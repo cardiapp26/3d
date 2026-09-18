@@ -20,7 +20,9 @@ Unregistered legacy catheter curves are no longer superimposed on this anatomy. 
 
 ## Interactive Features & Ergonomics
 
-- **C-Arm Angiography Gantry**: 2D trackpad joystick, standard projections (Spider, RAO/LAO Cranial/Caudal), and fluoroscopy X-ray shading. Starts collapsed (`+`) in anatomy mode to preserve 3D visibility, opens automatically in angiography mode, and behaves as a responsive bottom sheet drawer on mobile viewports (`<= 768px`). Exiting fluoroscopy cleanly restores coronary material roughness (0.65) and metalness (0).
+- **Bachmann bundle (07)**: Independently selectable, atlas-anchored schematic atrial roof band under the conduction layer, with its own visibility toggle. A separate bilingual lesson compares RAA pacing with a right-sided Bachmann-area lead in AP and LAO 40° views. The progress slider advances the lead. The endocardial teaching target is offset inward from the band anchor; this is not measured wall thickness or segmented conduction tissue. Fluoroscopy does not establish electrical capture. Run `npm run test:bachmann` for the dedicated browser checks.
+
+- **C-Arm Angiography Gantry**: 2D trackpad joystick, standard projections (Spider, RAO/LAO Cranial/Caudal), and grayscale fluoroscopy shading. Fluoroscopy uses a light detector background, translucent anatomy, dark procedural devices and dark coronary contrast in angiography mode. This is an educational mesh projection, without radiographic tissue-density simulation. Original materials remain intact when leaving the mode. Starts collapsed (`+`) in anatomy mode and opens automatically in angiography mode.
 - **Unified Reset**: Keyboard shortcut `0` and the `#reset` button execute the exact same state restoration (camera, opacity, all wall cut windows, layer toggles, coronary filters, and fluoroscopy).
 - **Bilingual Interface**: Seamless Turkish / English (`TR` / `EN`) switcher preserving active selection and lesson context.
 - **On-Demand Rendering**: Dirty-flag rendering loop idles when camera and animations are static, significantly lowering GPU/CPU consumption.

@@ -108,6 +108,33 @@ const fs = require('node:fs');
     // 7. Fluoroscopy exit restores coronary material roughness & metalness
     await page.locator('#fluoroscopy-toggle').click();
     assert.ok(await page.locator('#fluoroscopy-toggle').evaluate(el => el.classList.contains('active')));
+    await page.waitForSelector('#viewport[data-camera-settled=true]');
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    assert.equal(await page.evaluate(() => window.heart.getState().fluoroscopy), true);
+    await page.screenshot({ path: 'research/screenshots/fluoroscopy-grayscale.png' });
+    const projectionImage = await page.evaluate(() => {
+      window.heart.setFluoroscopy(true);
+      return new Promise(resolve => requestAnimationFrame(() => resolve(document.querySelector('#viewport canvas').toDataURL())));
+    });
+    const projectionPixels = await page.evaluate(async data => {
+      const canvas = new Image();
+      canvas.src = data;
+      await canvas.decode();
+      const copy = document.createElement('canvas');
+      copy.width = canvas.width; copy.height = canvas.height;
+      const ctx = copy.getContext('2d'); ctx.drawImage(canvas, 0, 0);
+      const pixels = ctx.getImageData(0, 0, copy.width, copy.height).data;
+      let colored = 0, dark = 0, background = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (Math.max(pixels[i], pixels[i+1], pixels[i+2])-Math.min(pixels[i], pixels[i+1], pixels[i+2]) > 2) colored++;
+        if (pixels[i+3] && pixels[i] < 120) dark++;
+        if (pixels[i+3] && pixels[i] > 180) background++;
+      }
+      return { colored, dark, background };
+    }, projectionImage);
+    assert.equal(projectionPixels.colored, 0, 'fluoroscopy uses neutral grayscale');
+    assert.ok(projectionPixels.dark > 100, 'contrast vessels remain dark');
+    assert.ok(projectionPixels.background > 100, 'detector background remains light');
     await page.locator('#fluoroscopy-toggle').click();
     assert.ok(!await page.locator('#fluoroscopy-toggle').evaluate(el => el.classList.contains('active')));
     const coronaryMats = await page.evaluate(() => {

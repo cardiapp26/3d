@@ -93,6 +93,8 @@ export function createTransseptal(helpers) {
   const stages = {};
   const progressive = {};
   let balloonState = null;
+  let activeStep = 0;
+  const catheterToggles = { pigtail: true, cs: true };
 
   function makeTube(curve, radius, material, segments = 48) {
     const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, segments, radius, 8, false), material.clone());
@@ -137,6 +139,7 @@ export function createTransseptal(helpers) {
     // -------------------------------------------------------------
     const iasGroup = new THREE.Group();
     iasGroup.name = 'Interatrial septum';
+    iasGroup.userData.projectionTissue = true;
 
     const septumDisc = new THREE.Mesh(new THREE.CircleGeometry(0.52, 40), matSeptum);
     septumDisc.position.copy(fossa);
@@ -249,8 +252,10 @@ export function createTransseptal(helpers) {
     // -------------------------------------------------------------
     // 2b. Fluoroscopic landmark catheters: aortic pigtail (NCC) + CS decapolar
     // -------------------------------------------------------------
-    const landmarkGroup = new THREE.Group();
-    landmarkGroup.name = 'Fluoroscopic landmark catheters';
+    const pigtailGroup = new THREE.Group();
+    pigtailGroup.name = 'Aortic pigtail catheter';
+    const csGroup = new THREE.Group();
+    csGroup.name = 'CS diagnostic catheter';
 
     const lcc = sourceCenter('lcc') || new THREE.Vector3(-0.06, 0.74, -0.08);
     const rcc = sourceCenter('rcc') || new THREE.Vector3(-0.30, 0.67, 0.18);
@@ -323,7 +328,7 @@ export function createTransseptal(helpers) {
     const pigtailCurve = new THREE.CatmullRomCurve3(pigtailPts);
     const pigtailMesh = makeTube(pigtailCurve, 0.018, matPigtail, 140);
     pigtailMesh.name = 'Pigtail catheter (seated in NCC)';
-    landmarkGroup.add(pigtailMesh);
+    pigtailGroup.add(pigtailMesh);
 
     // CS decapolar diagnostic catheter (femoral approach): IVC -> low RA ->
     // posteroinferior turn into the CS ostium -> along the CS centerline.
@@ -339,7 +344,7 @@ export function createTransseptal(helpers) {
     const csCurve = new THREE.CatmullRomCurve3([...csApproach, ...csCenter.map(v => v.clone())]);
     const csMesh = makeTube(csCurve, 0.016, matSheath, 120);
     csMesh.name = 'CS decapolar diagnostic catheter';
-    landmarkGroup.add(csMesh);
+    csGroup.add(csMesh);
 
     // Decapolar electrode rings (5 bipoles) on the portion inside the CS
     const csOnly = new THREE.CatmullRomCurve3(csCenter.map(v => v.clone()));
@@ -350,7 +355,7 @@ export function createTransseptal(helpers) {
       const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.016, 10), matNeedle.clone());
       ring.position.copy(pt);
       ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
-      landmarkGroup.add(ring);
+      csGroup.add(ring);
     }
 
     // Cusp identification markers: color-coded rings above each aortic cusp
@@ -367,11 +372,13 @@ export function createTransseptal(helpers) {
       ring.position.copy(def.center).add(new THREE.Vector3(0, 0.05, 0));
       ring.rotation.x = Math.PI / 2;
       ring.name = def.name;
-      landmarkGroup.add(ring);
+      pigtailGroup.add(ring);
     }
 
-    group.add(landmarkGroup);
-    stages.landmarks = landmarkGroup;
+    group.add(pigtailGroup);
+    stages.pigtail = pigtailGroup;
+    group.add(csGroup);
+    stages.cs = csGroup;
 
     // -------------------------------------------------------------
     // 3. Crossing: needle through fossa, guidewire toward LSPV
@@ -412,20 +419,33 @@ export function createTransseptal(helpers) {
     ]);
     balloonGroup.add(makeTube(shaftCurve, 0.018, matSheath, 40));
 
-    const balloonMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 22), matBalloon);
+    // Dumbbell profile: RA and LA lobes with the waist pinched by the septal rim.
+    // Lathe axis is +Y; the mesh is rotated so the axis runs along the septal normal.
+    const profile = [];
+    const balloonHalfLen = 0.24;
+    for (let i = 0; i <= 40; i++) {
+      const u = i / 40;
+      const lobe = Math.sin(u * Math.PI) ** 0.8;
+      const pinch = 1 - 0.72 * Math.exp(-((u - 0.5) ** 2) / 0.012);
+      const radius = Math.max(0.012, 0.17 * lobe * pinch);
+      profile.push(new THREE.Vector2(radius, (u - 0.5) * 2 * balloonHalfLen));
+    }
+    const balloonMesh = new THREE.Mesh(new THREE.LatheGeometry(profile, 30), matBalloon);
     balloonMesh.position.copy(fossa).addScaledVector(septalNormal, 0.02);
-    balloonMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), septalNormal);
-    balloonMesh.name = 'Septostomy balloon';
+    balloonMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), septalNormal);
+    balloonMesh.name = 'Septostomy balloon (dumbbell, waist at IAS)';
     balloonGroup.add(balloonMesh);
 
-    // Waist ring where the septum grips the inflating balloon
-    const waist = new THREE.Mesh(new THREE.TorusGeometry(0.10, 0.016, 10, 30), matLimbus.clone());
-    waist.position.copy(fossa).addScaledVector(septalNormal, 0.02);
-    waist.lookAt(facing);
-    waist.name = 'Balloon waist at IAS';
-    balloonGroup.add(waist);
+    // Catheter shaft continuing through the balloon to a soft distal tip in the LA
+    const throughShaft = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, balloonHalfLen * 2 + 0.22, 10),
+      matSheath.clone()
+    );
+    throughShaft.position.copy(balloonMesh.position);
+    throughShaft.quaternion.copy(balloonMesh.quaternion);
+    balloonGroup.add(throughShaft);
 
-    balloonState = { mesh: balloonMesh, waist };
+    balloonState = { mesh: balloonMesh };
 
     group.add(balloonGroup);
     stages.balloon = balloonGroup;
@@ -459,10 +479,11 @@ export function createTransseptal(helpers) {
     }
 
     if (balloonState) {
-      // Inflation: radius grows with progress, waist stays pinched at the septum
-      const inflate = 0.05 + 0.20 * t;
-      balloonState.mesh.scale.set(inflate, inflate, inflate * 1.5);
-      balloonState.waist.scale.setScalar(0.4 + 0.6 * t);
+      // Inflation: lobes grow radially with progress, length changes little;
+      // the waist stays pinched because it is part of the lathe profile.
+      const radial = 0.15 + 0.85 * t;
+      const axial = 0.6 + 0.4 * t;
+      balloonState.mesh.scale.set(radial, axial, radial);
     }
   }
 
@@ -477,15 +498,24 @@ export function createTransseptal(helpers) {
     const idx = Number(stepIndex);
     // 0: femoral access route, 1: positioning & tenting, 2: crossing, 3: septostomy
     const visibilityMap = {
-      0: { ias: true, access: true, puncture: false, cross: false, balloon: false, landmarks: false },
-      1: { ias: true, access: false, puncture: true, cross: false, balloon: false, landmarks: true },
-      2: { ias: true, access: false, puncture: false, cross: true, balloon: false, landmarks: true },
-      3: { ias: true, access: false, puncture: false, cross: false, balloon: true, landmarks: false }
+      0: { ias: true, access: true, puncture: false, cross: false, balloon: false, pigtail: false, cs: false },
+      1: { ias: true, access: false, puncture: true, cross: false, balloon: false, pigtail: true, cs: true },
+      2: { ias: true, access: false, puncture: false, cross: true, balloon: false, pigtail: true, cs: true },
+      3: { ias: true, access: false, puncture: false, cross: false, balloon: true, pigtail: false, cs: false }
     };
+    activeStep = idx;
     const config = visibilityMap[idx] || visibilityMap[0];
     for (const [key, stageGroup] of Object.entries(stages)) {
-      stageGroup.visible = Boolean(config[key]);
+      const userAllows = key in catheterToggles ? catheterToggles[key] : true;
+      stageGroup.visible = Boolean(config[key]) && userAllows;
     }
+  }
+
+  // User overrides for the landmark catheters; ANDed with the step visibility.
+  function setCatheterVisible(key, visible) {
+    if (!(key in catheterToggles)) return;
+    catheterToggles[key] = Boolean(visible);
+    if (initialized) setStep(activeStep);
   }
 
   function setVisible(visible) {
@@ -499,6 +529,7 @@ export function createTransseptal(helpers) {
     setVisible,
     setStep,
     setProgress,
+    setCatheterVisible,
     stages
   };
 }

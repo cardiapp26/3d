@@ -40,3 +40,11 @@ Source directory: `/Users/yh/Library/CloudStorage/OneDrive-Personal/eps için k
 ## Verification
 
 `node --check src/content.js` passed after content creation. Anatomical statements were checked against the extracted passages listed above. Geometry and clinical training validity require independent expert review. No scite tool was used; this task was source-grounded content creation, not a citation support audit.
+
+## Bachmann bundle teaching module
+
+- User-supplied anatomical and AP/LAO 40° fluoroscopy screenshots (2026-09-18): distinction between RAA anterior orientation and high right atrial region pacing; broad atrial roof band.
+- [Alternative atrial pacing site to improve cardiac function: focus on Bachmann’s bundle pacing](https://academic.oup.com/eurheartjsupp/article/25/Supplement_G/G44/7394338), European Heart Journal Supplements (2023).
+- [Fundamental Anatomy and Its Impact on Clinical Practice: The Rightward Extension of Bachmann's Bundle (Part II-III)](https://www.jacc.org/doi/10.1016/j.jaccas.2026.108795), JACC: Case Reports (2026).
+
+The band uses the existing RA/LA atlas geometry as spatial context, not a segmented bundle. Its right-sided pacing endpoint has a small illustrative inward offset from the band anchor, not a millimetre measurement or an inferred wall layer. Lead trajectory is schematic. AP/LAO orientation does not prove conduction capture; ECG and intracardiac electrograms remain separate evidence. No simulated thresholds, capture results or outcome benefits are assigned. Source discovery used publisher search excerpts and supplied captions; full-text publisher fetches were blocked (403/redirect).

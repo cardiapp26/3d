@@ -11,7 +11,7 @@ import * as THREE from 'three';
  * and animated advancement progress (0..1).
  */
 export function createPacemakerLeads(helpers) {
-  const { sourceCenter } = helpers;
+  const { sourceCenter, getBachmannTarget } = helpers;
   const group = new THREE.Group();
   group.name = 'Pacemaker Leads';
   group.visible = false;
@@ -44,6 +44,7 @@ export function createPacemakerLeads(helpers) {
   let initialized = false;
   let currentProgress = 1.0;
   let activeStep = 0;
+  let activeLesson = 'pacemaker';
 
   // Definitions for lead trajectories
   let leadCurves = {};
@@ -122,7 +123,16 @@ export function createPacemakerLeads(helpers) {
       csLvTip.clone()
     ]);
 
+    const bbTarget = getBachmannTarget?.();
+    if (!bbTarget) return; // The shared atlas-anchored target is built after model loading.
+    const bbCurve = new THREE.CatmullRomCurve3([
+      entryPt.clone(), highSvc.clone(),
+      new THREE.Vector3(ra.x, ra.y + .1, ra.z + .1),
+      new THREE.Vector3(bbTarget.x - .25, bbTarget.y - .2, bbTarget.z + .25),
+      bbTarget.clone()
+    ]);
     leadCurves = {
+      bachmann: { curve: bbCurve, color: 0xf6b64b, name: 'Bachmann area atrial lead (schematic)' },
       ra: { curve: raCurve, color: 0x00f2fe, name: 'RA Lead (Appendage)' },
       rv: { curve: rvCurve, color: 0x30d158, name: 'RV Septal Lead' },
       csp: { curve: cspCurve, color: 0xffd60a, name: 'CSP / LBBAP Physiological Lead' },
@@ -175,6 +185,7 @@ export function createPacemakerLeads(helpers) {
 
     initialized = true;
     updateGeometry();
+    applyLeadVisibility();
   }
 
   function updateGeometry() {
@@ -215,20 +226,25 @@ export function createPacemakerLeads(helpers) {
   }
 
   function setStep(stepIndex) {
-    init();
     activeStep = Number(stepIndex);
+    activeLesson = 'pacemaker';
+    init();
+    applyLeadVisibility();
+  }
 
-    // Step 0: Overview
-    // Step 1: RA Lead
-    // Step 2: RV Septal Lead
-    // Step 3: Conduction System Pacing (LBBAP / His)
-    // Step 4: CRT LV Lead (Coronary Sinus)
+  function applyLeadVisibility() {
+    if (activeLesson === 'bachmann') {
+      const key = activeStep === 1 ? 'ra' : activeStep >= 2 ? 'bachmann' : null;
+      for (const [id, lead] of Object.entries(leadMeshes)) lead.group.visible = id === key;
+      return;
+    }
+
+    // Indices match the four pacemaker lesson steps.
     const visibilityMap = {
-      0: { ra: true, rv: true, csp: false, cs_lv: true },
-      1: { ra: true, rv: false, csp: false, cs_lv: false },
-      2: { ra: false, rv: true, csp: false, cs_lv: false },
-      3: { ra: false, rv: false, csp: true, cs_lv: false },
-      4: { ra: true, rv: true, csp: false, cs_lv: true }
+      0: { ra: true },
+      1: { rv: true },
+      2: { csp: true },
+      3: { cs_lv: true }
     };
 
     const config = visibilityMap[activeStep] || visibilityMap[0];
@@ -244,13 +260,21 @@ export function createPacemakerLeads(helpers) {
     group.visible = Boolean(visible);
   }
 
+  function setBachmannStep(step) {
+    activeLesson = 'bachmann';
+    activeStep = Number(step);
+    init();
+    applyLeadVisibility();
+  }
+
   return {
     group,
     init,
     setVisible,
     setProgress,
     setStep,
-    leadCurves,
-    leadMeshes
+    setBachmannStep,
+    get leadCurves() { return leadCurves; },
+    get leadMeshes() { return leadMeshes; }
   };
 }

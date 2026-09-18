@@ -9,7 +9,8 @@ const modes = [
   ['angiography','03','Angiography'],
   ['ablation','04','Ablation anatomy'],
   ['pacemaker','05','Pacemaker leads'],
-  ['transseptal','06','Transseptal & septostomy']
+  ['transseptal','06','Transseptal & septostomy'],
+  ['bachmann','07','Bachmann bundle pacing']
 ];
 
 const app = document.querySelector('#app');
@@ -49,7 +50,8 @@ app.innerHTML = `
         ['vessels', 'Great vessels (Büyük damarlar)', '#729fca'],
         ['coronaries', 'Coronary circulation (Koronerler)', '#ebba70'],
         ['veins', 'Venöz sistem (Venler)', '#5187a0'],
-        ['conduction', 'İleti sistemi (SA, AV, His)', '#f5df76']
+        ['conduction', 'İleti sistemi (SA, AV, His, Bachmann)', '#f5df76'],
+        ['bachmann', 'Bachmann demeti', '#f6b64b']
       ].map(([id, t, c]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
       <label class="layer"><i style="background:#d6c7bc"></i>Kapak yapıları (Valves)<input type="checkbox" data-layer="valves" checked></label>
       <div class="layer-subgroup">
@@ -198,6 +200,14 @@ app.innerHTML = `
               <span class="carm-sub-icon">🤍</span> Kapaklar
             </button>
           </div>
+          <div id="catheter-toggles" class="carm-quick-actions" hidden>
+            <button id="toggle-pigtail" class="carm-sub-btn active" aria-pressed="true" title="Aortik pigtail kateterini (NCC) gizle / göster">
+              <span class="carm-sub-icon">💛</span> Pigtail
+            </button>
+            <button id="toggle-cs-cath" class="carm-sub-btn active" aria-pressed="true" title="CS dekapolar diagnostik kateterini gizle / göster">
+              <span class="carm-sub-icon">💙</span> CS kateter
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -245,7 +255,7 @@ app.innerHTML = `
   <h2>Keyboard Shortcuts</h2>
   <p class="muted">Fast navigation inspired by neuroanatomy atlas conventions.</p>
   <div class="shortcuts-grid">
-    <div class="shortcut-row"><kbd>1</kbd>–<kbd>5</kbd><span>Switch Learning Mode (Anatomy, Micro, Angio, Ablation, Pacemaker)</span></div>
+    <div class="shortcut-row"><kbd>1</kbd>–<kbd>7</kbd><span>Switch Learning Mode (including Transseptal and Bachmann pacing)</span></div>
     <div class="shortcut-row"><kbd>A</kbd><span>Anterior View</span></div>
     <div class="shortcut-row"><kbd>P</kbd><span>Posterior View</span></div>
     <div class="shortcut-row"><kbd>R</kbd><span>RAO (Right Anterior Oblique)</span></div>
@@ -363,14 +373,17 @@ document.querySelector('#root-window').addEventListener('change', e => heart?.se
 
 function showStep() {
   const isPacemaker = mode === 'pacemaker';
+  const isBachmann = mode === 'bachmann';
   const isTransseptal = mode === 'transseptal';
-  const hasProgress = isPacemaker || isTransseptal;
+  const hasProgress = isPacemaker || isTransseptal || (isBachmann && step > 0);
   const progressEl = document.querySelector('#progress');
   const progressLabel = document.querySelector('#progress-label');
   const progressNote = document.querySelector('#progress-note');
   if (progressEl) progressEl.hidden = !hasProgress;
   if (progressLabel) progressLabel.hidden = !hasProgress;
   if (progressNote) progressNote.hidden = !hasProgress;
+  const cathToggles = document.querySelector('#catheter-toggles');
+  if (cathToggles) cathToggles.hidden = !isTransseptal;
 
   const lesson = lessons[mode];
   if (!lesson) return;
@@ -385,8 +398,11 @@ function showStep() {
     if (progressEl) progressEl.value = 100;
     document.querySelector('#progress-value').textContent = '100%';
     heart?.setProgress(1.0);
-    if (isPacemaker) heart?.setPacemakerStep(step);
+    if (isBachmann) heart?.setBachmannStep(step);
+    else if (isPacemaker) heart?.setPacemakerStep(step);
     else heart?.setTransseptalStep(step);
+  } else if (isBachmann) {
+    heart?.setBachmannStep(step);
   } else if (mode === 'ablation') {
     heart?.setAblationStep(step);
   }
@@ -424,8 +440,11 @@ function setMode(newMode, updateUrl = true) {
   step = 0;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
+  document.querySelector('main .pill').textContent = mode === 'bachmann'
+    ? 'BACHMANN · SCHEMATIC ANATOMY & PACING'
+    : 'ATLAS MESH · SHARED COORDINATES';
 
-  if (mode === 'angiography' || mode === 'transseptal') {
+  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann') {
     setCarmPanelOpen(true);
   } else {
     setCarmPanelOpen(false);
@@ -440,7 +459,8 @@ function setMode(newMode, updateUrl = true) {
     angiography: 'Read the projection.',
     ablation: 'Map the landmarks.',
     pacemaker: 'Trace the lead.',
-    transseptal: 'Cross the septum.'
+    transseptal: 'Cross the septum.',
+    bachmann: 'Bachmann: anatomy & atrial pacing.'
   }[mode] || 'Inside the heart.';
 
   const activeBtn = document.querySelector(`[data-mode="${mode}"]`);
@@ -484,7 +504,7 @@ function handleHashChange() {
     const urlParams = new URLSearchParams(hash.split('?')[1] || '');
     const targetStructure = urlParams.get('structure') || (hash.match(/#\/structure\/([a-z0-9_-]+)/i)?.[1]);
 
-    if (targetMode && ['anatomy', 'micro', 'angiography', 'ablation', 'pacemaker', 'transseptal'].includes(targetMode)) {
+    if (targetMode && modes.some(([id]) => id === targetMode)) {
       if (targetMode !== mode) setMode(targetMode, false);
     }
 
@@ -815,6 +835,7 @@ function toggleBeat() {
 document.querySelector('#beat').addEventListener('click', toggleBeat);
 
 function resetAll() {
+  setMode('anatomy');
   heart?.reset();
   const rw = document.querySelector('#root-window');
   if (rw) rw.checked = false;
@@ -926,6 +947,16 @@ document.querySelector('#lang-btn')?.addEventListener('click', () => {
   updateLanguageUI();
 });
 
+for (const [btnId, key] of [['#toggle-pigtail', 'pigtail'], ['#toggle-cs-cath', 'cs']]) {
+  const btn = document.querySelector(btnId);
+  btn?.addEventListener('click', () => {
+    const on = !btn.classList.contains('active');
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', String(on));
+    heart?.setCatheterVisible(key, on);
+  });
+}
+
 document.querySelector('#progress').addEventListener('input', e => {
   heart?.setProgress(Number(e.target.value) / 100);
   document.querySelector('#progress-value').textContent = `${Math.round(e.target.value)}%`;
@@ -970,7 +1001,7 @@ window.addEventListener('keydown', e => {
 
   const key = e.key;
 
-  if (key >= '1' && key <= '6') {
+  if (key >= '1' && key <= '7') {
     const modeIndex = parseInt(key, 10) - 1;
     if (modes[modeIndex]) {
       setMode(modes[modeIndex][0]);
@@ -1001,4 +1032,3 @@ window.addEventListener('keydown', e => {
     if (lessons[mode]) nextLandmark();
   }
 });
-

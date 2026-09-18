@@ -65,7 +65,7 @@
 .fluoro-btn:hover{background:rgba(36,79,67,0.9);color:#e5f5ee}
 .fluoro-btn.active{background:#14352b;border-color:#4ef2b7;color:#4ef2b7;box-shadow:0 0 12px rgba(57,232,173,0.4)}
 .carm-dock-btn{color:#1a4d3f !important;font-weight:600}
-main.fluoroscopy-active{background:radial-gradient(ellipse at 50% 46%,#0b1513 0%,#060d0b 70%,#030605 100%) !important}
+main.fluoroscopy-active{background:#c9c9c9 !important}
 .lang-btn{font-weight:700;font-size:11px;padding:6px 11px;border-radius:5px;border:1px solid #3d7966;background:#e5eee7;color:#204b3e;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center}
 .lang-btn:hover{background:#265446;color:#ffffff;border-color:#265446}
 @media(max-width:768px){
@@ -73,3 +73,6 @@ main.fluoroscopy-active{background:radial-gradient(ellipse at 50% 46%,#0b1513 0%
     padding:11px 16px;
   }
 }
+
+/* Landmark catheter toggles live in the C-Arm quick actions row */
+#catheter-toggles{margin-top:6px}

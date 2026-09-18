@@ -199,6 +199,20 @@ export const rawStructures = {
     },
     source: `${atlas}, PDF pp. 15–17; Ho et al., 2003, PDF p. 1`
   },
+  bachmann: {
+    modelType: 'schematic',
+    tr: {
+      title: 'Bachmann demeti • Şematik',
+      description: 'Sağ ve sol atriyumun ön-üst çatısını birbirine bağlayan geniş subepikardiyal kas bandıdır. Çevre atriyal miyokardla devamlılık gösterir; yalıtılmış bir kablo değildir.',
+      clinical: 'Bachmann bölgesi pacing lead’i sağ atriyumun üst anteroseptal bölgesine endokardiyal olarak yerleşir; epikardiyal bandın içine ilerletilmez. Floroskopik konum doğrudan demet yakalanmasını kanıtlamaz; yüzey EKG’si ve intrakardiyak elektrogramlarla değerlendirme gerekir.'
+    },
+    en: {
+      title: 'Bachmann bundle • Schematic',
+      description: 'A broad subepicardial muscular band connects the anterior-superior roofs of the right and left atria. It is continuous with surrounding atrial myocardium, not an insulated cable.',
+      clinical: 'Bachmann bundle area pacing places an endocardial lead in the high right atrial anteroseptal region, not through the epicardial band. Fluoroscopic position does not prove direct bundle capture; surface ECG and intracardiac electrograms are needed for assessment.'
+    },
+    source: 'Fontenla et al., 2026, doi:10.1016/j.jaccas.2026.108795; PMC10637835'
+  },
   av: {
     tr: {
       title: 'Atriyoventriküler düğüm (AV) • Şematik',
@@ -431,7 +445,8 @@ export const structures = new Proxy({}, {
       title: loc.title || raw.title || '',
       description: loc.description || raw.description || '',
       clinical: loc.clinical || raw.clinical || '',
-      source: raw.source || ''
+      source: raw.source || '',
+      modelType: raw.modelType
     };
   },
   has(target, prop) {
@@ -635,6 +650,68 @@ export const rawLessons = {
       ]
     }
   },
+  bachmann: {
+    tr: {
+      title: 'Bachmann demeti anatomisi ve bölge pacing',
+      intro: 'Atriyumlar arası kas bandını ve sağ atriyumdan endokardiyal bölge pacing yaklaşımını karşılaştırın. Geometri şematiktir; floroskopik yerleşim elektriksel yakalanmayı kanıtlamaz.',
+      steps: [
+        {
+          title: 'Anatomi • Ön-üst atriyal kas bandı',
+          text: 'Bachmann demeti sağ atriyumdan sol atriyum çatısına uzanan geniş subepikardiyal miyokard bandıdır. Renkli bant anatomik ilişkiyi gösterir; gerçek floroskopide ayrı bir yapı olarak görülmez. Bu adımda pacing lead’i gösterilmez.',
+          landmark: 'bachmann',
+          view: 'bachmann_roof'
+        },
+        {
+          title: 'Karşılaştırma • RAA lead’i, LAO 40°',
+          text: 'Sağ atriyal apendiks (RAA) lead’i anterior yerleşimi temsil eder. Referans LAO 40° görünümünde uç sternum yönüne, görüntünün soluna bakar. Bunu sonraki adımlardaki üst septal bölge lead’i ile karşılaştırın; kişiye özgü anatomi projeksiyonu değiştirir.',
+          landmark: 'ra',
+          view: 'lao40'
+        },
+        {
+          title: 'Bachmann bölgesi • AP projeksiyonu',
+          text: 'Lead SVC üzerinden sağ atriyuma ulaşır ve üst anteroseptal bölgenin endokardiyal yüzeyinde sonlanır. AP görünümünde distal yönelim RAA örneğine göre daha medialdir. Bu model epikardiyal bandın içine vida ilerlemesini veya doğrudan demet yakalanmasını simüle etmez.',
+          landmark: 'bachmann',
+          view: 'ap'
+        },
+        {
+          title: 'Bachmann bölgesi • LAO 40° ve elektriksel değerlendirme',
+          text: 'Referans LAO 40° görünümünde üst septal bölge lead’i RAA lead’ine göre daha posteriora, omurga yönüne bakar. Projeksiyon tek başına demet yakalanmasını kanıtlamaz. P dalgası morfolojisi ve süresi ile intrakardiyak elektrogramlar birlikte değerlendirilmelidir; model elektriksel yakalanma ölçümü yapmaz.',
+          landmark: 'bachmann',
+          view: 'lao40'
+        }
+      ]
+    },
+    en: {
+      title: 'Bachmann bundle anatomy and area pacing',
+      intro: 'Compare the interatrial muscular band with right atrial endocardial area pacing. Geometry is schematic; fluoroscopic placement does not establish electrical capture.',
+      steps: [
+        {
+          title: 'Anatomy • Anterior-superior atrial band',
+          text: 'Bachmann bundle is a broad subepicardial myocardial band extending from the right atrium to the left atrial roof. The colored band shows anatomical relationships; it is not separately visible on clinical fluoroscopy. No pacing lead is shown in this step.',
+          landmark: 'bachmann',
+          view: 'bachmann_roof'
+        },
+        {
+          title: 'Comparison • RAA lead, LAO 40°',
+          text: 'The right atrial appendage (RAA) lead represents an anterior position. In the reference LAO 40° projection, its tip points toward the sternum, on the left of the image. Compare this with the high septal region lead in the following steps; individual anatomy affects the projection.',
+          landmark: 'ra',
+          view: 'lao40'
+        },
+        {
+          title: 'Bachmann bundle area • AP projection',
+          text: 'The lead reaches the right atrium through the SVC and terminates on the endocardial surface of the high anteroseptal region. In AP, its distal orientation is more medial than the RAA example. This model does not simulate screw advancement into the epicardial band or direct bundle capture.',
+          landmark: 'bachmann',
+          view: 'ap'
+        },
+        {
+          title: 'Bachmann bundle area • LAO 40° and electrical assessment',
+          text: 'In the reference LAO 40° projection, the high septal region lead points more posteriorly, toward the spine, than the RAA lead. Projection alone does not prove bundle capture. P-wave morphology and duration must be assessed alongside intracardiac electrograms; this model does not measure electrical capture.',
+          landmark: 'bachmann',
+          view: 'lao40'
+        }
+      ]
+    }
+  },
   transseptal: {
     tr: {
       title: 'Transseptal ponksiyon & balon atriyal septostomi',
@@ -734,7 +811,8 @@ export const uiTranslations = {
       ['angiography', '03', 'Anjiyografi'],
       ['ablation', '04', 'Ablasyon anatomisi'],
       ['pacemaker', '05', 'Pacemaker telleri'],
-      ['transseptal', '06', 'Transseptal & septostomi']
+      ['transseptal', '06', 'Transseptal & septostomi'],
+      ['bachmann', '07', 'Bachmann demeti & pacing']
     ],
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Odacıklar (Chambers)',
@@ -789,7 +867,8 @@ export const uiTranslations = {
       ['angiography', '03', 'Angiography'],
       ['ablation', '04', 'Ablation anatomy'],
       ['pacemaker', '05', 'Pacemaker leads'],
-      ['transseptal', '06', 'Transseptal & septostomy']
+      ['transseptal', '06', 'Transseptal & septostomy'],
+      ['bachmann', '07', 'Bachmann bundle & pacing']
     ],
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Chambers',
@@ -836,4 +915,3 @@ export function getTranslation(key) {
   const dict = uiTranslations[currentLang] || uiTranslations.tr;
   return dict[key] ?? uiTranslations.tr[key] ?? key;
 }
-

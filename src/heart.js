@@ -7,6 +7,7 @@ import { createEPLandmarks } from './ep-landmarks.js';
 import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createAnnuli } from './annuli.js';
 import { createTransseptal } from './transseptal.js';
+import { createBachmannGeometry } from './bachmann.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
 export function createHeart(container, onSelect = () => {}, onHover = () => {}, onAngleChange = () => {}) {
@@ -43,7 +44,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     valves: true, 'aortic-valve': true, lcc: true, rcc: true, ncc: true,
     mitral: true, tricuspid: true, 'mitral-annulus': true, 'tricuspid-annulus': true, 'pulmonary-valve': true,
     papillary: true, 'rv-papillary': true, 'lv-papillary': true,
-    veins: true, conduction: true
+    veins: true, conduction: true, bachmann: true
   };
   const meshes = [], meshMap = new Map();
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
@@ -62,7 +63,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
   const epLandmarks = createEPLandmarks({ sourceCenter });
   heart.add(epLandmarks.group);
-  const pacemakerLeads = createPacemakerLeads({ sourceCenter });
+  let bachmannTarget = null;
+  const pacemakerLeads = createPacemakerLeads({ sourceCenter, getBachmannTarget: () => bachmannTarget });
   heart.add(pacemakerLeads.group);
   function meshVertices(id,nameFilter){
     const out=[];
@@ -97,12 +99,13 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const tissue=layer==='chambers';
       // Catheters run inside these vessels in the transseptal lesson; keep them see-through.
       const catheterVessel=mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id);
-      const alpha=tissue?(fluoroscopy?0.12:opacity):catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
+      const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
+      const alpha=tissue?opacity:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
       m.material.clippingPlanes=id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
-        m.material.roughness=fluoroscopy?0.25:0.65;
-        m.material.metalness=fluoroscopy?0.4:0;
+        m.material.roughness=0.65;
+        m.material.metalness=0;
       }
     }
     heart.visible=mode!=='micro';micro.visible=mode==='micro';
@@ -230,11 +233,16 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       avCenter.clone()
     ], 0.016, 'sa', 'Anterior internodal tract');
 
-    makeTract([
-      new THREE.Vector3(-0.85, 0.90, 0.22),
-      new THREE.Vector3(-0.50, 0.70, -0.05),
-      new THREE.Vector3(-0.15, 0.45, -0.28)
-    ], 0.014, 'sa', "Bachmann's bundle");
+    const bachmann = createBachmannGeometry(meshVertices);
+    bachmannTarget = bachmann.target;
+    const bandMaterial = matPath.clone();
+    bandMaterial.color.setHex(0xf6b64b);
+    bandMaterial.side = THREE.DoubleSide;
+    const band = new THREE.Mesh(bachmann.geometry, bandMaterial);
+    band.name = "Bachmann's bundle (schematic atrial roof band)";
+    band.userData = {id:'bachmann', layer:'conduction', provenance:'schematic', bandAnchor:bachmann.bandAnchor.toArray(), pacingTarget:bachmann.target.toArray()};
+    conductionGroup.add(band);
+    register(band, 'bachmann');
 
     makeTract([
       saCenter.clone(),
@@ -315,6 +323,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function updateWallPlane(id){const record=wallPlanes.get(id);if(record)record.plane.constant=-(record.min+(record.max-record.min)*wallCuts[id]);}
   function setWallCut(id,value){if(!(id in wallCuts))return;wallCuts[id]=THREE.MathUtils.clamp(Number(value),0,.8);updateWallPlane(id);applyState();}
   const angioPresets={
+    ap:{laoRao:0,craCau:0},
+    lao40:{laoRao:40,craCau:0},
+    bachmann_roof:{laoRao:0,craCau:35},
     anterior:{laoRao:0,craCau:0},
     posterior:{laoRao:180,craCau:0},
     rao:{laoRao:-30,craCau:0},
@@ -435,15 +446,47 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     container.dataset.cameraSettled=String(!transition);
     emitAngleChange();
     if(needsRender){
-      renderer.render(scene,camera);
+      renderScene();
       if(!transition&&(!beating||mode==='micro'))needsRender=false;
     }
   }frame=requestAnimationFrame(animate);
+  // Educational projection: layer attenuation, not a simulated diagnostic radiograph.
+  // Swap only during rendering so selection, lesson updates and resets retain originals.
+  const projectionMaterials = new Map();
+  function renderScene(){
+    if(!fluoroscopy || mode==='micro'){renderer.render(scene,camera);return;}
+    const originals=[];
+    heart.traverseVisible(object=>{
+      if(!object.isMesh || Array.isArray(object.material))return;
+      const original=object.material;
+      const layer=object.userData.layer;
+      const atlas=object.userData.provenance==='atlas';
+      const contrast=atlas && layer==='coronaries' && mode==='angiography';
+      let device=false;
+      let schematicTissue=false;
+      for(let parent=object.parent;parent;parent=parent.parent){
+        if(parent.userData.projectionTissue)schematicTissue=true;
+        if(parent===pacemakerLeads.group || parent===transseptal.group){device=true;break;}
+      }
+      device=device && !schematicTissue && !original.isMeshBasicMaterial;
+      let projected=projectionMaterials.get(object);
+      if(!projected){
+        projected=new THREE.MeshBasicMaterial({transparent:true,premultipliedAlpha:true,depthWrite:false,depthTest:false,side:THREE.FrontSide,toneMapped:false,blending:THREE.MultiplyBlending});
+        projectionMaterials.set(object,projected);
+      }
+      projected.color.setHex(device?0x202020:contrast?0x303030:0x737373);
+      projected.opacity=device?(original.transparent?Math.min(.8,original.opacity):.9):contrast?.8:atlas?(layer==='chambers'?.14:layer==='valves'?.08:.07):.12;
+      projected.clippingPlanes=original.clippingPlanes;
+      originals.push([object,original]);
+      object.material=projected;
+    });
+    try{renderer.render(scene,camera);}finally{for(const [object,original] of originals)object.material=original;}
+  }
   function disposeScene(root){const materials=new Set(),geometries=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>materials.add(m));});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
   function setFluoroscopy(value){
     fluoroscopy=Boolean(value);
-    renderer.setClearColor(fluoroscopy?0x0e1413:0xffffff,fluoroscopy?1:0);
-    renderer.toneMappingExposure=fluoroscopy?1.35:1.05;
+    renderer.setClearColor(fluoroscopy?0xc9c9c9:0xffffff,fluoroscopy?1:0);
+    renderer.toneMappingExposure=1.05;
     applyState();
   }
   return {ready,
@@ -483,15 +526,18 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
       mode=name;
-      opacity=['angiography','ablation','pacemaker','transseptal'].includes(name)?.32:1;
+      opacity=['angiography','ablation','pacemaker','transseptal','bachmann'].includes(name)?.32:1;
       epLandmarks.setVisible(name==='ablation');
-      pacemakerLeads.setVisible(name==='pacemaker');
+      pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       transseptal.setVisible(name==='transseptal');
       if(name==='ablation'){
         epLandmarks.setStep(0);
       }else if(name==='pacemaker'){
         pacemakerLeads.setStep(0);
         pacemakerLeads.setProgress(1.0);
+      }else if(name==='bachmann'){
+        pacemakerLeads.setBachmannStep(0);
+        pacemakerLeads.setProgress(1);
       }else if(name==='transseptal'){
         transseptal.setStep(0);
         transseptal.setProgress(1.0);
@@ -505,7 +551,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setBeating(value){beating=Boolean(value);requestRender();},
     setAblationStep(step){epLandmarks.setStep(Number(step));requestRender();},
     setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
+    setBachmannStep(step){pacemakerLeads.setBachmannStep(Number(step));requestRender();},
     setTransseptalStep(step){transseptal.setStep(Number(step));requestRender();},
+    setCatheterVisible(key,value){transseptal.setCatheterVisible(key,Boolean(value));requestRender();},
     setProgress(value){if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
@@ -525,6 +573,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       visibility.coronaries=true;
       visibility.veins=true;
       visibility.conduction=true;
+      visibility.bachmann=true;
       visibility.valves=true;
       valveIds.forEach(id=>visibility[id]=true);
       visibility['aortic-valve']=true;
@@ -540,6 +589,6 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       requestRender();
     },
     getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
-    dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
+    dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }
