@@ -211,10 +211,6 @@ app.innerHTML = `
       <div class="eyebrow">WHY IT MATTERS</div>
       <p id="clinical"></p>
     </div>
-    <div class="reference">
-      <div class="eyebrow">SOURCE NOTE</div>
-      <p id="source"></p>
-    </div>
     <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
     <select id="structure-select"></select>
     <section id="lesson" hidden>
@@ -303,8 +299,9 @@ function inspect(id, flyTo = true, updateUrl = true) {
   currentSelectedId = cleanId;
   select.value = cleanId;
 
-  for (const [target, key] of [['structure-title', 'title'], ['description', 'description'], ['clinical', 'clinical'], ['source', 'source']]) {
-    document.getElementById(target).textContent = s[key] || '';
+  for (const [target, key] of [['structure-title', 'title'], ['description', 'description'], ['clinical', 'clinical']]) {
+    const el = document.getElementById(target);
+    if (el) el.textContent = s[key] || '';
   }
 
   heart?.selectStructure(cleanId, flyTo);
