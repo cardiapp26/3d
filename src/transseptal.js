@@ -254,8 +254,10 @@ export function createTransseptal(helpers) {
     // -------------------------------------------------------------
     const pigtailGroup = new THREE.Group();
     pigtailGroup.name = 'Aortic pigtail catheter';
+    pigtailGroup.userData.fluoroTint = 0x8a6a00; // dark amber under multiply projection
     const csGroup = new THREE.Group();
     csGroup.name = 'CS diagnostic catheter';
+    csGroup.userData.fluoroTint = 0x1c3f8f; // dark blue under multiply projection
 
     const lcc = sourceCenter('lcc') || new THREE.Vector3(-0.06, 0.74, -0.08);
     const rcc = sourceCenter('rcc') || new THREE.Vector3(-0.30, 0.67, 0.18);

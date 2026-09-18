@@ -3,9 +3,11 @@ import * as THREE from 'three';
 /**
  * Procedural 3D Clinical Electrophysiology (EP) Landmarks and Ablation Targets.
  * Grounded in standard clinical EP practice (CTI line, Triangle of Koch, WACA/PVI rings).
+ * Anchor points are measured from the atlas meshes (vein ostia, leaflet hinges,
+ * CS ostium) instead of hand-tuned constants.
  */
 export function createEPLandmarks(helpers) {
-  const { sourceCenter } = helpers;
+  const { sourceCenter, meshVertices = () => [] } = helpers;
   const group = new THREE.Group();
   group.name = 'EP Landmarks';
   group.visible = false;
@@ -51,14 +53,43 @@ export function createEPLandmarks(helpers) {
 
   let initialized = false;
 
+  // Centroid of the vertices of `verts` nearest to `ref` (ostium finder).
+  function nearEndCentroid(verts, ref, keepFraction = 0.15) {
+    if (!verts.length) return null;
+    const sorted = [...verts].sort((a, b) => a.distanceTo(ref) - b.distanceTo(ref));
+    const keep = sorted.slice(0, Math.max(6, Math.floor(sorted.length * keepFraction)));
+    return keep.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / keep.length);
+  }
+
   function init() {
     if (initialized) return;
 
-    const ivc = sourceCenter('ivc') || new THREE.Vector3(-0.85, -0.65, -0.35);
-    const tv = sourceCenter('tricuspid') || new THREE.Vector3(-0.45, -0.45, 0.15);
-    const av = sourceCenter('av') || new THREE.Vector3(-0.28, -0.20, -0.10);
-    const cs = sourceCenter('cs') || new THREE.Vector3(-0.55, -0.38, -0.20);
-    const la = sourceCenter('la') || new THREE.Vector3(0.05, 0.45, -0.55);
+    const ra = sourceCenter('ra') || new THREE.Vector3(-1.03, 0.13, 0.12);
+    const la = sourceCenter('la') || new THREE.Vector3(-0.05, 0.27, -0.37);
+    const av = new THREE.Vector3(-0.28, -0.20, -0.10); // matches the conduction system AV node
+
+    const tvVerts = meshVertices('tricuspid');
+    const ivcVerts = meshVertices('ivc');
+    const csVerts = meshVertices('cs');
+    const septalVerts = meshVertices('tricuspid', /septal/i);
+
+    // Measured anchors -------------------------------------------------
+    // IVC ostium: IVC vertices nearest the RA centroid.
+    const ivcOs = nearEndCentroid(ivcVerts, ra) || new THREE.Vector3(-0.85, -0.65, -0.35);
+    // CS ostium: CS vertices nearest the RA centroid.
+    const csOs = nearEndCentroid(csVerts, ra) || new THREE.Vector3(-0.70, -0.41, -0.30);
+    // Inferior tricuspid hinge: lowest band of tricuspid vertices closest to the IVC ostium.
+    let tvInferior = new THREE.Vector3(-0.75, -0.75, 0.0);
+    if (tvVerts.length) {
+      const lowBand = [...tvVerts].sort((a, b) => a.y - b.y).slice(0, Math.floor(tvVerts.length * 0.2));
+      tvInferior = nearEndCentroid(lowBand, ivcOs, 0.35) || tvInferior;
+    }
+    // Septal tricuspid hinge: upper (annular) band of the septal leaflet.
+    let septalHinge = new THREE.Vector3(-0.45, -0.20, 0.05);
+    if (septalVerts.length) {
+      const highBand = [...septalVerts].sort((a, b) => b.y - a.y).slice(0, Math.floor(septalVerts.length * 0.25));
+      septalHinge = highBand.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / highBand.length);
+    }
 
     // -------------------------------------------------------------
     // 1. CTI (Cavotricuspid Isthmus) Ablation Line (Atrial Flutter)
@@ -66,19 +97,15 @@ export function createEPLandmarks(helpers) {
     const ctiGroup = new THREE.Group();
     ctiGroup.name = 'CTI Ablation Line';
 
-    // Curve between IVC edge and tricuspid annulus
-    const ctiStart = new THREE.Vector3(ivc.x * 0.9 + tv.x * 0.1, ivc.y + 0.12, ivc.z * 0.9 + tv.z * 0.1);
-    const ctiMid = new THREE.Vector3((ivc.x + tv.x) * 0.5, (ivc.y + tv.y) * 0.5 - 0.05, (ivc.z + tv.z) * 0.5 - 0.04);
-    const ctiEnd = new THREE.Vector3(tv.x * 0.85 + ivc.x * 0.15, tv.y + 0.05, tv.z * 0.85 + ivc.z * 0.15);
+    const ctiMid = ivcOs.clone().lerp(tvInferior, 0.5).add(new THREE.Vector3(0, -0.04, 0.06));
+    const ctiCurve = new THREE.CatmullRomCurve3([
+      ivcOs.clone().lerp(tvInferior, 0.08),
+      ctiMid,
+      tvInferior.clone().lerp(ivcOs, 0.05)
+    ]);
+    ctiGroup.add(new THREE.Mesh(new THREE.TubeGeometry(ctiCurve, 20, 0.022, 10, false), matLesion.clone()));
 
-    const ctiCurve = new THREE.CatmullRomCurve3([ctiStart, ctiMid, ctiEnd]);
-    const ctiTube = new THREE.TubeGeometry(ctiCurve, 20, 0.022, 10, false);
-    const ctiMesh = new THREE.Mesh(ctiTube, matLesion.clone());
-    ctiGroup.add(ctiMesh);
-
-    // Discrete RF ablation burn points along the line
-    const ctiPoints = ctiCurve.getPoints(9);
-    ctiPoints.forEach((pt, i) => {
+    ctiCurve.getPoints(9).forEach(pt => {
       const burn = new THREE.Mesh(new THREE.SphereGeometry(0.032, 16, 16), matLesion.clone());
       burn.position.copy(pt);
       ctiGroup.add(burn);
@@ -93,47 +120,34 @@ export function createEPLandmarks(helpers) {
     const kochGroup = new THREE.Group();
     kochGroup.name = 'Triangle of Koch';
 
-    // Apex: Compact AV node
     const apexPt = av.clone();
-    // Base 1: CS ostium
-    const csPt = new THREE.Vector3(cs.x * 0.85 + av.x * 0.15, cs.y + 0.05, cs.z);
-    // Base 2: Septal tricuspid hinge point
-    const hingePt = new THREE.Vector3(tv.x * 0.7 + av.x * 0.3, tv.y + 0.08, tv.z * 0.7 + av.z * 0.3);
-
-    // Triangle boundary lines (Tendon of Todaro, Septal Hinge, CS Base)
     const lineGeom = new THREE.BufferGeometry().setFromPoints([
-      apexPt, hingePt,
-      hingePt, csPt,
-      csPt, apexPt
+      apexPt, septalHinge,
+      septalHinge, csOs,
+      csOs, apexPt
     ]);
-    const boundaryLines = new THREE.LineSegments(lineGeom, matBoundary);
-    kochGroup.add(boundaryLines);
+    kochGroup.add(new THREE.LineSegments(lineGeom, matBoundary));
 
     // Compact AV node marker (Apex - High risk of AV block)
     const avDanger = new THREE.Mesh(new THREE.SphereGeometry(0.055, 18, 18), matDanger);
     avDanger.position.copy(apexPt);
     kochGroup.add(avDanger);
 
-    // Slow pathway ablation target zone (near CS ostium at base of triangle)
-    const slowPathwayCenter = new THREE.Vector3(
-      csPt.x * 0.65 + hingePt.x * 0.25 + apexPt.x * 0.1,
-      csPt.y * 0.65 + hingePt.y * 0.25 + apexPt.y * 0.1,
-      csPt.z * 0.65 + hingePt.z * 0.25 + apexPt.z * 0.1
-    );
+    // Slow pathway target zone: base of the triangle, just anterior to the CS ostium.
+    const slowPathwayCenter = csOs.clone().lerp(septalHinge, 0.3);
     const slowTarget = new THREE.Mesh(new THREE.SphereGeometry(0.05, 18, 18), matSafeTarget);
     slowTarget.position.copy(slowPathwayCenter);
     kochGroup.add(slowTarget);
 
-    // RF lesion cluster in slow pathway area
+    // RF lesion cluster in the slow pathway area, spread along the CS-hinge axis.
+    const axis = septalHinge.clone().sub(csOs).normalize();
+    const side = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0)).normalize();
     for (let i = 0; i < 5; i++) {
       const angle = (i / 5) * Math.PI * 2;
-      const r = 0.045;
       const rf = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 12), matLesion.clone());
-      rf.position.set(
-        slowPathwayCenter.x + Math.cos(angle) * r,
-        slowPathwayCenter.y + Math.sin(angle) * r,
-        slowPathwayCenter.z + (Math.random() - 0.5) * 0.02
-      );
+      rf.position.copy(slowPathwayCenter)
+        .addScaledVector(axis, Math.cos(angle) * 0.045)
+        .addScaledVector(side, Math.sin(angle) * 0.045);
       kochGroup.add(rf);
     }
 
@@ -146,46 +160,54 @@ export function createEPLandmarks(helpers) {
     const pviGroup = new THREE.Group();
     pviGroup.name = 'PVI / WACA Rings';
 
-    function createPviRing(center, radiusX, radiusY, tiltY, tiltX) {
-      const curve = new THREE.EllipseCurve(0, 0, radiusX, radiusY, 0, Math.PI * 2, false, 0);
-      const points2D = curve.getPoints(36);
-      const points3D = points2D.map(p => new THREE.Vector3(p.x, p.y, 0));
-      const spline = new THREE.CatmullRomCurve3(points3D, true);
-      const tubeGeom = new THREE.TubeGeometry(spline, 36, 0.025, 8, true);
-      const ringMesh = new THREE.Mesh(tubeGeom, matLesion.clone());
+    // Measured PV ostia: for each vein, the vertex band nearest the LA centroid.
+    const ostium = pattern => {
+      const verts = meshVertices('pv', pattern);
+      return verts.length ? nearEndCentroid(verts, la) : null;
+    };
+    const lspv = ostium(/Left superior/i);
+    const lipv = ostium(/Left inferior/i);
+    const rspv = ostium(/Right superior/i);
+    const ripv = ostium(/Right inferior/i);
 
-      ringMesh.position.copy(center);
-      ringMesh.rotation.y = tiltY;
-      ringMesh.rotation.x = tiltX;
-
-      // Burn dots along the ring
-      points3D.filter((_, idx) => idx % 3 === 0).forEach(pt => {
+    function antralRing(osA, osB, fallbackCenter) {
+      const center = osA && osB ? osA.clone().add(osB).multiplyScalar(0.5) : fallbackCenter;
+      // Ring plane faces outward from the LA body through the vein pair.
+      const normal = center.clone().sub(la).normalize();
+      const spread = osA && osB ? osA.distanceTo(osB) : 0.55;
+      const radius = spread * 0.5 + 0.16;
+      const u = new THREE.Vector3(0, 1, 0).cross(normal).normalize();
+      if (u.lengthSq() < 0.01) u.set(1, 0, 0);
+      const v = new THREE.Vector3().crossVectors(normal, u).normalize();
+      const pts = [];
+      for (let i = 0; i <= 40; i++) {
+        const a = (i / 40) * Math.PI * 2;
+        pts.push(center.clone()
+          .addScaledVector(u, Math.cos(a) * radius)
+          .addScaledVector(v, Math.sin(a) * radius * 1.25)); // taller than wide (superior+inferior veins)
+      }
+      const spline = new THREE.CatmullRomCurve3(pts, true);
+      const ringMesh = new THREE.Mesh(new THREE.TubeGeometry(spline, 40, 0.025, 8, true), matLesion.clone());
+      spline.getPoints(14).forEach(pt => {
         const dot = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 12), matLesion.clone());
         dot.position.copy(pt);
         ringMesh.add(dot);
+        dot.position.sub(ringMesh.position);
       });
-
-      return ringMesh;
+      return { ringMesh, center };
     }
 
-    // Left Pulmonary Veins WACA Ring (LSPV + LIPV on posterior-left LA antrum)
-    const leftPvCenter = new THREE.Vector3(la.x + 0.55, la.y + 0.15, la.z - 0.15);
-    const leftRing = createPviRing(leftPvCenter, 0.28, 0.38, -0.4, 0.2);
-    pviGroup.add(leftRing);
+    const leftRing = antralRing(lspv, lipv, new THREE.Vector3(la.x + 0.6, la.y + 0.1, la.z - 0.2));
+    const rightRing = antralRing(rspv, ripv, new THREE.Vector3(la.x - 0.6, la.y + 0.1, la.z - 0.2));
+    pviGroup.add(leftRing.ringMesh);
+    pviGroup.add(rightRing.ringMesh);
 
-    // Right Pulmonary Veins WACA Ring (RSPV + RIPV on posterior-right LA antrum)
-    const rightPvCenter = new THREE.Vector3(la.x - 0.55, la.y + 0.15, la.z - 0.12);
-    const rightRing = createPviRing(rightPvCenter, 0.28, 0.38, 0.4, 0.2);
-    pviGroup.add(rightRing);
-
-    // Roof and Floor lines (optional linear ablation)
+    // Roof line joining the superior aspects of the two antral rings.
+    const roofA = (lspv || leftRing.center).clone();
+    const roofB = (rspv || rightRing.center).clone();
+    const roofMid = roofA.clone().add(roofB).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.18, 0));
     const roofLine = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(leftPvCenter.x - 0.12, leftPvCenter.y + 0.32, leftPvCenter.z),
-        new THREE.Vector3(la.x, la.y + 0.38, la.z - 0.12),
-        new THREE.Vector3(rightPvCenter.x + 0.12, rightPvCenter.y + 0.32, rightPvCenter.z)
-      ]),
-      16, 0.018, 8, false
+      new THREE.CatmullRomCurve3([roofA, roofMid, roofB]), 16, 0.018, 8, false
     );
     pviGroup.add(new THREE.Mesh(roofLine, matLesionGlow));
 

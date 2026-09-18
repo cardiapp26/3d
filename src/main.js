@@ -53,12 +53,25 @@ app.innerHTML = `
         ['conduction', 'İleti sistemi (SA, AV, His, Bachmann)', '#f5df76'],
         ['bachmann', 'Bachmann demeti', '#f6b64b']
       ].map(([id, t, c]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
+      ${[
+        ['diaphragm', 'Diyafram', '#c98f76', true],
+        ['phrenic', 'Frenik sinirler', '#e8e29a', false],
+        ['vertebrae', 'Vertebra kolonu (silik)', '#bdb7ac', true]
+      ].map(([id, t, c, on]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}"${on ? ' checked' : ''}></label>`).join('')}
       <label class="layer"><i style="background:#d6c7bc"></i>Kapak yapıları (Valves)<input type="checkbox" data-layer="valves" checked></label>
       <div class="layer-subgroup">
         ${[
           ['aortic-valve', 'Aort kapağı (LCC, RCC, NCC)', '#d9c5a8'],
           ['mitral', 'Mitral kapak', '#e2d5c4'],
+          ['mitral-anterior', 'AML · ön yaprakçık (şematik)', '#efe6d8'],
+          ['mitral-posterior', 'PML · arka yaprakçık', '#efe6d8'],
           ['tricuspid', 'Triküspit kapak', '#e2d5c4'],
+          ['tricuspid-anterior', 'TV ön yaprakçık (şematik)', '#efe6d8'],
+          ['tricuspid-septal', 'TV septal yaprakçık', '#efe6d8'],
+          ['tricuspid-inferior', 'TV inferior yaprakçık', '#efe6d8'],
+          ['amc', 'Aorto-mitral devamlılık (AMC)', '#f5f3ea'],
+          ['mitral-annulus', 'Mitral anulus', '#f5f3ea'],
+          ['tricuspid-annulus', 'Triküspit anulus', '#f5f3ea'],
           ['pulmonary-valve', 'Pulmoner kapak', '#e2d5c4'],
           ['papillary', 'Papiller kaslar (RV / LV)', '#b57368']
         ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}

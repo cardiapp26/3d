@@ -6,6 +6,7 @@ import { ATLAS_URL, normalizedParts, normalizeAtlasName } from './atlas.js';
 import { createEPLandmarks } from './ep-landmarks.js';
 import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createAnnuli } from './annuli.js';
+import { createThorax } from './thorax.js';
 import { createTransseptal } from './transseptal.js';
 import { createBachmannGeometry } from './bachmann.js';
 
@@ -37,14 +38,17 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const heart = new THREE.Group(); scene.add(heart);
   const layers = Object.fromEntries(['chambers','vessels','coronaries','valves','conduction'].map(id=>{const g=new THREE.Group();heart.add(g);return [id,g];}));
-  const valveIds = ['lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'mitral-annulus', 'tricuspid-annulus', 'rv-papillary', 'lv-papillary'];
+  const valveIds = ['lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'mitral-annulus', 'tricuspid-annulus', 'amc', 'rv-papillary', 'lv-papillary'];
   const visibility = {
     chambers: true, lv: true, rv: true, la: true, ra: true,
     vessels: true, coronaries: true,
     valves: true, 'aortic-valve': true, lcc: true, rcc: true, ncc: true,
     mitral: true, tricuspid: true, 'mitral-annulus': true, 'tricuspid-annulus': true, 'pulmonary-valve': true,
+    'mitral-anterior': true, 'mitral-posterior': true,
+    'tricuspid-anterior': true, 'tricuspid-septal': true, 'tricuspid-inferior': true,
     papillary: true, 'rv-papillary': true, 'lv-papillary': true,
-    veins: true, conduction: true, bachmann: true
+    veins: true, conduction: true, bachmann: true,
+    thorax: true, diaphragm: true, phrenic: false, vertebrae: true
   };
   const meshes = [], meshMap = new Map();
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
@@ -61,7 +65,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function material(color) {return new THREE.MeshStandardMaterial({color,roughness:.65,metalness:0,side:THREE.DoubleSide});}
   function register(mesh,id){mesh.userData.id=id;meshes.push(mesh);if(!meshMap.has(id))meshMap.set(id,[]);meshMap.get(id).push(mesh);}
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
-  const epLandmarks = createEPLandmarks({ sourceCenter });
+  const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices });
   heart.add(epLandmarks.group);
   let bachmannTarget = null;
   const pacemakerLeads = createPacemakerLeads({ sourceCenter, getBachmannTarget: () => bachmannTarget });
@@ -78,7 +82,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const transseptal = createTransseptal({ sourceCenter, meshVertices });
   heart.add(transseptal.group);
-  const annuli = createAnnuli({ sourceCenter });
+  const annuli = createAnnuli({ sourceCenter, register, meshVertices });
+  const thorax = createThorax({ sourceCenter, register });
+  heart.add(thorax.group);
   layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
@@ -94,8 +100,14 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         m.visible = visibility.conduction !== false && visibility[id] !== false;
         continue;
       }
+      if (layer === 'thorax') {
+        // Schematic scenery keeps its own authored transparency.
+        m.visible = visibility.thorax !== false && visibility[id] !== false;
+        continue;
+      }
       const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers';
-      m.visible=visibility[layer]!==false&&visibility[id]!==false&&allowed;
+      const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
+      m.visible=visibility[layer]!==false&&visibility[id]!==false&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
       const tissue=layer==='chambers';
       // Catheters run inside these vessels in the transseptal lesson; keep them see-through.
       const catheterVessel=mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id);
@@ -156,6 +168,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     ivcPlane.constant=-(chamberBounds.min.y-center.y)*scale+.45;
     initializeWallPlanes();
     buildConductionSystem();
+    annuli.build();
+    thorax.build();
     epLandmarks.init();
     pacemakerLeads.init();
     applyState();loading.remove();container.dataset.modelReady='true';
@@ -464,8 +478,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const contrast=atlas && layer==='coronaries' && mode==='angiography';
       let device=false;
       let schematicTissue=false;
+      let deviceTint=null;
       for(let parent=object.parent;parent;parent=parent.parent){
         if(parent.userData.projectionTissue)schematicTissue=true;
+        if(deviceTint===null && parent.userData.fluoroTint!=null)deviceTint=parent.userData.fluoroTint;
         if(parent===pacemakerLeads.group || parent===transseptal.group){device=true;break;}
       }
       device=device && !schematicTissue && !original.isMeshBasicMaterial;
@@ -474,8 +490,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         projected=new THREE.MeshBasicMaterial({transparent:true,premultipliedAlpha:true,depthWrite:false,depthTest:false,side:THREE.FrontSide,toneMapped:false,blending:THREE.MultiplyBlending});
         projectionMaterials.set(object,projected);
       }
-      projected.color.setHex(device?0x202020:contrast?0x303030:0x737373);
-      projected.opacity=device?(original.transparent?Math.min(.8,original.opacity):.9):contrast?.8:atlas?(layer==='chambers'?.14:layer==='valves'?.08:.07):.12;
+      projected.color.setHex(device?(deviceTint??0x202020):contrast?0x303030:0x6a6a6a);
+      projected.opacity=device?(original.transparent?Math.min(.85,original.opacity+.15):.95):contrast?.8:atlas?(layer==='chambers'?.2:layer==='valves'?.12:.11):.16;
       projected.clippingPlanes=original.clippingPlanes;
       originals.push([object,original]);
       object.material=projected;
@@ -573,6 +589,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       visibility.coronaries=true;
       visibility.veins=true;
       visibility.conduction=true;
+      visibility.thorax=true;
+      visibility.diaphragm=true;
+      visibility.phrenic=false;
+      visibility.vertebrae=true;
       visibility.bachmann=true;
       visibility.valves=true;
       valveIds.forEach(id=>visibility[id]=true);

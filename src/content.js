@@ -121,6 +121,84 @@ export const rawStructures = {
     },
     source: 'İnferior sağ atriyal istmus anatomisi, PDF pp. 2–3'
   },
+  amc: {
+    tr: {
+      title: 'Aorto-mitral devamlılık • AMC',
+      description: 'AMC, mitral anulusun anteromedial yüzünün aort kapağına doğru devamı olarak tanımlanır. Mitral ön yaprakçık ile sol ve nonkoroner aortik yaprakçıklar arasındaki fibröz perdedir (aorto-mitral perde).',
+      clinical: 'AMC bölgesi bazı ventriküler aritmilerin ve aort-mitral bileşke taşikardilerinin kaynağıdır; kapak cerrahisi ve perkütan girişimlerde (TAVI, mitral tamir) kritik komşuluktur. Şematik gösterim.'
+    },
+    en: {
+      title: 'Aorto-mitral continuity • AMC',
+      description: 'The AMC is defined as the continuation of the anteromedial aspect of the mitral annulus to the aortic valve: the fibrous curtain between the anterior mitral leaflet and the left and non-coronary aortic leaflets.',
+      clinical: 'The AMC can harbor ventricular arrhythmias and junctional tachycardias; it is a critical neighborhood in valve surgery and percutaneous interventions (TAVI, mitral repair). Schematic illustration.'
+    },
+    source: 'Ho et al., valve anatomy reviews; schematic'
+  },
+  diaphragm: {
+    tr: {
+      title: 'Diyafram',
+      description: 'Kalbin üzerine oturduğu ana solunum kası. Sağ hemidiyafram karaciğer nedeniyle daha yüksektir. Şematik kubbe gösterimi.',
+      clinical: 'İnferior duvar (diyafragmatik yüz) enfarktları ve frenik sinir hasarı sonrası diyafram paralizisi klinik ilişkileridir.'
+    },
+    en: {
+      title: 'Diaphragm',
+      description: 'The main respiratory muscle on which the heart rests. The right hemidiaphragm sits higher because of the liver. Schematic dome.',
+      clinical: 'Relevant to inferior (diaphragmatic) wall infarcts and to diaphragmatic paralysis after phrenic nerve injury.'
+    },
+    source: 'Schematic context'
+  },
+  phrenic: {
+    tr: {
+      title: 'Frenik sinirler',
+      description: 'Sağ frenik sinir SVC lateralinden sağ atriyum yan duvarı boyunca (sağ pulmoner venlerin önünden) diyaframa iner; sol frenik sinir aort arkusu ve sol atriyal apendiks/LV lateral duvarı üzerinden seyreder.',
+      clinical: 'Sağ frenik: RSPV izolasyonu ve SVC ablasyonunda hasar riski (kryobalonda frenik pacing ile izlenir). Sol frenik: LAA kapatma ve LV lateral epikardiyal lead yerleşiminde önemlidir. Şematik seyir.'
+    },
+    en: {
+      title: 'Phrenic nerves',
+      description: 'The right phrenic nerve descends lateral to the SVC along the right atrial wall (in front of the right pulmonary veins) to the diaphragm; the left phrenic courses over the aortic arch and the LAA / lateral LV wall.',
+      clinical: 'Right phrenic: at risk in RSPV isolation and SVC ablation (monitored with phrenic pacing during cryoballoon). Left phrenic: relevant to LAA closure and lateral epicardial LV leads. Schematic course.'
+    },
+    source: 'Sánchez-Quintana et al., phrenic nerve anatomy; schematic'
+  },
+  vertebrae: {
+    tr: {
+      title: 'Vertebra kolonu',
+      description: 'Kalbin arkasındaki torasik omurga; floroskopide temel derinlik ve orta hat referansıdır. Silik şematik gösterim.',
+      clinical: 'AP projeksiyonda omurga orta hattı, kateter pozisyonlarının sağ/sol değerlendirmesinde referans alınır.'
+    },
+    en: {
+      title: 'Vertebral column',
+      description: 'The thoracic spine behind the heart; a basic depth and midline reference in fluoroscopy. Faint schematic.',
+      clinical: 'In the AP projection the spine marks the midline used to judge right/left catheter positions.'
+    },
+    source: 'Schematic context'
+  },
+  'mitral-annulus': {
+    tr: {
+      title: 'Mitral anulus',
+      description: 'Sol atriyum ile sol ventrikül arasındaki D-şekilli, eyer (saddle) geometrili fibröz halka. Anterior segmenti aorto-mitral devamlılığa (AMC) katılır.',
+      clinical: 'Anuloplasti halkaları ve perkütan mitral tamir (TEER) anulus geometrisine göre planlanır. Şematik halka.'
+    },
+    en: {
+      title: 'Mitral annulus',
+      description: 'The D-shaped, saddle-form fibrous ring between the left atrium and ventricle. Its anterior segment joins the aorto-mitral continuity.',
+      clinical: 'Annuloplasty rings and transcatheter mitral repair (TEER) are planned around annular geometry. Schematic ring.'
+    },
+    source: 'Ho et al., mitral annulus anatomy; schematic'
+  },
+  'tricuspid-annulus': {
+    tr: {
+      title: 'Triküspit anulus',
+      description: 'Sağ atriyum ile sağ ventrikül arasındaki non-planar, oval fibröz halka; septal segmenti Koch üçgeninin tabanını yapar.',
+      clinical: 'Fonksiyonel triküspit yetersizliğinde anulus dilatasyonu tipiktir; CTI hattı anulusun inferior kenarına komşudur. Şematik halka.'
+    },
+    en: {
+      title: 'Tricuspid annulus',
+      description: 'The non-planar oval fibrous ring between the right atrium and ventricle; its septal segment forms the base of Koch\'s triangle.',
+      clinical: 'Annular dilation drives functional tricuspid regurgitation; the CTI line abuts the inferior annulus. Schematic ring.'
+    },
+    source: 'Ho et al., tricuspid annulus anatomy; schematic'
+  },
   lm: {
     tr: {
       title: 'Sol ana koroner arter • LM',
