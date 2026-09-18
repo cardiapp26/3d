@@ -8,7 +8,8 @@ const modes = [
   ['micro','02','Microstructure'],
   ['angiography','03','Angiography'],
   ['ablation','04','Ablation anatomy'],
-  ['pacemaker','05','Pacemaker leads']
+  ['pacemaker','05','Pacemaker leads'],
+  ['transseptal','06','Transseptal & septostomy']
 ];
 
 const app = document.querySelector('#app');
@@ -82,11 +83,36 @@ app.innerHTML = `
     </div>
     <div id="viewport" aria-label="Interactive 3D heart. Drag to rotate, scroll to zoom."></div>
 
+    <div class="view-controls" aria-label="Camera presets">
+      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root & Cusps','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}">${t} <kbd>${k}</kbd></button>`).join('')}
+      <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm Gantry & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
+      <button id="reset" title="Reset camera (0)">↺</button>
+    </div>
+    <div class="viewer-bottom">
+      <span>↔ Drag to rotate <em>·</em> Scroll to zoom <em>·</em> Click to inspect & focus</span>
+      <div class="viewer-actions">
+        <button id="beat" aria-pressed="false">♡ Animate beat <kbd>Space</kbd></button>
+      </div>
+    </div>
+    <div id="scene-note">Hasta sağı önden görünümde soldadır. Koronerler ve odacıklar aynı atlas koordinatlarını kullanır.</div>
+  </main>
+  <article>
+    <div class="eyebrow">STRUCTURE SPOTLIGHT</div>
+    <div class="structure-index">01 / ANATOMY</div>
+    <h2 id="structure-title">Left ventricle</h2>
+    <div class="divider"></div>
+    <p id="description"></p>
+    <div class="clinical">
+      <div class="eyebrow">WHY IT MATTERS</div>
+      <p id="clinical"></p>
+    </div>
+    <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
+    <select id="structure-select"></select>
+
     <!-- C-ARM FLUOROSCOPY & GANTRY JOYSTICK PANEL -->
     <div id="carm-panel" class="carm-panel collapsed" aria-label="C-Arm Angiografi Gantry Kontrolü">
-      <div class="carm-header" id="carm-header" title="Paneli serbestçe taşımak için sürükleyin">
+      <div class="carm-header" id="carm-header">
         <div class="carm-title-group">
-          <span class="carm-drag-handle" title="Paneli sürükleyip taşıyın">⋮⋮</span>
           <span class="carm-led-pulse"></span>
           <span class="carm-title-text">C-ARM GANTRY</span>
           <span class="carm-pill">ANJİOGRAFİ</span>
@@ -188,31 +214,6 @@ app.innerHTML = `
       </div>
     </div>
 
-    <div class="view-controls" aria-label="Camera presets">
-      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root & Cusps','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}">${t} <kbd>${k}</kbd></button>`).join('')}
-      <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm Gantry & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
-      <button id="reset" title="Reset camera (0)">↺</button>
-    </div>
-    <div class="viewer-bottom">
-      <span>↔ Drag to rotate <em>·</em> Scroll to zoom <em>·</em> Click to inspect & focus</span>
-      <div class="viewer-actions">
-        <button id="beat" aria-pressed="false">♡ Animate beat <kbd>Space</kbd></button>
-      </div>
-    </div>
-    <div id="scene-note">Hasta sağı önden görünümde soldadır. Koronerler ve odacıklar aynı atlas koordinatlarını kullanır.</div>
-  </main>
-  <article>
-    <div class="eyebrow">STRUCTURE SPOTLIGHT</div>
-    <div class="structure-index">01 / ANATOMY</div>
-    <h2 id="structure-title">Left ventricle</h2>
-    <div class="divider"></div>
-    <p id="description"></p>
-    <div class="clinical">
-      <div class="eyebrow">WHY IT MATTERS</div>
-      <p id="clinical"></p>
-    </div>
-    <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
-    <select id="structure-select"></select>
     <section id="lesson" hidden>
       <div class="divider"></div>
       <div class="eyebrow">GUIDED EXPLORATION</div>
@@ -364,12 +365,14 @@ document.querySelector('#root-window').addEventListener('change', e => heart?.se
 
 function showStep() {
   const isPacemaker = mode === 'pacemaker';
+  const isTransseptal = mode === 'transseptal';
+  const hasProgress = isPacemaker || isTransseptal;
   const progressEl = document.querySelector('#progress');
   const progressLabel = document.querySelector('#progress-label');
   const progressNote = document.querySelector('#progress-note');
-  if (progressEl) progressEl.hidden = !isPacemaker;
-  if (progressLabel) progressLabel.hidden = !isPacemaker;
-  if (progressNote) progressNote.hidden = !isPacemaker;
+  if (progressEl) progressEl.hidden = !hasProgress;
+  if (progressLabel) progressLabel.hidden = !hasProgress;
+  if (progressNote) progressNote.hidden = !hasProgress;
 
   const lesson = lessons[mode];
   if (!lesson) return;
@@ -380,11 +383,12 @@ function showStep() {
   const nextBtnText = isLast ? getTranslation('restartExploration') : getTranslation('nextLandmark');
   document.querySelector('#next-step').textContent = nextBtnText;
 
-  if (isPacemaker) {
+  if (hasProgress) {
     if (progressEl) progressEl.value = 100;
     document.querySelector('#progress-value').textContent = '100%';
     heart?.setProgress(1.0);
-    heart?.setPacemakerStep(step);
+    if (isPacemaker) heart?.setPacemakerStep(step);
+    else heart?.setTransseptalStep(step);
   } else if (mode === 'ablation') {
     heart?.setAblationStep(step);
   }
@@ -423,7 +427,7 @@ function setMode(newMode, updateUrl = true) {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
 
-  if (mode === 'angiography') {
+  if (mode === 'angiography' || mode === 'transseptal') {
     setCarmPanelOpen(true);
   } else {
     setCarmPanelOpen(false);
@@ -437,7 +441,8 @@ function setMode(newMode, updateUrl = true) {
     micro: 'From muscle to cell.',
     angiography: 'Read the projection.',
     ablation: 'Map the landmarks.',
-    pacemaker: 'Trace the lead.'
+    pacemaker: 'Trace the lead.',
+    transseptal: 'Cross the septum.'
   }[mode] || 'Inside the heart.';
 
   const activeBtn = document.querySelector(`[data-mode="${mode}"]`);
@@ -481,7 +486,7 @@ function handleHashChange() {
     const urlParams = new URLSearchParams(hash.split('?')[1] || '');
     const targetStructure = urlParams.get('structure') || (hash.match(/#\/structure\/([a-z0-9_-]+)/i)?.[1]);
 
-    if (targetMode && ['anatomy', 'micro', 'angiography', 'ablation', 'pacemaker'].includes(targetMode)) {
+    if (targetMode && ['anatomy', 'micro', 'angiography', 'ablation', 'pacemaker', 'transseptal'].includes(targetMode)) {
       if (targetMode !== mode) setMode(targetMode, false);
     }
 
@@ -495,7 +500,9 @@ function handleHashChange() {
 
 window.addEventListener('hashchange', handleHashChange);
 if (window.location.hash && window.location.hash !== '#/') {
-  handleHashChange();
+  // Deferred: a lesson-mode deep link triggers setView -> joystick sync,
+  // which reads consts (pad, puck) declared later in this module (TDZ crash).
+  queueMicrotask(handleHashChange);
 } else {
   inspect('lv', false, true);
 }
@@ -546,59 +553,11 @@ const angioDescriptions = {
   posterior: 'POSTERIOR • Kalbin arka yüzeyi ve sol atriyum venöz girişi'
 };
 
-// Draggable C-Arm Gantry Panel
-let isDraggingPanel = false;
-const panelDragOffset = { x: 0, y: 0 };
-
-carmPanel?.addEventListener('pointerdown', e => e.stopPropagation());
-carmPanel?.addEventListener('wheel', e => e.stopPropagation());
-
-carmHeader?.addEventListener('pointerdown', e => {
-  if (e.target.closest('#carm-toggle-btn') || e.target.closest('button')) return;
-  isDraggingPanel = true;
-  carmPanel.classList.add('is-dragging');
-  carmHeader.setPointerCapture(e.pointerId);
-  e.stopPropagation();
-  e.preventDefault();
-
-  const panelRect = carmPanel.getBoundingClientRect();
-  const mainEl = document.querySelector('main');
-  const mainRect = mainEl ? mainEl.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
-  panelDragOffset.x = e.clientX - panelRect.left;
-  panelDragOffset.y = e.clientY - panelRect.top;
+// C-Arm panel is docked in the Structure Spotlight column; header click toggles collapse.
+carmHeader?.addEventListener('click', e => {
+  if (e.target.closest('button')) return;
+  toggleCarmPanel();
 });
-
-carmHeader?.addEventListener('pointermove', e => {
-  if (!isDraggingPanel || !carmPanel) return;
-  e.stopPropagation();
-  e.preventDefault();
-
-  const mainEl = document.querySelector('main');
-  const mainRect = mainEl ? mainEl.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
-  const panelRect = carmPanel.getBoundingClientRect();
-
-  let newLeft = e.clientX - mainRect.left - panelDragOffset.x;
-  let newTop = e.clientY - mainRect.top - panelDragOffset.y;
-
-  const maxLeft = Math.max(10, mainRect.width - panelRect.width - 10);
-  const maxTop = Math.max(10, mainRect.height - panelRect.height - 10);
-  newLeft = Math.max(10, Math.min(maxLeft, newLeft));
-  newTop = Math.max(10, Math.min(maxTop, newTop));
-
-  carmPanel.style.left = `${newLeft}px`;
-  carmPanel.style.top = `${newTop}px`;
-  carmPanel.style.bottom = 'auto';
-  carmPanel.style.right = 'auto';
-});
-
-const stopPanelDrag = e => {
-  if (!isDraggingPanel) return;
-  isDraggingPanel = false;
-  carmPanel?.classList.remove('is-dragging');
-  try { carmHeader?.releasePointerCapture(e.pointerId); } catch (_) {}
-};
-carmHeader?.addEventListener('pointerup', stopPanelDrag);
-carmHeader?.addEventListener('pointercancel', stopPanelDrag);
 
 // Quick toggles for Veins and Conduction System
 let veinsVisible = true;
@@ -1013,7 +972,7 @@ window.addEventListener('keydown', e => {
 
   const key = e.key;
 
-  if (key >= '1' && key <= '5') {
+  if (key >= '1' && key <= '6') {
     const modeIndex = parseInt(key, 10) - 1;
     if (modes[modeIndex]) {
       setMode(modes[modeIndex][0]);

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "check": "node --check src/main.js && node --check src/heart.js && node --check src/atlas.js && node --check src/content.js && node --check scripts/verify-coronaries.mjs && node --check scripts/browser-check.cjs",
+    "check": "node --check src/main.js && node --check src/heart.js && node --check src/atlas.js && node --check src/content.js && node --check src/transseptal.js && node --check src/annuli.js && node --check scripts/verify-coronaries.mjs && node --check scripts/browser-check.cjs",
     "test": "node scripts/verify-coronaries.mjs",
     "test:browser": "node scripts/browser-check.cjs"
   },

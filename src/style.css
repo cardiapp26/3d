@@ -6,14 +6,10 @@
 .wall-tools{border-top:1px solid #d8e0d5;border-bottom:1px solid #d8e0d5;padding:12px 0;margin:12px 0}.wall-tools summary{font-size:11px;cursor:pointer;color:#536e5b}.wall-tools p{font-size:10.5px;line-height:1.7;color:#869581}.wall-tools>label{font-size:11px;display:flex;justify-content:space-between;gap:5px;margin:14px 0 8px;color:#60745e}.wall-tools output{font-size:10px;white-space:nowrap}.wall-tools button{font-size:11px;border:1px solid #cbd7c5;background:transparent;color:#56704f;border-radius:4px;padding:7px;margin-top:12px}aside{max-height:calc(100vh - 127px);overflow:auto}@media(max-width:640px){aside{max-height:none}}
 
 /* C-ARM GANTRY & ANGIOGRAPHY JOYSTICK CONTROLS */
-.carm-panel{position:absolute;bottom:84px;left:24px;width:318px;background:rgba(14,24,21,0.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(52,160,137,0.38);border-radius:12px;color:#e3ede8;box-shadow:0 12px 36px rgba(0,0,0,0.35),0 0 0 1px rgba(0,0,0,0.2);z-index:10;transition:width 0.25s cubic-bezier(0.16,1,0.3,1),box-shadow 0.2s ease;user-select:none}
-.carm-panel.is-dragging{transition:none !important;box-shadow:0 18px 48px rgba(0,0,0,0.55),0 0 16px rgba(52,160,137,0.4);border-color:rgba(78,242,183,0.6);cursor:grabbing}
+.carm-panel{position:relative;width:100%;margin:24px 0 6px;background:rgba(14,24,21,0.94);border:1px solid rgba(52,160,137,0.38);border-radius:12px;color:#e3ede8;box-shadow:0 6px 20px rgba(0,0,0,0.18);transition:box-shadow 0.2s ease;user-select:none}
 .carm-panel.collapsed .carm-content{display:none}
-.carm-panel.collapsed{width:260px}
-.carm-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(22,38,33,0.85);border-top-left-radius:11px;border-top-right-radius:11px;border-bottom:1px solid rgba(52,160,137,0.25);cursor:grab;touch-action:none}
-.carm-panel.is-dragging .carm-header{cursor:grabbing}
-.carm-drag-handle{font-size:13px;color:#528073;letter-spacing:-1px;margin-right:2px;display:inline-flex;cursor:grab;line-height:1}
-.carm-panel.is-dragging .carm-drag-handle{color:#4ef2b7;cursor:grabbing}
+.carm-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(22,38,33,0.85);border-top-left-radius:11px;border-top-right-radius:11px;border-bottom:1px solid rgba(52,160,137,0.25);cursor:pointer}
+.carm-panel.collapsed .carm-header{border-bottom:0;border-radius:11px}
 .carm-title-group{display:flex;align-items:center;gap:8px}
 .carm-led-pulse{width:8px;height:8px;border-radius:50%;background:#39e8ad;box-shadow:0 0 8px #39e8ad;animation:carm-pulse 2s infinite}
 @keyframes carm-pulse{0%,100%{opacity:0.9;transform:scale(1)}50%{opacity:0.5;transform:scale(0.85)}}
@@ -28,7 +24,7 @@
 .readout-sub{font-size:9.5px;letter-spacing:0.8px;color:#85a397;font-weight:600}
 .readout-digit{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;font-weight:700;color:#45f3b7;letter-spacing:0.5px}
 .carm-desc-box{font-size:11px;color:#b7ceca;background:rgba(25,43,38,0.5);border-left:2px solid #34a089;padding:6px 9px;border-radius:4px;line-height:1.4}
-.carm-control-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:3px 0}
+.carm-control-row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;margin:3px 0}
 .joystick-wrapper{position:relative;width:150px;height:112px;padding:14px 16px;box-sizing:border-box}
 .joy-label{position:absolute;font-size:9px;font-weight:700;letter-spacing:0.5px;color:#6d8e82}
 .joy-top{top:0;left:50%;transform:translateX(-50%)}
@@ -73,33 +69,6 @@ main.fluoroscopy-active{background:radial-gradient(ellipse at 50% 46%,#0b1513 0%
 .lang-btn{font-weight:700;font-size:11px;padding:6px 11px;border-radius:5px;border:1px solid #3d7966;background:#e5eee7;color:#204b3e;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center}
 .lang-btn:hover{background:#265446;color:#ffffff;border-color:#265446}
 @media(max-width:768px){
-  .carm-panel{
-    position:fixed !important;
-    left:0 !important;
-    right:0 !important;
-    bottom:0 !important;
-    top:auto !important;
-    width:100% !important;
-    max-width:100% !important;
-    border-radius:16px 16px 0 0 !important;
-    border-bottom:0 !important;
-    box-shadow:0 -8px 28px rgba(0,0,0,0.45), 0 -1px 0 rgba(52,160,137,0.3) !important;
-    margin:0 !important;
-    z-index:999 !important;
-    transition:none !important;
-  }
-  .carm-panel.collapsed{
-    width:100% !important;
-    bottom:0 !important;
-    left:0 !important;
-    border-radius:12px 12px 0 0 !important;
-    transition:none !important;
-  }
-  .carm-panel .carm-content{
-    max-height:52vh;
-    overflow-y:auto;
-    padding-bottom:16px;
-  }
   .carm-header{
     padding:11px 16px;
   }

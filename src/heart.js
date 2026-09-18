@@ -5,12 +5,17 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { ATLAS_URL, normalizedParts, normalizeAtlasName } from './atlas.js';
 import { createEPLandmarks } from './ep-landmarks.js';
 import { createPacemakerLeads } from './pacemaker-leads.js';
+import { createAnnuli } from './annuli.js';
+import { createTransseptal } from './transseptal.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
 export function createHeart(container, onSelect = () => {}, onHover = () => {}, onAngleChange = () => {}) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(35, 1, .05, 100);
   camera.position.set(0, .5, 9.3);
+  const headlight = new THREE.PointLight(0xfff8ee, 2.2, 16, 1.2);
+  camera.add(headlight);
+  scene.add(camera);
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0xffffff, 0);
@@ -20,7 +25,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   container.appendChild(renderer.domElement);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.minDistance = 1.2;
+  controls.minDistance = 0.02;
   controls.maxDistance = 16;
   let needsRender = true;
   function requestRender() { needsRender = true; }
@@ -31,12 +36,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const heart = new THREE.Group(); scene.add(heart);
   const layers = Object.fromEntries(['chambers','vessels','coronaries','valves','conduction'].map(id=>{const g=new THREE.Group();heart.add(g);return [id,g];}));
-  const valveIds = ['lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'rv-papillary', 'lv-papillary'];
+  const valveIds = ['lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'mitral-annulus', 'tricuspid-annulus', 'rv-papillary', 'lv-papillary'];
   const visibility = {
     chambers: true, lv: true, rv: true, la: true, ra: true,
     vessels: true, coronaries: true,
     valves: true, 'aortic-valve': true, lcc: true, rcc: true, ncc: true,
-    mitral: true, tricuspid: true, 'pulmonary-valve': true,
+    mitral: true, tricuspid: true, 'mitral-annulus': true, 'tricuspid-annulus': true, 'pulmonary-valve': true,
     papillary: true, 'rv-papillary': true, 'lv-papillary': true,
     veins: true, conduction: true
   };
@@ -59,6 +64,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   heart.add(epLandmarks.group);
   const pacemakerLeads = createPacemakerLeads({ sourceCenter });
   heart.add(pacemakerLeads.group);
+  const transseptal = createTransseptal({ sourceCenter });
+  heart.add(transseptal.group);
+  const annuli = createAnnuli({ sourceCenter });
+  layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
     for(const m of meshes){
@@ -158,8 +167,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       toneMapped: false
     });
 
-    // 1. Sinoatrial (SA) node at cavoatrial junction
-    const saCenter = new THREE.Vector3(-1.05, 1.38, 0.05);
+    // 1. Sinoatrial (SA) node at cavoatrial junction, embedded in RA wall
+    // (measured closest RA surface point so the node does not float in the SVC lumen)
+    const saCenter = new THREE.Vector3(-1.045, 1.39, 0.115);
+    const saWallNormal = new THREE.Vector3(0.05, 0.05, 1).normalize();
     const saMesh = new THREE.Mesh(new THREE.SphereGeometry(0.085, 24, 24), matNode.clone());
     saMesh.position.copy(saCenter);
     saMesh.name = 'Sinoatrial node';
@@ -172,8 +183,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       new THREE.RingGeometry(0.09, 0.13, 24),
       new THREE.MeshBasicMaterial({ color: 0xffdf6d, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
     );
-    saHalo.position.copy(saCenter);
-    saHalo.rotation.y = Math.PI / 3;
+    saHalo.position.copy(saCenter).addScaledVector(saWallNormal, 0.02);
+    saHalo.lookAt(saCenter.clone().addScaledVector(saWallNormal, 1));
     saHalo.name = 'SA Node Halo';
     saHalo.userData = { id: 'sa', layer: 'conduction', sourceName: 'Sinoatrial node halo', provenance: 'schematic' };
     conductionGroup.add(saHalo);
@@ -460,14 +471,18 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
       mode=name;
-      opacity=['angiography','ablation','pacemaker'].includes(name)?.32:1;
+      opacity=['angiography','ablation','pacemaker','transseptal'].includes(name)?.32:1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker');
+      transseptal.setVisible(name==='transseptal');
       if(name==='ablation'){
         epLandmarks.setStep(0);
       }else if(name==='pacemaker'){
         pacemakerLeads.setStep(0);
         pacemakerLeads.setProgress(1.0);
+      }else if(name==='transseptal'){
+        transseptal.setStep(0);
+        transseptal.setProgress(1.0);
       }
       applyState();
       requestRender();
@@ -478,12 +493,14 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setBeating(value){beating=Boolean(value);requestRender();},
     setAblationStep(step){epLandmarks.setStep(Number(step));requestRender();},
     setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
-    setProgress(value){pacemakerLeads.setProgress(Number(value));requestRender();},
+    setTransseptalStep(step){transseptal.setStep(Number(step));requestRender();},
+    setProgress(value){if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){
       epLandmarks.setVisible(false);
       pacemakerLeads.setVisible(false);
+      transseptal.setVisible(false);
       rootWindow=false;
       system='all';
       fluoroscopy=false;

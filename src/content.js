@@ -634,6 +634,68 @@ export const rawLessons = {
         }
       ]
     }
+  },
+  transseptal: {
+    tr: {
+      title: 'Transseptal ponksiyon & balon atriyal septostomi',
+      intro: 'İnteratriyal septum (fossa ovalis) üzerinden perkütan sol atriyum erişimi: femoral venöz giriş, floroskopik konumlandırma açıları, septal geçiş ve balon septostomi. C-Arm panelinden LAO/RAO açılarını simüle edin; ilerleme çubuğu kateter/iğne ilerletmesini animasyonlar.',
+      steps: [
+        {
+          title: 'Perkütan giriş • Femoral ven → İVC → RA',
+          text: 'Giriş yeri: sağ femoral ven (perkütan Seldinger tekniği). Kılavuz tel ve kılıf İVC üzerinden sağ atriyuma, oradan SVC seviyesine ilerletilir. Floroskopi: AP 0° projeksiyonda tel omurga sağında İVC-RA hattını izler. İlerleme çubuğu ile rotayı takip edin.',
+          landmark: 'ra',
+          view: 'anterior'
+        },
+        {
+          title: 'Fossa ovalis konumlandırma • Tenting (LAO 45°)',
+          text: 'Transseptal sistem SVC\'den geriye çekilirken iğne ucu iki "atlama" (aorta, limbus) sonrası fossa ovalise oturur ve membranı çadırlaştırır (tenting). Floroskopik işaret kateterleri: aort köküne retrograd yerleştirilen sarı pigtail kateter nonkoroner cuspa (NCC) oturur ve aort kökünü işaretler; iğne her zaman pigtailin posteroinferiorunda kalmalıdır. Mavi dekapolar CS kateteri koroner sinüs boyunca uzanır ve AV oluğu (septumun alt sınırını) gösterir. Cusp halkaları: yeşil = LCC, turuncu = RCC, camgöbeği = NCC (pigtail yuvası). Açılar: LAO 45° septumu en face gösterir; RAO 30° tanjansiyel değerlendirir. Kırmızı işaretler tehlike bölgeleri: aort kökü ve posterior LA duvarı.',
+          landmark: 'la',
+          view: 'lao'
+        },
+        {
+          title: 'Septal geçiş • İğne + tel LA\'ya (RAO 30°)',
+          text: 'Basınç eğrisi ve kontrast ile LA doğrulandıktan sonra iğne fossa ovalisi geçer; kılavuz tel sol üst pulmoner vene (LSPV) yönlendirilir. RAO 30° projeksiyonda iğnenin posterior duvara değil LA ortasına yöneldiği doğrulanır. Aksesuar: TEE/ICE eşliği güvenliği artırır.',
+          landmark: 'la',
+          view: 'rao'
+        },
+        {
+          title: 'Balon atriyal septostomi (statik balon)',
+          text: 'Yerleşik interatriyal defekti genişletmek için (ör. duktus bağımlı dolaşım, pulmoner hipertansiyonda dekompresyon) balon septum hizasında şişirilir; septumun oluşturduğu bel (waist) kaybolana dek dilatasyon yapılır. İlerleme çubuğu balon şişirmeyi simüle eder. Floroskopi: AP 0° veya hafif LAO ile balon beli izlenir.',
+          landmark: 'ra',
+          view: 'anterior'
+        }
+      ]
+    },
+    en: {
+      title: 'Transseptal puncture & balloon atrial septostomy',
+      intro: 'Percutaneous left atrial access across the interatrial septum (fossa ovalis): femoral venous entry, fluoroscopic positioning angles, septal crossing, and balloon septostomy. Simulate LAO/RAO gantry angles from the C-Arm panel; the progress slider animates catheter/needle advancement.',
+      steps: [
+        {
+          title: 'Percutaneous access • Femoral vein → IVC → RA',
+          text: 'Access site: right femoral vein (percutaneous Seldinger technique). The guidewire and sheath are advanced via the IVC into the right atrium and up to the SVC. Fluoroscopy: in AP 0° the wire tracks the IVC-RA line to the right of the spine. Use the progress slider to trace the route.',
+          landmark: 'ra',
+          view: 'anterior'
+        },
+        {
+          title: 'Fossa ovalis positioning • Tenting (LAO 45°)',
+          text: 'As the transseptal system is withdrawn from the SVC, the needle tip drops over two "jumps" (aortic mound, limbus) onto the fossa ovalis and tents the membrane. Fluoroscopic landmark catheters: a yellow retrograde pigtail seats in the non-coronary cusp (NCC), marking the aortic root; the needle must always stay posteroinferior to the pigtail. The blue decapolar CS catheter lines the coronary sinus, outlining the AV groove (inferior septal border). Cusp rings: green = LCC, orange = RCC, cyan = NCC (pigtail seat). Angles: LAO 45° shows the septum en face; RAO 30° profiles it tangentially. Red markers flag danger zones: the aortic root and the posterior LA wall.',
+          landmark: 'la',
+          view: 'lao'
+        },
+        {
+          title: 'Septal crossing • Needle + wire into the LA (RAO 30°)',
+          text: 'After LA confirmation by pressure waveform and contrast, the needle crosses the fossa ovalis and the guidewire is directed into the left superior pulmonary vein (LSPV). RAO 30° confirms the needle points into the LA body rather than the posterior wall. Adjunct TEE/ICE guidance improves safety.',
+          landmark: 'la',
+          view: 'rao'
+        },
+        {
+          title: 'Balloon atrial septostomy (static balloon)',
+          text: 'To enlarge an interatrial communication (e.g. duct-dependent circulations, decompression in pulmonary hypertension), the balloon is inflated across the septum and dilated until the septal waist resolves. The progress slider simulates balloon inflation. Fluoroscopy: watch the balloon waist in AP 0° or shallow LAO.',
+          landmark: 'ra',
+          view: 'anterior'
+        }
+      ]
+    }
   }
 };
 
@@ -671,7 +733,8 @@ export const uiTranslations = {
       ['micro', '02', 'Mikroyapı'],
       ['angiography', '03', 'Anjiyografi'],
       ['ablation', '04', 'Ablasyon anatomisi'],
-      ['pacemaker', '05', 'Pacemaker telleri']
+      ['pacemaker', '05', 'Pacemaker telleri'],
+      ['transseptal', '06', 'Transseptal & septostomi']
     ],
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Odacıklar (Chambers)',
@@ -725,7 +788,8 @@ export const uiTranslations = {
       ['micro', '02', 'Microstructure'],
       ['angiography', '03', 'Angiography'],
       ['ablation', '04', 'Ablation anatomy'],
-      ['pacemaker', '05', 'Pacemaker leads']
+      ['pacemaker', '05', 'Pacemaker leads'],
+      ['transseptal', '06', 'Transseptal & septostomy']
     ],
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Chambers',
