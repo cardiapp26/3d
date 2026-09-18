@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { sharedRim, nearestLoop } from './mesh-utils.js';
 
 /**
  * Procedural 3D Clinical Electrophysiology (EP) Landmarks and Ablation Targets.
@@ -7,7 +8,7 @@ import * as THREE from 'three';
  * CS ostium) instead of hand-tuned constants.
  */
 export function createEPLandmarks(helpers) {
-  const { sourceCenter, meshVertices = () => [] } = helpers;
+  const { sourceCenter, meshVertices = () => [], getMeshes = () => [] } = helpers;
   const group = new THREE.Group();
   group.name = 'EP Landmarks';
   group.visible = false;
@@ -68,27 +69,22 @@ export function createEPLandmarks(helpers) {
     const la = sourceCenter('la') || new THREE.Vector3(-0.05, 0.27, -0.37);
     const av = new THREE.Vector3(-0.28, -0.20, -0.10); // matches the conduction system AV node
 
-    const tvVerts = meshVertices('tricuspid');
-    const ivcVerts = meshVertices('ivc');
-    const csVerts = meshVertices('cs');
-    const septalVerts = meshVertices('tricuspid', /septal/i);
-
     // Measured anchors -------------------------------------------------
-    // IVC ostium: IVC vertices nearest the RA centroid.
-    const ivcOs = nearEndCentroid(ivcVerts, ra) || new THREE.Vector3(-0.85, -0.65, -0.35);
-    // CS ostium: CS vertices nearest the RA centroid.
-    const csOs = nearEndCentroid(csVerts, ra) || new THREE.Vector3(-0.70, -0.41, -0.30);
-    // Inferior tricuspid hinge: lowest band of tricuspid vertices closest to the IVC ostium.
+    // Ostia come from mesh boundary loops (the actual open rims), the
+    // tricuspid ring from the RA/RV shared orifice rim.
+    const ivcLoop = nearestLoop(getMeshes('ivc')[0], ra);
+    const ivcOs = ivcLoop ? ivcLoop.center.clone() : (nearEndCentroid(meshVertices('ivc'), ra) || new THREE.Vector3(-0.85, -0.65, -0.35));
+    const csLoop = nearestLoop(getMeshes('cs')[0], ra);
+    const csOs = csLoop ? csLoop.center.clone() : (nearEndCentroid(meshVertices('cs'), ra) || new THREE.Vector3(-0.70, -0.41, -0.30));
+
+    const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
+    // Inferior tricuspid hinge: rim point nearest the IVC ostium.
     let tvInferior = new THREE.Vector3(-0.75, -0.75, 0.0);
-    if (tvVerts.length) {
-      const lowBand = [...tvVerts].sort((a, b) => a.y - b.y).slice(0, Math.floor(tvVerts.length * 0.2));
-      tvInferior = nearEndCentroid(lowBand, ivcOs, 0.35) || tvInferior;
-    }
-    // Septal tricuspid hinge: upper (annular) band of the septal leaflet.
+    // Septal tricuspid hinge: rim point nearest the left heart (septal side).
     let septalHinge = new THREE.Vector3(-0.45, -0.20, 0.05);
-    if (septalVerts.length) {
-      const highBand = [...septalVerts].sort((a, b) => b.y - a.y).slice(0, Math.floor(septalVerts.length * 0.25));
-      septalHinge = highBand.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / highBand.length);
+    if (tvRim) {
+      tvInferior = tvRim.reduce((best, v) => v.distanceTo(ivcOs) < best.distanceTo(ivcOs) ? v : best).clone();
+      septalHinge = tvRim.reduce((best, v) => v.distanceTo(la) < best.distanceTo(la) ? v : best).clone();
     }
 
     // -------------------------------------------------------------
@@ -160,8 +156,11 @@ export function createEPLandmarks(helpers) {
     const pviGroup = new THREE.Group();
     pviGroup.name = 'PVI / WACA Rings';
 
-    // Measured PV ostia: for each vein, the vertex band nearest the LA centroid.
+    // Measured PV ostia: each vein's boundary loop nearest the LA centroid.
     const ostium = pattern => {
+      const mesh = getMeshes('pv').find(m => pattern.test(m.name));
+      const loop = mesh ? nearestLoop(mesh, la) : null;
+      if (loop) return loop.center.clone();
       const verts = meshVertices('pv', pattern);
       return verts.length ? nearEndCentroid(verts, la) : null;
     };

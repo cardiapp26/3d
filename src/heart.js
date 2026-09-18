@@ -67,7 +67,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function material(color) {return new THREE.MeshStandardMaterial({color,roughness:.65,metalness:0,side:THREE.DoubleSide});}
   function register(mesh,id){mesh.userData.id=id;meshes.push(mesh);if(!meshMap.has(id))meshMap.set(id,[]);meshMap.get(id).push(mesh);}
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
-  const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices });
+  const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   heart.add(epLandmarks.group);
   let bachmannTarget = null;
   const pacemakerLeads = createPacemakerLeads({ sourceCenter, getBachmannTarget: () => bachmannTarget });

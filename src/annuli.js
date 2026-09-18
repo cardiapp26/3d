@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { centroid, sharedRim, ringNormal } from './mesh-utils.js';
 
 /**
  * Procedural 3D Anatomical Valve Annuli (Mitral & Tricuspid), the aorto-mitral
@@ -27,96 +28,6 @@ export function createAnnuli(helpers) {
   });
 
   const meshes = [];
-
-  function centroid(points) {
-    return points.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / points.length);
-  }
-
-  /**
-   * Boundary loops of a chamber mesh: chains of edges referenced by a single
-   * triangle. The AV orifice rims are open holes in the atlas chamber meshes,
-   * so the loop shared between an atrium and its ventricle IS the visible
-   * annulus ring in the render.
-   */
-  function boundaryLoops(mesh) {
-    const g = mesh.geometry;
-    if (!g.index) return [];
-    const idx = g.index.array;
-    const edgeCount = new Map();
-    for (let i = 0; i < idx.length; i += 3) {
-      for (const [a, b] of [[idx[i], idx[i + 1]], [idx[i + 1], idx[i + 2]], [idx[i + 2], idx[i]]]) {
-        const k = a < b ? a + '_' + b : b + '_' + a;
-        edgeCount.set(k, (edgeCount.get(k) || 0) + 1);
-      }
-    }
-    const adj = new Map();
-    for (const [k, c] of edgeCount) {
-      if (c !== 1) continue;
-      const [a, b] = k.split('_').map(Number);
-      if (!adj.has(a)) adj.set(a, []);
-      adj.get(a).push(b);
-      if (!adj.has(b)) adj.set(b, []);
-      adj.get(b).push(a);
-    }
-    const pos = g.attributes.position;
-    mesh.updateWorldMatrix(true, false);
-    const seen = new Set();
-    const loops = [];
-    for (const startIdx of adj.keys()) {
-      if (seen.has(startIdx)) continue;
-      const chain = [];
-      let cur = startIdx, prev = -1;
-      while (cur !== undefined && !seen.has(cur)) {
-        seen.add(cur);
-        chain.push(cur);
-        const nexts = (adj.get(cur) || []).filter(n => n !== prev && !seen.has(n));
-        prev = chain[chain.length - 1];
-        cur = nexts[0];
-      }
-      if (chain.length < 12) continue;
-      const pts = chain.map(i => new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld));
-      loops.push({ pts, center: centroid(pts) });
-    }
-    return loops;
-  }
-
-  // The orifice rim shared by two chambers: the loop pair with the closest
-  // centroids. Returns the ventricle-side loop, lightly smoothed.
-  function sharedRim(atriumMesh, ventricleMesh) {
-    if (!atriumMesh || !ventricleMesh) return null;
-    const la = boundaryLoops(atriumMesh);
-    const lv = boundaryLoops(ventricleMesh);
-    let best = null;
-    for (const a of la) for (const v of lv) {
-      const d = a.center.distanceTo(v.center);
-      if (!best || d < best.d) best = { d, loop: v };
-    }
-    if (!best || best.d > 0.3) return null;
-    // Closed moving-average smoothing against mesh jaggies.
-    let pts = best.loop.pts.map(v => v.clone());
-    for (let pass = 0; pass < 2; pass++) {
-      pts = pts.map((pt, i) => pt.clone().multiplyScalar(2)
-        .add(pts[(i - 1 + pts.length) % pts.length])
-        .add(pts[(i + 1) % pts.length])
-        .multiplyScalar(0.25));
-    }
-    return pts;
-  }
-
-  // Best-fit ring normal (Newell's method), oriented from the atrium toward
-  // the ventricle so leaflet rotations keep their drape direction.
-  function ringNormal(pts, towardDir) {
-    const n = new THREE.Vector3();
-    for (let i = 0; i < pts.length; i++) {
-      const a = pts[i], b = pts[(i + 1) % pts.length];
-      n.x += (a.y - b.y) * (a.z + b.z);
-      n.y += (a.z - b.z) * (a.x + b.x);
-      n.z += (a.x - b.x) * (a.y + b.y);
-    }
-    n.normalize();
-    if (n.dot(towardDir) < 0) n.negate();
-    return n;
-  }
 
   function addMesh(mesh, id, name, sourceName, extra = {}) {
     mesh.name = name;
@@ -245,21 +156,14 @@ export function createAnnuli(helpers) {
       return new THREE.Mesh(geom, matLeaflet.clone());
     }
 
-    const pmlMesh = getMeshes('mitral').find(m => /Posterior leaflet/i.test(m.name));
-    const aml = rotatedLeaflet(pmlMesh, maCentroid, mitralAxis, rootMid.clone().sub(maCentroid));
-    if (aml) {
-      addMesh(aml, 'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' });
-    }
-
-    // Tricuspid empty sector: rim samples farthest from the existing leaflets.
-    const tvVerts = meshVertices('tricuspid', /leaflet of right atrioventricular/i);
-    if (tvVerts.length) {
+    // Empty rim sector = rim samples farthest from the existing leaflet.
+    function gapDirection(ringCurve, ringCentroid, leafletVerts) {
       const samples = [];
-      for (let i = 0; i <= 96; i++) samples.push(taCurve.getPointAt(i / 96));
+      for (let i = 0; i <= 96; i++) samples.push(ringCurve.getPointAt(i / 96));
       const gapScore = samples.map(pt => {
         let best = Infinity;
-        for (let i = 0; i < tvVerts.length; i += 3) {
-          const d = tvVerts[i].distanceTo(pt);
+        for (let i = 0; i < leafletVerts.length; i += 3) {
+          const d = leafletVerts[i].distanceTo(pt);
           if (d < best) best = d;
         }
         return best;
@@ -270,9 +174,23 @@ export function createAnnuli(helpers) {
         for (let k = -12; k <= 12; k++) acc += gapScore[(i + k + 97) % 97];
         if (acc > best) { best = acc; gapCenter = i; }
       }
-      const gapDir = samples[gapCenter].clone().sub(taCentroid);
+      return samples[gapCenter].clone().sub(ringCentroid);
+    }
+
+    const pmlMesh = getMeshes('mitral').find(m => /Posterior leaflet/i.test(m.name));
+    const mitralLeafletVerts = meshVertices('mitral', /Posterior leaflet/i);
+    if (pmlMesh && mitralLeafletVerts.length) {
+      const aml = rotatedLeaflet(pmlMesh, maCentroid, mitralAxis, gapDirection(maCurve, maCentroid, mitralLeafletVerts));
+      if (aml) {
+        addMesh(aml, 'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' });
+      }
+    }
+
+    // Tricuspid empty sector: rim samples farthest from the existing leaflets.
+    const tvVerts = meshVertices('tricuspid', /leaflet of right atrioventricular/i);
+    if (tvVerts.length) {
       const tvInferiorMesh = getMeshes('tricuspid').find(m => /Inferior leaflet/i.test(m.name));
-      const tvAnterior = rotatedLeaflet(tvInferiorMesh, taCentroid, tvAxis, gapDir);
+      const tvAnterior = rotatedLeaflet(tvInferiorMesh, taCentroid, tvAxis, gapDirection(taCurve, taCentroid, tvVerts));
       if (tvAnterior) {
         addMesh(tvAnterior, 'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' });
       }
