@@ -130,34 +130,13 @@ export function createAnnuli(helpers) {
     addMesh(new THREE.Mesh(amcGeom, amcMat), 'amc', 'Aorto-mitral continuity', 'Aorto-mitral continuity (fibrous curtain)');
 
     // -------------------------------------------------------------
-    // 4. AV leaflets missing from the atlas: clone the opposite atlas leaflet
-    //    (chordae included) and rotate it about the measured rim axis into the
-    //    empty sector; rotation keeps the hinge on the annulus ring.
+    // 4. AV leaflets missing from the atlas (anterior mitral, anterior
+    //    tricuspid): sails lofted directly off the measured rim arc. The base
+    //    edge lies exactly on the annulus ring; the free edge bows toward the
+    //    orifice center and drops toward the ventricle. Cloning the opposite
+    //    leaflet (with its chordae) kept reading as a solid lid.
     // -------------------------------------------------------------
-    function rotatedLeaflet(sourceMesh, center, axis, targetDir) {
-      if (!sourceMesh) return null;
-      const geom = sourceMesh.geometry.clone();
-      geom.computeBoundingBox();
-      const srcCenter = geom.boundingBox.getCenter(new THREE.Vector3());
-      const flatten = v => v.clone().sub(center).addScaledVector(axis, -v.clone().sub(center).dot(axis));
-      const from = flatten(srcCenter);
-      const to = targetDir.clone().addScaledVector(axis, -targetDir.dot(axis));
-      if (from.lengthSq() < 1e-6 || to.lengthSq() < 1e-6) return null;
-      from.normalize();
-      to.normalize();
-      let angle = Math.acos(THREE.MathUtils.clamp(from.dot(to), -1, 1));
-      if (new THREE.Vector3().crossVectors(from, to).dot(axis) < 0) angle = -angle;
-      const q = new THREE.Quaternion().setFromAxisAngle(axis, angle);
-      const M = new THREE.Matrix4().makeTranslation(center.x, center.y, center.z)
-        .multiply(new THREE.Matrix4().makeRotationFromQuaternion(q))
-        .multiply(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z));
-      geom.applyMatrix4(M);
-      geom.computeVertexNormals();
-      return new THREE.Mesh(geom, matLeaflet.clone());
-    }
-
-    // Empty rim sector = rim samples farthest from the existing leaflet.
-    function gapDirection(ringCurve, ringCentroid, leafletVerts) {
+    function gapParam(ringCurve, leafletVerts) {
       const samples = [];
       for (let i = 0; i <= 96; i++) samples.push(ringCurve.getPointAt(i / 96));
       const gapScore = samples.map(pt => {
@@ -174,26 +153,53 @@ export function createAnnuli(helpers) {
         for (let k = -12; k <= 12; k++) acc += gapScore[(i + k + 97) % 97];
         if (acc > best) { best = acc; gapCenter = i; }
       }
-      return samples[gapCenter].clone().sub(ringCentroid);
+      return gapCenter / 96;
     }
 
-    const pmlMesh = getMeshes('mitral').find(m => /Posterior leaflet/i.test(m.name));
-    const mitralLeafletVerts = meshVertices('mitral', /Posterior leaflet/i);
-    if (pmlMesh && mitralLeafletVerts.length) {
-      const aml = rotatedLeaflet(pmlMesh, maCentroid, mitralAxis, gapDirection(maCurve, maCentroid, mitralLeafletVerts));
-      if (aml) {
-        addMesh(aml, 'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' });
+    function sailLeaflet(ringCurve, ringCentroid, axis, tCenter, spanFrac, reach, drop) {
+      const uSeg = 26, vSeg = 10;
+      const positions = [], indices = [];
+      for (let vi = 0; vi <= vSeg; vi++) {
+        const v = vi / vSeg;
+        for (let ui = 0; ui <= uSeg; ui++) {
+          const u = ui / uSeg;
+          const t = ((tCenter - spanFrac / 2 + spanFrac * u) % 1 + 1) % 1;
+          const base = ringCurve.getPointAt(t);
+          // Horizontal pull toward the orifice center, strongest mid-arc.
+          const inward = ringCentroid.clone().sub(base);
+          inward.addScaledVector(axis, -inward.dot(axis));
+          const shape = Math.sin(Math.PI * u);
+          const pt = base.clone()
+            .addScaledVector(inward, v * reach * shape)
+            .addScaledVector(axis, v * drop * (0.35 + 0.65 * shape));
+          positions.push(pt.x, pt.y, pt.z);
+        }
       }
+      for (let vi = 0; vi < vSeg; vi++) {
+        for (let ui = 0; ui < uSeg; ui++) {
+          const a = vi * (uSeg + 1) + ui;
+          indices.push(a, a + 1, a + uSeg + 1, a + 1, a + uSeg + 2, a + uSeg + 1);
+        }
+      }
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
+      return new THREE.Mesh(geom, matLeaflet.clone());
     }
 
-    // Tricuspid empty sector: rim samples farthest from the existing leaflets.
+    const mitralLeafletVerts = meshVertices('mitral', /Posterior leaflet/i);
+    if (mitralLeafletVerts.length) {
+      const t = gapParam(maCurve, mitralLeafletVerts);
+      const aml = sailLeaflet(maCurve, maCentroid, mitralAxis, t, 0.42, 0.85, 0.30);
+      addMesh(aml, 'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' });
+    }
+
     const tvVerts = meshVertices('tricuspid', /leaflet of right atrioventricular/i);
     if (tvVerts.length) {
-      const tvInferiorMesh = getMeshes('tricuspid').find(m => /Inferior leaflet/i.test(m.name));
-      const tvAnterior = rotatedLeaflet(tvInferiorMesh, taCentroid, tvAxis, gapDirection(taCurve, taCentroid, tvVerts));
-      if (tvAnterior) {
-        addMesh(tvAnterior, 'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' });
-      }
+      const t = gapParam(taCurve, tvVerts);
+      const tvAnterior = sailLeaflet(taCurve, taCentroid, tvAxis, t, 0.36, 0.70, 0.26);
+      addMesh(tvAnterior, 'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' });
     }
   }
 
