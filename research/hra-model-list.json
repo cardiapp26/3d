@@ -1,0 +1,914 @@
+[
+  {
+    "name": "ASCT-B_3D_Models_Mapping.csv",
+    "path": "v1.2/models/ASCT-B_3D_Models_Mapping.csv",
+    "sha": "52ba2b45ea4f3d6d995424b5339ca098c37eec25",
+    "size": 272624,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/ASCT-B_3D_Models_Mapping.csv?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/ASCT-B_3D_Models_Mapping.csv",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/52ba2b45ea4f3d6d995424b5339ca098c37eec25",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/ASCT-B_3D_Models_Mapping.csv",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/ASCT-B_3D_Models_Mapping.csv?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/52ba2b45ea4f3d6d995424b5339ca098c37eec25",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/ASCT-B_3D_Models_Mapping.csv"
+    }
+  },
+  {
+    "name": "Allen_F_Brain.glb",
+    "path": "v1.2/models/Allen_F_Brain.glb",
+    "sha": "46be1ef8f30b42b1bda45efc909d09badc2c1013",
+    "size": 11977884,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/Allen_F_Brain.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/Allen_F_Brain.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/46be1ef8f30b42b1bda45efc909d09badc2c1013",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/Allen_F_Brain.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/Allen_F_Brain.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/46be1ef8f30b42b1bda45efc909d09badc2c1013",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/Allen_F_Brain.glb"
+    }
+  },
+  {
+    "name": "Allen_M_Brain.glb",
+    "path": "v1.2/models/Allen_M_Brain.glb",
+    "sha": "b87f9f5cae36ef916d526a0dc300c466980a84ff",
+    "size": 11977312,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/Allen_M_Brain.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/Allen_M_Brain.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/b87f9f5cae36ef916d526a0dc300c466980a84ff",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/Allen_M_Brain.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/Allen_M_Brain.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/b87f9f5cae36ef916d526a0dc300c466980a84ff",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/Allen_M_Brain.glb"
+    }
+  },
+  {
+    "name": "NIH_F_Lymph_Node.glb",
+    "path": "v1.2/models/NIH_F_Lymph_Node.glb",
+    "sha": "fddecfec57b79db1c91faf65209129e2fb9f22cc",
+    "size": 4542832,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/NIH_F_Lymph_Node.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/NIH_F_Lymph_Node.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/fddecfec57b79db1c91faf65209129e2fb9f22cc",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/NIH_F_Lymph_Node.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/NIH_F_Lymph_Node.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/fddecfec57b79db1c91faf65209129e2fb9f22cc",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/NIH_F_Lymph_Node.glb"
+    }
+  },
+  {
+    "name": "NIH_M_Lymph_Node.glb",
+    "path": "v1.2/models/NIH_M_Lymph_Node.glb",
+    "sha": "5c8fd0b2c61cf5e5f1434c7043d8bb92ec7d2a0a",
+    "size": 7413900,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/NIH_M_Lymph_Node.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/NIH_M_Lymph_Node.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/5c8fd0b2c61cf5e5f1434c7043d8bb92ec7d2a0a",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/NIH_M_Lymph_Node.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/NIH_M_Lymph_Node.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/5c8fd0b2c61cf5e5f1434c7043d8bb92ec7d2a0a",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/NIH_M_Lymph_Node.glb"
+    }
+  },
+  {
+    "name": "SBU_F_Intestine_Large.glb",
+    "path": "v1.2/models/SBU_F_Intestine_Large.glb",
+    "sha": "0eb339ecc96642d02c54e43717a78c8dcc87bd9e",
+    "size": 387184,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/SBU_F_Intestine_Large.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/SBU_F_Intestine_Large.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/0eb339ecc96642d02c54e43717a78c8dcc87bd9e",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/SBU_F_Intestine_Large.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/SBU_F_Intestine_Large.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/0eb339ecc96642d02c54e43717a78c8dcc87bd9e",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/SBU_F_Intestine_Large.glb"
+    }
+  },
+  {
+    "name": "SBU_M_Intestine_Large.glb",
+    "path": "v1.2/models/SBU_M_Intestine_Large.glb",
+    "sha": "a36ab258f8e3179d82da12b08c1f4a5149db0418",
+    "size": 686888,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/SBU_M_Intestine_Large.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/SBU_M_Intestine_Large.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/a36ab258f8e3179d82da12b08c1f4a5149db0418",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/SBU_M_Intestine_Large.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/SBU_M_Intestine_Large.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/a36ab258f8e3179d82da12b08c1f4a5149db0418",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/SBU_M_Intestine_Large.glb"
+    }
+  },
+  {
+    "name": "VH_F_Blood_Vasculature.glb",
+    "path": "v1.2/models/VH_F_Blood_Vasculature.glb",
+    "sha": "e5ee60b7c3e58b913e00fb0d860a93667db166e3",
+    "size": 7262232,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Blood_Vasculature.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Blood_Vasculature.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e5ee60b7c3e58b913e00fb0d860a93667db166e3",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Blood_Vasculature.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Blood_Vasculature.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e5ee60b7c3e58b913e00fb0d860a93667db166e3",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Blood_Vasculature.glb"
+    }
+  },
+  {
+    "name": "VH_F_Eye_L.glb",
+    "path": "v1.2/models/VH_F_Eye_L.glb",
+    "sha": "71e7bfef9b3fba1936d08d8c047c71cadff38d3f",
+    "size": 9610916,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Eye_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Eye_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/71e7bfef9b3fba1936d08d8c047c71cadff38d3f",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Eye_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Eye_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/71e7bfef9b3fba1936d08d8c047c71cadff38d3f",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Eye_L.glb"
+    }
+  },
+  {
+    "name": "VH_F_Eye_R.glb",
+    "path": "v1.2/models/VH_F_Eye_R.glb",
+    "sha": "6d07e686c58a8ce6104131829d98e2068ca7d44f",
+    "size": 9511360,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Eye_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Eye_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/6d07e686c58a8ce6104131829d98e2068ca7d44f",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Eye_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Eye_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/6d07e686c58a8ce6104131829d98e2068ca7d44f",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Eye_R.glb"
+    }
+  },
+  {
+    "name": "VH_F_Fallopian_Tube_L.glb",
+    "path": "v1.2/models/VH_F_Fallopian_Tube_L.glb",
+    "sha": "560433afd71368c354d97b8e40e80cb255db04f7",
+    "size": 336676,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Fallopian_Tube_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Fallopian_Tube_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/560433afd71368c354d97b8e40e80cb255db04f7",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Fallopian_Tube_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Fallopian_Tube_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/560433afd71368c354d97b8e40e80cb255db04f7",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Fallopian_Tube_L.glb"
+    }
+  },
+  {
+    "name": "VH_F_Fallopian_Tube_R.glb",
+    "path": "v1.2/models/VH_F_Fallopian_Tube_R.glb",
+    "sha": "d653750c7bd1a112a6c9ed6f51be59cd2a6bc2a8",
+    "size": 327448,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Fallopian_Tube_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Fallopian_Tube_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/d653750c7bd1a112a6c9ed6f51be59cd2a6bc2a8",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Fallopian_Tube_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Fallopian_Tube_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/d653750c7bd1a112a6c9ed6f51be59cd2a6bc2a8",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Fallopian_Tube_R.glb"
+    }
+  },
+  {
+    "name": "VH_F_Heart.glb",
+    "path": "v1.2/models/VH_F_Heart.glb",
+    "sha": "7e4709ac174f4f43bedb80ed488fdcb62d02aac3",
+    "size": 1745284,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Heart.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Heart.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/7e4709ac174f4f43bedb80ed488fdcb62d02aac3",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Heart.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Heart.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/7e4709ac174f4f43bedb80ed488fdcb62d02aac3",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Heart.glb"
+    }
+  },
+  {
+    "name": "VH_F_Kidney_L.glb",
+    "path": "v1.2/models/VH_F_Kidney_L.glb",
+    "sha": "03a86aa33b02608ede00b41d4dc68b0680a268f4",
+    "size": 1330900,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Kidney_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Kidney_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/03a86aa33b02608ede00b41d4dc68b0680a268f4",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Kidney_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Kidney_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/03a86aa33b02608ede00b41d4dc68b0680a268f4",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Kidney_L.glb"
+    }
+  },
+  {
+    "name": "VH_F_Kidney_R.glb",
+    "path": "v1.2/models/VH_F_Kidney_R.glb",
+    "sha": "f2dc4787682c1b355f17674a6069dd21001f896a",
+    "size": 1356976,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Kidney_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Kidney_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/f2dc4787682c1b355f17674a6069dd21001f896a",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Kidney_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Kidney_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/f2dc4787682c1b355f17674a6069dd21001f896a",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Kidney_R.glb"
+    }
+  },
+  {
+    "name": "VH_F_Knee_L.glb",
+    "path": "v1.2/models/VH_F_Knee_L.glb",
+    "sha": "93a0754dfc8888aeb1dd94eb78c0f186b1ff190c",
+    "size": 347952,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Knee_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Knee_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/93a0754dfc8888aeb1dd94eb78c0f186b1ff190c",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Knee_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Knee_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/93a0754dfc8888aeb1dd94eb78c0f186b1ff190c",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Knee_L.glb"
+    }
+  },
+  {
+    "name": "VH_F_Knee_R.glb",
+    "path": "v1.2/models/VH_F_Knee_R.glb",
+    "sha": "21c6783356b10448f2b53405fb9df3b0945f3c89",
+    "size": 347996,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Knee_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Knee_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/21c6783356b10448f2b53405fb9df3b0945f3c89",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Knee_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Knee_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/21c6783356b10448f2b53405fb9df3b0945f3c89",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Knee_R.glb"
+    }
+  },
+  {
+    "name": "VH_F_Liver.glb",
+    "path": "v1.2/models/VH_F_Liver.glb",
+    "sha": "c24c6fbcd37162e26d43a6870afc238aa27f09c1",
+    "size": 1738032,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Liver.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Liver.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/c24c6fbcd37162e26d43a6870afc238aa27f09c1",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Liver.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Liver.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/c24c6fbcd37162e26d43a6870afc238aa27f09c1",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Liver.glb"
+    }
+  },
+  {
+    "name": "VH_F_Lung.glb",
+    "path": "v1.2/models/VH_F_Lung.glb",
+    "sha": "68a100eda66459764a2cd6558bd575e3006df57b",
+    "size": 11240608,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Lung.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Lung.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/68a100eda66459764a2cd6558bd575e3006df57b",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Lung.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Lung.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/68a100eda66459764a2cd6558bd575e3006df57b",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Lung.glb"
+    }
+  },
+  {
+    "name": "VH_F_Ovary_L.glb",
+    "path": "v1.2/models/VH_F_Ovary_L.glb",
+    "sha": "1f83e9ce3a58bc0de6c5a9cc1a5126867e43dfbc",
+    "size": 8984,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ovary_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ovary_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/1f83e9ce3a58bc0de6c5a9cc1a5126867e43dfbc",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Ovary_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ovary_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/1f83e9ce3a58bc0de6c5a9cc1a5126867e43dfbc",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ovary_L.glb"
+    }
+  },
+  {
+    "name": "VH_F_Ovary_R.glb",
+    "path": "v1.2/models/VH_F_Ovary_R.glb",
+    "sha": "9af44606e833b9dd3a035e2a1d5698ae001302fd",
+    "size": 8744,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ovary_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ovary_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/9af44606e833b9dd3a035e2a1d5698ae001302fd",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Ovary_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ovary_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/9af44606e833b9dd3a035e2a1d5698ae001302fd",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ovary_R.glb"
+    }
+  },
+  {
+    "name": "VH_F_Pancreas.glb",
+    "path": "v1.2/models/VH_F_Pancreas.glb",
+    "sha": "e3e32b07cee1e1c84689c603f8b8373180dd9bd3",
+    "size": 216380,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Pancreas.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Pancreas.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e3e32b07cee1e1c84689c603f8b8373180dd9bd3",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Pancreas.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Pancreas.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e3e32b07cee1e1c84689c603f8b8373180dd9bd3",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Pancreas.glb"
+    }
+  },
+  {
+    "name": "VH_F_Pelvis.glb",
+    "path": "v1.2/models/VH_F_Pelvis.glb",
+    "sha": "eb6e1ae3743c1d30250f2771e7185b4324b217e5",
+    "size": 1593336,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Pelvis.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Pelvis.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/eb6e1ae3743c1d30250f2771e7185b4324b217e5",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Pelvis.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Pelvis.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/eb6e1ae3743c1d30250f2771e7185b4324b217e5",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Pelvis.glb"
+    }
+  },
+  {
+    "name": "VH_F_Placenta.glb",
+    "path": "v1.2/models/VH_F_Placenta.glb",
+    "sha": "22e0fa26bd50da263dd70e9d5abede007b543830",
+    "size": 4917240,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Placenta.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Placenta.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/22e0fa26bd50da263dd70e9d5abede007b543830",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Placenta.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Placenta.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/22e0fa26bd50da263dd70e9d5abede007b543830",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Placenta.glb"
+    }
+  },
+  {
+    "name": "VH_F_Skin.glb",
+    "path": "v1.2/models/VH_F_Skin.glb",
+    "sha": "cbbe2b63e739d2466f10227c047a478f6f878798",
+    "size": 22959832,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Skin.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Skin.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/cbbe2b63e739d2466f10227c047a478f6f878798",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Skin.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Skin.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/cbbe2b63e739d2466f10227c047a478f6f878798",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Skin.glb"
+    }
+  },
+  {
+    "name": "VH_F_Small_Intestine.glb",
+    "path": "v1.2/models/VH_F_Small_Intestine.glb",
+    "sha": "6ca631189a55dcd5fe625be2f139048a36c11339",
+    "size": 856388,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Small_Intestine.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Small_Intestine.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/6ca631189a55dcd5fe625be2f139048a36c11339",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Small_Intestine.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Small_Intestine.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/6ca631189a55dcd5fe625be2f139048a36c11339",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Small_Intestine.glb"
+    }
+  },
+  {
+    "name": "VH_F_Spinal_Cord.glb",
+    "path": "v1.2/models/VH_F_Spinal_Cord.glb",
+    "sha": "b7fe688162b02c9023f7de4ca2a78636282d404c",
+    "size": 7656588,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Spinal_Cord.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Spinal_Cord.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/b7fe688162b02c9023f7de4ca2a78636282d404c",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Spinal_Cord.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Spinal_Cord.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/b7fe688162b02c9023f7de4ca2a78636282d404c",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Spinal_Cord.glb"
+    }
+  },
+  {
+    "name": "VH_F_Spleen.glb",
+    "path": "v1.2/models/VH_F_Spleen.glb",
+    "sha": "acba45ef717cd8cca488fd17cbf8dd988df68420",
+    "size": 276712,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Spleen.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Spleen.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/acba45ef717cd8cca488fd17cbf8dd988df68420",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Spleen.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Spleen.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/acba45ef717cd8cca488fd17cbf8dd988df68420",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Spleen.glb"
+    }
+  },
+  {
+    "name": "VH_F_Thymus.glb",
+    "path": "v1.2/models/VH_F_Thymus.glb",
+    "sha": "14eac0d3ceb4d007de52237763a0819d7e21a4dc",
+    "size": 71928,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Thymus.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Thymus.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/14eac0d3ceb4d007de52237763a0819d7e21a4dc",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Thymus.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Thymus.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/14eac0d3ceb4d007de52237763a0819d7e21a4dc",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Thymus.glb"
+    }
+  },
+  {
+    "name": "VH_F_United.glb.zip",
+    "path": "v1.2/models/VH_F_United.glb.zip",
+    "sha": "513d11891f56e9741eecc616e4b808aa33de4417",
+    "size": 68348995,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_United.glb.zip?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_United.glb.zip",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/513d11891f56e9741eecc616e4b808aa33de4417",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_United.glb.zip",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_United.glb.zip?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/513d11891f56e9741eecc616e4b808aa33de4417",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_United.glb.zip"
+    }
+  },
+  {
+    "name": "VH_F_Ureter_L.glb",
+    "path": "v1.2/models/VH_F_Ureter_L.glb",
+    "sha": "6d1b5084eef08232a519e53cd244cf8f0f030483",
+    "size": 707996,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ureter_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ureter_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/6d1b5084eef08232a519e53cd244cf8f0f030483",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Ureter_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ureter_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/6d1b5084eef08232a519e53cd244cf8f0f030483",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ureter_L.glb"
+    }
+  },
+  {
+    "name": "VH_F_Ureter_R.glb",
+    "path": "v1.2/models/VH_F_Ureter_R.glb",
+    "sha": "e7cf8de3a1afbe4dc44bb736922a38079278398f",
+    "size": 637764,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ureter_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ureter_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e7cf8de3a1afbe4dc44bb736922a38079278398f",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Ureter_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Ureter_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e7cf8de3a1afbe4dc44bb736922a38079278398f",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Ureter_R.glb"
+    }
+  },
+  {
+    "name": "VH_F_Urinary_Bladder.glb",
+    "path": "v1.2/models/VH_F_Urinary_Bladder.glb",
+    "sha": "fb121cf1c9c6b3a1deddb1640120cd0dd7929d7c",
+    "size": 765100,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Urinary_Bladder.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Urinary_Bladder.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/fb121cf1c9c6b3a1deddb1640120cd0dd7929d7c",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Urinary_Bladder.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Urinary_Bladder.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/fb121cf1c9c6b3a1deddb1640120cd0dd7929d7c",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Urinary_Bladder.glb"
+    }
+  },
+  {
+    "name": "VH_F_Uterus.glb",
+    "path": "v1.2/models/VH_F_Uterus.glb",
+    "sha": "05284300f02da90b7321a0dcf6a7d6d21e774770",
+    "size": 909772,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Uterus.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Uterus.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/05284300f02da90b7321a0dcf6a7d6d21e774770",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_F_Uterus.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_F_Uterus.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/05284300f02da90b7321a0dcf6a7d6d21e774770",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_F_Uterus.glb"
+    }
+  },
+  {
+    "name": "VH_M_Blood_Vasculature.glb",
+    "path": "v1.2/models/VH_M_Blood_Vasculature.glb",
+    "sha": "90016b0b5f8028ad0afa9d39672352ffce625498",
+    "size": 7436204,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Blood_Vasculature.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Blood_Vasculature.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/90016b0b5f8028ad0afa9d39672352ffce625498",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Blood_Vasculature.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Blood_Vasculature.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/90016b0b5f8028ad0afa9d39672352ffce625498",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Blood_Vasculature.glb"
+    }
+  },
+  {
+    "name": "VH_M_Eye_L.glb",
+    "path": "v1.2/models/VH_M_Eye_L.glb",
+    "sha": "c4cecec60f945508bc5a513caf4ddca34b07f44a",
+    "size": 9610816,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Eye_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Eye_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/c4cecec60f945508bc5a513caf4ddca34b07f44a",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Eye_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Eye_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/c4cecec60f945508bc5a513caf4ddca34b07f44a",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Eye_L.glb"
+    }
+  },
+  {
+    "name": "VH_M_Eye_R.glb",
+    "path": "v1.2/models/VH_M_Eye_R.glb",
+    "sha": "1a6a40174cd3e55c03b1f8cc00ef0acf41578115",
+    "size": 9511464,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Eye_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Eye_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/1a6a40174cd3e55c03b1f8cc00ef0acf41578115",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Eye_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Eye_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/1a6a40174cd3e55c03b1f8cc00ef0acf41578115",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Eye_R.glb"
+    }
+  },
+  {
+    "name": "VH_M_Heart.glb",
+    "path": "v1.2/models/VH_M_Heart.glb",
+    "sha": "7efc2cf858b4434249a48c6f104842e1662c9043",
+    "size": 4071500,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Heart.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Heart.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/7efc2cf858b4434249a48c6f104842e1662c9043",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Heart.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Heart.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/7efc2cf858b4434249a48c6f104842e1662c9043",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Heart.glb"
+    }
+  },
+  {
+    "name": "VH_M_Kidney_L.glb",
+    "path": "v1.2/models/VH_M_Kidney_L.glb",
+    "sha": "b243680fe62520242cabfa55a8d29a57dac5dcb7",
+    "size": 1536532,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Kidney_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Kidney_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/b243680fe62520242cabfa55a8d29a57dac5dcb7",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Kidney_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Kidney_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/b243680fe62520242cabfa55a8d29a57dac5dcb7",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Kidney_L.glb"
+    }
+  },
+  {
+    "name": "VH_M_Kidney_R.glb",
+    "path": "v1.2/models/VH_M_Kidney_R.glb",
+    "sha": "5c3330722f238d480571aff608411c9404d33b83",
+    "size": 1546868,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Kidney_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Kidney_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/5c3330722f238d480571aff608411c9404d33b83",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Kidney_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Kidney_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/5c3330722f238d480571aff608411c9404d33b83",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Kidney_R.glb"
+    }
+  },
+  {
+    "name": "VH_M_Knee_L.glb",
+    "path": "v1.2/models/VH_M_Knee_L.glb",
+    "sha": "5bb27b98c6839a906681f128ef7ccf0adbc212ee",
+    "size": 439644,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Knee_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Knee_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/5bb27b98c6839a906681f128ef7ccf0adbc212ee",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Knee_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Knee_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/5bb27b98c6839a906681f128ef7ccf0adbc212ee",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Knee_L.glb"
+    }
+  },
+  {
+    "name": "VH_M_Knee_R.glb",
+    "path": "v1.2/models/VH_M_Knee_R.glb",
+    "sha": "fc70ceeb3039cdc8b1e6c4d4face5b305784bf54",
+    "size": 439704,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Knee_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Knee_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/fc70ceeb3039cdc8b1e6c4d4face5b305784bf54",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Knee_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Knee_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/fc70ceeb3039cdc8b1e6c4d4face5b305784bf54",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Knee_R.glb"
+    }
+  },
+  {
+    "name": "VH_M_Liver.glb",
+    "path": "v1.2/models/VH_M_Liver.glb",
+    "sha": "7a140a4d527b6364ee6486a540e9927dffacfe29",
+    "size": 1135892,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Liver.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Liver.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/7a140a4d527b6364ee6486a540e9927dffacfe29",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Liver.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Liver.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/7a140a4d527b6364ee6486a540e9927dffacfe29",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Liver.glb"
+    }
+  },
+  {
+    "name": "VH_M_Lung.glb",
+    "path": "v1.2/models/VH_M_Lung.glb",
+    "sha": "80262031f1f90abfd1287ce70aa1290657d68087",
+    "size": 6355840,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Lung.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Lung.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/80262031f1f90abfd1287ce70aa1290657d68087",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Lung.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Lung.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/80262031f1f90abfd1287ce70aa1290657d68087",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Lung.glb"
+    }
+  },
+  {
+    "name": "VH_M_Pancreas.glb",
+    "path": "v1.2/models/VH_M_Pancreas.glb",
+    "sha": "911cb272dc9e2ee781fa5af48fbb54730a9c94e0",
+    "size": 265276,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Pancreas.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Pancreas.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/911cb272dc9e2ee781fa5af48fbb54730a9c94e0",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Pancreas.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Pancreas.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/911cb272dc9e2ee781fa5af48fbb54730a9c94e0",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Pancreas.glb"
+    }
+  },
+  {
+    "name": "VH_M_Pelvis.glb",
+    "path": "v1.2/models/VH_M_Pelvis.glb",
+    "sha": "395bebeaa1313225704b1786aa433243b66e1652",
+    "size": 1348060,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Pelvis.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Pelvis.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/395bebeaa1313225704b1786aa433243b66e1652",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Pelvis.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Pelvis.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/395bebeaa1313225704b1786aa433243b66e1652",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Pelvis.glb"
+    }
+  },
+  {
+    "name": "VH_M_Prostate.glb",
+    "path": "v1.2/models/VH_M_Prostate.glb",
+    "sha": "4b6b933ff2940e7f4008e57473a06e4f84358be1",
+    "size": 4086328,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Prostate.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Prostate.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/4b6b933ff2940e7f4008e57473a06e4f84358be1",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Prostate.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Prostate.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/4b6b933ff2940e7f4008e57473a06e4f84358be1",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Prostate.glb"
+    }
+  },
+  {
+    "name": "VH_M_Skin.glb",
+    "path": "v1.2/models/VH_M_Skin.glb",
+    "sha": "57b4af235eb34e2dce104b619c55b09ec44dae63",
+    "size": 5931700,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Skin.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Skin.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/57b4af235eb34e2dce104b619c55b09ec44dae63",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Skin.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Skin.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/57b4af235eb34e2dce104b619c55b09ec44dae63",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Skin.glb"
+    }
+  },
+  {
+    "name": "VH_M_Small_Intestine.glb",
+    "path": "v1.2/models/VH_M_Small_Intestine.glb",
+    "sha": "aa882262ba5c25541bef6987acafe00182ec3266",
+    "size": 618560,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Small_Intestine.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Small_Intestine.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/aa882262ba5c25541bef6987acafe00182ec3266",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Small_Intestine.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Small_Intestine.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/aa882262ba5c25541bef6987acafe00182ec3266",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Small_Intestine.glb"
+    }
+  },
+  {
+    "name": "VH_M_Spinal_Cord.glb",
+    "path": "v1.2/models/VH_M_Spinal_Cord.glb",
+    "sha": "70ae7aaff86cf529df3da67600acac42bd5e82a7",
+    "size": 489992,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Spinal_Cord.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Spinal_Cord.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/70ae7aaff86cf529df3da67600acac42bd5e82a7",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Spinal_Cord.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Spinal_Cord.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/70ae7aaff86cf529df3da67600acac42bd5e82a7",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Spinal_Cord.glb"
+    }
+  },
+  {
+    "name": "VH_M_Spleen.glb",
+    "path": "v1.2/models/VH_M_Spleen.glb",
+    "sha": "096b1800255c56ce0fb06b2f2da97d9d8d868937",
+    "size": 540236,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Spleen.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Spleen.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/096b1800255c56ce0fb06b2f2da97d9d8d868937",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Spleen.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Spleen.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/096b1800255c56ce0fb06b2f2da97d9d8d868937",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Spleen.glb"
+    }
+  },
+  {
+    "name": "VH_M_Thymus.glb",
+    "path": "v1.2/models/VH_M_Thymus.glb",
+    "sha": "3cebb701e86e8bbe8ba90b801c77a29b3e70980c",
+    "size": 74876,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Thymus.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Thymus.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/3cebb701e86e8bbe8ba90b801c77a29b3e70980c",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Thymus.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Thymus.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/3cebb701e86e8bbe8ba90b801c77a29b3e70980c",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Thymus.glb"
+    }
+  },
+  {
+    "name": "VH_M_United.glb.zip",
+    "path": "v1.2/models/VH_M_United.glb.zip",
+    "sha": "c5d97e5382a4b14cecce4a8af6185a2828ab3d73",
+    "size": 82940753,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_United.glb.zip?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_United.glb.zip",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/c5d97e5382a4b14cecce4a8af6185a2828ab3d73",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_United.glb.zip",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_United.glb.zip?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/c5d97e5382a4b14cecce4a8af6185a2828ab3d73",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_United.glb.zip"
+    }
+  },
+  {
+    "name": "VH_M_Ureter_L.glb",
+    "path": "v1.2/models/VH_M_Ureter_L.glb",
+    "sha": "0c0e9585b5aacefa8bd52a5b1cc6ee8795499cd1",
+    "size": 682796,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Ureter_L.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Ureter_L.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/0c0e9585b5aacefa8bd52a5b1cc6ee8795499cd1",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Ureter_L.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Ureter_L.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/0c0e9585b5aacefa8bd52a5b1cc6ee8795499cd1",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Ureter_L.glb"
+    }
+  },
+  {
+    "name": "VH_M_Ureter_R.glb",
+    "path": "v1.2/models/VH_M_Ureter_R.glb",
+    "sha": "2bbc2ffed77fc590568e60177b415d72fd1ee558",
+    "size": 540712,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Ureter_R.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Ureter_R.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/2bbc2ffed77fc590568e60177b415d72fd1ee558",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Ureter_R.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Ureter_R.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/2bbc2ffed77fc590568e60177b415d72fd1ee558",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Ureter_R.glb"
+    }
+  },
+  {
+    "name": "VH_M_Urethra.glb",
+    "path": "v1.2/models/VH_M_Urethra.glb",
+    "sha": "a7ea134891dd3c09950fe4eb6c0e6d656f7aea42",
+    "size": 176688,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Urethra.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Urethra.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/a7ea134891dd3c09950fe4eb6c0e6d656f7aea42",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Urethra.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Urethra.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/a7ea134891dd3c09950fe4eb6c0e6d656f7aea42",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Urethra.glb"
+    }
+  },
+  {
+    "name": "VH_M_Urinary_Bladder.glb",
+    "path": "v1.2/models/VH_M_Urinary_Bladder.glb",
+    "sha": "e61c58959555f2c47755b46af64614aec7e031da",
+    "size": 198936,
+    "url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Urinary_Bladder.glb?ref=main",
+    "html_url": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Urinary_Bladder.glb",
+    "git_url": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e61c58959555f2c47755b46af64614aec7e031da",
+    "download_url": "https://raw.githubusercontent.com/hubmapconsortium/ccf-releases/main/v1.2/models/VH_M_Urinary_Bladder.glb",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/hubmapconsortium/ccf-releases/contents/v1.2/models/VH_M_Urinary_Bladder.glb?ref=main",
+      "git": "https://api.github.com/repos/hubmapconsortium/ccf-releases/git/blobs/e61c58959555f2c47755b46af64614aec7e031da",
+      "html": "https://github.com/hubmapconsortium/ccf-releases/blob/main/v1.2/models/VH_M_Urinary_Bladder.glb"
+    }
+  }
+]

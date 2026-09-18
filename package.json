@@ -1,0 +1,22 @@
+{
+  "name": "3d-card-visualization",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "check": "node --check src/main.js && node --check src/heart.js && node --check src/atlas.js && node --check src/content.js && node --check scripts/verify-coronaries.mjs && node --check scripts/browser-check.cjs",
+    "test": "node scripts/verify-coronaries.mjs",
+    "test:browser": "node scripts/browser-check.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "three": "^0.186.0",
+    "vite": "^8.3.0"
+  },
+  "type": "module",
+  "private": true
+}

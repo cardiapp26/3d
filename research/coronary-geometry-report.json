@@ -1,0 +1,1138 @@
+{
+  "asset": "public/models/cardiovascular.glb",
+  "sha256": "05f373a294ab809b9a628bc1474a66028642997330fddc553a33d4ac6409b757",
+  "sourceUnits": "Unverified source coordinate units; no millimetre conversion asserted.",
+  "method": "Decode actual Draco positions and triangles; apply complete glTF node/ancestor transforms. Pair distances use closest source vertices (upper bounds on triangle-surface separation). Left-main boundary centroids use exact point-to-triangle distances.",
+  "thresholdReason": "3.5% of maximum four-chamber bounding-box extent is a gross registration/branch proximity regression guard, not a clinical tolerance or proof of lumen connection.",
+  "chamberBounds": {
+    "min": [
+      -0.036787353456020355,
+      1.2367327887967061,
+      -0.031658208907884205
+    ],
+    "max": [
+      0.08233170211315155,
+      1.3447729992368174,
+      0.0812038097025413
+    ],
+    "center": [
+      0.022772174328565598,
+      1.2907528940167619,
+      0.02477280039732855
+    ],
+    "maximumExtent": 0.1191190555691719
+  },
+  "structures": {
+    "lm": {
+      "name": "Left coronary artery",
+      "sourceNode": 334,
+      "bounds": {
+        "min": [
+          0.02097072172909975,
+          1.321993101388216,
+          0.019190066494047642
+        ],
+        "max": [
+          0.03628972824662924,
+          1.3328303890302777,
+          0.02633388713002205
+        ]
+      },
+      "vertexCount": 300,
+      "triangleCount": 576,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.030691273510456085,
+        1.3321551084518433,
+        0.02322361059486866,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.035679526937504605,
+            1.3236898366206635,
+            0.024549879890400916
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.021733336926748354,
+            1.330505842459388,
+            0.02144160106157263
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        }
+      ]
+    },
+    "lad": {
+      "name": "Anterior interventricular artery",
+      "sourceNode": 40,
+      "bounds": {
+        "min": [
+          0.03507564216852188,
+          1.2434166111052036,
+          0.02275947853922844
+        ],
+        "max": [
+          0.07428308576345444,
+          1.3253889866173267,
+          0.07922400161623955
+        ]
+      },
+      "vertexCount": 5832,
+      "triangleCount": 11520,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.05728095397353172,
+        1.2751576900482178,
+        0.06659471988677979,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.04152557346969843,
+            1.2942567821592093,
+            0.07647708058357239
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.05480695329606533,
+            1.2998903080200155,
+            0.05799122309933106
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.03845175526415308,
+            1.2673583696596324,
+            0.07802774819235006
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.054559280164539814,
+            1.2850461673612394,
+            0.06781851872801781
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.06736282631754875,
+            1.2488675098866224,
+            0.06592052367826302
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.06747999104360738,
+            1.2638071342371404,
+            0.07212528338034947
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.07331115566194057,
+            1.2519642616001267,
+            0.06072105094790459
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.05522057646885514,
+            1.2886516085515418,
+            0.06612608395516872
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.060273279901593924,
+            1.244861372280866,
+            0.062373456855614975
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.05683003645390272,
+            1.2665198661076524,
+            0.07353043369948864
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.05720613291487098,
+            1.2438039655486741,
+            0.06243308292080958
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.03568023225913445,
+            1.3236894651005664,
+            0.02454989838103453
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        }
+      ]
+    },
+    "lcx": {
+      "name": "Circumflex artery of heart",
+      "sourceNode": 108,
+      "bounds": {
+        "min": [
+          0.03507564961910248,
+          1.2505092360079288,
+          -0.011260353028774261
+        ],
+        "max": [
+          0.08015979453921318,
+          1.3253889568150043,
+          0.04624661058187485
+        ]
+      },
+      "vertexCount": 8280,
+      "triangleCount": 16416,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.06847196817398071,
+        1.2709671258926392,
+        0.011622317135334015,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.06212545015538732,
+            1.262951481544102,
+            -0.002487897640094161
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.05890281451866031,
+            1.2793091856874526,
+            -0.00746296780804793
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.07063319347798824,
+            1.2576538051944226,
+            0.009472152218222618
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.06781124509871006,
+            1.2719444672887523,
+            0.00040413315097490943
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.07844963731865087,
+            1.2751153032295406,
+            0.01797418234248956
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.06207250788186987,
+            1.2785919865903754,
+            -0.004969719486931959
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.07716225863744815,
+            1.2515859872413178,
+            0.030976323410868645
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.0794178374732534,
+            1.2596987562719733,
+            0.024185593239963055
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.0778927889962991,
+            1.2515665621807177,
+            0.046138060589631394
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.07919159407416979,
+            1.254401460600396,
+            0.035600602005918816
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.07907885281989971,
+            1.2539588770208259,
+            0.04457720834761858
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.03567972717185815,
+            1.3236886989325285,
+            0.02455009582142035
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        }
+      ]
+    },
+    "rca": {
+      "name": "Right coronary artery",
+      "sourceNode": 533,
+      "bounds": {
+        "min": [
+          -0.022575072944164276,
+          1.2404407039284706,
+          -0.0045049116015434265
+        ],
+        "max": [
+          0.057983413338661194,
+          1.3337516263127327,
+          0.08125364780426025
+        ]
+      },
+      "vertexCount": 13704,
+      "triangleCount": 27072,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.016551591455936432,
+        1.2754875421524048,
+        0.06532016396522522,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.03395132565249999,
+            1.3214524624248345,
+            0.06799288218220075
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.02059278512994448,
+            1.3187480041136344,
+            0.06877318024635315
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.02797380027671655,
+            1.3123228984574475,
+            0.07374258463581403
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.007845095358788967,
+            1.3220438535014787,
+            0.05942765809595585
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.035677565882603325,
+            1.2910911484311023,
+            0.07920228689908981
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.023277307239671547,
+            1.2941458861654003,
+            0.08017623362441857
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.035174929847319916,
+            1.28665617822359,
+            0.07977089658379555
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.013192782799402872,
+            1.2959181632225711,
+            0.07775513082742691
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.02558829542249441,
+            1.2866699431712427,
+            0.08083217591047287
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.0008646704566975434,
+            1.3087911549955606,
+            0.06557083129882812
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.00017028208822011948,
+            1.2668582933644452,
+            0.06967830347518125
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            -0.0052500249197085696,
+            1.275445825109879,
+            0.07010167775054772
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.01657976365337769,
+            1.2590558041507998,
+            0.07263526630898316
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.0059712451572219525,
+            1.2702253389482696,
+            0.0750838965177536
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.037206832940379776,
+            1.2688095091531673,
+            0.07722733976940313
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.026292175675431885,
+            1.2650807932950556,
+            0.07758853522439797
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.027228626422584057,
+            1.258030122766892,
+            0.07348865581055482
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.015630023553967476,
+            1.2673803895401456,
+            0.07714048152168591
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.035477745036284127,
+            1.2589803375303745,
+            0.07413083501160145
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            -0.014605038333684206,
+            1.2819444984197617,
+            0.06350570420424143
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.03804550847659508,
+            1.250323509176572,
+            0.06887427407006422
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.018805316338936486,
+            1.246600963330517,
+            0.06099537077049414
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.05787471992274125,
+            1.2414241430039206,
+            0.05700323358178139
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.040006216925879315,
+            1.2414606899643936,
+            0.05976417288184166
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.049902786811192826,
+            1.2439226104567447,
+            0.06250945044060548
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            -0.021020175889134407,
+            1.271532952475051,
+            0.05394992077102263
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.021562933921813965,
+            1.2570215275821586,
+            -0.004121408487359682
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.004553516705830892,
+            1.3317842700829108,
+            0.04083391558378935
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        }
+      ]
+    },
+    "aorta": {
+      "name": "Ascending aorta",
+      "sourceNode": 73,
+      "bounds": {
+        "min": [
+          -0.009629275649785995,
+          1.3080096077173948,
+          0.004325050860643387
+        ],
+        "max": [
+          0.03196554258465767,
+          1.3635563869029284,
+          0.044221218675374985
+        ]
+      },
+      "vertexCount": 300,
+      "triangleCount": 576,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0.010749086737632751,
+        1.3359973430633545,
+        0.025153648108243942,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.005829769652336836,
+            1.3602201212197542,
+            0.028574001199255385
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.019546938904871542,
+            1.3164220366937418,
+            0.01932298648171127
+          ],
+          "vertexCount": 12,
+          "closedLoop": true
+        }
+      ]
+    },
+    "la": {
+      "name": "Left atrium",
+      "sourceNode": 330,
+      "bounds": {
+        "min": [
+          -0.023833900690078735,
+          1.26292057467216,
+          -0.031658208907884205
+        ],
+        "max": [
+          0.06556069850921631,
+          1.3381499707293194,
+          0.054664354100475675
+        ]
+      },
+      "vertexCount": 2607,
+      "triangleCount": 5105,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -3.029462689596585e-7,
+        0.9999999657714298,
+        0,
+        0,
+        -0.9999999657714298,
+        -3.029462689596585e-7,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.022743353560086218,
+            1.2851480893708063,
+            -0.00372192721736786
+          ],
+          "vertexCount": 31,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.02021540239867237,
+            1.293192646921216,
+            0.00029023258867698413
+          ],
+          "vertexCount": 90,
+          "closedLoop": true
+        }
+      ]
+    },
+    "lv": {
+      "name": "Left ventricle",
+      "sourceNode": 350,
+      "bounds": {
+        "min": [
+          0.0024719543289393187,
+          1.2367327887967061,
+          -0.015569350729765747
+        ],
+        "max": [
+          0.08233170211315155,
+          1.3263452686471466,
+          0.07182783730117838
+        ]
+      },
+      "vertexCount": 11306,
+      "triangleCount": 22252,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -3.029462689596585e-7,
+        0.9999999657714298,
+        0,
+        0,
+        -0.9999999657714298,
+        -3.029462689596585e-7,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.04042056430272177,
+            1.2746870968512944,
+            0.026672609237479054
+          ],
+          "vertexCount": 218,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.012235226678004597,
+            1.3157850963401527,
+            0.02372377853620467
+          ],
+          "vertexCount": 68,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.008914520964026451,
+            1.3097287725042797,
+            0.012491878970332057
+          ],
+          "vertexCount": 6,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.023504556636052096,
+            1.2857224268324963,
+            -0.004154343420123617
+          ],
+          "vertexCount": 68,
+          "closedLoop": true
+        }
+      ]
+    },
+    "ra": {
+      "name": "Right atrium",
+      "sourceNode": 528,
+      "bounds": {
+        "min": [
+          -0.036787353456020355,
+          1.246163204661989,
+          -0.007734119932304364
+        ],
+        "max": [
+          0.007873866707086563,
+          1.3447729992368174,
+          0.06599902988260083
+        ]
+      },
+      "vertexCount": 11463,
+      "triangleCount": 22682,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -3.029462689596585e-7,
+        0.9999999657714298,
+        0,
+        0,
+        -0.9999999657714298,
+        -3.029462689596585e-7,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            0.0006068882842858632,
+            1.3189112529803495,
+            0.052438152733194424
+          ],
+          "vertexCount": 3,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.0006068882842858632,
+            1.3189112529803495,
+            0.052438152733194424
+          ],
+          "vertexCount": 3,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            -0.011973021576475156,
+            1.2840732809479423,
+            0.030009882141139473
+          ],
+          "vertexCount": 76,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            -0.001619745379336822,
+            1.2881802012880654,
+            0.03614796792186267
+          ],
+          "vertexCount": 162,
+          "closedLoop": true
+        }
+      ]
+    },
+    "rv": {
+      "name": "Right ventricle",
+      "sourceNode": 550,
+      "bounds": {
+        "min": [
+          -0.021543698385357857,
+          1.238951983145647,
+          0.014182466555301238
+        ],
+        "max": [
+          0.061007462441921234,
+          1.3313693403871498,
+          0.0812038097025413
+        ]
+      },
+      "vertexCount": 11328,
+      "triangleCount": 22322,
+      "sourceWorldTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -3.029462689596585e-7,
+        0.9999999657714298,
+        0,
+        0,
+        -0.9999999657714298,
+        -3.029462689596585e-7,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "boundaryLoops": [
+        {
+          "centroid": [
+            -0.01045379267473306,
+            1.2843232118914543,
+            0.02977240296452627
+          ],
+          "vertexCount": 70,
+          "closedLoop": true
+        },
+        {
+          "centroid": [
+            0.022994888184422798,
+            1.281918343464516,
+            0.04530596860031554
+          ],
+          "vertexCount": 264,
+          "closedLoop": true
+        }
+      ]
+    }
+  },
+  "separations": {
+    "lm_aorta": {
+      "distance": 0.00035621037033599725,
+      "closestSourcePoints": [
+        [
+          0.02837168239057064,
+          1.329070532694459,
+          0.020275665447115898
+        ],
+        [
+          0.02822919562458992,
+          1.329396964982152,
+          0.020270634442567825
+        ]
+      ],
+      "chamberSpanRatio": 0.002990372687509661
+    },
+    "lm_lad": {
+      "distance": 0.00009810499429074047,
+      "closestSourcePoints": [
+        [
+          0.0350694814696908,
+          1.322173566557467,
+          0.025303456466645002
+        ],
+        [
+          0.03507564216852188,
+          1.3222167678177357,
+          0.025391321629285812
+        ]
+      ],
+      "chamberSpanRatio": 0.0008235877443955333
+    },
+    "lm_lcx": {
+      "distance": 0.00009798423200684688,
+      "closestSourcePoints": [
+        [
+          0.0350694814696908,
+          1.322173566557467,
+          0.025303456466645002
+        ],
+        [
+          0.03507564961910248,
+          1.3222169764339924,
+          0.02539108321070671
+        ]
+      ],
+      "chamberSpanRatio": 0.0008225739495554335
+    },
+    "lad_lcx": {
+      "distance": 3.16890631886374e-7,
+      "closestSourcePoints": [
+        [
+          0.03507564216852188,
+          1.3222167678177357,
+          0.025391321629285812
+        ],
+        [
+          0.03507564961910248,
+          1.3222169764339924,
+          0.02539108321070671
+        ]
+      ],
+      "chamberSpanRatio": 0.000002660284959213407
+    },
+    "rca_aorta": {
+      "distance": 0.001678713589232701,
+      "closestSourcePoints": [
+        [
+          0.003191795200109482,
+          1.3306190446019173,
+          0.042318567633628845
+        ],
+        [
+          0.0015187319368124008,
+          1.3307328280061483,
+          0.042241159826517105
+        ]
+      ],
+      "chamberSpanRatio": 0.014092737565887428
+    }
+  },
+  "leftMainEndpointDistances": [
+    {
+      "centroid": [
+        0.035679526937504605,
+        1.3236898366206635,
+        0.024549879890400916
+      ],
+      "vertexCount": 12,
+      "closedLoop": true,
+      "distanceToSurface": {
+        "aorta": 0.004809747207923295,
+        "lad": 0.0017342335280875229,
+        "lcx": 0.0017273872959266536
+      }
+    },
+    {
+      "centroid": [
+        0.021733336926748354,
+        1.330505842459388,
+        0.02144160106157263
+      ],
+      "vertexCount": 12,
+      "closedLoop": true,
+      "distanceToSurface": {
+        "aorta": 0.0031487882915557028,
+        "lad": 0.015660212215488332,
+        "lcx": 0.015660358545187894
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "lm–aorta source surface vertex proximity",
+      "pass": true,
+      "measuredRatio": 0.002990372687509661,
+      "maximumRatio": 0.035
+    },
+    {
+      "name": "lm–lad source surface vertex proximity",
+      "pass": true,
+      "measuredRatio": 0.0008235877443955333,
+      "maximumRatio": 0.035
+    },
+    {
+      "name": "lm–lcx source surface vertex proximity",
+      "pass": true,
+      "measuredRatio": 0.0008225739495554335,
+      "maximumRatio": 0.035
+    },
+    {
+      "name": "lad–lcx source surface vertex proximity",
+      "pass": true,
+      "measuredRatio": 0.000002660284959213407,
+      "maximumRatio": 0.035
+    },
+    {
+      "name": "rca–aorta source surface vertex proximity",
+      "pass": true,
+      "measuredRatio": 0.014092737565887428,
+      "maximumRatio": 0.035
+    },
+    {
+      "name": "Left main contains two closed boundary loops",
+      "pass": true
+    },
+    {
+      "name": "Left main aortic endpoint differs from shared LAD/LCX endpoint",
+      "pass": true
+    }
+  ],
+  "limits": [
+    "Does not validate diagnosis, patient anatomy, catheter paths, perfusion territories, or vessel wall/lumen topology.",
+    "Does not exercise browser scene transforms; rendering must apply a single shared normalization to the selected structures.",
+    "Geometry proximity alone does not establish anatomical correctness; inspect source provenance and anterior/posterior/cutaway views."
+  ]
+}
