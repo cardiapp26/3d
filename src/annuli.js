@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * everything remains schematic and is flagged provenance:'schematic'.
  */
 export function createAnnuli(helpers) {
-  const { sourceCenter, register = () => {}, meshVertices = () => [] } = helpers;
+  const { sourceCenter, register = () => {}, meshVertices = () => [], getMeshes = () => [] } = helpers;
   const group = new THREE.Group();
   group.name = 'Valve Annuli';
 
@@ -56,33 +56,18 @@ export function createAnnuli(helpers) {
       if (!binBest[bi] || h < binBest[bi].h) binBest[bi] = { v: v.clone(), h, bi };
     }
     const kept = binBest.filter(Boolean);
-    return kept.length >= 10 ? kept : null;
-  }
-
-  function loftLeaflet(arcCurve, tip, sagAxis, belly) {
-    const uSeg = 22, vSeg = 8;
-    const positions = [], indices = [];
-    for (let vi = 0; vi <= vSeg; vi++) {
-      const v = vi / vSeg;
-      for (let ui = 0; ui <= uSeg; ui++) {
-        const u = ui / uSeg;
-        const pt = arcCurve.getPointAt(u).lerp(tip, v);
-        const sag = Math.sin(v * Math.PI) * Math.sin(u * Math.PI) * belly;
-        pt.addScaledVector(sagAxis, sag);
-        positions.push(pt.x, pt.y, pt.z);
-      }
+    if (kept.length < 10) return null;
+    // Reorder into one contiguous arc: start right after the largest angular
+    // gap, otherwise the point sequence jumps across the missing sector and
+    // the spline cuts straight through the valve orifice.
+    kept.sort((a, b) => a.bi - b.bi);
+    let gapAfter = 0, gapSize = -1;
+    for (let i = 0; i < kept.length; i++) {
+      const next = kept[(i + 1) % kept.length];
+      const delta = ((next.bi - kept[i].bi) + bins) % bins || bins;
+      if (delta > gapSize) { gapSize = delta; gapAfter = i; }
     }
-    for (let vi = 0; vi < vSeg; vi++) {
-      for (let ui = 0; ui < uSeg; ui++) {
-        const a = vi * (uSeg + 1) + ui;
-        indices.push(a, a + 1, a + uSeg + 1, a + 1, a + uSeg + 2, a + uSeg + 1);
-      }
-    }
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geom.setIndex(indices);
-    geom.computeVertexNormals();
-    return new THREE.Mesh(geom, matLeaflet.clone());
+    return [...kept.slice(gapAfter + 1), ...kept.slice(0, gapAfter + 1)];
   }
 
   function addMesh(mesh, id, name, sourceName, extra = {}) {
@@ -235,24 +220,44 @@ export function createAnnuli(helpers) {
     addMesh(new THREE.Mesh(amcGeom, amcMat), 'amc', 'Aorto-mitral continuity', 'Aorto-mitral continuity (fibrous curtain)');
 
     // -------------------------------------------------------------
-    // 4. AV leaflets missing from the atlas: anterior mitral (hangs from the
-    //    AMC arc) and anterior tricuspid (fills the measured uncovered
-    //    sector). Sag and tip follow the valve axis, not world Y.
+    // 4. AV leaflets missing from the atlas (anterior mitral, anterior
+    //    tricuspid): clone the opposite atlas leaflet (chordae included) and
+    //    mirror it across a vertical plane through the valve centroid, so the
+    //    sail occupies the empty sector with matching texture and drape.
     // -------------------------------------------------------------
-    const mitralAxis = lv.clone().sub(la).normalize();
-    const amlTip = centroid(bottomPts).addScaledVector(mitralAxis, 0.30).lerp(mitralCenter, 0.35);
-    addMesh(
-      loftLeaflet(bottomCurve, amlTip, mitralAxis, 0.05),
-      'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' }
-    );
-
-    if (tvGapArc) {
-      const tvAxis = rv.clone().sub(ra).normalize();
-      const tvTip = centroid(tvGapArc.getPoints(8)).addScaledVector(tvAxis, 0.28).lerp(tricuspidCenter, 0.3);
-      addMesh(
-        loftLeaflet(tvGapArc, tvTip, tvAxis, 0.05),
-        'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' }
+    function mirroredLeaflet(sourceMesh, valveCenter) {
+      if (!sourceMesh) return null;
+      const geom = sourceMesh.geometry.clone();
+      geom.computeBoundingBox();
+      const srcCenter = geom.boundingBox.getCenter(new THREE.Vector3());
+      const n = srcCenter.clone().sub(valveCenter);
+      n.y = 0;
+      if (n.lengthSq() < 1e-6) return null;
+      n.normalize();
+      const R = new THREE.Matrix4().set(
+        1 - 2 * n.x * n.x, -2 * n.x * n.y, -2 * n.x * n.z, 0,
+        -2 * n.y * n.x, 1 - 2 * n.y * n.y, -2 * n.y * n.z, 0,
+        -2 * n.z * n.x, -2 * n.z * n.y, 1 - 2 * n.z * n.z, 0,
+        0, 0, 0, 1
       );
+      const M = new THREE.Matrix4().makeTranslation(valveCenter.x, valveCenter.y, valveCenter.z)
+        .multiply(R)
+        .multiply(new THREE.Matrix4().makeTranslation(-valveCenter.x, -valveCenter.y, -valveCenter.z));
+      geom.applyMatrix4(M);
+      geom.computeVertexNormals();
+      return new THREE.Mesh(geom, matLeaflet.clone());
+    }
+
+    const pmlMesh = getMeshes('mitral').find(m => /Posterior leaflet/i.test(m.name));
+    const aml = mirroredLeaflet(pmlMesh, mitralCenter);
+    if (aml) {
+      addMesh(aml, 'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' });
+    }
+
+    const tvInferiorMesh = getMeshes('tricuspid').find(m => /Inferior leaflet/i.test(m.name));
+    const tvAnterior = mirroredLeaflet(tvInferiorMesh, tricuspidCenter);
+    if (tvAnterior) {
+      addMesh(tvAnterior, 'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' });
     }
   }
 

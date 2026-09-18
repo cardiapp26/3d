@@ -84,7 +84,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const transseptal = createTransseptal({ sourceCenter, meshVertices });
   heart.add(transseptal.group);
-  const annuli = createAnnuli({ sourceCenter, register, meshVertices });
+  const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });
   heart.add(thorax.group);
   layers.valves.add(annuli.group);
