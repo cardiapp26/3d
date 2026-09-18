@@ -97,18 +97,6 @@ app.innerHTML = `
     <div id="scene-note">Hasta sağı önden görünümde soldadır. Koronerler ve odacıklar aynı atlas koordinatlarını kullanır.</div>
   </main>
   <article>
-    <div class="eyebrow">STRUCTURE SPOTLIGHT</div>
-    <div class="structure-index">01 / ANATOMY</div>
-    <h2 id="structure-title">Left ventricle</h2>
-    <div class="divider"></div>
-    <p id="description"></p>
-    <div class="clinical">
-      <div class="eyebrow">WHY IT MATTERS</div>
-      <p id="clinical"></p>
-    </div>
-    <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
-    <select id="structure-select"></select>
-
     <!-- C-ARM FLUOROSCOPY & GANTRY JOYSTICK PANEL -->
     <div id="carm-panel" class="carm-panel collapsed" aria-label="C-Arm Angiografi Gantry Kontrolü">
       <div class="carm-header" id="carm-header">
@@ -213,7 +201,17 @@ app.innerHTML = `
         </div>
       </div>
     </div>
-
+    <div class="eyebrow">STRUCTURE SPOTLIGHT</div>
+    <div class="structure-index">01 / ANATOMY</div>
+    <h2 id="structure-title">Left ventricle</h2>
+    <div class="divider"></div>
+    <p id="description"></p>
+    <div class="clinical">
+      <div class="eyebrow">WHY IT MATTERS</div>
+      <p id="clinical"></p>
+    </div>
+    <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
+    <select id="structure-select"></select>
     <section id="lesson" hidden>
       <div class="divider"></div>
       <div class="eyebrow">GUIDED EXPLORATION</div>

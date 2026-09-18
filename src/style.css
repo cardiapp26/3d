@@ -6,7 +6,7 @@
 .wall-tools{border-top:1px solid #d8e0d5;border-bottom:1px solid #d8e0d5;padding:12px 0;margin:12px 0}.wall-tools summary{font-size:11px;cursor:pointer;color:#536e5b}.wall-tools p{font-size:10.5px;line-height:1.7;color:#869581}.wall-tools>label{font-size:11px;display:flex;justify-content:space-between;gap:5px;margin:14px 0 8px;color:#60745e}.wall-tools output{font-size:10px;white-space:nowrap}.wall-tools button{font-size:11px;border:1px solid #cbd7c5;background:transparent;color:#56704f;border-radius:4px;padding:7px;margin-top:12px}aside{max-height:calc(100vh - 127px);overflow:auto}@media(max-width:640px){aside{max-height:none}}
 
 /* C-ARM GANTRY & ANGIOGRAPHY JOYSTICK CONTROLS */
-.carm-panel{position:relative;width:100%;margin:24px 0 6px;background:rgba(14,24,21,0.94);border:1px solid rgba(52,160,137,0.38);border-radius:12px;color:#e3ede8;box-shadow:0 6px 20px rgba(0,0,0,0.18);transition:box-shadow 0.2s ease;user-select:none}
+.carm-panel{position:relative;width:100%;margin:0 0 28px;background:rgba(14,24,21,0.94);border:1px solid rgba(52,160,137,0.38);border-radius:12px;color:#e3ede8;box-shadow:0 6px 20px rgba(0,0,0,0.18);transition:box-shadow 0.2s ease;user-select:none}
 .carm-panel.collapsed .carm-content{display:none}
 .carm-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(22,38,33,0.85);border-top-left-radius:11px;border-top-right-radius:11px;border-bottom:1px solid rgba(52,160,137,0.25);cursor:pointer}
 .carm-panel.collapsed .carm-header{border-bottom:0;border-radius:11px}

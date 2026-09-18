@@ -12,7 +12,7 @@ import * as THREE from 'three';
  * All geometry is schematic and anchored to atlas mesh centers via sourceCenter().
  */
 export function createTransseptal(helpers) {
-  const { sourceCenter } = helpers;
+  const { sourceCenter, meshVertices = () => [] } = helpers;
   const group = new THREE.Group();
   group.name = 'Transseptal & Septostomy';
   group.visible = false;
@@ -105,6 +105,19 @@ export function createTransseptal(helpers) {
     return mesh;
   }
 
+  // Slice vertices along one axis and average each slice; drops sparse end slices.
+  function meshCenterline(points, axisValue, step, minCount = 15) {
+    const bins = new Map();
+    for (const v of points) {
+      const key = Math.round(axisValue(v) / step);
+      if (!bins.has(key)) bins.set(key, []);
+      bins.get(key).push(v);
+    }
+    return [...bins.values()]
+      .filter(list => list.length >= minCount)
+      .map(list => list.reduce((sum, v) => sum.add(v), new THREE.Vector3()).multiplyScalar(1 / list.length));
+  }
+
   function init() {
     if (initialized) return;
 
@@ -112,7 +125,6 @@ export function createTransseptal(helpers) {
     const la = sourceCenter('la') || new THREE.Vector3(-0.05, 0.27, -0.37);
     const svc = sourceCenter('svc') || new THREE.Vector3(-1.08, 1.89, -0.16);
     const ivc = sourceCenter('ivc') || new THREE.Vector3(-0.85, -0.65, -0.35);
-    const aorta = sourceCenter('aorta') || new THREE.Vector3(-0.32, 1.71, -0.67);
 
     // Septal plane: normal points RA -> LA
     const septalNormal = la.clone().sub(ra).normalize();
@@ -219,8 +231,10 @@ export function createTransseptal(helpers) {
     punctureGroup.add(targetRing);
 
     // Danger zones: aortic root (NCC) anterosuperior, posterior LA wall
-    const aorticDanger = new THREE.Mesh(new THREE.SphereGeometry(0.075, 18, 18), matDanger.clone());
-    aorticDanger.position.set(aorta.x, aorta.y - 1.05, aorta.z + 0.45);
+    // Aortic mound: RA-side septal wall between the NCC and the fossa (anterosuperior puncture risk)
+    const nccCenter = sourceCenter('ncc') || new THREE.Vector3(-0.36, 0.65, -0.14);
+    const aorticDanger = new THREE.Mesh(new THREE.SphereGeometry(0.06, 18, 18), matDanger.clone());
+    aorticDanger.position.copy(nccCenter).lerp(fossa, 0.45);
     aorticDanger.name = 'Danger: aortic root / NCC';
     punctureGroup.add(aorticDanger);
 
@@ -241,7 +255,6 @@ export function createTransseptal(helpers) {
     const lcc = sourceCenter('lcc') || new THREE.Vector3(-0.06, 0.74, -0.08);
     const rcc = sourceCenter('rcc') || new THREE.Vector3(-0.30, 0.67, 0.18);
     const ncc = sourceCenter('ncc') || new THREE.Vector3(-0.36, 0.65, -0.14);
-    const cs = sourceCenter('cs') || new THREE.Vector3(-0.03, -0.51, -0.68);
 
     const matPigtail = new THREE.MeshStandardMaterial({
       color: 0xffd60a,
@@ -252,55 +265,89 @@ export function createTransseptal(helpers) {
       toneMapped: false
     });
 
-    // Retrograde pigtail: descending aorta -> arch -> root, loop seated in the NCC.
+    // Catheter paths follow centerlines extracted from the atlas vessel meshes, so the
+    // pigtail stays inside the aortic lumen and the decapolar sits inside the CS.
+    // Fallback centerlines are the same values measured once from the loaded atlas.
+    const archLine = meshCenterline(meshVertices('aorta', /arch/i), v => v.z, 0.2)
+      .sort((a, b) => a.z - b.z);
+    const ascLine = meshCenterline(meshVertices('aorta', /ascending/i), v => v.y, 0.2)
+      .sort((a, b) => b.y - a.y);
+    const csLine = meshCenterline(meshVertices('cs'), v => v.x, 0.1)
+      .sort((a, b) => a.x - b.x);
+
+    const arch = archLine.length >= 4 ? archLine : [
+      [-0.09, 2.13, -1.79], [-0.11, 2.28, -1.59], [-0.07, 2.23, -1.39], [-0.11, 2.33, -1.19],
+      [-0.10, 2.44, -1.00], [-0.15, 2.50, -0.80], [-0.19, 2.52, -0.59], [-0.32, 2.35, -0.39],
+      [-0.32, 2.27, -0.21], [-0.32, 2.33, 0.00], [-0.39, 2.28, 0.20], [-0.43, 2.13, 0.39]
+    ].map(a => new THREE.Vector3(...a));
+    const ascending = (ascLine.length >= 4 ? ascLine : [
+      [-0.49, 1.79, 0.08], [-0.47, 1.59, 0.08], [-0.42, 1.41, 0.10], [-0.31, 1.21, -0.03],
+      [-0.26, 1.00, -0.02], [-0.32, 0.80, 0.01]
+    ].map(a => new THREE.Vector3(...a)));
+    const csCenter = csLine.length >= 4 ? csLine : [
+      [-0.76, -0.36, -0.27], [-0.70, -0.41, -0.30], [-0.61, -0.47, -0.32], [-0.50, -0.60, -0.37],
+      [-0.40, -0.70, -0.48], [-0.31, -0.74, -0.58], [-0.21, -0.76, -0.71], [-0.10, -0.76, -0.82],
+      [0.00, -0.74, -0.90], [0.10, -0.71, -0.97], [0.20, -0.65, -1.03], [0.30, -0.60, -1.07],
+      [0.40, -0.52, -1.10], [0.50, -0.42, -1.10], [0.59, -0.32, -1.09]
+    ].map(a => new THREE.Vector3(...a));
+
+    // Retrograde pigtail: femoral artery -> descending aorta (below the atlas cut)
+    // -> arch -> ascending aorta -> loop seated in the non-coronary sinus.
     // The NCC abuts the interatrial septum; the pigtail marks the aortic root so the
     // transseptal needle stays posteroinferior to it.
-    const archTop = new THREE.Vector3(aorta.x, aorta.y + 0.85, aorta.z);
-    const rootAbove = new THREE.Vector3(ncc.x + 0.05, ncc.y + 0.55, ncc.z - 0.12);
+    const rootCenter = lcc.clone().add(rcc).add(ncc).multiplyScalar(1 / 3);
+    const toNcc = ncc.clone().sub(rootCenter).setY(0).normalize();
+    const up = new THREE.Vector3(0, 1, 0);
+    const loopSide = new THREE.Vector3().crossVectors(up, toNcc).normalize();
+    const loopRadius = 0.085;
+    const loopCenter = rootCenter.clone().addScaledVector(toNcc, 0.13).setY(ncc.y);
+
+    const descendingEnd = arch[0];
     const pigtailPts = [
-      new THREE.Vector3(aorta.x - 0.15, aorta.y + 1.10, aorta.z - 0.25),
-      archTop,
-      rootAbove
+      descendingEnd.clone().add(new THREE.Vector3(0, -0.9, -0.05)),
+      descendingEnd.clone().add(new THREE.Vector3(0, -0.4, -0.02)),
+      ...arch.map(v => v.clone()),
+      ...ascending.filter(v => v.y > loopCenter.y + 0.25).map(v => v.clone()),
+      loopCenter.clone().addScaledVector(up, loopRadius + 0.08)
     ];
-    // Pigtail loop: 1.25 turns of radius 0.085 in a plane just above the NCC
-    const loopCenter = new THREE.Vector3(ncc.x, ncc.y + 0.10, ncc.z);
-    const loopU = new THREE.Vector3(1, 0, 0);
-    const loopV = new THREE.Vector3(0, 0, 1);
-    for (let i = 0; i <= 14; i++) {
-      const a = -Math.PI / 2 + (i / 14) * Math.PI * 2.5;
-      const r = 0.085;
+    // 1.3 turns in a vertical plane facing the NCC (en face in LAO, edge-on in RAO), curling at the sinus floor
+    for (let i = 0; i <= 18; i++) {
+      const a = Math.PI / 2 + (i / 18) * Math.PI * 2.6;
+      const r = loopRadius * (1 - i * 0.012);
       pigtailPts.push(
         loopCenter.clone()
-          .addScaledVector(loopU, Math.cos(a) * r)
-          .addScaledVector(loopV, Math.sin(a) * r)
-          .add(new THREE.Vector3(0, -i * 0.004, 0))
+          .addScaledVector(loopSide, Math.cos(a) * r)
+          .addScaledVector(up, Math.sin(a) * r)
       );
     }
     const pigtailCurve = new THREE.CatmullRomCurve3(pigtailPts);
-    const pigtailMesh = makeTube(pigtailCurve, 0.020, matPigtail, 72);
+    const pigtailMesh = makeTube(pigtailCurve, 0.018, matPigtail, 140);
     pigtailMesh.name = 'Pigtail catheter (seated in NCC)';
     landmarkGroup.add(pigtailMesh);
 
-    // CS decapolar diagnostic catheter: IVC -> RA -> CS ostium -> distal CS
-    const csOstium = new THREE.Vector3(-0.68, -0.45, -0.45);
-    const csCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(ivc.x, ivc.y - 0.35, ivc.z),
-      new THREE.Vector3(ivc.x + 0.02, ivc.y + 0.20, ivc.z + 0.05),
-      new THREE.Vector3(ra.x + 0.15, ra.y - 0.35, ra.z - 0.15),
-      csOstium,
-      new THREE.Vector3(cs.x - 0.25, cs.y - 0.02, cs.z - 0.10),
-      new THREE.Vector3(cs.x + 0.35, cs.y + 0.05, cs.z - 0.20)
-    ]);
-    const csMesh = makeTube(csCurve, 0.018, matSheath, 64);
+    // CS decapolar diagnostic catheter (femoral approach): IVC -> low RA ->
+    // posteroinferior turn into the CS ostium -> along the CS centerline.
+    const csOstium = csCenter[0];
+    const csInward = csCenter[Math.min(2, csCenter.length - 1)].clone().sub(csOstium).normalize();
+    const raLow = new THREE.Vector3(ra.x + 0.08, csOstium.y - 0.30, csOstium.z + 0.10);
+    const csApproach = [
+      new THREE.Vector3(raLow.x, raLow.y - 1.20, raLow.z - 0.10),
+      new THREE.Vector3(raLow.x, raLow.y - 0.55, raLow.z - 0.05),
+      raLow,
+      csOstium.clone().addScaledVector(csInward, -0.12).add(new THREE.Vector3(0, 0.02, 0.03))
+    ];
+    const csCurve = new THREE.CatmullRomCurve3([...csApproach, ...csCenter.map(v => v.clone())]);
+    const csMesh = makeTube(csCurve, 0.016, matSheath, 120);
     csMesh.name = 'CS decapolar diagnostic catheter';
     landmarkGroup.add(csMesh);
 
-    // Decapolar electrode rings along the distal CS segment
+    // Decapolar electrode rings (5 bipoles) on the portion inside the CS
+    const csOnly = new THREE.CatmullRomCurve3(csCenter.map(v => v.clone()));
     for (let i = 0; i < 10; i++) {
-      const u = 0.62 + (i / 9) * 0.36;
-      const pt = csCurve.getPointAt(u);
-      const tangent = csCurve.getTangentAt(u).normalize();
-      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.018, 10), matNeedle.clone());
+      const u = 0.25 + Math.floor(i / 2) * 0.16 + (i % 2) * 0.04;
+      const pt = csOnly.getPointAt(Math.min(u, 0.99));
+      const tangent = csOnly.getTangentAt(Math.min(u, 0.99)).normalize();
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.016, 10), matNeedle.clone());
       ring.position.copy(pt);
       ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
       landmarkGroup.add(ring);

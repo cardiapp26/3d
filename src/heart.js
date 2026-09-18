@@ -64,7 +64,17 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   heart.add(epLandmarks.group);
   const pacemakerLeads = createPacemakerLeads({ sourceCenter });
   heart.add(pacemakerLeads.group);
-  const transseptal = createTransseptal({ sourceCenter });
+  function meshVertices(id,nameFilter){
+    const out=[];
+    for(const m of meshMap.get(id)||[]){
+      if(nameFilter&&!nameFilter.test(m.name))continue;
+      m.updateWorldMatrix(true,false);
+      const p=m.geometry.attributes.position;
+      for(let i=0;i<p.count;i++)out.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld));
+    }
+    return out;
+  }
+  const transseptal = createTransseptal({ sourceCenter, meshVertices });
   heart.add(transseptal.group);
   const annuli = createAnnuli({ sourceCenter });
   layers.valves.add(annuli.group);
@@ -85,7 +95,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers';
       m.visible=visibility[layer]!==false&&visibility[id]!==false&&allowed;
       const tissue=layer==='chambers';
-      const alpha=tissue?(fluoroscopy?0.12:opacity):(id==='aorta'&&rootWindow?.22:1);
+      // Catheters run inside these vessels in the transseptal lesson; keep them see-through.
+      const catheterVessel=mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id);
+      const alpha=tissue?(fluoroscopy?0.12:opacity):catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
       m.material.clippingPlanes=id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
