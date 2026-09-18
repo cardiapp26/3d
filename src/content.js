@@ -121,6 +121,45 @@ export const rawStructures = {
     },
     source: 'İnferior sağ atriyal istmus anatomisi, PDF pp. 2–3'
   },
+  'ts-sheath': {
+    tr: {
+      title: 'Transseptal kılıf + kılavuz tel',
+      description: 'Femoral venden İVC yoluyla sağ atriyuma ilerletilen transseptal kılıf/dilatatör sistemi. Standart teknikte kılavuz tel önce SVC\'ye kadar ilerletilir; iğneli sistem sonra SVC\'den geriye çekilerek fossa ovalise oturtulur (pull-down).',
+      clinical: 'İVC\'den SVC\'ye uzanan mavi hat bu hazırlık pozisyonudur; ponksiyon SVC\'de değil, geri çekilme sırasında fossa ovaliste yapılır. Şematik model.'
+    },
+    en: {
+      title: 'Transseptal sheath + guidewire',
+      description: 'The transseptal sheath/dilator system advanced from the femoral vein through the IVC into the right atrium. In the standard technique the guidewire is first parked in the SVC; the needle system is then withdrawn from the SVC onto the fossa ovalis (pull-down).',
+      clinical: 'The blue line running from the IVC to the SVC is this staging position; the puncture happens at the fossa during pull-down, never in the SVC. Schematic model.'
+    },
+    source: 'Standard transseptal technique references; schematic'
+  },
+  'pigtail-cath': {
+    tr: {
+      title: 'Pigtail kateter • Aort kökü işareti',
+      description: 'Femoral arterden retrograd ilerletilen, ucu kıvrık (pigtail) tanısal kateter. Transseptal ponksiyon sırasında nonkoroner cuspa (NCC) oturtulur ve floroskopide aort kökünü işaretler.',
+      clinical: 'NCC interatriyal septuma komşudur: transseptal iğne her zaman pigtailin posteroinferiorunda kalmalıdır. Cusp halkaları: yeşil = LCC, turuncu = RCC, camgöbeği = NCC. Şematik model.'
+    },
+    en: {
+      title: 'Pigtail catheter • Aortic root marker',
+      description: 'A diagnostic catheter with a curled tip advanced retrogradely from the femoral artery. During transseptal puncture it is seated in the non-coronary cusp (NCC), marking the aortic root on fluoroscopy.',
+      clinical: 'The NCC abuts the interatrial septum: the transseptal needle must stay posteroinferior to the pigtail. Cusp rings: green = LCC, orange = RCC, cyan = NCC. Schematic model.'
+    },
+    source: 'Standard transseptal technique references; schematic'
+  },
+  'cs-cath': {
+    tr: {
+      title: 'CS dekapolar kateter • AV oluk işareti',
+      description: 'Femoral venden koroner sinüs ostiyumuna yerleştirilen 10 elektrotlu (dekapolar) tanısal EP kateteri. Koroner sinüs boyunca uzanarak floroskopide sol AV oluğu ve septumun inferior sınırını çizer.',
+      clinical: 'Transseptal ponksiyonda fossa hedefi pigtail (anterosuperior sınır) ile CS kateteri (inferior sınır) arasında kalır. Elektrogramları AVNRT/AVRT tanısında da kullanılır. Şematik model.'
+    },
+    en: {
+      title: 'CS decapolar catheter • AV groove marker',
+      description: 'A 10-electrode (decapolar) diagnostic EP catheter placed from the femoral vein into the coronary sinus ostium. Lying along the CS, it outlines the left AV groove and the inferior septal border on fluoroscopy.',
+      clinical: 'During transseptal puncture the fossa target sits between the pigtail (anterosuperior limit) and the CS catheter (inferior limit). Its electrograms also serve AVNRT/AVRT diagnosis. Schematic model.'
+    },
+    source: 'Standard EP catheter placement references; schematic'
+  },
   amc: {
     tr: {
       title: 'Aorto-mitral devamlılık • AMC',
@@ -803,7 +842,7 @@ export const rawLessons = {
         },
         {
           title: 'Fossa ovalis konumlandırma • Tenting (LAO 45°)',
-          text: 'Transseptal sistem SVC\'den geriye çekilirken iğne ucu iki "atlama" (aorta, limbus) sonrası fossa ovalise oturur ve membranı çadırlaştırır (tenting). Floroskopik işaret kateterleri: aort köküne retrograd yerleştirilen sarı pigtail kateter nonkoroner cuspa (NCC) oturur ve aort kökünü işaretler; iğne her zaman pigtailin posteroinferiorunda kalmalıdır. Mavi dekapolar CS kateteri koroner sinüs boyunca uzanır ve AV oluğu (septumun alt sınırını) gösterir. Cusp halkaları: yeşil = LCC, turuncu = RCC, camgöbeği = NCC (pigtail yuvası). Açılar: LAO 45° septumu en face gösterir; RAO 30° tanjansiyel değerlendirir. Kırmızı işaretler tehlike bölgeleri: aort kökü ve posterior LA duvarı.',
+          text: 'Transseptal sistem SVC\'den geriye çekilirken iğne ucu iki "atlama" (aorta, limbus) sonrası fossa ovalise oturur ve membranı çadırlaştırır (tenting). Floroskopik işaret kateterleri: aort köküne retrograd yerleştirilen mavi pigtail kateter nonkoroner cuspa (NCC) oturur ve aort kökünü işaretler; iğne her zaman pigtailin posteroinferiorunda kalmalıdır. Koyu mavi dekapolar CS kateteri koroner sinüs boyunca uzanır ve AV oluğu (septumun alt sınırını) gösterir. Cusp halkaları: yeşil = LCC, turuncu = RCC, camgöbeği = NCC (pigtail yuvası). Açılar: LAO 45° septumu en face gösterir; RAO 30° tanjansiyel değerlendirir. Kırmızı işaretler tehlike bölgeleri: aort kökü ve posterior LA duvarı.',
           landmark: 'la',
           view: 'lao'
         },
@@ -833,7 +872,7 @@ export const rawLessons = {
         },
         {
           title: 'Fossa ovalis positioning • Tenting (LAO 45°)',
-          text: 'As the transseptal system is withdrawn from the SVC, the needle tip drops over two "jumps" (aortic mound, limbus) onto the fossa ovalis and tents the membrane. Fluoroscopic landmark catheters: a yellow retrograde pigtail seats in the non-coronary cusp (NCC), marking the aortic root; the needle must always stay posteroinferior to the pigtail. The blue decapolar CS catheter lines the coronary sinus, outlining the AV groove (inferior septal border). Cusp rings: green = LCC, orange = RCC, cyan = NCC (pigtail seat). Angles: LAO 45° shows the septum en face; RAO 30° profiles it tangentially. Red markers flag danger zones: the aortic root and the posterior LA wall.',
+          text: 'As the transseptal system is withdrawn from the SVC, the needle tip drops over two "jumps" (aortic mound, limbus) onto the fossa ovalis and tents the membrane. Fluoroscopic landmark catheters: a blue retrograde pigtail seats in the non-coronary cusp (NCC), marking the aortic root; the needle must always stay posteroinferior to the pigtail. The dark-blue decapolar CS catheter lines the coronary sinus, outlining the AV groove (inferior septal border). Cusp rings: green = LCC, orange = RCC, cyan = NCC (pigtail seat). Angles: LAO 45° shows the septum en face; RAO 30° profiles it tangentially. Red markers flag danger zones: the aortic root and the posterior LA wall.',
           landmark: 'la',
           view: 'lao'
         },

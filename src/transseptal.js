@@ -254,7 +254,7 @@ export function createTransseptal(helpers) {
     // -------------------------------------------------------------
     const pigtailGroup = new THREE.Group();
     pigtailGroup.name = 'Aortic pigtail catheter';
-    pigtailGroup.userData.fluoroTint = 0x8a6a00; // dark amber under multiply projection
+    pigtailGroup.userData.fluoroTint = 0x2a5cb8; // lighter blue than the CS catheter under multiply projection
     const csGroup = new THREE.Group();
     csGroup.name = 'CS diagnostic catheter';
     csGroup.userData.fluoroTint = 0x1c3f8f; // dark blue under multiply projection
@@ -264,8 +264,8 @@ export function createTransseptal(helpers) {
     const ncc = sourceCenter('ncc') || new THREE.Vector3(-0.36, 0.65, -0.14);
 
     const matPigtail = new THREE.MeshStandardMaterial({
-      color: 0xffd60a,
-      emissive: 0xd9a400,
+      color: 0x3aa0ff,
+      emissive: 0x1d6fd8,
       emissiveIntensity: 0.7,
       roughness: 0.25,
       metalness: 0.6,
@@ -310,13 +310,26 @@ export function createTransseptal(helpers) {
     const loopCenter = rootCenter.clone().addScaledVector(toNcc, 0.13).setY(ncc.y);
 
     const descendingEnd = arch[0];
-    const pigtailPts = [
+    // Mesh-derived centerlines are noisy; a few smoothing passes keep the
+    // catheter spine gently curved instead of zig-zagging (the loop stays crisp).
+    function smoothPolyline(points, passes = 3) {
+      let pts = points;
+      for (let pass = 0; pass < passes; pass++) {
+        pts = pts.map((pt, i) => {
+          if (i === 0 || i === pts.length - 1) return pt.clone();
+          return pt.clone().multiplyScalar(2).add(pts[i - 1]).add(pts[i + 1]).multiplyScalar(0.25);
+        });
+      }
+      return pts;
+    }
+    const pigtailSpine = smoothPolyline([
       descendingEnd.clone().add(new THREE.Vector3(0, -0.9, -0.05)),
       descendingEnd.clone().add(new THREE.Vector3(0, -0.4, -0.02)),
       ...arch.map(v => v.clone()),
       ...ascending.filter(v => v.y > loopCenter.y + 0.25).map(v => v.clone()),
       loopCenter.clone().addScaledVector(up, loopRadius + 0.08)
-    ];
+    ]).filter((_, i, a) => i % 2 === 0 || i === a.length - 1);
+    const pigtailPts = [...pigtailSpine];
     // 1.3 turns in a vertical plane facing the NCC (en face in LAO, edge-on in RAO), curling at the sinus floor
     for (let i = 0; i <= 18; i++) {
       const a = Math.PI / 2 + (i / 18) * Math.PI * 2.6;
@@ -377,6 +390,10 @@ export function createTransseptal(helpers) {
       pigtailGroup.add(ring);
     }
 
+    pigtailGroup.traverse(o => { if (o.isMesh) o.userData.pickId = 'pigtail-cath'; });
+    csGroup.traverse(o => { if (o.isMesh) o.userData.pickId = 'cs-cath'; });
+    accessGroup.traverse(o => { if (o.isMesh) o.userData.pickId = 'ts-sheath'; });
+    punctureGroup.traverse(o => { if (o.isMesh && !o.userData.pickId) o.userData.pickId = 'ts-sheath'; });
     group.add(pigtailGroup);
     stages.pigtail = pigtailGroup;
     group.add(csGroup);
@@ -500,16 +517,16 @@ export function createTransseptal(helpers) {
     const idx = Number(stepIndex);
     // 0: femoral access route, 1: positioning & tenting, 2: crossing, 3: septostomy
     const visibilityMap = {
-      0: { ias: true, access: true, puncture: false, cross: false, balloon: false, pigtail: false, cs: false },
-      1: { ias: true, access: false, puncture: true, cross: false, balloon: false, pigtail: true, cs: true },
-      2: { ias: true, access: false, puncture: false, cross: true, balloon: false, pigtail: true, cs: true },
-      3: { ias: true, access: false, puncture: false, cross: false, balloon: true, pigtail: false, cs: false }
+      0: { ias: true, access: true, puncture: false, cross: false, balloon: false },
+      1: { ias: true, access: false, puncture: true, cross: false, balloon: false },
+      2: { ias: true, access: false, puncture: false, cross: true, balloon: false },
+      3: { ias: true, access: false, puncture: false, cross: false, balloon: true }
     };
     activeStep = idx;
     const config = visibilityMap[idx] || visibilityMap[0];
     for (const [key, stageGroup] of Object.entries(stages)) {
-      const userAllows = key in catheterToggles ? catheterToggles[key] : true;
-      stageGroup.visible = Boolean(config[key]) && userAllows;
+      // Landmark catheters follow their user toggles in every step.
+      stageGroup.visible = key in catheterToggles ? catheterToggles[key] : Boolean(config[key]);
     }
   }
 

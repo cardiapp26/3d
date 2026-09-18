@@ -54,6 +54,9 @@ app.innerHTML = `
         ['bachmann', 'Bachmann demeti', '#f6b64b']
       ].map(([id, t, c]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
       ${[
+        ['pa-faint', 'Pulmoner arteri silikleştir', '#9fc2d0', false]
+      ].map(([id, t, c, on]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}"${on ? ' checked' : ''}></label>`).join('')}
+      ${[
         ['diaphragm', 'Diyafram', '#c98f76', true],
         ['phrenic', 'Frenik sinirler', '#e8e29a', false],
         ['vertebrae', 'Vertebra kolonu (silik)', '#bdb7ac', true]
@@ -215,7 +218,7 @@ app.innerHTML = `
           </div>
           <div id="catheter-toggles" class="carm-quick-actions" hidden>
             <button id="toggle-pigtail" class="carm-sub-btn active" aria-pressed="true" title="Aortik pigtail kateterini (NCC) gizle / göster">
-              <span class="carm-sub-icon">💛</span> Pigtail
+              <span class="carm-sub-icon">🔵</span> Pigtail
             </button>
             <button id="toggle-cs-cath" class="carm-sub-btn active" aria-pressed="true" title="CS dekapolar diagnostik kateterini gizle / göster">
               <span class="carm-sub-icon">💙</span> CS kateter

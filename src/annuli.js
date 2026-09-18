@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 
 /**
- * Procedural 3D Anatomical Valve Annuli (Mitral & Tricuspid Fibröz Halkaları).
- * Mitral Annulus: D-shaped saddle fibrous ring between LA and LV (anterior fibrous aorto-mitral curtain & posterior muscular saddle).
- * Tricuspid Annulus: Non-planar elliptical fibrous ring between RA and RV.
+ * Procedural 3D Anatomical Valve Annuli (Mitral & Tricuspid), the aorto-mitral
+ * continuity (AMC) and the AV leaflets missing from the atlas GLB.
+ * Annulus curves are measured from the atlas leaflet hinge vertices (the
+ * per-sector leaflet edge nearest the atrium) instead of parametric ellipses;
+ * everything remains schematic and is flagged provenance:'schematic'.
  */
 export function createAnnuli(helpers) {
   const { sourceCenter, register = () => {}, meshVertices = () => [] } = helpers;
@@ -17,137 +19,204 @@ export function createAnnuli(helpers) {
     side: THREE.DoubleSide
   });
 
+  const matLeaflet = new THREE.MeshStandardMaterial({
+    color: 0xe2d5c4,
+    roughness: 0.55,
+    metalness: 0.03,
+    side: THREE.DoubleSide
+  });
+
   const meshes = [];
 
-  function build() {
-    const mitralCenter = sourceCenter('mitral') || new THREE.Vector3(0.48, -0.31, -0.50);
-    const tricuspidCenter = sourceCenter('tricuspid') || new THREE.Vector3(-0.45, -0.35, 0.15);
+  function centroid(points) {
+    return points.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / points.length);
+  }
 
-    // -------------------------------------------------------------
-    // 1. Mitral Annulus (D-shaped saddle ring)
-    // -------------------------------------------------------------
-    // Saddle shape: high points anteriorly and posteriorly, low points at commissures.
-    // D-shape: straight anterior border (aorto-mitral continuity) and curved posterior border.
-    const maPoints = [];
-    const numPoints = 32;
-    const rX = 0.52;
-    const rZ = 0.44;
+  /**
+   * Measure an AV annulus from leaflet vertices: bin them by angle around the
+   * valve axis (atrium -> ventricle) and keep, per sector, the vertex nearest
+   * the atrium (the hinge). Sectors without a leaflet stay empty and are
+   * bridged smoothly by the closed spline.
+   */
+  function measureAnnulus(verts, atriumCenter, ventricleCenter, bins = 36) {
+    if (verts.length < 60) return null;
+    const c = centroid(verts);
+    const axis = ventricleCenter.clone().sub(atriumCenter).normalize();
+    let u = new THREE.Vector3(0, 1, 0).cross(axis);
+    if (u.lengthSq() < 0.01) u = new THREE.Vector3(1, 0, 0).cross(axis);
+    u.normalize();
+    const w = new THREE.Vector3().crossVectors(axis, u);
 
-    for (let i = 0; i < numPoints; i++) {
-      const theta = (i / numPoints) * Math.PI * 2;
-      let x = Math.sin(theta) * rX;
-      let z = Math.cos(theta) * rZ;
-
-      // Flatten anterior portion to create the anatomical 'D' shape
-      if (z > 0.12) {
-        z = 0.12 + (z - 0.12) * 0.35;
-      }
-
-      // Saddle height modulation (peaks anterior and posterior, troughs laterally/commissural)
-      const saddleY = Math.cos(theta * 2) * 0.08;
-
-      maPoints.push(new THREE.Vector3(
-        mitralCenter.x + x,
-        mitralCenter.y + 0.10 + saddleY,
-        mitralCenter.z + z
-      ));
+    const binBest = new Array(bins).fill(null);
+    for (const v of verts) {
+      const d = v.clone().sub(c);
+      const angle = Math.atan2(d.dot(w), d.dot(u));
+      const bi = ((Math.round(((angle + Math.PI) / (2 * Math.PI)) * bins)) % bins + bins) % bins;
+      const h = d.dot(axis); // smaller = closer to the atrium = hinge side
+      if (!binBest[bi] || h < binBest[bi].h) binBest[bi] = { v: v.clone(), h, bi };
     }
+    const kept = binBest.filter(Boolean);
+    return kept.length >= 10 ? kept : null;
+  }
 
-    const maCurve = new THREE.CatmullRomCurve3(maPoints, true);
-    const maTubeGeom = new THREE.TubeGeometry(maCurve, 48, 0.038, 12, true);
-    const maMesh = new THREE.Mesh(maTubeGeom, matAnnulus.clone());
-    maMesh.name = 'Mitral annulus';
-    maMesh.userData = {
-      id: 'mitral-annulus',
-      layer: 'valves',
-      sourceName: 'Mitral valve fibrous annulus',
-      provenance: 'schematic'
-    };
-    group.add(maMesh);
-    meshes.push(maMesh);
-    register(maMesh, 'mitral-annulus');
-
-    // -------------------------------------------------------------
-    // 2. Tricuspid Annulus (Non-planar elliptical ring)
-    // -------------------------------------------------------------
-    const taPoints = [];
-    const taNumPoints = 32;
-    const taRadiusX = 0.58;
-    const taRadiusZ = 0.48;
-
-    for (let i = 0; i < taNumPoints; i++) {
-      const theta = (i / taNumPoints) * Math.PI * 2;
-      const x = Math.sin(theta) * taRadiusX;
-      const z = Math.cos(theta) * taRadiusZ;
-
-      // Anteroseptal and posteroseptal contour
-      const taSaddleY = Math.sin(theta + 0.4) * 0.12;
-
-      // Rotate slightly to align with right AV groove tilt
-      const tiltedX = x * 0.92 - z * 0.25;
-      const tiltedZ = x * 0.25 + z * 0.92;
-
-      taPoints.push(new THREE.Vector3(
-        tricuspidCenter.x + tiltedX,
-        tricuspidCenter.y + 0.08 + taSaddleY,
-        tricuspidCenter.z + tiltedZ
-      ));
-    }
-
-    const taCurve = new THREE.CatmullRomCurve3(taPoints, true);
-    const taTubeGeom = new THREE.TubeGeometry(taCurve, 48, 0.038, 12, true);
-    const taMesh = new THREE.Mesh(taTubeGeom, matAnnulus.clone());
-    taMesh.name = 'Tricuspid annulus';
-    taMesh.userData = {
-      id: 'tricuspid-annulus',
-      layer: 'valves',
-      sourceName: 'Tricuspid valve fibrous annulus',
-      provenance: 'schematic'
-    };
-    group.add(taMesh);
-    meshes.push(taMesh);
-    register(taMesh, 'tricuspid-annulus');
-
-    // -------------------------------------------------------------
-    // 3. Aorto-mitral continuity (AMC): the fibrous curtain continuing the
-    //    anteromedial aspect of the mitral annulus up to the aortic valve.
-    // -------------------------------------------------------------
-    const lcc = sourceCenter('lcc') || new THREE.Vector3(-0.06, 0.74, -0.08);
-    const ncc = sourceCenter('ncc') || new THREE.Vector3(-0.36, 0.65, -0.14);
-
-    // Bottom edge: the anteromedial third of the mitral annulus, i.e. the arc
-    // of annulus points closest to the aortic root.
-    const rootMid = lcc.clone().add(ncc).multiplyScalar(0.5);
-    const samples = [];
-    for (let i = 0; i < 64; i++) samples.push(maCurve.getPointAt(i / 63));
-    let bestStart = 0, bestDist = Infinity;
-    for (let i = 0; i < 64; i++) {
-      if (samples[i].distanceTo(rootMid) < bestDist) { bestDist = samples[i].distanceTo(rootMid); bestStart = i; }
-    }
-    const span = 11; // ~1/3 of the annulus circumference on each side combined
-    const bottomPts = [];
-    for (let k = -span; k <= span; k++) bottomPts.push(samples[(bestStart + k + 64) % 64].clone());
-    const bottomCurve = new THREE.CatmullRomCurve3(bottomPts);
-
-    // Top edge: arc across the aortic annulus from the NCC toward the LCC.
-    const topRise = rootMid.clone().add(new THREE.Vector3(0, 0.1, 0));
-    const topCurve = new THREE.CatmullRomCurve3([
-      ncc.clone().add(new THREE.Vector3(0, -0.05, 0)),
-      topRise,
-      lcc.clone().add(new THREE.Vector3(0, -0.05, 0))
-    ]);
-
-    // Loft the two edges into a curtain with a gentle anterior bow.
-    const uSeg = 24, vSeg = 8;
-    const positions = [];
-    const indices = [];
+  function loftLeaflet(arcCurve, tip, sagAxis, belly) {
+    const uSeg = 22, vSeg = 8;
+    const positions = [], indices = [];
     for (let vi = 0; vi <= vSeg; vi++) {
       const v = vi / vSeg;
       for (let ui = 0; ui <= uSeg; ui++) {
         const u = ui / uSeg;
-        const pt = bottomCurve.getPointAt(u).lerp(topCurve.getPointAt(u), v);
-        const bow = Math.sin(v * Math.PI) * 0.04;
-        positions.push(pt.x, pt.y + bow, pt.z);
+        const pt = arcCurve.getPointAt(u).lerp(tip, v);
+        const sag = Math.sin(v * Math.PI) * Math.sin(u * Math.PI) * belly;
+        pt.addScaledVector(sagAxis, sag);
+        positions.push(pt.x, pt.y, pt.z);
+      }
+    }
+    for (let vi = 0; vi < vSeg; vi++) {
+      for (let ui = 0; ui < uSeg; ui++) {
+        const a = vi * (uSeg + 1) + ui;
+        indices.push(a, a + 1, a + uSeg + 1, a + 1, a + uSeg + 2, a + uSeg + 1);
+      }
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setIndex(indices);
+    geom.computeVertexNormals();
+    return new THREE.Mesh(geom, matLeaflet.clone());
+  }
+
+  function addMesh(mesh, id, name, sourceName, extra = {}) {
+    mesh.name = name;
+    mesh.userData = { id, layer: 'valves', sourceName, provenance: 'schematic', ...extra };
+    group.add(mesh);
+    meshes.push(mesh);
+    register(mesh, id);
+    return mesh;
+  }
+
+  function build() {
+    const mitralCenter = sourceCenter('mitral') || new THREE.Vector3(0.48, -0.31, -0.50);
+    const tricuspidCenter = sourceCenter('tricuspid') || new THREE.Vector3(-0.45, -0.35, 0.15);
+    const la = sourceCenter('la') || new THREE.Vector3(-0.05, 0.27, -0.37);
+    const ra = sourceCenter('ra') || new THREE.Vector3(-1.03, 0.13, 0.12);
+    const lv = sourceCenter('lv') || new THREE.Vector3(0.65, -0.75, 0.05);
+    const rv = sourceCenter('rv') || new THREE.Vector3(-0.4, -0.9, 0.5);
+    const lcc = sourceCenter('lcc') || new THREE.Vector3(-0.06, 0.74, -0.08);
+    const ncc = sourceCenter('ncc') || new THREE.Vector3(-0.36, 0.65, -0.14);
+    const rootMid = lcc.clone().add(ncc).multiplyScalar(0.5);
+
+    // -------------------------------------------------------------
+    // 1. Mitral annulus: posterior arc measured from the posterior leaflet
+    //    hinge; the anterior segment is anchored toward the aortic root (AMC).
+    // -------------------------------------------------------------
+    const mitralVerts = meshVertices('mitral', /Posterior leaflet/i);
+    const mitralKept = measureAnnulus(mitralVerts, la, lv);
+    let maPoints;
+    if (mitralKept) {
+      maPoints = mitralKept.map(k => k.v);
+      const anteriorAnchor = rootMid.clone().lerp(mitralCenter, 0.35).add(new THREE.Vector3(0, -0.12, 0));
+      const first = maPoints[0], last = maPoints[maPoints.length - 1];
+      maPoints = [...maPoints,
+        last.clone().lerp(anteriorAnchor, 0.5),
+        anteriorAnchor,
+        first.clone().lerp(anteriorAnchor, 0.5)
+      ];
+    } else {
+      maPoints = [];
+      for (let i = 0; i < 32; i++) {
+        const theta = (i / 32) * Math.PI * 2;
+        let z = Math.cos(theta) * 0.44;
+        if (z > 0.12) z = 0.12 + (z - 0.12) * 0.35;
+        maPoints.push(new THREE.Vector3(
+          mitralCenter.x + Math.sin(theta) * 0.52,
+          mitralCenter.y + 0.10 + Math.cos(theta * 2) * 0.08,
+          mitralCenter.z + z
+        ));
+      }
+    }
+    const maCurve = new THREE.CatmullRomCurve3(maPoints, true);
+    addMesh(
+      new THREE.Mesh(new THREE.TubeGeometry(maCurve, 64, 0.034, 12, true), matAnnulus.clone()),
+      'mitral-annulus', 'Mitral annulus', 'Mitral valve fibrous annulus'
+    );
+
+    // -------------------------------------------------------------
+    // 2. Tricuspid annulus: measured from the septal + inferior leaflet
+    //    hinges; the anterior sector is bridged by the closed spline.
+    // -------------------------------------------------------------
+    const tvVerts = meshVertices('tricuspid', /leaflet of right atrioventricular/i);
+    const tvKept = measureAnnulus(tvVerts, ra, rv);
+    let taCurve, tvGapArc = null;
+    if (tvKept) {
+      taCurve = new THREE.CatmullRomCurve3(tvKept.map(k => k.v), true);
+      // Uncovered (anterior) sector: samples of the closed curve farthest from
+      // any existing leaflet vertex.
+      const samples = [];
+      for (let i = 0; i <= 96; i++) samples.push(taCurve.getPointAt(i / 96));
+      const gapScore = samples.map(pt => {
+        let best = Infinity;
+        for (let i = 0; i < tvVerts.length; i += 3) {
+          const d = tvVerts[i].distanceTo(pt);
+          if (d < best) best = d;
+        }
+        return best;
+      });
+      let gapCenter = 0, best = -1;
+      for (let i = 0; i <= 96; i++) {
+        let acc = 0;
+        for (let k = -12; k <= 12; k++) acc += gapScore[(i + k + 97) % 97];
+        if (acc > best) { best = acc; gapCenter = i; }
+      }
+      const arcPts = [];
+      for (let k = -14; k <= 14; k++) arcPts.push(samples[(gapCenter + k + 97) % 97].clone());
+      tvGapArc = new THREE.CatmullRomCurve3(arcPts);
+    } else {
+      const taPoints = [];
+      for (let i = 0; i < 32; i++) {
+        const theta = (i / 32) * Math.PI * 2;
+        const x = Math.sin(theta) * 0.58, z = Math.cos(theta) * 0.48;
+        taPoints.push(new THREE.Vector3(
+          tricuspidCenter.x + x * 0.92 - z * 0.25,
+          tricuspidCenter.y + 0.08 + Math.sin(theta + 0.4) * 0.12,
+          tricuspidCenter.z + x * 0.25 + z * 0.92
+        ));
+      }
+      taCurve = new THREE.CatmullRomCurve3(taPoints, true);
+    }
+    addMesh(
+      new THREE.Mesh(new THREE.TubeGeometry(taCurve, 64, 0.034, 12, true), matAnnulus.clone()),
+      'tricuspid-annulus', 'Tricuspid annulus', 'Tricuspid valve fibrous annulus'
+    );
+
+    // -------------------------------------------------------------
+    // 3. Aorto-mitral continuity (AMC): continuation of the anteromedial
+    //    mitral annulus to the aortic valve.
+    // -------------------------------------------------------------
+    const maSamples = [];
+    for (let i = 0; i < 64; i++) maSamples.push(maCurve.getPointAt(i / 63));
+    let bestStart = 0, bestDist = Infinity;
+    maSamples.forEach((pt, i) => {
+      const d = pt.distanceTo(rootMid);
+      if (d < bestDist) { bestDist = d; bestStart = i; }
+    });
+    const span = 9;
+    const bottomPts = [];
+    for (let k = -span; k <= span; k++) bottomPts.push(maSamples[(bestStart + k + 64) % 64].clone());
+    const bottomCurve = new THREE.CatmullRomCurve3(bottomPts);
+
+    const topCurve = new THREE.CatmullRomCurve3([
+      ncc.clone().add(new THREE.Vector3(0, -0.05, 0)),
+      rootMid.clone().add(new THREE.Vector3(0, 0.1, 0)),
+      lcc.clone().add(new THREE.Vector3(0, -0.05, 0))
+    ]);
+
+    const uSeg = 24, vSeg = 8;
+    const positions = [], indices = [];
+    for (let vi = 0; vi <= vSeg; vi++) {
+      const v = vi / vSeg;
+      for (let ui = 0; ui <= uSeg; ui++) {
+        const pt = bottomCurve.getPointAt(ui / uSeg).lerp(topCurve.getPointAt(ui / uSeg), v);
+        positions.push(pt.x, pt.y + Math.sin(v * Math.PI) * 0.04, pt.z);
       }
     }
     for (let vi = 0; vi < vSeg; vi++) {
@@ -160,99 +229,30 @@ export function createAnnuli(helpers) {
     amcGeom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     amcGeom.setIndex(indices);
     amcGeom.computeVertexNormals();
-
     const amcMat = matAnnulus.clone();
     amcMat.transparent = true;
     amcMat.opacity = 0.82;
-    const amcMesh = new THREE.Mesh(amcGeom, amcMat);
-    amcMesh.name = 'Aorto-mitral continuity';
-    amcMesh.userData = {
-      id: 'amc',
-      layer: 'valves',
-      sourceName: 'Aorto-mitral continuity (fibrous curtain)',
-      provenance: 'schematic'
-    };
-    group.add(amcMesh);
-    meshes.push(amcMesh);
-    register(amcMesh, 'amc');
+    addMesh(new THREE.Mesh(amcGeom, amcMat), 'amc', 'Aorto-mitral continuity', 'Aorto-mitral continuity (fibrous curtain)');
 
     // -------------------------------------------------------------
-    // 4. Missing AV leaflets (the atlas GLB ships no anterior mitral and no
-    //    anterior/superior tricuspid leaflet). Modeled as schematic sails
-    //    lofted from the annulus arc to a coaptation point.
+    // 4. AV leaflets missing from the atlas: anterior mitral (hangs from the
+    //    AMC arc) and anterior tricuspid (fills the measured uncovered
+    //    sector). Sag and tip follow the valve axis, not world Y.
     // -------------------------------------------------------------
-    const matLeaflet = new THREE.MeshStandardMaterial({
-      color: 0xe2d5c4,
-      roughness: 0.55,
-      metalness: 0.03,
-      side: THREE.DoubleSide
-    });
+    const mitralAxis = lv.clone().sub(la).normalize();
+    const amlTip = centroid(bottomPts).addScaledVector(mitralAxis, 0.30).lerp(mitralCenter, 0.35);
+    addMesh(
+      loftLeaflet(bottomCurve, amlTip, mitralAxis, 0.05),
+      'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' }
+    );
 
-    function loftLeaflet(arcCurve, tip, belly) {
-      const uSeg = 22, vSeg = 8;
-      const positions = [], indices = [];
-      for (let vi = 0; vi <= vSeg; vi++) {
-        const v = vi / vSeg;
-        for (let ui = 0; ui <= uSeg; ui++) {
-          const u = ui / uSeg;
-          const pt = arcCurve.getPointAt(u).lerp(tip, v);
-          const sag = Math.sin(v * Math.PI) * Math.sin(u * Math.PI) * belly;
-          positions.push(pt.x, pt.y - sag, pt.z);
-        }
-      }
-      for (let vi = 0; vi < vSeg; vi++) {
-        for (let ui = 0; ui < uSeg; ui++) {
-          const a = vi * (uSeg + 1) + ui;
-          indices.push(a, a + 1, a + uSeg + 1, a + 1, a + uSeg + 2, a + uSeg + 1);
-        }
-      }
-      const geom = new THREE.BufferGeometry();
-      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      geom.setIndex(indices);
-      geom.computeVertexNormals();
-      return new THREE.Mesh(geom, matLeaflet.clone());
-    }
-
-    // Anterior mitral leaflet: hangs from the same anteromedial annulus arc as
-    // the AMC and coapts below the annular plane toward the posterior leaflet.
-    const amlTip = mitralCenter.clone().add(new THREE.Vector3(0, -0.22, 0));
-    const aml = loftLeaflet(bottomCurve, amlTip, 0.05);
-    aml.name = 'Anterior mitral leaflet (schematic)';
-    aml.userData = { id: 'mitral', leaflet: 'anterior', layer: 'valves', sourceName: 'Anterior mitral leaflet', provenance: 'schematic' };
-    group.add(aml);
-    meshes.push(aml);
-    register(aml, 'mitral');
-
-    // Anterior (anterosuperior) tricuspid leaflet: fills the annulus sector the
-    // atlas leaflets leave uncovered, found by distance to their vertices.
-    const tvVerts = meshVertices('tricuspid');
-    if (tvVerts.length) {
-      const tvSamples = [];
-      for (let i = 0; i < 48; i++) tvSamples.push(taCurve.getPointAt(i / 47));
-      const gapScore = tvSamples.map(pt => {
-        let best = Infinity;
-        for (let i = 0; i < tvVerts.length; i += 4) {
-          const d = tvVerts[i].distanceTo(pt);
-          if (d < best) best = d;
-        }
-        return best;
-      });
-      let gapCenter = 0, bestScore = -1;
-      for (let i = 0; i < 48; i++) {
-        let windowScore = 0;
-        for (let k = -7; k <= 7; k++) windowScore += gapScore[(i + k + 48) % 48];
-        if (windowScore > bestScore) { bestScore = windowScore; gapCenter = i; }
-      }
-      const arcPts = [];
-      for (let k = -8; k <= 8; k++) arcPts.push(tvSamples[(gapCenter + k + 48) % 48].clone());
-      const tvArc = new THREE.CatmullRomCurve3(arcPts);
-      const tvTip = tricuspidCenter.clone().add(new THREE.Vector3(0, -0.2, 0));
-      const tvAnterior = loftLeaflet(tvArc, tvTip, 0.05);
-      tvAnterior.name = 'Anterior tricuspid leaflet (schematic)';
-      tvAnterior.userData = { id: 'tricuspid', leaflet: 'anterior', layer: 'valves', sourceName: 'Anterior tricuspid leaflet', provenance: 'schematic' };
-      group.add(tvAnterior);
-      meshes.push(tvAnterior);
-      register(tvAnterior, 'tricuspid');
+    if (tvGapArc) {
+      const tvAxis = rv.clone().sub(ra).normalize();
+      const tvTip = centroid(tvGapArc.getPoints(8)).addScaledVector(tvAxis, 0.28).lerp(tricuspidCenter, 0.3);
+      addMesh(
+        loftLeaflet(tvGapArc, tvTip, tvAxis, 0.05),
+        'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' }
+      );
     }
   }
 

@@ -48,7 +48,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     'tricuspid-anterior': true, 'tricuspid-septal': true, 'tricuspid-inferior': true,
     papillary: true, 'rv-papillary': true, 'lv-papillary': true,
     veins: true, conduction: true, bachmann: true,
-    thorax: true, diaphragm: true, phrenic: false, vertebrae: true
+    thorax: true, diaphragm: true, phrenic: false, vertebrae: true, 'pa-faint': false
   };
   const meshes = [], meshMap = new Map();
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
@@ -59,6 +59,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const wallCuts={lv:0,rv:0,la:0,ra:0};
   const wallPlanes=new Map();
   const ivcPlane=new THREE.Plane(new THREE.Vector3(0,1,0),2);
+  // The atlas LPA sweeps far posteroinferiorly; trim the distal tail for a tidy silhouette.
+  const lpaPlane=new THREE.Plane(new THREE.Vector3(0,1,0),-0.5);
   const rootPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),rootHeight);
   const decoder=new DRACOLoader().setDecoderPath('/draco/');
   const loader=new GLTFLoader().setDRACOLoader(decoder);
@@ -112,9 +114,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       // Catheters run inside these vessels in the transseptal lesson; keep them see-through.
       const catheterVessel=mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id);
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
-      const alpha=tissue?opacity:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
+      const faintPa=visibility['pa-faint']&&id==='pa';
+      const alpha=tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
-      m.material.clippingPlanes=id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
+      m.material.clippingPlanes=m.name==='Left pulmonary artery'?[lpaPlane]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
         m.material.roughness=0.65;
         m.material.metalness=0;
@@ -133,6 +136,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       m.material.emissive.setHex(isSelected?0x27634f:isHovered?0x2a5664:0x000000);
       m.material.emissiveIntensity=isSelected?.35:isHovered?.25:0;
+    }
+    if(catheterPickables)for(const m of catheterPickables){
+      if(!m.material.emissive)continue;
+      if(m.userData.baseEmissiveIntensity===undefined)m.userData.baseEmissiveIntensity=m.material.emissiveIntensity??0;
+      const active=m.userData.pickId===selected?1.4:m.userData.pickId===hovered?1.1:1;
+      m.material.emissiveIntensity=m.userData.baseEmissiveIntensity*active;
     }
     requestRender();
   }
@@ -426,8 +435,24 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     emitAngleChange();
   }
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+  let catheterPickables=null;
+  function pickTargets(){
+    if(!transseptal.group.visible)return meshes;
+    if(!catheterPickables||!catheterPickables.length){
+      catheterPickables=[];
+      transseptal.group.traverse(o=>{if(o.isMesh&&o.userData.pickId)catheterPickables.push(o);});
+    }
+    return catheterPickables.length?meshes.concat(catheterPickables):meshes;
+  }
   function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
-    return raycaster.intersectObjects(meshes).find(hit=>{for(let p=hit.object;p;p=p.parent)if(!p.visible)return false;return !(hit.object.material.clippingPlanes||[]).some(p=>p.distanceToPoint(hit.point)<0);})?.object.userData.id||null;
+    const hits=raycaster.intersectObjects(pickTargets()).filter(h=>{for(let p=h.object;p;p=p.parent)if(!p.visible)return false;return !(h.object.material.clippingPlanes||[]).some(p=>p.distanceToPoint(h.point)<0);});
+    // See-through tissue (opacity < .5) should not swallow clicks aimed at
+    // devices or solid structures behind it.
+    for(const h of hits){
+      if(h.object.userData.pickId)return h.object.userData.pickId;
+      if((h.object.material.opacity??1)>=0.5)return h.object.userData.id;
+    }
+    return hits[0]?(hits[0].object.userData.pickId||hits[0].object.userData.id):null;
   }
   function pointerMove(e){hovered=pick(e);paintSelection();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered);}
   function pointerDown(e){transition=false;down=[e.clientX,e.clientY];}

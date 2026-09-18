@@ -9,12 +9,15 @@ export function createBachmannGeometry(meshVertices) {
   const lb = new THREE.Box3().setFromPoints(la);
   const nearest = (vertices, point) => vertices.reduce((best, v) =>
     v.distanceToSquared(point) < best.distanceToSquared(point) ? v : best).clone();
-  const bandAnchor = nearest(ra, new THREE.Vector3(rb.max.x, rb.max.y - .35, .05));
+  // Seek posteriorly biased roof vertices: Bachmann's band crosses the anterior
+  // interatrial groove BEHIND the ascending aorta, so anterior (+z) anchors
+  // would drag the band through the aortic lumen (and the pigtail catheter).
+  const bandAnchor = nearest(ra, new THREE.Vector3(rb.max.x, rb.max.y - .35, -.35));
   // The atlas has no wall-layer segmentation. This inward offset distinguishes
   // the conceptual endocardial endpoint; it is not a measured wall thickness.
   const target = bandAnchor.clone().addScaledVector(rb.getCenter(new THREE.Vector3()).sub(bandAnchor).normalize(), .065);
-  const start = nearest(ra, new THREE.Vector3(rb.getCenter(new THREE.Vector3()).x, target.y, .3));
-  const end = nearest(la, new THREE.Vector3(lb.getCenter(new THREE.Vector3()).x + .45, lb.max.y - .2, .45));
+  const start = nearest(ra, new THREE.Vector3(rb.getCenter(new THREE.Vector3()).x, target.y, -.4));
+  const end = nearest(la, new THREE.Vector3(lb.getCenter(new THREE.Vector3()).x + .45, lb.max.y - .2, -.3));
   const middle = bandAnchor.clone().lerp(end, .5);
   middle.y += .1;
   const curve = new THREE.CatmullRomCurve3([start, bandAnchor, middle, end]);
