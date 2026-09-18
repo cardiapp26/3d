@@ -221,9 +221,9 @@ app.innerHTML = `
       <div id="steps"></div>
       <div id="step-detail"></div>
       <button class="primary" id="next-step">Next landmark →</button>
-      <label class="slider-label" for="progress">Path preview <span id="progress-value">0%</span></label>
-      <input id="progress" type="range" min="0" max="100" value="0">
-      <small>Eski kateter yolları bu atlasla kayıtlı değil; gösterilmiyor. Bu bölüm anatomik rehberdir, işlem simülasyonu değildir.</small>
+      <label class="slider-label" for="progress" id="progress-label">Lead ilerletme / Yerleşim <span id="progress-value">100%</span></label>
+      <input id="progress" type="range" min="0" max="100" value="100">
+      <small id="progress-note">3D transvenöz lead modelleri ve fizyolojik ileti sistemi (CSP/LBBAP) hedefleri eğitim amaçlı modellenmiştir.</small>
     </section>
   </article>
 </div>
@@ -363,19 +363,38 @@ document.querySelector('#coronary-system').addEventListener('change', e => {hear
 document.querySelector('#root-window').addEventListener('change', e => heart?.setRootWindow(e.target.checked));
 
 function showStep() {
-  document.querySelector('#progress').hidden = true;
-  document.querySelector('label[for=progress]').hidden = true;
+  const isPacemaker = mode === 'pacemaker';
+  const progressEl = document.querySelector('#progress');
+  const progressLabel = document.querySelector('#progress-label');
+  const progressNote = document.querySelector('#progress-note');
+  if (progressEl) progressEl.hidden = !isPacemaker;
+  if (progressLabel) progressLabel.hidden = !isPacemaker;
+  if (progressNote) progressNote.hidden = !isPacemaker;
+
   const lesson = lessons[mode];
   if (!lesson) return;
   const s = lesson.steps[step];
   document.querySelector('#step-detail').textContent = s.text;
   document.querySelector('#steps').innerHTML = lesson.steps.map((st, i) => `<button data-step="${i}" class="${i === step ? 'current' : ''}">${i + 1}. ${st.title}</button>`).join('');
-  document.querySelector('#next-step').textContent = step === lesson.steps.length - 1 ? 'Restart exploration ↺' : 'Next landmark →';
-  const p = step / (lesson.steps.length - 1);
-  document.querySelector('#progress').value = p * 100;
-  document.querySelector('#progress-value').textContent = `${Math.round(p * 100)}%`;
-  heart?.setProgress(p);
-  if (s.landmark) inspect(s.landmark, true, true);
+  const isLast = step === lesson.steps.length - 1;
+  const nextBtnText = isLast ? getTranslation('restartExploration') : getTranslation('nextLandmark');
+  document.querySelector('#next-step').textContent = nextBtnText;
+
+  if (isPacemaker) {
+    if (progressEl) progressEl.value = 100;
+    document.querySelector('#progress-value').textContent = '100%';
+    heart?.setProgress(1.0);
+    heart?.setPacemakerStep(step);
+  } else if (mode === 'ablation') {
+    heart?.setAblationStep(step);
+  }
+
+  if (s.view) {
+    heart?.setView(s.view, true);
+  }
+  if (s.landmark) {
+    inspect(s.landmark, !s.view, true);
+  }
 }
 
 const carmPanel = document.querySelector('#carm-panel');
@@ -931,6 +950,16 @@ function updateLanguageUI() {
   }
   if (carmValvesToggle) {
     carmValvesToggle.innerHTML = `<span class="carm-sub-icon">🤍</span> ${valvesVisible ? getTranslation('valvesBtn') : getTranslation('valvesHiddenBtn')}`;
+  }
+
+  const progressLabelEl = document.querySelector('#progress-label');
+  if (progressLabelEl) {
+    const val = document.querySelector('#progress')?.value || 100;
+    progressLabelEl.innerHTML = `${getTranslation('leadProgressLabel')} <span id="progress-value">${Math.round(val)}%</span>`;
+  }
+  const progressNoteEl = document.querySelector('#progress-note');
+  if (progressNoteEl) {
+    progressNoteEl.textContent = getTranslation('leadProgressNote');
   }
 }
 

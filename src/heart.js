@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { ATLAS_URL, normalizedParts, normalizeAtlasName } from './atlas.js';
+import { createEPLandmarks } from './ep-landmarks.js';
+import { createPacemakerLeads } from './pacemaker-leads.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
 export function createHeart(container, onSelect = () => {}, onHover = () => {}, onAngleChange = () => {}) {
@@ -53,6 +55,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function material(color) {return new THREE.MeshStandardMaterial({color,roughness:.65,metalness:0,side:THREE.DoubleSide});}
   function register(mesh,id){mesh.userData.id=id;meshes.push(mesh);if(!meshMap.has(id))meshMap.set(id,[]);meshMap.get(id).push(mesh);}
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
+  const epLandmarks = createEPLandmarks({ sourceCenter });
+  heart.add(epLandmarks.group);
+  const pacemakerLeads = createPacemakerLeads({ sourceCenter });
+  heart.add(pacemakerLeads.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
     for(const m of meshes){
@@ -126,6 +132,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     ivcPlane.constant=-(chamberBounds.min.y-center.y)*scale+.45;
     initializeWallPlanes();
     buildConductionSystem();
+    epLandmarks.init();
+    pacemakerLeads.init();
     applyState();loading.remove();container.dataset.modelReady='true';
     container.dataset.meshCount=String(found.length);
     return {count:found.length,normalization:{center:center.toArray(),scale},source:ATLAS_URL};
@@ -450,15 +458,32 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     },
     setVeinsVisible(value){visibility.veins=Boolean(value);applyState();},
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
-    setMode(name){mode=name;opacity=['angiography','ablation','pacemaker'].includes(name)?.28:1;applyState();},
+    setMode(name){
+      mode=name;
+      opacity=['angiography','ablation','pacemaker'].includes(name)?.32:1;
+      epLandmarks.setVisible(name==='ablation');
+      pacemakerLeads.setVisible(name==='pacemaker');
+      if(name==='ablation'){
+        epLandmarks.setStep(0);
+      }else if(name==='pacemaker'){
+        pacemakerLeads.setStep(0);
+        pacemakerLeads.setProgress(1.0);
+      }
+      applyState();
+      requestRender();
+    },
     setWallCut,
     setView,setAngioProjection,getAngioAngles,setFluoroscopy,selectStructure,clearSelection(){selectStructure(null,false);},
     setOpacity(value){opacity=THREE.MathUtils.clamp(Number(value),.08,1);applyState();},
     setBeating(value){beating=Boolean(value);requestRender();},
-    setProgress(){ /* Unregistered legacy catheter routes are not superimposed on the atlas. */ },
+    setAblationStep(step){epLandmarks.setStep(Number(step));requestRender();},
+    setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
+    setProgress(value){pacemakerLeads.setProgress(Number(value));requestRender();},
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){
+      epLandmarks.setVisible(false);
+      pacemakerLeads.setVisible(false);
       rootWindow=false;
       system='all';
       fluoroscopy=false;

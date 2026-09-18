@@ -464,67 +464,187 @@ export const structures = new Proxy({}, {
 export const rawLessons = {
   angiography: {
     tr: {
-      title: 'Koroner köken ve seyir',
-      intro: 'Referans anatomi incelemesi. Kateter gösterilmez; anatomi oryantasyonu ve anjiyografik izdüşüm ilişkisini inceleyin.',
+      title: 'Floroskopik koroner anatomi',
+      intro: 'Klinik floroskopi ve anjiyografi projeksiyonları altında koroner arterlerin uzaysal oryantasyonu ve dallanma modelleri.',
       steps: [
-        { title: 'Aort kökü ve LM', text: 'LM sol koroner sinüs duvarından çıkar. Yaprakçık, sinüs duvarı ve ostiyum ayrı yapılardır.', landmark: 'lm' },
-        { title: 'LM bifurkasyonu', text: 'Sol ana koroner arterin LAD ve LCX olarak ayrılmasını inceleyin; LAD ön interventriküler oluğa yönelir.', landmark: 'lad' },
-        { title: 'LAD ile LCX ayrımı', text: 'LAD ventriküller arasında apekse iner; LCX sol atriyoventriküler olukta arkaya döner.', landmark: 'lcx' },
-        { title: 'RCA seyri', text: 'RCA sağ koroner sinüsten sağ atriyoventriküler oluğa ilerler. Ana gövdeyi marjinal dallardan ayırın.', landmark: 'rca' }
+        {
+          title: 'Aort Kökü ve Sol Ana Koroner (LM)',
+          text: 'Sol koroner ostiyum, Valsalva sol sinüsünün üst 1/3 duvarından köken alır (yaprakçık üzerinde değildir). LAO Cranial projeksiyonda aort kökü ve LM gövdesi kranial açılanmayla netleşir.',
+          landmark: 'lm',
+          view: 'lao_cranial'
+        },
+        {
+          title: 'LM Bifurkasyonu ("Spider" Görünümü)',
+          text: 'LAO 45° · CAU 30° ("Spider" veya örümcek projeksiyonu), sol ana koroner bifurkasyonunu, LAD (ön inen) ve LCx (sirkumfleks) ostiyumlarını üst üste binmeden (foreshortening olmadan) açığa çıkarır.',
+          landmark: 'lad',
+          view: 'spider'
+        },
+        {
+          title: 'LAD ve Septal Perforatörler (RAO Cranial)',
+          text: 'RAO 30° · CRA 30° görünümü, LAD gövdesini ve interventriküler septuma dik inen septal perforatör dalları uzatarak anterior miyokardiyumun perfüzyon yatağını sergiler.',
+          landmark: 'lad',
+          view: 'rao_cranial'
+        },
+        {
+          title: 'Sağ Koroner Arter (RCA) ve Crux (LAO)',
+          text: 'LAO 45° görünümünde RCA sağ atriyoventriküler olukta tipik "C" kavisini çizer; distalinde PDA (posterior inen dal) ve posterolateral (RPL) dallarına ayrılarak crux cordis bölgesine ulaşır.',
+          landmark: 'rca',
+          view: 'lao'
+        }
       ]
     },
     en: {
-      title: 'Coronary origins & courses',
-      intro: 'Reference anatomical examination. No catheter engagement simulated; study spatial orientation under fluoroscopic projections.',
+      title: 'Fluoroscopic coronary anatomy',
+      intro: 'Spatial orientation and arborization of the coronary tree under standard clinical fluoroscopic projections.',
       steps: [
-        { title: 'Aortic root & LM', text: 'The LM arises from the left sinus wall. Leaflet, sinus wall, and ostium are distinct structures.', landmark: 'lm' },
-        { title: 'LM bifurcation', text: 'Examine the division of the left main into the LAD and LCX branches; LAD heads down the anterior groove.', landmark: 'lad' },
-        { title: 'LAD & LCX pathways', text: 'LAD descends to the apex; LCX courses posteriorly along the left atrioventricular sulcus.', landmark: 'lcx' },
-        { title: 'RCA trajectory', text: 'RCA travels from the right aortic sinus down the right atrioventricular groove.', landmark: 'rca' }
+        {
+          title: 'Aortic root & Left Main (LM)',
+          text: 'The left coronary ostium arises from the upper third of the left aortic sinus wall. The LAO Cranial view elongates the aortic root and the left main coronary trunk.',
+          landmark: 'lm',
+          view: 'lao_cranial'
+        },
+        {
+          title: 'LM bifurcation ("Spider" view)',
+          text: 'LAO 45° · CAU 30° (the "Spider" projection) displays the LM bifurcation into the LAD and LCx without foreshortening, critical for bifurcation stenting and ostial evaluation.',
+          landmark: 'lad',
+          view: 'spider'
+        },
+        {
+          title: 'LAD & septal perforators (RAO Cranial)',
+          text: 'RAO 30° · CRA 30° projects the anterior interventricular groove along its long axis, clearly displaying diagonal branches and septal perforators supplying the bundle branches.',
+          landmark: 'lad',
+          view: 'rao_cranial'
+        },
+        {
+          title: 'Right Coronary (RCA) & Crux (LAO)',
+          text: 'LAO 45° reveals the classic "C-curve" of the RCA coursing down the right AV groove to the crux cordis, dividing into posterior descending (PDA) and posterolateral (RPL) branches.',
+          landmark: 'rca',
+          view: 'lao'
+        }
       ]
     }
   },
   ablation: {
     tr: {
-      title: 'EP anatomi • Ablasyon nirengileri',
-      intro: 'Kritik elektrofizyolojik anatomik bölgeleri tanıyın. İşaretleme enerji verilmesi veya lezyon simülasyonu değildir.',
+      title: 'Elektrofizyoloji (EP) • Ablasyon hedefleri',
+      intro: 'Aritmi substratlarının anatomik temeli: Kavotriküspit istmus, Koch üçgeni ve pulmoner ven antrum izolasyonu.',
       steps: [
-        { title: 'Sağ atriyal nirengiler', text: 'Vena kava inferior orifisi ile triküspit kapak anulusunu bulun. Arasındaki kavotriküspit istmus ablasyon hedefidir.', landmark: 'ivc' },
-        { title: 'Koch üçgeni', text: 'Üçgenin apeksinde AV düğüm bölgesini, tabanında koroner sinüs ağzını ayırt edin.', landmark: 'av' },
-        { title: 'Pulmoner ven kılıfları', text: 'Posterior sol atriyuma dönün. Pulmoner venlerin etrafındaki atriyal miyokard kılıflarını inceleyin.', landmark: 'la' },
-        { title: 'İleti fizyolojisi', text: 'Ablasyon kavramları anatomi yanında elektriksel haritalama gerektirir.', landmark: 'his' }
+        {
+          title: 'Kavotriküspit İstmus (CTI) • Atriyal Flatter',
+          text: 'IVC alt kenarı ile triküspit kapak anulusu arasındaki isthmus hattı, tipik saat-yönü-tersi atriyal flatter devresinin zorunlu geçididir. Radyofrekans lezyon hattı ile çift yönlü iletim bloku hedeflenir.',
+          landmark: 'ivc',
+          view: 'lao'
+        },
+        {
+          title: 'Koch Üçgeni ve Yavaş Yol • AVNRT',
+          text: 'Todaro tendonu, triküspit septal menteşesi ve koroner sinüs (CS) ostiyumu Koch üçgenini sınırlar. Apeksinde kompakt AV düğüm (kalıcı blok riski), CS ağzı tabanında ise güvenli Yavaş Yol (Slow Pathway) ablasyon hedefi yer alır.',
+          landmark: 'av',
+          view: 'rao'
+        },
+        {
+          title: 'Pulmoner Ven İzolasyonu (WACA / PVI) • AF',
+          text: 'Atriyal fibrilasyon tetikleyicilerini izole etmek için sol atriyum posterior duvarında sol ve sağ pulmoner ven çiftleri geniş çevresel halkalarla (WACA) elektriksel olarak izole edilir. Özofagus ve frenik sinir komşuluklarına dikkat edilir.',
+          landmark: 'la',
+          view: 'posterior'
+        },
+        {
+          title: 'Kombine EP Haritası & Lineer Hatlar',
+          text: 'Atriyal çatı hattı (roof line), mitral istmus ve koroner sinüs ilişkileri. Kompleks atriyal taşikardilerde anatomik engeller (crista terminalis, fossa ovalis, venöz ostiyumlar) iletim bariyeri oluşturur.',
+          landmark: 'his',
+          view: 'root'
+        }
       ]
     },
     en: {
-      title: 'EP anatomy • Ablation landmarks',
-      intro: 'Identify key electrophysiological landmarks. Highlighting a region does not simulate energy delivery or lesion formation.',
+      title: 'Electrophysiology (EP) • Ablation targets',
+      intro: 'Anatomical basis of arrhythmia substrates: Cavotricuspid isthmus, Triangle of Koch, and pulmonary vein antral isolation.',
       steps: [
-        { title: 'Right atrial landmarks', text: 'Locate the inferior caval opening and tricuspid hinge framing the cavotricuspid isthmus.', landmark: 'ivc' },
-        { title: 'Triangle of Koch', text: 'Identify the AV node near the apex and the coronary sinus opening at the base.', landmark: 'av' },
-        { title: 'Pulmonary vein sleeves', text: 'Rotate to the posterior left atrium to observe myocardial sleeves around pulmonary veins.', landmark: 'la' },
-        { title: 'Physiological correlation', text: 'Clinical ablation requires electrograms and electrical verification beyond static anatomy.', landmark: 'his' }
+        {
+          title: 'Cavotricuspid Isthmus (CTI) • Atrial Flutter',
+          text: 'The isthmus between the inferior caval orifice and the tricuspid valve annulus forms the obligatory slow conduction corridor of counterclockwise atrial flutter. A contiguous linear RF lesion achieves bidirectional block.',
+          landmark: 'ivc',
+          view: 'lao'
+        },
+        {
+          title: 'Triangle of Koch & Slow Pathway • AVNRT',
+          text: 'Bounded by the Tendon of Todaro, septal tricuspid hinge, and CS ostium. The apex hosts the compact AV node (danger of heart block); the inferior base near the CS ostium is the target for slow-pathway modulation.',
+          landmark: 'av',
+          view: 'rao'
+        },
+        {
+          title: 'Wide Area Circumferential Ablation (WACA) • AF',
+          text: 'Circumferential antral lesion sets around ipsilateral pulmonary vein pairs in the posterior left atrium disconnect arrhythmogenic pulmonary vein triggers, with vigilance for the retrocardiac esophagus and phrenic nerve.',
+          landmark: 'la',
+          view: 'posterior'
+        },
+        {
+          title: 'Comprehensive EP Substrate & Linear Sets',
+          text: 'Integrated view of roof lines, mitral isthmus, and coronary sinus connections. Natural anatomic barriers (crista terminalis, oval fossa, venous orifices) channel reentrant circuits.',
+          landmark: 'his',
+          view: 'root'
+        }
       ]
     }
   },
   pacemaker: {
     tr: {
-      title: 'Pacing lead • Anatomi rehberi',
-      intro: 'Referans anatomi eğitimi. Doğrulanmış bir kateter yolu veya fiksasyon simülasyonu içermez.',
+      title: 'Kardiyak implante edilebilir elektronik cihazlar (CIED)',
+      intro: 'Transvenöz pacing telleri ve fizyolojik ileti sistemi uyarımı (CSP/LBBAP ve CRT). İlerleme çubuğunu kaydırarak lead ilerletilmesini gözlemleyin.',
       steps: [
-        { title: 'Venöz giriş', text: 'Vena kava süperior sağ atriyuma açılır. Lead venöz yol boyunca ilerler.', landmark: 'svc' },
-        { title: 'Kapak düzlemi', text: 'Sağ atriyum, triküspit kapak ve sağ ventrikül giriş ilişkisini gözlemleyin.', landmark: 'tricuspid' },
-        { title: 'RV bölgeleri', text: 'Giriş yolu, apeks, septum ve çıkış yolunu (RVOT) ayırt edin.', landmark: 'rv' },
-        { title: 'İleti sistemi pacing', text: 'His demeti ve sol dal alanı fizyolojik iletim için hedeflenen bölgelerdir.', landmark: 'his' }
+        {
+          title: 'Sağ Atriyal (RA) Lead • Apendiks Fiksasyonu',
+          text: 'Subklavyan/sefalik venöz girişten SVC yoluyla sağ atriyuma ulaşır. Aktif fiksasyonlu vida ucu (helix) pektinat kasların zengin olduğu sağ atriyal apendikse (RAA) veya lateral duvara tutturulur.',
+          landmark: 'ra',
+          view: 'anterior'
+        },
+        {
+          title: 'Sağ Ventrikül (RV) Septal Lead',
+          text: 'Triküspit kapağı geçerek sağ ventriküle ilerler. Apikal perforasyon ve dissenkroni riskini azaltmak için elektrot interventriküler septumun orta/apikal yüzeyine hedeflenir.',
+          landmark: 'rv',
+          view: 'lao'
+        },
+        {
+          title: 'Fizyolojik İleti Sistemi Pacing (CSP / LBBAP)',
+          text: 'Membranöz septum ve His demeti düzeyinden interventriküler septuma derin vidalanarak sol dalı (LBB) doğrudan uyarır. Doğal Purkinje ağını aktive ederek dar QRS ve fizyolojik ventrikül senkronizasyonu sağlar.',
+          landmark: 'his',
+          view: 'rao'
+        },
+        {
+          title: 'Sol Ventrikül CRT Lead • Koroner Sinüs',
+          text: 'Kardiyak Resenkronizasyon Tedavisi (CRT) için koroner sinüs (CS) ostiyumundan girilerek büyük kardiyak ven üzerinden sol ventrikül lateral/posterolateral serbest duvar venine kuadripolar lead yerleştirilir.',
+          landmark: 'cs',
+          view: 'posterior'
+        }
       ]
     },
     en: {
-      title: 'Pacing lead • Anatomy walkthrough',
-      intro: 'Reference anatomical walkthrough. No validated lead trajectory or fixation simulation provided.',
+      title: 'Cardiac implantable electronic devices (CIED)',
+      intro: 'Transvenous pacing leads and physiological conduction system pacing (CSP/LBBAP and CRT). Use the progress slider to trace lead advancement.',
       steps: [
-        { title: 'Venous entry', text: 'The superior vena cava opens into the right atrium, providing primary transvenous access.', landmark: 'svc' },
-        { title: 'Valve plane', text: 'Observe the spatial relationship between right atrium, tricuspid valve, and RV inlet.', landmark: 'tricuspid' },
-        { title: 'RV regions', text: 'Distinguish RV inlet, apex, muscular septum, and outflow tract.', landmark: 'rv' },
-        { title: 'Conduction pacing', text: 'The bundle of His and left bundle branch area serve as physiological pacing targets.', landmark: 'his' }
+        {
+          title: 'Right Atrial (RA) Lead • Appendage Fixation',
+          text: 'Introduced via subclavian/cephalic venous access down the SVC into the right atrium. The active-fixation helical screw tip anchors securely in the pectinate trabeculae of the right atrial appendage (RAA).',
+          landmark: 'ra',
+          view: 'anterior'
+        },
+        {
+          title: 'Right Ventricular (RV) Septal Lead',
+          text: 'Traverses the tricuspid valve into the RV. The mid-interventricular septum is preferred over the thin apex to minimize perforation risk and decrease pacing-induced electromechanical dyssynchrony.',
+          landmark: 'rv',
+          view: 'lao'
+        },
+        {
+          title: 'Conduction System Pacing (CSP / LBBAP)',
+          text: 'Screws deeply into the basal interventricular septum to recruit the Left Bundle Branch directly. Bypasses proximal conduction blocks, recruiting the intrinsic Purkinje network for a narrow, physiological QRS.',
+          landmark: 'his',
+          view: 'rao'
+        },
+        {
+          title: 'Left Ventricular CRT Lead • Coronary Sinus',
+          text: 'In Cardiac Resynchronization Therapy (CRT), a quadripolar lead cannulates the Coronary Sinus ostium, advancing into a posterolateral cardiac vein along the LV free wall to restore biventricular synchrony.',
+          landmark: 'cs',
+          view: 'posterior'
+        }
       ]
     }
   }
@@ -601,7 +721,9 @@ export const uiTranslations = {
     nextLandmark: 'Sonraki nirengi →',
     restartExploration: 'Yeniden başlat ↺',
     keyboardHelpTitle: 'Klavye Kısayolları',
-    carmDragHint: 'Paneli serbestçe taşımak için sürükleyin'
+    carmDragHint: 'Paneli serbestçe taşımak için sürükleyin',
+    leadProgressLabel: 'Lead ilerletme / Yerleşim',
+    leadProgressNote: '3D transvenöz lead modelleri ve fizyolojik ileti sistemi (CSP/LBBAP) hedefleri eğitim amaçlı modellenmiştir.'
   },
   en: {
     brandSubtitle: 'ANATOMY STUDIO',
@@ -653,7 +775,9 @@ export const uiTranslations = {
     nextLandmark: 'Next landmark →',
     restartExploration: 'Restart exploration ↺',
     keyboardHelpTitle: 'Keyboard Shortcuts',
-    carmDragHint: 'Drag to freely reposition panel'
+    carmDragHint: 'Drag to freely reposition panel',
+    leadProgressLabel: 'Lead advancement / Placement',
+    leadProgressNote: '3D transvenous lead models and physiological conduction system pacing (CSP/LBBAP) targets are modeled for clinical education.'
   }
 };
 

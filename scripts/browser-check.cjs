@@ -195,9 +195,43 @@ const fs = require('node:fs');
       return { width: r.width, left: r.left, right: r.right, pos: style.position, collapsed: el.classList.contains('collapsed') };
     });
     assert.ok(Math.abs(panelBox.width - 390) < 2, `C-Arm bottom drawer spans mobile width (actual: ${panelBox.width})`);
-    await page.setViewportSize({ width:1440,height:1050 });
+    await page.setViewportSize({ width: 1440, height: 1050 });
 
-    // 12. Independently instantiate the production viewer and compare it to decoded source geometry.
+    // 12. Educational modes: Angiography (03), Ablation anatomy (04), Pacemaker leads (05)
+    // Mode 03 Angiography
+    await page.locator('[data-mode="angiography"]').click();
+    assert.equal(await page.locator('#carm-panel').evaluate(el => !el.classList.contains('collapsed')), true, 'C-Arm opens in angiography mode');
+    await page.locator('#steps button[data-step="1"]').click(); // Spider view step
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
+    await page.screenshot({ path: 'research/screenshots/mode-03-angiography-spider.png' });
+    const angioText = await page.locator('#step-detail').textContent();
+    assert.match(angioText, /Spider|bifurkasyon/i, 'Angiography step 2 shows Spider projection clinical guide');
+
+    // Mode 04 Ablation anatomy
+    await page.locator('[data-mode="ablation"]').click();
+    await page.locator('#steps button[data-step="1"]').click(); // Triangle of Koch
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
+    await page.screenshot({ path: 'research/screenshots/mode-04-ablation-koch.png' });
+    const ablationTitle = await page.locator('#steps button[data-step="0"]').textContent();
+    assert.match(ablationTitle, /CTI|Kavotriküspit/i, 'Ablation step 1 features CTI');
+    const kochText = await page.locator('#step-detail').textContent();
+    assert.match(kochText, /Koch|Yavaş Yol|Slow Pathway/i, 'Ablation step 2 features Triangle of Koch');
+
+    // Mode 05 Pacemaker leads
+    await page.locator('[data-mode="pacemaker"]').click();
+    const progressHidden = await page.locator('#progress').evaluate(el => el.hidden);
+    assert.equal(progressHidden, false, 'Progress slider is visible in pacemaker mode');
+    assert.equal(await page.locator('#progress-value').textContent(), '100%');
+    await page.locator('#steps button[data-step="2"]').click(); // CSP / LBBAP step
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
+    await page.screenshot({ path: 'research/screenshots/mode-05-pacemaker-csp.png' });
+    await page.locator('#progress').fill('45');
+    await page.locator('#progress').dispatchEvent('input');
+    assert.equal(await page.locator('#progress-value').textContent(), '45%', 'Progress slider updates lead advancement');
+    const cspText = await page.locator('#step-detail').textContent();
+    assert.match(cspText, /LBBAP|Purkinje|His/i, 'Pacemaker step 3 features Conduction System Pacing');
+
+    // 13. Independently instantiate the production viewer and compare it to decoded source geometry.
     await page.evaluate(async () => {
       const { createHeart } = await import('/src/heart.js');
       const container = document.createElement('div');container.style.cssText='width:800px;height:700px;position:fixed;inset:0;background:white';document.body.append(container);
