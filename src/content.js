@@ -924,12 +924,11 @@ export const uiTranslations = {
     workspaceMuted: 'Yapıyı keşfedin. İlişkileri anlayın.',
     modes: [
       ['anatomy', '01', 'Genel anatomi'],
-      ['micro', '02', 'Mikroyapı'],
-      ['angiography', '03', 'Anjiyografi'],
-      ['ablation', '04', 'Ablasyon anatomisi'],
-      ['pacemaker', '05', 'Pacemaker telleri'],
-      ['transseptal', '06', 'Transseptal & septostomi'],
-      ['bachmann', '07', 'Bachmann demeti & pacing']
+      ['angiography', '02', 'Anjiyografi'],
+      ['ablation', '03', 'Ablasyon anatomisi'],
+      ['pacemaker', '04', 'Pacemaker telleri'],
+      ['transseptal', '05', 'Transseptal & septostomi'],
+      ['bachmann', '06', 'Bachmann demeti & pacing']
     ],
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Odacıklar (Chambers)',
@@ -980,12 +979,11 @@ export const uiTranslations = {
     workspaceMuted: 'Explore structure. Understand relationships.',
     modes: [
       ['anatomy', '01', 'Gross anatomy'],
-      ['micro', '02', 'Microstructure'],
-      ['angiography', '03', 'Angiography'],
-      ['ablation', '04', 'Ablation anatomy'],
-      ['pacemaker', '05', 'Pacemaker leads'],
-      ['transseptal', '06', 'Transseptal & septostomy'],
-      ['bachmann', '07', 'Bachmann bundle & pacing']
+      ['angiography', '02', 'Angiography'],
+      ['ablation', '03', 'Ablation anatomy'],
+      ['pacemaker', '04', 'Pacemaker leads'],
+      ['transseptal', '05', 'Transseptal & septostomy'],
+      ['bachmann', '06', 'Bachmann bundle & pacing']
     ],
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Chambers',

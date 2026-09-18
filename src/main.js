@@ -5,12 +5,11 @@ import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation}
 
 const modes = [
   ['anatomy','01','Gross anatomy'],
-  ['micro','02','Microstructure'],
-  ['angiography','03','Angiography'],
-  ['ablation','04','Ablation anatomy'],
-  ['pacemaker','05','Pacemaker leads'],
-  ['transseptal','06','Transseptal & septostomy'],
-  ['bachmann','07','Bachmann bundle pacing']
+  ['angiography','02','Angiography'],
+  ['ablation','03','Ablation anatomy'],
+  ['pacemaker','04','Pacemaker leads'],
+  ['transseptal','05','Transseptal & septostomy'],
+  ['bachmann','06','Bachmann bundle pacing']
 ];
 
 const app = document.querySelector('#app');

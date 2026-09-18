@@ -33,41 +33,89 @@ export function createAnnuli(helpers) {
   }
 
   /**
-   * Measure an AV annulus from leaflet vertices: bin them by angle around the
-   * valve axis (atrium -> ventricle) and keep, per sector, the vertex nearest
-   * the atrium (the hinge). Sectors without a leaflet stay empty and are
-   * bridged smoothly by the closed spline.
+   * Boundary loops of a chamber mesh: chains of edges referenced by a single
+   * triangle. The AV orifice rims are open holes in the atlas chamber meshes,
+   * so the loop shared between an atrium and its ventricle IS the visible
+   * annulus ring in the render.
    */
-  function measureAnnulus(verts, atriumCenter, ventricleCenter, bins = 36) {
-    if (verts.length < 60) return null;
-    const c = centroid(verts);
-    const axis = ventricleCenter.clone().sub(atriumCenter).normalize();
-    let u = new THREE.Vector3(0, 1, 0).cross(axis);
-    if (u.lengthSq() < 0.01) u = new THREE.Vector3(1, 0, 0).cross(axis);
-    u.normalize();
-    const w = new THREE.Vector3().crossVectors(axis, u);
+  function boundaryLoops(mesh) {
+    const g = mesh.geometry;
+    if (!g.index) return [];
+    const idx = g.index.array;
+    const edgeCount = new Map();
+    for (let i = 0; i < idx.length; i += 3) {
+      for (const [a, b] of [[idx[i], idx[i + 1]], [idx[i + 1], idx[i + 2]], [idx[i + 2], idx[i]]]) {
+        const k = a < b ? a + '_' + b : b + '_' + a;
+        edgeCount.set(k, (edgeCount.get(k) || 0) + 1);
+      }
+    }
+    const adj = new Map();
+    for (const [k, c] of edgeCount) {
+      if (c !== 1) continue;
+      const [a, b] = k.split('_').map(Number);
+      if (!adj.has(a)) adj.set(a, []);
+      adj.get(a).push(b);
+      if (!adj.has(b)) adj.set(b, []);
+      adj.get(b).push(a);
+    }
+    const pos = g.attributes.position;
+    mesh.updateWorldMatrix(true, false);
+    const seen = new Set();
+    const loops = [];
+    for (const startIdx of adj.keys()) {
+      if (seen.has(startIdx)) continue;
+      const chain = [];
+      let cur = startIdx, prev = -1;
+      while (cur !== undefined && !seen.has(cur)) {
+        seen.add(cur);
+        chain.push(cur);
+        const nexts = (adj.get(cur) || []).filter(n => n !== prev && !seen.has(n));
+        prev = chain[chain.length - 1];
+        cur = nexts[0];
+      }
+      if (chain.length < 12) continue;
+      const pts = chain.map(i => new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld));
+      loops.push({ pts, center: centroid(pts) });
+    }
+    return loops;
+  }
 
-    const binBest = new Array(bins).fill(null);
-    for (const v of verts) {
-      const d = v.clone().sub(c);
-      const angle = Math.atan2(d.dot(w), d.dot(u));
-      const bi = ((Math.round(((angle + Math.PI) / (2 * Math.PI)) * bins)) % bins + bins) % bins;
-      const h = d.dot(axis); // smaller = closer to the atrium = hinge side
-      if (!binBest[bi] || h < binBest[bi].h) binBest[bi] = { v: v.clone(), h, bi };
+  // The orifice rim shared by two chambers: the loop pair with the closest
+  // centroids. Returns the ventricle-side loop, lightly smoothed.
+  function sharedRim(atriumMesh, ventricleMesh) {
+    if (!atriumMesh || !ventricleMesh) return null;
+    const la = boundaryLoops(atriumMesh);
+    const lv = boundaryLoops(ventricleMesh);
+    let best = null;
+    for (const a of la) for (const v of lv) {
+      const d = a.center.distanceTo(v.center);
+      if (!best || d < best.d) best = { d, loop: v };
     }
-    const kept = binBest.filter(Boolean);
-    if (kept.length < 10) return null;
-    // Reorder into one contiguous arc: start right after the largest angular
-    // gap, otherwise the point sequence jumps across the missing sector and
-    // the spline cuts straight through the valve orifice.
-    kept.sort((a, b) => a.bi - b.bi);
-    let gapAfter = 0, gapSize = -1;
-    for (let i = 0; i < kept.length; i++) {
-      const next = kept[(i + 1) % kept.length];
-      const delta = ((next.bi - kept[i].bi) + bins) % bins || bins;
-      if (delta > gapSize) { gapSize = delta; gapAfter = i; }
+    if (!best || best.d > 0.3) return null;
+    // Closed moving-average smoothing against mesh jaggies.
+    let pts = best.loop.pts.map(v => v.clone());
+    for (let pass = 0; pass < 2; pass++) {
+      pts = pts.map((pt, i) => pt.clone().multiplyScalar(2)
+        .add(pts[(i - 1 + pts.length) % pts.length])
+        .add(pts[(i + 1) % pts.length])
+        .multiplyScalar(0.25));
     }
-    return [...kept.slice(gapAfter + 1), ...kept.slice(0, gapAfter + 1)];
+    return pts;
+  }
+
+  // Best-fit ring normal (Newell's method), oriented from the atrium toward
+  // the ventricle so leaflet rotations keep their drape direction.
+  function ringNormal(pts, towardDir) {
+    const n = new THREE.Vector3();
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      n.x += (a.y - b.y) * (a.z + b.z);
+      n.y += (a.z - b.z) * (a.x + b.x);
+      n.z += (a.x - b.x) * (a.y + b.y);
+    }
+    n.normalize();
+    if (n.dot(towardDir) < 0) n.negate();
+    return n;
   }
 
   function addMesh(mesh, id, name, sourceName, extra = {}) {
@@ -91,91 +139,42 @@ export function createAnnuli(helpers) {
     const rootMid = lcc.clone().add(ncc).multiplyScalar(0.5);
 
     // -------------------------------------------------------------
-    // 1. Mitral annulus: posterior arc measured from the posterior leaflet
-    //    hinge; the anterior segment is anchored toward the aortic root (AMC).
+    // 1+2. Annulus rings on the REAL orifice rims: the boundary loops the
+    //      atrium and ventricle meshes share at each AV valve.
     // -------------------------------------------------------------
-    const mitralVerts = meshVertices('mitral', /Posterior leaflet/i);
-    const mitralKept = measureAnnulus(mitralVerts, la, lv);
-    let maPoints;
-    if (mitralKept) {
-      maPoints = mitralKept.map(k => k.v);
-      const anteriorAnchor = rootMid.clone().lerp(mitralCenter, 0.35).add(new THREE.Vector3(0, -0.12, 0));
-      const first = maPoints[0], last = maPoints[maPoints.length - 1];
-      maPoints = [...maPoints,
-        last.clone().lerp(anteriorAnchor, 0.5),
-        anteriorAnchor,
-        first.clone().lerp(anteriorAnchor, 0.5)
-      ];
-    } else {
-      maPoints = [];
+    const mitralRim = sharedRim(getMeshes('la')[0], getMeshes('lv')[0]);
+    const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
+
+    const fallbackRing = (center, rx, rz) => {
+      const pts = [];
       for (let i = 0; i < 32; i++) {
-        const theta = (i / 32) * Math.PI * 2;
-        let z = Math.cos(theta) * 0.44;
-        if (z > 0.12) z = 0.12 + (z - 0.12) * 0.35;
-        maPoints.push(new THREE.Vector3(
-          mitralCenter.x + Math.sin(theta) * 0.52,
-          mitralCenter.y + 0.10 + Math.cos(theta * 2) * 0.08,
-          mitralCenter.z + z
-        ));
+        const t = (i / 32) * Math.PI * 2;
+        pts.push(new THREE.Vector3(center.x + Math.sin(t) * rx, center.y + 0.08, center.z + Math.cos(t) * rz));
       }
-    }
+      return pts;
+    };
+    const maPoints = mitralRim || fallbackRing(mitralCenter, 0.5, 0.44);
+    const taPoints = tvRim || fallbackRing(tricuspidCenter, 0.55, 0.48);
+
     const maCurve = new THREE.CatmullRomCurve3(maPoints, true);
     addMesh(
-      new THREE.Mesh(new THREE.TubeGeometry(maCurve, 64, 0.034, 12, true), matAnnulus.clone()),
+      new THREE.Mesh(new THREE.TubeGeometry(maCurve, 96, 0.032, 12, true), matAnnulus.clone()),
       'mitral-annulus', 'Mitral annulus', 'Mitral valve fibrous annulus'
     );
-
-    // -------------------------------------------------------------
-    // 2. Tricuspid annulus: measured from the septal + inferior leaflet
-    //    hinges; the anterior sector is bridged by the closed spline.
-    // -------------------------------------------------------------
-    const tvVerts = meshVertices('tricuspid', /leaflet of right atrioventricular/i);
-    const tvKept = measureAnnulus(tvVerts, ra, rv);
-    let taCurve, tvGapArc = null;
-    if (tvKept) {
-      taCurve = new THREE.CatmullRomCurve3(tvKept.map(k => k.v), true);
-      // Uncovered (anterior) sector: samples of the closed curve farthest from
-      // any existing leaflet vertex.
-      const samples = [];
-      for (let i = 0; i <= 96; i++) samples.push(taCurve.getPointAt(i / 96));
-      const gapScore = samples.map(pt => {
-        let best = Infinity;
-        for (let i = 0; i < tvVerts.length; i += 3) {
-          const d = tvVerts[i].distanceTo(pt);
-          if (d < best) best = d;
-        }
-        return best;
-      });
-      let gapCenter = 0, best = -1;
-      for (let i = 0; i <= 96; i++) {
-        let acc = 0;
-        for (let k = -12; k <= 12; k++) acc += gapScore[(i + k + 97) % 97];
-        if (acc > best) { best = acc; gapCenter = i; }
-      }
-      const arcPts = [];
-      for (let k = -14; k <= 14; k++) arcPts.push(samples[(gapCenter + k + 97) % 97].clone());
-      tvGapArc = new THREE.CatmullRomCurve3(arcPts);
-    } else {
-      const taPoints = [];
-      for (let i = 0; i < 32; i++) {
-        const theta = (i / 32) * Math.PI * 2;
-        const x = Math.sin(theta) * 0.58, z = Math.cos(theta) * 0.48;
-        taPoints.push(new THREE.Vector3(
-          tricuspidCenter.x + x * 0.92 - z * 0.25,
-          tricuspidCenter.y + 0.08 + Math.sin(theta + 0.4) * 0.12,
-          tricuspidCenter.z + x * 0.25 + z * 0.92
-        ));
-      }
-      taCurve = new THREE.CatmullRomCurve3(taPoints, true);
-    }
+    const taCurve = new THREE.CatmullRomCurve3(taPoints, true);
     addMesh(
-      new THREE.Mesh(new THREE.TubeGeometry(taCurve, 64, 0.034, 12, true), matAnnulus.clone()),
+      new THREE.Mesh(new THREE.TubeGeometry(taCurve, 96, 0.032, 12, true), matAnnulus.clone()),
       'tricuspid-annulus', 'Tricuspid annulus', 'Tricuspid valve fibrous annulus'
     );
 
+    const maCentroid = centroid(maPoints);
+    const taCentroid = centroid(taPoints);
+    const mitralAxis = ringNormal(maPoints, lv.clone().sub(la));
+    const tvAxis = ringNormal(taPoints, rv.clone().sub(ra));
+
     // -------------------------------------------------------------
     // 3. Aorto-mitral continuity (AMC): continuation of the anteromedial
-    //    mitral annulus to the aortic valve.
+    //    mitral annulus (the rim arc nearest the aortic root) to the valve.
     // -------------------------------------------------------------
     const maSamples = [];
     for (let i = 0; i < 64; i++) maSamples.push(maCurve.getPointAt(i / 63));
@@ -220,44 +219,63 @@ export function createAnnuli(helpers) {
     addMesh(new THREE.Mesh(amcGeom, amcMat), 'amc', 'Aorto-mitral continuity', 'Aorto-mitral continuity (fibrous curtain)');
 
     // -------------------------------------------------------------
-    // 4. AV leaflets missing from the atlas (anterior mitral, anterior
-    //    tricuspid): clone the opposite atlas leaflet (chordae included) and
-    //    mirror it across a vertical plane through the valve centroid, so the
-    //    sail occupies the empty sector with matching texture and drape.
+    // 4. AV leaflets missing from the atlas: clone the opposite atlas leaflet
+    //    (chordae included) and rotate it about the measured rim axis into the
+    //    empty sector; rotation keeps the hinge on the annulus ring.
     // -------------------------------------------------------------
-    function mirroredLeaflet(sourceMesh, valveCenter) {
+    function rotatedLeaflet(sourceMesh, center, axis, targetDir) {
       if (!sourceMesh) return null;
       const geom = sourceMesh.geometry.clone();
       geom.computeBoundingBox();
       const srcCenter = geom.boundingBox.getCenter(new THREE.Vector3());
-      const n = srcCenter.clone().sub(valveCenter);
-      n.y = 0;
-      if (n.lengthSq() < 1e-6) return null;
-      n.normalize();
-      const R = new THREE.Matrix4().set(
-        1 - 2 * n.x * n.x, -2 * n.x * n.y, -2 * n.x * n.z, 0,
-        -2 * n.y * n.x, 1 - 2 * n.y * n.y, -2 * n.y * n.z, 0,
-        -2 * n.z * n.x, -2 * n.z * n.y, 1 - 2 * n.z * n.z, 0,
-        0, 0, 0, 1
-      );
-      const M = new THREE.Matrix4().makeTranslation(valveCenter.x, valveCenter.y, valveCenter.z)
-        .multiply(R)
-        .multiply(new THREE.Matrix4().makeTranslation(-valveCenter.x, -valveCenter.y, -valveCenter.z));
+      const flatten = v => v.clone().sub(center).addScaledVector(axis, -v.clone().sub(center).dot(axis));
+      const from = flatten(srcCenter);
+      const to = targetDir.clone().addScaledVector(axis, -targetDir.dot(axis));
+      if (from.lengthSq() < 1e-6 || to.lengthSq() < 1e-6) return null;
+      from.normalize();
+      to.normalize();
+      let angle = Math.acos(THREE.MathUtils.clamp(from.dot(to), -1, 1));
+      if (new THREE.Vector3().crossVectors(from, to).dot(axis) < 0) angle = -angle;
+      const q = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+      const M = new THREE.Matrix4().makeTranslation(center.x, center.y, center.z)
+        .multiply(new THREE.Matrix4().makeRotationFromQuaternion(q))
+        .multiply(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z));
       geom.applyMatrix4(M);
       geom.computeVertexNormals();
       return new THREE.Mesh(geom, matLeaflet.clone());
     }
 
     const pmlMesh = getMeshes('mitral').find(m => /Posterior leaflet/i.test(m.name));
-    const aml = mirroredLeaflet(pmlMesh, mitralCenter);
+    const aml = rotatedLeaflet(pmlMesh, maCentroid, mitralAxis, rootMid.clone().sub(maCentroid));
     if (aml) {
       addMesh(aml, 'mitral', 'Anterior mitral leaflet (schematic)', 'Anterior mitral leaflet', { leaflet: 'anterior' });
     }
 
-    const tvInferiorMesh = getMeshes('tricuspid').find(m => /Inferior leaflet/i.test(m.name));
-    const tvAnterior = mirroredLeaflet(tvInferiorMesh, tricuspidCenter);
-    if (tvAnterior) {
-      addMesh(tvAnterior, 'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' });
+    // Tricuspid empty sector: rim samples farthest from the existing leaflets.
+    const tvVerts = meshVertices('tricuspid', /leaflet of right atrioventricular/i);
+    if (tvVerts.length) {
+      const samples = [];
+      for (let i = 0; i <= 96; i++) samples.push(taCurve.getPointAt(i / 96));
+      const gapScore = samples.map(pt => {
+        let best = Infinity;
+        for (let i = 0; i < tvVerts.length; i += 3) {
+          const d = tvVerts[i].distanceTo(pt);
+          if (d < best) best = d;
+        }
+        return best;
+      });
+      let gapCenter = 0, best = -1;
+      for (let i = 0; i <= 96; i++) {
+        let acc = 0;
+        for (let k = -12; k <= 12; k++) acc += gapScore[(i + k + 97) % 97];
+        if (acc > best) { best = acc; gapCenter = i; }
+      }
+      const gapDir = samples[gapCenter].clone().sub(taCentroid);
+      const tvInferiorMesh = getMeshes('tricuspid').find(m => /Inferior leaflet/i.test(m.name));
+      const tvAnterior = rotatedLeaflet(tvInferiorMesh, taCentroid, tvAxis, gapDir);
+      if (tvAnterior) {
+        addMesh(tvAnterior, 'tricuspid', 'Anterior tricuspid leaflet (schematic)', 'Anterior tricuspid leaflet', { leaflet: 'anterior' });
+      }
     }
   }
 
