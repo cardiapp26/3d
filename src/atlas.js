@@ -25,7 +25,6 @@ export const atlasParts = {
   'Circumflex artery of heart': entry('lcx','coronaries',0xc5904c,'left'),
   'Right coronary artery': entry('rca','coronaries',0xe3a66c,'right'),
   'Right inferolateral branch of right coronary artery': entry('rpl','coronaries',0xe3a66c,'right'),
-  'Marginal artery': entry('om','coronaries',0xc5904c,'left'),
   'Septal branches of anterior interventricular artery': entry('septal','coronaries',0xd79958,'left'),
   'Coronary sinus': entry('cs','coronaries',0x5187a0,'veins'),
   'Great cardiac vein': entry('gcv','coronaries',0x679db2,'veins'),

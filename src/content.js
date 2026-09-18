@@ -342,19 +342,6 @@ export const rawStructures = {
     },
     source: 'Ho et al., 2012, PDF pp. 2–3'
   },
-  om: {
-    tr: {
-      title: 'Obtüz marjinal dal • OM',
-      description: 'LCX sisteminden ayrılarak sol ventrikülün serbest lateral duvarına uzanan marjinal arter dalıdır.',
-      clinical: 'Sol ventrikül lateral duvar perfüzyonunu incelerken temel referans daldır.'
-    },
-    en: {
-      title: 'Obtuse marginal branch • OM',
-      description: 'Branch arising from the LCX artery coursing over the lateral obtuse margin of the left ventricle.',
-      clinical: 'Key target in coronary revascularization for lateral LV perfusion.'
-    },
-    source: 'ACC/AHA coronary definitions, 2014'
-  },
   septal: {
     tr: {
       title: 'Septal koroner dallar',
