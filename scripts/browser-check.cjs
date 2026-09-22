@@ -256,6 +256,36 @@ const fs = require('node:fs');
     assert.equal(fossaMarker.pickId, 'fossa');
     assert.equal(fossaMarker.depthTest, true, 'Fossa membrane stays behind structures in front of it');
     assert.ok(fossaMarker.renderOrder > 4);
+    await page.evaluate(() => window.heart.setTransseptalStep(1));
+    const sheathRoute = await page.evaluate(() => {
+      let sheath = null;
+      let fossa = null;
+      let access = null;
+      window.heart.scene.traverse(object => {
+        if (object.name === 'Transseptal sheath-dilator at fossa') sheath = object;
+        if (object.name === 'Fossa ovalis') fossa = object;
+        if (object.name === 'Femoral venous access route') access = object;
+      });
+      window.heart.scene.updateMatrixWorld(true);
+      const positions = sheath.geometry.attributes.position;
+      const matrix = sheath.matrixWorld.elements;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (let i = 0; i < positions.count; i++) {
+        const y = matrix[1] * positions.getX(i) + matrix[5] * positions.getY(i)
+          + matrix[9] * positions.getZ(i) + matrix[13];
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+      return { minY, maxY, fossaY: fossa.position.y,
+        visible: sheath.parent.visible, accessVisible: access.visible };
+    });
+    assert.equal(sheathRoute.visible, true, 'Sheath is shown at the fossa positioning step');
+    assert.equal(sheathRoute.accessVisible, false, 'Earlier SVC position is hidden at the fossa step');
+    assert.ok(sheathRoute.minY < sheathRoute.fossaY - 0.8,
+      'Sheath enters from the IVC below the fossa');
+    assert.ok(sheathRoute.maxY < sheathRoute.fossaY + 0.12,
+      'Positioned sheath does not loop up into the SVC and back down');
     await page.evaluate(() => window.heart.setView('anterior', false));
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     await page.screenshot({ path: 'research/screenshots/fossa-ovalis.png' });

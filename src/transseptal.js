@@ -255,20 +255,25 @@ export function createTransseptal(helpers) {
     stages.access = accessGroup;
 
     // -------------------------------------------------------------
-    // 2. Transseptal positioning: drag-down from SVC, tenting on fossa
+    // 2. Transseptal positioning: final sheath position after SVC pull-down.
+    // Zeidan et al. (2024), Fig. 6D, shows SVC parking and FO tenting as successive positions.
     // -------------------------------------------------------------
     const punctureGroup = new THREE.Group();
     punctureGroup.name = 'Transseptal positioning & tenting';
 
     const raSideStandoff = fossa.clone().addScaledVector(septalNormal, -0.10);
+    const lowRa = new THREE.Vector3(ivc.x + 0.02, ivc.y + 0.25, ivc.z + 0.12);
+    const septalApproach = lowRa.clone().lerp(raSideStandoff, 0.58)
+      .add(new THREE.Vector3(-0.05, 0, 0.05));
     const dragCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(ivc.x + 0.02, ivc.y + 0.25, ivc.z + 0.12),
-      midRa.clone(),
-      highSvc.clone(),
-      new THREE.Vector3(ra.x + 0.10, ra.y + 0.55, ra.z - 0.10),
+      new THREE.Vector3(ivc.x, ivc.y - 0.35, ivc.z),
+      lowRa,
+      septalApproach,
       raSideStandoff
-    ]);
-    punctureGroup.add(makeProgressiveTube('drag', dragCurve, 0.024, matSheath));
+    ], false, 'centripetal');
+    const sheath = makeProgressiveTube('drag', dragCurve, 0.024, matSheath);
+    sheath.name = 'Transseptal sheath-dilator at fossa';
+    punctureGroup.add(sheath);
 
     // Needle tip + fossa tenting cone (pointing along septal normal)
     const tentTip = new THREE.Group();
