@@ -101,3 +101,40 @@ export function ringNormal(pts, towardDir) {
   if (n.dot(towardDir) < 0) n.negate();
   return n;
 }
+
+/**
+ * Contact patch between two chamber meshes: vertices of `meshA` lying within
+ * `thresh` of `meshB`. For the two atria this is the interatrial septum.
+ * Returns the patch points (A side), their centroid and the average A->B
+ * direction as the patch normal.
+ */
+export function contactPatch(meshA, meshB, thresh = 0.12) {
+  if (!meshA || !meshB) return null;
+  const collect = (mesh, step) => {
+    mesh.updateWorldMatrix(true, false);
+    const p = mesh.geometry.attributes.position;
+    const out = [];
+    for (let i = 0; i < p.count; i += step) {
+      out.push(new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(mesh.matrixWorld));
+    }
+    return out;
+  };
+  const A = collect(meshA, 2);
+  const B = collect(meshB, 3);
+  const points = [];
+  const normal = new THREE.Vector3();
+  const threshSq = thresh * thresh;
+  for (const a of A) {
+    let bestSq = Infinity, bestB = null;
+    for (const b of B) {
+      const d = a.distanceToSquared(b);
+      if (d < bestSq) { bestSq = d; bestB = b; }
+    }
+    if (bestSq < threshSq) {
+      points.push(a);
+      normal.add(bestB.clone().sub(a));
+    }
+  }
+  if (points.length < 20) return null;
+  return { points, centroid: centroid(points), normal: normal.normalize() };
+}

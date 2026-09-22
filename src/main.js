@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import './style.css';
 import {createHeart} from './heart.js';
-import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation,getUiModes,getViewerTitle,getAngioDescription} from './content.js';
+import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation,getUiModes,getAngioDescription} from './content.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
+import {drawWiggers, formatCycleTiming} from './wiggers.js';
 
 document.documentElement.lang = getContentLanguage();
 
@@ -106,13 +107,8 @@ app.innerHTML = `
   </aside>
   <main>
     <div class="viewer-top">
-      <div>
-        <div class="eyebrow" id="mode-label">${getTranslation('explorerPrefix')} / ${getUiModes()[0][2].toUpperCase()}</div>
-        <h2 id="viewer-title">${getViewerTitle('anatomy')}</h2>
-      </div>
       <div class="top-badges">
         <span id="hover-badge" class="hover-badge" hidden></span>
-        <span class="pill">ATLAS MESH · SHARED COORDINATES</span>
       </div>
     </div>
     <div id="viewport" aria-label="Interactive 3D heart. Drag to rotate, scroll to zoom."></div>
@@ -127,6 +123,7 @@ app.innerHTML = `
         <div class="cycle-play-group">
           <button id="beat" class="cycle-play-btn" aria-pressed="false">♡ Animate beat <kbd>Space</kbd></button>
           <button id="flow-toggle" class="cycle-flow-btn active" aria-pressed="true" title="${getTranslation('flowToggleTitle')}">${getTranslation('flowToggleBtn')} <kbd>F</kbd></button>
+          <button id="wiggers-toggle" class="cycle-flow-btn" aria-pressed="false" title="Wiggers diyagramı (basınç / hacim / EKG)">Wiggers <kbd>W</kbd></button>
           <span id="cycle-interval-name" class="cycle-badge">Rapid ventricular filling</span>
           <span id="cycle-phase-val" class="cycle-phase-tag">%0</span>
         </div>
@@ -155,6 +152,10 @@ app.innerHTML = `
       </div>
       <div class="cycle-timeline-wrap">
         <input type="range" id="cycle-scrubber" min="0" max="100" value="0" step="0.2" aria-label="Cardiac cycle phase timeline">
+      </div>
+      <div id="wiggers-strip" class="wiggers-strip" hidden>
+        <canvas id="wiggers-canvas" aria-label="Wiggers diagram"></canvas>
+        <span id="wiggers-timing" class="wiggers-timing"></span>
       </div>
       <div class="ecg-strip">
         <canvas id="ecg-canvas" aria-label="${getTranslation('ecgCaption')}"></canvas>
@@ -457,6 +458,7 @@ if (cyclePanelEl && mainPanelEl) {
   syncCycleHeight();
 }
 
+let lastCycleState = null;
 const scrubber = document.querySelector('#cycle-scrubber');
   if (scrubber && document.activeElement !== scrubber) {
     scrubber.value = (state.phase * 100).toFixed(1);
@@ -487,6 +489,13 @@ const scrubber = document.querySelector('#cycle-scrubber');
     btn.classList.toggle('active', Number(btn.dataset.bpm) === state.bpm);
   });
   drawEcgTrace(document.querySelector('#ecg-canvas'), state);
+  lastCycleState = state;
+  const wigStrip = document.querySelector('#wiggers-strip');
+  if (wigStrip && !wigStrip.hidden) {
+    drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en');
+    const timing = document.querySelector('#wiggers-timing');
+    if (timing) timing.textContent = formatCycleTiming(state.bpm, isTr ? 'tr' : 'en');
+  }
 }
 
 heart?.subscribeCycle(updateCycleUI);
@@ -582,9 +591,6 @@ function setMode(newMode, updateUrl = true) {
   step = 0;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
-  document.querySelector('main .pill').textContent = mode === 'bachmann'
-    ? 'BACHMANN · SCHEMATIC ANATOMY & PACING'
-    : 'ATLAS MESH · SHARED COORDINATES';
 
   if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann') {
     setCarmPanelOpen(true);
@@ -596,13 +602,6 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#opacity').value = opacity;
   document.querySelector('#opacity-value').textContent = `${opacity}%`;
   heart?.setOpacity(opacity / 100);
-  document.querySelector('#viewer-title').textContent = getViewerTitle(mode);
-
-  const activeBtn = document.querySelector(`[data-mode="${mode}"]`);
-  if (activeBtn) {
-    const modeName = activeBtn.querySelector('.mode-label')?.textContent || '';
-    document.querySelector('#mode-label').textContent = `${getTranslation('explorerPrefix')} / ${modeName.toUpperCase()}`;
-  }
 
   document.querySelector('#layers').hidden = mode === 'micro';
   document.querySelector('#lesson').hidden = !lessons[mode];
@@ -988,6 +987,42 @@ document.querySelector('#cycle-scrubber')?.addEventListener('input', e => {
   heart?.seekCycle(Number(e.target.value) / 100);
 });
 
+const wiggersToggle = document.querySelector('#wiggers-toggle');
+function setWiggersOpen(open) {
+  const strip = document.querySelector('#wiggers-strip');
+  if (!strip || !wiggersToggle) return;
+  strip.hidden = !open;
+  wiggersToggle.classList.toggle('active', open);
+  wiggersToggle.setAttribute('aria-pressed', String(open));
+  const state = lastCycleState || heart?.getCycleState?.();
+  if (open && state) {
+    const isTr = getContentLanguage() === 'tr';
+    drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en');
+    const timing = document.querySelector('#wiggers-timing');
+    if (timing) timing.textContent = formatCycleTiming(state.bpm, isTr ? 'tr' : 'en');
+  }
+}
+wiggersToggle?.addEventListener('click', () => {
+  setWiggersOpen(document.querySelector('#wiggers-strip')?.hidden);
+});
+
+// Click / drag on the diagram scrubs the cycle phase.
+const wiggersCanvas = document.querySelector('#wiggers-canvas');
+let wiggersDragging = false;
+function wiggersSeek(e) {
+  const rect = wiggersCanvas.getBoundingClientRect();
+  const phase = Math.min(1, Math.max(0, (e.clientX - rect.left - 8) / (rect.width - 16)));
+  heart?.seekCycle(phase);
+}
+wiggersCanvas?.addEventListener('pointerdown', e => {
+  wiggersDragging = true;
+  try { wiggersCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+  wiggersSeek(e);
+});
+wiggersCanvas?.addEventListener('pointermove', e => { if (wiggersDragging) wiggersSeek(e); });
+wiggersCanvas?.addEventListener('pointerup', () => { wiggersDragging = false; });
+wiggersCanvas?.addEventListener('pointercancel', () => { wiggersDragging = false; });
+
 document.querySelector('#cycle-bpm')?.addEventListener('input', e => {
   heart?.setBpm(Number(e.target.value));
 });
@@ -1086,8 +1121,6 @@ function applyChromeTranslations() {
     const label = labels.get(btn.dataset.mode);
     if (labelEl && label) labelEl.textContent = label;
   });
-  const title = document.querySelector('#viewer-title');
-  if (title) title.textContent = getViewerTitle(mode);
   const opacityInput = document.querySelector('#opacity');
   if (opacityInput) opacityInput.setAttribute('aria-label', getTranslation('opacityLabel'));
   const wallKeys = { rv: 'wallRv', lv: 'wallLv', la: 'wallLa', ra: 'wallRa' };
@@ -1097,10 +1130,6 @@ function applyChromeTranslations() {
     const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
     if (out) out.textContent = formatWallReadout(input.value);
   });
-  const activeBtn = document.querySelector(`[data-mode="${mode}"]`);
-  const modeName = activeBtn?.querySelector('.mode-label')?.textContent || '';
-  const modeLabel = document.querySelector('#mode-label');
-  if (modeLabel && modeName) modeLabel.textContent = `${getTranslation('explorerPrefix')} / ${modeName.toUpperCase()}`;
   const angles = heart?.getAngioAngles?.();
   if (angles) updateJoystickFromCamera(angles);
 }
@@ -1245,6 +1274,8 @@ window.addEventListener('keydown', e => {
     setCameraPreset('lao');
   } else if (key === 's' || key === 'S') {
     setCameraPreset('spider');
+  } else if (key === 'w' || key === 'W') {
+    setWiggersOpen(document.querySelector('#wiggers-strip')?.hidden);
   } else if (key === 'c' || key === 'C') {
     toggleCarmPanel();
   } else if (key === 'o' || key === 'O') {

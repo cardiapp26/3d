@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { centroid, ringNormal, sharedRim } from './mesh-utils.js';
+import { centroid, ringNormal, sharedRim, contactPatch } from './mesh-utils.js';
 
 /**
  * Procedural 3D Transseptal Puncture & Balloon Atrial Septostomy simulation.
@@ -147,7 +147,10 @@ export function createTransseptal(helpers) {
     // Fossa ovalis lies inferior and posterior to the non-coronary cusp.
     // A puncture above that cusp enters the aortic root. The inferior limbus
     // stays just above the tricuspid annulus, not across its orifice.
-    const septalNormal = la.clone().sub(ra).normalize();
+    // True septal plane: the RA<->LA mesh contact patch (the interatrial
+    // septum itself), not bounding-box centers.
+    const septum = contactPatch(getMeshes('ra')[0], getMeshes('la')[0]);
+    const septalNormal = septum ? septum.normal.clone() : la.clone().sub(ra).normalize();
     const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
     const annular = tvRim
       ? centroid(tvRim.map(point => point.clone()))
@@ -166,7 +169,7 @@ export function createTransseptal(helpers) {
     // Center the fossa in the gap: above the tricuspid annulus, below the non-coronary cusp.
     let along = 0.40;
     let septumRadius = aortaDist * 0.18;
-    const septalOrigin = ra.clone().lerp(la, 0.42);
+    const septalOrigin = septum ? septum.centroid.clone() : ra.clone().lerp(la, 0.42);
     const fossa = annular.clone().addScaledVector(aortaDir, aortaDist * along);
     fossa.addScaledVector(septalNormal, septalOrigin.clone().sub(fossa).dot(septalNormal));
     const posterior = new THREE.Vector3(0, 0, -1).addScaledVector(septalNormal, -septalNormal.z);
@@ -183,6 +186,12 @@ export function createTransseptal(helpers) {
     const cuspLimit = aorticCusp.clone().sub(annular).dot(annularUp) - septumRadius * 0.8;
     const highestNow = fossa.clone().sub(annular).dot(annularUp) + drop;
     if (highestNow > cuspLimit) fossa.addScaledVector(lift, (cuspLimit - highestNow) / align);
+    // Keep the fossa on the measured septal patch (posteroinferior septum).
+    if (septum) {
+      const nearestPt = septum.points.reduce((best, v) =>
+        v.distanceTo(fossa) < best.distanceTo(fossa) ? v : best);
+      fossa.lerp(nearestPt, 0.5);
+    }
     const facing = fossa.clone().add(septalNormal);
 
     // -------------------------------------------------------------
