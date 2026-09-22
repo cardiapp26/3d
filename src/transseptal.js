@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { boundaryLoops, centroid, contactPatch, sharedRim, inferiorCavalOstium } from './mesh-utils.js';
+import { boundaryLoops, centroid, contactPatch, sharedRim, nearestLoop, inferiorCavalOstium } from './mesh-utils.js';
 
 /**
  * Procedural 3D Transseptal Puncture & Balloon Atrial Septostomy simulation.
@@ -316,7 +316,14 @@ export function createTransseptal(helpers) {
     punctureGroup.add(aorticDanger);
 
     const posteriorDanger = new THREE.Mesh(new THREE.SphereGeometry(0.07, 18, 18), matDanger.clone());
-    posteriorDanger.position.copy(fossa).add(new THREE.Vector3(0.12, 0.02, -0.42));
+    // Seat the marker on the posterior LA wall in the direction a too-posterior
+    // needle would travel (nearest LA wall vertex, lifted into the cavity).
+    const posteriorAim = fossa.clone().add(new THREE.Vector3(0.12, 0.02, -0.42));
+    const laWallVerts = meshVertices('la');
+    const posteriorWall = laWallVerts.length
+      ? laWallVerts.reduce((b, v) => v.distanceToSquared(posteriorAim) < b.distanceToSquared(posteriorAim) ? v : b).clone()
+      : posteriorAim;
+    posteriorDanger.position.copy(posteriorWall.lerp(la, 0.04));
     posteriorDanger.name = 'Danger: posterior LA wall';
     punctureGroup.add(posteriorDanger);
 
@@ -480,7 +487,19 @@ export function createTransseptal(helpers) {
     crossGroup.name = 'Transseptal crossing';
 
     const laDepth = fossa.clone().addScaledVector(septalNormal, 0.30);
-    const lspv = new THREE.Vector3(la.x + 0.62, la.y + 0.28, la.z - 0.10);
+    // Wire parked in the left superior pulmonary vein: measured LSPV ostium
+    // (its LA-side boundary loop), advanced ~0.18 into the vein.
+    let lspv = new THREE.Vector3(la.x + 0.62, la.y + 0.28, la.z - 0.10);
+    const lspvMesh = getMeshes('pv').find(m => /Left superior/i.test(m.name));
+    const lspvOstium = lspvMesh ? nearestLoop(lspvMesh, la) : null;
+    if (lspvOstium) {
+      const veinVerts = meshVertices('pv', /Left superior/i);
+      const veinCenter = veinVerts.length ? centroid(veinVerts) : lspvOstium.center.clone();
+      const inward = veinCenter.clone().sub(lspvOstium.center);
+      lspv = inward.lengthSq() > 1e-6
+        ? lspvOstium.center.clone().add(inward.setLength(0.18))
+        : lspvOstium.center.clone();
+    }
     const crossCurve = new THREE.CatmullRomCurve3([
       raSideStandoff.clone(),
       fossa.clone(),
