@@ -447,7 +447,17 @@ function updateCycleUI(state) {
     const label = state.playing ? getTranslation('beatPause') : getTranslation('beatAnimate');
     beatBtn.innerHTML = `${label} <kbd>Space</kbd>`;
   }
-  const scrubber = document.querySelector('#cycle-scrubber');
+  // The bottom bars (hint row, camera presets, viewport inset) stack on top of
+// the cycle panel; publish its live height so CSS can position them.
+const cyclePanelEl = document.querySelector('#cycle-panel');
+const mainPanelEl = document.querySelector('main');
+if (cyclePanelEl && mainPanelEl) {
+  const syncCycleHeight = () => mainPanelEl.style.setProperty('--cycle-h', `${cyclePanelEl.offsetHeight}px`);
+  new ResizeObserver(syncCycleHeight).observe(cyclePanelEl);
+  syncCycleHeight();
+}
+
+const scrubber = document.querySelector('#cycle-scrubber');
   if (scrubber && document.activeElement !== scrubber) {
     scrubber.value = (state.phase * 100).toFixed(1);
   }
