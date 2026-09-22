@@ -398,7 +398,7 @@ app.innerHTML = `
   <div class="up-card-body">
     <p id="up-text" class="up-text" data-i18n="upDesc">${getTranslation('upDesc')}</p>
     <p class="up-version-tag">
-      <span data-i18n="upVersionLabel">${getTranslation('upVersionLabel')}</span>: <code id="up-version-val">v1.8.0 (Build v8)</code>
+      <span data-i18n="upVersionLabel">${getTranslation('upVersionLabel')}</span>: <code id="up-version-val">v1.9.0 (Build v9)</code>
     </p>
     <div class="up-actions">
       <button id="up-later" class="up-btn up-btn-later" type="button" data-i18n="upLater">${getTranslation('upLater')}</button>

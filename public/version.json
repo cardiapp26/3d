@@ -1,7 +1,7 @@
 {
-  "version": "1.8.0",
-  "build": "v8",
+  "version": "1.9.0",
+  "build": "v9",
   "date": "2026-09-22",
   "name": "Cardia 3D",
-  "description": "Network-first sw v8, header update button, wiz3 update prompt"
+  "description": "Transseptal catheter toggles, panel resizer, pacemaker lead terminology, flow default off"
 }

@@ -1,8 +1,8 @@
-// Cardia Service Worker (v8)
+// Cardia Service Worker (v9)
 // Strategy:
 //   - HTML, JS, CSS, JSON (App Shell & Logic): Network-First, fallback to cache
 //   - 3D models (.glb), Draco wasm, textures, static media: Cache-First, fallback to network
-const VERSION = 'v8';
+const VERSION = 'v9';
 const CACHE = `cardia-${VERSION}`;
 
 const CORE = [

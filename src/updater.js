@@ -1,7 +1,7 @@
 // Cardia PWA Updater (wiz3 style)
 // Handles:
-// - Service Worker registration (sw.js v8)
-// - Network-first updates & controllerchange auto-prompt
+// - Service Worker registration (sw.js v9)
+// - Network-first updates & controllerchange auto-reload
 // - Header update button with .has-update glow & red notification dot
 // - wiz3 style update prompt card with version info
 // - Hard cache-purging update trigger
@@ -50,8 +50,8 @@ export function showUpdatePrompt(info) {
   const prompt = document.querySelector('#update-prompt');
   if (!prompt) return;
 
-  const ver = (info && info.version) || getMeta('app-version', '1.8.0');
-  const bld = (info && info.build) || getMeta('app-build', 'v8');
+  const ver = (info && info.version) || getMeta('app-version', '1.9.0');
+  const bld = (info && info.build) || getMeta('app-build', 'v9');
   const valEl = document.querySelector('#up-version-val');
   if (valEl) {
     valEl.textContent = `v${ver} (Build ${bld})`;
@@ -92,29 +92,33 @@ export async function triggerAppUpdate() {
     } catch (_) {}
   }
 
-  // Grace period fallback (1500ms like wiz3 & webread)
+  // Purge caches immediately
+  try {
+    if (typeof window !== 'undefined' && window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k).catch(() => false)));
+    }
+  } catch (_) {}
+
+  // Fallback unregister and hard reload
   setTimeout(async () => {
     try {
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r => r.unregister().catch(() => false)));
       }
-      if (typeof window !== 'undefined' && window.caches) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k).catch(() => false)));
-      }
     } catch (_) {}
     hardReload();
-  }, 1500);
+  }, 1000);
 }
 
 export async function checkVersionJsonFallback() {
   try {
-    const res = await fetch('./version.json', { cache: 'no-store' });
+    const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) return false;
     const data = await res.json();
-    const metaBuild = getMeta('app-build', 'v8');
-    const metaVer = getMeta('app-version', '1.8.0');
+    const metaBuild = getMeta('app-build', 'v9');
+    const metaVer = getMeta('app-version', '1.9.0');
 
     const hasNewBuild = Boolean(data.build && metaBuild && data.build !== metaBuild);
     const hasNewVersion = Boolean(data.version && metaVer && data.version !== metaVer);
@@ -137,13 +141,13 @@ export async function checkAppUpdate(isManual = false) {
     showToast(getTranslation('upChecking'), 2000);
   }
 
-  const finish = (hasUpdate) => {
+  const finish = (hasUpdate, info) => {
     if (isManual) {
       if (headerBtn) headerBtn.disabled = false;
       if (icon) icon.classList.remove('up-spin');
     }
     if (hasUpdate) {
-      showUpdatePrompt();
+      showUpdatePrompt(info);
       showToast(getTranslation('upTitle'));
     } else if (isManual) {
       showToast(getTranslation('upUpToDate'));
@@ -155,27 +159,37 @@ export async function checkAppUpdate(isManual = false) {
       await registration.update();
       setTimeout(async () => {
         if (registration && registration.waiting) {
-          finish(true);
+          let info = null;
+          try {
+            const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
+            if (res.ok) info = await res.json();
+          } catch (_) {}
+          finish(true, info);
         } else {
-          const fallback = await checkVersionJsonFallback();
-          finish(fallback);
+          const hasFallback = await checkVersionJsonFallback();
+          if (!hasFallback) finish(false);
         }
       }, 750);
     } catch (_) {
-      const fallback = await checkVersionJsonFallback();
-      finish(fallback);
+      const hasFallback = await checkVersionJsonFallback();
+      if (!hasFallback) finish(false);
     }
   } else {
-    const fallback = await checkVersionJsonFallback();
-    finish(fallback);
+    const hasFallback = await checkVersionJsonFallback();
+    if (!hasFallback) finish(false);
   }
 }
 
 function watchWorker(sw, hadController) {
-  sw.addEventListener('statechange', () => {
+  sw.addEventListener('statechange', async () => {
     if (sw.state !== 'installed') return;
     if (hadController) {
-      showUpdatePrompt();
+      let info = null;
+      try {
+        const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) info = await res.json();
+      } catch (_) {}
+      showUpdatePrompt(info);
       showToast(getTranslation('upTitle'));
     } else {
       showToast(getTranslation('upOfflineReady'));
@@ -186,7 +200,9 @@ function watchWorker(sw, hadController) {
 function watchRegistration(reg, hadController) {
   registration = reg;
   if (reg.waiting && navigator.serviceWorker.controller) {
-    showUpdatePrompt();
+    checkVersionJsonFallback().then(hasFallback => {
+      if (!hasFallback) showUpdatePrompt();
+    });
   }
   reg.addEventListener('updatefound', () => {
     if (reg.installing) {
@@ -223,6 +239,7 @@ export function initUpdater() {
   document.querySelector('#header-update-btn')?.addEventListener('click', () => {
     if (hasUpdateDetected) {
       showUpdatePrompt();
+      return;
     }
     checkAppUpdate(true);
   });
@@ -242,13 +259,15 @@ export function initUpdater() {
   const hadController = Boolean(navigator.serviceWorker.controller);
 
   // controllerchange listener: triggered when a new SW takes over
+  let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloadRequested) {
-      window.location.reload();
-      return;
-    }
-    showUpdatePrompt();
-    showToast(getTranslation('upTitle'));
+    // If the page had no controller on initial load, ignore the first claim
+    if (!hadController) return;
+
+    // Reload once when a new SW takes control after update
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
   });
 
   window.addEventListener('load', () => {
