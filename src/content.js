@@ -161,6 +161,36 @@ export const rawStructures = {
     },
     source: 'Standard EP catheter placement references; schematic'
   },
+  'cath-ra': {
+    tr: { title: 'RA istasyonu • ort < 5 mmHg', description: 'Sağ atriyum basıncı: a, c, v dalgaları, x ve y inişleri. O₂ satürasyonu %75.', clinical: 'Yüksek RA basıncı: sağ kalp yetersizliği, triküspit yetersizliği, tamponad veya konstriksiyon.' },
+    en: { title: 'RA station • mean < 5 mmHg', description: 'Right atrial pressure: a, c and v waves with x and y descents. O₂ saturation 75%.', clinical: 'Raised RA pressure: right heart failure, tricuspid regurgitation, tamponade or constriction.' },
+    source: 'Standard hemodynamic normals (adult, supine); schematic'
+  },
+  'cath-rv': {
+    tr: { title: 'RV istasyonu • 25/5 mmHg', description: 'Sağ ventrikül sistolik < 25, diyastolik < 5 mmHg. O₂ %75.', clinical: 'RV sistolik basınç, pulmoner kapak darlığı yoksa PA sistolik basıncına eşittir.' },
+    en: { title: 'RV station • 25/5 mmHg', description: 'Right ventricular systolic < 25, diastolic < 5 mmHg. O₂ 75%.', clinical: 'Without pulmonary stenosis, RV systolic pressure equals PA systolic pressure.' },
+    source: 'Standard hemodynamic normals (adult, supine); schematic'
+  },
+  'cath-pa': {
+    tr: { title: 'PA istasyonu • 25/10, ort < 15', description: 'Pulmoner arter sistolik < 25, diyastolik < 10, ortalama < 15 mmHg. O₂ %75.', clinical: 'Ortalama PA basıncı > 20 mmHg pulmoner hipertansiyon tanımıdır.' },
+    en: { title: 'PA station • 25/10, mean < 15', description: 'Pulmonary artery systolic < 25, diastolic < 10, mean < 15 mmHg. O₂ 75%.', clinical: 'Mean PA pressure > 20 mmHg defines pulmonary hypertension.' },
+    source: 'Standard hemodynamic normals (adult, supine); schematic'
+  },
+  'cath-wedge': {
+    tr: { title: 'Wedge (PCWP) • ort < 12', description: 'Balon şişik, distal dalda: LA basıncının gecikmeli, sönümlü yansıması. O₂ %97.', clinical: 'PCWP > 15 mmHg postkapiller (sol kalp kaynaklı) pulmoner hipertansiyonu düşündürür.' },
+    en: { title: 'Wedge (PCWP) • mean < 12', description: 'Balloon inflated in a distal branch: damped, delayed reflection of LA pressure. O₂ 97%.', clinical: 'PCWP > 15 mmHg suggests post-capillary (left-heart) pulmonary hypertension.' },
+    source: 'Standard hemodynamic normals (adult, supine); schematic'
+  },
+  'cath-lv': {
+    tr: { title: 'LV istasyonu • 120/8 mmHg', description: 'Sol ventrikül sistolik < 120, diyastolik (LVEDP) < 8-12 mmHg. O₂ %95.', clinical: 'LVEDP yüksekliği diyastolik disfonksiyon veya volüm yükünü gösterir.' },
+    en: { title: 'LV station • 120/8 mmHg', description: 'Left ventricular systolic < 120, diastolic (LVEDP) < 8-12 mmHg. O₂ 95%.', clinical: 'Raised LVEDP reflects diastolic dysfunction or volume load.' },
+    source: 'Standard hemodynamic normals (adult, supine); schematic'
+  },
+  'cath-ao': {
+    tr: { title: 'Aort istasyonu • 120/80 mmHg', description: 'Aort sistolik < 120, diyastolik < 80 mmHg; dikrotik çentik aort kapanışını gösterir. O₂ %95.', clinical: 'Geri çekmede LV-aort sistolik farkı aort darlığı gradyanıdır.' },
+    en: { title: 'Aortic station • 120/80 mmHg', description: 'Aortic systolic < 120, diastolic < 80 mmHg; the dicrotic notch marks aortic closure. O₂ 95%.', clinical: 'On pull-back, the LV-aortic systolic difference is the aortic stenosis gradient.' },
+    source: 'Standard hemodynamic normals (adult, supine); schematic'
+  },
   amc: {
     tr: {
       title: 'Aorto-mitral devamlılık • AMC',
@@ -660,6 +690,30 @@ export const structures = new Proxy({}, {
 });
 
 export const rawLessons = {
+  cath: {
+    tr: {
+      title: 'Kardiyak kateterizasyon • Basınç ve oksimetri',
+      intro: 'Sağ kalp (Swan-Ganz) ve sol kalp kateterizasyonunda her istasyonun normal basınç eğrisi, değer aralığı ve oksijen satürasyonu; eğriler EKG ve Wiggers saatiyle senkron. İlerleme çubuğu kateteri ilerletir; istasyon noktalarına tıklayın.',
+      steps: [
+        { title: 'Sağ atriyum (RA)', text: 'Femoral ven → İVC → RA. Normal ortalama < 5 mmHg, O₂ %75. a dalgası atriyal sistol (P\'den sonra), c dalgası triküspit kapanışında kapağın RA\'ya bombelenmesi, v dalgası sistolde venöz doluş; x ve y inişleri. Yüksek RA: sağ kalp yetersizliği, triküspit yetersizliği (büyük v), tamponad/konstriksiyon (belirgin y).', landmark: 'ra', view: 'anterior' },
+        { title: 'Sağ ventrikül (RV)', text: 'Kateter triküspitten RV\'ye geçer. Normal sistolik < 25, diyastolik < 5 mmHg, O₂ %75. Diyastolik basınç düşük başlar, atriyal sistolle yükselir (RVEDP). Ventriküler ektopi kateter temasına bağlı sık görülür.', landmark: 'rv', view: 'rao' },
+        { title: 'Pulmoner arter + wedge (PCWP)', text: 'RV çıkış yolu ve pulmoner kapaktan PA\'ya. Normal sistolik < 25, diyastolik < 10, ortalama < 15 mmHg; diyastolde dikrotik çentik görülür. Balon distal dalda şişirilince wedge (PCWP) ölçülür: ortalama < 12 mmHg, LA basıncını gecikmeli ve sönümlü yansıtır (a ve v dalgaları). O₂: PA %75, wedge %97.', landmark: 'pa', view: 'anterior' },
+        { title: 'Sol kalp (retrograd) • LV ve aort', text: 'Femoral arter → aort → aort kapağı → LV. Normal LV sistolik < 120, diyastolik (LVEDP) < 8-12 mmHg; aort sistolik < 120, diyastolik < 80 mmHg, O₂ %95. Geri çekme (pull-back) sırasında LV-aort sistolik farkı aort darlığı gradyanını verir.', landmark: 'lv', view: 'lao' },
+        { title: 'Oksimetri özeti ve şant taraması', text: 'Sağ kalp satürasyonları %75 civarında, sol kalp %95-97. Sağ tarafta istasyonlar arasında ≥ %7 (atriyal seviyede) veya ≥ %5 (ventriküler/PA) satürasyon artışı soldan sağa şantı düşündürür (ASD, VSD, PDA). Qp/Qs = (SaO₂ − SvO₂) / (SpvO₂ − SpaO₂).', landmark: 'la', view: 'anterior' }
+      ]
+    },
+    en: {
+      title: 'Cardiac catheterization • Pressures and oximetry',
+      intro: 'Normal pressure tracing, value range and oxygen saturation at each right-heart (Swan-Ganz) and left-heart station, synchronized with the ECG and Wiggers clock. The progress slider advances the catheter; click the station markers.',
+      steps: [
+        { title: 'Right atrium (RA)', text: 'Femoral vein → IVC → RA. Normal mean < 5 mmHg, O₂ 75%. a wave = atrial systole (after P), c wave = tricuspid closure bulging into the RA, v wave = systolic venous filling; x and y descents. Raised RA: right heart failure, tricuspid regurgitation (large v), tamponade/constriction (prominent y).', landmark: 'ra', view: 'anterior' },
+        { title: 'Right ventricle (RV)', text: 'The catheter crosses the tricuspid valve. Normal systolic < 25, diastolic < 5 mmHg, O₂ 75%. Diastolic pressure starts low and rises with atrial systole (RVEDP). Catheter-induced ventricular ectopy is common.', landmark: 'rv', view: 'rao' },
+        { title: 'Pulmonary artery + wedge (PCWP)', text: 'Through the RV outflow tract and pulmonary valve into the PA. Normal systolic < 25, diastolic < 10, mean < 15 mmHg, with a diastolic dicrotic notch. Inflating the balloon in a distal branch gives the wedge (PCWP): mean < 12 mmHg, a damped, delayed reflection of LA pressure (a and v waves). O₂: PA 75%, wedge 97%.', landmark: 'pa', view: 'anterior' },
+        { title: 'Left heart (retrograde) • LV and aorta', text: 'Femoral artery → aorta → aortic valve → LV. Normal LV systolic < 120, diastolic (LVEDP) < 8-12 mmHg; aortic systolic < 120, diastolic < 80 mmHg, O₂ 95%. On pull-back, the LV-aortic systolic difference gives the aortic stenosis gradient.', landmark: 'lv', view: 'lao' },
+        { title: 'Oximetry summary and shunt run', text: 'Right-heart saturations run near 75%, left-heart 95-97%. A step-up of ≥ 7% (atrial level) or ≥ 5% (ventricular/PA) between right-sided stations suggests a left-to-right shunt (ASD, VSD, PDA). Qp/Qs = (SaO₂ − SvO₂) / (SpvO₂ − SpaO₂).', landmark: 'la', view: 'anterior' }
+      ]
+    }
+  },
   angiography: {
     tr: {
       title: 'Floroskopik koroner anatomi',
@@ -1007,7 +1061,8 @@ export const uiTranslations = {
       ['ablation', '03', 'Ablasyon anatomisi'],
       ['pacemaker', '04', 'Pacemaker telleri'],
       ['transseptal', '05', 'Transseptal & septostomi'],
-      ['bachmann', '06', 'Bachmann demeti & pacing']
+      ['bachmann', '06', 'Bachmann demeti & pacing'],
+      ['cath', '07', 'Kardiyak kateterizasyon']
     ],
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Odacıklar (Chambers)',
@@ -1079,7 +1134,8 @@ export const uiTranslations = {
       ['ablation', '03', 'Ablation anatomy'],
       ['pacemaker', '04', 'Pacemaker leads'],
       ['transseptal', '05', 'Transseptal & septostomy'],
-      ['bachmann', '06', 'Bachmann bundle & pacing']
+      ['bachmann', '06', 'Bachmann bundle & pacing'],
+      ['cath', '07', 'Cardiac catheterization']
     ],
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Chambers',

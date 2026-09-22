@@ -9,10 +9,12 @@ import { createAnnuli } from './annuli.js';
 import { addSchematicAvLeaflets } from './schematic-leaflets.js';
 import { createThorax } from './thorax.js';
 import { createTransseptal } from './transseptal.js';
+import { createCathLab } from './cath-lab.js';
 import { createBachmannGeometry } from './bachmann.js';
 import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
+import { vesselTrimPlane } from './mesh-utils.js';
 import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
@@ -63,7 +65,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const wallPlanes=new Map();
   const ivcPlane=new THREE.Plane(new THREE.Vector3(0,1,0),2);
   // The atlas LPA sweeps far posteroinferiorly; trim the distal tail for a tidy silhouette.
-  const lpaPlane=new THREE.Plane(new THREE.Vector3(0,1,0),-0.5);
+  // Atlas vessels that run far beyond the cardiac silhouette are trimmed on a
+  // plane across their measured centerline (see computeVesselTrims).
+  const vesselTrims=new Map();
   const rootPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),rootHeight);
   const decoder=new DRACOLoader().setDecoderPath('/draco/');
   const loader=new GLTFLoader().setDRACOLoader(decoder);
@@ -85,6 +89,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   let bachmannTarget = null;
   const pacemakerLeads = createPacemakerLeads({ sourceCenter, getBachmannTarget: () => bachmannTarget });
   heart.add(pacemakerLeads.group);
+  function computeVesselTrims(){
+    const verts=name=>{const m=meshes.find(x=>x.name===name);if(!m)return[];m.updateWorldMatrix(true,false);const p=m.geometry.attributes.position;const out=[];for(let i=0;i<p.count;i++)out.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld));return out;};
+    const bifurcation=sourceCenter('pa')||new THREE.Vector3(0.07,1.5,-0.42);
+    const bif=verts('Bifurcation of pulmonary trunk');
+    const bifCenter=bif.length?bif.reduce((a,v)=>a.add(v),new THREE.Vector3()).multiplyScalar(1/bif.length):bifurcation;
+    const la=sourceCenter('la')||new THREE.Vector3(-0.05,0.27,-0.37);
+    // LPA: keep the arch over the left bronchus (~4 cm), drop the lower-lobe run.
+    const lpa=vesselTrimPlane(verts('Left pulmonary artery'),bifCenter,1.1);
+    if(lpa)vesselTrims.set('Left pulmonary artery',lpa);
+    // RSPV: keep a stump comparable to the other pulmonary veins.
+    const rspv=vesselTrimPlane(verts('Right superior pulmonary vein'),la,0.55);
+    if(rspv)vesselTrims.set('Right superior pulmonary vein',rspv);
+  }
   function meshVertices(id,nameFilter){
     const out=[];
     for(const m of meshMap.get(id)||[]){
@@ -97,6 +114,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const transseptal = createTransseptal({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [] });
   heart.add(transseptal.group);
+  const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
+  heart.add(cathLab.group);
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });
   heart.add(thorax.group);
@@ -127,12 +146,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       m.visible=visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
       const tissue=layer==='chambers';
       // Catheters run inside these vessels in the transseptal lesson; keep them see-through.
-      const catheterVessel=mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id);
+      const catheterVessel=(mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id))||(mode==='cath'&&['aorta','pa','svc','ivc'].includes(id));
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
       const faintPa=visibility['pa-faint']&&id==='pa';
       const alpha=tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
-      m.material.clippingPlanes=m.name==='Left pulmonary artery'?[lpaPlane]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
+      m.material.clippingPlanes=vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
         m.material.roughness=0.65;
         m.material.metalness=0;
@@ -200,7 +219,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     channels = createAnimationChannels({ meshMap, sourceCenter });
     bloodFlow = createBloodFlow();
     layers.flow.add(bloodFlow.group);
-    applyState();loading.remove();container.dataset.modelReady='true';
+    computeVesselTrims();applyState();computeFit();setView('anterior',false);loading.remove();container.dataset.modelReady='true';
     container.dataset.meshCount=String(found.length);
     return {count:found.length,normalization:{center:center.toArray(),scale},source:ATLAS_URL};
   }).catch(error=>{loading.textContent='Anatomical asset could not load. Reload to retry; no substitute geometry is shown.';decoder.dispose();throw error;});
@@ -412,10 +431,29 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
   }
 
-  function setAngioProjection(laoRaoDeg,craCauDeg,smooth=true){
-    const target=new THREE.Vector3(0,.4,0);
+  // Framing: distance at which the heart (chambers, great vessels, coronaries)
+  // fills the canvas for the current aspect ratio. Recomputed on resize.
+  const fitCenter=new THREE.Vector3(0,.4,0);
+  let fitDistance=9.3;
+  function computeFit(){
+    const box=new THREE.Box3();
+    for(const m of meshes){
+      const layer=m.userData.layer;
+      if(layer==='chambers'||layer==='vessels'||layer==='coronaries')box.expandByObject(m);
+    }
+    if(box.isEmpty())return;
+    box.getCenter(fitCenter);
+    const size=box.getSize(new THREE.Vector3());
+    const t=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+    const depth=Math.max(size.x,size.z);
+    const vertical=(size.y/2)/t;
+    const horizontal=(depth/2)/(t*Math.max(camera.aspect,.2));
+    fitDistance=THREE.MathUtils.clamp((Math.max(vertical,horizontal)/.94+depth*.5)*.9,3,18);
+  }
+  function setAngioProjection(laoRaoDeg,craCauDeg,smooth=true,keepDistance=true){
+    const target=fitCenter.clone();
     const offset=camera.position.clone().sub(target);
-    const R=Math.max(6.0,Math.min(14.0,offset.length()||9.3));
+    const R=keepDistance?Math.max(2.5,Math.min(16.0,offset.length()||fitDistance)):fitDistance;
     const clampedLaoRao=THREE.MathUtils.clamp(Number(laoRaoDeg)||0,-180,180);
     const clampedCraCau=THREE.MathUtils.clamp(Number(craCauDeg)||0,-50,50);
     const theta=(clampedLaoRao*Math.PI)/180;
@@ -442,11 +480,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
 
   function setView(name,smooth=true){
     if(angioPresets[name]){
-      setAngioProjection(angioPresets[name].laoRao,angioPresets[name].craCau,smooth);
+      setAngioProjection(angioPresets[name].laoRao,angioPresets[name].craCau,smooth,false);
       return;
     }
     const root=sourceCenter('lm')||new THREE.Vector3(0,.6,0);
-    const target=name==='root'?root:new THREE.Vector3(0,.4,0);
+    const target=name==='root'?root:fitCenter.clone();
     const offsets={anterior:[0,.1,9.3],posterior:[0,.1,-9.3],rao:[-6.6,.3,6.6],lao:[6.6,.3,6.6],root:[.2,3.7,1.4]};
     cameraTarget.copy(target).add(new THREE.Vector3(...(offsets[name]||offsets.anterior)));lookTarget.copy(target);
     if(name==='root'){rootWindow=true;applyState();}
@@ -456,10 +494,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let catheterPickables=null;
   function pickTargets(){
-    if(!transseptal.group.visible)return meshes;
+    if(!transseptal.group.visible&&!cathLab.group.visible)return meshes;
     if(!catheterPickables||!catheterPickables.length){
       catheterPickables=[];
-      transseptal.group.traverse(o=>{if(o.isMesh&&o.userData.pickId)catheterPickables.push(o);});
+      for(const g of [transseptal.group,cathLab.group]){
+        if(g.visible)g.traverse(o=>{if(o.isMesh&&o.userData.pickId)catheterPickables.push(o);});
+      }
     }
     return catheterPickables.length?meshes.concat(catheterPickables):meshes;
   }
@@ -478,7 +518,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){const id=pick(e);if(id)onSelect(id);}}
   function pointerLeave(){hovered=null;down=null;paintSelection();onHover(null);}
   renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointerleave',pointerLeave);
-  const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();requestRender();};
+  const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();requestRender();};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
   let lastTime = performance.now();
   function animate(now){
@@ -527,7 +567,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       for(let parent=object.parent;parent;parent=parent.parent){
         if(parent.userData.projectionTissue)schematicTissue=true;
         if(deviceTint===null && parent.userData.fluoroTint!=null)deviceTint=parent.userData.fluoroTint;
-        if(parent===pacemakerLeads.group || parent===transseptal.group){device=true;break;}
+        if(parent===pacemakerLeads.group || parent===transseptal.group || parent===cathLab.group){device=true;break;}
       }
       device=device && !schematicTissue && !original.isMeshBasicMaterial;
       let projected=projectionMaterials.get(object);
@@ -586,10 +626,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
       mode=name;
-      opacity=['angiography','ablation','pacemaker','transseptal','bachmann'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
+      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       transseptal.setVisible(name==='transseptal');
+      cathLab.setVisible(name==='cath');
+      catheterPickables=null;
       if(name==='ablation'){
         epLandmarks.setStep(0);
       }else if(name==='pacemaker'){
@@ -601,6 +643,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }else if(name==='transseptal'){
         transseptal.setStep(0);
         transseptal.setProgress(1.0);
+      }else if(name==='cath'){
+        cathLab.setStep(0);
+        cathLab.setProgress(1.0);
       }
       applyState();
       requestRender();
@@ -648,8 +693,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
     setBachmannStep(step){pacemakerLeads.setBachmannStep(Number(step));requestRender();},
     setTransseptalStep(step){transseptal.setStep(Number(step));requestRender();},
+    setCathStep(step){cathLab.setStep(Number(step));requestRender();},
     setCatheterVisible(key,value){transseptal.setCatheterVisible(key,Boolean(value));requestRender();},
-    setProgress(value){if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
+    setProgress(value){if(mode==='cath'){cathLab.setProgress(Number(value));requestRender();return;}if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){
@@ -667,6 +713,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       epLandmarks.setVisible(false);
       pacemakerLeads.setVisible(false);
       transseptal.setVisible(false);
+      cathLab.setVisible(false);
       rootWindow=false;
       system='all';
       fluoroscopy=false;

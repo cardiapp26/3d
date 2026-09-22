@@ -11,14 +11,15 @@ import {
 const previous = getContentLanguage();
 
 setContentLanguage('en');
-assert.equal(getUiModes().length, 6);
+assert.equal(getUiModes().length, 7);
 assert.deepEqual(getUiModes().map(([id]) => id), [
   'anatomy',
   'angiography',
   'ablation',
   'pacemaker',
   'transseptal',
-  'bachmann'
+  'bachmann',
+  'cath'
 ]);
 assert.match(getViewerTitle('angiography'), /projection/i);
 assert.match(getAngioDescription('spider'), /spider/i);
@@ -27,7 +28,7 @@ assert.equal(getTranslation('wallClosed'), 'Closed');
 const englishSpider = getAngioDescription('spider');
 
 setContentLanguage('tr');
-assert.equal(getUiModes().length, 6);
+assert.equal(getUiModes().length, 7);
 assert.equal(getTranslation('wallClosed'), 'Kapalı');
 assert.match(getAngioDescription('spider'), /Spider|bifurk/i);
 assert.notEqual(getAngioDescription('spider'), englishSpider);

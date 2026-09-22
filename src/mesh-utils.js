@@ -138,3 +138,38 @@ export function contactPatch(meshA, meshB, thresh = 0.12) {
   if (points.length < 20) return null;
   return { points, centroid: centroid(points), normal: normal.normalize() };
 }
+
+/**
+ * Trim plane across a vessel at arc distance `keep` from its proximal end.
+ * The proximal end is the point of `verts` nearest `origin`; the centerline
+ * comes from binning vertices by distance to it. Returns a THREE.Plane whose
+ * positive side is the kept (proximal) part, or null if the vessel is
+ * already shorter than `keep`.
+ */
+export function vesselTrimPlane(verts, origin, keep, step = 0.12) {
+  if (!verts.length) return null;
+  const start = verts.reduce((best, v) => v.distanceTo(origin) < best.distanceTo(origin) ? v : best);
+  const bins = new Map();
+  for (const v of verts) {
+    const k = Math.round(v.distanceTo(start) / step);
+    if (!bins.has(k)) bins.set(k, []);
+    bins.get(k).push(v);
+  }
+  const line = [...bins.keys()].sort((a, b) => a - b)
+    .filter(k => bins.get(k).length >= 4)
+    .map(k => centroid(bins.get(k)));
+  if (line.length < 3) return null;
+  let arc = 0;
+  for (let i = 1; i < line.length; i++) {
+    const seg = line[i].distanceTo(line[i - 1]);
+    if (arc + seg >= keep) {
+      const f = (keep - arc) / seg;
+      const point = line[i - 1].clone().lerp(line[i], f);
+      const tangent = line[Math.min(i + 1, line.length - 1)].clone().sub(line[Math.max(i - 1, 0)]).normalize();
+      const normal = tangent.clone().negate();
+      return new THREE.Plane(normal, -normal.dot(point));
+    }
+    arc += seg;
+  }
+  return null;
+}

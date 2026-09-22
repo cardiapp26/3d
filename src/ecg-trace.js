@@ -1,7 +1,7 @@
 // Schematic lead II shape locked to CYCLE_SYNC, the same clock as the valve pose.
 // It is a teaching trace, not a recorded or diagnostic electrocardiogram.
 
-import { CYCLE_SYNC as SYNC } from './cardiac-cycle.js';
+import { CYCLE_SYNC as SYNC, phaseToTime, timeToPhase } from './cardiac-cycle.js';
 
 function wrapPhase(phase) {
   const p = Number(phase);
@@ -44,7 +44,7 @@ const MARKS = [
   { phase: SYNC.pPeak, label: 'P', rhythms: new Set(['sinus', 'bradycardia', 'tachycardia']) },
   { phase: SYNC.qrsPeak, label: 'QRS' },
   { phase: SYNC.tPeak, label: 'T' },
-  { phase: SYNC.avCloseStart, label: 'S1' },
+  { phase: SYNC.ivcStart, label: 'S1' },
   { phase: SYNC.ejectionStart, label: 'Ao' },
   { phase: SYNC.ivrStart, label: 'S2' }
 ];
@@ -89,16 +89,18 @@ export function drawEcgTrace(canvas, state) {
   ctx.lineWidth = 1.6;
   ctx.strokeStyle = '#3ee08f';
   ctx.lineJoin = 'round';
+  // x axis is real time over one RR interval (same warp as the Wiggers strip).
+  const bpm = state.bpm || 72;
   const steps = Math.max(80, Math.floor(width / 2));
   for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const y = mid - ecgSample(t, rhythm) * gain;
-    if (i === 0) ctx.moveTo(t * width, y);
-    else ctx.lineTo(t * width, y);
+    const tau = i / steps;
+    const y = mid - ecgSample(timeToPhase(tau, bpm), rhythm) * gain;
+    if (i === 0) ctx.moveTo(tau * width, y);
+    else ctx.lineTo(tau * width, y);
   }
   ctx.stroke();
 
-  const cursor = phase * width;
+  const cursor = phaseToTime(phase, bpm) * width;
   ctx.strokeStyle = 'rgba(255, 236, 168, 0.9)';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -112,7 +114,7 @@ export function drawEcgTrace(canvas, state) {
     for (const mark of MARKS) {
       if (mark.rhythms && !mark.rhythms.has(rhythm)) continue;
       const onBaseline = mark.label === 'S1' || mark.label === 'Ao' || mark.label === 'S2';
-      ctx.fillText(mark.label, mark.phase * width + 3, onBaseline ? height - 6 : 12);
+      ctx.fillText(mark.label, phaseToTime(mark.phase, bpm) * width + 3, onBaseline ? height - 6 : 12);
     }
   }
 }

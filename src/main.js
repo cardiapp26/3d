@@ -4,7 +4,7 @@ import {createHeart} from './heart.js';
 import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation,getUiModes,getAngioDescription} from './content.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
-import {drawWiggers, formatCycleTiming} from './wiggers.js';
+import {drawWiggers, formatCycleTiming, wiggersPhaseAt, drawCathTracing} from './wiggers.js';
 
 document.documentElement.lang = getContentLanguage();
 
@@ -14,7 +14,8 @@ const modes = [
   ['ablation', '03'],
   ['pacemaker', '04'],
   ['transseptal', '05'],
-  ['bachmann', '06']
+  ['bachmann', '06'],
+  ['cath', '07']
 ];
 
 const app = document.querySelector('#app');
@@ -106,6 +107,11 @@ app.innerHTML = `
     </div>
   </aside>
   <main>
+    <div class="myo-control" id="myo-control">
+      <button id="myo-toggle" class="myo-btn" aria-pressed="false" title="Dış miyokardı saydamlaştır (M)">◐ Miyokard <kbd>M</kbd></button>
+      <input id="myo-opacity" type="range" min="15" max="100" value="100" aria-label="Miyokard opaklığı">
+      <output id="myo-value">100%</output>
+    </div>
     <div class="viewer-top">
       <div class="top-badges">
         <span id="hover-badge" class="hover-badge" hidden></span>
@@ -300,6 +306,9 @@ app.innerHTML = `
       <p id="lesson-intro"></p>
       <div id="steps"></div>
       <div id="step-detail"></div>
+      <div id="cath-tracing-wrap" class="cath-tracing-wrap" hidden>
+        <canvas id="cath-tracing" aria-label="Kateter basınç izi"></canvas>
+      </div>
       <button class="primary" id="next-step">Next landmark →</button>
       <label class="slider-label" for="progress" id="progress-label">Lead ilerletme / Yerleşim <span id="progress-value">100%</span></label>
       <input id="progress" type="range" min="0" max="100" value="100">
@@ -374,7 +383,20 @@ function resolveStructureId(id) {
   })[id] || id;
 }
 
+const CATH_STEP_STATIONS = ['cath-ra', 'cath-rv', 'cath-pa', 'cath-lv', 'cath-ao'];
+let cathStation = 'cath-ra';
+function drawCathPanel(state) {
+  const canvas = document.querySelector('#cath-tracing');
+  if (!canvas || mode !== 'cath') return;
+  const cycle = state || heart?.getCycleState?.();
+  drawCathTracing(canvas, cathStation, cycle, getContentLanguage() === 'tr' ? 'tr' : 'en');
+}
+
 function inspect(id, flyTo = true, updateUrl = true) {
+  if (typeof id === 'string' && id.startsWith('cath-')) {
+    cathStation = id;
+    drawCathPanel();
+  }
   const cleanId = resolveStructureId(id);
   const s = structures[cleanId];
   if (!s) return;
@@ -438,17 +460,7 @@ try {
   console.error(error);
 }
 
-function updateCycleUI(state) {
-  if (!state) return;
-  beating = state.playing;
-  const isTr = getContentLanguage() === 'tr';
-  const beatBtn = document.querySelector('#beat');
-  if (beatBtn) {
-    beatBtn.setAttribute('aria-pressed', String(state.playing));
-    const label = state.playing ? getTranslation('beatPause') : getTranslation('beatAnimate');
-    beatBtn.innerHTML = `${label} <kbd>Space</kbd>`;
-  }
-  // The bottom bars (hint row, camera presets, viewport inset) stack on top of
+// The bottom bars (hint row, camera presets, viewport inset) stack on top of
 // the cycle panel; publish its live height so CSS can position them.
 const cyclePanelEl = document.querySelector('#cycle-panel');
 const mainPanelEl = document.querySelector('main');
@@ -459,7 +471,18 @@ if (cyclePanelEl && mainPanelEl) {
 }
 
 let lastCycleState = null;
-const scrubber = document.querySelector('#cycle-scrubber');
+
+function updateCycleUI(state) {
+  if (!state) return;
+  beating = state.playing;
+  const isTr = getContentLanguage() === 'tr';
+  const beatBtn = document.querySelector('#beat');
+  if (beatBtn) {
+    beatBtn.setAttribute('aria-pressed', String(state.playing));
+    const label = state.playing ? getTranslation('beatPause') : getTranslation('beatAnimate');
+    beatBtn.innerHTML = `${label} <kbd>Space</kbd>`;
+  }
+  const scrubber = document.querySelector('#cycle-scrubber');
   if (scrubber && document.activeElement !== scrubber) {
     scrubber.value = (state.phase * 100).toFixed(1);
   }
@@ -490,6 +513,7 @@ const scrubber = document.querySelector('#cycle-scrubber');
   });
   drawEcgTrace(document.querySelector('#ecg-canvas'), state);
   lastCycleState = state;
+  if (mode === 'cath') drawCathPanel(state);
   const wigStrip = document.querySelector('#wiggers-strip');
   if (wigStrip && !wigStrip.hidden) {
     drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en');
@@ -526,7 +550,14 @@ function showStep() {
   const isPacemaker = mode === 'pacemaker';
   const isBachmann = mode === 'bachmann';
   const isTransseptal = mode === 'transseptal';
-  const hasProgress = isPacemaker || isTransseptal || (isBachmann && step > 0);
+  const isCath = mode === 'cath';
+  const hasProgress = isPacemaker || isTransseptal || isCath || (isBachmann && step > 0);
+  const cathWrap = document.querySelector('#cath-tracing-wrap');
+  if (cathWrap) cathWrap.hidden = !isCath;
+  if (isCath) {
+    cathStation = CATH_STEP_STATIONS[step] || 'cath-ra';
+    drawCathPanel();
+  }
   const progressEl = document.querySelector('#progress');
   const progressLabel = document.querySelector('#progress-label');
   const progressNote = document.querySelector('#progress-note');
@@ -551,6 +582,7 @@ function showStep() {
     heart?.setProgress(1.0);
     if (isBachmann) heart?.setBachmannStep(step);
     else if (isPacemaker) heart?.setPacemakerStep(step);
+    else if (isCath) heart?.setCathStep(step);
     else heart?.setTransseptalStep(step);
   } else if (isBachmann) {
     heart?.setBachmannStep(step);
@@ -592,7 +624,7 @@ function setMode(newMode, updateUrl = true) {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
 
-  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann') {
+  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath') {
     setCarmPanelOpen(true);
   } else {
     setCarmPanelOpen(false);
@@ -600,6 +632,11 @@ function setMode(newMode, updateUrl = true) {
 
   const opacity = lessons[mode] ? Math.round(LESSON_TISSUE_OPACITY * 100) : 100;
   document.querySelector('#opacity').value = opacity;
+  const myoSlider = document.querySelector('#myo-opacity');
+  if (myoSlider) myoSlider.value = opacity;
+  const myoValue = document.querySelector('#myo-value');
+  if (myoValue) myoValue.textContent = `${opacity}%`;
+  document.querySelector('#myo-toggle')?.classList.toggle('active', opacity < 100);
   document.querySelector('#opacity-value').textContent = `${opacity}%`;
   heart?.setOpacity(opacity / 100);
 
@@ -944,10 +981,38 @@ document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('clic
   setCameraPreset(el.dataset.view);
 }));
 
-document.querySelector('#opacity').addEventListener('input', e => {
-  heart?.setOpacity(Number(e.target.value) / 100);
-  document.querySelector('#opacity-value').textContent = `${e.target.value}%`;
-});
+// Tissue opacity has two controls (sidebar slider, viewport myocardium
+// control); both route through setTissueOpacity so they stay in sync.
+let myoRestoreOpacity = 30;
+function setTissueOpacity(percent) {
+  const value = Math.round(Math.min(100, Math.max(15, Number(percent) || 100)));
+  heart?.setOpacity(value / 100);
+  const sidebar = document.querySelector('#opacity');
+  if (sidebar) sidebar.value = value;
+  const sidebarLabel = document.querySelector('#opacity-value');
+  if (sidebarLabel) sidebarLabel.textContent = `${value}%`;
+  const myo = document.querySelector('#myo-opacity');
+  if (myo) myo.value = value;
+  const myoLabel = document.querySelector('#myo-value');
+  if (myoLabel) myoLabel.textContent = `${value}%`;
+  const btn = document.querySelector('#myo-toggle');
+  if (btn) {
+    btn.classList.toggle('active', value < 100);
+    btn.setAttribute('aria-pressed', String(value < 100));
+  }
+}
+function toggleMyocardium() {
+  const current = Number(document.querySelector('#myo-opacity')?.value || 100);
+  if (current < 100) {
+    myoRestoreOpacity = current;
+    setTissueOpacity(100);
+  } else {
+    setTissueOpacity(myoRestoreOpacity);
+  }
+}
+document.querySelector('#opacity').addEventListener('input', e => setTissueOpacity(e.target.value));
+document.querySelector('#myo-opacity')?.addEventListener('input', e => setTissueOpacity(e.target.value));
+document.querySelector('#myo-toggle')?.addEventListener('click', toggleMyocardium);
 
 function toggleBeat() {
   const state = heart?.getCycleState();
@@ -1010,9 +1075,8 @@ wiggersToggle?.addEventListener('click', () => {
 const wiggersCanvas = document.querySelector('#wiggers-canvas');
 let wiggersDragging = false;
 function wiggersSeek(e) {
-  const rect = wiggersCanvas.getBoundingClientRect();
-  const phase = Math.min(1, Math.max(0, (e.clientX - rect.left - 8) / (rect.width - 16)));
-  heart?.seekCycle(phase);
+  const bpm = heart?.getCycleState?.().bpm || 72;
+  heart?.seekCycle(wiggersPhaseAt(wiggersCanvas, e.clientX, bpm));
 }
 wiggersCanvas?.addEventListener('pointerdown', e => {
   wiggersDragging = true;
@@ -1274,6 +1338,8 @@ window.addEventListener('keydown', e => {
     setCameraPreset('lao');
   } else if (key === 's' || key === 'S') {
     setCameraPreset('spider');
+  } else if (key === 'm' || key === 'M') {
+    toggleMyocardium();
   } else if (key === 'w' || key === 'W') {
     setWiggersOpen(document.querySelector('#wiggers-strip')?.hidden);
   } else if (key === 'c' || key === 'C') {

@@ -98,6 +98,89 @@ export const RHYTHM_PRESETS = {
   afib: { name: 'Atrial Fibrillation Concept', bpm: 110, labelTr: 'Atriyal Fibrilasyon Konsepti' }
 };
 
+// ---------------------------------------------------------------------------
+// Heart-rate time warp. The engine phase is the physiologic (template) phase
+// u, whose interval boundaries above are fixed. Real time within one RR
+// interval (tau) maps onto u piecewise: systole shortens slowly with rate,
+// the diastolic filling time absorbs the rest, and diastasis is consumed
+// first. At ~72 bpm the warp is close to identity.
+// ---------------------------------------------------------------------------
+const BASE_RR = 60 / 72;
+const BASE_SEC = {
+  'rapid-filling': 0.18 * BASE_RR,
+  'atrial-systole': 0.13 * BASE_RR,
+  'isovolumetric-relaxation': 0.12 * BASE_RR
+};
+const TEMPLATE_SYSTOLE_U = 0.08 + 0.35; // isovolumetric contraction + ejection
+
+/** Seconds spent in each template interval at a given rate. */
+export function intervalDurations(bpm) {
+  const rr = 60 / Math.max(30, Math.min(200, Number(bpm) || 72));
+  const systole = Math.min(Math.max(0.0475 + 0.375 * rr, 0.12), rr * 0.7);
+  const systoleScale = systole / (TEMPLATE_SYSTOLE_U * BASE_RR);
+  const ivr = BASE_SEC['isovolumetric-relaxation'] * Math.min(1.25, systoleScale);
+  const filling = Math.max(rr - systole - ivr, 0.02);
+  let rapid = BASE_SEC['rapid-filling'];
+  let atrial = BASE_SEC['atrial-systole'];
+  let diastasis = filling - rapid - atrial;
+  if (diastasis < 0) {
+    const k = filling / (rapid + atrial);
+    rapid *= k;
+    atrial *= k;
+    diastasis = 0;
+  }
+  const sec = {
+    'rapid-filling': rapid,
+    diastasis: Math.max(diastasis, 1e-5),
+    'atrial-systole': atrial,
+    'isovolumetric-contraction': systole * (0.08 / TEMPLATE_SYSTOLE_U),
+    'ventricular-ejection': systole * (0.35 / TEMPLATE_SYSTOLE_U),
+    'isovolumetric-relaxation': ivr
+  };
+  return CARDIAC_INTERVALS.map(iv => ({ id: iv.id, u0: iv.start, u1: iv.end, sec: sec[iv.id] }));
+}
+
+/** Systole / diastole seconds at a rate (systole = isovolumetric contraction + ejection). */
+export function cycleSeconds(bpm) {
+  const d = intervalDurations(bpm);
+  const total = d.reduce((acc, iv) => acc + iv.sec, 0);
+  const systole = d.filter(iv => iv.id === 'isovolumetric-contraction' || iv.id === 'ventricular-ejection')
+    .reduce((acc, iv) => acc + iv.sec, 0);
+  return { cycleSec: total, systoleSec: systole, diastoleSec: total - systole };
+}
+
+/** Template phase u -> real-time fraction tau of the RR interval. */
+export function phaseToTime(u, bpm) {
+  const d = intervalDurations(bpm);
+  const total = d.reduce((acc, iv) => acc + iv.sec, 0);
+  const uu = ((u % 1) + 1) % 1;
+  let acc = 0;
+  for (const iv of d) {
+    if (uu <= iv.u1 || iv === d[d.length - 1]) {
+      const f = (uu - iv.u0) / (iv.u1 - iv.u0);
+      return (acc + Math.min(1, Math.max(0, f)) * iv.sec) / total;
+    }
+    acc += iv.sec;
+  }
+  return 1;
+}
+
+/** Real-time fraction tau -> template phase u. */
+export function timeToPhase(tau, bpm) {
+  const d = intervalDurations(bpm);
+  const total = d.reduce((acc, iv) => acc + iv.sec, 0);
+  const target = (((tau % 1) + 1) % 1) * total;
+  let acc = 0;
+  for (const iv of d) {
+    if (target <= acc + iv.sec || iv === d[d.length - 1]) {
+      const f = iv.sec > 0 ? (target - acc) / iv.sec : 0;
+      return iv.u0 + Math.min(1, Math.max(0, f)) * (iv.u1 - iv.u0);
+    }
+    acc += iv.sec;
+  }
+  return 0;
+}
+
 export function getIntervalForPhase(phase) {
   const normPhase = ((phase % 1) + 1) % 1;
   for (let i = CARDIAC_INTERVALS.length - 1; i >= 0; i--) {
@@ -193,7 +276,9 @@ export function createCardiacCycle(initialOptions = {}) {
   function tick(dtMs) {
     if (!playing || reducedMotion || dtMs <= 0) return getState();
     const cycleDurationMs = (60000 / bpm) / speed;
-    phase = ((phase + (dtMs / cycleDurationMs)) % 1 + 1) % 1;
+    // Advance in real time, then map back onto the physiologic phase.
+    const tau = phaseToTime(phase, bpm) + dtMs / cycleDurationMs;
+    phase = timeToPhase(tau, bpm);
     notify();
     return getState();
   }
