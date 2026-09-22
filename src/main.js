@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import './style.css';
 import {createHeart} from './heart.js';
-import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation,getUiModes,getAngioDescription} from './content.js';
+import {structures,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
+import { fetchCountryCode, languageForCountry } from './entry-language.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
 import {drawWiggers, formatCycleTiming, wiggersPhaseAt, drawCathTracing} from './wiggers.js';
@@ -37,9 +38,6 @@ app.innerHTML = `
 </header>
 <div class="workspace">
   <aside>
-    <div class="eyebrow" data-i18n="workspaceEyebrow">${getTranslation('workspaceEyebrow')}</div>
-    <h1 data-i18n="workspaceTitle">${getTranslation('workspaceTitle')}</h1>
-    <p class="muted" data-i18n="workspaceMuted">${getTranslation('workspaceMuted')}</p>
     <nav aria-label="Learning modes">
       ${getUiModes().map(([id,n,t])=>`<button class="mode ${id==='anatomy'?'active':''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> <kbd class="mode-kbd">${n.replace(/^0/,'')}</kbd><b>↗</b></button>`).join('')}
     </nav>
@@ -322,7 +320,6 @@ app.innerHTML = `
         </div>
       </div>
     </div>
-    <div class="eyebrow">STRUCTURE SPOTLIGHT</div>
     <div class="structure-index">01 / ANATOMY</div>
     <h2 id="structure-title">Left ventricle</h2>
     <div class="divider"></div>
@@ -357,11 +354,15 @@ app.innerHTML = `
 </footer>
 
 <dialog id="references">
-  <button id="close-dialog">Close ×</button>
-  <h2>Reference library</h2>
-  <p>Descriptions grounded in selected supplied PDFs. Page numbers refer to PDF pages where specified. Full audit and limitations: SOURCES.md.</p>
+  <button id="close-dialog" data-i18n="closeDialog">${getTranslation('closeDialog')}</button>
+  <h2 data-i18n="referencesTitle">${getTranslation('referencesTitle')}</h2>
+  <div class="about-block">
+    <p data-i18n="madeBy">${getTranslation('madeBy')}</p>
+    <p><span data-i18n="contactLead">${getTranslation('contactLead')}</span> <a href="mailto:adycovs@gmail.com">adycovs@gmail.com</a></p>
+  </div>
+  <p data-i18n="referencesIntro">${getTranslation('referencesIntro')}</p>
   <div id="reference-list"></div>
-  <p><strong>Model limitations:</strong> Heart and vascular meshes now come from the same local cardiovascular.glb. Its upstream author and license have not been verified; this is not attributed to HuBMAP. Cell diagrams and beating remain illustrative. Anatomical source review does not establish clinical simulator validity.</p>
+  <p data-i18n="referencesLimits">${getTranslation('referencesLimits')}</p>
 </dialog>
 
 <dialog id="shortcuts-modal">
@@ -470,7 +471,8 @@ function inspect(id, flyTo = true, updateUrl = true) {
   }
 
   heart?.selectStructure(cleanId, flyTo);
-  const stMatch = heart?.getState().structures.find(item => item.id === cleanId);
+  const listed = heart?.getState().structures || [];
+  const stMatch = listed.find(item => item.id === cleanId) || listed.find(item => item.valveId === cleanId);
   const indexEl = document.querySelector('.structure-index');
   if (indexEl) {
     if (stMatch) {
@@ -1352,9 +1354,24 @@ function updateLanguageUI() {
 
 document.querySelector('#lang-btn')?.addEventListener('click', () => {
   const newLang = getContentLanguage() === 'tr' ? 'en' : 'tr';
-  setContentLanguage(newLang);
+  setContentLanguage(newLang, { explicit: true });
   updateLanguageUI();
 });
+
+async function applyCountryLanguage() {
+  if (hasExplicitLanguageChoice()) return;
+  try {
+    const code = await fetchCountryCode();
+    if (hasExplicitLanguageChoice()) return;
+    const lang = languageForCountry(code);
+    if (lang === getContentLanguage()) return;
+    setContentLanguage(lang);
+    updateLanguageUI();
+  } catch {
+    /* Keep the timezone guess when the country lookup does not answer. */
+  }
+}
+applyCountryLanguage();
 
 function syncCatheterUI() {
   const vis = heart?.getCatheterVisibility?.() || {

@@ -18,6 +18,10 @@ const fs = require('node:fs');
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
+    await page.addInitScript(() => {
+      localStorage.setItem('cardia_lang', 'tr');
+      localStorage.setItem('cardia_lang_explicit', '1');
+    });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto(url);
     await page.waitForSelector('#viewport[data-model-ready=true]');
@@ -99,6 +103,19 @@ const fs = require('node:fs');
     ));
     assert.equal(schematicLeaflets.length, 2, 'mitral and tricuspid each gain one schematic anterior leaflet');
     assert.ok(schematicLeaflets.every(item => item.provenance === 'schematic' && item.visible));
+    assert.deepEqual(schematicLeaflets.map(item => item.id).sort(), ['mitral-anterior', 'tricuspid-anterior']);
+    const leafletCards = [
+      ['mitral-posterior', 'atlas', /Posterior mitral|PML/],
+      ['mitral-anterior', 'schematic', /Anterior mitral|AML/],
+      ['tricuspid-septal', 'atlas', /Septal triküspit|Septal tricuspid/],
+      ['tricuspid-inferior', 'atlas', /İnferior triküspit|Inferior tricuspid/],
+      ['tricuspid-anterior', 'schematic', /Anterior triküspit|Anterior tricuspid/]
+    ];
+    for (const [id, provenance, title] of leafletCards) {
+      await page.locator('#structure-select').selectOption(id);
+      assert.match(await page.locator('#structure-title').textContent(), title, id);
+      assert.equal(await page.locator('.structure-index').getAttribute('data-provenance'), provenance, id);
+    }
     const amcMesh = await page.evaluate(() => window.heart.getState().structures.filter(item => item.id === 'amc'));
     assert.deepEqual(amcMesh, [], 'AMC stays a reference note, not a mesh');
 
@@ -490,8 +507,31 @@ const fs = require('node:fs');
 
     // 10. Dialogs and modes
     for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await page.locator(`[data-mode=${mode}]`).click();
-    await page.locator('#sources').click(); assert.ok(await page.locator('dialog#references').isVisible());
+    await page.locator('#sources').click();
+    assert.ok(await page.locator('dialog#references').isVisible());
+    assert.match(await page.locator('#sources').textContent(), /Hakkında ve kaynaklar/);
+    assert.match(await page.locator('#references').textContent(), /Yapım: Dr\. Yusuf Hoşoğlu/);
+    assert.match(await page.locator('#references').textContent(), /adycovs@gmail\.com/);
     await page.locator('#close-dialog').click();
+    for (const country of ['TR', 'DE']) {
+      const context = await browser.newContext();
+      await context.route('https://get.geojs.io/**', route => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ country })
+      }));
+      const geoPage = await context.newPage();
+      const geoErrors = [];
+      geoPage.on('pageerror', error => geoErrors.push(error.message));
+      await geoPage.goto(url);
+      await geoPage.waitForSelector('#lang-btn');
+      const expected = country === 'TR' ? 'TR' : 'EN';
+      const label = country === 'TR' ? 'Hakkında ve kaynaklar' : 'About and sources';
+      await geoPage.waitForFunction(value => document.querySelector('#lang-btn')?.textContent === value, expected);
+      assert.equal(await geoPage.locator('#sources').textContent(), label, country);
+      assert.deepEqual(geoErrors, [], country);
+      await context.close();
+    }
 
     // 11. Mobile viewport test
     await page.setViewportSize({ width:390,height:844 });

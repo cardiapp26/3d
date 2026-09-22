@@ -8,6 +8,10 @@ const fs = require('node:fs');
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
+    await page.addInitScript(() => {
+      localStorage.setItem('cardia_lang', 'tr');
+      localStorage.setItem('cardia_lang_explicit', '1');
+    });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && m.text().includes('THREE.')) errors.push(m.text()); });

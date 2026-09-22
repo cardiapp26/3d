@@ -77,6 +77,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     meshes.push(mesh);
     if(!meshMap.has(id))meshMap.set(id,[]);
     meshMap.get(id).push(mesh);
+    if(mesh.userData.leaflet){
+      const lid=id+'-'+mesh.userData.leaflet;
+      if(!meshMap.has(lid))meshMap.set(lid,[]);
+      meshMap.get(lid).push(mesh);
+    }
     if(mesh.userData.veinGroup){
       const vg = mesh.userData.veinGroup;
       if(!meshMap.has(vg))meshMap.set(vg,[]);
@@ -163,7 +168,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   function paintSelection(){
     for(const m of meshes){
-      const isSelected=m.userData.id===selected,isHovered=m.userData.id===hovered;
+      const shown=m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id;
+      const isSelected=shown===selected||m.userData.id===selected,isHovered=shown===hovered;
       if(m.userData.layer==='conduction'){
         m.material.emissiveIntensity=isSelected?1.2:isHovered?1.0:0.75;
         continue;
@@ -179,7 +185,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     requestRender();
   }
-  function selectStructure(id,flyTo=true){selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(['lm','lcc','rcc','ncc','mitral','tricuspid','sa','av','his'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+  function selectStructure(id,flyTo=true){selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
 
   // Conceptual cellular illustration is separate from the source atlas.
   const micro=new THREE.Group();scene.add(micro);micro.visible=false;
@@ -503,15 +509,21 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     return catheterPickables.length?meshes.concat(catheterPickables):meshes;
   }
+  function shownStructureId(object){
+    const data=object.userData||{};
+    if(data.pickId)return data.pickId;
+    if(data.leaflet&&data.id)return data.id+'-'+data.leaflet;
+    return data.id||null;
+  }
   function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
     const hits=raycaster.intersectObjects(pickTargets()).filter(h=>{for(let p=h.object;p;p=p.parent)if(!p.visible)return false;return !(h.object.material.clippingPlanes||[]).some(p=>p.distanceToPoint(h.point)<0);});
     // See-through tissue (opacity < .5) should not swallow clicks aimed at
     // devices or solid structures behind it.
     for(const h of hits){
       if(h.object.userData.pickId)return h.object.userData.pickId;
-      if((h.object.material.opacity??1)>=0.5)return h.object.userData.id;
+      if((h.object.material.opacity??1)>=0.5)return shownStructureId(h.object);
     }
-    return hits[0]?(hits[0].object.userData.pickId||hits[0].object.userData.id):null;
+    return hits[0]?shownStructureId(hits[0].object):null;
   }
   function pointerMove(e){hovered=pick(e);paintSelection();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered);}
   function pointerDown(e){transition=false;down=[e.clientX,e.clientY];}
@@ -730,7 +742,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
     dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

@@ -1,15 +1,28 @@
+import { initialLanguage } from './entry-language.js';
+
 const atlas = 'Kardiyak anatomi atlası';
 const av = 'Ho et al., 2003, PDF pp. 3–4';
 const la = 'Ho et al., 2012, PDF pp. 2–3';
 const rv = 'Anatomy for right ventricular lead implantation, PDF p. 2';
 
-let currentLang = (typeof localStorage !== 'undefined' && localStorage.getItem('cardia_lang')) || 'tr';
+let currentLang = initialLanguage();
 
-export function setContentLanguage(lang) {
+export function setContentLanguage(lang, options = {}) {
   currentLang = lang === 'en' ? 'en' : 'tr';
   if (typeof document !== 'undefined') document.documentElement.lang = currentLang;
   if (typeof localStorage !== 'undefined') {
-    try { localStorage.setItem('cardia_lang', currentLang); } catch (_) {}
+    try {
+      localStorage.setItem('cardia_lang', currentLang);
+      if (options.explicit) localStorage.setItem('cardia_lang_explicit', '1');
+    } catch (_) {}
+  }
+}
+
+export function hasExplicitLanguageChoice() {
+  try {
+    return localStorage.getItem('cardia_lang_explicit') === '1';
+  } catch {
+    return false;
   }
 }
 
@@ -413,6 +426,32 @@ export const rawStructures = {
     },
     source: 'Ho et al., 2012, PDF p. 7; mini atlas, PDF pp. 38–39'
   },
+  'mitral-posterior': {
+    tr: {
+      title: 'Posterior mitral yaprakçık • PML',
+      description: 'Mitral kapağın mural yaprakçığıdır. Anulus çevresinin büyük bölümünü tutar. Serbest kenar klinikte P1, P2 ve P3 taraklarına ayrılır.',
+      clinical: 'Atlas parçası tek posterior yaprakçıktır; taraklar ayrı mesh değildir. Korda yoktur.'
+    },
+    en: {
+      title: 'Posterior mitral leaflet • PML',
+      description: 'The mural leaflet of the mitral valve. It occupies most of the annular circumference. Its free edge is divided clinically into P1, P2 and P3 scallops.',
+      clinical: 'The atlas part is a single posterior leaflet; the scallops are not separate meshes. Chordae are not included.'
+    },
+    source: 'Ho et al., 2012, PDF p. 7; mini atlas, PDF pp. 38–39'
+  },
+  'mitral-anterior': {
+    tr: {
+      title: 'Anterior mitral yaprakçık • AML · şematik',
+      description: 'Aort kapağı ile fibröz devamlılığı olan ön yaprakçıktır. Anulus çevresinin kısa bir yayını, kapak alanının büyük bölümünü tutar.',
+      clinical: 'Atlas düğümü yoktur. Parça, ölçülmüş anulusun posterior yaprakçığın karşı yayına oturan şematik bir yelkendir. Korda yoktur.'
+    },
+    en: {
+      title: 'Anterior mitral leaflet • AML · schematic',
+      description: 'The anterior leaflet is in fibrous continuity with the aortic valve. It takes a short arc of the annulus and most of the leaflet area.',
+      clinical: 'The atlas has no anterior leaflet node. This part is a schematic sail on the annular arc opposite the posterior leaflet. Chordae are not included.'
+    },
+    source: 'Ho et al., 2012, PDF p. 7; mini atlas, PDF pp. 38–39'
+  },
   tricuspid: {
     tr: {
       title: 'Triküspit kapak • Sağ AV kapak',
@@ -423,6 +462,45 @@ export const rawStructures = {
       title: 'Tricuspid valve • Right AV valve',
       description: 'The right atrioventricular valve has septal, anterior and inferior leaflets with chordal attachments to the ventricular apparatus.',
       clinical: 'The atlas contains the septal and inferior leaflets. The anterior leaflet is a schematic sail on the uncovered arc of the measured annulus. The septal hinge is a landmark for Koch’s triangle.'
+    },
+    source: `${rv}; ${av}`
+  },
+  'tricuspid-septal': {
+    tr: {
+      title: 'Septal triküspit yaprakçık',
+      description: 'Triküspit kapağın septal yaprakçığıdır. Menteşesi septum üzerindedir ve Koch üçgeninin bir kenarını oluşturur.',
+      clinical: 'Atlas parçasıdır. Septal menteşe, AV düğüm ve His demetine en yakın yaprakçık kenarıdır. Korda yoktur.'
+    },
+    en: {
+      title: 'Septal tricuspid leaflet',
+      description: 'The septal leaflet of the tricuspid valve. Its hinge lies on the septum and forms one side of the triangle of Koch.',
+      clinical: 'Atlas part. The septal hinge is the leaflet edge closest to the AV node and the bundle of His. Chordae are not included.'
+    },
+    source: `${rv}; ${av}`
+  },
+  'tricuspid-inferior': {
+    tr: {
+      title: 'İnferior triküspit yaprakçık',
+      description: 'Triküspit kapağın diyafragmatik yaprakçığıdır. Cerrahi metinlerde posterior yaprakçık olarak da geçer.',
+      clinical: 'Atlas düğümünün adı inferior yaprakçıktır. Bu, posterior yaprakçıkla aynı parçadır; dördüncü bir yaprakçık yoktur. Korda yoktur.'
+    },
+    en: {
+      title: 'Inferior tricuspid leaflet',
+      description: 'The diaphragmatic leaflet of the tricuspid valve. Surgical texts also call it the posterior leaflet.',
+      clinical: 'The atlas node is named the inferior leaflet. It is the same leaflet as the posterior leaflet, not a fourth cusp. Chordae are not included.'
+    },
+    source: `${rv}; ${av}`
+  },
+  'tricuspid-anterior': {
+    tr: {
+      title: 'Anterior triküspit yaprakçık · şematik',
+      description: 'Triküspit kapağın en geniş yaprakçığıdır. Anterosüperior anulus boyunca sağ ventrikül serbest duvarına uzanır.',
+      clinical: 'Atlas yalnız septal ve inferior yaprakçıkları içerir. Bu parça, ölçülmüş anulusun boş yayına oturan şematik bir yelkendir. Korda yoktur.'
+    },
+    en: {
+      title: 'Anterior tricuspid leaflet · schematic',
+      description: 'The largest tricuspid leaflet. It runs along the anterosuperior annulus toward the right ventricular free wall.',
+      clinical: 'The atlas contains only the septal and inferior leaflets. This part is a schematic sail on the uncovered arc of the measured annulus. Chordae are not included.'
     },
     source: `${rv}; ${av}`
   },
@@ -1051,7 +1129,13 @@ export const uiTranslations = {
     brandSubtitle: 'ANATOMİ STÜDYOSU',
     headerTitle: 'İnteraktif 3D Kardiyak Atlas',
     shortcutsBtn: 'Kısayollar',
-    referencesBtn: 'Kaynaklar ↗',
+    referencesBtn: 'Hakkında ve kaynaklar',
+    referencesTitle: 'Hakkında ve kaynaklar',
+    madeBy: 'Yapım: Dr. Yusuf Hoşoğlu',
+    contactLead: 'İletişim:',
+    referencesIntro: 'Metinler seçilmiş kaynaklara dayanır. Sayfa numaraları, belirtildiyse PDF sayfasıdır. Denetim ve sınırlar: SOURCES.md.',
+    referencesLimits: 'Model sınırları: Kalp ve damar örgüleri aynı yerel cardiovascular.glb dosyasındadır. Üst yazar ve lisans doğrulanmamıştır; HuBMAP atfı yoktur. Hücre çizimleri ve atım şematiktir. Anatomi kaynak taraması klinik simülatör geçerliliği kurmaz.',
+    closeDialog: 'Kapat ×',
     workspaceEyebrow: 'ÇALIŞMA ALANI',
     workspaceTitle: 'Kalbin anatomisi.',
     workspaceMuted: 'Yapıyı keşfedin. İlişkileri anlayın.',
@@ -1148,7 +1232,13 @@ export const uiTranslations = {
     brandSubtitle: 'ANATOMY STUDIO',
     headerTitle: 'Interactive 3D Cardiac Atlas',
     shortcutsBtn: 'Shortcuts',
-    referencesBtn: 'References ↗',
+    referencesBtn: 'About and sources',
+    referencesTitle: 'About and sources',
+    madeBy: 'Made by: Dr. Yusuf Hoşoğlu',
+    contactLead: 'Contact:',
+    referencesIntro: 'Descriptions are grounded in selected sources. Page numbers refer to PDF pages where specified. Audit and limitations: SOURCES.md.',
+    referencesLimits: 'Model limitations: Heart and vascular meshes come from the same local cardiovascular.glb. Its upstream author and license have not been verified; this is not attributed to HuBMAP. Cell diagrams and beating remain illustrative. Anatomical source review does not establish clinical simulator validity.',
+    closeDialog: 'Close ×',
     workspaceEyebrow: 'YOUR WORKSPACE',
     workspaceTitle: 'Inside the heart.',
     workspaceMuted: 'Explore structure. Understand relationships.',
