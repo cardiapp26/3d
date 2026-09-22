@@ -104,7 +104,7 @@ const fs = require('node:fs');
 
     await page.locator('[data-mode="transseptal"]').click();
     const valveAndSeptumState = await page.evaluate(async () => {
-      const { contactPatch } = await import('/src/mesh-utils.js');
+      const { boundaryLoops, contactPatch } = await import('/src/mesh-utils.js');
       const structures = window.heart.getState().structures;
       const leaflets = structures.filter(item =>
         item.name === 'Posterior leaflet of left atrioventricular valve' ||
@@ -131,90 +131,67 @@ const fs = require('node:fs');
       };
       let annulus = null;
       let septum = null;
+      let fossa = null;
       let raMesh = null;
       let laMesh = null;
+      let svcMesh = null;
+      let ivcMesh = null;
       window.heart.scene.traverse(object => {
         if (object.name === 'Tricuspid annulus') annulus = object;
-        if (object.name === 'Interatrial septum (schematic)') septum = object;
+        if (object.name === 'Apparent interatrial septal region (schematic)') septum = object;
+        if (object.name === 'Fossa ovalis') fossa = object;
         if (object.userData?.id === 'ra' && object.name === 'Right atrium') raMesh = object;
         if (object.userData?.id === 'la' && object.name === 'Left atrium') laMesh = object;
+        if (object.userData?.id === 'svc' && object.name === 'Superior vena cava') svcMesh = object;
+        if (object.userData?.id === 'ivc') ivcMesh = object;
       });
       const radial = 13;
       const tubular = 96;
-      const center = { x: 0, y: 0, z: 0 };
-      const samples = [];
+      let annulusY = 0;
+      let annulusZ = 0;
       for (let i = 0; i < tubular; i++) {
-        const point = { x: 0, y: 0, z: 0 };
         for (let j = 0; j < 12; j++) {
           const sample = worldPoint(annulus, i * radial + j);
-          point.x += sample.x;
-          point.y += sample.y;
-          point.z += sample.z;
+          annulusY += sample.y;
+          annulusZ += sample.z;
         }
-        point.x /= 12;
-        point.y /= 12;
-        point.z /= 12;
-        samples.push(point);
-        center.x += point.x;
-        center.y += point.y;
-        center.z += point.z;
       }
-      center.x /= samples.length;
-      center.y /= samples.length;
-      center.z /= samples.length;
-      const normal = { x: 0, y: 0, z: 0 };
-      for (let i = 0; i < samples.length; i++) {
-        const a = samples[i];
-        const b = samples[(i + 1) % samples.length];
-        normal.x += (a.y - b.y) * (a.z + b.z);
-        normal.y += (a.z - b.z) * (a.x + b.x);
-        normal.z += (a.x - b.x) * (a.y + b.y);
-      }
-      const towardRa = {
-        x: raCenter[0] - center.x,
-        y: raCenter[1] - center.y,
-        z: raCenter[2] - center.z
-      };
-      if (normal.x * towardRa.x + normal.y * towardRa.y + normal.z * towardRa.z < 0) {
-        normal.x *= -1;
-        normal.y *= -1;
-        normal.z *= -1;
-      }
-      const length = Math.hypot(normal.x, normal.y, normal.z) || 1;
-      normal.x /= length;
-      normal.y /= length;
-      normal.z /= length;
-      let lowest = Infinity;
-      let highest = -Infinity;
-      let minY = Infinity;
-      let maxY = -Infinity;
-      const discCount = septum.geometry.attributes.position.count;
-      for (let i = 0; i < discCount; i++) {
-        const point = worldPoint(septum, i);
-        const signed = (point.x - center.x) * normal.x + (point.y - center.y) * normal.y + (point.z - center.z) * normal.z;
-        lowest = Math.min(lowest, signed);
-        highest = Math.max(highest, signed);
-        minY = Math.min(minY, point.y);
-        maxY = Math.max(maxY, point.y);
-      }
+      annulusY /= tubular * 12;
+      annulusZ /= tubular * 12;
       const fossaCenter = worldPoint(septum, 0);
       const ncc = { x: nccCenter[0], y: nccCenter[1], z: nccCenter[2] };
       const patch = contactPatch(raMesh, laMesh);
+      const svcOstiumY = Math.min(...boundaryLoops(svcMesh).map(loop => loop.center.y));
+      const ivcOstiumY = ivcMesh
+        ? Math.max(...boundaryLoops(ivcMesh).map(loop => loop.center.y))
+        : -0.65;
       const surfaceDistance = Math.min(...patch.points.map(point =>
         Math.hypot(point.x - fossaCenter.x, point.y - fossaCenter.y, point.z - fossaCenter.z)));
+      const areaRatio = fossa.geometry.parameters.radius ** 2 * fossa.scale.x * fossa.scale.y
+        / (septum.geometry.parameters.radius ** 2 * septum.scale.x * septum.scale.y);
+      let fossaMinY = Infinity;
+      let fossaMaxY = -Infinity;
+      for (let i = 0; i < fossa.geometry.attributes.position.count; i++) {
+        const point = worldPoint(fossa, i);
+        fossaMinY = Math.min(fossaMinY, point.y);
+        fossaMaxY = Math.max(fossaMaxY, point.y);
+      }
       return {
         ias: {
           y: septum.position.y,
           opacity: septum.material.opacity,
           depthWrite: septum.material.depthWrite,
-          lowestAboveAnnulus: lowest,
-          highestAboveAnnulus: highest,
           surfaceDistance,
+          areaRatio,
           centerY: fossaCenter.y,
+          raCenterY: raCenter[1],
+          cavalMidY: (svcOstiumY + ivcOstiumY) / 2,
+          posteriorToTricuspid: fossaCenter.z < annulusZ - 0.5,
+          fossaMinY,
+          fossaMaxY,
+          fossaAspect: fossa.scale.x / fossa.scale.y,
           posteriorToCusp: fossaCenter.z < ncc.z,
-          minY,
-          maxY,
-          annulusY: center.y,
+          annulusY,
           nccY: ncc.y
         },
         leaflets: leaflets.map(item => ({
@@ -233,12 +210,22 @@ const fs = require('node:fs');
       'Fossa center lies on the RA side of the measured interatrial septal contact patch');
     assert.ok(valveAndSeptumState.ias.centerY < valveAndSeptumState.ias.nccY,
       'Fossa center remains inferior to the non-coronary cusp');
+    assert.ok(valveAndSeptumState.ias.centerY > valveAndSeptumState.ias.raCenterY + 0.12,
+      'Fossa center sits between the caval openings rather than low on the atrial wall');
+    assert.ok(Math.abs(valveAndSeptumState.ias.centerY - valveAndSeptumState.ias.cavalMidY) < 0.12,
+      'Fossa center lies midway between the SVC and IVC ostia');
+    assert.equal(valveAndSeptumState.ias.posteriorToTricuspid, true,
+      'Fossa center is posterior to the tricuspid annulus');
+    assert.ok(valveAndSeptumState.ias.areaRatio > 0.15 && valveAndSeptumState.ias.areaRatio < 0.28,
+      'Fossa is about one fifth of the apparent septal region');
+    assert.ok(valveAndSeptumState.ias.fossaAspect > 1.1,
+      'Fossa membrane is oval in the septal plane');
     assert.equal(valveAndSeptumState.ias.posteriorToCusp, true,
       'Fossa center remains posterior to the non-coronary cusp');
-    assert.ok(valveAndSeptumState.ias.minY > valveAndSeptumState.ias.annulusY - 0.05,
-      'Inferior limbus does not hang through the tricuspid annulus');
-    assert.ok(valveAndSeptumState.ias.maxY < valveAndSeptumState.ias.nccY - 0.12,
-      'Superior rim stays below the non-coronary cusp');
+    assert.ok(valveAndSeptumState.ias.fossaMinY > valveAndSeptumState.ias.annulusY,
+      'Inferior fossa rim stays above the tricuspid annulus');
+    assert.ok(valveAndSeptumState.ias.fossaMaxY < valveAndSeptumState.ias.nccY - 0.08,
+      'Superior fossa rim stays below the non-coronary cusp');
     assert.ok(valveAndSeptumState.ias.opacity <= 0.25 && valveAndSeptumState.ias.depthWrite === false,
       'IAS display does not occlude atlas AV leaflets');
     const fossaMarker = await page.evaluate(() => {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { centroid, contactPatch } from './mesh-utils.js';
+import { boundaryLoops, centroid, contactPatch, sharedRim } from './mesh-utils.js';
 
 /**
  * Procedural 3D Transseptal Puncture & Balloon Atrial Septostomy simulation.
@@ -23,7 +23,7 @@ export function createTransseptal(helpers) {
     roughness: 0.6,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.12,
     depthWrite: false,
     side: THREE.DoubleSide
   });
@@ -143,19 +143,38 @@ export function createTransseptal(helpers) {
     const svc = sourceCenter('svc') || new THREE.Vector3(-1.08, 1.89, -0.16);
     const ivc = sourceCenter('ivc') || new THREE.Vector3(-0.85, -0.65, -0.35);
 
-    // The oval fossa belongs on the lower RA side of the shared atrial wall.
-    // Valve centers describe its neighbors, not the surface it sits on.
+    // Locate the fossa between the caval openings, behind the tricuspid hinge.
+    // The broad RA/LA contact patch also contains atrial folds outside the true septum.
     const septum = contactPatch(getMeshes('ra')[0], getMeshes('la')[0]);
-    const septalNormal = septum ? septum.normal.clone() : la.clone().sub(ra).normalize();
-    const lowerPatch = septum?.points.filter(point =>
-      point.y >= ra.y - 0.25 && point.y <= ra.y + 0.15);
-    const patchPoints = lowerPatch?.length ? lowerPatch : septum?.points;
-    const patchCenter = patchPoints ? centroid(patchPoints.map(point => point.clone())) : null;
-    const fossa = patchCenter
-      ? patchPoints.reduce((best, point) =>
-        point.distanceToSquared(patchCenter) < best.distanceToSquared(patchCenter) ? point : best).clone()
-      : ra.clone().lerp(la, 0.42).add(new THREE.Vector3(0, -0.12, -0.18));
-    const septumRadius = 0.18;
+    if (!septum) throw new Error('No measured RA/LA septal contact patch for fossa ovalis');
+    const septalNormal = septum.normal.clone();
+    const svcMesh = getMeshes('svc')[0];
+    const ivcMesh = getMeshes('ivc')[0];
+    const svcLoops = svcMesh ? boundaryLoops(svcMesh) : [];
+    const ivcLoops = ivcMesh ? boundaryLoops(ivcMesh) : [];
+    const svcOstium = svcLoops.length
+      ? svcLoops.reduce((best, loop) => loop.center.y < best.center.y ? loop : best).center
+      : svc;
+    const ivcOstium = ivcLoops.length
+      ? ivcLoops.reduce((best, loop) => loop.center.y > best.center.y ? loop : best).center
+      : ivc;
+    const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
+    const tvCenter = tvRim ? centroid(tvRim.map(point => point.clone())) : sourceCenter('tricuspid-annulus');
+    const cavalMidY = (svcOstium.y + ivcOstium.y) / 2;
+    const fossaCandidates = septum.points.filter(point =>
+      Math.abs(point.y - cavalMidY) < 0.18 && (!tvCenter || point.z < tvCenter.z - 0.5));
+    if (fossaCandidates.length < 20) {
+      throw new Error('No fossa ovalis site between the caval openings behind the tricuspid hinge');
+    }
+    const patchCenter = centroid(fossaCandidates.map(point => point.clone()));
+    const fossa = fossaCandidates.reduce((best, point) =>
+      point.distanceToSquared(patchCenter) < best.distanceToSquared(patchCenter) ? point : best).clone();
+    const septalUp = new THREE.Vector3(0, 1, 0).addScaledVector(septalNormal, -septalNormal.y).normalize();
+    const septalAcross = new THREE.Vector3().crossVectors(septalUp, septalNormal).normalize();
+    const septalRotation = new THREE.Quaternion().setFromRotationMatrix(
+      new THREE.Matrix4().makeBasis(septalAcross, septalUp, septalNormal));
+    const septumRadius = 0.5;
+    const fossaRadius = 0.195;
     const facing = fossa.clone().add(septalNormal);
 
     // -------------------------------------------------------------
@@ -167,13 +186,15 @@ export function createTransseptal(helpers) {
 
     const septumDisc = new THREE.Mesh(new THREE.CircleGeometry(septumRadius, 40), matSeptum);
     septumDisc.position.copy(fossa);
-    septumDisc.lookAt(facing);
-    septumDisc.name = 'Interatrial septum (schematic)';
+    septumDisc.quaternion.copy(septalRotation);
+    septumDisc.scale.x = 0.8;
+    septumDisc.name = 'Apparent interatrial septal region (schematic)';
     iasGroup.add(septumDisc);
 
-    const fossaDisc = new THREE.Mesh(new THREE.CircleGeometry(septumRadius * 0.62, 40), matFossa);
+    const fossaDisc = new THREE.Mesh(new THREE.CircleGeometry(fossaRadius, 40), matFossa);
     fossaDisc.position.copy(fossa).addScaledVector(septalNormal, -0.02);
-    fossaDisc.lookAt(facing);
+    fossaDisc.quaternion.copy(septalRotation);
+    fossaDisc.scale.x = 1.16;
     fossaDisc.name = 'Fossa ovalis';
     fossaDisc.renderOrder = 12;
     fossaDisc.userData = {
@@ -187,11 +208,12 @@ export function createTransseptal(helpers) {
     iasGroup.add(fossaDisc);
 
     const limbus = new THREE.Mesh(
-      new THREE.TorusGeometry(septumRadius * 0.64, Math.max(0.016, septumRadius * 0.09), 10, 40),
+      new THREE.TorusGeometry(fossaRadius * 1.02, 0.018, 10, 40),
       matLimbus
     );
     limbus.position.copy(fossa).addScaledVector(septalNormal, -0.028);
-    limbus.lookAt(facing);
+    limbus.quaternion.copy(septalRotation);
+    limbus.scale.x = 1.16;
     limbus.name = 'Limbus fossae ovalis';
     limbus.renderOrder = 13;
     limbus.userData = { id: 'fossa', pickId: 'fossa', provenance: 'schematic', keepOrder: true };
