@@ -100,6 +100,15 @@ app.innerHTML = `
       <label class="slider-label"><span data-i18n="opacityLabel">${getTranslation('opacityLabel')}</span> <span id="opacity-value">100%</span></label>
       <input id="opacity" aria-label="${getTranslation('opacityLabel')}" type="range" min="15" max="100" value="100">
       <div class="coronary-tools"><div class="section-heading" data-i18n="coronaryToolsHeading">${getTranslation('coronaryToolsHeading')}</div><label for="coronary-system"><span data-i18n="coronarySystemLabel">${getTranslation('coronarySystemLabel')}</span></label><select id="coronary-system"><option value="all">Tüm anatomi</option><option value="both">İki koroner sistem</option><option value="left">Sol sistem · LM / LAD / LCx</option><option value="right">Sağ sistem · RCA</option></select><label class="layer"><input id="root-window" type="checkbox"> <span data-i18n="rootWindowLabel">${getTranslation('rootWindowLabel')}</span></label><small data-i18n="rootWindowNote">${getTranslation('rootWindowNote')}</small></div>
+      <div id="transseptal-layers" class="transseptal-tools" hidden>
+        <div class="section-heading" data-i18n="tsCathHeading">${getTranslation('tsCathHeading')}</div>
+        <label class="layer"><i style="background:#3aa0ff"></i><span data-i18n="tsCathPigtail">${getTranslation('tsCathPigtail')}</span><input type="checkbox" data-ts-cath="pigtail" checked></label>
+        <label class="layer"><i style="background:#2a66d8"></i><span data-i18n="tsCathCs">${getTranslation('tsCathCs')}</span><input type="checkbox" data-ts-cath="cs" checked></label>
+        <label class="layer"><i style="background:#52b788"></i><span data-i18n="tsCathSheath">${getTranslation('tsCathSheath')}</span><input type="checkbox" data-ts-cath="sheath" checked></label>
+        <label class="layer"><i style="background:#f4a261"></i><span data-i18n="tsCathWire">${getTranslation('tsCathWire')}</span><input type="checkbox" data-ts-cath="wire" checked></label>
+        <label class="layer"><i style="background:#e76f51"></i><span data-i18n="tsCathBalloon">${getTranslation('tsCathBalloon')}</span><input type="checkbox" data-ts-cath="balloon" checked></label>
+        <label class="layer"><i style="background:#4ade80"></i><span data-i18n="tsCathIas">${getTranslation('tsCathIas')}</span><input type="checkbox" data-ts-cath="ias" checked></label>
+      </div>
     </section>
     <div class="aside-bottom">
       <span class="outline-icon">i</span>
@@ -120,8 +129,9 @@ app.innerHTML = `
     <div id="viewport" aria-label="Interactive 3D heart. Drag to rotate, scroll to zoom."></div>
 
     <div class="view-controls" aria-label="Camera presets">
-      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root & Cusps','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}">${t} <kbd>${k}</kbd></button>`).join('')}
+      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}" title="${id==='root'?'Root & Cusps':t} (${k})">${t} <kbd>${k}</kbd></button>`).join('')}
       <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm Gantry & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
+      <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
       <button id="reset" title="Reset camera (0)">↺</button>
     </div>
     <div id="cycle-panel" class="cycle-panel">
@@ -277,13 +287,28 @@ app.innerHTML = `
               <span class="carm-sub-icon">🤍</span> Kapaklar
             </button>
           </div>
-          <div id="catheter-toggles" class="carm-quick-actions" hidden>
-            <button id="toggle-pigtail" class="carm-sub-btn active" aria-pressed="true" title="Aortik pigtail kateterini (NCC) gizle / göster">
-              <span class="carm-sub-icon">🔵</span> Pigtail
-            </button>
-            <button id="toggle-cs-cath" class="carm-sub-btn active" aria-pressed="true" title="CS dekapolar diagnostik kateterini gizle / göster">
-              <span class="carm-sub-icon">💙</span> CS kateter
-            </button>
+          <div id="catheter-toggles" class="carm-catheter-container" hidden>
+            <div class="carm-section-subtitle" data-i18n="tsCathHeading">${getTranslation('tsCathHeading')}</div>
+            <div class="carm-catheter-grid">
+              <button id="toggle-pigtail" data-cath="pigtail" class="carm-sub-btn active" aria-pressed="true" title="Aortik pigtail kateteri (NCC)">
+                <span class="carm-sub-icon">🔵</span> Pigtail
+              </button>
+              <button id="toggle-cs-cath" data-cath="cs" class="carm-sub-btn active" aria-pressed="true" title="CS dekapolar diagnostik kateteri">
+                <span class="carm-sub-icon">💙</span> CS
+              </button>
+              <button id="toggle-sheath" data-cath="sheath" class="carm-sub-btn active" aria-pressed="true" title="Transseptal kılıf ve iğne">
+                <span class="carm-sub-icon">💉</span> Kılıf/İğne
+              </button>
+              <button id="toggle-wire" data-cath="wire" class="carm-sub-btn active" aria-pressed="true" title="Sol atriyal kılavuz tel">
+                <span class="carm-sub-icon">〰️</span> Tel
+              </button>
+              <button id="toggle-balloon" data-cath="balloon" class="carm-sub-btn active" aria-pressed="true" title="Septostomi balonu">
+                <span class="carm-sub-icon">🎈</span> Balon
+              </button>
+              <button id="toggle-ias" data-cath="ias" class="carm-sub-btn active" aria-pressed="true" title="Fossa ovalis & septum">
+                <span class="carm-sub-icon">🎯</span> Fossa
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -342,6 +367,7 @@ app.innerHTML = `
     <div class="shortcut-row"><kbd>L</kbd><span>LAO (Left Anterior Oblique)</span></div>
     <div class="shortcut-row"><kbd>S</kbd><span>Spider View (LAO 45° / CAU 30° LMCA Angiography)</span></div>
     <div class="shortcut-row"><kbd>C</kbd><span>Toggle C-Arm Angiography Gantry & Joystick</span></div>
+    <div class="shortcut-row"><kbd>X</kbd><span data-i18n="fluoroShortcut">${getTranslation('fluoroShortcut')}</span></div>
     <div class="shortcut-row"><kbd>O</kbd><span>Aortic Root & Cusps View</span></div>
     <div class="shortcut-row"><kbd>0</kbd><span>Reset Camera View</span></div>
     <div class="shortcut-row"><kbd>Space</kbd><span>Toggle Heartbeat Animation</span></div>
@@ -566,6 +592,8 @@ function showStep() {
   if (progressNote) progressNote.hidden = !hasProgress;
   const cathToggles = document.querySelector('#catheter-toggles');
   if (cathToggles) cathToggles.hidden = !isTransseptal;
+  const tsLayers = document.querySelector('#transseptal-layers');
+  if (tsLayers) tsLayers.hidden = !isTransseptal;
 
   const lesson = lessons[mode];
   if (!lesson) return;
@@ -588,6 +616,10 @@ function showStep() {
     heart?.setBachmannStep(step);
   } else if (mode === 'ablation') {
     heart?.setAblationStep(step);
+  }
+
+  if (isTransseptal) {
+    syncCatheterUI();
   }
 
   if (s.view) {
@@ -913,13 +945,28 @@ document.querySelectorAll('[data-angio]').forEach(btn => {
 
 let fluoroActive = false;
 const fluoroBtn = document.querySelector('#fluoroscopy-toggle');
-fluoroBtn?.addEventListener('click', () => {
-  fluoroActive = !fluoroActive;
+const fluoroDockBtn = document.querySelector('#fluoro-toggle-dock');
+
+function setFluoroscopyActive(active) {
+  fluoroActive = Boolean(active);
   heart?.setFluoroscopy(fluoroActive);
-  fluoroBtn.setAttribute('aria-pressed', String(fluoroActive));
-  fluoroBtn.classList.toggle('active', fluoroActive);
+  if (fluoroBtn) {
+    fluoroBtn.setAttribute('aria-pressed', String(fluoroActive));
+    fluoroBtn.classList.toggle('active', fluoroActive);
+  }
+  if (fluoroDockBtn) {
+    fluoroDockBtn.setAttribute('aria-pressed', String(fluoroActive));
+    fluoroDockBtn.classList.toggle('active', fluoroActive);
+  }
   document.querySelector('main')?.classList.toggle('fluoroscopy-active', fluoroActive);
-});
+}
+
+function toggleFluoroscopy() {
+  setFluoroscopyActive(!fluoroActive);
+}
+
+fluoroBtn?.addEventListener('click', toggleFluoroscopy);
+fluoroDockBtn?.addEventListener('click', toggleFluoroscopy);
 
 function updateJoystickFromCamera(angles) {
   const { laoRao, craCau, laoRaoStr, craCauStr, label } = angles;
@@ -1126,12 +1173,7 @@ function resetAll() {
   setValvesState(true);
   syncLayerCheckboxesFromHeart();
 
-  fluoroActive = false;
-  if (fluoroBtn) {
-    fluoroBtn.setAttribute('aria-pressed', 'false');
-    fluoroBtn.classList.remove('active');
-  }
-  document.querySelector('main')?.classList.remove('fluoroscopy-active');
+  setFluoroscopyActive(false);
 
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('selected', b.dataset.view === 'anterior'));
   document.querySelectorAll('[data-angio]').forEach(b => b.classList.remove('active'));
@@ -1217,6 +1259,10 @@ function updateLanguageUI() {
   if (flowLegendEl) {
     flowLegendEl.title = getTranslation('flowLegendTitle');
   }
+  const fluoroDock = document.querySelector('#fluoro-toggle-dock');
+  if (fluoroDock) {
+    fluoroDock.title = getTranslation('fluoroDockTitle');
+  }
 
   const selectEl = document.querySelector('#structure-select');
   if (selectEl) {
@@ -1269,15 +1315,39 @@ document.querySelector('#lang-btn')?.addEventListener('click', () => {
   updateLanguageUI();
 });
 
-for (const [btnId, key] of [['#toggle-pigtail', 'pigtail'], ['#toggle-cs-cath', 'cs']]) {
-  const btn = document.querySelector(btnId);
-  btn?.addEventListener('click', () => {
-    const on = !btn.classList.contains('active');
+function syncCatheterUI() {
+  const vis = heart?.getCatheterVisibility?.() || {
+    pigtail: true, cs: true, sheath: true, wire: false, balloon: false, ias: true
+  };
+  document.querySelectorAll('[data-cath]').forEach(btn => {
+    const key = btn.dataset.cath;
+    const on = !!vis[key];
     btn.classList.toggle('active', on);
     btn.setAttribute('aria-pressed', String(on));
-    heart?.setCatheterVisible(key, on);
+  });
+  document.querySelectorAll('[data-ts-cath]').forEach(cb => {
+    const key = cb.dataset.tsCath;
+    cb.checked = !!vis[key];
   });
 }
+
+document.querySelector('#catheter-toggles')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-cath]');
+  if (!btn) return;
+  const key = btn.dataset.cath;
+  const currentVis = heart?.getCatheterVisibility?.() || {};
+  const next = !currentVis[key];
+  heart?.setCatheterVisible(key, next);
+  syncCatheterUI();
+});
+
+document.querySelector('#transseptal-layers')?.addEventListener('change', e => {
+  const cb = e.target.closest('[data-ts-cath]');
+  if (!cb) return;
+  const key = cb.dataset.tsCath;
+  heart?.setCatheterVisible(key, cb.checked);
+  syncCatheterUI();
+});
 
 document.querySelector('#progress').addEventListener('input', e => {
   heart?.setProgress(Number(e.target.value) / 100);
@@ -1344,6 +1414,8 @@ window.addEventListener('keydown', e => {
     setWiggersOpen(document.querySelector('#wiggers-strip')?.hidden);
   } else if (key === 'c' || key === 'C') {
     toggleCarmPanel();
+  } else if (key === 'x' || key === 'X') {
+    toggleFluoroscopy();
   } else if (key === 'o' || key === 'O') {
     setCameraPreset('root');
   } else if (key === '0') {

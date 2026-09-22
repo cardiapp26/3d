@@ -1098,6 +1098,9 @@ export const uiTranslations = {
     carmPresetsTitle: 'STANDART PROJEKSİYONLAR',
     carmQuickTogglesTitle: 'HIZLI KATMAN KONTROLLERİ',
     fluoroBtn: 'Floroskopi Modu',
+    fluoroDockBtn: 'Floroskopi',
+    fluoroDockTitle: 'Floroskopi Modu (X-ışını simülasyonu)',
+    fluoroShortcut: 'Floroskopi Modunu aç veya kapat',
     resetBtn: 'Sıfırla',
     beatAnimate: '♡ Kalp atımı',
     beatPause: '♡ Atımı durdur',
@@ -1118,7 +1121,15 @@ export const uiTranslations = {
     flowToggleTitle: 'Kan akışı partiküllerini aç/kapat (F)',
     flowLegendTitle: 'Oksijenlenme: Kırmızı (Sol kalp / Aort / Koroner arter) · Mavi (Sağ kalp / Pulmoner arter / Venöz sistem)',
     cycleDisclaimer: 'Wiggers döngüsü · Şematik akış · Eğitim modeli (CFD / Tanısal simülasyon değildir)',
-    ecgCaption: 'Şematik DII EKG · tanı kaydı değildir'
+    ecgCaption: 'Şematik DII EKG · tanı kaydı değildir',
+    tsCathHeading: 'TRANSSEPTAL KATETERLERİ',
+    tsCathPigtail: 'Pigtail (Aort Kökü)',
+    tsCathCs: 'CS Kateteri (AV Oluk)',
+    tsCathSheath: 'Kılıf & İğne (Sheath)',
+    tsCathWire: 'Kılavuz Tel (Guidewire)',
+    tsCathBalloon: 'Septostomi Balonu',
+    tsCathIas: 'Fossa Ovalis & Septum',
+    tsCathReset: 'Kateterleri Sıfırla'
   },
   en: {
     brandSubtitle: 'ANATOMY STUDIO',
@@ -1171,6 +1182,9 @@ export const uiTranslations = {
     carmPresetsTitle: 'STANDARD PROJECTIONS',
     carmQuickTogglesTitle: 'QUICK LAYER TOGGLES',
     fluoroBtn: 'Fluoroscopy Mode',
+    fluoroDockBtn: 'Fluoroscopy',
+    fluoroDockTitle: 'Fluoroscopy Mode (X-ray simulation)',
+    fluoroShortcut: 'Toggle fluoroscopy mode',
     resetBtn: 'Reset view',
     beatAnimate: '♡ Animate beat',
     beatPause: '♡ Pause beat',
@@ -1191,7 +1205,15 @@ export const uiTranslations = {
     flowToggleTitle: 'Toggle blood flow particles (F)',
     flowLegendTitle: 'Oxygenation: Red (Left heart / Aorta / Coronaries) · Blue (Right heart / Pulmonary artery / Veins)',
     cycleDisclaimer: 'Wiggers cycle · Schematic flow · Educational model (Not CFD / diagnostic simulation)',
-    ecgCaption: 'Schematic lead II ECG · not a diagnostic tracing'
+    ecgCaption: 'Schematic lead II ECG · not a diagnostic tracing',
+    tsCathHeading: 'TRANSSEPTAL CATHETERS',
+    tsCathPigtail: 'Pigtail (Aortic Root)',
+    tsCathCs: 'CS Catheter (AV Groove)',
+    tsCathSheath: 'Sheath & Needle',
+    tsCathWire: 'Guidewire',
+    tsCathBalloon: 'Septostomy Balloon',
+    tsCathIas: 'Fossa Ovalis & Septum',
+    tsCathReset: 'Reset Catheters'
   }
 };
 

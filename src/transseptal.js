@@ -109,7 +109,14 @@ export function createTransseptal(helpers) {
   const progressive = {};
   let balloonState = null;
   let activeStep = 0;
-  const catheterToggles = { pigtail: true, cs: true };
+  const catheterToggles = {
+    pigtail: true,
+    cs: true,
+    sheath: null,
+    wire: null,
+    balloon: null,
+    ias: true
+  };
 
   function makeTube(curve, radius, material, segments = 48) {
     const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, segments, radius, 8, false), material.clone());
@@ -577,29 +584,78 @@ export function createTransseptal(helpers) {
     updateGeometry();
   }
 
+  function applyCatheterVisibility(stepConfig) {
+    if (!initialized) return;
+    const def = stepConfig || {
+      access: activeStep === 0,
+      puncture: activeStep === 1,
+      cross: activeStep === 2,
+      balloon: activeStep === 3
+    };
+
+    if (stages.pigtail) stages.pigtail.visible = catheterToggles.pigtail !== false;
+    if (stages.cs) stages.cs.visible = catheterToggles.cs !== false;
+    if (stages.ias) stages.ias.visible = catheterToggles.ias !== false;
+
+    const sheathOn = catheterToggles.sheath !== null ? catheterToggles.sheath : (def.access || def.puncture);
+    if (stages.access) stages.access.visible = (activeStep === 0) && sheathOn;
+    if (stages.puncture) stages.puncture.visible = (activeStep !== 0) && sheathOn;
+
+    const wireOn = catheterToggles.wire !== null ? catheterToggles.wire : Boolean(def.cross);
+    if (stages.cross) stages.cross.visible = wireOn;
+
+    const balloonOn = catheterToggles.balloon !== null ? catheterToggles.balloon : Boolean(def.balloon);
+    if (stages.balloon) stages.balloon.visible = balloonOn;
+  }
+
   function setStep(stepIndex) {
     init();
     const idx = Number(stepIndex);
-    // 0: femoral access route, 1: positioning & tenting, 2: crossing, 3: septostomy
-    const visibilityMap = {
-      0: { ias: true, access: true, puncture: false, cross: false, balloon: false },
-      1: { ias: true, access: false, puncture: true, cross: false, balloon: false },
-      2: { ias: true, access: false, puncture: false, cross: true, balloon: false },
-      3: { ias: true, access: false, puncture: false, cross: false, balloon: true }
-    };
     activeStep = idx;
-    const config = visibilityMap[idx] || visibilityMap[0];
-    for (const [key, stageGroup] of Object.entries(stages)) {
-      // Landmark catheters follow their user toggles in every step.
-      stageGroup.visible = key in catheterToggles ? catheterToggles[key] : Boolean(config[key]);
-    }
+    catheterToggles.sheath = null;
+    catheterToggles.wire = null;
+    catheterToggles.balloon = null;
+
+    const visibilityMap = {
+      0: { access: true, puncture: false, cross: false, balloon: false },
+      1: { access: false, puncture: true, cross: false, balloon: false },
+      2: { access: false, puncture: false, cross: true, balloon: false },
+      3: { access: false, puncture: false, cross: false, balloon: true }
+    };
+    applyCatheterVisibility(visibilityMap[idx] || visibilityMap[0]);
   }
 
-  // User overrides for the landmark catheters; ANDed with the step visibility.
   function setCatheterVisible(key, visible) {
-    if (!(key in catheterToggles)) return;
-    catheterToggles[key] = Boolean(visible);
-    if (initialized) setStep(activeStep);
+    init();
+    const val = Boolean(visible);
+    if (key === 'pigtail') catheterToggles.pigtail = val;
+    else if (key === 'cs') catheterToggles.cs = val;
+    else if (key === 'sheath' || key === 'puncture' || key === 'access') catheterToggles.sheath = val;
+    else if (key === 'wire' || key === 'cross') catheterToggles.wire = val;
+    else if (key === 'balloon') catheterToggles.balloon = val;
+    else if (key === 'ias' || key === 'fossa') catheterToggles.ias = val;
+    applyCatheterVisibility();
+  }
+
+  function getCatheterVisibility() {
+    return {
+      pigtail: stages.pigtail ? stages.pigtail.visible : true,
+      cs: stages.cs ? stages.cs.visible : true,
+      sheath: Boolean((stages.puncture && stages.puncture.visible) || (stages.access && stages.access.visible)),
+      wire: stages.cross ? stages.cross.visible : false,
+      balloon: stages.balloon ? stages.balloon.visible : false,
+      ias: stages.ias ? stages.ias.visible : true
+    };
+  }
+
+  function resetCatheterToggles() {
+    catheterToggles.pigtail = true;
+    catheterToggles.cs = true;
+    catheterToggles.sheath = null;
+    catheterToggles.wire = null;
+    catheterToggles.balloon = null;
+    catheterToggles.ias = true;
+    if (initialized) applyCatheterVisibility();
   }
 
   function setVisible(visible) {
@@ -614,6 +670,8 @@ export function createTransseptal(helpers) {
     setStep,
     setProgress,
     setCatheterVisible,
+    getCatheterVisibility,
+    resetCatheterToggles,
     stages
   };
 }
