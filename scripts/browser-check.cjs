@@ -103,7 +103,8 @@ const fs = require('node:fs');
     assert.deepEqual(amcMesh, [], 'AMC stays a reference note, not a mesh');
 
     await page.locator('[data-mode="transseptal"]').click();
-    const valveAndSeptumState = await page.evaluate(() => {
+    const valveAndSeptumState = await page.evaluate(async () => {
+      const { contactPatch } = await import('/src/mesh-utils.js');
       const structures = window.heart.getState().structures;
       const leaflets = structures.filter(item =>
         item.name === 'Posterior leaflet of left atrioventricular valve' ||
@@ -130,9 +131,13 @@ const fs = require('node:fs');
       };
       let annulus = null;
       let septum = null;
+      let raMesh = null;
+      let laMesh = null;
       window.heart.scene.traverse(object => {
         if (object.name === 'Tricuspid annulus') annulus = object;
         if (object.name === 'Interatrial septum (schematic)') septum = object;
+        if (object.userData?.id === 'ra' && object.name === 'Right atrium') raMesh = object;
+        if (object.userData?.id === 'la' && object.name === 'Left atrium') laMesh = object;
       });
       const radial = 13;
       const tubular = 96;
@@ -194,15 +199,9 @@ const fs = require('node:fs');
       }
       const fossaCenter = worldPoint(septum, 0);
       const ncc = { x: nccCenter[0], y: nccCenter[1], z: nccCenter[2] };
-      const annulusToCusp = {
-        x: ncc.x - center.x,
-        y: ncc.y - center.y,
-        z: ncc.z - center.z
-      };
-      const cuspSpan = Math.hypot(annulusToCusp.x, annulusToCusp.y, annulusToCusp.z) || 1;
-      const fossaAlong = ((fossaCenter.x - center.x) * annulusToCusp.x
-        + (fossaCenter.y - center.y) * annulusToCusp.y
-        + (fossaCenter.z - center.z) * annulusToCusp.z) / (cuspSpan * cuspSpan);
+      const patch = contactPatch(raMesh, laMesh);
+      const surfaceDistance = Math.min(...patch.points.map(point =>
+        Math.hypot(point.x - fossaCenter.x, point.y - fossaCenter.y, point.z - fossaCenter.z)));
       return {
         ias: {
           y: septum.position.y,
@@ -210,7 +209,8 @@ const fs = require('node:fs');
           depthWrite: septum.material.depthWrite,
           lowestAboveAnnulus: lowest,
           highestAboveAnnulus: highest,
-          fossaAlong,
+          surfaceDistance,
+          centerY: fossaCenter.y,
           posteriorToCusp: fossaCenter.z < ncc.z,
           minY,
           maxY,
@@ -229,8 +229,12 @@ const fs = require('node:fs');
     assert.ok(valveAndSeptumState.leaflets.every(item => item.visible), 'Atlas AV leaflets visible');
     assert.ok(valveAndSeptumState.leaflets.every(item => item.provenance === 'atlas' && item.vertices > 0),
       'AV leaflets retain atlas provenance and geometry');
-    assert.ok(valveAndSeptumState.ias.fossaAlong > 0.25 && valveAndSeptumState.ias.fossaAlong < 0.6,
-      'Fossa center lies between the tricuspid annulus and the non-coronary cusp');
+    assert.ok(valveAndSeptumState.ias.surfaceDistance < 0.06,
+      'Fossa center lies on the RA side of the measured interatrial septal contact patch');
+    assert.ok(valveAndSeptumState.ias.centerY < valveAndSeptumState.ias.nccY,
+      'Fossa center remains inferior to the non-coronary cusp');
+    assert.equal(valveAndSeptumState.ias.posteriorToCusp, true,
+      'Fossa center remains posterior to the non-coronary cusp');
     assert.ok(valveAndSeptumState.ias.minY > valveAndSeptumState.ias.annulusY - 0.05,
       'Inferior limbus does not hang through the tricuspid annulus');
     assert.ok(valveAndSeptumState.ias.maxY < valveAndSeptumState.ias.nccY - 0.12,
