@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boundaryLoops, sharedRim } from './mesh-utils.js';
 
 /**
  * Procedural 3D Pacemaker and Defibrillator Lead Models for Cardiac EP/CIED education.
@@ -93,7 +94,7 @@ export function buildCrtPath({ entry, highSvc, ra, csPoints, pivPoints }) {
 }
 
 export function createPacemakerLeads(helpers) {
-  const { sourceCenter, meshVertices = () => [], getBachmannTarget, isReady = () => true } = helpers;
+  const { sourceCenter, meshVertices = () => [], getMeshes = () => [], getBachmannTarget, isReady = () => true } = helpers;
   const group = new THREE.Group();
   group.name = 'Pacemaker Leads';
   group.visible = false;
@@ -140,52 +141,101 @@ export function createPacemakerLeads(helpers) {
     // Anchor points from cardiac atlas mesh
     const svc = sourceCenter('svc') || new THREE.Vector3(-0.85, 1.25, -0.30);
     const ra = sourceCenter('ra') || new THREE.Vector3(-0.95, 0.35, 0.10);
-    const tv = sourceCenter('tricuspid') || new THREE.Vector3(-0.45, -0.45, 0.15);
     const rv = sourceCenter('rv') || new THREE.Vector3(0.05, -0.95, 0.50);
-    const his = sourceCenter('his') || new THREE.Vector3(-0.10, -0.32, 0.06);
 
-    // Entry point: Superior Vena Cava access (subclavian/cephalic approach)
-    const entryPt = new THREE.Vector3(svc.x * 0.95, svc.y + 0.35, svc.z * 0.95);
-    const highSvc = new THREE.Vector3(svc.x, svc.y + 0.10, svc.z);
-    const midRa = new THREE.Vector3(ra.x * 0.85, ra.y * 0.9, ra.z * 0.8);
+    const centroidOf = pts => pts.reduce((acc, v) => acc.add(v.clone()), new THREE.Vector3()).multiplyScalar(1 / pts.length);
+    const raVerts = meshVertices('ra');
+    const rvVerts = meshVertices('rv');
+    const lvVerts = meshVertices('lv');
+    const raCenter = raVerts.length ? centroidOf(raVerts) : ra.clone();
+    const rvCenter = rvVerts.length ? centroidOf(rvVerts) : rv.clone();
+
+    // Venous route: through the measured SVC openings into the RA.
+    const svcLoops = getMeshes('svc')[0] ? boundaryLoops(getMeshes('svc')[0]) : [];
+    const svcTop = svcLoops.length ? svcLoops.reduce((b, l) => l.center.y > b.center.y ? l : b).center.clone() : new THREE.Vector3(svc.x, svc.y + 0.4, svc.z);
+    const svcOs = svcLoops.length ? svcLoops.reduce((b, l) => l.center.y < b.center.y ? l : b).center.clone() : new THREE.Vector3(svc.x, svc.y - 0.4, svc.z);
+    const entryPt = svcTop.clone().add(new THREE.Vector3(0, 0.3, 0));
+    const highSvc = svcOs.clone().lerp(svcTop, 0.35);
+    const midRa = raCenter.clone().lerp(svcOs, 0.2);
+
+    // Tricuspid crossing: centroid of the measured RA/RV orifice rim.
+    const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
+    const tvCenter = tvRim ? centroidOf(tvRim) : (sourceCenter('tricuspid') || new THREE.Vector3(-0.45, -0.45, 0.15));
+
+    // Interventricular septum: RV endocardial vertices with an LV vertex
+    // within septal thickness; each pair spans the septum RV side -> LV side.
+    const septum = [];
+    for (let i = 0; i < rvVerts.length; i += 2) {
+      const v = rvVerts[i];
+      let best = null, bestD = Infinity;
+      for (let j = 0; j < lvVerts.length; j += 3) {
+        const d = v.distanceToSquared(lvVerts[j]);
+        if (d < bestD) { bestD = d; best = lvVerts[j]; }
+      }
+      if (bestD < 0.35 * 0.35) septum.push({ rvSide: v, lvSide: best });
+    }
+    const septalSiteNear = target => septum.length
+      ? septum.reduce((b, o) => o.rvSide.distanceTo(target) < b.rvSide.distanceTo(target) ? o : b)
+      : null;
+    const rvApex = rvVerts.length ? rvVerts.reduce((b, v) => v.y < b.y ? v : b).clone() : new THREE.Vector3(rv.x, rv.y - 0.5, rv.z);
+
+    // His bundle distal end (on the septal crest), measured from its tract.
+    let hisDistal = new THREE.Vector3(-0.10, -0.32, 0.06);
+    const hisMesh = getMeshes('his').find(m => m.name === 'Bundle of His');
+    if (hisMesh && hisMesh.geometry.parameters?.path) hisDistal = hisMesh.geometry.parameters.path.getPointAt(1).clone();
 
     // -------------------------------------------------------------
-    // 1. Right Atrial (RA) Lead (J-shape or active fixation in RAA)
+    // 1. Right Atrial (RA) Lead: active fixation in the right atrial appendage
+    //    (anterosuperior RA pouch, pectinate muscles).
     // -------------------------------------------------------------
-    const raaTip = new THREE.Vector3(ra.x + 0.25, ra.y + 0.38, ra.z + 0.42);
+    let raaTip = new THREE.Vector3(ra.x + 0.25, ra.y + 0.38, ra.z + 0.42);
+    if (raVerts.length) {
+      const ys = raVerts.map(v => v.y).sort((a, b) => a - b);
+      const upper = raVerts.filter(v => v.y >= ys[Math.floor(ys.length * 0.55)]);
+      const zs = upper.map(v => v.z).sort((a, b) => b - a);
+      const pouch = upper.filter(v => v.z >= zs[Math.floor(zs.length * 0.08)]);
+      if (pouch.length) raaTip = centroidOf(pouch);
+    }
     const raCurve = new THREE.CatmullRomCurve3([
       entryPt.clone(),
       highSvc.clone(),
-      new THREE.Vector3(ra.x * 0.7, ra.y + 0.45, ra.z * 0.4),
-      new THREE.Vector3(ra.x * 0.85 + 0.1, ra.y + 0.25, ra.z + 0.25),
+      svcOs.clone(),
+      raCenter.clone().lerp(raaTip, 0.45),
       raaTip.clone()
     ]);
 
     // -------------------------------------------------------------
-    // 2. Right Ventricular (RV) Septal/Apical Lead
+    // 2. Right Ventricular (RV) Septal Lead: tip on the RV side of the mid
+    //    interventricular septum (not the thin apex).
     // -------------------------------------------------------------
-    const rvSeptumMid = new THREE.Vector3((tv.x + rv.x) * 0.5 - 0.05, (tv.y + rv.y) * 0.5 - 0.05, (tv.z + rv.z) * 0.5 + 0.08);
-    const rvApexTip = new THREE.Vector3(rv.x * 0.85 + 0.05, rv.y + 0.12, rv.z * 0.85);
+    const midSeptalSite = septalSiteNear(hisDistal.clone().lerp(rvApex, 0.5));
+    const rvSeptalTip = midSeptalSite
+      ? midSeptalSite.rvSide.clone().lerp(rvCenter, 0.03)
+      : new THREE.Vector3(rv.x * 0.85 + 0.05, rv.y + 0.12, rv.z * 0.85);
     const rvCurve = new THREE.CatmullRomCurve3([
       entryPt.clone(),
       highSvc.clone(),
       midRa.clone(),
-      new THREE.Vector3(tv.x * 0.9, tv.y + 0.05, tv.z * 0.9),
-      rvSeptumMid.clone(),
-      rvApexTip.clone()
+      tvCenter.clone(),
+      tvCenter.clone().lerp(rvSeptalTip, 0.5).lerp(rvCenter, 0.35),
+      rvSeptalTip.clone()
     ]);
 
     // -------------------------------------------------------------
-    // 3. Conduction System Pacing (CSP / LBBAP / His) Lead
+    // 3. Left Bundle Branch Area Pacing (LBBAP): the lead enters the RV
+    //    septum ~1-1.5 cm distal to the His along the His-apex line and is
+    //    screwed transseptally until the tip sits in the LV subendocardium.
     // -------------------------------------------------------------
-    // Enters through TV and screws into basal interventricular septum to capture LBB
-    const lbbapTip = new THREE.Vector3(his.x + 0.06, his.y - 0.08, his.z + 0.04);
+    const lbbSite = septalSiteNear(hisDistal.clone().add(rvApex.clone().sub(hisDistal).setLength(0.4)));
+    const lbbEntry = lbbSite ? lbbSite.rvSide.clone() : hisDistal.clone().add(new THREE.Vector3(0.06, -0.08, 0.04));
+    const lbbapTip = lbbSite ? lbbSite.rvSide.clone().lerp(lbbSite.lvSide, 0.8) : lbbEntry.clone();
     const cspCurve = new THREE.CatmullRomCurve3([
       entryPt.clone(),
       highSvc.clone(),
       midRa.clone(),
-      new THREE.Vector3(tv.x * 0.95, tv.y + 0.12, tv.z * 0.85),
-      new THREE.Vector3(his.x - 0.08, his.y + 0.05, his.z - 0.02),
+      tvCenter.clone(),
+      lbbEntry.clone().lerp(rvCenter, 0.25),
+      lbbEntry.clone(),
       lbbapTip.clone()
     ]);
 
@@ -198,7 +248,7 @@ export function createPacemakerLeads(helpers) {
     const csCurve = new THREE.CatmullRomCurve3(buildCrtPath({
       entry: entryPt,
       highSvc,
-      ra,
+      ra: raCenter,
       csPoints: meshCenterline(meshVertices('cs')),
       pivPoints: meshCenterline(meshVertices('piv'))
     }));
@@ -206,8 +256,7 @@ export function createPacemakerLeads(helpers) {
     const bbTarget = getBachmannTarget?.();
     if (!bbTarget) return; // The shared atlas-anchored target is built after model loading.
     const bbCurve = new THREE.CatmullRomCurve3([
-      entryPt.clone(), highSvc.clone(),
-      new THREE.Vector3(ra.x, ra.y + .1, ra.z + .1),
+      entryPt.clone(), highSvc.clone(), svcOs.clone(),
       new THREE.Vector3(bbTarget.x - .25, bbTarget.y - .2, bbTarget.z + .25),
       bbTarget.clone()
     ]);

@@ -979,13 +979,13 @@ export const rawLessons = {
         },
         {
           title: 'Sağ Ventrikül (RV) Septal Lead',
-          text: 'Triküspit kapağı geçerek sağ ventriküle ilerler. Apikal perforasyon ve dissenkroni riskini azaltmak için elektrot interventriküler septumun orta/apikal yüzeyine hedeflenir.',
+          text: 'Triküspit kapağı geçerek sağ ventriküle ilerler. İnce apeks yerine uç interventriküler septumun orta bölümünün RV yüzüne aktif fiksasyonla tutturulur: perforasyon riski azalır ve pacing kaynaklı dissenkroni sınırlanır. LAO projeksiyonunda uç septuma (omurgaya doğru) bakmalıdır; RAO\'da apeks ile His arasında durur.',
           landmark: 'rv',
           view: 'lao'
         },
         {
           title: 'Fizyolojik İleti Sistemi Pacing (CSP / LBBAP)',
-          text: 'Membranöz septum ve His demeti düzeyinden interventriküler septuma derin vidalanarak sol dalı (LBB) doğrudan uyarır. Doğal Purkinje ağını aktive ederek dar QRS ve fizyolojik ventrikül senkronizasyonu sağlar.',
+          text: 'Lead, His\'in yaklaşık 1-1,5 cm distalinde, RAO 30\'da His ile RV apeksi arasındaki hat üzerinde septumun RV yüzüne girer ve septumdan transseptal olarak vidalanır; uç LV subendokardında, sol dal (LBB) bölgesinde durur. Doğal ileti sistemini yakaladığı için dar QRS ve fizyolojik senkronizasyon sağlar. Yakalama işaretleri: V1\'de qR/Qr (sağ dal bloku paterni), kısa ve sabit stimulus-LV aktivasyon zamanı. Lead ucunun septumun içine gömüldüğüne dikkat edin.',
           landmark: 'his',
           view: 'rao'
         },
@@ -1009,13 +1009,13 @@ export const rawLessons = {
         },
         {
           title: 'Right Ventricular (RV) Septal Lead',
-          text: 'Traverses the tricuspid valve into the RV. The mid-interventricular septum is preferred over the thin apex to minimize perforation risk and decrease pacing-induced electromechanical dyssynchrony.',
+          text: 'Crosses the tricuspid valve into the RV. Instead of the thin apex, the tip is actively fixed to the RV side of the mid interventricular septum: lower perforation risk and less pacing-induced dyssynchrony. In LAO the tip should point toward the septum (the spine); in RAO it sits between the apex and the His.',
           landmark: 'rv',
           view: 'lao'
         },
         {
           title: 'Conduction System Pacing (CSP / LBBAP)',
-          text: 'Screws deeply into the basal interventricular septum to recruit the Left Bundle Branch directly. Bypasses proximal conduction blocks, recruiting the intrinsic Purkinje network for a narrow, physiological QRS.',
+          text: 'The lead enters the RV side of the septum about 1-1.5 cm distal to the His, on the His-to-RV-apex line in RAO 30, and is screwed transseptally until the tip rests in the LV subendocardium at the left bundle branch (LBB) area. Recruiting the native conduction system gives a narrow QRS and physiological synchrony. Capture markers: qR/Qr in V1 (RBBB pattern) and a short, stable stimulus-to-LV activation time. Note the lead tip buried inside the septum.',
           landmark: 'his',
           view: 'rao'
         },

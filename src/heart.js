@@ -94,7 +94,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
   heart.add(epLandmarks.group);
   let bachmannTarget = null;
-  const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getBachmannTarget: () => bachmannTarget, isReady });
+  const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getBachmannTarget: () => bachmannTarget, isReady });
   heart.add(pacemakerLeads.group);
   function computeVesselTrims(){
     const verts=name=>{const m=meshes.find(x=>x.name===name);if(!m)return[];m.updateWorldMatrix(true,false);const p=m.geometry.attributes.position;const out=[];for(let i=0;i<p.count;i++)out.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld));return out;};
