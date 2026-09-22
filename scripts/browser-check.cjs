@@ -505,6 +505,60 @@ const fs = require('node:fs');
     const resetArticleWidth = await page.evaluate(() => document.querySelector('article').getBoundingClientRect().width);
     assert.ok(resetArticleWidth < widenedArticleWidth, `Article panel reset to default width via double-click (${resetArticleWidth})`);
 
+    // CRT lead: CS ostium, then the posterior LV vein, not the anterior great cardiac vein.
+    await page.locator('[data-mode=pacemaker]').click();
+    await page.locator('#steps [data-step="3"]').click();
+    await page.waitForSelector('#viewport[data-camera-settled=true]');
+    const crtLead = await page.evaluate(() => {
+      const structures = window.heart.getState().structures;
+      const bounds = id => {
+        const items = structures.filter(item => item.id === id);
+        const min = [Infinity, Infinity, Infinity];
+        const max = [-Infinity, -Infinity, -Infinity];
+        for (const item of items) {
+          for (let i = 0; i < 3; i++) {
+            min[i] = Math.min(min[i], item.bounds.min[i]);
+            max[i] = Math.max(max[i], item.bounds.max[i]);
+          }
+        }
+        return { min, max, center: min.map((value, i) => (value + max[i]) / 2) };
+      };
+      const gap = (point, box) => {
+        const clamped = point.map((value, i) => Math.max(box.min[i], Math.min(box.max[i], value)));
+        return Math.hypot(point[0] - clamped[0], point[1] - clamped[1], point[2] - clamped[2]);
+      };
+      window.heart.scene.updateMatrixWorld(true);
+      const lead = window.heart.scene.getObjectByName('CRT LV Coronary Sinus Lead');
+      const tipObject = lead.children[lead.children.length - 1];
+      const tipMatrix = tipObject.matrixWorld.elements;
+      const tip = [tipMatrix[12], tipMatrix[13], tipMatrix[14]];
+      const body = lead.children[0].geometry.attributes.position;
+      const bodyMatrix = lead.children[0].matrixWorld.elements;
+      let nearCs = Infinity;
+      for (let i = 0; i < body.count; i += 12) {
+        const x = body.getX(i), y = body.getY(i), z = body.getZ(i);
+        const world = [
+          bodyMatrix[0] * x + bodyMatrix[4] * y + bodyMatrix[8] * z + bodyMatrix[12],
+          bodyMatrix[1] * x + bodyMatrix[5] * y + bodyMatrix[9] * z + bodyMatrix[13],
+          bodyMatrix[2] * x + bodyMatrix[6] * y + bodyMatrix[10] * z + bodyMatrix[14]
+        ];
+        nearCs = Math.min(nearCs, gap(world, bounds('cs')));
+      }
+      const piv = bounds('piv');
+      const gcv = bounds('gcv');
+      const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+      return {
+        tipGapPiv: gap(tip, piv),
+        tipToPiv: dist(tip, piv.center),
+        tipToGcv: dist(tip, gcv.center),
+        nearCs
+      };
+    });
+    assert.ok(crtLead.nearCs < 0.2, `CRT shaft passes through the coronary sinus (${crtLead.nearCs})`);
+    assert.ok(crtLead.tipGapPiv < 0.25, `CRT tip lies in the posterior LV vein (${crtLead.tipGapPiv})`);
+    assert.ok(crtLead.tipToPiv < crtLead.tipToGcv, 'CRT tip is closer to the posterior LV vein than to the great cardiac vein');
+    await page.locator('[data-mode=anatomy]').click();
+
     // 10. Dialogs and modes
     for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await page.locator(`[data-mode=${mode}]`).click();
     await page.locator('#sources').click();

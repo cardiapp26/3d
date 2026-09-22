@@ -6,12 +6,94 @@ import * as THREE from 'three';
  * - RA lead (SVC -> Right Atrial Appendage)
  * - RV lead (SVC -> RA -> Tricuspid Valve -> RV Septum/Apex)
  * - CSP / LBBAP lead (His bundle / deep septal Left Bundle Branch Area Pacing)
- * - CRT CS LV lead (Coronary Sinus ostium -> Posterolateral branch over LV free wall)
+ * - CRT CS LV lead (Coronary Sinus ostium, along the sinus, into the posterior LV vein)
  * Includes active-fixation helical tips, radiopaque bipolar/quadripolar electrodes,
  * and animated advancement progress (0..1).
  */
+function axisOf(points) {
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (const v of points) {
+    minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x);
+    minY = Math.min(minY, v.y); maxY = Math.max(maxY, v.y);
+    minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z);
+  }
+  const sx = maxX - minX, sy = maxY - minY, sz = maxZ - minZ;
+  if (sy >= sx && sy >= sz) return v => v.y;
+  if (sz >= sx) return v => v.z;
+  return v => v.x;
+}
+
+function meshCenterline(points, step = 0.12, minCount = 8) {
+  if (!points || points.length < minCount) return [];
+  const axisValue = axisOf(points);
+  const bins = new Map();
+  for (const v of points) {
+    const key = Math.round(axisValue(v) / step);
+    if (!bins.has(key)) bins.set(key, []);
+    bins.get(key).push(v);
+  }
+  return [...bins.entries()]
+    .filter(([, list]) => list.length >= minCount)
+    .sort((a, b) => a[0] - b[0])
+    .map(([, list]) => list.reduce((sum, v) => sum.add(v), new THREE.Vector3()).multiplyScalar(1 / list.length));
+}
+
+function closestDistance(point, cloud) {
+  let best = Infinity;
+  for (const other of cloud) best = Math.min(best, point.distanceTo(other));
+  return best;
+}
+
+const FALLBACK_CS = [
+  [-0.76, -0.36, -0.27], [-0.61, -0.47, -0.32], [-0.40, -0.70, -0.48],
+  [-0.21, -0.76, -0.71], [0.00, -0.74, -0.90], [0.20, -0.65, -1.03], [0.40, -0.52, -1.10]
+].map(v => new THREE.Vector3(...v));
+
+const FALLBACK_PIV = [
+  [-0.03, -0.51, -0.68], [0.40, -0.58, -0.58], [0.75, -0.68, -0.42]
+].map(v => new THREE.Vector3(...v));
+
+/** SVC to CS ostium, along the sinus only as far as the posterior LV vein, then into that vein. */
+export function buildCrtPath({ entry, highSvc, ra, csPoints, pivPoints }) {
+  const cs = (csPoints && csPoints.length >= 4 ? csPoints : FALLBACK_CS).map(p => p.clone());
+  if (cs[cs.length - 1].distanceTo(ra) < cs[0].distanceTo(ra)) cs.reverse();
+  let piv = (pivPoints && pivPoints.length >= 3 ? pivPoints : FALLBACK_PIV).map(p => p.clone());
+  if (closestDistance(piv[piv.length - 1], cs) < closestDistance(piv[0], cs)) piv.reverse();
+  const keep = Math.max(2, Math.round((piv.length - 1) * 0.72) + 1);
+  piv = piv.slice(0, keep);
+
+  let join = 0;
+  let joinDist = Infinity;
+  cs.forEach((point, index) => {
+    const dist = point.distanceTo(piv[0]);
+    if (dist < joinDist) {
+      joinDist = dist;
+      join = index;
+    }
+  });
+  const csUsed = cs.slice(0, Math.max(join, 1) + 1);
+  const ostium = csUsed[0];
+  const approach = new THREE.Vector3(
+    ostium.x + (ra.x - ostium.x) * 0.28,
+    ostium.y + 0.22,
+    ostium.z + (ra.z - ostium.z) * 0.35
+  );
+  const midSvc = new THREE.Vector3(
+    (highSvc.x + ra.x) * 0.5,
+    (highSvc.y + approach.y) * 0.5,
+    (highSvc.z + ra.z) * 0.5
+  );
+  const raw = [entry, highSvc, midSvc, approach, ...csUsed, ...piv.slice(1)];
+  const spaced = [];
+  for (const point of raw) {
+    if (!spaced.length || spaced[spaced.length - 1].distanceTo(point) > 0.05) spaced.push(point.clone());
+  }
+  return spaced;
+}
+
 export function createPacemakerLeads(helpers) {
-  const { sourceCenter, getBachmannTarget } = helpers;
+  const { sourceCenter, meshVertices = () => [], getBachmannTarget } = helpers;
   const group = new THREE.Group();
   group.name = 'Pacemaker Leads';
   group.visible = false;
@@ -58,9 +140,7 @@ export function createPacemakerLeads(helpers) {
     const ra = sourceCenter('ra') || new THREE.Vector3(-0.95, 0.35, 0.10);
     const tv = sourceCenter('tricuspid') || new THREE.Vector3(-0.45, -0.45, 0.15);
     const rv = sourceCenter('rv') || new THREE.Vector3(0.05, -0.95, 0.50);
-    const cs = sourceCenter('cs') || new THREE.Vector3(-0.55, -0.38, -0.20);
     const his = sourceCenter('his') || new THREE.Vector3(-0.10, -0.32, 0.06);
-    const lv = sourceCenter('lv') || new THREE.Vector3(0.65, -0.75, 0.05);
 
     // Entry point: Superior Vena Cava access (subclavian/cephalic approach)
     const entryPt = new THREE.Vector3(svc.x * 0.95, svc.y + 0.35, svc.z * 0.95);
@@ -110,18 +190,16 @@ export function createPacemakerLeads(helpers) {
     // -------------------------------------------------------------
     // 4. CRT Coronary Sinus (CS) LV Lead
     // -------------------------------------------------------------
-    // Enters CS ostium -> Great Cardiac Vein -> Posterolateral LV vein
-    const csOstium = new THREE.Vector3(cs.x * 0.95, cs.y + 0.02, cs.z * 0.95);
-    const csMid = new THREE.Vector3(cs.x * 0.6 + lv.x * 0.4, cs.y - 0.12, cs.z * 0.7 - 0.15);
-    const csLvTip = new THREE.Vector3(lv.x * 0.82, lv.y + 0.15, lv.z - 0.35);
-    const csCurve = new THREE.CatmullRomCurve3([
-      entryPt.clone(),
-      highSvc.clone(),
-      new THREE.Vector3(midRa.x, midRa.y - 0.15, midRa.z - 0.08),
-      csOstium.clone(),
-      csMid.clone(),
-      csLvTip.clone()
-    ]);
+    // Subclavian/SVC to the CS ostium, along the sinus, then into the
+    // posterior vein of the LV. The tip stays on the posterolateral free wall.
+    // The anterior course of the great cardiac vein is not the target.
+    const csCurve = new THREE.CatmullRomCurve3(buildCrtPath({
+      entry: entryPt,
+      highSvc,
+      ra,
+      csPoints: meshCenterline(meshVertices('cs')),
+      pivPoints: meshCenterline(meshVertices('piv'))
+    }));
 
     const bbTarget = getBachmannTarget?.();
     if (!bbTarget) return; // The shared atlas-anchored target is built after model loading.

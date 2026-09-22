@@ -941,7 +941,7 @@ export const rawLessons = {
         },
         {
           title: 'Sol Ventrikül CRT Lead • Koroner Sinüs',
-          text: 'Kardiyak Resenkronizasyon Tedavisi (CRT) için koroner sinüs (CS) ostiyumundan girilerek büyük kardiyak ven üzerinden sol ventrikül lateral/posterolateral serbest duvar venine kuadripolar lead yerleştirilir.',
+          text: 'Koroner sinüs ostiyumundan girilir, sinüs gövdesinde sola ilerler ve sol ventrikülün posterior venine döner. Kuadripolar uç posterolateral serbest duvarda kalır. Büyük kardiyak venin anterior oluğa giden devamı bu hedef değildir.',
           landmark: 'cs',
           view: 'posterior'
         }
@@ -971,7 +971,7 @@ export const rawLessons = {
         },
         {
           title: 'Left Ventricular CRT Lead • Coronary Sinus',
-          text: 'In Cardiac Resynchronization Therapy (CRT), a quadripolar lead cannulates the Coronary Sinus ostium, advancing into a posterolateral cardiac vein along the LV free wall to restore biventricular synchrony.',
+          text: 'The CRT lead enters the coronary sinus ostium, runs along the sinus, and turns into the posterior vein of the left ventricle. The quadripolar tip rests on the posterolateral free wall. It does not follow the great cardiac vein into the anterior interventricular groove.',
           landmark: 'cs',
           view: 'posterior'
         }
