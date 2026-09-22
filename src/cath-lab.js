@@ -9,7 +9,7 @@ import { centroid, sharedRim, nearestLoop, inferiorCavalOstium } from './mesh-ut
  * Measurement stations carry pickIds that open pressure/saturation content.
  */
 export function createCathLab(helpers) {
-  const { sourceCenter, meshVertices = () => [], getMeshes = () => [], isReady = () => true } = helpers;
+  const { sourceCenter, meshVertices = () => [], getMeshes = () => [], getVesselTrim = () => null, isReady = () => true } = helpers;
   const group = new THREE.Group();
   group.name = 'Catheterization Lab';
   group.visible = false;
@@ -124,9 +124,15 @@ export function createCathLab(helpers) {
       new THREE.Vector3(0.07, 1.51, -0.31));
     const lpaVerts = meshVertices('pa', /Left pulmonary/i);
     const lpaLine = meshCenterline(lpaVerts, v => v.x, 0.2).sort((a, b) => a.x - b.x);
-    const distalBranchIndex = Math.min(Math.round(lpaLine.length * 0.7), lpaLine.length - 1);
-    const branchPath = lpaLine.length
-      ? lpaLine.slice(0, distalBranchIndex + 1).map(point => point.clone())
+    // The displayed LPA is trimmed on a plane across its centerline; keep the
+    // wedge route inside the visible vessel (positive side, with a margin).
+    const lpaTrim = getVesselTrim('Left pulmonary artery');
+    const visibleLpa = lpaTrim ? lpaLine.filter(point => lpaTrim.distanceToPoint(point) > 0.08) : lpaLine;
+    const distalBranchIndex = lpaTrim
+      ? visibleLpa.length - 1
+      : Math.min(Math.round(lpaLine.length * 0.7), lpaLine.length - 1);
+    const branchPath = visibleLpa.length
+      ? visibleLpa.slice(0, distalBranchIndex + 1).map(point => point.clone())
       : [new THREE.Vector3(1.25, 0.55, -1.55)];
     const paTarget = branchPath[branchPath.length - 1].clone();
 

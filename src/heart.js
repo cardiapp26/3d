@@ -121,7 +121,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const transseptal = createTransseptal({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], isReady });
   heart.add(transseptal.group);
-  const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
+  const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getVesselTrim:(name)=>vesselTrims.get(name)||null, isReady });
   heart.add(cathLab.group);
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });
@@ -222,6 +222,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     annuli.build();
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
     thorax.build();
+    computeVesselTrims();
     modelReady=true;
     epLandmarks.init();
     pacemakerLeads.init();
@@ -231,7 +232,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     channels = createAnimationChannels({ meshMap, sourceCenter });
     bloodFlow = createBloodFlow();
     layers.flow.add(bloodFlow.group);
-    computeVesselTrims();applyState();computeFit();setView('anterior',false);loading.remove();container.dataset.modelReady='true';
+    applyState();computeFit();setView('anterior',false);loading.remove();container.dataset.modelReady='true';
     container.dataset.meshCount=String(found.length);
     return {count:found.length,normalization:{center:center.toArray(),scale},source:ATLAS_URL};
   }).catch(error=>{loading.textContent='Anatomical asset could not load. Reload to retry; no substitute geometry is shown.';decoder.dispose();throw error;});
