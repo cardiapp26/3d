@@ -45,6 +45,7 @@ export function createCathLab(helpers) {
   let currentProgress = 1;
   let activeStep = 0;
   let wedgeBalloon = null;
+  let rightStepStops = { ra: 1, rv: 1 };
 
   function meshCenterline(points, axisValue, step, minCount = 15) {
     const bins = new Map();
@@ -73,6 +74,11 @@ export function createCathLab(helpers) {
     const mesh = new THREE.Mesh(new THREE.BufferGeometry(), material.clone());
     progressive[key] = { curve, radius, mesh };
     return mesh;
+  }
+
+  function namedVesselCenter(id, name, fallback) {
+    const mesh = getMeshes(id).find(item => item.name === name);
+    return mesh ? new THREE.Box3().setFromObject(mesh).getCenter(new THREE.Vector3()) : fallback;
   }
 
   function station(pos, pickId, name, side) {
@@ -109,10 +115,17 @@ export function createCathLab(helpers) {
     const ivcOs = ivcLoop ? ivcLoop.center.clone() : new THREE.Vector3(-0.85, -0.65, -0.35);
     const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
     const tvCenter = tvRim ? centroid(tvRim) : new THREE.Vector3(-0.92, -0.18, 0.14);
-    const paTrunk = sourceCenter('pa') || new THREE.Vector3(0.14, 1.38, 0.54);
+    // The PA atlas id spans trunk and both branches; its combined box center is not in the trunk.
+    const paTrunk = namedVesselCenter('pa', 'Pulmonary trunk', new THREE.Vector3(0.14, 1.38, 0.54));
+    const paBifurcation = namedVesselCenter('pa', 'Bifurcation of pulmonary trunk',
+      new THREE.Vector3(0.07, 1.51, -0.31));
     const lpaVerts = meshVertices('pa', /Left pulmonary/i);
     const lpaLine = meshCenterline(lpaVerts, v => v.x, 0.2).sort((a, b) => a.x - b.x);
-    const paTarget = lpaLine.length ? lpaLine[Math.min(2, lpaLine.length - 1)].clone() : new THREE.Vector3(0.7, 1.35, -0.75);
+    const distalBranchIndex = Math.min(Math.round(lpaLine.length * 0.7), lpaLine.length - 1);
+    const branchPath = lpaLine.length
+      ? lpaLine.slice(0, distalBranchIndex + 1).map(point => point.clone())
+      : [new THREE.Vector3(1.25, 0.55, -1.55)];
+    const paTarget = branchPath[branchPath.length - 1].clone();
 
     // -------------------------------------------------------------
     // Right heart catheter: femoral vein -> IVC -> RA -> TV -> RV -> PA.
@@ -121,32 +134,48 @@ export function createCathLab(helpers) {
     rhcGroup.name = 'Right heart catheter (Swan-Ganz)';
     rhcGroup.userData.fluoroTint = 0x8a6a00;
 
-    const rhcPts = smoothPolyline([
+    const rvBody = rv.clone().add(new THREE.Vector3(0.10, -0.5, 0.10));
+    const rvOutflow = rv.clone().lerp(pv, 0.55);
+    const rhcPts = [
       ivcOs.clone().add(new THREE.Vector3(0, -1.2, -0.05)),
       ivcOs.clone().add(new THREE.Vector3(0, -0.5, 0)),
       ivcOs.clone(),
-      ra.clone().add(new THREE.Vector3(0.05, -0.1, 0)),
+      ra.clone(),
       tvCenter.clone(),
-      rv.clone().add(new THREE.Vector3(0.05, 0.15, 0.1)),
+      rvBody,
+      rvOutflow,
       pv.clone(),
       paTrunk.clone(),
-      paTarget.clone()
-    ], 2);
-    const rhcCurve = new THREE.CatmullRomCurve3(rhcPts);
-    rhcGroup.add(progressiveTube('rhc', rhcCurve, 0.02, matRight));
+      paBifurcation.clone(),
+      ...branchPath
+    ];
+    const rhcCurve = new THREE.CatmullRomCurve3(rhcPts, false, 'centripetal');
+    const fractionAt = target => {
+      let best = { fraction: 0, distance: Infinity };
+      for (let i = 0; i <= 256; i++) {
+        const fraction = i / 256;
+        const distance = rhcCurve.getPointAt(fraction).distanceToSquared(target);
+        if (distance < best.distance) best = { fraction, distance };
+      }
+      return best.fraction;
+    };
+    rightStepStops = { ra: fractionAt(ra), rv: fractionAt(rvBody) };
+    const rightCatheter = progressiveTube('rhc', rhcCurve, 0.02, matRight);
+    rightCatheter.name = 'Swan-Ganz catheter route';
+    rhcGroup.add(rightCatheter);
 
     // Wedge balloon at the catheter tip (shown when fully advanced).
     wedgeBalloon = new THREE.Mesh(new THREE.SphereGeometry(0.09, 18, 18), matBalloon);
     wedgeBalloon.position.copy(paTarget);
-    wedgeBalloon.name = 'Wedge balloon (inflated)';
-    wedgeBalloon.userData = { pickId: 'cath-wedge', provenance: 'schematic', sourceName: 'Pulmonary wedge' };
+    wedgeBalloon.name = 'Distal PA balloon target (schematic)';
+    wedgeBalloon.userData = { pickId: 'cath-wedge', provenance: 'schematic', sourceName: 'Distal PA balloon target' };
     wedgeBalloon.visible = false;
     rhcGroup.add(wedgeBalloon);
 
     rhcGroup.add(station(ra.clone().add(new THREE.Vector3(0.1, 0, 0)), 'cath-ra', 'RA measurement station', 'right'));
-    rhcGroup.add(station(rv.clone().add(new THREE.Vector3(0.05, 0.15, 0.1)), 'cath-rv', 'RV measurement station', 'right'));
+    rhcGroup.add(station(rvBody.clone(), 'cath-rv', 'RV measurement station', 'right'));
     rhcGroup.add(station(paTrunk.clone(), 'cath-pa', 'PA measurement station', 'right'));
-    rhcGroup.add(station(paTarget.clone(), 'cath-wedge', 'Wedge position', 'right'));
+    rhcGroup.add(station(paTarget.clone(), 'cath-wedge', 'Distal PA balloon target', 'right'));
 
     group.add(rhcGroup);
     stages.rhc = rhcGroup;
@@ -192,8 +221,12 @@ export function createCathLab(helpers) {
 
   function updateGeometry() {
     if (!initialized) return;
-    const t = Math.max(0.05, Math.min(1, currentProgress));
-    for (const record of Object.values(progressive)) {
+    const progress = Math.max(0.05, Math.min(1, currentProgress));
+    for (const [key, record] of Object.entries(progressive)) {
+      const stageStop = key === 'rhc'
+        ? activeStep === 0 ? rightStepStops.ra : activeStep === 1 ? rightStepStops.rv : 1
+        : 1;
+      const t = progress * stageStop;
       const totalPoints = 64;
       const numPoints = Math.max(4, Math.floor(totalPoints * t));
       const sampled = [];
@@ -202,7 +235,7 @@ export function createCathLab(helpers) {
       record.mesh.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(sampled), numPoints * 2, record.radius, 8, false);
     }
     // Wedge balloon inflates only when the RHC is fully advanced on the wedge step.
-    if (wedgeBalloon) wedgeBalloon.visible = activeStep === 2 && currentProgress >= 0.7;
+    if (wedgeBalloon) wedgeBalloon.visible = activeStep === 2 && currentProgress >= 0.99;
   }
 
   function setProgress(progress) {

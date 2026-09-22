@@ -19,7 +19,7 @@ assert.equal(visibility.ivc, true);
 assert.equal(visibility['mitral-posterior'], true);
 assert.equal(visibility['tricuspid-septal'], true);
 assert.equal(visibility['tricuspid-inferior'], true);
-assert.equal(visibility.flow, true);
+assert.equal(visibility.flow, false);
 assert.equal(visibility.chambers, true);
 assert.equal('stray' in visibility, false);
 assert.ok(VEIN_VISIBILITY_IDS.includes('svc') && VEIN_VISIBILITY_IDS.includes('ivc'));

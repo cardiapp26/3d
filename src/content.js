@@ -177,8 +177,8 @@ export const rawStructures = {
     source: 'Standard hemodynamic normals (adult, supine); schematic'
   },
   'cath-wedge': {
-    tr: { title: 'Wedge (PCWP) • ort < 12', description: 'Balon şişik, distal dalda: LA basıncının gecikmeli, sönümlü yansıması. O₂ %97.', clinical: 'PCWP > 15 mmHg postkapiller (sol kalp kaynaklı) pulmoner hipertansiyonu düşündürür.' },
-    en: { title: 'Wedge (PCWP) • mean < 12', description: 'Balloon inflated in a distal branch: damped, delayed reflection of LA pressure. O₂ 97%.', clinical: 'PCWP > 15 mmHg suggests post-capillary (left-heart) pulmonary hypertension.' },
+    tr: { title: 'Wedge (PCWP) • ort < 12', description: 'Balon hedefi sol PA dalı üzerinde şematiktir; atlas küçük oklüzyon dalını içermez. Gerçek PCWP distal küçük dal oklüzyonunda LA basıncını gecikmeli ve sönümlü yansıtır. O₂ %97.', clinical: 'PCWP > 15 mmHg postkapiller (sol kalp kaynaklı) pulmoner hipertansiyonu düşündürür.' },
+    en: { title: 'Wedge (PCWP) • mean < 12', description: 'Balloon target on the left PA branch is schematic; the atlas lacks the small occluded vessel. Actual PCWP reflects LA pressure through distal small-branch occlusion. O₂ 97%.', clinical: 'PCWP > 15 mmHg suggests post-capillary (left-heart) pulmonary hypertension.' },
     source: 'Standard hemodynamic normals (adult, supine); schematic'
   },
   'cath-lv': {
@@ -841,7 +841,7 @@ export const rawLessons = {
   pacemaker: {
     tr: {
       title: 'Kardiyak implante edilebilir elektronik cihazlar (CIED)',
-      intro: 'Transvenöz pacing telleri ve fizyolojik ileti sistemi uyarımı (CSP/LBBAP ve CRT). İlerleme çubuğunu kaydırarak lead ilerletilmesini gözlemleyin.',
+      intro: 'Transvenöz pacing leadleri ve fizyolojik ileti sistemi uyarımı (CSP/LBBAP ve CRT). İlerleme çubuğunu kaydırarak lead ilerletilmesini gözlemleyin.',
       steps: [
         {
           title: 'Sağ Atriyal (RA) Lead • Apendiks Fiksasyonu',
@@ -1059,7 +1059,7 @@ export const uiTranslations = {
       ['anatomy', '01', 'Genel anatomi'],
       ['angiography', '02', 'Anjiyografi'],
       ['ablation', '03', 'Ablasyon anatomisi'],
-      ['pacemaker', '04', 'Pacemaker telleri'],
+      ['pacemaker', '04', 'Pacemaker leadi'],
       ['transseptal', '05', 'Transseptal & septostomi'],
       ['bachmann', '06', 'Bachmann demeti & pacing'],
       ['cath', '07', 'Kardiyak kateterizasyon']
@@ -1140,7 +1140,9 @@ export const uiTranslations = {
     upUpToDate: 'Cardia güncel (En son sürüm) ✓',
     upFound: 'Yeni sürüm mevcut!',
     upReloading: 'Yenileniyor…',
-    upOfflineReady: 'Çevrimdışı kullanıma hazır ✓'
+    upOfflineReady: 'Çevrimdışı kullanıma hazır ✓',
+    resizerTitle: 'Sağ paneli genişletmek için sürükleyin · Sıfırlamak için çift tıklayın',
+    resizerAria: 'Sağ paneli genişlet veya daralt'
   },
   en: {
     brandSubtitle: 'ANATOMY STUDIO',
@@ -1235,7 +1237,9 @@ export const uiTranslations = {
     upUpToDate: 'Cardia is up to date ✓',
     upFound: 'New version available!',
     upReloading: 'Reloading…',
-    upOfflineReady: 'Ready for offline use ✓'
+    upOfflineReady: 'Ready for offline use ✓',
+    resizerTitle: 'Drag to resize right panel · Double-click to reset',
+    resizerAria: 'Resize right panel'
   }
 };
 
@@ -1255,7 +1259,7 @@ const viewerTitles = {
     micro: 'Kastan hücreye.',
     angiography: 'Projeksiyonu oku.',
     ablation: 'Nirengi noktalarını işaretle.',
-    pacemaker: 'Teli izle.',
+    pacemaker: 'Leadi izle.',
     transseptal: 'Septumu geç.',
     bachmann: 'Bachmann: anatomi ve atriyal pacing.'
   },

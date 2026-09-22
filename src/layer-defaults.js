@@ -71,7 +71,7 @@ export const LAYER_DEFAULTS = Object.freeze({
   phrenic: false,
   vertebrae: true,
   'pa-faint': false,
-  flow: true
+  flow: false
 });
 
 export function applyLayerDefaults(visibility) {

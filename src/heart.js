@@ -122,7 +122,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
-    layers.flow.visible = visibility.flow !== false && mode !== 'micro';
+    layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro';
     if(bloodFlow) bloodFlow.setVisible(layers.flow.visible);
     for(const m of meshes){
       if(m.userData.micro)continue;
@@ -536,7 +536,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       cardiacCycle.tick(dt);
       const curState = cardiacCycle.getCycleState();
       if(channels) channels.applyChannels(curState);
-      if(bloodFlow && visibility.flow !== false) bloodFlow.tick(dt, curState);
+      if(bloodFlow && visibility.flow) bloodFlow.tick(dt, curState);
       needsRender=true;
     }
     if(controls.update()){
@@ -665,7 +665,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       cardiacCycle.seekCycle(phase);
       const state = cardiacCycle.getCycleState();
       if(channels) channels.applyChannels(state);
-      if(bloodFlow && visibility.flow !== false) bloodFlow.update(state);
+      if(bloodFlow && visibility.flow) bloodFlow.update(state);
       requestRender();
     },
     getCycleState(){return cardiacCycle.getCycleState();},
@@ -676,7 +676,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       requestRender();
     },
     getFlowVisible(){
-      return visibility.flow !== false;
+      return Boolean(visibility.flow);
     },
     setFlowLowPower(value){
       if(bloodFlow) bloodFlow.setLowPower(value);
@@ -709,7 +709,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       if(channels) channels.reset();
       if(bloodFlow){
         bloodFlow.setLowPower(false);
-        bloodFlow.setVisible(true);
+        bloodFlow.setVisible(false);
         bloodFlow.update(cardiacCycle.getCycleState());
       }
       epLandmarks.setVisible(false);
@@ -730,7 +730,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:visibility.flow!==false,bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
     dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

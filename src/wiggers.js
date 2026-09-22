@@ -507,12 +507,20 @@ export function drawCathTracing(canvas, stationId, state, lang = 'tr') {
   ctx.textAlign = 'left';
   ctx.fillStyle = '#31473d';
   ctx.font = '700 10px "DM Sans", sans-serif';
-  ctx.fillText(station.label[lang] || station.label.tr, left, 12);
+  const labelText = station.label[lang] || station.label.tr;
+  ctx.fillText(labelText, left, 12);
   ctx.font = '9px "DM Sans", sans-serif';
   ctx.fillStyle = '#5c7267';
   ctx.textAlign = 'right';
   const normal = station.normal[lang] || station.normal.tr;
-  ctx.fillText(`${normal} · O₂ %${station.sat}`, right, 12);
+  const normalText = `${normal} · O₂ %${station.sat}`;
+  const labelWidth = ctx.measureText(labelText).width;
+  const normalWidth = ctx.measureText(normalText).width;
+  if (left + labelWidth + 10 > right - normalWidth) {
+    ctx.fillText(`O₂ %${station.sat}`, right, 12);
+  } else {
+    ctx.fillText(normalText, right, 12);
+  }
   ctx.textAlign = 'left';
 
   // Phase cursor at the real-time position of the current phase.

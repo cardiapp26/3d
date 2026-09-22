@@ -437,27 +437,56 @@ const fs = require('node:fs');
     // 9d. Blood Flow Visualization (Phase 4)
     const flowBtn = page.locator('#flow-toggle');
     assert.ok(await flowBtn.isVisible(), 'Flow toggle button visible');
-    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'true', 'Flow active by default');
+    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'false', 'Flow inactive by default');
     assert.ok(await page.locator('.flow-legend').isVisible(), 'Flow legend visible');
+    assert.equal(await page.locator('input[data-layer="flow"]').isChecked(), false, 'flow checkbox synced to false by default');
+    let heartFlowState = await page.evaluate(() => window.heart.getState().flow);
+    assert.equal(heartFlowState, false, 'heart.getState().flow false by default');
 
     // Toggle via button
     await flowBtn.click();
-    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'false', 'Flow paused via button');
-    let heartFlowState = await page.evaluate(() => window.heart.getState().flow);
-    assert.equal(heartFlowState, false, 'heart.getState().flow updated to false');
-    assert.equal(await page.locator('input[data-layer="flow"]').isChecked(), false, 'flow checkbox synced to false');
-
-    // Toggle via keyboard shortcut 'f'
-    await page.keyboard.press('f');
-    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'true', 'Flow re-enabled via key F');
+    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'true', 'Flow enabled via button');
     heartFlowState = await page.evaluate(() => window.heart.getState().flow);
     assert.equal(heartFlowState, true, 'heart.getState().flow updated to true');
     assert.equal(await page.locator('input[data-layer="flow"]').isChecked(), true, 'flow checkbox synced to true');
+
+    // Toggle via keyboard shortcut 'f'
+    await page.keyboard.press('f');
+    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'false', 'Flow paused via key F');
+    heartFlowState = await page.evaluate(() => window.heart.getState().flow);
+    assert.equal(heartFlowState, false, 'heart.getState().flow updated to false');
+    assert.equal(await page.locator('input[data-layer="flow"]').isChecked(), false, 'flow checkbox synced to false');
+
+    // Re-enable for screenshot
+    await page.keyboard.press('f');
+    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'true', 'Flow re-enabled for screenshot');
 
     // Capture screenshot of blood flow during ejection
     await page.locator('#cycle-scrubber').fill('65');
     await page.evaluate(() => new Promise(r => setTimeout(r, 400)));
     await page.screenshot({ path: 'research/screenshots/blood-flow-ejection.png' });
+
+    // 9e. Panel Resizer (Draggable Divider)
+    const resizer = page.locator('#panel-resizer');
+    assert.ok(await resizer.isVisible(), 'Panel resizer divider is visible on desktop');
+    const initialArticleWidth = await page.evaluate(() => document.querySelector('article').getBoundingClientRect().width);
+    assert.ok(initialArticleWidth >= 280, `Initial article width (${initialArticleWidth}) is at least 280px`);
+
+    // Drag resizer to the left to widen the right panel
+    const resizerBox = await resizer.boundingBox();
+    assert.ok(resizerBox, 'Resizer bounding box exists');
+    await page.mouse.move(resizerBox.x + resizerBox.width / 2, resizerBox.y + 100);
+    await page.mouse.down();
+    await page.mouse.move(resizerBox.x + resizerBox.width / 2 - 80, resizerBox.y + 100, { steps: 5 });
+    await page.mouse.up();
+
+    const widenedArticleWidth = await page.evaluate(() => document.querySelector('article').getBoundingClientRect().width);
+    assert.ok(widenedArticleWidth > initialArticleWidth + 50, `Article panel widened via drag (from ${initialArticleWidth} to ${widenedArticleWidth})`);
+
+    // Double click resizer to reset to default
+    await resizer.dblclick();
+    const resetArticleWidth = await page.evaluate(() => document.querySelector('article').getBoundingClientRect().width);
+    assert.ok(resetArticleWidth < widenedArticleWidth, `Article panel reset to default width via double-click (${resetArticleWidth})`);
 
     // 10. Dialogs and modes
     for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await page.locator(`[data-mode=${mode}]`).click();

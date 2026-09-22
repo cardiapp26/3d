@@ -85,7 +85,7 @@ app.innerHTML = `
         ['phrenic', 'Frenik sinirler', '#e8e29a', false],
         ['vertebrae', 'Vertebra kolonu (silik)', '#bdb7ac', true]
       ].map(([id, t, c, on]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}"${on ? ' checked' : ''}></label>`).join('')}
-      <label class="layer"><i style="background:#e74c3c"></i>Kan akışı (Yollar ve partiküller)<input type="checkbox" data-layer="flow" checked></label>
+      <label class="layer"><i style="background:#e74c3c"></i>Kan akışı (Yollar ve partiküller)<input type="checkbox" data-layer="flow"></label>
       <label class="layer"><i style="background:#d6c7bc"></i><span data-i18n="valves">${getTranslation('valves')}</span><input type="checkbox" data-layer="valves" checked></label>
       <div class="layer-subgroup">
         ${[
@@ -144,7 +144,7 @@ app.innerHTML = `
       <div class="cycle-top-row">
         <div class="cycle-play-group">
           <button id="beat" class="cycle-play-btn" aria-pressed="false">♡ Animate beat <kbd>Space</kbd></button>
-          <button id="flow-toggle" class="cycle-flow-btn active" aria-pressed="true" title="${getTranslation('flowToggleTitle')}">${getTranslation('flowToggleBtn')} <kbd>F</kbd></button>
+          <button id="flow-toggle" class="cycle-flow-btn" aria-pressed="false" title="${getTranslation('flowToggleTitle')}">${getTranslation('flowToggleBtn')} <kbd>F</kbd></button>
           <button id="wiggers-toggle" class="cycle-flow-btn" aria-pressed="false" title="Wiggers diyagramı (basınç / hacim / EKG)">Wiggers <kbd>W</kbd></button>
           <span id="cycle-interval-name" class="cycle-badge">Rapid ventricular filling</span>
           <span id="cycle-phase-val" class="cycle-phase-tag">%0</span>
@@ -191,6 +191,9 @@ app.innerHTML = `
     </div>
     <div id="scene-note">Hasta sağı önden görünümde soldadır. Koronerler ve odacıklar aynı atlas koordinatlarını kullanır.</div>
   </main>
+  <div id="panel-resizer" class="panel-resizer" role="separator" aria-orientation="vertical" aria-label="${getTranslation('resizerAria')}" tabindex="0" title="${getTranslation('resizerTitle')}">
+    <div class="resizer-handle"></div>
+  </div>
   <article>
     <!-- C-ARM FLUOROSCOPY & GANTRY JOYSTICK PANEL -->
     <div id="carm-panel" class="carm-panel collapsed" aria-label="C-Arm Angiografi Gantry Kontrolü">
@@ -1212,11 +1215,11 @@ function resetAll() {
 
   const flowBtn = document.querySelector('#flow-toggle');
   if (flowBtn) {
-    flowBtn.classList.add('active');
-    flowBtn.setAttribute('aria-pressed', 'true');
+    flowBtn.classList.remove('active');
+    flowBtn.setAttribute('aria-pressed', 'false');
   }
   const flowBox = document.querySelector('input[data-layer="flow"]');
-  if (flowBox) flowBox.checked = true;
+  if (flowBox) flowBox.checked = false;
 
   const descEl = document.querySelector('#carm-projection-desc');
   if (descEl) descEl.textContent = getAngioDescription('anterior');
@@ -1270,6 +1273,11 @@ function applyChromeTranslations() {
   });
   const angles = heart?.getAngioAngles?.();
   if (angles) updateJoystickFromCamera(angles);
+  const resizer = document.querySelector('#panel-resizer');
+  if (resizer) {
+    resizer.title = getTranslation('resizerTitle');
+    resizer.setAttribute('aria-label', getTranslation('resizerAria'));
+  }
 }
 
 function updateLanguageUI() {
@@ -1475,5 +1483,125 @@ motionQuery.addEventListener('change', e => {
   heart?.setReducedMotion(e.matches);
 });
 
+function initPanelResizer() {
+  const resizer = document.querySelector('#panel-resizer');
+  const workspace = document.querySelector('.workspace');
+  const article = document.querySelector('article');
+  if (!resizer || !workspace || !article) return;
+
+  const STORAGE_KEY = 'cardia_article_w';
+  const MIN_WIDTH = 260;
+  const DEFAULT_WIDTH = window.innerWidth >= 1500 ? 350 : 320;
+
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!Number.isNaN(parsed) && parsed >= MIN_WIDTH) {
+        workspace.style.setProperty('--article-w', `${parsed}px`);
+      }
+    }
+  } catch (_) {}
+
+  let isDragging = false;
+  let startX = 0;
+  let startWidth = 0;
+  let rafId = null;
+
+  function updateWidth(targetWidth) {
+    workspace.style.setProperty('--article-w', `${targetWidth}px`);
+    if (mode === 'cath') drawCathPanel();
+  }
+
+  function onPointerDown(e) {
+    if (e.button !== 0) return;
+    isDragging = true;
+    startX = e.clientX;
+    startWidth = article.getBoundingClientRect().width;
+    resizer.classList.add('is-dragging');
+    workspace.classList.add('is-resizing');
+    resizer.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 252 - 320 - 8);
+    const maxCap = Math.min(800, maxAllowed);
+    const targetWidth = Math.round(Math.min(maxCap, Math.max(MIN_WIDTH, startWidth - dx)));
+
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      updateWidth(targetWidth);
+      rafId = null;
+    });
+  }
+
+  function onPointerUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    resizer.classList.remove('is-dragging');
+    workspace.classList.remove('is-resizing');
+    try {
+      resizer.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const currentWidth = Math.round(article.getBoundingClientRect().width);
+    if (currentWidth >= MIN_WIDTH) {
+      try {
+        localStorage.setItem(STORAGE_KEY, String(currentWidth));
+      } catch (_) {}
+    }
+    if (mode === 'cath') drawCathPanel();
+  }
+
+  function onDoubleClick() {
+    workspace.style.setProperty('--article-w', `${DEFAULT_WIDTH}px`);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (_) {}
+    if (mode === 'cath') drawCathPanel();
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const currentWidth = article.getBoundingClientRect().width;
+      const step = e.shiftKey ? 40 : 15;
+      const delta = e.key === 'ArrowLeft' ? step : -step;
+      const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 252 - 320 - 8);
+      const maxCap = Math.min(800, maxAllowed);
+      const targetWidth = Math.round(Math.min(maxCap, Math.max(MIN_WIDTH, currentWidth + delta)));
+      updateWidth(targetWidth);
+      try {
+        localStorage.setItem(STORAGE_KEY, String(targetWidth));
+      } catch (_) {}
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onDoubleClick();
+    }
+  }
+
+  resizer.addEventListener('pointerdown', onPointerDown);
+  resizer.addEventListener('pointermove', onPointerMove);
+  resizer.addEventListener('pointerup', onPointerUp);
+  resizer.addEventListener('pointercancel', onPointerUp);
+  resizer.addEventListener('dblclick', onDoubleClick);
+  resizer.addEventListener('keydown', onKeyDown);
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const articleObserver = new ResizeObserver(() => {
+      if (mode === 'cath') drawCathPanel();
+    });
+    articleObserver.observe(article);
+  }
+}
+
 applyChromeTranslations();
 initUpdater();
+initPanelResizer();
