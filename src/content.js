@@ -1129,7 +1129,18 @@ export const uiTranslations = {
     tsCathWire: 'Kılavuz Tel (Guidewire)',
     tsCathBalloon: 'Septostomi Balonu',
     tsCathIas: 'Fossa Ovalis & Septum',
-    tsCathReset: 'Kateterleri Sıfırla'
+    tsCathReset: 'Kateterleri Sıfırla',
+    updateBtn: 'Güncelle',
+    upTitle: 'Yeni sürüm hazır',
+    upDesc: 'Cardia güncellendi. Yeni özellikleri ve düzeltmeleri almak için yenileyin.',
+    upVersionLabel: 'Sürüm',
+    upLater: 'Sonra',
+    upReload: 'Güncellemek için yenile',
+    upChecking: 'Denetleniyor…',
+    upUpToDate: 'Cardia güncel (En son sürüm) ✓',
+    upFound: 'Yeni sürüm mevcut!',
+    upReloading: 'Yenileniyor…',
+    upOfflineReady: 'Çevrimdışı kullanıma hazır ✓'
   },
   en: {
     brandSubtitle: 'ANATOMY STUDIO',
@@ -1213,7 +1224,18 @@ export const uiTranslations = {
     tsCathWire: 'Guidewire',
     tsCathBalloon: 'Septostomy Balloon',
     tsCathIas: 'Fossa Ovalis & Septum',
-    tsCathReset: 'Reset Catheters'
+    tsCathReset: 'Reset Catheters',
+    updateBtn: 'Update',
+    upTitle: 'New version ready',
+    upDesc: 'Cardia has been updated. Reload to pick up new features and fixes.',
+    upVersionLabel: 'Version',
+    upLater: 'Later',
+    upReload: 'Reload to update',
+    upChecking: 'Checking…',
+    upUpToDate: 'Cardia is up to date ✓',
+    upFound: 'New version available!',
+    upReloading: 'Reloading…',
+    upOfflineReady: 'Ready for offline use ✓'
   }
 };
 

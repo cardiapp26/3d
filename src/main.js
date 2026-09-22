@@ -5,6 +5,7 @@ import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation,
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
 import {drawWiggers, formatCycleTiming, wiggersPhaseAt, drawCathTracing} from './wiggers.js';
+import {initUpdater, updateUpdaterLanguage} from './updater.js';
 
 document.documentElement.lang = getContentLanguage();
 
@@ -25,6 +26,11 @@ app.innerHTML = `
   <div class="header-right">
     <span class="dot"></span> <span data-i18n="headerTitle">${getTranslation('headerTitle')}</span>
     <button id="lang-btn" class="lang-btn" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
+    <button id="header-update-btn" class="header-update-btn" title="Güncellemeleri denetle / Check for updates">
+      <span class="update-btn-icon">↺</span>
+      <span class="update-label" data-i18n="updateBtn">${getTranslation('updateBtn')}</span>
+      <span id="header-update-dot" class="update-dot" style="display:none;"></span>
+    </button>
     <button id="shortcuts-btn" title="Keyboard shortcuts (?)"><span data-i18n="shortcutsBtn">${getTranslation('shortcutsBtn')}</span> <kbd>?</kbd></button>
     <button id="sources"><span data-i18n="referencesBtn">${getTranslation('referencesBtn')}</span></button>
   </div>
@@ -376,6 +382,32 @@ app.innerHTML = `
     <div class="shortcut-row"><kbd>?</kbd><span>Show / Hide Shortcuts Dialog</span></div>
   </div>
 </dialog>
+
+<!-- ── APP UPDATE PROMPT (wiz3 style) ────────────────────── -->
+<div id="update-prompt" class="update-prompt-card" hidden role="status" aria-live="polite">
+  <div class="up-card-head">
+    <div class="up-head-title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="up-title" data-i18n="upTitle">${getTranslation('upTitle')}</span>
+    </div>
+    <button id="up-close" class="up-close-btn" type="button" title="Kapat" aria-label="Kapat">✕</button>
+  </div>
+  <div class="up-card-body">
+    <p id="up-text" class="up-text" data-i18n="upDesc">${getTranslation('upDesc')}</p>
+    <p class="up-version-tag">
+      <span data-i18n="upVersionLabel">${getTranslation('upVersionLabel')}</span>: <code id="up-version-val">v1.8.0 (Build v8)</code>
+    </p>
+    <div class="up-actions">
+      <button id="up-later" class="up-btn up-btn-later" type="button" data-i18n="upLater">${getTranslation('upLater')}</button>
+      <button id="up-reload" class="up-btn up-btn-primary" type="button">
+        <svg id="up-reload-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span id="up-reload-text" data-i18n="upReload">${getTranslation('upReload')}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="app-toast" hidden></div>
 `;
 
 const select = document.querySelector('#structure-select');
@@ -1306,6 +1338,7 @@ function updateLanguageUI() {
   if (progressNoteEl) {
     progressNoteEl.textContent = getTranslation('leadProgressNote');
   }
+  updateUpdaterLanguage();
   updateCycleUI(heart?.getCycleState());
 }
 
@@ -1443,3 +1476,4 @@ motionQuery.addEventListener('change', e => {
 });
 
 applyChromeTranslations();
+initUpdater();
