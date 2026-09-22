@@ -204,6 +204,36 @@ export const rawStructures = {
     en: { title: 'Aortic station • 120/80 mmHg', description: 'Aortic systolic < 120, diastolic < 80 mmHg; the dicrotic notch marks aortic closure. O₂ 95%.', clinical: 'On pull-back, the LV-aortic systolic difference is the aortic stenosis gradient.' },
     source: 'Standard hemodynamic normals (adult, supine); schematic'
   },
+  'koch-triangle': {
+    tr: { title: 'Koch üçgeni', description: 'Sağ atriyum alt septumunda; taban CS ostiyumu, kenarları Todaro tendonu ve triküspit septal yaprakçık menteşesi, apeksi kompakt AV düğüm.', clinical: 'Hem kaçınılacak bölgeyi (AV düğüm, hızlı yol) hem hedefi (yavaş yol) içerdiği için AVNRT ablasyonunun temel haritasıdır.' },
+    en: { title: 'Triangle of Koch', description: 'Lower septal right atrium; base = CS ostium, sides = tendon of Todaro and the septal tricuspid hinge, apex = compact AV node.', clinical: 'Holds both the zone to avoid (AV node, fast pathway) and the target (slow pathway): the core map for AVNRT ablation.' },
+    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+  },
+  'koch-todaro': {
+    tr: { title: 'Todaro tendonu', description: 'Eustachian valf / sırtın devamı olan fibröz kordon; Koch üçgeninin posterosüperior kenarı, santral fibröz gövdeye uzanır.', clinical: 'Hızlı yol bu kenara komşu, apekse yakındır; yakın bölgede ablasyon PR uzaması veya AV blok riski taşır.' },
+    en: { title: 'Tendon of Todaro', description: 'Fibrous cord continuing the Eustachian valve / ridge; the posterosuperior side of Koch\'s triangle, running to the central fibrous body.', clinical: 'The fast pathway lies next to it near the apex; ablating close by risks PR prolongation or AV block.' },
+    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+  },
+  'koch-base': {
+    tr: { title: 'CS ostiyumu (Koch tabanı)', description: 'Koroner sinüsün sağ atriyuma açıldığı ağız; Koch üçgeninin tabanı. Floroskopide proksimal CS elektrotları tabanı işaretler.', clinical: 'Yavaş yol tabanın hemen üstünde, CS ağzı ile triküspit septal yaprakçık arasındadır.' },
+    en: { title: 'CS ostium (Koch base)', description: 'The opening of the coronary sinus into the right atrium; the base of Koch\'s triangle. On fluoroscopy the proximal CS electrodes mark it.', clinical: 'The slow pathway sits just above the base, between the CS ostium and the septal tricuspid leaflet.' },
+    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+  },
+  'koch-avnode': {
+    tr: { title: 'Kompakt AV düğüm (Koch apeksi)', description: 'Koch üçgeninin apeksinde, triküspit septal menteşesinin membranöz septumla birleştiği yerde; His demeti buradan santral fibröz gövdeyi deler. Floroskopide His kateteri apeksi gösterir.', clinical: 'Bu bölgeye ablasyon kalıcı tam AV blok yapar: kesin kaçınılacak bölge.' },
+    en: { title: 'Compact AV node (Koch apex)', description: 'At the apex of Koch\'s triangle, where the septal tricuspid hinge meets the membranous septum; the His bundle penetrates the central fibrous body from here. On fluoroscopy the His catheter marks the apex.', clinical: 'Ablation here causes permanent complete AV block: strictly the zone to avoid.' },
+    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+  },
+  'koch-fast': {
+    tr: { title: 'Hızlı yol (kaçınılacak bölge)', description: 'Todaro tendonuna komşu, apeksin hemen altındaki süperior atriyal giriş; tipik AVNRT\'de retrograd kol.', clinical: 'Hızlı yol modifikasyonu yüksek AV blok riski nedeniyle günümüzde tercih edilmez.' },
+    en: { title: 'Fast pathway (zone to avoid)', description: 'Superior atrial input next to the tendon of Todaro, just below the apex; the retrograde limb in typical AVNRT.', clinical: 'Fast-pathway modification is avoided today because of the high AV block risk.' },
+    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+  },
+  'koch-slow': {
+    tr: { title: 'Yavaş yol (ablasyon hedefi)', description: 'İnferior atrial giriş; CS ostiyumu ile triküspit septal yaprakçığı arasında, Koch tabanına yakın. Tipik AVNRT\'de antegrad kol.', clinical: 'Tipik AVNRT\'de standart hedef: tabandan başlayıp apekse doğru kademeli RF uygulanır, junctional ritim başarı işaretidir.' },
+    en: { title: 'Slow pathway (ablation target)', description: 'Inferior atrial input between the CS ostium and the septal tricuspid leaflet, near the base of Koch\'s triangle; the antegrade limb in typical AVNRT.', clinical: 'The standard target in typical AVNRT: RF starts at the base and moves stepwise toward the apex; junctional rhythm marks success.' },
+    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+  },
   amc: {
     tr: {
       title: 'Aorto-mitral devamlılık • AMC',
@@ -867,7 +897,7 @@ export const rawLessons = {
         },
         {
           title: 'Koch Üçgeni ve Yavaş Yol • AVNRT',
-          text: 'Todaro tendonu, triküspit septal menteşesi ve koroner sinüs (CS) ostiyumu Koch üçgenini sınırlar. Apeksinde kompakt AV düğüm (kalıcı blok riski), CS ağzı tabanında ise güvenli Yavaş Yol (Slow Pathway) ablasyon hedefi yer alır.',
+          text: 'Koch üçgeni sağ atriyumun alt septal bölgesindedir. Taban: koroner sinüs (CS) ostiyumu (yeşil). Posterosüperior kenar: Eustachian sırtının devamı olan Todaro tendonu (beyaz). Anterior kenar: triküspit septal yaprakçığının menteşesi (turkuaz). Apeks: kompakt AV düğüm / His (kırmızı; ablasyon kalıcı AV blok yapar). Hızlı yol Todaro\'ya komşu, apeksin hemen altındadır (turuncu, kaçınılacak bölge). Yavaş yol CS ostiyumu ile septal yaprakçık arasında, tabana yakındır (yeşil, AVNRT ablasyon hedefi). Floroskopide RAO projeksiyonu üçgeni en iyi gösterir: taban proksimal CS elektrotlarından çizilen yatay hat, apeks His kateteri, anterior kenar His\'ten tabana inen dikey hat (TV septal yaprakçığı).',
           landmark: 'av',
           view: 'rao'
         },
@@ -897,7 +927,7 @@ export const rawLessons = {
         },
         {
           title: 'Triangle of Koch & Slow Pathway • AVNRT',
-          text: 'Bounded by the Tendon of Todaro, septal tricuspid hinge, and CS ostium. The apex hosts the compact AV node (danger of heart block); the inferior base near the CS ostium is the target for slow-pathway modulation.',
+          text: 'The triangle of Koch lies in the lower septal right atrium. Base: the coronary sinus (CS) ostium (green). Posterosuperior side: the tendon of Todaro, continuing the Eustachian ridge (white). Anterior side: the hinge of the septal tricuspid leaflet (cyan). Apex: the compact AV node / His (red; ablation causes permanent AV block). The fast pathway runs next to Todaro just below the apex (orange, zone to avoid). The slow pathway lies between the CS ostium and the septal leaflet near the base (green, the AVNRT ablation target). On fluoroscopy the RAO view shows the triangle best: base = a horizontal line through the proximal CS electrodes, apex = the His catheter, anterior side = the vertical drop from His to the base (septal tricuspid leaflet).',
           landmark: 'av',
           view: 'rao'
         },

@@ -45,12 +45,6 @@ export function createEPLandmarks(helpers) {
     roughness: 0.3
   });
 
-  const matBoundary = new THREE.LineBasicMaterial({
-    color: 0xffd60a,
-    linewidth: 2,
-    transparent: true,
-    opacity: 0.85
-  });
 
   let initialized = false;
 
@@ -67,7 +61,8 @@ export function createEPLandmarks(helpers) {
 
     const ra = sourceCenter('ra') || new THREE.Vector3(-1.03, 0.13, 0.12);
     const la = sourceCenter('la') || new THREE.Vector3(-0.05, 0.27, -0.37);
-    const av = new THREE.Vector3(-0.28, -0.20, -0.10); // matches the conduction system AV node
+    // Compact AV node, measured at the Koch apex by the conduction system.
+    const av = sourceCenter('av') || new THREE.Vector3(-0.72, 0.25, -0.02);
 
     // Measured anchors -------------------------------------------------
     // Ostia come from mesh boundary loops (the actual open rims), the
@@ -111,40 +106,115 @@ export function createEPLandmarks(helpers) {
     targets.cti = ctiGroup;
 
     // -------------------------------------------------------------
-    // 2. Triangle of Koch & Slow Pathway Area (AVNRT)
+    // 2. Triangle of Koch (AVNRT)
+    //    Base: CS ostium. Posterosuperior side: tendon of Todaro (continuation
+    //    of the Eustachian ridge). Anterior side: hinge of the septal tricuspid
+    //    leaflet. Apex: compact AV node. Fast pathway: superior, next to
+    //    Todaro near the apex (danger). Slow pathway: inferior, between the CS
+    //    ostium and the septal leaflet (target).
     // -------------------------------------------------------------
     const kochGroup = new THREE.Group();
     kochGroup.name = 'Triangle of Koch';
 
+    const tag = (mesh, pickId, name) => {
+      mesh.name = name;
+      mesh.userData = { pickId, provenance: 'schematic', sourceName: name };
+      return mesh;
+    };
+    // Lift points off the wall toward the RA cavity so the overlay stays visible.
+    const lift = v => v.clone().lerp(ra, 0.05);
+
     const apexPt = av.clone();
-    const lineGeom = new THREE.BufferGeometry().setFromPoints([
-      apexPt, septalHinge,
-      septalHinge, csOs,
-      csOs, apexPt
-    ]);
-    kochGroup.add(new THREE.LineSegments(lineGeom, matBoundary));
+    // Septal hinge = orifice-rim arc from the CS-ostium end to the apex.
+    let hingeArc = [septalHinge.clone(), apexPt.clone()];
+    let baseAnterior = septalHinge.clone();
+    if (tvRim && tvRim.length > 8) {
+      const nearest = target => tvRim.reduce((bi, v, i) => v.distanceTo(target) < tvRim[bi].distanceTo(target) ? i : bi, 0);
+      const iBase = nearest(csOs);
+      const iApex = nearest(apexPt);
+      const n = tvRim.length;
+      const forward = (iApex - iBase + n) % n;
+      const backward = (iBase - iApex + n) % n;
+      const step = forward <= backward ? 1 : -1;
+      const count = Math.min(forward, backward);
+      hingeArc = [];
+      for (let k = 0; k <= count; k++) hingeArc.push(tvRim[(iBase + step * k + n) % n].clone());
+      hingeArc[hingeArc.length - 1] = apexPt.clone();
+      baseAnterior = hingeArc[0].clone();
+    }
+    // Posterior base corner: CS-ostium rim point farthest from the tricuspid
+    // annulus (the lip the Eustachian ridge / Todaro rises from).
+    const csRim = csLoop ? csLoop.pts : [csOs.clone()];
+    const basePosterior = csRim.reduce((best, v) => {
+      const d = Math.min(...(tvRim || [septalHinge]).map(r => r.distanceTo(v)));
+      return d > best.d ? { v, d } : best;
+    }, { v: csOs.clone(), d: -1 }).v.clone();
 
-    // Compact AV node marker (Apex - High risk of AV block)
-    const avDanger = new THREE.Mesh(new THREE.SphereGeometry(0.055, 18, 18), matDanger);
-    avDanger.position.copy(apexPt);
-    kochGroup.add(avDanger);
+    // Todaro: from the posterior base corner up to the apex, bowed away from
+    // the hinge side (posterosuperior border of the triangle).
+    const hingeMid = hingeArc[Math.floor(hingeArc.length / 2)];
+    const todaroMid = basePosterior.clone().lerp(apexPt, 0.5);
+    todaroMid.add(todaroMid.clone().sub(hingeMid).setLength(0.05));
+    const todaroCurve = new THREE.CatmullRomCurve3([basePosterior, todaroMid, apexPt].map(lift));
+    const hingeCurve = new THREE.CatmullRomCurve3(hingeArc.map(lift));
+    const baseCurve = new THREE.CatmullRomCurve3([baseAnterior, csOs, basePosterior].map(lift));
 
-    // Slow pathway target zone: base of the triangle, just anterior to the CS ostium.
-    const slowPathwayCenter = csOs.clone().lerp(septalHinge, 0.3);
-    const slowTarget = new THREE.Mesh(new THREE.SphereGeometry(0.05, 18, 18), matSafeTarget);
+    const matTodaro = new THREE.MeshStandardMaterial({ color: 0xf1ede2, emissive: 0x6b6450, emissiveIntensity: 0.35, roughness: 0.5 });
+    const matHinge = new THREE.MeshStandardMaterial({ color: 0x61d6e8, emissive: 0x1b8fa3, emissiveIntensity: 0.5, roughness: 0.4 });
+    const matBase = new THREE.MeshStandardMaterial({ color: 0x4bd18a, emissive: 0x1d8a52, emissiveIntensity: 0.5, roughness: 0.4 });
+    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(todaroCurve, 32, 0.017, 8, false), matTodaro), 'koch-todaro', 'Tendon of Todaro'));
+    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(hingeCurve, 40, 0.015, 8, false), matHinge), 'tricuspid-septal', 'Septal tricuspid hinge (Koch side)'));
+    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(baseCurve, 20, 0.014, 8, false), matBase), 'koch-base', 'CS ostium (Koch base)'));
+
+    // Translucent triangle fill: fan from the apex over hinge + base + Todaro.
+    const outline = [
+      ...hingeCurve.getPoints(24),
+      ...baseCurve.getPoints(12).slice(1),
+      ...todaroCurve.getPoints(24).slice(1)
+    ];
+    const fillPos = [];
+    const apexLift = lift(apexPt);
+    for (let i = 0; i < outline.length - 1; i++) {
+      fillPos.push(...apexLift.toArray(), ...outline[i].toArray(), ...outline[i + 1].toArray());
+    }
+    const fillGeom = new THREE.BufferGeometry();
+    fillGeom.setAttribute('position', new THREE.Float32BufferAttribute(fillPos, 3));
+    fillGeom.computeVertexNormals();
+    const fill = new THREE.Mesh(fillGeom, new THREE.MeshBasicMaterial({
+      color: 0x7fe3ee, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false
+    }));
+    kochGroup.add(tag(fill, 'koch-triangle', 'Triangle of Koch'));
+
+    // Compact AV node at the apex (do not ablate: complete heart block).
+    const avDanger = new THREE.Mesh(new THREE.SphereGeometry(0.05, 18, 18), matDanger);
+    avDanger.position.copy(apexLift);
+    kochGroup.add(tag(avDanger, 'koch-avnode', 'Compact AV node (Koch apex)'));
+
+    // Fast pathway: superior zone along Todaro just below the apex (danger).
+    const fastCenter = lift(todaroCurve.getPointAt(0.78).lerp(hingeCurve.getPointAt(0.85), 0.25));
+    const fastZone = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), new THREE.MeshStandardMaterial({
+      color: 0xff9f0a, emissive: 0xff7a00, emissiveIntensity: 0.8, roughness: 0.3, transparent: true, opacity: 0.9
+    }));
+    fastZone.position.copy(fastCenter);
+    kochGroup.add(tag(fastZone, 'koch-fast', 'Fast pathway (danger zone)'));
+
+    // Slow pathway: inferior zone between the CS ostium and the septal
+    // leaflet, just above the base (ablation target).
+    const slowPathwayCenter = lift(baseAnterior.clone().lerp(csOs, 0.45).lerp(apexPt, 0.18));
+    const slowTarget = new THREE.Mesh(new THREE.SphereGeometry(0.045, 18, 18), matSafeTarget);
     slowTarget.position.copy(slowPathwayCenter);
-    kochGroup.add(slowTarget);
+    kochGroup.add(tag(slowTarget, 'koch-slow', 'Slow pathway (ablation target)'));
 
-    // RF lesion cluster in the slow pathway area, spread along the CS-hinge axis.
-    const axis = septalHinge.clone().sub(csOs).normalize();
-    const side = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0)).normalize();
+    // RF lesion cluster at the slow pathway, spread along the hinge direction.
+    const axis = apexPt.clone().sub(baseAnterior).normalize();
+    const side = new THREE.Vector3().crossVectors(axis, csOs.clone().sub(baseAnterior)).cross(axis).normalize();
     for (let i = 0; i < 5; i++) {
       const angle = (i / 5) * Math.PI * 2;
-      const rf = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 12), matLesion.clone());
+      const rf = new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 12), matLesion.clone());
       rf.position.copy(slowPathwayCenter)
-        .addScaledVector(axis, Math.cos(angle) * 0.045)
-        .addScaledVector(side, Math.sin(angle) * 0.045);
-      kochGroup.add(rf);
+        .addScaledVector(axis, Math.cos(angle) * 0.04)
+        .addScaledVector(side, Math.sin(angle) * 0.04);
+      kochGroup.add(tag(rf, 'koch-slow', 'Slow pathway RF lesion'));
     }
 
     group.add(kochGroup);

@@ -14,7 +14,7 @@ import { createBachmannGeometry } from './bachmann.js';
 import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
-import { vesselTrimPlane } from './mesh-utils.js';
+import { vesselTrimPlane, sharedRim } from './mesh-utils.js';
 import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
@@ -272,8 +272,17 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     conductionGroup.add(saHalo);
     register(saHalo, 'sa');
 
-    // 2. Atrioventricular (AV) node at Koch's triangle
-    const avCenter = new THREE.Vector3(-0.28, -0.20, -0.10);
+    // 2. Compact AV node at the apex of Koch's triangle: the superior end of
+    // the septal tricuspid hinge, where it meets the membranous septum under
+    // the non-coronary cusp. Measured on the RA/RV orifice rim, nudged to the
+    // atrial side. The old hand-placed point sat inside the septum.
+    const avCenter = (()=>{
+      const rim=sharedRim(meshMap.get('ra')?.[0], meshMap.get('rv')?.[0]);
+      const ncc=sourceCenter('ncc'), ra=sourceCenter('ra');
+      if(!rim||!ncc||!ra)return new THREE.Vector3(-0.72,0.25,-0.02);
+      const apex=rim.reduce((best,v)=>v.distanceTo(ncc)<best.distanceTo(ncc)?v:best).clone();
+      return apex.lerp(ra,.06);
+    })();
     const avMesh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 24, 24), matNode.clone());
     avMesh.position.copy(avCenter);
     avMesh.name = 'Atrioventricular node';
@@ -328,9 +337,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
 
     // 4. Bundle of His penetrating central fibrous body into interventricular septum
     const hisSeptum = new THREE.Vector3(-0.10, -0.32, 0.06);
+    // Penetrating His: through the central fibrous body toward the crest of
+    // the muscular septum.
+    const hisPenetrating = avCenter.clone().lerp(hisSeptum, .45).add(new THREE.Vector3(0, -.04, .02));
     makeTract([
       avCenter.clone(),
-      new THREE.Vector3(-0.18, -0.26, -0.02),
+      hisPenetrating,
       hisSeptum.clone()
     ], 0.024, 'his', 'Bundle of His');
 
@@ -500,10 +512,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let catheterPickables=null;
   function pickTargets(){
-    if(!transseptal.group.visible&&!cathLab.group.visible)return meshes;
+    if(!transseptal.group.visible&&!cathLab.group.visible&&!epLandmarks.group.visible)return meshes;
     if(!catheterPickables||!catheterPickables.length){
       catheterPickables=[];
-      for(const g of [transseptal.group,cathLab.group]){
+      for(const g of [transseptal.group,cathLab.group,epLandmarks.group]){
         if(g.visible)g.traverse(o=>{if(o.isMesh&&o.userData.pickId)catheterPickables.push(o);});
       }
     }
