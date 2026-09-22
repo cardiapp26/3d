@@ -6,9 +6,14 @@ import { ATLAS_URL, normalizedParts, normalizeAtlasName } from './atlas.js';
 import { createEPLandmarks } from './ep-landmarks.js';
 import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createAnnuli } from './annuli.js';
+import { addSchematicAvLeaflets } from './schematic-leaflets.js';
 import { createThorax } from './thorax.js';
 import { createTransseptal } from './transseptal.js';
 import { createBachmannGeometry } from './bachmann.js';
+import { createCardiacCycle } from './cardiac-cycle.js';
+import { createAnimationChannels } from './animation-channels.js';
+import { createBloodFlow } from './blood-flow.js';
+import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
 export function createHeart(container, onSelect = () => {}, onHover = () => {}, onAngleChange = () => {}) {
@@ -37,21 +42,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const light = new THREE.DirectionalLight(color,intensity); light.position.set(...position); scene.add(light);
   }
   const heart = new THREE.Group(); scene.add(heart);
-  const layers = Object.fromEntries(['chambers','vessels','coronaries','valves','conduction'].map(id=>{const g=new THREE.Group();heart.add(g);return [id,g];}));
-  const valveIds = ['lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'mitral-annulus', 'tricuspid-annulus', 'amc', 'rv-papillary', 'lv-papillary'];
-  const visibility = {
-    chambers: true, lv: true, rv: true, la: true, ra: true,
-    vessels: true, coronaries: true,
-    valves: true, 'aortic-valve': true, lcc: true, rcc: true, ncc: true,
-    mitral: true, tricuspid: true, 'mitral-annulus': true, 'tricuspid-annulus': true, 'pulmonary-valve': true,
-    'mitral-anterior': true, 'mitral-posterior': true,
-    'tricuspid-anterior': true, 'tricuspid-septal': true, 'tricuspid-inferior': true,
-    papillary: true, 'rv-papillary': true, 'lv-papillary': true,
-    veins: true, conduction: true, bachmann: true,
-    thorax: true, diaphragm: true, phrenic: false, vertebrae: true, 'pa-faint': false
-  };
+  const layers = Object.fromEntries(['chambers','vessels','coronaries','valves','conduction','flow'].map(id=>{const g=new THREE.Group();heart.add(g);return [id,g];}));
+  const valveIds = ['lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'mitral-annulus', 'tricuspid-annulus', 'rv-papillary', 'lv-papillary'];
+  const visibility = applyLayerDefaults({});
+  function setValveFamily(boolVal) {
+    valveIds.forEach(id => { visibility[id] = boolVal; });
+    visibility['aortic-valve'] = boolVal;
+    visibility.papillary = boolVal;
+    for (const id of LEAFLET_VISIBILITY_IDS) visibility[id] = boolVal;
+  }
   const meshes = [], meshMap = new Map();
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
+  const cardiacCycle = createCardiacCycle({ bpm: 72, phase: 0.0, playing: false, rhythm: 'sinus' });
+  let channels = null, bloodFlow = null;
   let fluoroscopy=false, lastEmittedKey='';
   let center=new THREE.Vector3(), scale=1, frame, down=null, transition=false;
   const cameraTarget=camera.position.clone(), lookTarget=new THREE.Vector3();
@@ -65,7 +68,17 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const decoder=new DRACOLoader().setDecoderPath('/draco/');
   const loader=new GLTFLoader().setDRACOLoader(decoder);
   function material(color) {return new THREE.MeshStandardMaterial({color,roughness:.65,metalness:0,side:THREE.DoubleSide});}
-  function register(mesh,id){mesh.userData.id=id;meshes.push(mesh);if(!meshMap.has(id))meshMap.set(id,[]);meshMap.get(id).push(mesh);}
+  function register(mesh,id){
+    mesh.userData.id=id;
+    meshes.push(mesh);
+    if(!meshMap.has(id))meshMap.set(id,[]);
+    meshMap.get(id).push(mesh);
+    if(mesh.userData.veinGroup){
+      const vg = mesh.userData.veinGroup;
+      if(!meshMap.has(vg))meshMap.set(vg,[]);
+      meshMap.get(vg).push(mesh);
+    }
+  }
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
   const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   heart.add(epLandmarks.group);
@@ -82,7 +95,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     return out;
   }
-  const transseptal = createTransseptal({ sourceCenter, meshVertices });
+  const transseptal = createTransseptal({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [] });
   heart.add(transseptal.group);
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });
@@ -90,10 +103,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
+    layers.flow.visible = visibility.flow !== false && mode !== 'micro';
+    if(bloodFlow) bloodFlow.setVisible(layers.flow.visible);
     for(const m of meshes){
       if(m.userData.micro)continue;
       const {id,layer,system:branch}=m.userData;
-      const isVein = branch === 'veins' || ['svc', 'ivc', 'pv', 'cs', 'gcv', 'mcv', 'cardiac-veins'].includes(id);
+      const isVein = branch === 'veins' || ['svc', 'ivc', 'pv', 'cs', 'gcv', 'mcv', 'piv', 'lspv', 'lipv', 'rspv', 'ripv', 'cardiac-veins'].includes(id);
       if (!visibility.veins && isVein) {
         m.visible = false;
         continue;
@@ -107,9 +122,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         m.visible = visibility.thorax !== false && visibility[id] !== false;
         continue;
       }
-      const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers';
+      const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers'||branch==='veins'||layer==='vessels';
       const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
-      m.visible=visibility[layer]!==false&&visibility[id]!==false&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
+      m.visible=visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
       const tissue=layer==='chambers';
       // Catheters run inside these vessels in the transseptal lesson; keep them see-through.
       const catheterVessel=mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id);
@@ -178,9 +193,13 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     initializeWallPlanes();
     buildConductionSystem();
     annuli.build();
+    addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
     thorax.build();
     epLandmarks.init();
     pacemakerLeads.init();
+    channels = createAnimationChannels({ meshMap, sourceCenter });
+    bloodFlow = createBloodFlow();
+    layers.flow.add(bloodFlow.group);
     applyState();loading.remove();container.dataset.modelReady='true';
     container.dataset.meshCount=String(found.length);
     return {count:found.length,normalization:{center:center.toArray(),scale},source:ATLAS_URL};
@@ -461,22 +480,23 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointerleave',pointerLeave);
   const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();requestRender();};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
-  const start=performance.now();
+  let lastTime = performance.now();
   function animate(now){
     frame=requestAnimationFrame(animate);
+    const dt = Math.min(100, Math.max(0, now - lastTime));
+    lastTime = now;
     if(transition){
       camera.position.lerp(cameraTarget,.12);
       controls.target.lerp(lookTarget,.12);
       if(camera.position.distanceTo(cameraTarget)<.002&&controls.target.distanceTo(lookTarget)<.002)transition=false;
       needsRender=true;
     }
-    const pulse=beating&&mode!=='micro'?1+.009*Math.max(0,Math.sin((now-start)*.007))**4:1;
-    if(beating&&mode!=='micro'){
-      heart.scale.setScalar(pulse);
-      rootPlane.constant=rootHeight*pulse;
-      for(const [id,record] of wallPlanes){
-        record.plane.constant=-(record.min+(record.max-record.min)*wallCuts[id])*pulse;
-      }
+    const cycleState = cardiacCycle.getCycleState();
+    if(cycleState.playing && mode !== 'micro'){
+      cardiacCycle.tick(dt);
+      const curState = cardiacCycle.getCycleState();
+      if(channels) channels.applyChannels(curState);
+      if(bloodFlow && visibility.flow !== false) bloodFlow.tick(dt, curState);
       needsRender=true;
     }
     if(controls.update()){
@@ -486,7 +506,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     emitAngleChange();
     if(needsRender){
       renderScene();
-      if(!transition&&(!beating||mode==='micro'))needsRender=false;
+      if(!transition&&(!cycleState.playing||mode==='micro'))needsRender=false;
     }
   }frame=requestAnimationFrame(animate);
   // Educational projection: layer attenuation, not a simulated diagnostic radiograph.
@@ -537,11 +557,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       visibility[name] = boolVal;
       if(name==='chambers')['lv','rv','la','ra'].forEach(id=>visibility[id]=boolVal);
       if(['lv','rv','la','ra'].includes(name))visibility.chambers=true;
-      if(name==='valves'){
-        valveIds.forEach(id=>visibility[id]=boolVal);
-        visibility['aortic-valve']=boolVal;
-        visibility['papillary']=boolVal;
-      }
+      if(name==='valves') setValveFamily(boolVal);
       if(name==='aortic-valve'){
         ['lcc','rcc','ncc'].forEach(id=>visibility[id]=boolVal);
         visibility.valves=true;
@@ -558,16 +574,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setValvesVisible(value){
       const boolVal = Boolean(value);
       visibility.valves = boolVal;
-      valveIds.forEach(id=>visibility[id]=boolVal);
-      visibility['aortic-valve'] = boolVal;
-      visibility['papillary'] = boolVal;
+      setValveFamily(boolVal);
       applyState();
     },
-    setVeinsVisible(value){visibility.veins=Boolean(value);applyState();},
+    setVeinsVisible(value){
+      const boolVal = Boolean(value);
+      visibility.veins = boolVal;
+      for (const id of VEIN_VISIBILITY_IDS) visibility[id] = boolVal;
+      applyState();
+    },
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
       mode=name;
-      opacity=['angiography','ablation','pacemaker','transseptal','bachmann'].includes(name)?.32:1;
+      opacity=['angiography','ablation','pacemaker','transseptal','bachmann'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       transseptal.setVisible(name==='transseptal');
@@ -589,7 +608,42 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setWallCut,
     setView,setAngioProjection,getAngioAngles,setFluoroscopy,selectStructure,clearSelection(){selectStructure(null,false);},
     setOpacity(value){opacity=THREE.MathUtils.clamp(Number(value),.08,1);applyState();},
-    setBeating(value){beating=Boolean(value);requestRender();},
+    setBeating(value){
+      beating=Boolean(value);
+      cardiacCycle.setPlaying(beating);
+      if(channels) channels.applyChannels(cardiacCycle.getCycleState());
+      requestRender();
+    },
+    setBpm(value){cardiacCycle.setBpm(value);requestRender();},
+    setRhythm(name){cardiacCycle.setRhythm(name);requestRender();},
+    seekCycle(phase){
+      cardiacCycle.seekCycle(phase);
+      const state = cardiacCycle.getCycleState();
+      if(channels) channels.applyChannels(state);
+      if(bloodFlow && visibility.flow !== false) bloodFlow.update(state);
+      requestRender();
+    },
+    getCycleState(){return cardiacCycle.getCycleState();},
+    subscribeCycle(listener){return cardiacCycle.subscribeCycle(listener);},
+    setFlowVisible(value){
+      visibility.flow = Boolean(value);
+      applyState();
+      requestRender();
+    },
+    getFlowVisible(){
+      return visibility.flow !== false;
+    },
+    setFlowLowPower(value){
+      if(bloodFlow) bloodFlow.setLowPower(value);
+      requestRender();
+    },
+    setReducedMotion(value){
+      const val = Boolean(value);
+      cardiacCycle.setReducedMotion(val);
+      if(bloodFlow) bloodFlow.setLowPower(val);
+      if(channels) channels.applyChannels(cardiacCycle.getCycleState());
+      requestRender();
+    },
     setAblationStep(step){epLandmarks.setStep(Number(step));requestRender();},
     setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
     setBachmannStep(step){pacemakerLeads.setBachmannStep(Number(step));requestRender();},
@@ -599,30 +653,24 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){
+      beating=false;
+      cardiacCycle.setPlaying(false);
+      cardiacCycle.seekCycle(0);
+      cardiacCycle.setBpm(72);
+      cardiacCycle.setRhythm('sinus');
+      if(channels) channels.reset();
+      if(bloodFlow){
+        bloodFlow.setLowPower(false);
+        bloodFlow.setVisible(true);
+        bloodFlow.update(cardiacCycle.getCycleState());
+      }
       epLandmarks.setVisible(false);
       pacemakerLeads.setVisible(false);
       transseptal.setVisible(false);
       rootWindow=false;
       system='all';
       fluoroscopy=false;
-      visibility.chambers=true;
-      visibility.lv=true;
-      visibility.rv=true;
-      visibility.la=true;
-      visibility.ra=true;
-      visibility.vessels=true;
-      visibility.coronaries=true;
-      visibility.veins=true;
-      visibility.conduction=true;
-      visibility.thorax=true;
-      visibility.diaphragm=true;
-      visibility.phrenic=false;
-      visibility.vertebrae=true;
-      visibility.bachmann=true;
-      visibility.valves=true;
-      valveIds.forEach(id=>visibility[id]=true);
-      visibility['aortic-valve']=true;
-      visibility['papillary']=true;
+      applyLayerDefaults(visibility);
       for(const id in wallCuts){
         wallCuts[id]=0;
         updateWallPlane(id);
@@ -633,7 +681,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
-    dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
+    getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:visibility.flow!==false,bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

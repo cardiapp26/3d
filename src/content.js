@@ -7,6 +7,7 @@ let currentLang = (typeof localStorage !== 'undefined' && localStorage.getItem('
 
 export function setContentLanguage(lang) {
   currentLang = lang === 'en' ? 'en' : 'tr';
+  if (typeof document !== 'undefined') document.documentElement.lang = currentLang;
   if (typeof localStorage !== 'undefined') {
     try { localStorage.setItem('cardia_lang', currentLang); } catch (_) {}
   }
@@ -164,14 +165,14 @@ export const rawStructures = {
     tr: {
       title: 'Aorto-mitral devamlılık • AMC',
       description: 'AMC, mitral anulusun anteromedial yüzünün aort kapağına doğru devamı olarak tanımlanır. Mitral ön yaprakçık ile sol ve nonkoroner aortik yaprakçıklar arasındaki fibröz perdedir (aorto-mitral perde).',
-      clinical: 'AMC bölgesi bazı ventriküler aritmilerin ve aort-mitral bileşke taşikardilerinin kaynağıdır; kapak cerrahisi ve perkütan girişimlerde (TAVI, mitral tamir) kritik komşuluktur. Şematik gösterim.'
+      clinical: 'Aktif atlas AMC için kayıtlı bir mesh içermez. Bu öğe yalnız referans notudur; sarı veya yüzeysel bir 3B perde gösterilmez.'
     },
     en: {
       title: 'Aorto-mitral continuity • AMC',
       description: 'The AMC is defined as the continuation of the anteromedial aspect of the mitral annulus to the aortic valve: the fibrous curtain between the anterior mitral leaflet and the left and non-coronary aortic leaflets.',
-      clinical: 'The AMC can harbor ventricular arrhythmias and junctional tachycardias; it is a critical neighborhood in valve surgery and percutaneous interventions (TAVI, mitral repair). Schematic illustration.'
+      clinical: 'The active atlas has no registered AMC mesh. This entry is a reference note only; no invented 3D curtain is displayed.'
     },
-    source: 'Ho et al., valve anatomy reviews; schematic'
+    source: 'Ho et al., valve anatomy reviews; reference note, no registered mesh'
   },
   diaphragm: {
     tr: {
@@ -292,14 +293,14 @@ export const rawStructures = {
   },
   cs: {
     tr: {
-      title: 'Koroner sinüs • CS',
-      description: 'İnferior atriyoventriküler olukta yer alan ve kardiyak venöz kanı sağ atriyuma boşaltan geniş venöz kanaldır.',
-      clinical: 'Ostiyumu Koch üçgeninin tabanını belirlemeye yardımcı olur. Sol ventrikül lead yerleşimi ve elektrofizyolojik haritalama için kritik giriş yoludur.'
+      title: 'Koroner sinüs ana gövdesi • CS Trunk',
+      description: 'İnferior atriyoventriküler olukta yer alan, miyokardiyal venöz kanın %75\'ini toplayıp Thebesian kapağı yoluyla sağ atriyuma boşaltan ana toplayıcı venöz kanaldır.',
+      clinical: 'Ostiyumu Koch üçgeninin tabanını belirler. Biventriküler pacing (CRT) sol ventrikül lead yerleşimi ve elektrofizyolojik haritalama kateterleri için birincil vasküler giriş yoludur.'
     },
     en: {
-      title: 'Coronary sinus • CS',
-      description: 'A venous channel in the inferior atrioventricular groove that opens into the right atrium near the inferior caval opening.',
-      clinical: 'Its ostium helps identify Koch’s triangle. The Thebesian valve and venous anatomy are variable; key conduit for CRT lead placement.'
+      title: 'Coronary sinus main trunk • CS Trunk',
+      description: 'The primary venous collector in the posterior atrioventricular groove that drains ~75% of cardiac venous blood into the right atrium via the Thebesian valve.',
+      clinical: 'Its ostium frames the base of Koch’s triangle. Crucial vascular gateway for cardiac resynchronization therapy (CRT) lead delivery and EP mapping.'
     },
     source: 'Coronary sinus and cardiac venous anatomy, PDF p. 3; Ho et al., 2012, PDF pp. 2–3'
   },
@@ -356,16 +357,29 @@ export const rawStructures = {
     },
     source: av
   },
+  fossa: {
+    tr: {
+      title: 'Fossa ovalis',
+      description: 'İnteratriyal septumun ince, çökük membranıdır. Transseptal iğne buradan sol atriyuma geçer.',
+      clinical: 'Non-koroner kuspun altında ve arkasındadır. Üst kenar aort köküne, alt kenar triküspit anulusuna, arka kenar sol atriyum serbest duvarına yakındır. Şematik membran.'
+    },
+    en: {
+      title: 'Fossa ovalis',
+      description: 'The thin depressed membrane of the interatrial septum. The transseptal needle crosses here into the left atrium.',
+      clinical: 'It lies inferior and posterior to the non-coronary cusp. The superior rim is near the aortic root, the inferior rim near the tricuspid annulus, and the posterior rim near the left atrial free wall. Schematic membrane.'
+    },
+    source: 'Fossa ovalis relations to the non-coronary cusp and tricuspid annulus'
+  },
   mitral: {
     tr: {
       title: 'Mitral kapak • Sol AV kapak',
       description: 'Sol atriyumu sol ventriküle bağlayan iki yaprakçıklı (anterior ve posterior) atriyoventriküler kapaktır.',
-      clinical: 'Mitral anulusu ile sol inferior pulmoner ven arasındaki mitral istmus, atriyal fibrilasyon ablasyonunda önemli bir çizgidir.'
+      clinical: 'Atlas düğümü yalnız posterior yaprakçığı içerir. Ön yaprakçık, ölçülmüş anulusun boş yayına oturan şematik bir yelkendir. Korda yoktur.'
     },
     en: {
       title: 'Mitral valve • Left AV valve',
       description: 'Marks the left atrioventricular junction, connecting the left atrial vestibule to the ventricular inlet.',
-      clinical: 'The mitral isthmus is an atrial region between the left inferior pulmonary vein orifice and mitral annulus; it is not a valve leaflet.'
+      clinical: 'The atlas node contains only the posterior leaflet. The anterior leaflet is a schematic sail on the uncovered arc of the measured annulus. Chordae are not included.'
     },
     source: 'Ho et al., 2012, PDF p. 7; mini atlas, PDF pp. 38–39'
   },
@@ -373,12 +387,12 @@ export const rawStructures = {
     tr: {
       title: 'Triküspit kapak • Sağ AV kapak',
       description: 'Sağ atriyum ile sağ ventrikül arasındaki üç yaprakçıklı (anterior, posterior, septal) kapak aygıtıdır.',
-      clinical: 'Septal yaprakçık insersiyonu Koch üçgeninin anterosüperior sınırını oluşturur. Pacemaker lead geçişlerinde kapak aparatusu incelenmelidir.'
+      clinical: 'Atlas septal ve inferior yaprakçıkları içerir. Anterior yaprakçık, ölçülmüş anulusun boş yayına oturan şematik bir yelkendir. Septal menteşe Koch üçgeninin sınırıdır.'
     },
     en: {
       title: 'Tricuspid valve • Right AV valve',
       description: 'The right atrioventricular valve has septal, anterior and inferior leaflets with chordal attachments to the ventricular apparatus.',
-      clinical: 'The septal hinge is a landmark for Koch’s triangle. Lead paths must be understood in relation to the valve and subvalvar apparatus.'
+      clinical: 'The atlas contains the septal and inferior leaflets. The anterior leaflet is a schematic sail on the uncovered arc of the measured annulus. The septal hinge is a landmark for Koch’s triangle.'
     },
     source: `${rv}; ${av}`
   },
@@ -423,53 +437,118 @@ export const rawStructures = {
   },
   gcv: {
     tr: {
-      title: 'Büyük kardiyak ven • GCV',
-      description: 'Ön interventriküler olukta LAD ile birlikte ilerleyen ve koroner sinüsle devam eden ana venöz yapıdır.',
-      clinical: 'Arter ağacıyla karıştırılmamalıdır. CRT lead yerleşiminde anterolateral venöz hedef sağlar.'
+      title: 'Büyük kardiyak ven • GCV (Anterior & Sol AV dalı)',
+      description: 'Apeks ve anterior interventriküler olukta LAD komşuluğunda başlar; sol AV oluğa (LCx komşuluğuna) kıvrılarak Vieussens kapağı seviyesinde koroner sinüse devam eder.',
+      clinical: 'Sol anterior ve lateral ventrikül duvarının venöz drenajını sağlar. CRT lead implantasyonunda anterolateral/lateral venöz hedef sunar.'
     },
     en: {
-      title: 'Great cardiac vein • GCV',
-      description: 'Ascends in the anterior interventricular groove alongside the LAD, then curves into the left AV groove to form the coronary sinus.',
-      clinical: 'Key anatomical route for left ventricular epicardial pacing leads.'
+      title: 'Great cardiac vein • GCV (Anterior & circumflex branch)',
+      description: 'Originates at the cardiac apex in the anterior interventricular groove alongside the LAD, then curves into the left AV groove to continue as the coronary sinus at the valve of Vieussens.',
+      clinical: 'Drains the anterior and lateral LV myocardium; provides critical anterolateral venous access for CRT pacing leads.'
     },
     source: 'Ho et al., 2012, PDF p. 3'
   },
   mcv: {
     tr: {
-      title: 'Orta kardiyak ven • MCV',
-      description: 'İnferior (posterior) interventriküler olukta PDA ile birlikte ilerleyen kardiyak vendir.',
-      clinical: 'Koroner sinüs ostiyumuna yakın birleşir; inferior miyokardiyal venöz drenajı sağlar.'
+      title: 'Orta kardiyak ven • MCV (Posterior interventriküler dal)',
+      description: 'Apeksten başlayarak inferior (posterior) interventriküler olukta PDA ile birlikte bazale doğru uzanır ve koroner sinüs ostiyumu yakınına dökülür.',
+      clinical: 'İnferior sol ventrikül duvarı ve posterior interventriküler septumun venöz drenajını sağlar; posteroseptal elektrofizyolojik ablasyonda anatomik kılavuzdur.'
     },
     en: {
-      title: 'Middle cardiac vein • MCV',
-      description: 'Courses in the posterior interventricular sulcus alongside the posterior descending artery to drain into the coronary sinus.',
-      clinical: 'Provides venous access to the basal inferior LV and posterior septum.'
+      title: 'Middle cardiac vein • MCV (Posterior interventricular branch)',
+      description: 'Ascends in the posterior interventricular sulcus alongside the posterior descending artery to drain into the terminal coronary sinus near its ostium.',
+      clinical: 'Drains the diaphragmatic LV wall and posterior septum; serves as an anatomical landmark in posteroseptal arrhythmia ablation.'
     },
     source: 'Coronary sinus and cardiac venous anatomy, PDF pp. 4–5'
   },
-  'cardiac-veins': {
+  piv: {
     tr: {
-      title: 'Kardiyak venler ağı',
-      description: 'Kalbin venöz drenaj ağı; koroner sinüs ve ona katılan ventriküler venlerden oluşur.',
-      clinical: 'Dalların sayısı, çapı ve seyri kişiden kişiye yüksek değişkenlik gösterir.'
+      title: 'Sol ventrikül posterior veni • PVLV / PIV',
+      description: 'Sol ventrikülün serbest diyafragmatik/inferolateral duvarı üzerinden yükselerek koroner sinüse dökülen geniş venöz daldır (Vena posterior ventriculi sinistri).',
+      clinical: 'Kardiyak resenkronizasyon tedavisinde (CRT) sol ventrikül epikardiyal pacing lead’i için en sık tercih edilen primer venöz kanaldır.'
     },
     en: {
-      title: 'Cardiac venous system',
-      description: 'The cardiac venous network comprising tributary veins draining into the coronary sinus.',
-      clinical: 'Individual branch topology and angulation vary significantly across patients.'
+      title: 'Posterior vein of left ventricle • PVLV / PIV',
+      description: 'Ascends across the inferolateral/posterior wall of the left ventricle to drain directly into the coronary sinus.',
+      clinical: 'Primary anatomical conduit frequently targeted for left ventricular lead placement in cardiac resynchronization therapy (CRT).'
+    },
+    source: 'Coronary sinus and cardiac venous anatomy, PDF pp. 3–5; Ho et al., 2012'
+  },
+  'cardiac-veins': {
+    tr: {
+      title: 'Kardiyak venler ağı (Koroner venöz sistem)',
+      description: 'Kalbin venöz drenaj ağı; koroner sinüs ana gövdesi (CS), büyük kardiyak ven (GCV), orta kardiyak ven (MCV) ve ventriküler posterior venlerden (PVLV) oluşur.',
+      clinical: 'Venöz dalların sayısı, çapı ve dallanma açıları kişiden kişiye yüksek varyasyon gösterir; CRT öncesi venografi ile haritalanır.'
+    },
+    en: {
+      title: 'Cardiac venous system (Coronary venous network)',
+      description: 'The cardiac venous network comprising the coronary sinus trunk (CS), great cardiac vein (GCV), middle cardiac vein (MCV), and posterior ventricular tributaries (PVLV).',
+      clinical: 'Branch topology, caliber, and take-off angles show high individual variation; evaluated pre-procedurally by occlusive venography.'
     },
     source: 'Coronary sinus and cardiac venous anatomy, PDF pp. 3–5'
   },
   pv: {
     tr: {
-      title: 'Pulmoner venler',
-      description: 'Akciğerlerden oksijenlenmiş kanı sol atriyumun posterior duvarına ileten dört ana vendir.',
-      clinical: 'Ven ostiyumları etrafındaki miyokardiyal kılıflar atriyal fibrilasyon tetikleyicilerinin ana kaynağıdır.'
+      title: 'Pulmoner venler (4 ana pulmoner ven ostiyumu)',
+      description: 'Akciğerlerden oksijenlenmiş kanı sol atriyumun posterior duvarına ileten dört ana vendir: LSPV, LIPV, RSPV, RIPV.',
+      clinical: 'Ven ostiyumları etrafındaki miyokardiyal kılıflar atriyal fibrilasyon tetikleyicilerinin ana kaynağıdır; geniş antral izolasyon (PVI/WACA) uygulanır.'
     },
     en: {
-      title: 'Pulmonary veins',
-      description: 'Typically four veins entering the posterior left atrium, carrying oxygenated blood from the lungs.',
-      clinical: 'Myocardial sleeves at the veno-atrial junctions are the primary source of triggers for atrial fibrillation.'
+      title: 'Pulmonary veins (Four pulmonary vein ostia)',
+      description: 'Four pulmonary veins (LSPV, LIPV, RSPV, RIPV) delivering oxygenated blood from the pulmonary capillary beds to the posterior left atrium.',
+      clinical: 'Myocardial sleeves extending onto the veno-atrial junctions are the primary source of ectopic triggers for atrial fibrillation.'
+    },
+    source: 'Ho et al., 2012, PDF pp. 2–3'
+  },
+  lspv: {
+    tr: {
+      title: 'Sol süperior pulmoner ven • LSPV',
+      description: 'Sol akciğerin üst lobundan oksijenlenmiş kanı sol atriyumun arka-üst (anterosüperior) tarafına iletir.',
+      clinical: 'Atriyal fibrilasyon (AF) kateter ablasyonunda aritmojenik tetikleyici odakların en sık izlendiği ostiyumdur; geniş antral dairesel ablasyon (WACA) ile izole edilir.'
+    },
+    en: {
+      title: 'Left superior pulmonary vein • LSPV',
+      description: 'Drains oxygenated blood from the left upper lung lobe into the posterosuperior left atrium.',
+      clinical: 'Most common site of arrhythmogenic triggers in atrial fibrillation; targeted by wide antral circumferential ablation (WACA).'
+    },
+    source: 'Ho et al., 2012, PDF pp. 2–3'
+  },
+  lipv: {
+    tr: {
+      title: 'Sol inferior pulmoner ven • LIPV',
+      description: 'Sol akciğerin alt lobundan gelen venöz kanı sol atriyumun arka-alt duvarına boşaltır.',
+      clinical: 'İnen torasik aort ve sol frenik sinir ile yakın posterolateral komşuluktadır; kriyobalon veya RF uygulamalarında enerji titrasyonu önemlidir.'
+    },
+    en: {
+      title: 'Left inferior pulmonary vein • LIPV',
+      description: 'Drains the left lower lung lobe into the posteroinferior aspect of the left atrium.',
+      clinical: 'Lies in close proximity to the descending thoracic aorta and left phrenic nerve; careful energy titration is required during isolation.'
+    },
+    source: 'Ho et al., 2012, PDF pp. 2–3'
+  },
+  rspv: {
+    tr: {
+      title: 'Sağ süperior pulmoner ven • RSPV',
+      description: 'Sağ akciğer üst ve orta lobundan gelen kanı sol atriyum arka çatısının sağ sınırına iletir.',
+      clinical: 'Süperior vena kava ve sağ frenik sinir ile çok yakın anterior komşuluk gösterir. Balon kriyoablasyon sırasında sağ frenik sinir hasarını önlemek için sürekli diyafram uyarımı (pacing) ile monitörizasyon zorunludur.'
+    },
+    en: {
+      title: 'Right superior pulmonary vein • RSPV',
+      description: 'Drains the right upper and middle lobes into the right-superior aspect of the posterior left atrium.',
+      clinical: 'Intimately related anteriorly to the superior vena cava and right phrenic nerve; diaphragmatic pacing is mandatory during cryoballoon ablation to avoid phrenic palsy.'
+    },
+    source: 'Ho et al., 2012, PDF pp. 2–3; ACC/HRS guidelines'
+  },
+  ripv: {
+    tr: {
+      title: 'Sağ inferior pulmoner ven • RIPV',
+      description: 'Sağ akciğer alt lobundan sol atriyumun tabanına dökülen en inferomedial pulmoner vendir.',
+      clinical: 'Fossa ovalis ve interatriyal septumun hemen posteriorunda seyreder; transseptal ponksiyon iğnesinin posteriora fazla yönelmesi durumunda potansiyel yaralanma riski taşır.'
+    },
+    en: {
+      title: 'Right inferior pulmonary vein • RIPV',
+      description: 'Enters the most inferior and medial aspect of the posterior left atrial wall from the right lower lung lobe.',
+      clinical: 'Located directly posterior to the fossa ovalis and interatrial septum; caution is required during transseptal puncture to avoid posterior wall trajectory.'
     },
     source: 'Ho et al., 2012, PDF pp. 2–3'
   },
@@ -945,7 +1024,18 @@ export const uiTranslations = {
     valvesHiddenBtn: 'Kapaklar (Gizli)',
     wallClosed: 'Kapalı',
     wallSection: 'kesit',
+    wallToolsSummary: 'Duvar açma pencereleri',
+    wallToolsNote: 'Atlas duvarları ayrı segmentlemiyor. Bu kontroller bölgesel geometrik kesitlerdir; endokard / miyokard / epikard katmanları değildir.',
+    wallRv: 'RV ön / serbest duvar yönü',
+    wallLv: 'LV lateral duvar yönü',
+    wallLa: 'LA posterior duvar yönü',
+    wallRa: 'RA lateral duvar yönü',
     restoreWalls: 'Duvarları geri getir',
+    rootWindowNote: 'Kesit üst aort duvarını gizler. Kusp, sinüs duvarı ve ostium farklı yapılardır.',
+    explorerPrefix: 'İNCELEME',
+    viewerHint: 'Sürükle: döndür · Kaydır: yakınlaştır · Tıkla: incele',
+    modeShortcut: 'Öğrenme modu (1 anatomi … 6 Bachmann)',
+    flowShortcut: 'Kan akışını aç veya kapat',
     carmTitle: 'C-ARM GANTRY',
     carmPill: 'ANJİOGRAFİ',
     obliqueLabel: 'OBLİK DÖNÜŞ (LAO / RAO)',
@@ -957,6 +1047,7 @@ export const uiTranslations = {
     beatAnimate: '♡ Kalp atımı',
     beatPause: '♡ Atımı durdur',
     opacityLabel: 'Saydamlık',
+    coronaryToolsHeading: 'KORONER İNCELEME',
     coronarySystemLabel: 'Koroner filtre',
     rootWindowLabel: 'Aort kökü penceresi',
     provenanceAtlas: 'ANATOMİK ATLAS / SEÇİLİ YAPI',
@@ -967,7 +1058,12 @@ export const uiTranslations = {
     keyboardHelpTitle: 'Klavye Kısayolları',
     carmDragHint: 'Paneli serbestçe taşımak için sürükleyin',
     leadProgressLabel: 'Lead ilerletme / Yerleşim',
-    leadProgressNote: '3D transvenöz lead modelleri ve fizyolojik ileti sistemi (CSP/LBBAP) hedefleri eğitim amaçlı modellenmiştir.'
+    leadProgressNote: '3D transvenöz lead modelleri ve fizyolojik ileti sistemi (CSP/LBBAP) hedefleri eğitim amaçlı modellenmiştir.',
+    flowToggleBtn: '🩸 Akış',
+    flowToggleTitle: 'Kan akışı partiküllerini aç/kapat (F)',
+    flowLegendTitle: 'Oksijenlenme: Kırmızı (Sol kalp / Aort / Koroner arter) · Mavi (Sağ kalp / Pulmoner arter / Venöz sistem)',
+    cycleDisclaimer: 'Wiggers döngüsü · Şematik akış · Eğitim modeli (CFD / Tanısal simülasyon değildir)',
+    ecgCaption: 'Şematik DII EKG · tanı kaydı değildir'
   },
   en: {
     brandSubtitle: 'ANATOMY STUDIO',
@@ -1000,7 +1096,18 @@ export const uiTranslations = {
     valvesHiddenBtn: 'Valves (Hidden)',
     wallClosed: 'Closed',
     wallSection: 'cut',
+    wallToolsSummary: 'Wall section windows',
+    wallToolsNote: 'The atlas does not segment wall layers. These controls are regional geometric sections, not endocardium, myocardium, or epicardium.',
+    wallRv: 'RV anterior / free-wall direction',
+    wallLv: 'LV lateral wall direction',
+    wallLa: 'LA posterior wall direction',
+    wallRa: 'RA lateral wall direction',
     restoreWalls: 'Restore wall windows',
+    rootWindowNote: 'The section hides the superior aortic wall. Cusp, sinus wall, and ostium are different structures.',
+    explorerPrefix: 'EXPLORER',
+    viewerHint: 'Drag to rotate · Scroll to zoom · Click to inspect',
+    modeShortcut: 'Switch learning mode (1 anatomy through 6 Bachmann)',
+    flowShortcut: 'Toggle blood flow',
     carmTitle: 'C-ARM GANTRY',
     carmPill: 'ANGIOGRAPHY',
     obliqueLabel: 'OBLIQUE ROTATION (LAO / RAO)',
@@ -1012,6 +1119,7 @@ export const uiTranslations = {
     beatAnimate: '♡ Animate beat',
     beatPause: '♡ Pause beat',
     opacityLabel: 'Opacity',
+    coronaryToolsHeading: 'CORONARY REVIEW',
     coronarySystemLabel: 'Coronary system',
     rootWindowLabel: 'Aortic root viewing cut',
     provenanceAtlas: 'ATLAS / SELECTED STRUCTURE',
@@ -1022,11 +1130,87 @@ export const uiTranslations = {
     keyboardHelpTitle: 'Keyboard Shortcuts',
     carmDragHint: 'Drag to freely reposition panel',
     leadProgressLabel: 'Lead advancement / Placement',
-    leadProgressNote: '3D transvenous lead models and physiological conduction system pacing (CSP/LBBAP) targets are modeled for clinical education.'
+    leadProgressNote: '3D transvenous lead models and physiological conduction system pacing (CSP/LBBAP) targets are modeled for clinical education.',
+    flowToggleBtn: '🩸 Flow',
+    flowToggleTitle: 'Toggle blood flow particles (F)',
+    flowLegendTitle: 'Oxygenation: Red (Left heart / Aorta / Coronaries) · Blue (Right heart / Pulmonary artery / Veins)',
+    cycleDisclaimer: 'Wiggers cycle · Schematic flow · Educational model (Not CFD / diagnostic simulation)',
+    ecgCaption: 'Schematic lead II ECG · not a diagnostic tracing'
   }
 };
 
 export function getTranslation(key) {
   const dict = uiTranslations[currentLang] || uiTranslations.tr;
   return dict[key] ?? uiTranslations.tr[key] ?? key;
+}
+
+export function getUiModes() {
+  const dict = uiTranslations[currentLang] || uiTranslations.tr;
+  return dict.modes || uiTranslations.tr.modes;
+}
+
+const viewerTitles = {
+  tr: {
+    anatomy: 'Yeni bir bakış.',
+    micro: 'Kastan hücreye.',
+    angiography: 'Projeksiyonu oku.',
+    ablation: 'Nirengi noktalarını işaretle.',
+    pacemaker: 'Teli izle.',
+    transseptal: 'Septumu geç.',
+    bachmann: 'Bachmann: anatomi ve atriyal pacing.'
+  },
+  en: {
+    anatomy: 'A new perspective.',
+    micro: 'From muscle to cell.',
+    angiography: 'Read the projection.',
+    ablation: 'Map the landmarks.',
+    pacemaker: 'Trace the lead.',
+    transseptal: 'Cross the septum.',
+    bachmann: 'Bachmann: anatomy and atrial pacing.'
+  }
+};
+
+export function getViewerTitle(mode) {
+  const table = viewerTitles[currentLang] || viewerTitles.tr;
+  return table[mode] || table.anatomy;
+}
+
+const angioCopy = {
+  tr: {
+    spider: 'SPIDER VIEW · Sol ana koroner (LMCA) bifurkasyonu, ostial LAD ve LCx',
+    rao_cranial: 'RAO CRANIAL · LAD orta-distal gövdesi ve diagonal (D1, D2) dallar',
+    lao_cranial: 'LAO CRANIAL · LAD septal dallar ve distal RCA / crux / PDA',
+    rao_caudal: 'RAO CAUDAL · LCx gövdesi ve obtüz marjinal (OM) dallar',
+    ap_cranial: 'AP CRANIAL · LAD gövdesinin uzatılmış projeksiyonu',
+    ap_caudal: 'AP CAUDAL · Sol ana koroner ve sirkumfleks ostiyumu',
+    lao: 'LAO 45 · Sağ koroner arter (RCA) C kıvrımı ve orta segment',
+    rao: 'RAO 30 · RCA düz profil, akut marjinal dallar',
+    lateral: 'LATERAL 90° · Sol lateral görünüm, LIMA grefti ve mid-LAD',
+    anterior: 'ANTERIOR (AP) · Anteroposterior temel kardiyak referans',
+    posterior: 'POSTERIOR · Kalbin arka yüzeyi ve sol atriyum venöz girişi',
+    custom: angles => `Özel açı · ${angles.laoRaoStr} · ${angles.craCauStr}`
+  },
+  en: {
+    spider: 'SPIDER VIEW · Left main bifurcation and ostial LAD / LCx',
+    rao_cranial: 'RAO CRANIAL · Mid-distal LAD and diagonal branches',
+    lao_cranial: 'LAO CRANIAL · LAD septals and distal RCA / crux / PDA',
+    rao_caudal: 'RAO CAUDAL · LCx body and obtuse marginal branches',
+    ap_cranial: 'AP CRANIAL · Elongated LAD body',
+    ap_caudal: 'AP CAUDAL · Left main and circumflex ostium',
+    lao: 'LAO 45 · RCA C-curve and mid segment',
+    rao: 'RAO 30 · Straight RCA profile and acute marginal branches',
+    lateral: 'LATERAL 90° · Left lateral view, LIMA graft and mid-LAD',
+    anterior: 'ANTERIOR (AP) · Anteroposterior reference',
+    posterior: 'POSTERIOR · Posterior surface and left atrial venous inflow',
+    custom: angles => `Custom angle · ${angles.laoRaoStr} · ${angles.craCauStr}`
+  }
+};
+
+export function getAngioDescription(key, angles) {
+  const table = angioCopy[currentLang] || angioCopy.tr;
+  const value = table[key];
+  if (typeof value === 'function') {
+    return value(angles || { laoRaoStr: '', craCauStr: '' });
+  }
+  return value || '';
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { centroid, ringNormal, sharedRim } from './mesh-utils.js';
 
 /**
  * Procedural 3D Transseptal Puncture & Balloon Atrial Septostomy simulation.
@@ -12,7 +13,7 @@ import * as THREE from 'three';
  * All geometry is schematic and anchored to atlas mesh centers via sourceCenter().
  */
 export function createTransseptal(helpers) {
-  const { sourceCenter, meshVertices = () => [] } = helpers;
+  const { sourceCenter, meshVertices = () => [], getMeshes = () => [] } = helpers;
   const group = new THREE.Group();
   group.name = 'Transseptal & Septostomy';
   group.visible = false;
@@ -22,23 +23,37 @@ export function createTransseptal(helpers) {
     roughness: 0.6,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.22,
+    depthWrite: false,
     side: THREE.DoubleSide
   });
 
   const matFossa = new THREE.MeshStandardMaterial({
-    color: 0xe7c3ae,
-    roughness: 0.45,
-    metalness: 0.05,
+    color: 0xf4e3b4,
+    emissive: 0xc6a15a,
+    emissiveIntensity: 0.18,
+    roughness: 0.55,
+    metalness: 0,
     transparent: true,
-    opacity: 0.75,
-    side: THREE.DoubleSide
+    opacity: 0.92,
+    depthWrite: false,
+    depthTest: true,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2
   });
 
   const matLimbus = new THREE.MeshStandardMaterial({
-    color: 0xa9564e,
+    color: 0x6e2430,
+    emissive: 0x5c2430,
+    emissiveIntensity: 0.15,
     roughness: 0.55,
-    metalness: 0.05
+    metalness: 0.05,
+    depthTest: true,
+    polygonOffset: true,
+    polygonOffsetFactor: -3,
+    polygonOffsetUnits: -3
   });
 
   const matSheath = new THREE.MeshStandardMaterial({
@@ -128,10 +143,46 @@ export function createTransseptal(helpers) {
     const svc = sourceCenter('svc') || new THREE.Vector3(-1.08, 1.89, -0.16);
     const ivc = sourceCenter('ivc') || new THREE.Vector3(-0.85, -0.65, -0.35);
 
-    // Septal plane: normal points RA -> LA
+    // Septal plane: normal points RA -> LA.
+    // Fossa ovalis lies inferior and posterior to the non-coronary cusp.
+    // A puncture above that cusp enters the aortic root. The inferior limbus
+    // stays just above the tricuspid annulus, not across its orifice.
     const septalNormal = la.clone().sub(ra).normalize();
-    // Fossa ovalis: posteroinferior septum, biased toward RA side of the midline
-    const fossa = ra.clone().lerp(la, 0.42).add(new THREE.Vector3(0, -0.12, -0.10));
+    const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
+    const annular = tvRim
+      ? centroid(tvRim.map(point => point.clone()))
+      : (sourceCenter('tricuspid-annulus') || sourceCenter('tricuspid') || ra.clone());
+    const annularUp = tvRim
+      ? ringNormal(tvRim, ra.clone().sub(annular))
+      : ra.clone().sub(annular).normalize();
+    const lift = annularUp.clone().addScaledVector(septalNormal, -annularUp.dot(septalNormal));
+    if (lift.lengthSq() < 1e-8) lift.set(0, 1, 0).addScaledVector(septalNormal, -septalNormal.y);
+    lift.normalize();
+    const align = Math.max(lift.dot(annularUp), 0.35);
+    const aorticCusp = sourceCenter('ncc') || sourceCenter('aorta') || annular.clone().addScaledVector(annularUp, 1);
+    const toAorta = aorticCusp.clone().sub(annular);
+    const aortaDist = Math.max(toAorta.length(), 0.2);
+    const aortaDir = toAorta.multiplyScalar(1 / aortaDist);
+    // Center the fossa in the gap: above the tricuspid annulus, below the non-coronary cusp.
+    let along = 0.40;
+    let septumRadius = aortaDist * 0.18;
+    const septalOrigin = ra.clone().lerp(la, 0.42);
+    const fossa = annular.clone().addScaledVector(aortaDir, aortaDist * along);
+    fossa.addScaledVector(septalNormal, septalOrigin.clone().sub(fossa).dot(septalNormal));
+    const posterior = new THREE.Vector3(0, 0, -1).addScaledVector(septalNormal, -septalNormal.z);
+    if (posterior.lengthSq() > 1e-6) {
+      posterior.normalize();
+      const descent = posterior.dot(annularUp);
+      if (descent < 0) posterior.addScaledVector(annularUp, -descent);
+      if (posterior.lengthSq() > 1e-6) fossa.addScaledVector(posterior.normalize(), septumRadius * 0.55);
+    }
+    const drop = septumRadius * align;
+    const floor = 0.03;
+    const lowestNow = fossa.clone().sub(annular).dot(annularUp) - drop;
+    if (lowestNow < floor) fossa.addScaledVector(lift, (floor - lowestNow) / align);
+    const cuspLimit = aorticCusp.clone().sub(annular).dot(annularUp) - septumRadius * 0.8;
+    const highestNow = fossa.clone().sub(annular).dot(annularUp) + drop;
+    if (highestNow > cuspLimit) fossa.addScaledVector(lift, (cuspLimit - highestNow) / align);
     const facing = fossa.clone().add(septalNormal);
 
     // -------------------------------------------------------------
@@ -141,22 +192,36 @@ export function createTransseptal(helpers) {
     iasGroup.name = 'Interatrial septum';
     iasGroup.userData.projectionTissue = true;
 
-    const septumDisc = new THREE.Mesh(new THREE.CircleGeometry(0.52, 40), matSeptum);
+    const septumDisc = new THREE.Mesh(new THREE.CircleGeometry(septumRadius, 40), matSeptum);
     septumDisc.position.copy(fossa);
     septumDisc.lookAt(facing);
     septumDisc.name = 'Interatrial septum (schematic)';
     iasGroup.add(septumDisc);
 
-    const fossaDisc = new THREE.Mesh(new THREE.CircleGeometry(0.17, 32), matFossa);
-    fossaDisc.position.copy(fossa).addScaledVector(septalNormal, 0.004);
+    const fossaDisc = new THREE.Mesh(new THREE.CircleGeometry(septumRadius * 0.62, 40), matFossa);
+    fossaDisc.position.copy(fossa).addScaledVector(septalNormal, -0.02);
     fossaDisc.lookAt(facing);
     fossaDisc.name = 'Fossa ovalis';
+    fossaDisc.renderOrder = 12;
+    fossaDisc.userData = {
+      id: 'fossa',
+      pickId: 'fossa',
+      layer: 'conduction',
+      provenance: 'schematic',
+      sourceName: 'Fossa ovalis',
+      keepOrder: true
+    };
     iasGroup.add(fossaDisc);
 
-    const limbus = new THREE.Mesh(new THREE.TorusGeometry(0.185, 0.028, 10, 40), matLimbus);
-    limbus.position.copy(fossa).addScaledVector(septalNormal, 0.006);
+    const limbus = new THREE.Mesh(
+      new THREE.TorusGeometry(septumRadius * 0.64, Math.max(0.016, septumRadius * 0.09), 10, 40),
+      matLimbus
+    );
+    limbus.position.copy(fossa).addScaledVector(septalNormal, -0.028);
     limbus.lookAt(facing);
     limbus.name = 'Limbus fossae ovalis';
+    limbus.renderOrder = 13;
+    limbus.userData = { id: 'fossa', pickId: 'fossa', provenance: 'schematic', keepOrder: true };
     iasGroup.add(limbus);
 
     group.add(iasGroup);
@@ -472,7 +537,7 @@ export function createTransseptal(helpers) {
     // Schematic overlay must stay legible through the translucent chamber walls:
     // draw after the atlas meshes and skip depth writes on transparent parts.
     group.traverse(obj => {
-      if (!obj.isMesh) return;
+      if (!obj.isMesh || obj.userData.keepOrder) return;
       obj.renderOrder = 4;
       if (obj.material.transparent) obj.material.depthWrite = false;
     });

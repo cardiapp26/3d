@@ -1,39 +1,43 @@
 import * as THREE from 'three';
 import './style.css';
 import {createHeart} from './heart.js';
-import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation} from './content.js';
+import {structures,lessons,setContentLanguage,getContentLanguage,getTranslation,getUiModes,getViewerTitle,getAngioDescription} from './content.js';
+import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
+import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
+
+document.documentElement.lang = getContentLanguage();
 
 const modes = [
-  ['anatomy','01','Gross anatomy'],
-  ['angiography','02','Angiography'],
-  ['ablation','03','Ablation anatomy'],
-  ['pacemaker','04','Pacemaker leads'],
-  ['transseptal','05','Transseptal & septostomy'],
-  ['bachmann','06','Bachmann bundle pacing']
+  ['anatomy', '01'],
+  ['angiography', '02'],
+  ['ablation', '03'],
+  ['pacemaker', '04'],
+  ['transseptal', '05'],
+  ['bachmann', '06']
 ];
 
 const app = document.querySelector('#app');
 app.innerHTML = `
 <header>
-  <a class="brand" href="#/">✳ <strong>CARDIA</strong><span>ANATOMY STUDIO</span></a>
+  <a class="brand" href="#/">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
   <div class="header-right">
-    <span class="dot"></span> Interactive 3D Cardiac Atlas
+    <span class="dot"></span> <span data-i18n="headerTitle">${getTranslation('headerTitle')}</span>
     <button id="lang-btn" class="lang-btn" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
-    <button id="shortcuts-btn" title="Keyboard shortcuts (?)">Shortcuts <kbd>?</kbd></button>
-    <button id="sources">References ↗</button>
+    <button id="shortcuts-btn" title="Keyboard shortcuts (?)"><span data-i18n="shortcutsBtn">${getTranslation('shortcutsBtn')}</span> <kbd>?</kbd></button>
+    <button id="sources"><span data-i18n="referencesBtn">${getTranslation('referencesBtn')}</span></button>
   </div>
 </header>
 <div class="workspace">
   <aside>
-    <div class="eyebrow">YOUR WORKSPACE</div>
-    <h1>Inside the heart.</h1>
-    <p class="muted">Explore structure. Understand relationships.</p>
+    <div class="eyebrow" data-i18n="workspaceEyebrow">${getTranslation('workspaceEyebrow')}</div>
+    <h1 data-i18n="workspaceTitle">${getTranslation('workspaceTitle')}</h1>
+    <p class="muted" data-i18n="workspaceMuted">${getTranslation('workspaceMuted')}</p>
     <nav aria-label="Learning modes">
-      ${modes.map(([id,n,t])=>`<button class="mode ${id==='anatomy'?'active':''}" data-mode="${id}"><span>${n}</span>${t} <kbd class="mode-kbd">${n.replace('0','')}</kbd><b>↗</b></button>`).join('')}
+      ${getUiModes().map(([id,n,t])=>`<button class="mode ${id==='anatomy'?'active':''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> <kbd class="mode-kbd">${n.replace(/^0/,'')}</kbd><b>↗</b></button>`).join('')}
     </nav>
     <section id="layers">
-      <div class="section-heading">ANATOMICAL LAYERS <span>08</span></div>
-      <label class="layer"><i style="background:#c76260"></i>Chambers<input type="checkbox" data-layer="chambers" checked></label>
+      <div class="section-heading"><span data-i18n="layersHeading">${getTranslation('layersHeading')}</span> <span>08</span></div>
+      <label class="layer"><i style="background:#c76260"></i><span data-i18n="chambers">${getTranslation('chambers')}</span><input type="checkbox" data-layer="chambers" checked></label>
       <div class="layer-subgroup">
         ${[
           ['lv', 'Left ventricle (LV)', '#9b3238'],
@@ -42,16 +46,29 @@ app.innerHTML = `
           ['ra', 'Right atrium (RA)', '#aa484e']
         ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
       </div>
-      <details class="wall-tools" open><summary>Duvar açma pencereleri</summary><p>Atlas duvarları ayrı segmentlemiyor. Bu kontroller bölgesel geometrik kesitlerdir; endokard / miyokard / epikard katmanları değildir.</p>
-      ${[['rv','RV ön / serbest duvar yönü'],['lv','LV lateral duvar yönü'],['la','LA posterior duvar yönü'],['ra','RA lateral duvar yönü']].map(([id,label])=>`<label for="wall-${id}">${label}<output id="wall-value-${id}">Kapalı</output></label><input id="wall-${id}" data-wall="${id}" type="range" min="0" max="80" value="0" aria-label="${label}">`).join('')}
-      <button id="restore-walls">Duvarları geri getir</button></details>
+      <details class="wall-tools" open><summary data-i18n="wallToolsSummary">${getTranslation('wallToolsSummary')}</summary><p data-i18n="wallToolsNote">${getTranslation('wallToolsNote')}</p>
+      ${[['rv','wallRv'],['lv','wallLv'],['la','wallLa'],['ra','wallRa']].map(([id,key])=>`<label for="wall-${id}"><span data-i18n="${key}">${getTranslation(key)}</span><output id="wall-value-${id}">${getTranslation('wallClosed')}</output></label><input id="wall-${id}" data-wall="${id}" type="range" min="0" max="80" value="0" aria-label="${getTranslation(key)}">`).join('')}
+      <button id="restore-walls" data-i18n="restoreWalls">${getTranslation('restoreWalls')}</button></details>
       ${[
-        ['vessels', 'Great vessels (Büyük damarlar)', '#729fca'],
-        ['coronaries', 'Coronary circulation (Koronerler)', '#ebba70'],
-        ['veins', 'Venöz sistem (Venler)', '#5187a0'],
-        ['conduction', 'İleti sistemi (SA, AV, His, Bachmann)', '#f5df76'],
-        ['bachmann', 'Bachmann demeti', '#f6b64b']
-      ].map(([id, t, c]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
+        ['vessels', 'vessels', '#729fca'],
+        ['coronaries', 'coronaries', '#ebba70']
+      ].map(([id, key, c]) => `<label class="layer"><i style="background:${c}"></i><span data-i18n="${key}">${getTranslation(key)}</span><input type="checkbox" data-layer="${id}" checked></label>`).join('')}
+      <label class="layer"><i style="background:#5187a0"></i><span data-i18n="veins">${getTranslation('veins')}</span><input type="checkbox" data-layer="veins" checked></label>
+      <div class="layer-subgroup">
+        ${[
+          ['cs', 'Koroner sinüs (CS Trunk)', '#5187a0'],
+          ['gcv', 'Büyük kardiyak ven (GCV)', '#679db2'],
+          ['mcv', 'Orta kardiyak ven (MCV)', '#679db2'],
+          ['piv', 'Sol ventrikül posterior veni (PVLV)', '#679db2'],
+          ['pv', 'Pulmoner venler (LSPV/LIPV/RSPV/RIPV)', '#b9827a'],
+          ['svc', 'Vena kava süperior (SVC)', '#62889c'],
+          ['ivc', 'Vena kava inferior (IVC)', '#62889c']
+        ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
+      </div>
+      ${[
+        ['conduction', 'conduction', '#f5df76'],
+        ['bachmann', null, '#f6b64b']
+      ].map(([id, key, c]) => `<label class="layer"><i style="background:${c}"></i>${key ? `<span data-i18n="${key}">${getTranslation(key)}</span>` : 'Bachmann'}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
       ${[
         ['pa-faint', 'Pulmoner arteri silikleştir', '#9fc2d0', false]
       ].map(([id, t, c, on]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}"${on ? ' checked' : ''}></label>`).join('')}
@@ -60,27 +77,27 @@ app.innerHTML = `
         ['phrenic', 'Frenik sinirler', '#e8e29a', false],
         ['vertebrae', 'Vertebra kolonu (silik)', '#bdb7ac', true]
       ].map(([id, t, c, on]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}"${on ? ' checked' : ''}></label>`).join('')}
-      <label class="layer"><i style="background:#d6c7bc"></i>Kapak yapıları (Valves)<input type="checkbox" data-layer="valves" checked></label>
+      <label class="layer"><i style="background:#e74c3c"></i>Kan akışı (Yollar ve partiküller)<input type="checkbox" data-layer="flow" checked></label>
+      <label class="layer"><i style="background:#d6c7bc"></i><span data-i18n="valves">${getTranslation('valves')}</span><input type="checkbox" data-layer="valves" checked></label>
       <div class="layer-subgroup">
         ${[
           ['aortic-valve', 'Aort kapağı (LCC, RCC, NCC)', '#d9c5a8'],
           ['mitral', 'Mitral kapak', '#e2d5c4'],
-          ['mitral-anterior', 'AML · ön yaprakçık (şematik)', '#efe6d8'],
-          ['mitral-posterior', 'PML · arka yaprakçık', '#efe6d8'],
+          ['mitral-posterior', 'PML · atlas yaprakçığı', '#efe6d8'],
+          ['mitral-anterior', 'AML · şematik', '#f4efe4'],
           ['tricuspid', 'Triküspit kapak', '#e2d5c4'],
-          ['tricuspid-anterior', 'TV ön yaprakçık (şematik)', '#efe6d8'],
           ['tricuspid-septal', 'TV septal yaprakçık', '#efe6d8'],
           ['tricuspid-inferior', 'TV inferior yaprakçık', '#efe6d8'],
-          ['amc', 'Aorto-mitral devamlılık (AMC)', '#f5f3ea'],
+          ['tricuspid-anterior', 'TV anterior · şematik', '#f4efe4'],
           ['mitral-annulus', 'Mitral anulus', '#f5f3ea'],
           ['tricuspid-annulus', 'Triküspit anulus', '#f5f3ea'],
           ['pulmonary-valve', 'Pulmoner kapak', '#e2d5c4'],
           ['papillary', 'Papiller kaslar (RV / LV)', '#b57368']
         ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
       </div>
-      <label class="slider-label">Tissue opacity <span id="opacity-value">100%</span></label>
-      <input id="opacity" aria-label="Tissue opacity" type="range" min="15" max="100" value="100">
-      <div class="coronary-tools"><div class="section-heading">KORONER İNCELEME</div><label for="coronary-system">Damar sistemi</label><select id="coronary-system"><option value="all">Tüm anatomi</option><option value="both">İki koroner sistem</option><option value="left">Sol sistem · LM / LAD / LCx</option><option value="right">Sağ sistem · RCA</option></select><label class="layer"><input id="root-window" type="checkbox"> Aort kökü kesiti</label><small>Kesit üst aort duvarını gizler. Kusp, sinüs duvarı ve ostium farklı yapılardır.</small></div>
+      <label class="slider-label"><span data-i18n="opacityLabel">${getTranslation('opacityLabel')}</span> <span id="opacity-value">100%</span></label>
+      <input id="opacity" aria-label="${getTranslation('opacityLabel')}" type="range" min="15" max="100" value="100">
+      <div class="coronary-tools"><div class="section-heading" data-i18n="coronaryToolsHeading">${getTranslation('coronaryToolsHeading')}</div><label for="coronary-system"><span data-i18n="coronarySystemLabel">${getTranslation('coronarySystemLabel')}</span></label><select id="coronary-system"><option value="all">Tüm anatomi</option><option value="both">İki koroner sistem</option><option value="left">Sol sistem · LM / LAD / LCx</option><option value="right">Sağ sistem · RCA</option></select><label class="layer"><input id="root-window" type="checkbox"> <span data-i18n="rootWindowLabel">${getTranslation('rootWindowLabel')}</span></label><small data-i18n="rootWindowNote">${getTranslation('rootWindowNote')}</small></div>
     </section>
     <div class="aside-bottom">
       <span class="outline-icon">i</span>
@@ -90,8 +107,8 @@ app.innerHTML = `
   <main>
     <div class="viewer-top">
       <div>
-        <div class="eyebrow" id="mode-label">EXPLORER / GROSS ANATOMY</div>
-        <h2 id="viewer-title">A new perspective.</h2>
+        <div class="eyebrow" id="mode-label">${getTranslation('explorerPrefix')} / ${getUiModes()[0][2].toUpperCase()}</div>
+        <h2 id="viewer-title">${getViewerTitle('anatomy')}</h2>
       </div>
       <div class="top-badges">
         <span id="hover-badge" class="hover-badge" hidden></span>
@@ -105,11 +122,49 @@ app.innerHTML = `
       <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm Gantry & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
       <button id="reset" title="Reset camera (0)">↺</button>
     </div>
-    <div class="viewer-bottom">
-      <span>↔ Drag to rotate <em>·</em> Scroll to zoom <em>·</em> Click to inspect & focus</span>
-      <div class="viewer-actions">
-        <button id="beat" aria-pressed="false">♡ Animate beat <kbd>Space</kbd></button>
+    <div id="cycle-panel" class="cycle-panel">
+      <div class="cycle-top-row">
+        <div class="cycle-play-group">
+          <button id="beat" class="cycle-play-btn" aria-pressed="false">♡ Animate beat <kbd>Space</kbd></button>
+          <button id="flow-toggle" class="cycle-flow-btn active" aria-pressed="true" title="${getTranslation('flowToggleTitle')}">${getTranslation('flowToggleBtn')} <kbd>F</kbd></button>
+          <span id="cycle-interval-name" class="cycle-badge">Rapid ventricular filling</span>
+          <span id="cycle-phase-val" class="cycle-phase-tag">%0</span>
+        </div>
+        <div class="cycle-rate-group">
+          <div class="flow-legend" title="Oksijenlenme: Kırmızı (Sol kalp / Aort / Koroner arter) · Mavi (Sağ kalp / Pulmoner arter / Venöz sistem)">
+            <span class="flow-dot oxy"></span><span class="flow-dot-label">O₂⁺</span>
+            <span class="flow-dot deoxy"></span><span class="flow-dot-label">O₂⁻</span>
+          </div>
+          <div class="cycle-bpm-wrap">
+            <span class="cycle-label">BPM:</span>
+            <strong id="cycle-bpm-val">72</strong>
+            <input type="range" id="cycle-bpm" min="30" max="200" value="72" step="1" title="Heart rate (30-200 BPM)">
+          </div>
+          <div class="cycle-presets">
+            <button class="cycle-preset-btn" data-bpm="60" title="Resting heart rate">60</button>
+            <button class="cycle-preset-btn active" data-bpm="72" title="Normal heart rate">72</button>
+            <button class="cycle-preset-btn" data-bpm="150" title="Exercise heart rate">150</button>
+          </div>
+          <select id="cycle-rhythm" class="cycle-rhythm-select" title="Cardiac rhythm preset">
+            <option value="sinus" selected>Normal Sinus</option>
+            <option value="bradycardia">Sinus Bradycardia</option>
+            <option value="tachycardia">Sinus Tachycardia</option>
+            <option value="afib">AFib Concept</option>
+          </select>
+        </div>
       </div>
+      <div class="cycle-timeline-wrap">
+        <input type="range" id="cycle-scrubber" min="0" max="100" value="0" step="0.2" aria-label="Cardiac cycle phase timeline">
+      </div>
+      <div class="ecg-strip">
+        <canvas id="ecg-canvas" aria-label="${getTranslation('ecgCaption')}"></canvas>
+        <span class="ecg-caption" data-i18n="ecgCaption">${getTranslation('ecgCaption')}</span>
+        <span id="ecg-valve-state" class="ecg-valves"></span>
+      </div>
+    </div>
+    <div class="viewer-bottom">
+      <span data-i18n="viewerHint">${getTranslation('viewerHint')}</span>
+      <span class="cycle-disclaimer">${getTranslation('cycleDisclaimer')}</span>
     </div>
     <div id="scene-note">Hasta sağı önden görünümde soldadır. Koronerler ve odacıklar aynı atlas koordinatlarını kullanır.</div>
   </main>
@@ -119,8 +174,8 @@ app.innerHTML = `
       <div class="carm-header" id="carm-header">
         <div class="carm-title-group">
           <span class="carm-led-pulse"></span>
-          <span class="carm-title-text">C-ARM GANTRY</span>
-          <span class="carm-pill">ANJİOGRAFİ</span>
+          <span class="carm-title-text" data-i18n="carmTitle">${getTranslation('carmTitle')}</span>
+          <span class="carm-pill" data-i18n="carmPill">${getTranslation('carmPill')}</span>
         </div>
         <div class="carm-angle-badge" id="carm-angle-badge">AP 0° · 0°</div>
         <button id="carm-toggle-btn" class="carm-icon-btn" title="Paneli Küçült / Büyüt">+</button>
@@ -129,16 +184,16 @@ app.innerHTML = `
       <div class="carm-content" id="carm-content">
         <div class="carm-readout-strip">
           <div class="readout-card">
-            <span class="readout-sub">OBLİK DÖNÜŞ (LAO / RAO)</span>
+            <span class="readout-sub" data-i18n="obliqueLabel">${getTranslation('obliqueLabel')}</span>
             <span class="readout-digit" id="readout-lao-rao">AP 0°</span>
           </div>
           <div class="readout-card">
-            <span class="readout-sub">ANGÜLASYON (CRA / CAU)</span>
+            <span class="readout-sub" data-i18n="angulationLabel">${getTranslation('angulationLabel')}</span>
             <span class="readout-digit" id="readout-cra-cau">0°</span>
           </div>
         </div>
 
-        <div class="carm-desc-box" id="carm-projection-desc">Anteroposterior (AP) Referans Görünümü</div>
+        <div class="carm-desc-box" id="carm-projection-desc">${getAngioDescription('anterior')}</div>
 
         <!-- 2D JOYSTICK TRACKPAD -->
         <div class="carm-control-row">
@@ -169,7 +224,7 @@ app.innerHTML = `
         </div>
 
         <!-- ANGIOGRAPHY PRESET BUTTONS -->
-        <div class="carm-presets-title">STANDART PROJEKSİYONLAR</div>
+        <div class="carm-presets-title" data-i18n="carmPresetsTitle">${getTranslation('carmPresetsTitle')}</div>
         <div class="carm-presets-grid">
           <button class="angio-btn" data-angio="spider" title="Sol Ana Koroner (LMCA) Bifurkasyonu & Ostial LAD/LCx">
             <span class="angio-name">Spider</span><span class="angio-deg">LAO 45 / CAU 30</span>
@@ -202,7 +257,7 @@ app.innerHTML = `
 
         <div class="carm-footer">
           <button id="fluoroscopy-toggle" class="fluoro-btn" aria-pressed="false">
-            <span class="fluoro-icon">☢</span> Floroskopi X-Ray Modu
+            <span class="fluoro-icon">☢</span> <span data-i18n="fluoroBtn">${getTranslation('fluoroBtn')}</span>
           </button>
           <div class="carm-quick-actions">
             <button id="carm-veins-toggle" class="carm-sub-btn active" title="Venöz sistemi (SVC, IVC, PV, CS, GCV) gizle / göster">
@@ -267,10 +322,10 @@ app.innerHTML = `
 
 <dialog id="shortcuts-modal">
   <button id="close-shortcuts">Close ×</button>
-  <h2>Keyboard Shortcuts</h2>
+  <h2 data-i18n="keyboardHelpTitle">${getTranslation('keyboardHelpTitle')}</h2>
   <p class="muted">Fast navigation inspired by neuroanatomy atlas conventions.</p>
   <div class="shortcuts-grid">
-    <div class="shortcut-row"><kbd>1</kbd>–<kbd>7</kbd><span>Switch Learning Mode (including Transseptal and Bachmann pacing)</span></div>
+    <div class="shortcut-row"><kbd>1</kbd>–<kbd>6</kbd><span data-i18n="modeShortcut">${getTranslation('modeShortcut')}</span></div>
     <div class="shortcut-row"><kbd>A</kbd><span>Anterior View</span></div>
     <div class="shortcut-row"><kbd>P</kbd><span>Posterior View</span></div>
     <div class="shortcut-row"><kbd>R</kbd><span>RAO (Right Anterior Oblique)</span></div>
@@ -280,6 +335,7 @@ app.innerHTML = `
     <div class="shortcut-row"><kbd>O</kbd><span>Aortic Root & Cusps View</span></div>
     <div class="shortcut-row"><kbd>0</kbd><span>Reset Camera View</span></div>
     <div class="shortcut-row"><kbd>Space</kbd><span>Toggle Heartbeat Animation</span></div>
+    <div class="shortcut-row"><kbd>F</kbd><span data-i18n="flowShortcut">${getTranslation('flowShortcut')}</span></div>
     <div class="shortcut-row"><kbd>N</kbd> / <kbd>→</kbd><span>Next Landmark (Guided Lesson)</span></div>
     <div class="shortcut-row"><kbd>?</kbd><span>Show / Hide Shortcuts Dialog</span></div>
   </div>
@@ -302,8 +358,9 @@ let isUpdatingRoute = false;
 function resolveStructureId(id) {
   return ({
     'pulmonary': 'pa',
-    'pulmonary-veins': 'la',
+    'pulmonary-veins': 'pv',
     'coronary-sinus': 'cs',
+    'pvlv': 'piv',
     'myocyte': 'micro',
     'nucleus': 'micro',
     'sarcomere': 'micro',
@@ -379,10 +436,70 @@ try {
   document.querySelector('#viewport').innerHTML = '<div class="error">3D view unavailable. Enable WebGL or use a supported browser. Anatomy notes and guided lessons remain available.</div>';
   console.error(error);
 }
+
+function updateCycleUI(state) {
+  if (!state) return;
+  beating = state.playing;
+  const isTr = getContentLanguage() === 'tr';
+  const beatBtn = document.querySelector('#beat');
+  if (beatBtn) {
+    beatBtn.setAttribute('aria-pressed', String(state.playing));
+    const label = state.playing ? getTranslation('beatPause') : getTranslation('beatAnimate');
+    beatBtn.innerHTML = `${label} <kbd>Space</kbd>`;
+  }
+  const scrubber = document.querySelector('#cycle-scrubber');
+  if (scrubber && document.activeElement !== scrubber) {
+    scrubber.value = (state.phase * 100).toFixed(1);
+  }
+  const phaseTag = document.querySelector('#cycle-phase-val');
+  if (phaseTag) {
+    phaseTag.textContent = `%${Math.round(state.phase * 100)}`;
+  }
+  const badge = document.querySelector('#cycle-interval-name');
+  if (badge && state.interval) {
+    badge.textContent = isTr ? state.interval.nameTr : state.interval.name;
+  }
+  const valveState = document.querySelector('#ecg-valve-state');
+  if (valveState) valveState.textContent = formatValveSync(state.interval, isTr ? 'tr' : 'en');
+  const bpmVal = document.querySelector('#cycle-bpm-val');
+  if (bpmVal) {
+    bpmVal.textContent = state.bpm;
+  }
+  const bpmSlider = document.querySelector('#cycle-bpm');
+  if (bpmSlider && document.activeElement !== bpmSlider) {
+    bpmSlider.value = state.bpm;
+  }
+  const rhythmSelect = document.querySelector('#cycle-rhythm');
+  if (rhythmSelect && document.activeElement !== rhythmSelect) {
+    rhythmSelect.value = state.rhythm;
+  }
+  document.querySelectorAll('.cycle-preset-btn').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.bpm) === state.bpm);
+  });
+  drawEcgTrace(document.querySelector('#ecg-canvas'), state);
+}
+
+heart?.subscribeCycle(updateCycleUI);
 heart?.ready.then(() => inspect(currentSelectedId, false, false)).catch(error => console.error('Atlas loading failed:', error));
 select.addEventListener('change', () => inspect(select.value));
-document.querySelectorAll('[data-wall]').forEach(input => input.addEventListener('input', () => {heart?.setWallCut(input.dataset.wall, Number(input.value)/100);document.querySelector(`#wall-value-${input.dataset.wall}`).textContent = Number(input.value) ? `${input.value}% kesit` : 'Kapalı';}));
-document.querySelector('#restore-walls').addEventListener('click', () => {document.querySelectorAll('[data-wall]').forEach(input => {input.value=0;heart?.setWallCut(input.dataset.wall,0);document.querySelector(`#wall-value-${input.dataset.wall}`).textContent='Kapalı';});});
+function formatWallReadout(value) {
+  const amount = Number(value);
+  return amount ? `${amount}% ${getTranslation('wallSection')}` : getTranslation('wallClosed');
+}
+
+document.querySelectorAll('[data-wall]').forEach(input => input.addEventListener('input', () => {
+  heart?.setWallCut(input.dataset.wall, Number(input.value) / 100);
+  const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
+  if (out) out.textContent = formatWallReadout(input.value);
+}));
+document.querySelector('#restore-walls').addEventListener('click', () => {
+  document.querySelectorAll('[data-wall]').forEach(input => {
+    input.value = 0;
+    heart?.setWallCut(input.dataset.wall, 0);
+    const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
+    if (out) out.textContent = formatWallReadout(0);
+  });
+});
 document.querySelector('#coronary-system').addEventListener('change', e => {heart?.setCoronarySystem(e.target.value);const value=e.target.value==='all'?100:20;heart?.setOpacity(value/100);document.querySelector('#opacity').value=value;document.querySelector('#opacity-value').textContent=`${value}%`;});
 document.querySelector('#root-window').addEventListener('change', e => heart?.setRootWindow(e.target.checked));
 
@@ -465,22 +582,16 @@ function setMode(newMode, updateUrl = true) {
     setCarmPanelOpen(false);
   }
 
-  const opacity = lessons[mode] ? 28 : 100;
+  const opacity = lessons[mode] ? Math.round(LESSON_TISSUE_OPACITY * 100) : 100;
   document.querySelector('#opacity').value = opacity;
   document.querySelector('#opacity-value').textContent = `${opacity}%`;
-  document.querySelector('#viewer-title').textContent = {
-    anatomy: 'A new perspective.',
-    micro: 'From muscle to cell.',
-    angiography: 'Read the projection.',
-    ablation: 'Map the landmarks.',
-    pacemaker: 'Trace the lead.',
-    transseptal: 'Cross the septum.',
-    bachmann: 'Bachmann: anatomy & atrial pacing.'
-  }[mode] || 'Inside the heart.';
+  heart?.setOpacity(opacity / 100);
+  document.querySelector('#viewer-title').textContent = getViewerTitle(mode);
 
   const activeBtn = document.querySelector(`[data-mode="${mode}"]`);
   if (activeBtn) {
-    document.querySelector('#mode-label').textContent = `EXPLORER / ${activeBtn.textContent.split('↗')[0].replace(/[0-9]/g, '').trim().toUpperCase()}`;
+    const modeName = activeBtn.querySelector('.mode-label')?.textContent || '';
+    document.querySelector('#mode-label').textContent = `${getTranslation('explorerPrefix')} / ${modeName.toUpperCase()}`;
   }
 
   document.querySelector('#layers').hidden = mode === 'micro';
@@ -567,24 +678,9 @@ subBoxes.forEach(b => {
   });
 });
 
-document.querySelectorAll('[data-layer]:not([data-layer="chambers"]):not([data-layer="lv"]):not([data-layer="rv"]):not([data-layer="la"]):not([data-layer="ra"]):not([data-layer="veins"]):not([data-layer="conduction"]):not([data-layer="valves"]):not([data-layer="aortic-valve"]):not([data-layer="mitral"]):not([data-layer="tricuspid"]):not([data-layer="pulmonary-valve"]):not([data-layer="papillary"])').forEach(el => {
+document.querySelectorAll('[data-layer]:not([data-layer="chambers"]):not([data-layer="lv"]):not([data-layer="rv"]):not([data-layer="la"]):not([data-layer="ra"]):not([data-layer="veins"]):not([data-layer="conduction"]):not([data-layer="valves"]):not([data-layer="aortic-valve"]):not([data-layer="mitral"]):not([data-layer="tricuspid"]):not([data-layer="pulmonary-valve"]):not([data-layer="papillary"]):not([data-layer="flow"])').forEach(el => {
   el.addEventListener('change', () => heart?.setLayer(el.dataset.layer, el.checked));
 });
-
-// --- C-Arm Angiography Gantry & 2D Joystick Logic ---
-const angioDescriptions = {
-  spider: 'SPIDER VIEW • Sol Ana Koroner (LMCA) bifurkasyonu, osteal LAD & LCx lezyonları için altın standart',
-  rao_cranial: 'RAO CRANIAL • LAD orta-distal gövdesi ve diagonal (D1, D2) dalların ayrılması',
-  lao_cranial: 'LAO CRANIAL • LAD septal dallar ve distal RCA / crux / PDA bifurkasyonu',
-  rao_caudal: 'RAO CAUDAL • LCx gövdesi ve obtüz marjinal (OM) dalların açılması',
-  ap_cranial: 'AP CRANIAL • LAD gövdesinin uzatılmış (elongated) projeksiyonu',
-  ap_caudal: 'AP CAUDAL • Sol ana koroner ve sirkumfleks arter ostiyumu',
-  lao: 'LAO 45 • Sağ koroner arter (RCA) "C" kıvrımı ve orta segment',
-  rao: 'RAO 30 • RCA düz profil, akut marjinal dallar',
-  lateral: 'LATERAL 90° • Sol lateral görünüm, LIMA grefti ve mid-LAD',
-  anterior: 'ANTERIOR (AP) • Anteroposterior temel kardiyak referans',
-  posterior: 'POSTERIOR • Kalbin arka yüzeyi ve sol atriyum venöz girişi'
-};
 
 // C-Arm panel is docked in the Structure Spotlight column; header click toggles collapse.
 carmHeader?.addEventListener('click', e => {
@@ -601,6 +697,9 @@ function setVeinsState(visible) {
   veinsVisible = visible;
   heart?.setVeinsVisible(veinsVisible);
   if (veinsCheckbox) veinsCheckbox.checked = veinsVisible;
+  document.querySelectorAll('[data-layer="cs"], [data-layer="gcv"], [data-layer="mcv"], [data-layer="piv"], [data-layer="pv"], [data-layer="svc"], [data-layer="ivc"]').forEach(cb => {
+    cb.checked = visible;
+  });
   if (carmVeinsToggle) {
     carmVeinsToggle.classList.toggle('active', veinsVisible);
     carmVeinsToggle.innerHTML = `<span class="carm-sub-icon">🩸</span> ${veinsVisible ? getTranslation('veinsBtn') : getTranslation('veinsHiddenBtn')}`;
@@ -638,7 +737,7 @@ conductionCheckbox?.addEventListener('change', () => {
 let valvesVisible = true;
 const carmValvesToggle = document.querySelector('#carm-valves-toggle');
 const valvesCheckbox = document.querySelector('input[data-layer="valves"]');
-const valveSubBoxes = ['aortic-valve', 'mitral', 'tricuspid', 'pulmonary-valve', 'papillary'].map(id => document.querySelector(`input[data-layer="${id}"]`)).filter(Boolean);
+const valveSubBoxes = ['aortic-valve', 'mitral', 'mitral-posterior', 'mitral-anterior', 'tricuspid', 'tricuspid-septal', 'tricuspid-inferior', 'tricuspid-anterior', 'mitral-annulus', 'tricuspid-annulus', 'pulmonary-valve', 'papillary'].map(id => document.querySelector(`input[data-layer="${id}"]`)).filter(Boolean);
 
 function setValvesState(visible) {
   valvesVisible = visible;
@@ -669,7 +768,7 @@ valveSubBoxes.forEach(b => {
       valvesVisible = anyChecked;
       if (carmValvesToggle) {
         carmValvesToggle.classList.toggle('active', valvesVisible);
-        carmValvesToggle.innerHTML = `<span class="carm-sub-icon">🤍</span> ${valvesVisible ? 'Kapaklar' : 'Kapaklar (Gizli)'}`;
+        carmValvesToggle.innerHTML = `<span class="carm-sub-icon">🤍</span> ${valvesVisible ? getTranslation('valvesBtn') : getTranslation('valvesHiddenBtn')}`;
       }
     }
   });
@@ -758,9 +857,10 @@ document.querySelectorAll('[data-angio]').forEach(btn => {
     heart?.setView(angioKey, true);
     document.querySelectorAll('[data-angio]').forEach(b => b.classList.toggle('active', b === btn));
     document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('selected', b.dataset.view === angioKey));
-    if (angioDescriptions[angioKey]) {
+    const angioText = getAngioDescription(angioKey);
+    if (angioText) {
       const descEl = document.querySelector('#carm-projection-desc');
-      if (descEl) descEl.textContent = angioDescriptions[angioKey];
+      if (descEl) descEl.textContent = angioText;
     }
   });
 });
@@ -812,10 +912,10 @@ function updateJoystickFromCamera(angles) {
 
   const descEl = document.querySelector('#carm-projection-desc');
   if (descEl) {
-    if (matchedPreset && angioDescriptions[matchedPreset]) {
-      descEl.textContent = angioDescriptions[matchedPreset];
+    if (matchedPreset && getAngioDescription(matchedPreset)) {
+      descEl.textContent = getAngioDescription(matchedPreset);
     } else {
-      descEl.textContent = `Özel Açı • ${laoRaoStr} · ${craCauStr}`;
+      descEl.textContent = getAngioDescription('custom', { laoRaoStr, craCauStr });
     }
   }
 }
@@ -824,9 +924,10 @@ function setCameraPreset(viewName) {
   heart?.setView(viewName, true);
   if (viewName === 'root') document.querySelector('#root-window').checked = true;
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('selected', b.dataset.view === viewName));
-  if (angioDescriptions[viewName]) {
+  const presetText = getAngioDescription(viewName);
+  if (presetText) {
     const descEl = document.querySelector('#carm-projection-desc');
-    if (descEl) descEl.textContent = angioDescriptions[viewName];
+    if (descEl) descEl.textContent = presetText;
   }
 }
 
@@ -840,14 +941,56 @@ document.querySelector('#opacity').addEventListener('input', e => {
 });
 
 function toggleBeat() {
-  beating = !beating;
-  heart?.setBeating(beating);
-  const btn = document.querySelector('#beat');
-  btn.setAttribute('aria-pressed', String(beating));
-  btn.innerHTML = beating ? '♡ Pause beat <kbd>Space</kbd>' : '♡ Animate beat <kbd>Space</kbd>';
+  const state = heart?.getCycleState();
+  const nextPlaying = !state?.playing;
+  heart?.setBeating(nextPlaying);
 }
 
 document.querySelector('#beat').addEventListener('click', toggleBeat);
+
+function toggleFlow() {
+  const nextVisible = !heart?.getFlowVisible();
+  heart?.setFlowVisible(nextVisible);
+  const flowBtn = document.querySelector('#flow-toggle');
+  if (flowBtn) {
+    flowBtn.classList.toggle('active', nextVisible);
+    flowBtn.setAttribute('aria-pressed', String(nextVisible));
+  }
+  const flowBox = document.querySelector('input[data-layer="flow"]');
+  if (flowBox) flowBox.checked = nextVisible;
+}
+
+document.querySelector('#flow-toggle')?.addEventListener('click', toggleFlow);
+
+const flowCheckbox = document.querySelector('input[data-layer="flow"]');
+if (flowCheckbox) {
+  flowCheckbox.addEventListener('change', e => {
+    heart?.setFlowVisible(e.target.checked);
+    const flowBtn = document.querySelector('#flow-toggle');
+    if (flowBtn) {
+      flowBtn.classList.toggle('active', e.target.checked);
+      flowBtn.setAttribute('aria-pressed', String(e.target.checked));
+    }
+  });
+}
+
+document.querySelector('#cycle-scrubber')?.addEventListener('input', e => {
+  heart?.seekCycle(Number(e.target.value) / 100);
+});
+
+document.querySelector('#cycle-bpm')?.addEventListener('input', e => {
+  heart?.setBpm(Number(e.target.value));
+});
+
+document.querySelectorAll('.cycle-preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    heart?.setBpm(Number(btn.dataset.bpm));
+  });
+});
+
+document.querySelector('#cycle-rhythm')?.addEventListener('change', e => {
+  heart?.setRhythm(e.target.value);
+});
 
 function resetAll() {
   setMode('anatomy');
@@ -866,23 +1009,13 @@ function resetAll() {
   document.querySelectorAll('[data-wall]').forEach(input => {
     input.value = 0;
     const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
-    if (out) out.textContent = getTranslation('wallClosed') || 'Kapalı';
-  });
-
-  if (chambersBox) {
-    chambersBox.checked = true;
-    chambersBox.indeterminate = false;
-  }
-  subBoxes.forEach(b => { b.checked = true; });
-
-  document.querySelectorAll('[data-layer]').forEach(el => {
-    el.checked = true;
-    if (el.indeterminate !== undefined) el.indeterminate = false;
+    if (out) out.textContent = formatWallReadout(0);
   });
 
   setVeinsState(true);
   setConductionState(true);
   setValvesState(true);
+  syncLayerCheckboxesFromHeart();
 
   fluoroActive = false;
   if (fluoroBtn) {
@@ -894,16 +1027,93 @@ function resetAll() {
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('selected', b.dataset.view === 'anterior'));
   document.querySelectorAll('[data-angio]').forEach(b => b.classList.remove('active'));
 
+  const flowBtn = document.querySelector('#flow-toggle');
+  if (flowBtn) {
+    flowBtn.classList.add('active');
+    flowBtn.setAttribute('aria-pressed', 'true');
+  }
+  const flowBox = document.querySelector('input[data-layer="flow"]');
+  if (flowBox) flowBox.checked = true;
+
   const descEl = document.querySelector('#carm-projection-desc');
-  if (descEl) descEl.textContent = angioDescriptions.anterior;
+  if (descEl) descEl.textContent = getAngioDescription('anterior');
+}
+
+function syncLayerCheckboxesFromHeart() {
+  const vis = heart?.getState().visibility;
+  if (!vis) return;
+  document.querySelectorAll('input[data-layer]').forEach(el => {
+    const id = el.dataset.layer;
+    if (Object.prototype.hasOwnProperty.call(vis, id)) {
+      el.checked = vis[id] !== false;
+      el.indeterminate = false;
+    }
+  });
+  if (chambersBox) {
+    const anyChecked = subBoxes.some(box => box.checked);
+    const allChecked = subBoxes.every(box => box.checked);
+    chambersBox.checked = allChecked;
+    chambersBox.indeterminate = anyChecked && !allChecked;
+  }
+  if (valvesCheckbox) {
+    const anyChecked = valveSubBoxes.some(box => box.checked);
+    const allChecked = valveSubBoxes.length > 0 && valveSubBoxes.every(box => box.checked);
+    valvesCheckbox.checked = allChecked;
+    valvesCheckbox.indeterminate = anyChecked && !allChecked;
+  }
 }
 
 document.querySelector('#reset')?.addEventListener('click', resetAll);
 
+function applyChromeTranslations() {
+  document.documentElement.lang = getContentLanguage();
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = getTranslation(el.dataset.i18n);
+  });
+  const labels = new Map(getUiModes().map(([id, , label]) => [id, label]));
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    const labelEl = btn.querySelector('.mode-label');
+    const label = labels.get(btn.dataset.mode);
+    if (labelEl && label) labelEl.textContent = label;
+  });
+  const title = document.querySelector('#viewer-title');
+  if (title) title.textContent = getViewerTitle(mode);
+  const opacityInput = document.querySelector('#opacity');
+  if (opacityInput) opacityInput.setAttribute('aria-label', getTranslation('opacityLabel'));
+  const wallKeys = { rv: 'wallRv', lv: 'wallLv', la: 'wallLa', ra: 'wallRa' };
+  document.querySelectorAll('[data-wall]').forEach(input => {
+    const key = wallKeys[input.dataset.wall];
+    if (key) input.setAttribute('aria-label', getTranslation(key));
+    const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
+    if (out) out.textContent = formatWallReadout(input.value);
+  });
+  const activeBtn = document.querySelector(`[data-mode="${mode}"]`);
+  const modeName = activeBtn?.querySelector('.mode-label')?.textContent || '';
+  const modeLabel = document.querySelector('#mode-label');
+  if (modeLabel && modeName) modeLabel.textContent = `${getTranslation('explorerPrefix')} / ${modeName.toUpperCase()}`;
+  const angles = heart?.getAngioAngles?.();
+  if (angles) updateJoystickFromCamera(angles);
+}
+
 function updateLanguageUI() {
+  applyChromeTranslations();
   const currentLang = getContentLanguage();
   const langBtn = document.querySelector('#lang-btn');
   if (langBtn) langBtn.textContent = currentLang.toUpperCase();
+
+  const flowBtn = document.querySelector('#flow-toggle');
+  if (flowBtn) {
+    flowBtn.innerHTML = `${getTranslation('flowToggleBtn')} <kbd>F</kbd>`;
+    flowBtn.title = getTranslation('flowToggleTitle');
+  }
+  const disclaimerEl = document.querySelector('.cycle-disclaimer');
+  if (disclaimerEl) {
+    disclaimerEl.textContent = getTranslation('cycleDisclaimer');
+  }
+  const flowLegendEl = document.querySelector('.flow-legend');
+  if (flowLegendEl) {
+    flowLegendEl.title = getTranslation('flowLegendTitle');
+  }
 
   const selectEl = document.querySelector('#structure-select');
   if (selectEl) {
@@ -928,13 +1138,6 @@ function updateLanguageUI() {
     showStep();
   }
 
-  document.querySelectorAll('[data-wall]').forEach(input => {
-    const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
-    if (out && input.value === '0') {
-      out.textContent = getTranslation('wallClosed') || 'Kapalı';
-    }
-  });
-
   if (carmVeinsToggle) {
     carmVeinsToggle.innerHTML = `<span class="carm-sub-icon">🩸</span> ${veinsVisible ? getTranslation('veinsBtn') : getTranslation('veinsHiddenBtn')}`;
   }
@@ -954,6 +1157,7 @@ function updateLanguageUI() {
   if (progressNoteEl) {
     progressNoteEl.textContent = getTranslation('leadProgressNote');
   }
+  updateCycleUI(heart?.getCycleState());
 }
 
 document.querySelector('#lang-btn')?.addEventListener('click', () => {
@@ -1040,6 +1244,8 @@ window.addEventListener('keydown', e => {
   } else if (key === ' ') {
     e.preventDefault();
     toggleBeat();
+  } else if (key === 'f' || key === 'F') {
+    toggleFlow();
   } else if (key === '?' || key === '/') {
     if (shortcutsModal.open) shortcutsModal.close();
     else shortcutsModal.showModal();
@@ -1047,3 +1253,14 @@ window.addEventListener('keydown', e => {
     if (lessons[mode]) nextLandmark();
   }
 });
+
+// Respect prefers-reduced-motion
+const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+if (motionQuery.matches) {
+  heart?.setReducedMotion(true);
+}
+motionQuery.addEventListener('change', e => {
+  heart?.setReducedMotion(e.matches);
+});
+
+applyChromeTranslations();

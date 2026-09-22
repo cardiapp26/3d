@@ -91,6 +91,185 @@ const fs = require('node:fs');
     assert.equal(await page.locator('.structure-index').getAttribute('data-provenance'), 'schematic');
     assert.match(await page.locator('.structure-index').textContent(), /ŞEMATİK|SCHEMATIC/);
 
+    await page.locator('#structure-select').selectOption('amc');
+    assert.equal(await page.locator('.structure-index').getAttribute('data-provenance'), 'reference');
+    assert.match(await page.locator('.structure-index').textContent(), /REFERANS|REFERENCE/);
+    const schematicLeaflets = await page.evaluate(() => window.heart.getState().structures.filter(item =>
+      /Anterior mitral leaflet|Anterior tricuspid leaflet/i.test(item.name)
+    ));
+    assert.equal(schematicLeaflets.length, 2, 'mitral and tricuspid each gain one schematic anterior leaflet');
+    assert.ok(schematicLeaflets.every(item => item.provenance === 'schematic' && item.visible));
+    const amcMesh = await page.evaluate(() => window.heart.getState().structures.filter(item => item.id === 'amc'));
+    assert.deepEqual(amcMesh, [], 'AMC stays a reference note, not a mesh');
+
+    await page.locator('[data-mode="transseptal"]').click();
+    const valveAndSeptumState = await page.evaluate(() => {
+      const structures = window.heart.getState().structures;
+      const leaflets = structures.filter(item =>
+        item.name === 'Posterior leaflet of left atrioventricular valve' ||
+        item.name === 'Septal leaflet of right atrioventricular valve' ||
+        item.name === 'Inferior leaflet of right atrioventricular valve'
+      );
+      const ra = structures.find(item => item.id === 'ra');
+      const nccItem = structures.find(item => item.id === 'ncc');
+      const mid = bounds => bounds.min.map((value, index) => (value + bounds.max[index]) / 2);
+      const raCenter = mid(ra.bounds);
+      const nccCenter = mid(nccItem.bounds);
+      window.heart.scene.updateMatrixWorld(true);
+      const worldPoint = (object, index) => {
+        const position = object.geometry.attributes.position;
+        const x = position.getX(index);
+        const y = position.getY(index);
+        const z = position.getZ(index);
+        const e = object.matrixWorld.elements;
+        return {
+          x: e[0] * x + e[4] * y + e[8] * z + e[12],
+          y: e[1] * x + e[5] * y + e[9] * z + e[13],
+          z: e[2] * x + e[6] * y + e[10] * z + e[14]
+        };
+      };
+      let annulus = null;
+      let septum = null;
+      window.heart.scene.traverse(object => {
+        if (object.name === 'Tricuspid annulus') annulus = object;
+        if (object.name === 'Interatrial septum (schematic)') septum = object;
+      });
+      const radial = 13;
+      const tubular = 96;
+      const center = { x: 0, y: 0, z: 0 };
+      const samples = [];
+      for (let i = 0; i < tubular; i++) {
+        const point = { x: 0, y: 0, z: 0 };
+        for (let j = 0; j < 12; j++) {
+          const sample = worldPoint(annulus, i * radial + j);
+          point.x += sample.x;
+          point.y += sample.y;
+          point.z += sample.z;
+        }
+        point.x /= 12;
+        point.y /= 12;
+        point.z /= 12;
+        samples.push(point);
+        center.x += point.x;
+        center.y += point.y;
+        center.z += point.z;
+      }
+      center.x /= samples.length;
+      center.y /= samples.length;
+      center.z /= samples.length;
+      const normal = { x: 0, y: 0, z: 0 };
+      for (let i = 0; i < samples.length; i++) {
+        const a = samples[i];
+        const b = samples[(i + 1) % samples.length];
+        normal.x += (a.y - b.y) * (a.z + b.z);
+        normal.y += (a.z - b.z) * (a.x + b.x);
+        normal.z += (a.x - b.x) * (a.y + b.y);
+      }
+      const towardRa = {
+        x: raCenter[0] - center.x,
+        y: raCenter[1] - center.y,
+        z: raCenter[2] - center.z
+      };
+      if (normal.x * towardRa.x + normal.y * towardRa.y + normal.z * towardRa.z < 0) {
+        normal.x *= -1;
+        normal.y *= -1;
+        normal.z *= -1;
+      }
+      const length = Math.hypot(normal.x, normal.y, normal.z) || 1;
+      normal.x /= length;
+      normal.y /= length;
+      normal.z /= length;
+      let lowest = Infinity;
+      let highest = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      const discCount = septum.geometry.attributes.position.count;
+      for (let i = 0; i < discCount; i++) {
+        const point = worldPoint(septum, i);
+        const signed = (point.x - center.x) * normal.x + (point.y - center.y) * normal.y + (point.z - center.z) * normal.z;
+        lowest = Math.min(lowest, signed);
+        highest = Math.max(highest, signed);
+        minY = Math.min(minY, point.y);
+        maxY = Math.max(maxY, point.y);
+      }
+      const fossaCenter = worldPoint(septum, 0);
+      const ncc = { x: nccCenter[0], y: nccCenter[1], z: nccCenter[2] };
+      const annulusToCusp = {
+        x: ncc.x - center.x,
+        y: ncc.y - center.y,
+        z: ncc.z - center.z
+      };
+      const cuspSpan = Math.hypot(annulusToCusp.x, annulusToCusp.y, annulusToCusp.z) || 1;
+      const fossaAlong = ((fossaCenter.x - center.x) * annulusToCusp.x
+        + (fossaCenter.y - center.y) * annulusToCusp.y
+        + (fossaCenter.z - center.z) * annulusToCusp.z) / (cuspSpan * cuspSpan);
+      return {
+        ias: {
+          y: septum.position.y,
+          opacity: septum.material.opacity,
+          depthWrite: septum.material.depthWrite,
+          lowestAboveAnnulus: lowest,
+          highestAboveAnnulus: highest,
+          fossaAlong,
+          posteriorToCusp: fossaCenter.z < ncc.z,
+          minY,
+          maxY,
+          annulusY: center.y,
+          nccY: ncc.y
+        },
+        leaflets: leaflets.map(item => ({
+          name: item.name,
+          visible: item.visible,
+          provenance: item.provenance,
+          vertices: item.vertices
+        }))
+      };
+    });
+    assert.equal(valveAndSeptumState.leaflets.length, 3, 'Atlas PML and two tricuspid leaflets loaded');
+    assert.ok(valveAndSeptumState.leaflets.every(item => item.visible), 'Atlas AV leaflets visible');
+    assert.ok(valveAndSeptumState.leaflets.every(item => item.provenance === 'atlas' && item.vertices > 0),
+      'AV leaflets retain atlas provenance and geometry');
+    assert.ok(valveAndSeptumState.ias.fossaAlong > 0.25 && valveAndSeptumState.ias.fossaAlong < 0.6,
+      'Fossa center lies between the tricuspid annulus and the non-coronary cusp');
+    assert.ok(valveAndSeptumState.ias.minY > valveAndSeptumState.ias.annulusY - 0.05,
+      'Inferior limbus does not hang through the tricuspid annulus');
+    assert.ok(valveAndSeptumState.ias.maxY < valveAndSeptumState.ias.nccY - 0.12,
+      'Superior rim stays below the non-coronary cusp');
+    assert.ok(valveAndSeptumState.ias.opacity <= 0.25 && valveAndSeptumState.ias.depthWrite === false,
+      'IAS display does not occlude atlas AV leaflets');
+    const fossaMarker = await page.evaluate(() => {
+      let fossa = null;
+      let label = null;
+      let limbus = null;
+      window.heart.scene.traverse(object => {
+        if (object.name === 'Fossa ovalis') fossa = object;
+        if (object.name === 'Fossa ovalis label') label = object;
+        if (object.name === 'Limbus fossae ovalis') limbus = object;
+      });
+      const parentVisible = object => {
+        for (let node = object; node; node = node.parent) if (node.visible === false) return false;
+        return true;
+      };
+      return {
+        fossa: Boolean(fossa) && parentVisible(fossa),
+        label: Boolean(label),
+        limbus: Boolean(limbus) && parentVisible(limbus),
+        pickId: fossa && fossa.userData.pickId,
+        depthTest: fossa && fossa.material.depthTest,
+        renderOrder: fossa && fossa.renderOrder
+      };
+    });
+    assert.equal(fossaMarker.fossa, true, 'Fossa membrane is in the transseptal view');
+    assert.equal(fossaMarker.label, false, 'Fossa has no floating caption');
+    assert.equal(fossaMarker.limbus, true, 'Limbus ring stays on the septum');
+    assert.equal(fossaMarker.pickId, 'fossa');
+    assert.equal(fossaMarker.depthTest, true, 'Fossa membrane stays behind structures in front of it');
+    assert.ok(fossaMarker.renderOrder > 4);
+    await page.evaluate(() => window.heart.setView('anterior', false));
+    await page.waitForSelector('#viewport[data-camera-settled=true]');
+    await page.screenshot({ path: 'research/screenshots/fossa-ovalis.png' });
+    await page.locator('[data-mode="anatomy"]').click();
+
     // 6. C-Arm panel collapsible ergonomics, quick actions & mobile sheet layout
     assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm starts collapsed in anatomy mode');
     assert.equal(await page.locator('#carm-toggle-btn').textContent(), '+');
@@ -207,8 +386,60 @@ const fs = require('node:fs');
     assert.match(await page.locator('#structure-title').textContent(), /Sol ventrikül/i);
     assert.equal(await page.locator('.structure-index').textContent(), 'ANATOMİK ATLAS / SEÇİLİ YAPI');
 
+    // 9b. Cardiac Cycle & BPM / Scrubber Controls (Phases 1-3)
+    assert.ok(await page.locator('#cycle-panel').isVisible(), 'Cardiac cycle control panel visible');
+    assert.equal(await page.locator('#cycle-bpm-val').textContent(), '72');
+    await page.locator('.cycle-preset-btn[data-bpm="150"]').click();
+    assert.equal(await page.locator('#cycle-bpm-val').textContent(), '150');
+    await page.locator('#beat').click();
+    assert.equal(await page.locator('#beat').getAttribute('aria-pressed'), 'true');
+    await page.locator('#beat').click();
+    assert.equal(await page.locator('#beat').getAttribute('aria-pressed'), 'false');
+    await page.locator('#cycle-scrubber').fill('65');
+    assert.match(await page.locator('#cycle-interval-name').textContent(), /ejeksiyon|ejection/i);
+    assert.equal(await page.locator('#cycle-phase-val').textContent(), '%65');
+    await page.locator('#cycle-rhythm').selectOption('bradycardia');
+    assert.equal(await page.locator('#cycle-bpm-val').textContent(), '48');
+
+    // 9c. Venous System Branch Selection & Naming
+    await page.locator('#structure-select').selectOption('cs');
+    assert.match(await page.locator('#structure-title').textContent(), /Koroner sinüs ana gövdesi|Coronary sinus main trunk/i);
+    await page.locator('#structure-select').selectOption('gcv');
+    assert.match(await page.locator('#structure-title').textContent(), /Büyük kardiyak ven|Great cardiac vein/i);
+    await page.locator('#structure-select').selectOption('mcv');
+    assert.match(await page.locator('#structure-title').textContent(), /Orta kardiyak ven|Middle cardiac vein/i);
+    await page.locator('#structure-select').selectOption('piv');
+    assert.match(await page.locator('#structure-title').textContent(), /Sol ventrikül posterior veni|Posterior vein of left ventricle/i);
+    await page.locator('#structure-select').selectOption('lspv');
+    assert.match(await page.locator('#structure-title').textContent(), /Sol süperior pulmoner ven|Left superior pulmonary vein/i);
+
+    // 9d. Blood Flow Visualization (Phase 4)
+    const flowBtn = page.locator('#flow-toggle');
+    assert.ok(await flowBtn.isVisible(), 'Flow toggle button visible');
+    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'true', 'Flow active by default');
+    assert.ok(await page.locator('.flow-legend').isVisible(), 'Flow legend visible');
+
+    // Toggle via button
+    await flowBtn.click();
+    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'false', 'Flow paused via button');
+    let heartFlowState = await page.evaluate(() => window.heart.getState().flow);
+    assert.equal(heartFlowState, false, 'heart.getState().flow updated to false');
+    assert.equal(await page.locator('input[data-layer="flow"]').isChecked(), false, 'flow checkbox synced to false');
+
+    // Toggle via keyboard shortcut 'f'
+    await page.keyboard.press('f');
+    assert.equal(await flowBtn.getAttribute('aria-pressed'), 'true', 'Flow re-enabled via key F');
+    heartFlowState = await page.evaluate(() => window.heart.getState().flow);
+    assert.equal(heartFlowState, true, 'heart.getState().flow updated to true');
+    assert.equal(await page.locator('input[data-layer="flow"]').isChecked(), true, 'flow checkbox synced to true');
+
+    // Capture screenshot of blood flow during ejection
+    await page.locator('#cycle-scrubber').fill('65');
+    await page.evaluate(() => new Promise(r => setTimeout(r, 400)));
+    await page.screenshot({ path: 'research/screenshots/blood-flow-ejection.png' });
+
     // 10. Dialogs and modes
-    for (const mode of ['micro','angiography','ablation','pacemaker','anatomy']) await page.locator(`[data-mode=${mode}]`).click();
+    for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await page.locator(`[data-mode=${mode}]`).click();
     await page.locator('#sources').click(); assert.ok(await page.locator('dialog#references').isVisible());
     await page.locator('#close-dialog').click();
 

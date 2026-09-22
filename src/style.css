@@ -69,6 +69,18 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .lang-btn{font-weight:700;font-size:11px;padding:6px 11px;border-radius:5px;border:1px solid #3d7966;background:#e5eee7;color:#204b3e;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center}
 .lang-btn:hover{background:#265446;color:#ffffff;border-color:#265446}
 @media(max-width:768px){
+  .carm-panel{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    width:100%;
+    margin:0;
+    border-radius:14px 14px 0 0;
+    z-index:100;
+    max-height:80vh;
+    overflow-y:auto;
+  }
   .carm-header{
     padding:11px 16px;
   }
@@ -76,3 +88,245 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 
 /* Landmark catheter toggles live in the C-Arm quick actions row */
 #catheter-toggles{margin-top:6px}
+
+/* Cardiac Cycle Controller Bar */
+.cycle-panel {
+  position: absolute;
+  bottom: 32px;
+  left: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(8px);
+  border: 1px solid #d9e0d6;
+  border-radius: 9px;
+  padding: 7px 14px 6px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+.cycle-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cycle-play-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cycle-play-btn {
+  font-weight: 600;
+  font-size: 11px;
+  padding: 5px 11px;
+  border-radius: 5px;
+  border: 1px solid #3d7966;
+  background: #244f43;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.cycle-play-btn[aria-pressed="true"] {
+  background: #a43d42;
+  border-color: #8c2e33;
+}
+.cycle-flow-btn {
+  font-weight: 600;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid #c9938b;
+  background: #fdf5f4;
+  color: #8c2e26;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+.cycle-flow-btn.active, .cycle-flow-btn[aria-pressed="true"] {
+  background: #b83b30;
+  border-color: #962c23;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(184, 59, 48, 0.25);
+}
+.cycle-flow-btn:hover {
+  filter: brightness(0.96);
+}
+.flow-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #f4f6f3;
+  border: 1px solid #dbe2d9;
+  border-radius: 12px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #485c4f;
+  cursor: default;
+}
+.flow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.flow-dot.oxy {
+  background: #e74c3c;
+  box-shadow: 0 0 4px rgba(231, 76, 60, 0.6);
+}
+.flow-dot.deoxy {
+  background: #3498db;
+  box-shadow: 0 0 4px rgba(52, 152, 219, 0.6);
+}
+.flow-dot-label {
+  font-size: 9.5px;
+  margin-right: 2px;
+  font-family: ui-monospace, monospace;
+}
+.cycle-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #244c34;
+  background: #e4eee5;
+  border: 1px solid #c8d9cb;
+  padding: 3px 9px;
+  border-radius: 12px;
+}
+.cycle-phase-tag {
+  font-size: 10.5px;
+  font-family: ui-monospace, monospace;
+  color: #647b6a;
+  background: #f0f4ef;
+  border: 1px solid #d4ded4;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.cycle-rate-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cycle-bpm-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #556c5c;
+}
+.cycle-bpm-wrap input[type=range] {
+  width: 70px;
+  height: 4px;
+  accent-color: #315d4d;
+}
+.cycle-presets {
+  display: flex;
+  gap: 4px;
+}
+.cycle-preset-btn {
+  font-size: 10px;
+  border: 1px solid #cbd7cc;
+  background: #ffffff;
+  color: #556c5c;
+  padding: 3px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.cycle-preset-btn.active {
+  background: #2d5e4f;
+  color: #ffffff;
+  border-color: #2d5e4f;
+}
+.cycle-rhythm-select {
+  font-size: 10.5px;
+  padding: 3px 6px;
+  border: 1px solid #cbd7cc;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #375343;
+  margin: 0;
+  width: auto;
+}
+.cycle-timeline-wrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.cycle-timeline-wrap input[type=range] {
+  width: 100%;
+  height: 5px;
+  accent-color: #244f43;
+  cursor: pointer;
+}
+.ecg-strip {
+  position: relative;
+  height: 54px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #10241c;
+}
+.ecg-strip canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.ecg-caption,
+.ecg-valves {
+  position: absolute;
+  bottom: 4px;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  color: #b7e7cc;
+  pointer-events: none;
+}
+.ecg-caption { left: 8px; }
+.ecg-valves { right: 8px; }
+.view-controls { bottom: 188px; z-index: 4; }
+@media (max-width: 768px) {
+  .view-controls { bottom: 168px; max-width: calc(100% - 12px); flex-wrap: wrap; justify-content: center; }
+  .ecg-strip { height: 44px; }
+}
+.cycle-disclaimer {
+  font-size: 9.5px;
+  color: #839780;
+  font-style: italic;
+}
+.viewer-bottom {
+  bottom: 10px !important;
+}
+#scene-note {
+  display: none !important;
+}
+@media(max-width:768px){
+  .cycle-panel {
+    bottom: 24px;
+    left: 8px;
+    right: 8px;
+    padding: 6px 8px;
+  }
+  .cycle-top-row {
+    gap: 5px;
+  }
+  .cycle-rate-group {
+    gap: 5px;
+  }
+  .cycle-bpm-wrap input[type=range] {
+    width: 45px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carm-led-pulse,
+  .angio-btn,
+  .joystick-puck {
+    animation: none;
+    transition: none;
+  }
+}
