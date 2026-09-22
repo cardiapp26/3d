@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { sharedRim, nearestLoop } from './mesh-utils.js';
+import { sharedRim, nearestLoop, inferiorCavalOstium } from './mesh-utils.js';
 
 /**
  * Procedural 3D Clinical Electrophysiology (EP) Landmarks and Ablation Targets.
@@ -8,7 +8,7 @@ import { sharedRim, nearestLoop } from './mesh-utils.js';
  * CS ostium) instead of hand-tuned constants.
  */
 export function createEPLandmarks(helpers) {
-  const { sourceCenter, meshVertices = () => [], getMeshes = () => [] } = helpers;
+  const { sourceCenter, meshVertices = () => [], getMeshes = () => [], isReady = () => true } = helpers;
   const group = new THREE.Group();
   group.name = 'EP Landmarks';
   group.visible = false;
@@ -57,7 +57,9 @@ export function createEPLandmarks(helpers) {
   }
 
   function init() {
-    if (initialized) return;
+    // Anchors are measured from atlas meshes: never build before the atlas
+    // loads, or every anchor freezes on its fallback constant.
+    if (initialized || !isReady()) return;
 
     const ra = sourceCenter('ra') || new THREE.Vector3(-1.03, 0.13, 0.12);
     const la = sourceCenter('la') || new THREE.Vector3(-0.05, 0.27, -0.37);
@@ -68,7 +70,8 @@ export function createEPLandmarks(helpers) {
     // Ostia come from mesh boundary loops (the actual open rims), the
     // tricuspid ring from the RA/RV shared orifice rim.
     const ivcLoop = nearestLoop(getMeshes('ivc')[0], ra);
-    const ivcOs = ivcLoop ? ivcLoop.center.clone() : (nearEndCentroid(meshVertices('ivc'), ra) || new THREE.Vector3(-0.85, -0.65, -0.35));
+    const ivcOs = ivcLoop ? ivcLoop.center.clone()
+      : (inferiorCavalOstium(getMeshes('ra')[0]) || new THREE.Vector3(-1.05, -0.93, -0.39));
     const csLoop = nearestLoop(getMeshes('cs')[0], ra);
     const csOs = csLoop ? csLoop.center.clone() : (nearEndCentroid(meshVertices('cs'), ra) || new THREE.Vector3(-0.70, -0.41, -0.30));
 
@@ -78,7 +81,9 @@ export function createEPLandmarks(helpers) {
     // Septal tricuspid hinge: rim point nearest the left heart (septal side).
     let septalHinge = new THREE.Vector3(-0.45, -0.20, 0.05);
     if (tvRim) {
-      tvInferior = tvRim.reduce((best, v) => v.distanceTo(ivcOs) < best.distanceTo(ivcOs) ? v : best).clone();
+      // 6 o'clock (LAO) of the tricuspid annulus: its lowest rim point. The
+      // central isthmus runs from here to the IVC, lateral to the CS ostium.
+      tvInferior = tvRim.reduce((best, v) => v.y < best.y ? v : best).clone();
       septalHinge = tvRim.reduce((best, v) => v.distanceTo(la) < best.distanceTo(la) ? v : best).clone();
     }
 
@@ -88,19 +93,48 @@ export function createEPLandmarks(helpers) {
     const ctiGroup = new THREE.Group();
     ctiGroup.name = 'CTI Ablation Line';
 
-    const ctiMid = ivcOs.clone().lerp(tvInferior, 0.5).add(new THREE.Vector3(0, -0.04, 0.06));
-    const ctiCurve = new THREE.CatmullRomCurve3([
-      ivcOs.clone().lerp(tvInferior, 0.08),
-      ctiMid,
-      tvInferior.clone().lerp(ivcOs, 0.05)
-    ]);
-    ctiGroup.add(new THREE.Mesh(new THREE.TubeGeometry(ctiCurve, 20, 0.022, 10, false), matLesion.clone()));
+    // Route the lesion line over the isthmus floor: sample the chord, snap each
+    // sample to the nearest RA wall vertex, then lift slightly into the cavity.
+    const raWall = meshVertices('ra');
+    const onWall = pt => {
+      if (!raWall.length) return pt;
+      let best = raWall[0], bestD = Infinity;
+      for (let i = 0; i < raWall.length; i += 2) {
+        const d = raWall[i].distanceToSquared(pt);
+        if (d < bestD) { bestD = d; best = raWall[i]; }
+      }
+      return best.clone().lerp(ra, 0.06);
+    };
+    const ctiPts = [];
+    for (let i = 0; i <= 6; i++) {
+      const t = i / 6;
+      const chord = tvInferior.clone().lerp(ivcOs, t);
+      ctiPts.push(i === 0 ? tvInferior.clone().lerp(ra, 0.04) : i === 6 ? ivcOs.clone() : onWall(chord));
+    }
+    const ctiCurve = new THREE.CatmullRomCurve3(ctiPts);
+    const ctiLine = new THREE.Mesh(new THREE.TubeGeometry(ctiCurve, 40, 0.022, 10, false), matLesion.clone());
+    ctiLine.name = 'CTI ablation line';
+    ctiLine.userData = { pickId: 'cti-line', provenance: 'schematic', sourceName: 'CTI ablation line' };
+    ctiGroup.add(ctiLine);
 
     ctiCurve.getPoints(9).forEach(pt => {
       const burn = new THREE.Mesh(new THREE.SphereGeometry(0.032, 16, 16), matLesion.clone());
       burn.position.copy(pt);
+      burn.name = 'CTI RF lesion';
+      burn.userData = { pickId: 'cti-line', provenance: 'schematic', sourceName: 'CTI RF lesion' };
       ctiGroup.add(burn);
     });
+
+    // IVC ostium marker (the atlas has no IVC mesh; measured from the RA floor).
+    const ivcMarker = new THREE.Mesh(
+      new THREE.TorusGeometry(0.14, 0.012, 8, 32),
+      new THREE.MeshBasicMaterial({ color: 0x5b9bd5, transparent: true, opacity: 0.8 })
+    );
+    ivcMarker.position.copy(ivcOs);
+    ivcMarker.rotation.x = Math.PI / 2;
+    ivcMarker.name = 'IVC ostium (measured)';
+    ivcMarker.userData = { pickId: 'ivc', provenance: 'schematic', sourceName: 'IVC ostium' };
+    ctiGroup.add(ivcMarker);
 
     group.add(ctiGroup);
     targets.cti = ctiGroup;
@@ -239,6 +273,21 @@ export function createEPLandmarks(helpers) {
     const rspv = ostium(/Right superior/i);
     const ripv = ostium(/Right inferior/i);
 
+    // Snap schematic lesion paths onto the LA endocardium (nearest wall vertex,
+    // lifted slightly into the cavity) so they sit on the antrum, not in the blood pool.
+    const laWall = meshVertices('la');
+    const onLaWall = pt => {
+      if (!laWall.length) return pt;
+      let best = laWall[0], bestD = Infinity;
+      for (let i = 0; i < laWall.length; i += 2) {
+        const d = laWall[i].distanceToSquared(pt);
+        if (d < bestD) { bestD = d; best = laWall[i]; }
+      }
+      return best.clone().lerp(la, 0.05);
+    };
+    const smoothClosed = pts => pts.map((pt, i) => pt.clone().multiplyScalar(2)
+      .add(pts[(i - 1 + pts.length) % pts.length]).add(pts[(i + 1) % pts.length]).multiplyScalar(0.25));
+
     function antralRing(osA, osB, fallbackCenter) {
       const center = osA && osB ? osA.clone().add(osB).multiplyScalar(0.5) : fallbackCenter;
       // Ring plane faces outward from the LA body through the vein pair.
@@ -248,18 +297,20 @@ export function createEPLandmarks(helpers) {
       const u = new THREE.Vector3(0, 1, 0).cross(normal).normalize();
       if (u.lengthSq() < 0.01) u.set(1, 0, 0);
       const v = new THREE.Vector3().crossVectors(normal, u).normalize();
-      const pts = [];
-      for (let i = 0; i <= 40; i++) {
+      let pts = [];
+      for (let i = 0; i < 40; i++) {
         const a = (i / 40) * Math.PI * 2;
-        pts.push(center.clone()
+        pts.push(onLaWall(center.clone()
           .addScaledVector(u, Math.cos(a) * radius)
-          .addScaledVector(v, Math.sin(a) * radius * 1.25)); // taller than wide (superior+inferior veins)
+          .addScaledVector(v, Math.sin(a) * radius * 1.25))); // taller than wide (superior+inferior veins)
       }
+      pts = smoothClosed(smoothClosed(pts));
       const spline = new THREE.CatmullRomCurve3(pts, true);
       const ringMesh = new THREE.Mesh(new THREE.TubeGeometry(spline, 40, 0.025, 8, true), matLesion.clone());
       spline.getPoints(14).forEach(pt => {
         const dot = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 12), matLesion.clone());
         dot.position.copy(pt);
+        dot.userData = { pickId: 'pvi-waca', provenance: 'schematic', sourceName: 'WACA RF lesion' };
         ringMesh.add(dot);
         dot.position.sub(ringMesh.position);
       });
@@ -271,14 +322,38 @@ export function createEPLandmarks(helpers) {
     pviGroup.add(leftRing.ringMesh);
     pviGroup.add(rightRing.ringMesh);
 
-    // Roof line joining the superior aspects of the two antral rings.
+    // Linear lesion helper: sample a chord, snap to the LA wall.
+    const wallLine = (a, b, lift = new THREE.Vector3()) => {
+      const pts = [];
+      for (let i = 0; i <= 8; i++) {
+        const t = i / 8;
+        pts.push(onLaWall(a.clone().lerp(b, t).addScaledVector(lift, Math.sin(Math.PI * t))));
+      }
+      return new THREE.CatmullRomCurve3(pts);
+    };
+    const tagLine = (curve, pickId, name) => {
+      const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.018, 8, false), matLesionGlow);
+      mesh.name = name;
+      mesh.userData = { pickId, provenance: 'schematic', sourceName: name };
+      return mesh;
+    };
+
+    // Roof line: between the superior veins across the LA roof.
     const roofA = (lspv || leftRing.center).clone();
     const roofB = (rspv || rightRing.center).clone();
-    const roofMid = roofA.clone().add(roofB).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.18, 0));
-    const roofLine = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3([roofA, roofMid, roofB]), 16, 0.018, 8, false
-    );
-    pviGroup.add(new THREE.Mesh(roofLine, matLesionGlow));
+    pviGroup.add(tagLine(wallLine(roofA, roofB, new THREE.Vector3(0, 0.25, 0)), 'la-roof-line', 'LA roof line'));
+
+    // Mitral isthmus line: from the LIPV ostium to the lateral mitral annulus.
+    const mitralRim = sharedRim(getMeshes('la')[0], getMeshes('lv')[0]);
+    if (lipv && mitralRim) {
+      const lateralMitral = mitralRim.reduce((best, v) => v.distanceTo(lipv) < best.distanceTo(lipv) ? v : best).clone();
+      pviGroup.add(tagLine(wallLine(lipv, lateralMitral), 'mitral-isthmus-line', 'Mitral isthmus line'));
+    }
+
+    leftRing.ringMesh.name = 'Left WACA ring';
+    leftRing.ringMesh.userData = { pickId: 'pvi-waca', provenance: 'schematic', sourceName: 'Left WACA ring' };
+    rightRing.ringMesh.name = 'Right WACA ring';
+    rightRing.ringMesh.userData = { pickId: 'pvi-waca', provenance: 'schematic', sourceName: 'Right WACA ring' };
 
     group.add(pviGroup);
     targets.pvi = pviGroup;

@@ -89,10 +89,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
   }
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
-  const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
+  let modelReady=false;
+  const isReady=()=>modelReady;
+  const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
   heart.add(epLandmarks.group);
   let bachmannTarget = null;
-  const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getBachmannTarget: () => bachmannTarget });
+  const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getBachmannTarget: () => bachmannTarget, isReady });
   heart.add(pacemakerLeads.group);
   function computeVesselTrims(){
     const verts=name=>{const m=meshes.find(x=>x.name===name);if(!m)return[];m.updateWorldMatrix(true,false);const p=m.geometry.attributes.position;const out=[];for(let i=0;i<p.count;i++)out.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld));return out;};
@@ -117,9 +119,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     return out;
   }
-  const transseptal = createTransseptal({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [] });
+  const transseptal = createTransseptal({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], isReady });
   heart.add(transseptal.group);
-  const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
+  const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
   heart.add(cathLab.group);
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });
@@ -220,8 +222,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     annuli.build();
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
     thorax.build();
+    modelReady=true;
     epLandmarks.init();
     pacemakerLeads.init();
+    transseptal.init();
+    cathLab.init();
+    catheterPickables=null;
     channels = createAnimationChannels({ meshMap, sourceCenter });
     bloodFlow = createBloodFlow();
     layers.flow.add(bloodFlow.group);

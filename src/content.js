@@ -234,6 +234,26 @@ export const rawStructures = {
     en: { title: 'Slow pathway (ablation target)', description: 'Inferior atrial input between the CS ostium and the septal tricuspid leaflet, near the base of Koch\'s triangle; the antegrade limb in typical AVNRT.', clinical: 'The standard target in typical AVNRT: RF starts at the base and moves stepwise toward the apex; junctional rhythm marks success.' },
     source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
   },
+  'cti-line': {
+    tr: { title: 'CTI ablasyon hattı', description: 'Triküspit anulusunun inferior kenarından (LAO saat 6) İVC ağzına uzanan lineer RF hattı; CS ostiyumunun lateralinde, santral istmusta.', clinical: 'Tipik flatterde hedef çift yönlü istmus blokudur; kalın Eustachian sırtı ve subeustachian cep başarıyı zorlaştırabilir.' },
+    en: { title: 'CTI ablation line', description: 'Linear RF line from the inferior tricuspid annulus (6 o\'clock in LAO) to the IVC orifice, across the central isthmus lateral to the CS ostium.', clinical: 'In typical flutter the goal is bidirectional isthmus block; a thick Eustachian ridge or a sub-Eustachian pouch can make it harder.' },
+    source: 'Standard EP ablation anatomy; schematic'
+  },
+  'pvi-waca': {
+    tr: { title: 'WACA / PVI halkası', description: 'Aynı taraftaki pulmoner ven çiftinin çevresinde, ostiyumların dışında antrumda çizilen çevresel RF halkası.', clinical: 'Hedef giriş ve çıkış bloku; posterior duvarda özofagus, sağ venlerde frenik sinir riski.' },
+    en: { title: 'WACA / PVI ring', description: 'Circumferential RF ring around an ipsilateral pulmonary vein pair, placed on the antrum outside the ostia.', clinical: 'Goal: entrance and exit block; esophageal risk on the posterior wall, phrenic nerve risk at the right veins.' },
+    source: 'Standard EP ablation anatomy; schematic'
+  },
+  'la-roof-line': {
+    tr: { title: 'LA çatı hattı', description: 'Sol ve sağ süperior pulmoner venleri LA tavanında birleştiren lineer lezyon.', clinical: 'Çatıya bağlı makro-reentran atriyal flatterde kullanılır; blok, posterior duvarın kaudo-kraniyal aktivasyonuyla doğrulanır.' },
+    en: { title: 'LA roof line', description: 'Linear lesion joining the left and right superior pulmonary veins across the LA roof.', clinical: 'Used for roof-dependent macro-reentrant flutter; block is confirmed by caudocranial activation of the posterior wall.' },
+    source: 'Standard EP ablation anatomy; schematic'
+  },
+  'mitral-isthmus-line': {
+    tr: { title: 'Mitral istmus hattı', description: 'LIPV ostiyumundan lateral mitral anulusa uzanan lineer lezyon.', clinical: 'Perimitral flatterde kullanılır; blok için sıklıkla koroner sinüs içinden uygulama gerekir, sirkumfleks artere yakındır.' },
+    en: { title: 'Mitral isthmus line', description: 'Linear lesion from the LIPV ostium to the lateral mitral annulus.', clinical: 'Used for perimitral flutter; block often needs ablation from inside the coronary sinus, close to the circumflex artery.' },
+    source: 'Standard EP ablation anatomy; schematic'
+  },
   amc: {
     tr: {
       title: 'Aorto-mitral devamlılık • AMC',
@@ -891,7 +911,7 @@ export const rawLessons = {
       steps: [
         {
           title: 'Kavotriküspit İstmus (CTI) • Atriyal Flatter',
-          text: 'IVC alt kenarı ile triküspit kapak anulusu arasındaki isthmus hattı, tipik saat-yönü-tersi atriyal flatter devresinin zorunlu geçididir. Radyofrekans lezyon hattı ile çift yönlü iletim bloku hedeflenir.',
+          text: 'Kavotriküspit istmus (CTI), triküspit anulusunun inferior kenarı ile İVC ağzı arasındaki sağ atriyum tabanıdır; tipik saat yönü tersi atriyal flatter devresinin zorunlu geçididir. Standart lezyon hattı LAO projeksiyonunda saat 6 hizasında (santral istmus), CS ostiyumunun lateralinden anulustan İVC\'ye çekilir; hedef çift yönlü istmus blokudur. Mavi halka ölçülen İVC ağzını gösterir (atlasta İVC mesh\'i yoktur).',
           landmark: 'ivc',
           view: 'lao'
         },
@@ -903,15 +923,15 @@ export const rawLessons = {
         },
         {
           title: 'Pulmoner Ven İzolasyonu (WACA / PVI) • AF',
-          text: 'Atriyal fibrilasyon tetikleyicilerini izole etmek için sol atriyum posterior duvarında sol ve sağ pulmoner ven çiftleri geniş çevresel halkalarla (WACA) elektriksel olarak izole edilir. Özofagus ve frenik sinir komşuluklarına dikkat edilir.',
+          text: 'AF tetikleyicilerinin çoğu pulmoner ven miyokard kılıflarından kaynaklanır. WACA\'da aynı taraftaki ven çiftleri (LSPV+LIPV, RSPV+RIPV) ostiyumların birkaç mm dışında, antrumdan geniş çevresel halkayla izole edilir; hedef giriş ve çıkış blokudur. Posterior duvarda özofagus (termal hasar, atriyo-özofageal fistül), sağ venlerde sağ frenik sinir (kryobalonda frenik pacing ile izlenir) risklidir.',
           landmark: 'la',
           view: 'posterior'
         },
         {
           title: 'Kombine EP Haritası & Lineer Hatlar',
-          text: 'Atriyal çatı hattı (roof line), mitral istmus ve koroner sinüs ilişkileri. Kompleks atriyal taşikardilerde anatomik engeller (crista terminalis, fossa ovalis, venöz ostiyumlar) iletim bariyeri oluşturur.',
-          landmark: 'his',
-          view: 'root'
+          text: 'Tüm hedefler bir arada. Çatı hattı iki süperior veni LA tavanında birleştirir (çatıya bağlı flatter). Mitral istmus hattı LIPV\'den lateral mitral anulusa uzanır (perimitral flatter); blok için çoğu zaman koroner sinüs içinden de uygulama gerekir, sirkumfleks arter yakındır. Sağda CTI hattı ve Koch üçgeni. Doğal iletim bariyerleri (crista terminalis, fossa ovalis, venöz ostiyumlar) makro-reentry devrelerini yönlendirir.',
+          landmark: 'la',
+          view: 'posterior'
         }
       ]
     },
@@ -921,7 +941,7 @@ export const rawLessons = {
       steps: [
         {
           title: 'Cavotricuspid Isthmus (CTI) • Atrial Flutter',
-          text: 'The isthmus between the inferior caval orifice and the tricuspid valve annulus forms the obligatory slow conduction corridor of counterclockwise atrial flutter. A contiguous linear RF lesion achieves bidirectional block.',
+          text: 'The cavotricuspid isthmus (CTI) is the right atrial floor between the inferior tricuspid annulus and the IVC orifice, the obligatory corridor of typical counterclockwise flutter. The standard lesion line runs at 6 o\'clock in LAO (central isthmus), lateral to the CS ostium, from the annulus to the IVC; the goal is bidirectional isthmus block. The blue ring marks the measured IVC orifice (the atlas has no IVC mesh).',
           landmark: 'ivc',
           view: 'lao'
         },
@@ -933,15 +953,15 @@ export const rawLessons = {
         },
         {
           title: 'Wide Area Circumferential Ablation (WACA) • AF',
-          text: 'Circumferential antral lesion sets around ipsilateral pulmonary vein pairs in the posterior left atrium disconnect arrhythmogenic pulmonary vein triggers, with vigilance for the retrocardiac esophagus and phrenic nerve.',
+          text: 'Most AF triggers arise in the pulmonary vein myocardial sleeves. WACA isolates each ipsilateral pair (LSPV+LIPV, RSPV+RIPV) with a wide antral ring a few mm outside the ostia; the goal is entrance and exit block. Watch the esophagus behind the posterior wall (thermal injury, atrio-esophageal fistula) and the right phrenic nerve near the right veins (monitored with phrenic pacing during cryoballoon).',
           landmark: 'la',
           view: 'posterior'
         },
         {
           title: 'Comprehensive EP Substrate & Linear Sets',
-          text: 'Integrated view of roof lines, mitral isthmus, and coronary sinus connections. Natural anatomic barriers (crista terminalis, oval fossa, venous orifices) channel reentrant circuits.',
-          landmark: 'his',
-          view: 'root'
+          text: 'All targets together. The roof line joins the two superior veins across the LA roof (roof-dependent flutter). The mitral isthmus line runs from the LIPV to the lateral mitral annulus (perimitral flutter); block often needs lesions from inside the coronary sinus, and the circumflex artery lies close. On the right: the CTI line and Koch\'s triangle. Natural barriers (crista terminalis, oval fossa, venous orifices) channel macro-reentrant circuits.',
+          landmark: 'la',
+          view: 'posterior'
         }
       ]
     }

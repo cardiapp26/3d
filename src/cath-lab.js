@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { centroid, sharedRim, nearestLoop } from './mesh-utils.js';
+import { centroid, sharedRim, nearestLoop, inferiorCavalOstium } from './mesh-utils.js';
 
 /**
  * Procedural 3D cardiac catheterization lab (Netter-style teaching module).
@@ -9,7 +9,7 @@ import { centroid, sharedRim, nearestLoop } from './mesh-utils.js';
  * Measurement stations carry pickIds that open pressure/saturation content.
  */
 export function createCathLab(helpers) {
-  const { sourceCenter, meshVertices = () => [], getMeshes = () => [] } = helpers;
+  const { sourceCenter, meshVertices = () => [], getMeshes = () => [], isReady = () => true } = helpers;
   const group = new THREE.Group();
   group.name = 'Catheterization Lab';
   group.visible = false;
@@ -103,7 +103,9 @@ export function createCathLab(helpers) {
   }
 
   function init() {
-    if (initialized) return;
+    // Anchors are measured from atlas meshes: never build before the atlas
+    // loads, or every anchor freezes on its fallback constant.
+    if (initialized || !isReady()) return;
 
     const ra = sourceCenter('ra') || new THREE.Vector3(-1.03, 0.13, 0.12);
     const rv = sourceCenter('rv') || new THREE.Vector3(-0.4, -0.9, 0.5);
@@ -112,7 +114,8 @@ export function createCathLab(helpers) {
     const lcc = sourceCenter('lcc') || new THREE.Vector3(-0.06, 0.74, -0.08);
     const ncc = sourceCenter('ncc') || new THREE.Vector3(-0.36, 0.65, -0.14);
     const ivcLoop = nearestLoop(getMeshes('ivc')[0], ra);
-    const ivcOs = ivcLoop ? ivcLoop.center.clone() : new THREE.Vector3(-0.85, -0.65, -0.35);
+    const ivcOs = ivcLoop ? ivcLoop.center.clone()
+      : (inferiorCavalOstium(getMeshes('ra')[0]) || new THREE.Vector3(-1.05, -0.93, -0.39));
     const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
     const tvCenter = tvRim ? centroid(tvRim) : new THREE.Vector3(-0.92, -0.18, 0.14);
     // The PA atlas id spans trunk and both branches; its combined box center is not in the trunk.
@@ -248,6 +251,7 @@ export function createCathLab(helpers) {
   function setStep(stepIndex) {
     init();
     activeStep = Number(stepIndex);
+    if (!initialized) return;
     const rightVisible = activeStep !== 3;
     const leftVisible = activeStep === 3 || activeStep === 4;
     stages.rhc.visible = rightVisible;

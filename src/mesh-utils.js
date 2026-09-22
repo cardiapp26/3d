@@ -173,3 +173,26 @@ export function vesselTrimPlane(verts, origin, keep, step = 0.12) {
   }
   return null;
 }
+
+/**
+ * Inferior caval ostium measured from the right atrium. The atlas ships no
+ * IVC mesh and the RA wall has no IVC hole, so the ostium is taken as the
+ * posteroinferior RA floor (sinus venarum): centroid of the lowest 12% of RA
+ * vertices behind the RA centroid, lifted slightly into the cavity.
+ */
+export function inferiorCavalOstium(raMesh) {
+  if (!raMesh) return null;
+  raMesh.updateWorldMatrix(true, false);
+  const p = raMesh.geometry.attributes.position;
+  const verts = [];
+  for (let i = 0; i < p.count; i++) {
+    verts.push(new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(raMesh.matrixWorld));
+  }
+  if (verts.length < 50) return null;
+  const center = centroid(verts);
+  const ys = verts.map(v => v.y).sort((a, b) => a - b);
+  const yCut = ys[Math.floor(ys.length * 0.12)];
+  const floor = verts.filter(v => v.y <= yCut && v.z < center.z);
+  if (floor.length < 10) return null;
+  return centroid(floor).lerp(center, 0.1);
+}

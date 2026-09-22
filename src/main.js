@@ -586,7 +586,15 @@ function updateCycleUI(state) {
 }
 
 heart?.subscribeCycle(updateCycleUI);
-heart?.ready.then(() => inspect(currentSelectedId, false, false)).catch(error => console.error('Atlas loading failed:', error));
+heart?.ready.then(() => {
+  // Lesson overlays are built only once the atlas exists; a deep link or a
+  // reload inside a lesson selected its mode before that, so re-apply it.
+  if (mode !== 'anatomy') {
+    heart.setMode(mode);
+    if (lessons[mode]) showStep();
+  }
+  inspect(currentSelectedId, false, false);
+}).catch(error => console.error('Atlas loading failed:', error));
 select.addEventListener('change', () => inspect(select.value));
 function formatWallReadout(value) {
   const amount = Number(value);

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { boundaryLoops, centroid, contactPatch, sharedRim } from './mesh-utils.js';
+import { boundaryLoops, centroid, contactPatch, sharedRim, inferiorCavalOstium } from './mesh-utils.js';
 
 /**
  * Procedural 3D Transseptal Puncture & Balloon Atrial Septostomy simulation.
@@ -13,7 +13,7 @@ import { boundaryLoops, centroid, contactPatch, sharedRim } from './mesh-utils.j
  * All geometry is schematic and anchored to atlas mesh centers via sourceCenter().
  */
 export function createTransseptal(helpers) {
-  const { sourceCenter, meshVertices = () => [], getMeshes = () => [] } = helpers;
+  const { sourceCenter, meshVertices = () => [], getMeshes = () => [], isReady = () => true } = helpers;
   const group = new THREE.Group();
   group.name = 'Transseptal & Septostomy';
   group.visible = false;
@@ -143,12 +143,14 @@ export function createTransseptal(helpers) {
   }
 
   function init() {
-    if (initialized) return;
+    // Anchors are measured from atlas meshes: never build before the atlas
+    // loads, or every anchor freezes on its fallback constant.
+    if (initialized || !isReady()) return;
 
     const ra = sourceCenter('ra') || new THREE.Vector3(-1.03, 0.13, 0.12);
     const la = sourceCenter('la') || new THREE.Vector3(-0.05, 0.27, -0.37);
     const svc = sourceCenter('svc') || new THREE.Vector3(-1.08, 1.89, -0.16);
-    const ivc = sourceCenter('ivc') || new THREE.Vector3(-0.85, -0.65, -0.35);
+    const ivc = sourceCenter('ivc') || inferiorCavalOstium(getMeshes('ra')[0]) || new THREE.Vector3(-1.05, -0.93, -0.39);
 
     // Locate the fossa between the caval openings, behind the tricuspid hinge.
     // The broad RA/LA contact patch also contains atrial folds outside the true septum.

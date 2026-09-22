@@ -93,7 +93,7 @@ export function buildCrtPath({ entry, highSvc, ra, csPoints, pivPoints }) {
 }
 
 export function createPacemakerLeads(helpers) {
-  const { sourceCenter, meshVertices = () => [], getBachmannTarget } = helpers;
+  const { sourceCenter, meshVertices = () => [], getBachmannTarget, isReady = () => true } = helpers;
   const group = new THREE.Group();
   group.name = 'Pacemaker Leads';
   group.visible = false;
@@ -133,7 +133,9 @@ export function createPacemakerLeads(helpers) {
   let leadMeshes = {};
 
   function init() {
-    if (initialized) return;
+    // Anchors are measured from atlas meshes: never build before the atlas
+    // loads, or every anchor freezes on its fallback constant.
+    if (initialized || !isReady()) return;
 
     // Anchor points from cardiac atlas mesh
     const svc = sourceCenter('svc') || new THREE.Vector3(-0.85, 1.25, -0.30);
