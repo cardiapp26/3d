@@ -14,7 +14,8 @@ import { createBachmannGeometry } from './bachmann.js';
 import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
-import { vesselTrimPlane, sharedRim } from './mesh-utils.js';
+import { measuredFlowRoutes } from './flow-routes.js';
+import { vesselTrimPlane, sharedRim, septalPairs, septalSiteNear, hisBundleEnd } from './mesh-utils.js';
 import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
@@ -230,7 +231,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     cathLab.init();
     catheterPickables=null;
     channels = createAnimationChannels({ meshMap, sourceCenter });
-    bloodFlow = createBloodFlow();
+    bloodFlow = createBloodFlow({ resolveRoutes: () => measuredFlowRoutes({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], getVesselTrim: name => vesselTrims.get(name) || null }) });
     layers.flow.add(bloodFlow.group);
     applyState();computeFit();setView('anterior',false);loading.remove();container.dataset.modelReady='true';
     container.dataset.meshCount=String(found.length);
@@ -342,8 +343,18 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       avCenter.clone()
     ], 0.015, 'sa', 'Posterior internodal tract (Thorel)');
 
-    // 4. Bundle of His penetrating central fibrous body into interventricular septum
-    const hisSeptum = new THREE.Vector3(-0.10, -0.32, 0.06);
+    // 4. Bundle of His penetrating central fibrous body into interventricular septum.
+    // Its distal (branching) end is measured on the crest of the muscular
+    // septum under the NCC/RCC commissure, 1-2 cm from the AV node; the LBB
+    // trunk runs ~1.3 cm on toward the apex and ends in LV subendocardium.
+    // The AV node and Koch's triangle above are unchanged.
+    const rvVerts = meshVertices('rv');
+    const septum = septalPairs(rvVerts, meshVertices('lv'));
+    const nccCenter = sourceCenter('ncc'), rccCenter = sourceCenter('rcc');
+    const commissure = nccCenter && rccCenter ? nccCenter.clone().lerp(rccCenter, 0.5) : null;
+    const hisSeptum = (commissure && hisBundleEnd(septum, avCenter, commissure)) || new THREE.Vector3(-0.10, -0.32, 0.06);
+    const rvApex = rvVerts.length ? rvVerts.reduce((b, v) => v.y < b.y ? v : b).clone() : null;
+    const lbbSite = rvApex ? septalSiteNear(septum, hisSeptum.clone().add(rvApex.clone().sub(hisSeptum).setLength(0.35))) : null;
     // Penetrating His: through the central fibrous body toward the crest of
     // the muscular septum.
     const hisPenetrating = avCenter.clone().lerp(hisSeptum, .45).add(new THREE.Vector3(0, -.04, .02));
@@ -363,7 +374,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     ], 0.018, 'his', 'Right bundle branch');
 
     // 6. Left Bundle Branch (LBB) trunk & fascicles
-    const lbbStart = new THREE.Vector3(0.05, -0.42, 0.05);
+    const lbbStart = lbbSite ? lbbSite.lvSide.clone().lerp(lbbSite.rvSide, 0.1) : new THREE.Vector3(0.05, -0.42, 0.05);
     makeTract([
       hisSeptum.clone(),
       lbbStart.clone()

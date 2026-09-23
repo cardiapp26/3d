@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { boundaryLoops, sharedRim } from './mesh-utils.js';
+import { boundaryLoops, septalPairs, septalSiteNear as nearestSeptalSite, sharedRim } from './mesh-utils.js';
 
 /**
  * Procedural 3D Pacemaker and Defibrillator Lead Models for Cardiac EP/CIED education.
@@ -164,19 +164,11 @@ export function createPacemakerLeads(helpers) {
 
     // Interventricular septum: RV endocardial vertices with an LV vertex
     // within septal thickness; each pair spans the septum RV side -> LV side.
-    const septum = [];
-    for (let i = 0; i < rvVerts.length; i += 2) {
-      const v = rvVerts[i];
-      let best = null, bestD = Infinity;
-      for (let j = 0; j < lvVerts.length; j += 3) {
-        const d = v.distanceToSquared(lvVerts[j]);
-        if (d < bestD) { bestD = d; best = lvVerts[j]; }
-      }
-      if (bestD < 0.35 * 0.35) septum.push({ rvSide: v, lvSide: best });
-    }
-    const septalSiteNear = target => septum.length
-      ? septum.reduce((b, o) => o.rvSide.distanceTo(target) < b.rvSide.distanceTo(target) ? o : b)
-      : null;
+    const septum = septalPairs(rvVerts, lvVerts);
+    const septalSiteNear = target => nearestSeptalSite(septum, target);
+    // Active-fixation tips meet the septum head-on: the last approach point
+    // sits ~1 cm back into the RV cavity along the septal normal.
+    const septalApproach = site => site.rvSide.clone().add(site.rvSide.clone().sub(site.lvSide).setLength(0.27));
     const rvApex = rvVerts.length ? rvVerts.reduce((b, v) => v.y < b.y ? v : b).clone() : new THREE.Vector3(rv.x, rv.y - 0.5, rv.z);
 
     // His bundle distal end (on the septal crest), measured from its tract.
@@ -206,27 +198,30 @@ export function createPacemakerLeads(helpers) {
 
     // -------------------------------------------------------------
     // 2. Right Ventricular (RV) Septal Lead: tip on the RV side of the mid
-    //    interventricular septum (not the thin apex).
+    //    interventricular septum (not the thin apex), halfway from the His
+    //    to the apex, facing the septum (toward the spine in LAO).
     // -------------------------------------------------------------
     const midSeptalSite = septalSiteNear(hisDistal.clone().lerp(rvApex, 0.5));
     const rvSeptalTip = midSeptalSite
       ? midSeptalSite.rvSide.clone().lerp(rvCenter, 0.03)
       : new THREE.Vector3(rv.x * 0.85 + 0.05, rv.y + 0.12, rv.z * 0.85);
+    const rvApproach = midSeptalSite ? septalApproach(midSeptalSite) : tvCenter.clone().lerp(rvSeptalTip, 0.5).lerp(rvCenter, 0.35);
     const rvCurve = new THREE.CatmullRomCurve3([
       entryPt.clone(),
       highSvc.clone(),
       midRa.clone(),
       tvCenter.clone(),
-      tvCenter.clone().lerp(rvSeptalTip, 0.5).lerp(rvCenter, 0.35),
+      rvApproach,
       rvSeptalTip.clone()
     ]);
 
     // -------------------------------------------------------------
     // 3. Left Bundle Branch Area Pacing (LBBAP): the lead enters the RV
-    //    septum ~1-1.5 cm distal to the His along the His-apex line and is
-    //    screwed transseptally until the tip sits in the LV subendocardium.
+    //    septum ~1.3 cm distal to the His along the His-apex line (the site
+    //    where the LBB trunk in heart.js ends) and is screwed transseptally,
+    //    perpendicular to the septum, until the tip sits in LV subendocardium.
     // -------------------------------------------------------------
-    const lbbSite = septalSiteNear(hisDistal.clone().add(rvApex.clone().sub(hisDistal).setLength(0.4)));
+    const lbbSite = septalSiteNear(hisDistal.clone().add(rvApex.clone().sub(hisDistal).setLength(0.35)));
     const lbbEntry = lbbSite ? lbbSite.rvSide.clone() : hisDistal.clone().add(new THREE.Vector3(0.06, -0.08, 0.04));
     const lbbapTip = lbbSite ? lbbSite.rvSide.clone().lerp(lbbSite.lvSide, 0.8) : lbbEntry.clone();
     const cspCurve = new THREE.CatmullRomCurve3([
@@ -234,7 +229,7 @@ export function createPacemakerLeads(helpers) {
       highSvc.clone(),
       midRa.clone(),
       tvCenter.clone(),
-      lbbEntry.clone().lerp(rvCenter, 0.25),
+      lbbSite ? septalApproach(lbbSite) : lbbEntry.clone().lerp(rvCenter, 0.25),
       lbbEntry.clone(),
       lbbapTip.clone()
     ]);

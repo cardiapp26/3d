@@ -182,7 +182,8 @@ export const FLOW_STREAMS = [
     // Coronary perfusion occurs predominantly during diastole (low ventricular pressure)
     gating: (w) => 0.20 + 1.1 * (1.0 - w.ventricularContraction),
     baseSpeed: 0.28,
-    weight: 0.6
+    weight: 0.6,
+    particleScale: 0.6
   },
   // 11. Coronary Arterial Circulation: Aortic Root -> LM -> LCx
   {
@@ -196,7 +197,8 @@ export const FLOW_STREAMS = [
     ],
     gating: (w) => 0.20 + 1.1 * (1.0 - w.ventricularContraction),
     baseSpeed: 0.28,
-    weight: 0.5
+    weight: 0.5,
+    particleScale: 0.6
   },
   // 12. Coronary Arterial Circulation: Right Aortic Root -> RCA -> RPL
   {
@@ -211,7 +213,8 @@ export const FLOW_STREAMS = [
     ],
     gating: (w) => 0.20 + 1.1 * (1.0 - w.ventricularContraction),
     baseSpeed: 0.28,
-    weight: 0.6
+    weight: 0.6,
+    particleScale: 0.6
   },
   // 13. Cardiac Vein Drainage: GCV -> CS -> RA
   {
@@ -228,7 +231,8 @@ export const FLOW_STREAMS = [
     // Venous drainage assisted by systolic myocardial squeeze
     gating: (w) => 0.35 + 0.85 * w.ventricularContraction,
     baseSpeed: 0.25,
-    weight: 0.6
+    weight: 0.6,
+    particleScale: 0.6
   },
   // 14. Cardiac Vein Drainage: MCV -> CS -> RA
   {
@@ -244,7 +248,8 @@ export const FLOW_STREAMS = [
     ],
     gating: (w) => 0.35 + 0.85 * w.ventricularContraction,
     baseSpeed: 0.25,
-    weight: 0.5
+    weight: 0.5,
+    particleScale: 0.6
   },
   // 15. Cardiac Vein Drainage: PIV (PVLV) -> CS -> RA
   {
@@ -259,25 +264,46 @@ export const FLOW_STREAMS = [
     ],
     gating: (w) => 0.35 + 0.85 * w.ventricularContraction,
     baseSpeed: 0.25,
-    weight: 0.5
+    weight: 0.5,
+    particleScale: 0.6
   }
 ];
 
+/**
+ * @param {{ routes?: Record<string, THREE.Vector3[]>, resolveRoutes?: () => Record<string, THREE.Vector3[]> }} options
+ *   routes: measured control points keyed by stream id (see flow-routes.js);
+ *   they replace the schematic points of the matching stream.
+ *   resolveRoutes: the same, measured lazily the first time flow is shown.
+ */
 export function createBloodFlow(options = {}) {
+  const { routes = {}, resolveRoutes = null } = options;
+  let routesPending = typeof resolveRoutes === 'function';
   const group = new THREE.Group();
   group.name = 'Blood Flow Pathways';
   group.userData = { id: 'blood-flow', layer: 'flow', provenance: 'schematic' };
 
+  const makeCurve = points => {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal', 0.5);
+    return { curve, length: curve.getLength() };
+  };
+
   // Prepare curves
   const streams = FLOW_STREAMS.map(s => {
-    const vPoints = s.points.map(p => new THREE.Vector3(...p));
-    const curve = new THREE.CatmullRomCurve3(vPoints, false, 'centripetal', 0.5);
+    const measured = routes[s.id];
+    const vPoints = measured ? measured.map(p => p.clone()) : s.points.map(p => new THREE.Vector3(...p));
     return {
       ...s,
-      curve,
-      length: curve.getLength()
+      ...makeCurve(vPoints),
+      particleScale: s.particleScale ?? 1
     };
   });
+
+  function applyRoutes(measured) {
+    for (const stream of streams) {
+      const points = measured[stream.id];
+      if (points && points.length >= 4) Object.assign(stream, makeCurve(points.map(p => p.clone())));
+    }
+  }
 
   const TOTAL_DEOXY_CAPACITY = 240;
   const TOTAL_OXY_CAPACITY = 240;
@@ -393,7 +419,7 @@ export function createBloodFlow(options = {}) {
 
       // Taper particle size at spline extremities for smooth enter/exit
       const edgeFactor = Math.min(1.0, Math.sin(Math.PI * p.t) * 2.5);
-      const sScale = p.baseScale * edgeFactor;
+      const sScale = p.baseScale * edgeFactor * s.particleScale;
       // Slight pulse during fast flow
       const pulse = 1.0 + Math.min(0.3, gate * 0.1);
       dummy.scale.set(sScale * pulse, sScale * pulse * 1.3, sScale * pulse);
@@ -429,6 +455,11 @@ export function createBloodFlow(options = {}) {
     setVisible(val) {
       visible = Boolean(val);
       group.visible = visible;
+      if (visible && routesPending) {
+        routesPending = false;
+        applyRoutes(resolveRoutes());
+        tick(0, { phase: 0, bpm: 72 });
+      }
     },
     getVisible() {
       return visible;

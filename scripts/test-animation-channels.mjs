@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
+  avLeafletOffset,
+  avLeafletWeight,
   computeChannelWeights,
   createAnimationChannels,
   leafletOffset
 } from '../src/animation-channels.js';
+import { annulusFrame } from '../src/mesh-utils.js';
 
 console.log('Running Animation Channels Unit Tests...\n');
 
@@ -127,6 +130,48 @@ console.log('Running Animation Channels Unit Tests...\n');
   assert.deepEqual(ivrPose, [0.2, 0, 0], 'Semilunar leaflet is shut during isovolumetric relaxation');
 
   console.log('PASS: Mock mesh deformation and reset verified');
+}
+
+// 4. AV leaflets swing about their measured annulus, not about world Y
+{
+  assert.equal(avLeafletWeight(0, 0, 1, 2), 0, 'Annular hinge does not swing');
+  assert.ok(avLeafletWeight(0.8, 0.3, 1, 2) > avLeafletWeight(0.3, 0.1, 1, 2), 'Swing grows away from the hinge');
+  assert.equal(avLeafletWeight(1.5, 2, 1, 2), 0, 'Chordae stay tethered at the papillary tips');
+  const outward = new THREE.Vector3(1, 0, 0);
+  const normal = new THREE.Vector3(0, 0, 1);
+  assert.deepEqual(avLeafletOffset(0.1, 0, 0.3, 0, 1, outward, normal, 1), [0.1, 0, 0.3], 'Closed pose is the rest pose');
+  const open = avLeafletOffset(0.1, 0, 0.3, 1, 1, outward, normal, 1);
+  assert.ok(open[0] > 0.1 && open[2] > 0.3, 'Open leaflet moves to its hinge side and into the ventricle');
+
+  // Tilted annulus: ring in a plane whose normal is not world Y.
+  const tilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 1.0);
+  const rim = [];
+  for (let i = 0; i < 48; i++) {
+    const a = (i / 48) * Math.PI * 2;
+    rim.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a)).applyQuaternion(tilt));
+  }
+  const ventricle = new THREE.Vector3(0, 1, 0).applyQuaternion(tilt);
+  const frame = annulusFrame(rim, ventricle);
+  // A leaflet hinged at +X whose free edge reaches the axis 0.3 below the ring.
+  const local = [[1, 0, 0], [0.6, 0.15, 0], [0.05, 0.3, 0]];
+  const positions = local.flatMap(([x, y, z]) => new THREE.Vector3(x, y, z).applyQuaternion(tilt).toArray());
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  const leaflet = new THREE.Mesh(geometry);
+  const annulus = new THREE.Mesh();
+  annulus.userData = { id: 'mitral-annulus', rim, frame };
+  const avMap = new Map([['mitral', [leaflet]], ['mitral-annulus', [annulus]]]);
+  const avChannels = createAnimationChannels({ meshMap: avMap });
+  const vertex = i => new THREE.Vector3().fromBufferAttribute(geometry.attributes.position, i);
+  avChannels.applyChannels({ phase: 0.2, reducedMotion: false });
+  assert.ok(vertex(0).distanceTo(new THREE.Vector3(...positions.slice(0, 3))) < 1e-6, 'Hinge vertex stays on the tilted annulus');
+  const edge = vertex(2).sub(frame.center);
+  assert.ok(edge.dot(new THREE.Vector3(1, 0, 0)) > 0.25, 'Free edge swings toward its hinge side in the annulus plane');
+  assert.ok(edge.dot(frame.normal) > 0.3, 'Free edge drops along the tilted annulus normal');
+  avChannels.applyChannels({ phase: 0.7, reducedMotion: false });
+  assert.ok(vertex(2).distanceTo(new THREE.Vector3(...positions.slice(6, 9))) < 1e-6, 'AV leaflet is shut in systole');
+
+  console.log('PASS: AV leaflets open about their measured, tilted annulus');
 }
 
 console.log('\nALL ANIMATION CHANNEL TESTS PASSED!');
