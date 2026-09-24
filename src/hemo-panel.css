@@ -1,0 +1,67 @@
+/* Hemodynamics lesson panel (src/hemo-panel.js). Palette follows style.css. */
+.hemo-panel{display:grid;gap:8px;min-width:0;font-size:11px;color:#263e3b}
+.hemo-panel [hidden]{display:none}
+.hemo-panel select{display:block;margin:0;background:#fff;border:1px solid #d9e0d5;border-radius:4px;font-size:11px;color:#55704f}
+
+/* Header: scenario + HR/CO badge */
+.hemo-header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.hemo-select{flex:1 1 170px;min-width:0;width:auto;padding:6px 8px}
+.hemo-badge{flex:0 0 auto;font-size:10px;font-weight:600;letter-spacing:.3px;color:#244f43;background:#edf2e9;border:1px solid #dce4d7;border-radius:20px;padding:4px 8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* Channel pills */
+.hemo-channels{display:flex;flex-wrap:wrap;gap:4px}
+.hemo-pill{position:relative;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid #dce4d7;border-radius:20px;background:#fff;color:#748276;font-size:11px;cursor:pointer;user-select:none;transition:background .12s,border-color .12s,color .12s}
+.hemo-pill input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.hemo-pill:hover{border-color:#b7c8ad}
+.hemo-pill:focus-within{outline:2px solid #299f8a;outline-offset:1px}
+.hemo-dot{width:7px;height:7px;border-radius:50%;background:var(--hemo-station,#748276);flex:0 0 auto}
+.hemo-pill.is-active{color:#263e3b;font-weight:600;border-color:color-mix(in srgb,var(--hemo-station) 45%,#dce4d7);background:color-mix(in srgb,var(--hemo-station) 11%,#fff)}
+
+/* Presets */
+.hemo-presets{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.hemo-presets-label{font-size:10.5px;color:#748276;margin-right:2px}
+.hemo-preset{border:1px solid #dce4d7;background:transparent;border-radius:4px;padding:3px 7px;font-size:10.5px;color:#31573f}
+.hemo-preset:hover{background:#edf2e9;border-color:#b7c8ad}
+
+/* Tracing */
+.hemo-canvas-wrap{border:1px solid #dce4d7;border-radius:6px;overflow:hidden;background:#fcfdfb;min-width:0}
+.hemo-canvas{display:block;width:100%;height:190px}
+
+/* Controls under the canvas */
+.hemo-controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.hemo-control{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#748276;cursor:pointer}
+.hemo-panel .hemo-beats{width:auto;padding:3px 6px}
+.hemo-toggle input{margin:0;accent-color:#315d4d;width:13px;height:13px}
+.hemo-pvc{margin-left:auto;border:1px solid #dce4d7;background:#fff;border-radius:4px;padding:4px 8px;font-size:10.5px;color:#31573f}
+.hemo-pvc:hover{background:#edf2e9}
+.hemo-pvc[aria-pressed="true"]{background:#244f43;border-color:#244f43;color:#fff}
+.hemo-panel .hemo-hint{margin:0;font-size:11px;line-height:1.45;color:#62745f;background:#edf2e9;border-radius:6px;padding:6px 9px}
+
+/* Metrics grid */
+.hemo-metrics-title,.hemo-calc-heading{margin:4px 0 0;font-size:11px;font-weight:600;color:#31573f}
+.hemo-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+.hemo-metric,.hemo-calc-row{display:flex;justify-content:space-between;align-items:baseline;gap:6px;min-width:0}
+.hemo-metric{border-bottom:1px solid #edf1eb;padding:2px 0}
+.hemo-metric-label{font-size:11px;color:#748276;min-width:0;overflow-wrap:anywhere}
+.hemo-metric-value{font-size:11px;font-weight:600;color:#263e3b;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* Calculators */
+.hemo-calc{border:1px solid #dce4d7;border-radius:6px;padding:0 10px;background:#fff}
+.hemo-calc[open]{padding-bottom:10px}
+.hemo-calc-title{cursor:pointer;padding:8px 0;font-size:11.5px;font-weight:600;color:#244f43}
+.hemo-calc-block{border-top:1px solid #edf1eb;padding-top:8px;margin-top:6px}
+.hemo-calc-heading{margin:0 0 6px}
+.hemo-field{display:grid;gap:2px;font-size:11px;color:#748276;min-width:0}
+.hemo-field-label{overflow-wrap:anywhere}
+.hemo-panel .hemo-input{width:100%;border:1px solid #d9e0d5;padding:5px 7px;border-radius:4px;font-size:11px;margin:0;background:#fff;color:#263e3b}
+.hemo-input:focus-visible{outline:2px solid #299f8a;outline-offset:1px}
+.hemo-calc-out{display:grid;gap:2px;margin-top:6px;background:#f4f7f1;border-radius:6px;padding:6px 8px}
+.hemo-panel .hemo-formula{margin:5px 0 0;font-size:10px;line-height:1.45;color:#96a28e;overflow-wrap:anywhere}
+
+@media (max-width:640px){
+  .hemo-canvas{height:150px}
+  .hemo-pill{padding:4px 9px}
+}
+@media (max-width:360px){
+  .hemo-metrics{grid-template-columns:1fr}
+}

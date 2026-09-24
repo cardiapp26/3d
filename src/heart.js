@@ -7,6 +7,8 @@ import { createEPLandmarks } from './ep-landmarks.js';
 import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createAnnuli } from './annuli.js';
 import { addSchematicAvLeaflets } from './schematic-leaflets.js';
+import { addLaaMarker } from './la-landmarks.js';
+import { createAuscultationMarkers } from './auscultation-points.js';
 import { createThorax } from './thorax.js';
 import { createTransseptal } from './transseptal.js';
 import { createCathLab } from './cath-lab.js';
@@ -122,6 +124,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const transseptal = createTransseptal({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], isReady });
   heart.add(transseptal.group);
+  const auscultation = createAuscultationMarkers({ sourceCenter, meshVertices });
+  heart.add(auscultation.group);
   const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getVesselTrim:(name)=>vesselTrims.get(name)||null, isReady });
   heart.add(cathLab.group);
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
@@ -153,8 +157,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
       m.visible=visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
       const tissue=layer==='chambers';
-      // Catheters run inside these vessels in the transseptal lesson; keep them see-through.
-      const catheterVessel=(mode==='transseptal'&&['aorta','cs','svc','ivc'].includes(id))||(mode==='cath'&&['aorta','pa','svc','ivc'].includes(id));
+      // Catheters run inside these vessels in the transseptal lesson; keep them
+      // see-through. The pulmonary trunk and bifurcation sit on the LA roof in
+      // front of the fossa in LAO/RAO, so they are faded there too.
+      const catheterVessel=(mode==='transseptal'&&['aorta','pa','cs','svc','ivc'].includes(id))||(['cath','hemodynamics'].includes(mode)&&['aorta','pa','svc','ivc'].includes(id));
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
       const faintPa=visibility['pa-faint']&&id==='pa';
       const alpha=tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
@@ -188,7 +194,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     requestRender();
   }
-  function selectStructure(id,flyTo=true){selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+  function selectStructure(id,flyTo=true){selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
 
   // Conceptual cellular illustration is separate from the source atlas.
   const micro=new THREE.Group();scene.add(micro);micro.visible=false;
@@ -222,6 +228,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     buildConductionSystem();
     annuli.build();
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
+    addLaaMarker({ meshVertices, register, parent: layers.chambers });
     thorax.build();
     computeVesselTrims();
     modelReady=true;
@@ -530,10 +537,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let catheterPickables=null;
   function pickTargets(){
-    if(!transseptal.group.visible&&!cathLab.group.visible&&!epLandmarks.group.visible)return meshes;
+    if(!transseptal.group.visible&&!cathLab.group.visible&&!epLandmarks.group.visible&&!auscultation.group.visible)return meshes;
     if(!catheterPickables||!catheterPickables.length){
       catheterPickables=[];
-      for(const g of [transseptal.group,cathLab.group,epLandmarks.group]){
+      for(const g of [transseptal.group,cathLab.group,epLandmarks.group,auscultation.group]){
         if(g.visible)g.traverse(o=>{if(o.isMesh&&o.userData.pickId)catheterPickables.push(o);});
       }
     }
@@ -638,7 +645,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const boolVal = Boolean(value);
       visibility[name] = boolVal;
       if(name==='chambers')['lv','rv','la','ra'].forEach(id=>visibility[id]=boolVal);
-      if(['lv','rv','la','ra'].includes(name))visibility.chambers=true;
+      if(['lv','rv','la','ra','laa'].includes(name))visibility.chambers=true;
       if(name==='valves') setValveFamily(boolVal);
       if(name==='aortic-valve'){
         ['lcc','rcc','ncc'].forEach(id=>visibility[id]=boolVal);
@@ -668,11 +675,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
       mode=name;
-      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
+      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath','hemodynamics'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       transseptal.setVisible(name==='transseptal');
-      cathLab.setVisible(name==='cath');
+      cathLab.setVisible(name==='cath'||name==='hemodynamics');
+      auscultation.setVisible(name==='exam');
       catheterPickables=null;
       if(name==='ablation'){
         epLandmarks.setStep(0);
@@ -685,7 +693,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }else if(name==='transseptal'){
         transseptal.setStep(0);
         transseptal.setProgress(1.0);
-      }else if(name==='cath'){
+      }else if(name==='cath'||name==='hemodynamics'){
         cathLab.setStep(0);
         cathLab.setProgress(1.0);
       }
@@ -736,10 +744,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setBachmannStep(step){pacemakerLeads.setBachmannStep(Number(step));requestRender();},
     setTransseptalStep(step){transseptal.setStep(Number(step));requestRender();},
     setCathStep(step){cathLab.setStep(Number(step));requestRender();},
+    highlightAuscultation(areaId){auscultation.highlight(areaId||null);requestRender();},
     setCatheterVisible(key,value){transseptal.setCatheterVisible(key,Boolean(value));requestRender();},
     getCatheterVisibility(){return transseptal.getCatheterVisibility();},
     resetCatheterToggles(){transseptal.resetCatheterToggles();requestRender();},
-    setProgress(value){if(mode==='cath'){cathLab.setProgress(Number(value));requestRender();return;}if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
+    setProgress(value){if(mode==='cath'||mode==='hemodynamics'){cathLab.setProgress(Number(value));requestRender();return;}if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){

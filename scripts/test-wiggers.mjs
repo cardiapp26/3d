@@ -58,7 +58,20 @@ check('No ejection before aortic opening', vol(E.aorticOpen) > 119);
 
 // ECG / sounds alignment
 check('R peak at QRS', ecgValue(CYCLE_SYNC.qrsPeak) > 0.8);
-check('P wave inside atrial systole', CYCLE_SYNC.pPeak > 0.32 && CYCLE_SYNC.pPeak < E.mitralClose);
+// Electromechanical sequence (72 bpm: 1 unit = 833 ms)
+const ms = u => u * 60000 / 72;
+check('P wave precedes atrial contraction by 30-100 ms',
+  ms(CYCLE_SYNC.atrialStart - CYCLE_SYNC.pPeak) > 30 && ms(CYCLE_SYNC.atrialStart - CYCLE_SYNC.pPeak) < 100);
+check('PR interval 120-200 ms', ms(CYCLE_SYNC.qrsOnset - (CYCLE_SYNC.pPeak - 0.04)) >= 120 && ms(CYCLE_SYNC.qrsOnset - (CYCLE_SYNC.pPeak - 0.04)) <= 200);
+check('QRS onset precedes S1 (mitral closure) by 20-60 ms',
+  ms(E.mitralClose - CYCLE_SYNC.qrsOnset) >= 20 && ms(E.mitralClose - CYCLE_SYNC.qrsOnset) <= 60);
+check('QRS onset precedes aortic opening by 80-120 ms (PEP)',
+  ms(E.aorticOpen - CYCLE_SYNC.qrsOnset) >= 80 && ms(E.aorticOpen - CYCLE_SYNC.qrsOnset) <= 120);
+check('QRS lasts 60-100 ms', ms(CYCLE_SYNC.qrsEnd - CYCLE_SYNC.qrsOnset) >= 60 && ms(CYCLE_SYNC.qrsEnd - CYCLE_SYNC.qrsOnset) <= 100);
+check('QT 350-440 ms', ms(E.aorticClose - CYCLE_SYNC.qrsOnset) >= 350 && ms(E.aorticClose - CYCLE_SYNC.qrsOnset) <= 440);
+check('AV valve closure starts after QRS onset and is complete at S1',
+  CYCLE_SYNC.avCloseStart >= CYCLE_SYNC.qrsOnset && Math.abs(CYCLE_SYNC.avClosed - E.mitralClose) < 1e-9);
+check('c wave sits at mitral closure', la(E.mitralClose + 0.005) > la(E.mitralClose + 0.06));
 check('Aortic closure after T peak (end of T)', E.aorticClose > CYCLE_SYNC.tPeak + 0.03);
 const s = Object.fromEntries(heartSounds('sinus').map(x => [x.id, x.u]));
 check('S1 at mitral closure', Math.abs(s.S1 - E.mitralClose) < 0.01);

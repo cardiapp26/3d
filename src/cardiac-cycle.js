@@ -74,15 +74,20 @@ export const CARDIAC_INTERVALS = [
 ];
 
 // One clock for the ECG trace, valve motion, and interval names.
+// Electrical events lead the mechanical ones: the P wave ends ~40 ms before
+// atrial contraction starts, QRS onset precedes mitral closure (S1) by
+// ~35 ms and aortic opening by ~100 ms (at 72 bpm one unit is 833 ms).
 export const CYCLE_SYNC = Object.freeze({
   fillingOpenEnd: 0.08,
+  pPeak: 0.27,
   atrialStart: 0.32,
-  pPeak: 0.38,
-  avCloseStart: 0.44,
+  qrsOnset: 0.41,
+  qrsPeak: 0.43,
+  avCloseStart: 0.43,
   atrialEnd: 0.45,
+  avClosed: 0.45,
   ivcStart: 0.45,
-  qrsPeak: 0.47,
-  avClosed: 0.48,
+  qrsEnd: 0.49,
   ejectionStart: 0.53,
   semilunarOpen: 0.60,
   ejectionPeak: 0.65,

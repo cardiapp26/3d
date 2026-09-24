@@ -1,0 +1,1291 @@
+{
+  "units": {
+    "pressure": "mmHg",
+    "saturation": "percent",
+    "co_l_min": "L/min (systemic flow; for shunts this is Qs)",
+    "hr": "beats/min",
+    "gradient_mean_mmHg": "mmHg",
+    "valve_area_cm2": "cm2",
+    "qp_qs": "ratio",
+    "pvr_wu": "Wood units (mmHg·min/L); multiply by 80 for dyn·s·cm-5",
+    "svr_dyn": "dyn·s·cm-5",
+    "tpg": "mmHg (mean PAP - mean PCWP)",
+    "dpg": "mmHg (PA diastolic - mean PCWP)",
+    "page_numbers": "Citations use PDF page numbers, not printed page numbers (Source 1 PDF page = printed page + 12)",
+    "sources": {
+      "Source 1": "Stouffer GA (ed.). Cardiovascular Hemodynamics for the Clinician, 2nd ed. Wiley 2017",
+      "Source 2": "Hahn RT. Hemodynamics I: Basic Calculations (State-of-the-Art Echo 2013 slides)",
+      "Source 3": "Oh JK. Hemodynamic Cases: Decision Making (Hemodynamics III, 2013 slides)",
+      "Source 4": "Wu P, Patel AH, Kern MJ. Right and left heart hemodynamics, The PCR-EAPCI Textbook (2023)"
+    }
+  },
+  "normal": {
+    "label_en": "Normal hemodynamics",
+    "label_tr": "Normal hemodinami",
+    "stations": {
+      "ra": {
+        "a": 6,
+        "v": 4,
+        "mean": 5
+      },
+      "rv": {
+        "systolic": 25,
+        "edp": 5
+      },
+      "pa": {
+        "systolic": 25,
+        "diastolic": 10,
+        "mean": 15
+      },
+      "pcwp": {
+        "a": 8,
+        "v": 10,
+        "mean": 8
+      },
+      "lv": {
+        "systolic": 115,
+        "edp": 9
+      },
+      "ao": {
+        "systolic": 115,
+        "diastolic": 75,
+        "mean": 88
+      }
+    },
+    "saturations": {
+      "svc": 74,
+      "ivc": 78,
+      "ra": 76,
+      "rv": 76,
+      "pa": 76,
+      "pv": 98,
+      "lv": 98,
+      "ao": 98
+    },
+    "co_l_min": 5.7,
+    "hr": 70,
+    "waveform_flags": [],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": 1.0,
+      "pvr_wu": 1.2,
+      "svr_dyn": 1170,
+      "tpg": 7,
+      "dpg": 2
+    },
+    "teaching_points_en": [
+      "RA a wave follows the P wave by about 60-80 ms and is normally taller than the v wave.",
+      "In the LA or wedge tracing the v wave is equal to or larger than the a wave, and the wedge waves arrive later than true LA events.",
+      "LVEDP is read at the R wave, on the downslope of the LV a wave.",
+      "PA diastolic pressure sits a few mmHg above mean PCWP when the pulmonary vessels are normal.",
+      "Read all pressures at end-expiration with the transducer zeroed at the phlebostatic axis."
+    ],
+    "teaching_points_tr": [
+      "Sağ atriyum a dalgası P dalgasından yaklaşık 60-80 ms sonra gelir ve normalde v dalgasından yüksektir.",
+      "Sol atriyum veya kama basıncı (PCWP) trasesinde v dalgası a dalgasına eşit ya da ondan büyüktür; kama dalgaları gerçek sol atriyum olaylarından daha geç görülür.",
+      "LVEDP, R dalgası hizasında, sol ventrikül a dalgasının iniş kolunda okunur.",
+      "Pulmoner damar yatağı normalken PA diyastolik basıncı ortalama PCWP'nin birkaç mmHg üzerindedir.",
+      "Tüm basınçlar ekspiryum sonunda, transdüser flebostatik eksende sıfırlanmış olarak okunur."
+    ],
+    "citations": [
+      "Source 1 p. 53",
+      "Source 1 p. 55",
+      "Source 1 p. 59",
+      "Source 1 p. 60",
+      "Source 1 p. 81",
+      "Source 1 p. 83",
+      "Source 1 p. 142",
+      "Source 1 p. 144",
+      "Source 1 p. 37",
+      "Source 1 p. 38",
+      "Source 1 p. 45",
+      "Source 1 p. 108"
+    ]
+  },
+  "aortic_stenosis_severe": {
+    "label_en": "Severe aortic stenosis",
+    "label_tr": "Ciddi aort darlığı",
+    "stations": {
+      "ra": {
+        "a": 9,
+        "v": 7,
+        "mean": 7
+      },
+      "rv": {
+        "systolic": 40,
+        "edp": 8
+      },
+      "pa": {
+        "systolic": 40,
+        "diastolic": 18,
+        "mean": 26
+      },
+      "pcwp": {
+        "a": 18,
+        "v": 20,
+        "mean": 16
+      },
+      "lv": {
+        "systolic": 180,
+        "edp": 20
+      },
+      "ao": {
+        "systolic": 115,
+        "diastolic": 70,
+        "mean": 88
+      }
+    },
+    "saturations": {
+      "svc": 68,
+      "ivc": 72,
+      "ra": 70,
+      "rv": 70,
+      "pa": 70,
+      "pv": 97,
+      "lv": 97,
+      "ao": 97
+    },
+    "co_l_min": 4.6,
+    "hr": 70,
+    "waveform_flags": [
+      "lv_ao_gradient"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": 50,
+      "valve_area_cm2": 0.64,
+      "qp_qs": null,
+      "pvr_wu": 2.2,
+      "svr_dyn": 1400,
+      "tpg": 10,
+      "dpg": 2
+    },
+    "teaching_points_en": [
+      "Simultaneous LV and ascending aortic pressures show a systolic gradient; the aortic upstroke is slow (parvus et tardus).",
+      "Peak-to-peak gradient (LV peak minus aortic peak) is smaller than the peak instantaneous gradient; mean gradients agree best with echo.",
+      "Gorlin: AVA = [CO / (SEP x HR)] / (44.3 x square root of mean gradient); Hakki: CO / square root of peak-to-peak gradient.",
+      "Pigtail side holes above the valve or a femoral surrogate for aortic pressure distort the gradient.",
+      "In fixed AS the aortic pulse pressure widens after a PVC, unlike HOCM."
+    ],
+    "teaching_points_tr": [
+      "Eş zamanlı sol ventrikül ve çıkan aort basınçları sistolik gradiyent gösterir; aort yükselişi yavaştır (parvus et tardus).",
+      "Tepe-tepe gradiyent (LV tepe eksi aort tepe), anlık tepe gradiyentten küçüktür; ortalama gradiyent ekokardiyografiyle en iyi uyumu verir.",
+      "Gorlin: AVA = [KD / (SEP x KH)] / (44,3 x ortalama gradiyentin karekökü); Hakki: KD / tepe-tepe gradiyentin karekökü.",
+      "Kapak üzerinde kalan pigtail yan delikleri veya aort yerine femoral basınç kullanımı gradiyenti bozar.",
+      "Sabit aort darlığında PVC sonrası aort nabız basıncı genişler; HOKM'de ise daralır."
+    ],
+    "citations": [
+      "Source 1 p. 116",
+      "Source 1 p. 121",
+      "Source 1 p. 122",
+      "Source 1 p. 123",
+      "Source 1 p. 124",
+      "Source 1 p. 128",
+      "Source 1 p. 76",
+      "Source 1 p. 366",
+      "Source 4 p. 8",
+      "Source 4 p. 13",
+      "Source 2 p. 21"
+    ]
+  },
+  "mitral_stenosis_severe": {
+    "label_en": "Severe mitral stenosis",
+    "label_tr": "Ciddi mitral darlığı",
+    "stations": {
+      "ra": {
+        "a": 8,
+        "v": 6,
+        "mean": 6
+      },
+      "rv": {
+        "systolic": 50,
+        "edp": 7
+      },
+      "pa": {
+        "systolic": 50,
+        "diastolic": 28,
+        "mean": 36
+      },
+      "pcwp": {
+        "a": 30,
+        "v": 28,
+        "mean": 25
+      },
+      "lv": {
+        "systolic": 115,
+        "edp": 6
+      },
+      "ao": {
+        "systolic": 110,
+        "diastolic": 70,
+        "mean": 83
+      }
+    },
+    "saturations": {
+      "svc": 68,
+      "ivc": 72,
+      "ra": 70,
+      "rv": 70,
+      "pa": 70,
+      "pv": 97,
+      "lv": 97,
+      "ao": 97
+    },
+    "co_l_min": 4.6,
+    "hr": 80,
+    "waveform_flags": [
+      "lv_pcwp_gradient",
+      "blunted_y_descent"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": 15,
+      "valve_area_cm2": 0.99,
+      "qp_qs": null,
+      "pvr_wu": 2.4,
+      "svr_dyn": 1330,
+      "tpg": 11,
+      "dpg": 3
+    },
+    "teaching_points_en": [
+      "A diastolic gradient between PCWP (or LA) and LV persists throughout diastole.",
+      "Shift the wedge tracing left so its v wave meets the LV downstroke before measuring the gradient.",
+      "Gorlin mitral constant is 37.7 (44.3 x 0.85); the diastolic filling period runs from the LV-wedge crossover to the R wave.",
+      "Faster heart rate or AF shortens diastole and raises the gradient; average 5 beats in sinus rhythm and 10 in AF.",
+      "LVEDP is usually normal; pulmonary pressures rise from LA hypertension and, later, pulmonary vascular disease."
+    ],
+    "teaching_points_tr": [
+      "Kama basıncı (veya sol atriyum) ile sol ventrikül arasında diyastol boyunca süren bir gradiyent vardır.",
+      "Gradiyenti ölçmeden önce kama trasesini, v dalgası sol ventrikül iniş koluna denk gelecek şekilde sola kaydırın.",
+      "Gorlin mitral sabiti 37,7'dir (44,3 x 0,85); diyastolik doluş süresi LV-kama kesişiminden R dalgasına kadar ölçülür.",
+      "Kalp hızının artması veya AF diyastolü kısaltır ve gradiyenti yükseltir; sinüs ritminde 5, AF'de 10 atım ortalaması alınır.",
+      "LVEDP genellikle normaldir; pulmoner basınçlar sol atriyal hipertansiyon ve ileride pulmoner vasküler hastalık nedeniyle yükselir."
+    ],
+    "citations": [
+      "Source 1 p. 90",
+      "Source 1 p. 142",
+      "Source 1 p. 143",
+      "Source 1 p. 146",
+      "Source 1 p. 147",
+      "Source 1 p. 149",
+      "Source 1 p. 150",
+      "Source 4 p. 9",
+      "Source 4 p. 10",
+      "Source 4 p. 18"
+    ]
+  },
+  "mitral_regurgitation_severe": {
+    "label_en": "Severe (acute) mitral regurgitation",
+    "label_tr": "Ciddi (akut) mitral yetersizliği",
+    "stations": {
+      "ra": {
+        "a": 10,
+        "v": 10,
+        "mean": 9
+      },
+      "rv": {
+        "systolic": 55,
+        "edp": 10
+      },
+      "pa": {
+        "systolic": 55,
+        "diastolic": 28,
+        "mean": 38
+      },
+      "pcwp": {
+        "a": 18,
+        "v": 60,
+        "mean": 28
+      },
+      "lv": {
+        "systolic": 115,
+        "edp": 18
+      },
+      "ao": {
+        "systolic": 105,
+        "diastolic": 65,
+        "mean": 78
+      }
+    },
+    "saturations": {
+      "svc": 60,
+      "ivc": 64,
+      "ra": 61,
+      "rv": 60,
+      "pa": 60,
+      "pv": 96,
+      "lv": 96,
+      "ao": 96
+    },
+    "co_l_min": 3.5,
+    "hr": 100,
+    "waveform_flags": [
+      "large_v_wave_pcwp"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 2.9,
+      "svr_dyn": 1590,
+      "tpg": 10,
+      "dpg": 0
+    },
+    "teaching_points_en": [
+      "A giant v wave appears on the wedge tracing; it coincides with the T wave and the LV downstroke.",
+      "A v wave above twice the mean PCWP suggests severe MR and above three times is considered diagnostic, but neither rule is well validated.",
+      "The v wave depends on LA compliance: a large chronic LA can hide severe MR, while a stiff LA shows big v waves.",
+      "A large v wave inflates mean PCWP above LVEDP; the reflected v wave can make the PA trace look like a camel's back.",
+      "Effective forward output is low even though total LV stroke volume is high."
+    ],
+    "teaching_points_tr": [
+      "Kama basıncı trasesinde dev v dalgası görülür; T dalgası ve sol ventrikül iniş koluyla çakışır.",
+      "Ortalama PCWP'nin iki katını aşan v dalgası ciddi MY'yi düşündürür, üç katını aşması tanısal kabul edilir; ancak bu kurallar iyi doğrulanmamıştır.",
+      "v dalgası sol atriyum kompliyansına bağlıdır: kronik geniş sol atriyum ciddi MY'yi gizleyebilir, sert sol atriyum ise büyük v dalgası verir.",
+      "Büyük v dalgası ortalama PCWP'yi LVEDP'nin üzerine çıkarır; yansıyan v dalgası PA trasesine deve hörgücü görünümü verebilir.",
+      "Toplam sol ventrikül atım hacmi yüksek olsa da etkin ileri debi düşüktür."
+    ],
+    "citations": [
+      "Source 1 p. 87",
+      "Source 1 p. 89",
+      "Source 1 p. 167",
+      "Source 1 p. 168",
+      "Source 1 p. 170",
+      "Source 1 p. 172",
+      "Source 1 p. 174",
+      "Source 4 p. 10",
+      "Source 2 p. 23"
+    ]
+  },
+  "aortic_regurgitation_severe": {
+    "label_en": "Severe aortic regurgitation",
+    "label_tr": "Ciddi aort yetersizliği",
+    "stations": {
+      "ra": {
+        "a": 8,
+        "v": 6,
+        "mean": 6
+      },
+      "rv": {
+        "systolic": 45,
+        "edp": 8
+      },
+      "pa": {
+        "systolic": 45,
+        "diastolic": 22,
+        "mean": 30
+      },
+      "pcwp": {
+        "a": 22,
+        "v": 26,
+        "mean": 20
+      },
+      "lv": {
+        "systolic": 160,
+        "edp": 28
+      },
+      "ao": {
+        "systolic": 160,
+        "diastolic": 40,
+        "mean": 80
+      }
+    },
+    "saturations": {
+      "svc": 68,
+      "ivc": 72,
+      "ra": 70,
+      "rv": 70,
+      "pa": 70,
+      "pv": 97,
+      "lv": 97,
+      "ao": 97
+    },
+    "co_l_min": 4.6,
+    "hr": 80,
+    "waveform_flags": [
+      "wide_pulse_pressure",
+      "dicrotic_notch_absent"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 2.2,
+      "svr_dyn": 1280,
+      "tpg": 10,
+      "dpg": 2
+    },
+    "teaching_points_en": [
+      "Chronic severe AR gives a wide pulse pressure with a low aortic diastolic pressure (diastolic usually below half of systolic).",
+      "LV diastolic pressure rises steeply and approaches aortic diastolic pressure at end-diastole.",
+      "Peripheral amplification is exaggerated, and the aortic trace may lose its dicrotic notch.",
+      "Acute AR lacks the wide pulse pressure; the mitral valve can close early as LV pressure overtakes LA pressure.",
+      "Fick and thermodilution measure forward output, not total transvalvular flow."
+    ],
+    "teaching_points_tr": [
+      "Kronik ciddi AY'de nabız basıncı geniş, aort diyastolik basıncı düşüktür (diyastolik genellikle sistoliğin yarısından azdır).",
+      "Sol ventrikül diyastolik basıncı dik yükselir ve diyastol sonunda aort diyastolik basıncına yaklaşır.",
+      "Periferik amplifikasyon belirginleşir; aort trasesinde dikrotik çentik kaybolabilir.",
+      "Akut AY'de geniş nabız basıncı yoktur; LV basıncı sol atriyum basıncını geçince mitral kapak erken kapanabilir.",
+      "Fick ve termodilüsyon toplam kapak akımını değil, ileri debiyi ölçer."
+    ],
+    "citations": [
+      "Source 1 p. 155",
+      "Source 1 p. 156",
+      "Source 1 p. 157",
+      "Source 1 p. 159",
+      "Source 1 p. 160",
+      "Source 1 p. 127",
+      "Source 4 p. 9",
+      "Source 2 p. 22",
+      "Source 3 p. 12"
+    ]
+  },
+  "hocm": {
+    "label_en": "Hypertrophic obstructive cardiomyopathy",
+    "label_tr": "Hipertrofik obstrüktif kardiyomiyopati (HOKM)",
+    "stations": {
+      "ra": {
+        "a": 9,
+        "v": 6,
+        "mean": 6
+      },
+      "rv": {
+        "systolic": 40,
+        "edp": 8
+      },
+      "pa": {
+        "systolic": 40,
+        "diastolic": 20,
+        "mean": 28
+      },
+      "pcwp": {
+        "a": 20,
+        "v": 24,
+        "mean": 18
+      },
+      "lv": {
+        "systolic": 190,
+        "edp": 22
+      },
+      "ao": {
+        "systolic": 125,
+        "diastolic": 70,
+        "mean": 88
+      }
+    },
+    "saturations": {
+      "svc": 68,
+      "ivc": 72,
+      "ra": 70,
+      "rv": 70,
+      "pa": 70,
+      "pv": 97,
+      "lv": 97,
+      "ao": 97
+    },
+    "co_l_min": 4.6,
+    "hr": 70,
+    "waveform_flags": [
+      "lv_ao_gradient",
+      "spike_and_dome",
+      "brockenbrough"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": 40,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 2.2,
+      "svr_dyn": 1420,
+      "tpg": 10,
+      "dpg": 2
+    },
+    "teaching_points_en": [
+      "The LV apex to aorta gradient is dynamic and changes with preload, afterload and contractility.",
+      "The aortic trace can show a spike-and-dome (bisferiens) contour that grows with provocation.",
+      "Brockenbrough-Braunwald-Morrow sign: after a PVC the gradient increases while aortic pulse pressure falls.",
+      "Provoke with Valsalva, nitrates or amyl nitrite, post-PVC beats or isoproterenol; avoid dobutamine.",
+      "LVEDP and PCWP are often raised with a prominent a wave; SAM-related MR can enlarge the v wave."
+    ],
+    "teaching_points_tr": [
+      "Sol ventrikül apeksi ile aort arasındaki gradiyent dinamiktir; ön yük, ard yük ve kontraktiliteyle değişir.",
+      "Aort trasesinde provokasyonla belirginleşen spike-and-dome (bisferiens) kontur görülebilir.",
+      "Brockenbrough-Braunwald-Morrow bulgusu: PVC sonrası atımda gradiyent artarken aort nabız basıncı düşer.",
+      "Provokasyon için Valsalva, nitrat veya amil nitrit, PVC sonrası atım ya da izoproterenol kullanılır; dobutaminden kaçınılır.",
+      "LVEDP ve PCWP çoğu kez yüksektir ve a dalgası belirgindir; SAM'a bağlı MY v dalgasını büyütebilir."
+    ],
+    "citations": [
+      "Source 1 p. 200",
+      "Source 1 p. 201",
+      "Source 1 p. 202",
+      "Source 1 p. 206",
+      "Source 1 p. 207",
+      "Source 1 p. 208",
+      "Source 1 p. 368",
+      "Source 3 p. 36"
+    ]
+  },
+  "constrictive_pericarditis": {
+    "label_en": "Constrictive pericarditis",
+    "label_tr": "Konstriktif perikardit",
+    "stations": {
+      "ra": {
+        "a": 20,
+        "v": 20,
+        "mean": 20
+      },
+      "rv": {
+        "systolic": 40,
+        "edp": 20
+      },
+      "pa": {
+        "systolic": 40,
+        "diastolic": 20,
+        "mean": 27
+      },
+      "pcwp": {
+        "a": 21,
+        "v": 22,
+        "mean": 20
+      },
+      "lv": {
+        "systolic": 110,
+        "edp": 22
+      },
+      "ao": {
+        "systolic": 105,
+        "diastolic": 70,
+        "mean": 82
+      }
+    },
+    "saturations": {
+      "svc": 62,
+      "ivc": 66,
+      "ra": 63,
+      "rv": 62,
+      "pa": 62,
+      "pv": 97,
+      "lv": 97,
+      "ao": 97
+    },
+    "co_l_min": 3.6,
+    "hr": 90,
+    "waveform_flags": [
+      "prominent_y_descent",
+      "square_root_sign",
+      "equalized_diastolic",
+      "kussmaul",
+      "ventricular_interdependence"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 2.0,
+      "svr_dyn": 1390,
+      "tpg": 7,
+      "dpg": 0
+    },
+    "teaching_points_en": [
+      "RA, RV, PCWP and LV diastolic pressures are elevated and within 5 mmHg of each other.",
+      "Ventricular traces show a dip-and-plateau (square-root) pattern; the RA shows a steep y descent and an M or W shape.",
+      "On inspiration RV systolic pressure rises while LV systolic pressure falls (discordance), the most specific sign.",
+      "RVEDP is usually above one third of RV systolic pressure and PA systolic pressure stays below about 50 mmHg.",
+      "Kussmaul sign is present in only a minority; hypovolemia can mask constriction, so give fluid before excluding it."
+    ],
+    "teaching_points_tr": [
+      "Sağ atriyum, sağ ventrikül, PCWP ve sol ventrikül diyastolik basınçları yüksektir ve birbirinden en fazla 5 mmHg farklıdır.",
+      "Ventrikül traselerinde dip-plato (kare kök işareti) paterni, sağ atriyumda derin y inişi ve M veya W şekli görülür.",
+      "İnspiryumda sağ ventrikül sistolik basıncı artarken sol ventrikül sistolik basıncı düşer (diskordans); en özgül bulgudur.",
+      "RVEDP genellikle sağ ventrikül sistolik basıncının üçte birinden fazladır; PA sistolik basıncı yaklaşık 50 mmHg'nin altında kalır.",
+      "Kussmaul işareti hastaların ancak azınlığında görülür; hipovolemi konstriksiyonu maskeleyebileceğinden dışlamadan önce sıvı verilir."
+    ],
+    "citations": [
+      "Source 1 p. 234",
+      "Source 1 p. 235",
+      "Source 1 p. 236",
+      "Source 1 p. 239",
+      "Source 1 p. 240",
+      "Source 1 p. 241",
+      "Source 1 p. 242",
+      "Source 1 p. 243",
+      "Source 4 p. 3",
+      "Source 4 p. 21",
+      "Source 4 p. 23",
+      "Source 4 p. 25"
+    ]
+  },
+  "restrictive_cardiomyopathy": {
+    "label_en": "Restrictive cardiomyopathy",
+    "label_tr": "Restriktif kardiyomiyopati",
+    "stations": {
+      "ra": {
+        "a": 18,
+        "v": 18,
+        "mean": 18
+      },
+      "rv": {
+        "systolic": 55,
+        "edp": 16
+      },
+      "pa": {
+        "systolic": 55,
+        "diastolic": 28,
+        "mean": 38
+      },
+      "pcwp": {
+        "a": 26,
+        "v": 30,
+        "mean": 25
+      },
+      "lv": {
+        "systolic": 105,
+        "edp": 26
+      },
+      "ao": {
+        "systolic": 100,
+        "diastolic": 70,
+        "mean": 80
+      }
+    },
+    "saturations": {
+      "svc": 60,
+      "ivc": 64,
+      "ra": 61,
+      "rv": 60,
+      "pa": 60,
+      "pv": 97,
+      "lv": 97,
+      "ao": 97
+    },
+    "co_l_min": 3.4,
+    "hr": 90,
+    "waveform_flags": [
+      "prominent_y_descent",
+      "square_root_sign"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 3.9,
+      "svr_dyn": 1470,
+      "tpg": 13,
+      "dpg": 3
+    },
+    "teaching_points_en": [
+      "Diastolic pressures are high with a dip-and-plateau pattern and a steep RA y descent, as in constriction.",
+      "LVEDP usually exceeds RVEDP by more than 5 mmHg, a separation that exercise or fluid loading accentuates.",
+      "RV and PA systolic pressures may exceed 50 mmHg and RVEDP is below one third of RV systolic pressure.",
+      "RV and LV systolic pressures fall together on inspiration (concordance), unlike constriction.",
+      "Hemodynamics alone often cannot separate restriction from constriction; about a quarter of patients remain unclassified."
+    ],
+    "teaching_points_tr": [
+      "Diyastolik basınçlar yüksektir; konstriksiyondaki gibi dip-plato paterni ve sağ atriyumda derin y inişi vardır.",
+      "LVEDP genellikle RVEDP'yi 5 mmHg'den fazla aşar; bu ayrışma egzersiz veya sıvı yüklemesiyle belirginleşir.",
+      "Sağ ventrikül ve PA sistolik basınçları 50 mmHg'yi aşabilir; RVEDP sağ ventrikül sistolik basıncının üçte birinden azdır.",
+      "İnspiryumda sağ ve sol ventrikül sistolik basınçları birlikte düşer (konkordans); konstriksiyondan farklıdır.",
+      "Yalnız hemodinamiyle restriksiyon ve konstriksiyon çoğu kez ayrılamaz; hastaların yaklaşık dörtte biri sınıflandırılamaz."
+    ],
+    "citations": [
+      "Source 1 p. 224",
+      "Source 1 p. 225",
+      "Source 1 p. 226",
+      "Source 1 p. 227",
+      "Source 1 p. 228",
+      "Source 1 p. 242",
+      "Source 1 p. 243",
+      "Source 4 p. 22",
+      "Source 4 p. 23"
+    ]
+  },
+  "tamponade": {
+    "label_en": "Cardiac tamponade",
+    "label_tr": "Kardiyak tamponad",
+    "stations": {
+      "ra": {
+        "a": 16,
+        "v": 14,
+        "mean": 15
+      },
+      "rv": {
+        "systolic": 35,
+        "edp": 15
+      },
+      "pa": {
+        "systolic": 35,
+        "diastolic": 16,
+        "mean": 22
+      },
+      "pcwp": {
+        "a": 16,
+        "v": 16,
+        "mean": 16
+      },
+      "lv": {
+        "systolic": 95,
+        "edp": 16
+      },
+      "ao": {
+        "systolic": 92,
+        "diastolic": 68,
+        "mean": 76
+      }
+    },
+    "saturations": {
+      "svc": 56,
+      "ivc": 60,
+      "ra": 57,
+      "rv": 55,
+      "pa": 55,
+      "pv": 96,
+      "lv": 96,
+      "ao": 96
+    },
+    "co_l_min": 3.0,
+    "hr": 112,
+    "waveform_flags": [
+      "blunted_y_descent",
+      "equalized_diastolic",
+      "pulsus_paradoxus",
+      "ventricular_interdependence"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 2.0,
+      "svr_dyn": 1600,
+      "tpg": 6,
+      "dpg": 0
+    },
+    "teaching_points_en": [
+      "RA, RVEDP, PA diastolic, PCWP and LVEDP are elevated and nearly equal (within about 5 mmHg).",
+      "The RA x descent is preserved but the y descent is blunted or absent; the RV shows no dip-and-plateau.",
+      "Pulsus paradoxus: inspiratory systolic fall of more than about 10-12 mmHg (or 9% or more), as RV filling squeezes LV filling.",
+      "Tachycardia maintains output until pericardial pressure approaches RA and RV diastolic pressure, then output falls.",
+      "After pericardiocentesis pericardial pressure falls toward zero and the y descent returns."
+    ],
+    "teaching_points_tr": [
+      "Sağ atriyum, RVEDP, PA diyastolik, PCWP ve LVEDP yükselmiş ve neredeyse eşitlenmiştir (yaklaşık 5 mmHg içinde).",
+      "Sağ atriyum x inişi korunur, y inişi küntleşir veya kaybolur; sağ ventrikülde dip-plato görülmez.",
+      "Pulsus paradoksus: inspiryumda sistolik basıncın yaklaşık 10-12 mmHg'den (veya %9'dan) fazla düşmesi; sağ ventrikül dolumu sol ventrikül dolumunu kısıtlar.",
+      "Taşikardi, perikard basıncı sağ atriyum ve sağ ventrikül diyastolik basıncına yaklaşana kadar debiyi korur; sonra debi düşer.",
+      "Perikardiyosentez sonrası perikard basıncı sıfıra iner ve y inişi geri gelir."
+    ],
+    "citations": [
+      "Source 1 p. 74",
+      "Source 1 p. 249",
+      "Source 1 p. 250",
+      "Source 1 p. 251",
+      "Source 1 p. 252",
+      "Source 1 p. 253",
+      "Source 1 p. 256",
+      "Source 4 p. 23"
+    ]
+  },
+  "precapillary_ph": {
+    "label_en": "Pre-capillary pulmonary hypertension (PAH)",
+    "label_tr": "Prekapiller pulmoner hipertansiyon (PAH)",
+    "stations": {
+      "ra": {
+        "a": 14,
+        "v": 10,
+        "mean": 10
+      },
+      "rv": {
+        "systolic": 80,
+        "edp": 12
+      },
+      "pa": {
+        "systolic": 80,
+        "diastolic": 32,
+        "mean": 50
+      },
+      "pcwp": {
+        "a": 9,
+        "v": 10,
+        "mean": 9
+      },
+      "lv": {
+        "systolic": 110,
+        "edp": 9
+      },
+      "ao": {
+        "systolic": 110,
+        "diastolic": 70,
+        "mean": 83
+      }
+    },
+    "saturations": {
+      "svc": 58,
+      "ivc": 62,
+      "ra": 60,
+      "rv": 60,
+      "pa": 60,
+      "pv": 95,
+      "lv": 95,
+      "ao": 95
+    },
+    "co_l_min": 3.6,
+    "hr": 85,
+    "waveform_flags": [],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 11.5,
+      "svr_dyn": 1640,
+      "tpg": 41,
+      "dpg": 23
+    },
+    "teaching_points_en": [
+      "Sources define PAH as mean PAP of 25 mmHg or more with PCWP of 15 mmHg or less and PVR above 3 Wood units.",
+      "PVR = (mean PAP - PCWP) / CO; multiply Wood units by 80 for dyn·s·cm-5.",
+      "A stiff hypertrophied RV produces prominent RA a waves; TR adds large v waves.",
+      "A positive vasodilator test is a mean PAP fall of at least 10 mmHg to below 40 mmHg without a fall in output.",
+      "In end-stage RV failure PA pressure may fall while RA rises above 20 mmHg and CI drops below 2.0."
+    ],
+    "teaching_points_tr": [
+      "Kaynaklara göre PAH: ortalama PAB 25 mmHg veya üzeri, PCWP 15 mmHg veya altı ve PVR 3 Wood biriminin üzerinde.",
+      "PVR = (ortalama PAB - PCWP) / KD; dyn·s·cm-5 için Wood birimini 80 ile çarpın.",
+      "Sert ve hipertrofik sağ ventrikül belirgin sağ atriyum a dalgalarına yol açar; TY büyük v dalgaları ekler.",
+      "Pozitif vazoreaktivite testi: debi düşmeden ortalama PAB'ın en az 10 mmHg azalarak 40 mmHg'nin altına inmesi.",
+      "Son dönem sağ ventrikül yetersizliğinde PA basıncı düşebilir, sağ atriyum 20 mmHg'yi aşar ve Kİ 2,0'ın altına iner."
+    ],
+    "citations": [
+      "Source 1 p. 322",
+      "Source 1 p. 324",
+      "Source 1 p. 325",
+      "Source 1 p. 326",
+      "Source 1 p. 327",
+      "Source 1 p. 42"
+    ]
+  },
+  "postcapillary_ph": {
+    "label_en": "Post-capillary pulmonary hypertension (left heart disease)",
+    "label_tr": "Postkapiller pulmoner hipertansiyon (sol kalp hastalığı)",
+    "stations": {
+      "ra": {
+        "a": 12,
+        "v": 12,
+        "mean": 11
+      },
+      "rv": {
+        "systolic": 45,
+        "edp": 12
+      },
+      "pa": {
+        "systolic": 45,
+        "diastolic": 25,
+        "mean": 32
+      },
+      "pcwp": {
+        "a": 24,
+        "v": 30,
+        "mean": 24
+      },
+      "lv": {
+        "systolic": 105,
+        "edp": 26
+      },
+      "ao": {
+        "systolic": 105,
+        "diastolic": 70,
+        "mean": 82
+      }
+    },
+    "saturations": {
+      "svc": 60,
+      "ivc": 64,
+      "ra": 62,
+      "rv": 62,
+      "pa": 62,
+      "pv": 96,
+      "lv": 96,
+      "ao": 96
+    },
+    "co_l_min": 3.7,
+    "hr": 85,
+    "waveform_flags": [],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 2.2,
+      "svr_dyn": 1550,
+      "tpg": 8,
+      "dpg": 1
+    },
+    "teaching_points_en": [
+      "WHO group 2 (left heart disease) is the most common cause of pulmonary hypertension.",
+      "Here the PA pressure rise is mostly passive: the transpulmonary gradient and PVR stay low.",
+      "TPG above 15 mmHg or PVR above 3 Wood units suggests added pulmonary vascular remodeling.",
+      "PA diastolic pressure tracks PCWP closely when the pulmonary vessels are not remodeled.",
+      "Before transplant, reversibility is tested (e.g., nitroprusside) when PASP exceeds 50, TPG 15 or PVR 3 Wood units."
+    ],
+    "teaching_points_tr": [
+      "DSÖ grup 2 (sol kalp hastalığı) pulmoner hipertansiyonun en sık nedenidir.",
+      "Burada PA basıncındaki artış büyük ölçüde pasiftir: transpulmoner gradiyent ve PVR düşük kalır.",
+      "TPG'nin 15 mmHg'yi veya PVR'nin 3 Wood birimini aşması eklenmiş pulmoner vasküler yeniden şekillenmeyi düşündürür.",
+      "Pulmoner damarlar yeniden şekillenmemişse PA diyastolik basıncı PCWP'yi yakından izler.",
+      "Transplant öncesinde PASB 50, TPG 15 veya PVR 3 Wood birimini aşarsa geri dönüşümlülük (ör. nitroprusid ile) test edilir."
+    ],
+    "citations": [
+      "Source 1 p. 216",
+      "Source 1 p. 217",
+      "Source 1 p. 219",
+      "Source 1 p. 322",
+      "Source 1 p. 328",
+      "Source 1 p. 329"
+    ]
+  },
+  "rv_infarct": {
+    "label_en": "Right ventricular infarction",
+    "label_tr": "Sağ ventrikül enfarktüsü",
+    "stations": {
+      "ra": {
+        "a": 16,
+        "v": 12,
+        "mean": 14
+      },
+      "rv": {
+        "systolic": 26,
+        "edp": 14
+      },
+      "pa": {
+        "systolic": 26,
+        "diastolic": 16,
+        "mean": 19
+      },
+      "pcwp": {
+        "a": 15,
+        "v": 16,
+        "mean": 15
+      },
+      "lv": {
+        "systolic": 90,
+        "edp": 15
+      },
+      "ao": {
+        "systolic": 88,
+        "diastolic": 55,
+        "mean": 66
+      }
+    },
+    "saturations": {
+      "svc": 53,
+      "ivc": 57,
+      "ra": 55,
+      "rv": 55,
+      "pa": 55,
+      "pv": 96,
+      "lv": 96,
+      "ao": 96
+    },
+    "co_l_min": 3.0,
+    "hr": 60,
+    "waveform_flags": [
+      "blunted_y_descent",
+      "kussmaul"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 1.3,
+      "svr_dyn": 1370,
+      "tpg": 4,
+      "dpg": 1
+    },
+    "teaching_points_en": [
+      "RA pressure is high with a blunted y descent; with intact RA function the trace forms a W (tall a, steep x).",
+      "Supportive criteria: mean RA of 10 mmHg or more with RA/PCWP of 0.8 or more, or RA within 1-5 mmHg of PCWP.",
+      "The RV trace shows a slow upstroke, low peak and rapidly rising, elevated diastolic pressure.",
+      "PA systolic and pulse pressure are low and systemic hypotension with a narrow pulse pressure is common.",
+      "Volume loading may unmask the pattern, but beyond a PCWP of about 15 mmHg more fluid rarely helps."
+    ],
+    "teaching_points_tr": [
+      "Sağ atriyum basıncı yüksektir ve y inişi küntleşmiştir; sağ atriyum fonksiyonu korunmuşsa trase W şeklindedir (yüksek a, derin x).",
+      "Destekleyici ölçütler: ortalama sağ atriyum basıncı 10 mmHg veya üzeri ve RA/PCWP oranı 0,8 veya üzeri, ya da RA'nın PCWP'ye 1-5 mmHg yakın olması.",
+      "Sağ ventrikül trasesinde yavaş yükseliş, düşük tepe ve hızla yükselen yüksek diyastolik basınç görülür.",
+      "PA sistolik ve nabız basıncı düşüktür; dar nabız basınçlı sistemik hipotansiyon sıktır.",
+      "Sıvı yüklemesi paterni ortaya çıkarabilir; ancak PCWP yaklaşık 15 mmHg'yi aşınca ek sıvı nadiren fayda sağlar."
+    ],
+    "citations": [
+      "Source 1 p. 314",
+      "Source 1 p. 316",
+      "Source 1 p. 317",
+      "Source 1 p. 318",
+      "Source 1 p. 319",
+      "Source 1 p. 320",
+      "Source 1 p. 366",
+      "Source 1 p. 86"
+    ]
+  },
+  "asd_left_to_right": {
+    "label_en": "Atrial septal defect (left-to-right shunt)",
+    "label_tr": "Atriyal septal defekt (soldan sağa şant)",
+    "stations": {
+      "ra": {
+        "a": 8,
+        "v": 8,
+        "mean": 7
+      },
+      "rv": {
+        "systolic": 35,
+        "edp": 6
+      },
+      "pa": {
+        "systolic": 35,
+        "diastolic": 14,
+        "mean": 22
+      },
+      "pcwp": {
+        "a": 8,
+        "v": 9,
+        "mean": 8
+      },
+      "lv": {
+        "systolic": 115,
+        "edp": 9
+      },
+      "ao": {
+        "systolic": 115,
+        "diastolic": 75,
+        "mean": 88
+      }
+    },
+    "saturations": {
+      "svc": 69,
+      "ivc": 64,
+      "ra": 80,
+      "rv": 82,
+      "pa": 84,
+      "pv": 98,
+      "lv": 98,
+      "ao": 98
+    },
+    "co_l_min": 4.1,
+    "hr": 75,
+    "waveform_flags": [
+      "step_up_atrial"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": 2.16,
+      "pvr_wu": 1.6,
+      "svr_dyn": 1570,
+      "tpg": 14,
+      "dpg": 6
+    },
+    "teaching_points_en": [
+      "Oximetry shows a saturation step-up at atrial level (7% or more from the venae cavae to the RA).",
+      "For an ASD, mixed venous saturation = (3 x SVC + IVC) / 4.",
+      "Qp/Qs = (arterial - mixed venous) / (pulmonary venous - PA saturation).",
+      "Qp/Qs 1.5-2.0 warrants considering closure; above 2 closure is advised unless contraindicated.",
+      "Increased pulmonary flow raises PA pressure while PVR stays normal early in the course."
+    ],
+    "teaching_points_tr": [
+      "Oksimetride atriyal düzeyde satürasyon basamaklanması vardır (vena kavalardan sağ atriyuma %7 veya üzeri).",
+      "ASD'de karışık venöz satürasyon = (3 x SVC + IVC) / 4.",
+      "Qp/Qs = (arteriyel - karışık venöz) / (pulmoner venöz - PA satürasyonu).",
+      "Qp/Qs 1,5-2,0 ise kapatma düşünülür; 2'nin üzerinde kontrendikasyon yoksa kapatma önerilir.",
+      "Artmış pulmoner akım PA basıncını yükseltir; hastalığın erken döneminde PVR normal kalır."
+    ],
+    "citations": [
+      "Source 1 p. 107",
+      "Source 1 p. 108",
+      "Source 1 p. 109",
+      "Source 1 p. 110",
+      "Source 1 p. 111",
+      "Source 1 p. 367",
+      "Source 4 p. 18",
+      "Source 4 p. 19",
+      "Source 4 p. 20"
+    ]
+  },
+  "vsd_left_to_right": {
+    "label_en": "Ventricular septal defect (left-to-right shunt)",
+    "label_tr": "Ventriküler septal defekt (soldan sağa şant)",
+    "stations": {
+      "ra": {
+        "a": 6,
+        "v": 5,
+        "mean": 5
+      },
+      "rv": {
+        "systolic": 42,
+        "edp": 7
+      },
+      "pa": {
+        "systolic": 42,
+        "diastolic": 16,
+        "mean": 26
+      },
+      "pcwp": {
+        "a": 12,
+        "v": 16,
+        "mean": 12
+      },
+      "lv": {
+        "systolic": 115,
+        "edp": 12
+      },
+      "ao": {
+        "systolic": 115,
+        "diastolic": 75,
+        "mean": 88
+      }
+    },
+    "saturations": {
+      "svc": 72,
+      "ivc": 76,
+      "ra": 74,
+      "rv": 84,
+      "pa": 85,
+      "pv": 98,
+      "lv": 98,
+      "ao": 98
+    },
+    "co_l_min": 5.2,
+    "hr": 80,
+    "waveform_flags": [
+      "step_up_ventricular"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": 1.85,
+      "pvr_wu": 1.5,
+      "svr_dyn": 1280,
+      "tpg": 14,
+      "dpg": 4
+    },
+    "teaching_points_en": [
+      "The saturation step-up appears between RA and RV (5% or more at ventricular level).",
+      "For a VSD, mixed venous saturation is taken from the RA, the chamber proximal to the step-up.",
+      "Qp/Qs from saturations is independent of hemoglobin and linearly related to shunt flow.",
+      "Shunt volume equals Qp minus Qs; the ratio alone does not give the shunted volume.",
+      "Extra pulmonary venous return loads the LA and LV, so PCWP and LVEDP can rise."
+    ],
+    "teaching_points_tr": [
+      "Satürasyon basamaklanması sağ atriyum ile sağ ventrikül arasında görülür (ventriküler düzeyde %5 veya üzeri).",
+      "VSD'de karışık venöz satürasyon basamaklanmanın proksimalindeki boşluktan, yani sağ atriyumdan alınır.",
+      "Satürasyonlardan hesaplanan Qp/Qs hemoglobinden bağımsızdır ve şant akımıyla doğrusal ilişkilidir.",
+      "Şant hacmi Qp eksi Qs'ye eşittir; oran tek başına şant hacmini vermez.",
+      "Artan pulmoner venöz dönüş sol atriyum ve sol ventrikülü yükler; PCWP ve LVEDP yükselebilir."
+    ],
+    "citations": [
+      "Source 1 p. 107",
+      "Source 1 p. 108",
+      "Source 1 p. 109",
+      "Source 1 p. 110",
+      "Source 4 p. 18",
+      "Source 4 p. 19"
+    ]
+  },
+  "acute_lv_failure": {
+    "label_en": "Acute left ventricular failure (cardiogenic shock)",
+    "label_tr": "Akut sol ventrikül yetersizliği (kardiyojenik şok)",
+    "stations": {
+      "ra": {
+        "a": 16,
+        "v": 15,
+        "mean": 15
+      },
+      "rv": {
+        "systolic": 45,
+        "edp": 15
+      },
+      "pa": {
+        "systolic": 45,
+        "diastolic": 30,
+        "mean": 35
+      },
+      "pcwp": {
+        "a": 26,
+        "v": 40,
+        "mean": 28
+      },
+      "lv": {
+        "systolic": 92,
+        "edp": 30
+      },
+      "ao": {
+        "systolic": 86,
+        "diastolic": 50,
+        "mean": 62
+      }
+    },
+    "saturations": {
+      "svc": 48,
+      "ivc": 52,
+      "ra": 50,
+      "rv": 50,
+      "pa": 50,
+      "pv": 94,
+      "lv": 94,
+      "ao": 94
+    },
+    "co_l_min": 2.8,
+    "hr": 110,
+    "waveform_flags": [
+      "large_v_wave_pcwp"
+    ],
+    "derived": {
+      "gradient_mean_mmHg": null,
+      "valve_area_cm2": null,
+      "qp_qs": null,
+      "pvr_wu": 2.5,
+      "svr_dyn": 1330,
+      "tpg": 7,
+      "dpg": 2
+    },
+    "teaching_points_en": [
+      "PCWP is high, often with prominent v waves from a stiff LA or LV or functional MR; mean PCWP then overstates preload.",
+      "A low cardiac index (below 2.2 L/min/m2 in acute HF) with high filling pressures defines cardiogenic shock.",
+      "Low LV systolic pressure despite a high LVEDP signals severely depressed contractility.",
+      "Mixed venous saturation is low (often below 60%) as tissues extract more oxygen.",
+      "SVR is typically normal to high; tachycardia supports output when stroke volume is small."
+    ],
+    "teaching_points_tr": [
+      "PCWP yüksektir; sert sol atriyum veya sol ventrikül ya da fonksiyonel MY nedeniyle çoğu kez belirgin v dalgaları vardır ve ortalama PCWP ön yükü olduğundan yüksek gösterir.",
+      "Yüksek dolum basınçlarıyla birlikte düşük kardiyak indeks (akut KY'de 2,2 L/dk/m2 altı) kardiyojenik şoku tanımlar.",
+      "Yüksek LVEDP'ye karşın düşük sol ventrikül sistolik basıncı ciddi kontraktilite kaybını gösterir.",
+      "Dokular daha fazla oksijen çektiği için karışık venöz satürasyon düşüktür (çoğu kez %60'ın altında).",
+      "SVR tipik olarak normal veya yüksektir; atım hacmi küçükken taşikardi debiyi destekler."
+    ],
+    "citations": [
+      "Source 1 p. 46",
+      "Source 1 p. 47",
+      "Source 1 p. 216",
+      "Source 1 p. 217",
+      "Source 1 p. 218",
+      "Source 1 p. 355",
+      "Source 1 p. 367",
+      "Source 1 p. 18"
+    ]
+  },
+  "assumptions": [
+    "Sources give ranges or single worked examples, not complete per-scenario pressure sets; every station value in every scenario is an interpolation within the ranges and examples cited for that scenario.",
+    "Normal a and v wave amplitudes (RA a 6 / v 4; PCWP a 8 / v 10) are not stated numerically in any source; only the relations RA a > v and LA v >= a are sourced (Source 1 p. 83).",
+    "Normal SVC 74% and IVC 78% saturations are assumed (right-heart chambers 76%); sources state only that right-heart blood is about 75% and left-heart blood 95-98% (Source 1 p. 144, p. 43, p. 218).",
+    "Pulmonary venous saturation is set equal to arterial saturation (Source 1 p. 108-109 allows arterial as a substitute); Source 4 p. 18 instead assumes 95%.",
+    "Cardiac output in every scenario is computed by Fick from the listed saturations with BSA 1.9 m2, hemoglobin 14 g/dL, VO2 125 mL/min/m2 (Source 1 p. 96; Source 1 p. 41 uses 130) and 1.36 mL O2/g Hb. BSA and hemoglobin are assumptions.",
+    "For shunt scenarios co_l_min is systemic flow Qs; PVR is computed with pulmonary flow Qp.",
+    "SVR = (Ao mean - RA mean) x 80 / CO; PVR = (PA mean - PCWP mean) / flow; TPG and DPG as defined in units. DPG is not defined in any source and is included only as a derived number.",
+    "Aortic stenosis valve area uses Gorlin with SEP 0.33 s/beat (the value used in Source 1 p. 116 and p. 128) and mean gradient 50 mmHg; heart rate 70.",
+    "Mitral stenosis valve area uses Gorlin (constant 37.7) with DFP 0.40 s/beat, derived from the HR x DFP = 32 modelling assumption in Source 1 p. 142, and mean gradient 15 mmHg.",
+    "HOCM gradient_mean_mmHg of 40 is an interpolation; sources describe HOCM gradients as peak values (resting obstruction >= 30 mmHg; 65 mmHg in Source 3 p. 36; > 100 mmHg post-PVC in Source 1 p. 368). The station values give a peak-to-peak gradient of 65 mmHg.",
+    "Mitral regurgitation is modeled as acute severe MR with a noncompliant LA (v wave about 2.1 x mean PCWP); chronic severe MR with a large compliant LA may show no large v wave (Source 1 p. 87, p. 170).",
+    "Aortic regurgitation is modeled as chronic severe AR beginning to decompensate (LVEDP 28, aortic diastolic 40); acute AR would instead show a narrow pulse pressure with LV and aortic diastolic equalization (Source 1 p. 159-160).",
+    "Constrictive pericarditis values follow the reported LVEDP - RVEDP 4 +/- 4 mmHg and RVEDP/RVSP 0.57 +/- 0.14 (Source 1 p. 239-240); restrictive values follow LVEDP - RVEDP > 5, RVSP > 50 and RVEDP/RVSP < 1/3 (Source 1 p. 225).",
+    "Tamponade systemic pressure and heart rate follow the case in Source 1 p. 256 (BP 92/68, HR 112); other stations are interpolated to equalize near 15-16 mmHg.",
+    "Post-capillary PH is modeled as the isolated (passive) form; the isolated vs combined classification and DPG criteria are not in the sources.",
+    "ASD saturations reproduce the worked example in Source 1 p. 111 (SVC 69, IVC 64, RV 82, PA 84, arterial 98); the RA value of 80% is an interpolation. VSD saturations and all ASD/VSD pressures are interpolations.",
+    "Acute LV failure pressures follow the cardiogenic shock case in Source 1 p. 46-47 (CVP 15, PA 45/30, PCWP 26, HR 120, BP 86/40); PCWP a/v values, LVEDP 30 (compare Source 1 p. 367, LVEDP 32 with LV systolic 95) and saturations are interpolations.",
+    "RV infarct values are set to satisfy the sourced criteria (mean RA >= 10, RA/PCWP >= 0.8, RA within 1-5 mmHg of PCWP, low PA pulse pressure/RA ratio; Source 1 p. 320); bradycardia (HR 60) is an assumption typical of inferior MI.",
+    "Waveform flags blunted_y_descent, prominent_y_descent and kussmaul refer to the RA tracing; step_up flags refer to oximetry; qp_qs is null for non-shunt scenarios except normal (1.0)."
+  ]
+}

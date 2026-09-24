@@ -47,15 +47,53 @@ export const rawStructures = {
   la: {
     tr: {
       title: 'Sol atriyum • LA',
-      description: 'En posterior kardiyak odacıktır; pulmoner venlerden oksijenlenmiş kanı alır. Atriyal miyokardiyal kılıflar venlerin üzerine değişken biçimde uzanır.',
+      description: 'En posterior kardiyak odacıktır; pulmoner venlerden oksijenlenmiş kanı alır. Atriyal miyokardiyal kılıflar venlerin üzerine değişken biçimde uzanır. Sol atriyal apendiks anterolateral duvardan öne ve sola uzanır (halka işareti).',
       clinical: 'Pulmoner ven anatomisi değişkenlik gösterir. Posterior duvar, bu şematik modelde gösterilmeyen özofagus ile çok yakın komşuluktadır.'
     },
     en: {
       title: 'Left atrium • LA',
-      description: 'The most posterior chamber receives pulmonary veins. Atrial muscle sleeves extend over the veins, with variable length and arrangement.',
+      description: 'The most posterior chamber receives pulmonary veins. Atrial muscle sleeves extend over the veins, with variable length and arrangement. The left atrial appendage projects anteriorly and to the left from the anterolateral wall (ring marker).',
       clinical: 'Pulmonary vein anatomy varies. The posterior wall lies near the esophagus, which is omitted from this schematic.'
     },
     source: `${la}; Ho et al., 2012, PDF p. 8`
+  },
+  laa: {
+    tr: {
+      title: 'Sol atriyal apendiks ağzı • LAA',
+      description: 'Sol atriyumun anterolateral duvarından öne ve sola uzanan, çok loblu, pektinat kaslı trabeküle çıkıntı. Boynu sol süperior pulmoner ven ağzının önünde yer alır; ikisini sol lateral sırt (Coumadin sırtı) ayırır. Gövdesi pulmoner trunkusun solunda, sol AV olukta seyreden sirkumfleks arter ve büyük kardiyak venin üzerinde durur. Halka, atlas LA ağının ön lobunun ölçülen boynuna oturtulmuş şematik ağız işaretidir; atlasta ayrı apendiks düğümü yoktur.',
+      clinical: 'Atriyal fibrilasyonda trombüsün en sık yeridir; perkütan LAA kapama cihazı ağız çapına (tipik 1,5–3 cm) ve derinliğe göre seçilir. Sol frenik sinir apendiks üzerinden geçer. Sol WACA halkasının ön kenarı sırt üzerinde, LSPV ile apendiks arasındaki dar alanda çizilir; burada kateter stabilitesi zordur.'
+    },
+    en: {
+      title: 'Left atrial appendage orifice • LAA',
+      description: 'A multilobed, trabeculated (pectinate) pouch projecting anteriorly and to the left from the anterolateral LA wall. Its neck lies in front of the left superior pulmonary vein ostium, separated from it by the left lateral ridge (Coumadin ridge); the body sits to the left of the pulmonary trunk, over the circumflex artery and great cardiac vein in the left AV groove. The ring is a schematic orifice marker fitted to the measured neck of the atlas LA anterior lobe; the atlas has no separate appendage node.',
+      clinical: 'The commonest site of thrombus in atrial fibrillation; percutaneous LAA occluders are sized to the orifice diameter (typically 1.5–3 cm) and depth. The left phrenic nerve courses over the appendage. The anterior edge of the left WACA ring runs on the ridge, in the narrow zone between the LSPV and the appendage, where catheter stability is difficult.'
+    },
+    source: 'Ho et al., 2012 (left atrial anatomy); schematic ring on the measured atlas lobe'
+  },
+  'ausc-aortic': {
+    tr: { title: 'Aort odağı • Sağ 2. interkostal aralık', description: 'Sternumun sağ kenarında 2. interkostal aralık. Aort darlığının ejeksiyon üfürümü burada en iyi duyulur ve karotislere yayılır; A2 bu odakta belirgindir.', clinical: 'Şematik odak: ölçülen pulmoner kapak seviyesi ve sternal orta hattan türetilmiştir, yüzey anatomisi ölçümü değildir.' },
+    en: { title: 'Aortic area • 2nd right intercostal space', description: 'Right sternal border, 2nd intercostal space. The ejection murmur of aortic stenosis is loudest here and radiates to the carotids; A2 is prominent.', clinical: 'Schematic area derived from the measured pulmonary valve level and the sternal midline, not a surface anatomy measurement.' },
+    source: 'Physical examination teaching; schematic projection'
+  },
+  'ausc-pulmonic': {
+    tr: { title: 'Pulmoner odak • Sol 2. interkostal aralık', description: 'Sternumun sol kenarında 2. interkostal aralık. Pulmoner darlık, akım üfürümleri ve S2 ayrılması (A2-P2) burada değerlendirilir; P2 en iyi burada duyulur.', clinical: 'S2 ayrılması inspiryumda genişler; sabit geniş ayrılma ASD, paradoks ayrılma sol dal bloğu veya ciddi aort darlığı düşündürür. Şematik odak.' },
+    en: { title: 'Pulmonic area • 2nd left intercostal space', description: 'Left sternal border, 2nd intercostal space. Pulmonic stenosis, flow murmurs and S2 splitting (A2-P2) are assessed here; P2 is heard best.', clinical: 'S2 splitting widens on inspiration; fixed wide splitting suggests ASD, paradoxical splitting LBBB or severe aortic stenosis. Schematic area.' },
+    source: 'Physical examination teaching; schematic projection'
+  },
+  'ausc-erb': {
+    tr: { title: 'Erb noktası • Sol 3. interkostal aralık', description: 'Sol parasternal 3. interkostal aralık. Aort yetersizliğinin dekreşendo diyastolik üfürümü (hasta öne eğilmiş, ekspiryumda) ve HOKM üfürümü burada iyi duyulur.', clinical: 'HOKM üfürümü karotise az yayılır, Valsalva ve ayağa kalkmakla artar; aort darlığı üfürümü ise karotise yayılır ve bu manevralarla azalır. Şematik odak.' },
+    en: { title: "Erb's point • 3rd left intercostal space", description: 'Left parasternal 3rd intercostal space. The decrescendo diastolic murmur of aortic regurgitation (sitting forward, held expiration) and the HOCM murmur are well heard here.', clinical: 'The HOCM murmur radiates little to the carotids and grows with Valsalva and standing; the aortic stenosis murmur radiates to the carotids and softens with them. Schematic area.' },
+    source: 'Physical examination teaching; schematic projection'
+  },
+  'ausc-tricuspid': {
+    tr: { title: 'Triküspit odağı • Sol alt sternal kenar', description: 'Sol alt sternal kenar, 4.-5. interkostal aralık. Triküspit yetersizliği ve VSD üfürümleri burada duyulur; sağ kalp kaynaklı üfürümler inspiryumda artar (Carvallo).', clinical: 'Lembo 1988: inspiryumda artış, sağ kalp üfürümlerini diğerlerinden %100 duyarlılık ve %88 özgüllükle ayırdı. Şematik odak: ölçülen triküspit anulus seviyesinden türetilmiştir.' },
+    en: { title: 'Tricuspid area • Lower left sternal border', description: 'Lower left sternal border, 4th-5th intercostal space. Tricuspid regurgitation and VSD murmurs are heard here; right-sided murmurs grow with inspiration (Carvallo).', clinical: 'Lembo 1988: augmentation with inspiration separated right-sided murmurs from all others with 100% sensitivity and 88% specificity. Schematic area derived from the measured tricuspid annulus level.' },
+    source: 'Lembo et al., N Engl J Med 1988;318:1572-8; schematic projection'
+  },
+  'ausc-mitral': {
+    tr: { title: 'Mitral odak • Apeks', description: 'Apeks, 5. interkostal aralık, midklaviküler hat. Mitral yetersizliği (aksillaya yayılır), mitral darlığı rulmanı, S3 ve S4 burada duyulur; düşük frekanslı sesler için sol lateral dekübitte çan kullanılır.', clinical: 'Mitral darlığında açılma sesi ve presistolik belirginleşme aranır; MVP\'de klik ayağa kalkınca S1\'e yaklaşır. Şematik odak: ölçülen LV apeksinden göğüs düzlemine yansıtılmıştır.' },
+    en: { title: 'Mitral area • Apex', description: 'Apex, 5th intercostal space, midclavicular line. Mitral regurgitation (radiating to the axilla), the mitral stenosis rumble, S3 and S4 are heard here; use the bell in left lateral decubitus for low-pitched sounds.', clinical: 'In mitral stenosis look for an opening snap and presystolic accentuation; in MVP the click moves toward S1 on standing. Schematic area projected from the measured LV apex.' },
+    source: 'Physical examination teaching; schematic projection'
   },
   rv: {
     tr: {
@@ -661,12 +699,12 @@ export const rawStructures = {
   lspv: {
     tr: {
       title: 'Sol süperior pulmoner ven • LSPV',
-      description: 'Sol akciğerin üst lobundan oksijenlenmiş kanı sol atriyumun arka-üst (anterosüperior) tarafına iletir.',
+      description: 'Sol akciğerin üst lobundan oksijenlenmiş kanı sol atriyumun posterosüperior duvarına iletir. Ağzının hemen önünde sol lateral sırt (Coumadin sırtı) ve sol atriyal apendiks ağzı bulunur.',
       clinical: 'Atriyal fibrilasyon (AF) kateter ablasyonunda aritmojenik tetikleyici odakların en sık izlendiği ostiyumdur; geniş antral dairesel ablasyon (WACA) ile izole edilir.'
     },
     en: {
       title: 'Left superior pulmonary vein • LSPV',
-      description: 'Drains oxygenated blood from the left upper lung lobe into the posterosuperior left atrium.',
+      description: 'Drains oxygenated blood from the left upper lung lobe into the posterosuperior left atrium. The left lateral ridge (Coumadin ridge) and the appendage orifice lie just anterior to its ostium.',
       clinical: 'Most common site of arrhythmogenic triggers in atrial fibrillation; targeted by wide antral circumferential ablation (WACA).'
     },
     source: 'Ho et al., 2012, PDF pp. 2–3'
@@ -675,12 +713,12 @@ export const rawStructures = {
     tr: {
       title: 'Sol inferior pulmoner ven • LIPV',
       description: 'Sol akciğerin alt lobundan gelen venöz kanı sol atriyumun arka-alt duvarına boşaltır.',
-      clinical: 'İnen torasik aort ve sol frenik sinir ile yakın posterolateral komşuluktadır; kriyobalon veya RF uygulamalarında enerji titrasyonu önemlidir.'
+      clinical: 'Arkasında özofagus ve inen torasik aort bulunur; izolasyonda özofagus ısı takibi ve enerji titrasyonu gerekir.'
     },
     en: {
       title: 'Left inferior pulmonary vein • LIPV',
       description: 'Drains the left lower lung lobe into the posteroinferior aspect of the left atrium.',
-      clinical: 'Lies in close proximity to the descending thoracic aorta and left phrenic nerve; careful energy titration is required during isolation.'
+      clinical: 'The esophagus and the descending thoracic aorta lie behind it; esophageal temperature monitoring and energy titration are needed during isolation.'
     },
     source: 'Ho et al., 2012, PDF pp. 2–3'
   },
@@ -1151,7 +1189,92 @@ export const rawLessons = {
         }
       ]
     }
+  },
+  hemodynamics: {
+    tr: {
+      title: 'İnteraktif hemodinami • Basınç eğrileri ve hesaplamalar',
+      intro: 'Sağ ve sol kalp basınç eğrileri aynı kalp döngüsü saatinde, EKG ve 3B kapak hareketiyle senkron çizilir. Senaryo seçin, kanalları üst üste bindirin, solunumu açın, ekstrasistol tetikleyin; gradyan, kapak alanı, direnç ve şant hesapları anlık güncellenir. Eğriler ders kitabı tipinde şematik şekillerdir, hasta kaydı değildir.',
+      steps: [
+        { title: 'Ölçüm tekniği ve normal değerler', text: 'Sıfırlama ve seviyeleme flebostatik eksende (orta göğüs) yapılır; değerler ekspiryum sonunda okunur. Sıvı dolu sistemde aşırı sönümleme dalgayı yuvarlar, yetersiz sönümleme ve kateter kırbacı sahte tepeler üretir. Normal: RA ort < 5, RV 25/5, PA 25/10 ort < 15, PCWP ort < 12, LV 120/8, aort 120/80 mmHg.', scenario: 'normal', channels: ['ra', 'ao'], beats: 2, respiration: true, landmark: 'cath-ra', view: 'anterior' },
+        { title: 'Sağ atriyum dalgaları', text: 'a dalgası P dalgasını izleyen atriyal kasılmadır; c dalgası triküspit kapanışında kapağın RA\'ya bombelenmesi, x inişi atriyal gevşeme ve anulusun aşağı çekilmesi, v dalgası sistolde venöz doluş, y inişi triküspit açılmasıyla boşalmadır. Solunumu açın: inspiryumda tüm basınçlar birkaç mmHg düşer.', scenario: 'normal', channels: ['ra'], beats: 2, respiration: true, landmark: 'cath-ra', view: 'rao' },
+        { title: 'Sağ ventrikül ve pulmoner arter', text: 'RV diyastolik basıncı erken diyastolde en düşüktür, yavaş yükselir ve atriyal kasılma ile RVEDP\'ye ulaşır (QRS başlangıcı). PA eğrisinde dikrotik çentik pulmoner kapak kapanışını gösterir; normalde PA diyastolik basıncı PCWP\'nin birkaç mmHg üstündedir.', scenario: 'normal', channels: ['rv', 'pa'], beats: 2, respiration: false, landmark: 'cath-pa', view: 'anterior' },
+        { title: 'Kama basıncı (PCWP) ve sol atriyum', text: 'Balon distal PA dalını tıkayınca sol atriyum basıncı gecikmeli (kaynaklara göre 50–150 ms) ve sönümlenmiş olarak yansır: a ve v dalgaları, x ve y inişleri. Gerçek kama için dalga şekli, PA\'dan daha düşük ortalama ve arteriyel düzeyde satürasyon (> %95) birlikte aranır. Diyastolde LV ile PCWP çakışır; aradaki fark mitral gradyanıdır.', scenario: 'normal', channels: ['lv', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'rao' },
+        { title: 'Sol ventrikül ve aort', text: 'LV basıncı izovolümetrik kasılmada dik yükselir, aort kapağı açılınca iki eğri üst üste biner, S2\'de dikrotik çentikle ayrılır. Aort diyastolik basıncı bir sonraki açılışa dek iner. Geri çekmede LV sistolik ile aort sistolik farkı tepe-tepe gradyandır; periferde sistolik yükselir, ortalama korunur (amplifikasyon).', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-lv', view: 'lao' },
+        { title: 'Debi, dirençler ve şant taraması', text: 'Fick: CO = VO₂ / (Hb × 1,36 × 10 × (SaO₂ − SvO₂)); VO₂ ölçülmezse 125 mL/dk/m² varsayılır. PVR = (mPAP − PCWP) / CO (Wood), SVR = (MAP − RA) / CO × 80 (dyn). Karışık venöz = (3 SVC + IVC) / 4; RA\'da ≥ %7, RV veya PA\'da ≥ %5 basamak artışı soldan sağa şantı gösterir. Bu ASD senaryosunda Qp/Qs yaklaşık 2\'dir; hesaplayıcıları açın.', scenario: 'asd_left_to_right', channels: ['ra', 'pa'], beats: 2, respiration: false, calculators: true, landmark: 'cath-ra', view: 'anterior' },
+        { title: 'Aort darlığı', text: 'Ejeksiyon boyunca LV aortun üzerindedir; boyalı alan ortalama gradyandır. Aort eğrisi geç ve yavaş tepe yapar (parvus et tardus). Gorlin: alan = akım / (44,3 × √ortalama gradyan), akım = CO / (KH × SEP). PVC düğmesine basın: sabit darlıkta ekstrasistol sonrası atımda gradyan da aort nabız basıncı da artar.', scenario: 'aortic_stenosis_severe', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-ao', view: 'lao' },
+        { title: 'Hipertrofik obstrüktif kardiyomiyopati', text: 'Dinamik obstrüksiyonda aort eğrisi erken tepe (spike), sistol ortasında çöküş ve ikinci kubbe (dome) gösterir; gradyan ejeksiyonun ortasında ve sonunda oluşur. PVC düğmesine basın: ekstrasistol sonrası atımda gradyan artarken aort nabız basıncı düşer (Brockenbrough-Braunwald-Morrow işareti), sabit aort darlığının tersi.', scenario: 'hocm', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-lv', view: 'lao' },
+        { title: 'Mitral darlığı', text: 'Diyastol boyunca PCWP LV\'nin üstünde kalır; boyalı alan ortalama diyastolik gradyandır. Gorlin sabiti 37,7, akım penceresi diyastolik doluş süresidir (DFP); taşikardi ve atriyal fibrilasyon DFP\'yi kısaltıp gradyanı büyütür. Kama gecikmesi düzeltilmezse gradyan abartılır.', scenario: 'mitral_stenosis_severe', channels: ['lv', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'rao' },
+        { title: 'Mitral yetersizliği', text: 'Sistolde sol atriyuma kaçan kan kama eğrisinde dev v dalgası yapar; v dalgası ortalama PCWP\'nin iki katını aşarsa anlamlıdır. Kompliyan, kronik genişlemiş atriyumda v dalgası küçük kalabilir; akut yetersizlikte belirgindir. Aynı dev v dalgası akut LV yetersizliğinde de görülür.', scenario: 'mitral_regurgitation_severe', channels: ['lv', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'rao' },
+        { title: 'Aort yetersizliği', text: 'Kronik ciddi AY\'de nabız basıncı genişler, aort diyastolik basıncı düşer, LVEDP yükselir; diyastol sonunda LV ve aort basınçları birbirine yaklaşır. Akut ciddi AY\'de LVEDP aort diyastoliğine eşitlenir, mitral erken kapanır ve nabız basıncı beklendiği kadar geniş olmayabilir.', scenario: 'aortic_regurgitation_severe', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-ao', view: 'lao' },
+        { title: 'Konstriktif perikardit', text: 'Diyastolik basınçlar yüksek ve 5 mmHg içinde eşitlenmiştir; ventrikül eğrisinde erken dip ve plato (kare kök işareti), RA\'da belirgin y inişi. Solunumu açın: inspiryumda LV sistolik düşer, RV sistolik yükselir (ventriküler bağımlılık, uyumsuz değişim); RA basıncı düşmez, hatta artar (Kussmaul).', scenario: 'constrictive_pericarditis', channels: ['lv', 'rv'], beats: 4, respiration: true, landmark: 'cath-rv', view: 'anterior' },
+        { title: 'Restriktif kardiyomiyopati', text: 'Dip-plato benzer görünür ama diyastolik basınçlar eşit değildir: LVEDP, RVEDP\'yi 5 mmHg\'den fazla aşar, PA sistolik sık sık 50 mmHg\'yi geçer. Solunumla LV ve RV sistolik basınçları aynı yönde değişir (uyumlu). Konstriksiyondan ayrımda bu iki bulgu esastır.', scenario: 'restrictive_cardiomyopathy', channels: ['lv', 'rv'], beats: 4, respiration: true, landmark: 'cath-lv', view: 'anterior' },
+        { title: 'Kardiyak tamponad', text: 'Perikard basıncı diyastolik basınçları eşitler; RA\'da y inişi silinir (ventriküler doluş sınırlıdır), x inişi korunur. Debi düşük, kalp hızı yüksektir. Solunumu açın: inspiryumda aort sistolik basıncı 10 mmHg\'den fazla düşer (pulsus paradoksus). Perikardiyosentez sonrası y inişi geri döner.', scenario: 'tamponade', channels: ['ra', 'ao'], beats: 4, respiration: true, landmark: 'cath-ra', view: 'anterior' },
+        { title: 'Pulmoner hipertansiyon', text: 'mPAP > 20 mmHg pulmoner hipertansiyondur (2022 ESC/ERS; eski kaynaklar ≥ 25 mmHg ve PVR > 3 WU kullanır); PCWP ≤ 15 ve PVR > 2 WU ise prekapiller, PCWP > 15 ise postkapiller. TPG = mPAP − PCWP, DPG = PA diyastolik − PCWP; DPG ≥ 7 ve PVR > 2 WU kombine pre- ve postkapiller hastalığı gösterir. Senaryoyu izole postkapiller PH ile karşılaştırın.', scenario: 'precapillary_ph', channels: ['pa', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-pa', view: 'anterior' },
+        { title: 'Sağ ventrikül infarktı ve akut sol kalp yetersizliği', text: 'RV infarktında RA basıncı yükselir, y inişi küner, RA/PCWP oranı 0,8\'i aşar ve Kussmaul görülebilir; PA ve PCWP görece düşüktür. Akut LV yetersizliği senaryosunda ise PCWP dev v dalgasıyla yüksek, debi düşük ve karışık venöz satürasyon azalmıştır.', scenario: 'rv_infarct', channels: ['ra', 'pcwp'], beats: 3, respiration: true, landmark: 'cath-ra', view: 'rao' }
+      ]
+    },
+    en: {
+      title: 'Interactive hemodynamics • Pressure tracings and calculations',
+      intro: 'Right and left heart pressure tracings are drawn on the shared cardiac clock, in step with the ECG and the 3D valve motion. Pick a scenario, overlay channels, switch respiration on, trigger a PVC; gradients, valve areas, resistances and shunt ratios update live. The curves are textbook-style schematic shapes, not patient recordings.',
+      steps: [
+        { title: 'Measurement technique and normal values', text: 'Zero and level at the phlebostatic axis (mid-chest); read values at end-expiration. In fluid-filled systems overdamping rounds the waveform, underdamping and catheter whip create false peaks. Normal: RA mean < 5, RV 25/5, PA 25/10 mean < 15, PCWP mean < 12, LV 120/8, aorta 120/80 mmHg.', scenario: 'normal', channels: ['ra', 'ao'], beats: 2, respiration: true, landmark: 'cath-ra', view: 'anterior' },
+        { title: 'Right atrial waves', text: 'The a wave is atrial contraction following the P wave; the c wave is the tricuspid bulging into the RA at closure, the x descent atrial relaxation with annular descent, the v wave venous filling during systole, the y descent emptying as the tricuspid opens. Switch respiration on: all pressures fall a few mmHg with inspiration.', scenario: 'normal', channels: ['ra'], beats: 2, respiration: true, landmark: 'cath-ra', view: 'rao' },
+        { title: 'Right ventricle and pulmonary artery', text: 'RV diastolic pressure is lowest in early diastole, rises slowly and reaches the RVEDP with atrial contraction (QRS onset). The PA dicrotic notch marks pulmonary valve closure; normally PA diastolic pressure sits a few mmHg above the PCWP.', scenario: 'normal', channels: ['rv', 'pa'], beats: 2, respiration: false, landmark: 'cath-pa', view: 'anterior' },
+        { title: 'Wedge pressure (PCWP) and the left atrium', text: 'With the balloon occluding a distal PA branch, left atrial pressure is transmitted delayed (50–150 ms depending on the source) and damped: a and v waves, x and y descents. A true wedge is confirmed by the waveform, a mean below the PA pressure and an arterial-level saturation (> 95%). In diastole LV and PCWP superimpose; any separation is the mitral gradient.', scenario: 'normal', channels: ['lv', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'rao' },
+        { title: 'Left ventricle and aorta', text: 'LV pressure rises steeply during isovolumetric contraction; once the aortic valve opens the two curves superimpose and separate again at S2 with the dicrotic notch. Aortic diastolic pressure decays until the next opening. On pullback the LV-to-aortic systolic difference is the peak-to-peak gradient; peripherally systolic pressure rises while the mean is preserved (amplification).', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-lv', view: 'lao' },
+        { title: 'Output, resistances and shunt run', text: 'Fick: CO = VO₂ / (Hb × 1.36 × 10 × (SaO₂ − SvO₂)); when VO₂ is not measured, 125 mL/min/m² is assumed. PVR = (mPAP − PCWP) / CO (Wood units), SVR = (MAP − RA) / CO × 80 (dyn). Mixed venous = (3 SVC + IVC) / 4; a step-up of ≥ 7% at the RA or ≥ 5% at the RV or PA indicates a left-to-right shunt. In this ASD scenario Qp/Qs is about 2; open the calculators.', scenario: 'asd_left_to_right', channels: ['ra', 'pa'], beats: 2, respiration: false, calculators: true, landmark: 'cath-ra', view: 'anterior' },
+        { title: 'Aortic stenosis', text: 'LV stays above the aorta throughout ejection; the shaded area is the mean gradient. The aortic upstroke is slow and late-peaking (parvus et tardus). Gorlin: area = flow / (44.3 × √mean gradient), flow = CO / (HR × SEP). Press PVC: in fixed stenosis the post-extrasystolic beat raises both the gradient and the aortic pulse pressure.', scenario: 'aortic_stenosis_severe', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-ao', view: 'lao' },
+        { title: 'Hypertrophic obstructive cardiomyopathy', text: 'In dynamic obstruction the aortic tracing shows an early spike, a mid-systolic dip and a second dome; the gradient develops in mid and late ejection. Press PVC: on the post-extrasystolic beat the gradient increases while the aortic pulse pressure falls (Brockenbrough-Braunwald-Morrow sign), the opposite of fixed aortic stenosis.', scenario: 'hocm', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-lv', view: 'lao' },
+        { title: 'Mitral stenosis', text: 'PCWP stays above the LV throughout diastole; the shaded area is the mean diastolic gradient. The Gorlin constant is 37.7 and the flow window is the diastolic filling period (DFP); tachycardia and atrial fibrillation shorten the DFP and raise the gradient. An uncorrected wedge delay overestimates the gradient.', scenario: 'mitral_stenosis_severe', channels: ['lv', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'rao' },
+        { title: 'Mitral regurgitation', text: 'Blood regurgitating into the left atrium in systole produces a giant v wave on the wedge tracing; a v wave exceeding twice the mean PCWP is significant. A compliant, chronically dilated atrium may show only a small v wave; acute regurgitation shows a prominent one. The same giant v wave appears in acute LV failure.', scenario: 'mitral_regurgitation_severe', channels: ['lv', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'rao' },
+        { title: 'Aortic regurgitation', text: 'In chronic severe AR the pulse pressure widens, aortic diastolic pressure falls and the LVEDP rises; LV and aortic pressures approach each other at end-diastole. In acute severe AR the LVEDP equilibrates with aortic diastolic pressure, the mitral valve closes prematurely and the pulse pressure may not be as wide as expected.', scenario: 'aortic_regurgitation_severe', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-ao', view: 'lao' },
+        { title: 'Constrictive pericarditis', text: 'Diastolic pressures are elevated and equalized within 5 mmHg; the ventricular tracing shows an early dip and plateau (square-root sign), the RA a prominent y descent. Switch respiration on: with inspiration LV systolic pressure falls while RV systolic rises (ventricular interdependence, discordant change); RA pressure fails to fall or even rises (Kussmaul).', scenario: 'constrictive_pericarditis', channels: ['lv', 'rv'], beats: 4, respiration: true, landmark: 'cath-rv', view: 'anterior' },
+        { title: 'Restrictive cardiomyopathy', text: 'The dip-and-plateau looks similar, but diastolic pressures are not equal: LVEDP exceeds RVEDP by more than 5 mmHg and PA systolic pressure often exceeds 50 mmHg. With respiration LV and RV systolic pressures change in the same direction (concordant). These two findings separate it from constriction.', scenario: 'restrictive_cardiomyopathy', channels: ['lv', 'rv'], beats: 4, respiration: true, landmark: 'cath-lv', view: 'anterior' },
+        { title: 'Cardiac tamponade', text: 'Pericardial pressure equalizes the diastolic pressures; the RA y descent is lost (ventricular filling is restricted) while the x descent is preserved. Output is low and heart rate high. Switch respiration on: aortic systolic pressure falls by more than 10 mmHg with inspiration (pulsus paradoxus). After pericardiocentesis the y descent returns.', scenario: 'tamponade', channels: ['ra', 'ao'], beats: 4, respiration: true, landmark: 'cath-ra', view: 'anterior' },
+        { title: 'Pulmonary hypertension', text: 'mPAP > 20 mmHg defines pulmonary hypertension (2022 ESC/ERS; older sources use ≥ 25 mmHg and PVR > 3 WU); with PCWP ≤ 15 and PVR > 2 WU it is pre-capillary, with PCWP > 15 post-capillary. TPG = mPAP − PCWP, DPG = PA diastolic − PCWP; DPG ≥ 7 with PVR > 2 WU indicates combined pre- and post-capillary disease. Compare with the isolated post-capillary PH scenario.', scenario: 'precapillary_ph', channels: ['pa', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-pa', view: 'anterior' },
+        { title: 'Right ventricular infarction and acute left heart failure', text: 'In RV infarction RA pressure rises, the y descent is blunted, the RA/PCWP ratio exceeds 0.8 and Kussmaul may appear; PA and PCWP are relatively low. In the acute LV failure scenario the PCWP is high with a giant v wave, output is low and mixed venous saturation falls.', scenario: 'rv_infarct', channels: ['ra', 'pcwp'], beats: 3, respiration: true, landmark: 'cath-ra', view: 'rao' }
+      ]
+    }
+  },
+  exam: {
+    tr: {
+      title: 'Fizik muayene • Oskültasyon ve dinamik manevralar',
+      intro: 'Üfürümü seçin, manevrayı uygulayın: model, manevranın ön yük, art yük, kontraktilite, kalp hızı ve sağ kalbe dönüş üzerindeki etkisinden üfürümün artıp azaldığını hesaplar ve ders kitabı tablosu ile karşılaştırır. Fonokardiyogram EKG ve 3B kalp ile aynı döngü saatindedir. Bu modül zamanla genişletilecek; yeni bulgu ve manevralar veri tablosuna eklenir.',
+      steps: [
+        { title: 'Oskültasyon odakları ve S2 ayrılması', text: 'Göğüs duvarındaki beş odak (A, P, E, T, M) şematik olarak işaretlidir. İnspiryumda sağ kalbe dönüş artar, P2 gecikir ve S2 ayrılması genişler; ekspiryumda daralır. Normal ayrılma pulmoner odakta duyulur.', finding: 'innocent', maneuver: 'inspiration', area: 'pulmonic', view: 'anterior' },
+        { title: 'Solunum: sağ mı sol mu?', text: 'Sağ kalp üfürümleri inspiryumda artar (Carvallo), ekspiryumda azalır. Lembo 1988: bu yanıt sağ kalp üfürümlerini %100 duyarlılık, %88 özgüllükle ayırır. Sol kalp üfürümlerinin çoğu inspiryumda azalır, ekspiryumda artar (Lembo: AS %75, HOKM %90, MY %67, VSD %70 azalma).', finding: 'tricuspid_regurgitation', maneuver: 'inspiration', area: 'tricuspid', view: 'anterior' },
+        { title: 'HOKM: dinamik LVOT obstrüksiyonu', text: 'Hipertrofik septum ile sistolde öne hareket eden anterior mitral yaprakçık (SAM) çıkış yolunu daraltır. Gradyan sabit değildir: LV küçüldükçe, aort basıncı düştükçe ve kontraktilite arttıkça büyür. İstirahatte ≥ 30 mmHg obstrüktif, provokasyonla ≥ 50 mmHg semptomatik hastada septal redüksiyon eşiğidir.', finding: 'hocm', maneuver: 'rest', area: 'erb', view: 'anterior' },
+        { title: 'HOKM: Valsalva ve ayağa kalkma', text: 'Valsalva ıkınma fazında venöz dönüş ve LV boyutu düşer; ayağa kalkınca kan bacaklarda göllenir. İkisi de gradyanı ve üfürümü artırır. Lembo 1988: Valsalva ile artış Se %65, Sp %96; çömelmeden ayağa kalkışta artış Se %95, Sp %84.', finding: 'hocm', maneuver: 'valsalva_strain', area: 'erb', view: 'anterior' },
+        { title: 'HOKM: çömelme, bacak kaldırma, el sıkma', text: 'Çömelme venöz dönüşü ve sistemik direnci birlikte artırır, bacak kaldırma LV\'yi doldurur, el sıkma art yükü artırır: üçü de obstrüksiyonu ve üfürümü azaltır. Lembo 1988: çömelmede azalma Se %95, Sp %85; pasif bacak kaldırmada Se %85, Sp %91; el sıkmada Se %85, Sp %75.', finding: 'hocm', maneuver: 'squat', area: 'erb', view: 'anterior' },
+        { title: 'Ekstrasistol sonrası atım: HOKM mi aort darlığı mı?', text: 'Kompansatuvar duraklamadan sonraki atımda doluş ve kontraktilite artar. Sabit aort darlığında üfürüm ve nabız basıncı artar; HOKM\'de gradyan artarken aort nabız basıncı düşer (Brockenbrough-Braunwald-Morrow). Mitral yetersizliği bu atımda değişmez.', finding: 'hocm', maneuver: 'post_pvc', area: 'erb', view: 'anterior' },
+        { title: 'Aort darlığı', text: 'Kapaktan geçen akım arttıkça (çömelme, bacak kaldırma, ekstrasistol sonrası, amil nitrit) üfürüm artar; Valsalva ve ayağa kalkmakla azalır. Karotise yayılır. Lembo 1988: hiçbir manevra tek başına tanı koydurmadı, tanı dışlamayla kondu.', finding: 'aortic_stenosis', maneuver: 'squat', area: 'aortic', view: 'anterior' },
+        { title: 'Mitral yetersizliği ve VSD: art yük manevraları', text: 'El sıkma ve geçici arteriyel oklüzyon art yükü artırıp geri kaçışı büyütür; amil nitrit azaltır. Lembo 1988: el sıkmada artış Se %68, Sp %92; arteriyel oklüzyonda Se %78, Sp %100; amil nitritle azalma Se %80, Sp %90 (MY veya VSD).', finding: 'mitral_regurgitation', maneuver: 'handgrip', area: 'mitral', view: 'anterior' },
+        { title: 'Mitral kapak prolapsusu', text: 'Şiddetten çok zamanlama değişir: LV küçüldükçe (Valsalva, ayağa kalkma) klik S1\'e yaklaşır ve üfürüm uzar; LV büyüdükçe (çömelme, bacak kaldırma) klik gecikir ve üfürüm kısalır. El sıkma için kaynaklar çelişir (Lembo: üfürümü erkene alır).', finding: 'mvp', maneuver: 'valsalva_strain', area: 'mitral', view: 'anterior' },
+        { title: 'Aort yetersizliği', text: 'Yüksek frekanslı dekreşendo diyastolik üfürüm; hasta öne eğilmiş, ekspiryumda nefes tutarken diyafram ile Erb noktasında dinlenir. El sıkma, çömelme ve arteriyel oklüzyon artırır, amil nitrit azaltır.', finding: 'aortic_regurgitation', maneuver: 'handgrip', area: 'erb', view: 'anterior' },
+        { title: 'Mitral darlığı', text: 'Açılma sesinden sonra düşük frekanslı rulman ve sinüs ritminde presistolik belirginleşme. Sol lateral dekübitte apekste çan ile dinlenir; kısa egzersiz veya amil nitrit belirginleştirir. Atriyal fibrilasyonda presistolik belirginleşme kaybolur.', finding: 'mitral_stenosis', maneuver: 'left_lateral', area: 'mitral', view: 'anterior' },
+        { title: 'Masum üfürüm', text: 'Kısa, hafif, erken tepeli ejeksiyon üfürümü; S2 ayrılması normal, başka anormal ses yok. Ayağa kalkınca ve Valsalva ile azalır. Yüksek dereceli (≥ 3/6), diyastolik, holosistolik veya yayılan üfürüm masum sayılmaz.', finding: 'innocent', maneuver: 'stand', area: 'erb', view: 'anterior' }
+      ]
+    },
+    en: {
+      title: 'Physical examination • Auscultation and dynamic maneuvers',
+      intro: 'Pick a murmur and apply a maneuver: the model computes whether the murmur grows or softens from the maneuver\'s effect on preload, afterload, contractility, heart rate and right-heart return, and compares it with the textbook table. The phonocardiogram shares the cycle clock with the ECG and the 3D heart. This module will keep growing; new findings and maneuvers are data table entries.',
+      steps: [
+        { title: 'Auscultation areas and S2 splitting', text: 'The five chest-wall areas (A, P, E, T, M) are marked schematically. With inspiration right-heart return rises, P2 is delayed and S2 splitting widens; it narrows on expiration. Normal splitting is heard at the pulmonic area.', finding: 'innocent', maneuver: 'inspiration', area: 'pulmonic', view: 'anterior' },
+        { title: 'Respiration: right or left?', text: 'Right-sided murmurs grow with inspiration (Carvallo) and soften with expiration. Lembo 1988: this response identified right-sided murmurs with 100% sensitivity and 88% specificity. Most left-sided murmurs fall with inspiration and rise with expiration (Lembo: AS 75%, HCM 90%, MR 67%, VSD 70% decrease).', finding: 'tricuspid_regurgitation', maneuver: 'inspiration', area: 'tricuspid', view: 'anterior' },
+        { title: 'HOCM: dynamic LVOT obstruction', text: 'The hypertrophied septum and the anterior mitral leaflet moving forward in systole (SAM) narrow the outflow tract. The gradient is not fixed: it grows as the LV gets smaller, aortic pressure falls and contractility rises. At rest ≥ 30 mmHg is obstructive; ≥ 50 mmHg with provocation is the septal reduction threshold in symptomatic patients.', finding: 'hocm', maneuver: 'rest', area: 'erb', view: 'anterior' },
+        { title: 'HOCM: Valsalva and standing', text: 'The Valsalva strain phase lowers venous return and LV size; on standing blood pools in the legs. Both raise the gradient and the murmur. Lembo 1988: louder with Valsalva Se 65%, Sp 96%; louder on squat-to-stand Se 95%, Sp 84%.', finding: 'hocm', maneuver: 'valsalva_strain', area: 'erb', view: 'anterior' },
+        { title: 'HOCM: squatting, leg raise, handgrip', text: 'Squatting raises venous return and systemic resistance together, leg raise fills the LV, handgrip raises afterload: all three relieve the obstruction and soften the murmur. Lembo 1988: softer on squatting Se 95%, Sp 85%; passive leg raise Se 85%, Sp 91%; handgrip Se 85%, Sp 75%.', finding: 'hocm', maneuver: 'squat', area: 'erb', view: 'anterior' },
+        { title: 'The beat after a PVC: HOCM or aortic stenosis?', text: 'After the compensatory pause filling and contractility rise. In fixed aortic stenosis the murmur and the pulse pressure increase; in HOCM the gradient rises while the aortic pulse pressure falls (Brockenbrough-Braunwald-Morrow). Mitral regurgitation does not change on that beat.', finding: 'hocm', maneuver: 'post_pvc', area: 'erb', view: 'anterior' },
+        { title: 'Aortic stenosis', text: 'The murmur grows with flow across the valve (squatting, leg raise, the beat after a PVC, amyl nitrite) and softens with Valsalva and standing. It radiates to the carotids. Lembo 1988: no single maneuver identified it; the diagnosis was made by exclusion.', finding: 'aortic_stenosis', maneuver: 'squat', area: 'aortic', view: 'anterior' },
+        { title: 'Mitral regurgitation and VSD: afterload maneuvers', text: 'Handgrip and transient arterial occlusion raise afterload and the regurgitant flow; amyl nitrite lowers it. Lembo 1988: louder with handgrip Se 68%, Sp 92%; with arterial occlusion Se 78%, Sp 100%; softer with amyl nitrite Se 80%, Sp 90% (MR or VSD).', finding: 'mitral_regurgitation', maneuver: 'handgrip', area: 'mitral', view: 'anterior' },
+        { title: 'Mitral valve prolapse', text: 'Timing changes more than loudness: as the LV gets smaller (Valsalva, standing) the click moves toward S1 and the murmur lengthens; as it enlarges (squatting, leg raise) the click is delayed and the murmur shortens. Sources disagree on handgrip (Lembo: makes the murmur earlier).', finding: 'mvp', maneuver: 'valsalva_strain', area: 'mitral', view: 'anterior' },
+        { title: 'Aortic regurgitation', text: 'A high-pitched decrescendo diastolic murmur; listen at Erb\'s point with the diaphragm, patient sitting forward in held expiration. Handgrip, squatting and arterial occlusion increase it, amyl nitrite decreases it.', finding: 'aortic_regurgitation', maneuver: 'handgrip', area: 'erb', view: 'anterior' },
+        { title: 'Mitral stenosis', text: 'A low-pitched rumble after an opening snap with presystolic accentuation in sinus rhythm. Listen with the bell at the apex in left lateral decubitus; brief exercise or amyl nitrite bring it out. Presystolic accentuation disappears in atrial fibrillation.', finding: 'mitral_stenosis', maneuver: 'left_lateral', area: 'mitral', view: 'anterior' },
+        { title: 'Innocent murmur', text: 'A short, soft, early-peaking ejection murmur with normal S2 splitting and no other abnormal sounds. It softens on standing and with Valsalva. A murmur that is loud (≥ 3/6), diastolic, holosystolic or radiating is not innocent.', finding: 'innocent', maneuver: 'stand', area: 'erb', view: 'anterior' }
+      ]
+    }
   }
+
 };
 
 export const lessons = new Proxy({}, {
@@ -1196,7 +1319,9 @@ export const uiTranslations = {
       ['pacemaker', '04', 'Pacemaker leadi'],
       ['transseptal', '05', 'Transseptal & septostomi'],
       ['bachmann', '06', 'Bachmann demeti & pacing'],
-      ['cath', '07', 'Kardiyak kateterizasyon']
+      ['cath', '07', 'Kardiyak kateterizasyon'],
+      ['hemodynamics', '08', 'İnteraktif hemodinami'],
+      ['exam', '09', 'Fizik muayene']
     ],
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Odacıklar (Chambers)',
@@ -1299,7 +1424,9 @@ export const uiTranslations = {
       ['pacemaker', '04', 'Pacemaker leads'],
       ['transseptal', '05', 'Transseptal & septostomy'],
       ['bachmann', '06', 'Bachmann bundle & pacing'],
-      ['cath', '07', 'Cardiac catheterization']
+      ['cath', '07', 'Cardiac catheterization'],
+      ['hemodynamics', '08', 'Interactive hemodynamics'],
+      ['exam', '09', 'Physical examination']
     ],
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Chambers',
@@ -1401,7 +1528,9 @@ const viewerTitles = {
     ablation: 'Nirengi noktalarını işaretle.',
     pacemaker: 'Leadi izle.',
     transseptal: 'Septumu geç.',
-    bachmann: 'Bachmann: anatomi ve atriyal pacing.'
+    bachmann: 'Bachmann: anatomi ve atriyal pacing.',
+    hemodynamics: 'Basınç eğrisini oku.',
+    exam: 'Dinle, manevrayı yap.'
   },
   en: {
     anatomy: 'A new perspective.',
@@ -1410,7 +1539,9 @@ const viewerTitles = {
     ablation: 'Map the landmarks.',
     pacemaker: 'Trace the lead.',
     transseptal: 'Cross the septum.',
-    bachmann: 'Bachmann: anatomy and atrial pacing.'
+    bachmann: 'Bachmann: anatomy and atrial pacing.',
+    hemodynamics: 'Read the pressure tracing.',
+    exam: 'Listen, then maneuver.'
   }
 };
 

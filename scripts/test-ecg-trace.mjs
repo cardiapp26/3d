@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { getIntervalForPhase } from '../src/cardiac-cycle.js';
+import { CYCLE_SYNC, getIntervalForPhase } from '../src/cardiac-cycle.js';
 import { computeChannelWeights } from '../src/animation-channels.js';
 import { ecgSample, formatValveSync } from '../src/ecg-trace.js';
 
@@ -15,10 +15,12 @@ for (let i = 0; i <= 1000; i++) {
   }
 }
 
-assert.ok(ecgSample(0.38, 'sinus') > 0.12, 'P wave is present in sinus rhythm');
-assert.ok(Math.abs(ecgSample(0.38, 'afib')) < 0.08, 'AFib concept has no P wave');
+assert.ok(ecgSample(CYCLE_SYNC.pPeak, 'sinus') > 0.12, 'P wave is present in sinus rhythm');
+assert.ok(Math.abs(ecgSample(CYCLE_SYNC.pPeak, 'afib')) < 0.08, 'AFib concept has no P wave');
+assert.ok(Math.abs(ecgSample(0.38, 'sinus')) < 0.05, 'atrial contraction (0.32-0.45) follows the P wave; the PR segment is isoelectric');
 assert.ok(peak > 0.8, 'QRS is the dominant deflection');
-assert.ok(peakPhase > 0.46 && peakPhase < 0.49, 'R peak sits at ventricular activation');
+assert.ok(Math.abs(peakPhase - CYCLE_SYNC.qrsPeak) < 0.005, 'R peak sits at ventricular activation');
+assert.ok(ecgSample(CYCLE_SYNC.ivcStart, 'sinus') < 0.3, 'S1 (mitral closure) falls after the R wave');
 assert.ok(Math.abs(ecgSample(0.1, 'sinus')) < 0.05, 'early filling is near the baseline');
 assert.ok(Math.abs(ecgSample(0.70, 'sinus')) < 0.08, 'mid-ejection is the ST segment, not the T wave');
 assert.ok(ecgSample(0.835, 'sinus') > 0.2, 'T wave peaks as semilunar closure starts');

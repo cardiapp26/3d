@@ -6,6 +6,8 @@ import { fetchCountryCode, languageForCountry } from './entry-language.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
 import {drawWiggers, formatCycleTiming, wiggersPhaseAt, drawCathTracing} from './wiggers.js';
+import { createHemoMode } from './hemo-mode.js';
+import { createExamMode } from './exam-mode.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 
 document.documentElement.lang = getContentLanguage();
@@ -17,7 +19,9 @@ const modes = [
   ['pacemaker', '04'],
   ['transseptal', '05'],
   ['bachmann', '06'],
-  ['cath', '07']
+  ['cath', '07'],
+  ['hemodynamics', '08'],
+  ['exam', '09']
 ];
 
 const app = document.querySelector('#app');
@@ -49,7 +53,8 @@ app.innerHTML = `
           ['lv', 'Left ventricle (LV)', '#9b3238'],
           ['rv', 'Right ventricle (RV)', '#a43d42'],
           ['la', 'Left atrium (LA)', '#b55157'],
-          ['ra', 'Right atrium (RA)', '#aa484e']
+          ['ra', 'Right atrium (RA)', '#aa484e'],
+          ['laa', 'LAA orifice (left atrial appendage)', '#d9a066']
         ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
       </div>
       <details class="wall-tools" open><summary data-i18n="wallToolsSummary">${getTranslation('wallToolsSummary')}</summary><p data-i18n="wallToolsNote">${getTranslation('wallToolsNote')}</p>
@@ -340,6 +345,8 @@ app.innerHTML = `
       <div id="cath-tracing-wrap" class="cath-tracing-wrap" hidden>
         <canvas id="cath-tracing" aria-label="Kateter basınç izi"></canvas>
       </div>
+      <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
+      <div id="exam-panel" class="exam-panel-mount" hidden></div>
       <button class="primary" id="next-step">Next landmark →</button>
       <label class="slider-label" for="progress" id="progress-label">Lead ilerletme / Yerleşim <span id="progress-value">100%</span></label>
       <input id="progress" type="range" min="0" max="100" value="100">
@@ -455,6 +462,7 @@ function drawCathPanel(state) {
 }
 
 function inspect(id, flyTo = true, updateUrl = true) {
+  if (typeof id === 'string' && id.startsWith('ausc-')) examMode?.focusArea(id.slice(5));
   if (typeof id === 'string' && id.startsWith('cath-')) {
     cathStation = id;
     drawCathPanel();
@@ -577,6 +585,8 @@ function updateCycleUI(state) {
   drawEcgTrace(document.querySelector('#ecg-canvas'), state);
   lastCycleState = state;
   if (mode === 'cath') drawCathPanel(state);
+  hemoMode?.tick(state);
+  examMode?.tick(state);
   const wigStrip = document.querySelector('#wiggers-strip');
   if (wigStrip && !wigStrip.hidden) {
     drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en');
@@ -585,6 +595,19 @@ function updateCycleUI(state) {
   }
 }
 
+// Built before the cycle subscription: subscribeCycle calls updateCycleUI at once.
+const hemoMode = heart ? createHemoMode({
+  heart,
+  mount: document.querySelector('#hemo-panel'),
+  getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
+  onFocus: station => inspect(`cath-${station === 'pcwp' ? 'wedge' : station}`, false, false)
+}) : null;
+const examMode = heart ? createExamMode({
+  heart,
+  mount: document.querySelector('#exam-panel'),
+  getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
+  onArea: areaId => inspect(`ausc-${areaId}`, false, false)
+}) : null;
 heart?.subscribeCycle(updateCycleUI);
 heart?.ready.then(() => {
   // Lesson overlays are built only once the atlas exists; a deep link or a
@@ -667,6 +690,9 @@ function showStep() {
     syncCatheterUI();
   }
 
+  if (mode === 'hemodynamics') hemoMode?.applyStep(s);
+  if (mode === 'exam') examMode?.applyStep(s);
+
   if (s.view) {
     heart?.setView(s.view, true);
   }
@@ -701,7 +727,9 @@ function setMode(newMode, updateUrl = true) {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
 
-  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath') {
+  if (mode === 'hemodynamics') hemoMode?.enter(); else hemoMode?.exit();
+  if (mode === 'exam') examMode?.enter(); else examMode?.exit();
+  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath' || mode === 'hemodynamics') {
     setCarmPanelOpen(true);
   } else {
     setCarmPanelOpen(false);
@@ -779,7 +807,7 @@ document.querySelectorAll('[data-mode]').forEach(button => button.addEventListen
 }));
 
 const chambersBox = document.querySelector('[data-layer="chambers"]');
-const subBoxes = ['lv', 'rv', 'la', 'ra'].map(id => document.querySelector(`[data-layer="${id}"]`)).filter(Boolean);
+const subBoxes = ['lv', 'rv', 'la', 'ra', 'laa'].map(id => document.querySelector(`[data-layer="${id}"]`)).filter(Boolean);
 
 chambersBox?.addEventListener('change', () => {
   const isChecked = chambersBox.checked;
@@ -1357,6 +1385,8 @@ function updateLanguageUI() {
     progressNoteEl.textContent = getTranslation('leadProgressNote');
   }
   updateUpdaterLanguage();
+  hemoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
+  examMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   updateCycleUI(heart?.getCycleState());
 }
 
@@ -1451,7 +1481,7 @@ const shortcutsModal = document.querySelector('#shortcuts-modal');
 document.querySelector('#shortcuts-btn').addEventListener('click', () => shortcutsModal.showModal());
 document.querySelector('#close-shortcuts').addEventListener('click', () => shortcutsModal.close());
 
-// Keyboard shortcuts (1-5, A, P, R, L, S, C, 0, Space, ?, N)
+// Keyboard shortcuts (1-9, A, P, R, L, S, C, 0, Space, ?, N)
 window.addEventListener('keydown', e => {
   if (dialog.open || shortcutsModal.open) return;
   // Keep text inputs and native dialog controls independent of scene shortcuts.
@@ -1459,7 +1489,7 @@ window.addEventListener('keydown', e => {
 
   const key = e.key;
 
-  if (key >= '1' && key <= '7') {
+  if (key >= '1' && key <= '9') {
     const modeIndex = parseInt(key, 10) - 1;
     if (modes[modeIndex]) {
       setMode(modes[modeIndex][0]);

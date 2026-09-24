@@ -31,6 +31,7 @@ export const LAYER_DEFAULTS = Object.freeze({
   rv: true,
   la: true,
   ra: true,
+  laa: true,
   vessels: true,
   coronaries: true,
   valves: true,

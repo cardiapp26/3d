@@ -8,7 +8,8 @@ import { ecgSample } from './ecg-trace.js';
  * Consistency rules (checked by scripts/test-wiggers.mjs):
  * - Valve events are the template interval boundaries used by the panel and
  *   the ECG strip: mitral closes 0.45 (S1), aortic opens 0.53, aortic closes
- *   0.88 (S2, end of T), mitral opens 0.00/1.00.
+ *   0.88 (S2, end of T), mitral opens 0.00/1.00. QRS onset (0.41) precedes
+ *   S1; the P wave (0.27) precedes atrial contraction (0.32).
  * - Each event sits on the matching pressure crossing.
  * - Mitral open: LA > LV. Aortic closed: aortic pressure never rises above
  *   its closure value (dicrotic notch = dip, then a small peak below it).
@@ -17,11 +18,12 @@ import { ecgSample } from './ecg-trace.js';
  */
 
 const S = CYCLE_SYNC;
+// Valve events are the shared clock's interval boundaries.
 export const EVENTS = Object.freeze({
   mitralOpen: 0.0,
-  mitralClose: 0.45,
-  aorticOpen: 0.53,
-  aorticClose: 0.88
+  mitralClose: S.ivcStart,
+  aorticOpen: S.ejectionStart,
+  aorticClose: S.ivrStart
 });
 
 function wrap(u) {
@@ -77,12 +79,12 @@ export function ventricularPressure(u, rhythm = 'sinus') {
     const f = (uu - EVENTS.mitralClose) / (EVENTS.aorticOpen - EVENTS.mitralClose);
     return lvedp + (AO_OPEN_P - lvedp) * Math.pow(f, 1.6);     // isovolumetric contraction
   }
-  if (uu < 0.64) {
-    const f = (uu - EVENTS.aorticOpen) / (0.64 - EVENTS.aorticOpen);
+  if (uu < S.ejectionPeak) {
+    const f = (uu - EVENTS.aorticOpen) / (S.ejectionPeak - EVENTS.aorticOpen);
     return AO_OPEN_P + (LV_PEAK - AO_OPEN_P) * (1 - (1 - f) * (1 - f)); // rapid ejection
   }
   if (uu < EVENTS.aorticClose) {
-    const f = (uu - 0.64) / (EVENTS.aorticClose - 0.64);
+    const f = (uu - S.ejectionPeak) / (EVENTS.aorticClose - S.ejectionPeak);
     return LV_PEAK - (LV_PEAK - AO_CLOSE_P) * Math.pow(f, 2.2);        // reduced ejection
   }
   // Isovolumetric relaxation: steep exponential fall to the LA v-wave level.
@@ -98,8 +100,8 @@ export function aorticPressure(u, rhythm = 'sinus') {
     // LV slightly above aorta early in ejection, slightly below late; the two
     // cross exactly at opening, at the peak and at closure.
     const lv = ventricularPressure(uu, rhythm);
-    const early = uu < 0.64 ? -2 * Math.sin(Math.PI * (uu - EVENTS.aorticOpen) / (0.64 - EVENTS.aorticOpen)) : 0;
-    const late = uu >= 0.64 ? 2.5 * Math.sin(Math.PI * (uu - 0.64) / (EVENTS.aorticClose - 0.64)) : 0;
+    const early = uu < S.ejectionPeak ? -2 * Math.sin(Math.PI * (uu - EVENTS.aorticOpen) / (S.ejectionPeak - EVENTS.aorticOpen)) : 0;
+    const late = uu >= S.ejectionPeak ? 2.5 * Math.sin(Math.PI * (uu - S.ejectionPeak) / (EVENTS.aorticClose - S.ejectionPeak)) : 0;
     return lv + early + late;
   }
   // Closed: runoff from the closure value down to the opening value.

@@ -16,9 +16,11 @@ function bump(phase, center, width, amplitude) {
 
 export function ecgSample(phase, rhythm = 'sinus') {
   const p = wrapPhase(phase);
-  const qrs = bump(p, SYNC.ivcStart + 0.004, 0.008, -0.12)
+  // Q at QRS onset, R at the peak, S just before the QRS ends; S1 (mitral
+  // closure) follows the QRS onset by ~35 ms.
+  const qrs = bump(p, SYNC.qrsOnset + 0.004, 0.008, -0.12)
     + bump(p, SYNC.qrsPeak, 0.011, 1)
-    + bump(p, SYNC.avClosed + 0.012, 0.009, -0.22);
+    + bump(p, SYNC.qrsEnd - 0.02, 0.009, -0.22);
   // T peaks as the semilunar valves start to close and is back on the baseline at S2,
   // when isovolumetric relaxation begins and both valves are shut.
   const tWave = bump(p, SYNC.tPeak, 0.02, 0.32);
