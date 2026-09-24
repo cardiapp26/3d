@@ -11,7 +11,7 @@ import {
 const previous = getContentLanguage();
 
 setContentLanguage('en');
-assert.equal(getUiModes().length, 9);
+assert.equal(getUiModes().length, 8);
 assert.deepEqual(getUiModes().map(([id]) => id), [
   'anatomy',
   'angiography',
@@ -20,7 +20,6 @@ assert.deepEqual(getUiModes().map(([id]) => id), [
   'transseptal',
   'bachmann',
   'cath',
-  'hemodynamics',
   'exam'
 ]);
 assert.match(getViewerTitle('angiography'), /projection/i);
@@ -30,12 +29,12 @@ assert.equal(getTranslation('wallClosed'), 'Closed');
 const englishSpider = getAngioDescription('spider');
 
 setContentLanguage('tr');
-assert.equal(getUiModes().length, 9);
+assert.equal(getUiModes().length, 8);
 assert.equal(getTranslation('wallClosed'), 'Kapalı');
 assert.match(getAngioDescription('spider'), /Spider|bifurk/i);
 assert.notEqual(getAngioDescription('spider'), englishSpider);
 assert.match(getViewerTitle('bachmann'), /Bachmann/);
-assert.match(getViewerTitle('hemodynamics'), /basınç|eğri/i);
+assert.match(getViewerTitle('cath'), /basınç|eğri/i);
 
 setContentLanguage(previous);
 console.log('PASS: chrome copy switches between Turkish and English for modes, titles, and projections');

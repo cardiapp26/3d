@@ -160,7 +160,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       // Catheters run inside these vessels in the transseptal lesson; keep them
       // see-through. The pulmonary trunk and bifurcation sit on the LA roof in
       // front of the fossa in LAO/RAO, so they are faded there too.
-      const catheterVessel=(mode==='transseptal'&&['aorta','pa','cs','svc','ivc'].includes(id))||(['cath','hemodynamics'].includes(mode)&&['aorta','pa','svc','ivc'].includes(id));
+      const catheterVessel=(mode==='transseptal'&&['aorta','pa','cs','svc','ivc'].includes(id))||(mode==='cath'&&['aorta','pa','svc','ivc'].includes(id));
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
       const faintPa=visibility['pa-faint']&&id==='pa';
       const alpha=tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
@@ -675,11 +675,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
       mode=name;
-      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath','hemodynamics'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
+      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       transseptal.setVisible(name==='transseptal');
-      cathLab.setVisible(name==='cath'||name==='hemodynamics');
+      cathLab.setVisible(name==='cath');
       auscultation.setVisible(name==='exam');
       catheterPickables=null;
       if(name==='ablation'){
@@ -693,7 +693,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }else if(name==='transseptal'){
         transseptal.setStep(0);
         transseptal.setProgress(1.0);
-      }else if(name==='cath'||name==='hemodynamics'){
+      }else if(name==='cath'){
         cathLab.setStep(0);
         cathLab.setProgress(1.0);
       }
@@ -748,7 +748,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setCatheterVisible(key,value){transseptal.setCatheterVisible(key,Boolean(value));requestRender();},
     getCatheterVisibility(){return transseptal.getCatheterVisibility();},
     resetCatheterToggles(){transseptal.resetCatheterToggles();requestRender();},
-    setProgress(value){if(mode==='cath'||mode==='hemodynamics'){cathLab.setProgress(Number(value));requestRender();return;}if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
+    setProgress(value){if(mode==='cath'){cathLab.setProgress(Number(value));requestRender();return;}if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){

@@ -1,4 +1,4 @@
-# Physical examination module (mode 09)
+# Physical examination module (mode 08)
 
 Teaching model for auscultation findings and dynamic bedside maneuvers.
 It is not a diagnostic tool; the sounds and phonocardiograms are

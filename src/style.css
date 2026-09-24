@@ -358,8 +358,6 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 @media(max-width:640px){.myo-control{top:8px;left:8px;padding:4px 6px}.myo-control input[type=range]{width:70px}}
 
 /* Catheterization pressure tracing */
-.cath-tracing-wrap{height:160px;margin:12px 0;border:1px solid #dce4d7;border-radius:7px;overflow:hidden;background:#fff}
-.cath-tracing-wrap canvas{display:block;width:100%;height:100%}
 
 /* ── HEADER UPDATE BUTTON ─────────────────────── */
 .header-update-btn {

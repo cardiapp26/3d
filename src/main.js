@@ -5,7 +5,7 @@ import {structures,lessons,setContentLanguage,getContentLanguage,hasExplicitLang
 import { fetchCountryCode, languageForCountry } from './entry-language.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
-import {drawWiggers, formatCycleTiming, wiggersPhaseAt, drawCathTracing} from './wiggers.js';
+import {drawWiggers, formatCycleTiming, wiggersPhaseAt} from './wiggers.js';
 import { createHemoMode } from './hemo-mode.js';
 import { createExamMode } from './exam-mode.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
@@ -20,8 +20,7 @@ const modes = [
   ['transseptal', '05'],
   ['bachmann', '06'],
   ['cath', '07'],
-  ['hemodynamics', '08'],
-  ['exam', '09']
+  ['exam', '08']
 ];
 
 const app = document.querySelector('#app');
@@ -342,9 +341,6 @@ app.innerHTML = `
       <p id="lesson-intro"></p>
       <div id="steps"></div>
       <div id="step-detail"></div>
-      <div id="cath-tracing-wrap" class="cath-tracing-wrap" hidden>
-        <canvas id="cath-tracing" aria-label="Kateter basınç izi"></canvas>
-      </div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div id="exam-panel" class="exam-panel-mount" hidden></div>
       <button class="primary" id="next-step">Next landmark →</button>
@@ -452,21 +448,10 @@ function resolveStructureId(id) {
   })[id] || id;
 }
 
-const CATH_STEP_STATIONS = ['cath-ra', 'cath-rv', 'cath-pa', 'cath-lv', 'cath-ao'];
-let cathStation = 'cath-ra';
-function drawCathPanel(state) {
-  const canvas = document.querySelector('#cath-tracing');
-  if (!canvas || mode !== 'cath') return;
-  const cycle = state || heart?.getCycleState?.();
-  drawCathTracing(canvas, cathStation, cycle, getContentLanguage() === 'tr' ? 'tr' : 'en');
-}
-
 function inspect(id, flyTo = true, updateUrl = true) {
   if (typeof id === 'string' && id.startsWith('ausc-')) examMode?.focusArea(id.slice(5));
-  if (typeof id === 'string' && id.startsWith('cath-')) {
-    cathStation = id;
-    drawCathPanel();
-  }
+  // A 3D catheter station adds its channel to the hemodynamics tracing.
+  if (typeof id === 'string' && id.startsWith('cath-')) hemoMode?.focusStation(id);
   const cleanId = resolveStructureId(id);
   const s = structures[cleanId];
   if (!s) return;
@@ -584,7 +569,6 @@ function updateCycleUI(state) {
   });
   drawEcgTrace(document.querySelector('#ecg-canvas'), state);
   lastCycleState = state;
-  if (mode === 'cath') drawCathPanel(state);
   hemoMode?.tick(state);
   examMode?.tick(state);
   const wigStrip = document.querySelector('#wiggers-strip');
@@ -646,12 +630,6 @@ function showStep() {
   const isTransseptal = mode === 'transseptal';
   const isCath = mode === 'cath';
   const hasProgress = isPacemaker || isTransseptal || isCath || (isBachmann && step > 0);
-  const cathWrap = document.querySelector('#cath-tracing-wrap');
-  if (cathWrap) cathWrap.hidden = !isCath;
-  if (isCath) {
-    cathStation = CATH_STEP_STATIONS[step] || 'cath-ra';
-    drawCathPanel();
-  }
   const progressEl = document.querySelector('#progress');
   const progressLabel = document.querySelector('#progress-label');
   const progressNote = document.querySelector('#progress-note');
@@ -678,8 +656,8 @@ function showStep() {
     heart?.setProgress(1.0);
     if (isBachmann) heart?.setBachmannStep(step);
     else if (isPacemaker) heart?.setPacemakerStep(step);
-    else if (isCath) heart?.setCathStep(step);
-    else heart?.setTransseptalStep(step);
+    else if (!isCath) heart?.setTransseptalStep(step);
+    // Catheterization: the step's channels choose the catheter stage (hemo-mode.js).
   } else if (isBachmann) {
     heart?.setBachmannStep(step);
   } else if (mode === 'ablation') {
@@ -690,7 +668,7 @@ function showStep() {
     syncCatheterUI();
   }
 
-  if (mode === 'hemodynamics') hemoMode?.applyStep(s);
+  if (isCath) hemoMode?.applyStep(s);
   if (mode === 'exam') examMode?.applyStep(s);
 
   if (s.view) {
@@ -727,9 +705,9 @@ function setMode(newMode, updateUrl = true) {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
 
-  if (mode === 'hemodynamics') hemoMode?.enter(); else hemoMode?.exit();
+  if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();
-  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath' || mode === 'hemodynamics') {
+  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath') {
     setCarmPanelOpen(true);
   } else {
     setCarmPanelOpen(false);
@@ -776,7 +754,8 @@ function handleHashChange() {
   isUpdatingRoute = true;
   try {
     const match = hash.match(/#\/mode\/([a-z]+)/i);
-    const targetMode = match ? match[1] : null;
+    // The former hemodynamics mode is part of catheterization now.
+    const targetMode = match ? (match[1] === 'hemodynamics' ? 'cath' : match[1]) : null;
 
     const urlParams = new URLSearchParams(hash.split('?')[1] || '');
     const targetStructure = urlParams.get('structure') || (hash.match(/#\/structure\/([a-z0-9_-]+)/i)?.[1]);
@@ -1481,7 +1460,7 @@ const shortcutsModal = document.querySelector('#shortcuts-modal');
 document.querySelector('#shortcuts-btn').addEventListener('click', () => shortcutsModal.showModal());
 document.querySelector('#close-shortcuts').addEventListener('click', () => shortcutsModal.close());
 
-// Keyboard shortcuts (1-9, A, P, R, L, S, C, 0, Space, ?, N)
+// Keyboard shortcuts (1-8, A, P, R, L, S, C, 0, Space, ?, N)
 window.addEventListener('keydown', e => {
   if (dialog.open || shortcutsModal.open) return;
   // Keep text inputs and native dialog controls independent of scene shortcuts.
@@ -1489,7 +1468,7 @@ window.addEventListener('keydown', e => {
 
   const key = e.key;
 
-  if (key >= '1' && key <= '9') {
+  if (key >= '1' && key <= '8') {
     const modeIndex = parseInt(key, 10) - 1;
     if (modes[modeIndex]) {
       setMode(modes[modeIndex][0]);
@@ -1565,7 +1544,6 @@ function initPanelResizer() {
 
   function updateWidth(targetWidth) {
     workspace.style.setProperty('--article-w', `${targetWidth}px`);
-    if (mode === 'cath') drawCathPanel();
   }
 
   function onPointerDown(e) {
@@ -1612,7 +1590,6 @@ function initPanelResizer() {
         localStorage.setItem(STORAGE_KEY, String(currentWidth));
       } catch (_) {}
     }
-    if (mode === 'cath') drawCathPanel();
   }
 
   function onDoubleClick() {
@@ -1620,7 +1597,6 @@ function initPanelResizer() {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (_) {}
-    if (mode === 'cath') drawCathPanel();
   }
 
   function onKeyDown(e) {
@@ -1648,13 +1624,6 @@ function initPanelResizer() {
   resizer.addEventListener('pointercancel', onPointerUp);
   resizer.addEventListener('dblclick', onDoubleClick);
   resizer.addEventListener('keydown', onKeyDown);
-
-  if (typeof ResizeObserver !== 'undefined') {
-    const articleObserver = new ResizeObserver(() => {
-      if (mode === 'cath') drawCathPanel();
-    });
-    articleObserver.observe(article);
-  }
 }
 
 applyChromeTranslations();
