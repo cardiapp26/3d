@@ -18,6 +18,12 @@ Unregistered legacy catheter curves are no longer superimposed on this anatomy. 
 - **Schematic 3D models** (`SCHEMATIC CONCEPT / 3D ILLUSTRATION`): Procedural conduction landmarks (SA node, halo, AV node, bundle branches) and microscopic myocyte illustrations.
 - **Reference notes** (`REFERENCE NOTE / NO REGISTERED MESH`): Contextual learning landmarks without dedicated 3D geometry.
 
+## Mitral scallop view
+
+Use **Mitral** in the camera controls, or select a mitral structure in anatomy mode, to open an isolated atrial view. A1–A3 anterior segments and P1–P3 posterior scallops have paired colors and labels that follow leaflet animation. Leaflet visibility controls remain active. Another camera preset, selecting another structure, or reset restores the surrounding anatomy.
+
+These are approximate teaching regions along the measured commissural axis, not atlas-segmented fissures or patient-specific scallop boundaries. Number 1 is lateral, number 3 medial. Anterior regions are segments, not natural scallops. Anatomical nomenclature: [Echocardiography of the mitral valve](https://pmc.ncbi.nlm.nih.gov/articles/PMC3727372/). Run `APP_URL=http://127.0.0.1:5177 npm run test:mitral` against a running development server.
+
 ## Interactive Features & Ergonomics
 
 - **Bachmann bundle (06)**: Independently selectable, atlas-anchored schematic atrial roof band under the conduction layer, with its own visibility toggle. A separate bilingual lesson compares RAA pacing with a right-sided Bachmann-area lead in AP and LAO 40° views. The progress slider advances the lead. The endocardial teaching target is offset inward from the band anchor; this is not measured wall thickness or segmented conduction tissue. Fluoroscopy does not establish electrical capture. Run `npm run test:bachmann` for the dedicated browser checks.

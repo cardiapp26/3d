@@ -518,12 +518,12 @@ export const rawStructures = {
     tr: {
       title: 'Posterior mitral yaprakçık • PML',
       description: 'Mitral kapağın mural yaprakçığıdır. Anulus çevresinin büyük bölümünü tutar. Serbest kenar klinikte P1, P2 ve P3 taraklarına ayrılır.',
-      clinical: 'Atlas parçası tek posterior yaprakçıktır; taraklar ayrı mesh değildir. Korda yoktur.'
+      clinical: 'Atlas parçası tek posterior yaprakçıktır. Mitral görünümünde P1–P3 renkli, şematik bölgelerle gösterilir; sınırlar atlas segmentasyonu değildir.'
     },
     en: {
       title: 'Posterior mitral leaflet • PML',
       description: 'The mural leaflet of the mitral valve. It occupies most of the annular circumference. Its free edge is divided clinically into P1, P2 and P3 scallops.',
-      clinical: 'The atlas part is a single posterior leaflet; the scallops are not separate meshes. Chordae are not included.'
+      clinical: 'The atlas contains one posterior leaflet. The Mitral view shows P1–P3 as colored schematic regions; boundaries are not atlas segmentations.'
     },
     source: 'Ho et al., 2012, PDF p. 7; mini atlas, PDF pp. 38–39'
   },

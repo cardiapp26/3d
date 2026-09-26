@@ -5,6 +5,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { ATLAS_URL, normalizedParts, normalizeAtlasName } from './atlas.js';
 import { createEPLandmarks } from './ep-landmarks.js';
 import { createPacemakerLeads } from './pacemaker-leads.js';
+import { createMitralScallops } from './mitral-scallops.js';
 import { createAnnuli } from './annuli.js';
 import { addSchematicAvLeaflets } from './schematic-leaflets.js';
 import { addLaaMarker } from './la-landmarks.js';
@@ -92,6 +93,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
   }
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
+  let mitralFocus=false;
+  const mitralScallops=createMitralScallops(container,id=>meshMap.get(id)||[]);
   let modelReady=false;
   const isReady=()=>modelReady;
   const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
@@ -134,11 +137,16 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
-    layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro';
+    layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro' && !mitralFocus;
     if(bloodFlow) bloodFlow.setVisible(layers.flow.visible);
     for(const m of meshes){
       if(m.userData.micro)continue;
+      if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
       const {id,layer,system:branch}=m.userData;
+      if (mode === 'angiography' && m.userData.veinGroup === 'cardiac-veins') {
+        m.visible = false;
+        continue;
+      }
       const isVein = branch === 'veins' || ['svc', 'ivc', 'pv', 'cs', 'gcv', 'mcv', 'piv', 'lspv', 'lipv', 'rspv', 'ripv', 'cardiac-veins'].includes(id);
       if (!visibility.veins && isVein) {
         m.visible = false;
@@ -194,7 +202,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     requestRender();
   }
-  function selectStructure(id,flyTo=true){selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+  function selectStructure(id,flyTo=true){if(mitralFocus&&!id?.startsWith('mitral')){mitralFocus=false;applyState();}if(flyTo&&id?.startsWith('mitral')&&mode==='anatomy'){selected=id;setView('mitral');return;}selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
 
   // Conceptual cellular illustration is separate from the source atlas.
   const micro=new THREE.Group();scene.add(micro);micro.visible=false;
@@ -229,6 +237,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     annuli.build();
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
     addLaaMarker({ meshVertices, register, parent: layers.chambers });
+    mitralScallops.build();
     thorax.build();
     computeVesselTrims();
     modelReady=true;
@@ -494,6 +503,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     fitDistance=THREE.MathUtils.clamp((Math.max(vertical,horizontal)/.94+depth*.5)*.9,3,18);
   }
   function setAngioProjection(laoRaoDeg,craCauDeg,smooth=true,keepDistance=true){
+    if(mitralFocus){mitralFocus=false;applyState();}
     const target=fitCenter.clone();
     const offset=camera.position.clone().sub(target);
     const R=keepDistance?Math.max(2.5,Math.min(16.0,offset.length()||fitDistance)):fitDistance;
@@ -522,6 +532,17 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
 
   function setView(name,smooth=true){
+    mitralFocus=name==='mitral'&&mode==='anatomy';
+    applyState();
+    if(mitralFocus){
+      const f=meshMap.get('mitral-annulus')?.[0]?.userData.frame;
+      if(!f)return;
+      lookTarget.copy(f.center);
+      cameraTarget.copy(f.center).addScaledVector(f.normal,-Math.max(2.8,f.radius*5));
+      transition=smooth;container.dataset.cameraSettled=String(!smooth);
+      if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
+      requestRender();return;
+    }
     if(angioPresets[name]){
       setAngioProjection(angioPresets[name].laoRao,angioPresets[name].craCau,smooth,false);
       return;
@@ -602,6 +623,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   // Swap only during rendering so selection, lesson updates and resets retain originals.
   const projectionMaterials = new Map();
   function renderScene(){
+    mitralScallops.update(camera,mitralFocus&&!fluoroscopy&&mode==='anatomy');
     if(!fluoroscopy || mode==='micro'){renderer.render(scene,camera);return;}
     const originals=[];
     heart.traverseVisible(object=>{
@@ -674,6 +696,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     },
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
+      mitralFocus=false;
       mode=name;
       opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
@@ -781,7 +804,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
-    dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
+    getState(){return {mitralFocus,mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    dispose(){mitralScallops.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

@@ -1,0 +1,48 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert = require('node:assert/strict');
+(async () => {
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
+    await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(process.env.APP_URL || 'http://127.0.0.1:5177');
+    await page.waitForSelector('#viewport[data-model-ready=true]');
+    await page.locator('[data-view=mitral]').click();
+    await page.waitForSelector('#viewport[data-camera-settled=true]');
+    assert.deepEqual((await page.locator('.mitral-scallop-label:visible').allTextContents()).sort(), ['A1','A2','A3','P1','P2','P3']);
+    assert.equal(await page.evaluate(() => window.heart.getState().mitralFocus), true);
+    assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'la').visible), false);
+    await page.screenshot({ path: 'research/screenshots/mitral-scallops.png' });
+    await page.locator('input[data-layer="mitral-posterior"]').uncheck();
+    await page.waitForFunction(() => [...document.querySelectorAll('.mitral-scallop-label')].filter(el => !el.hidden).length === 3);
+    assert.deepEqual((await page.locator('.mitral-scallop-label:visible').allTextContents()).sort(), ['A1','A2','A3']);
+    await page.locator('input[data-layer="mitral-posterior"]').check();
+    await page.locator('#beat').click();
+    await page.waitForTimeout(500);
+    assert.equal(await page.locator('.mitral-scallop-label:visible').count(), 6);
+    await page.locator('#beat').click();
+    await page.locator('[data-view=anterior]').click();
+    await page.waitForSelector('.mitral-scallops[hidden]', { state: 'attached' });
+    assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'la').visible), true);
+    await page.locator('#structure-select').selectOption('mitral');
+    await page.waitForSelector('.mitral-scallops:not([hidden])');
+    await page.locator('#reset').click();
+    await page.waitForSelector('.mitral-scallops[hidden]', { state: 'attached' });
+    assert.equal(await page.evaluate(() => window.heart.getState().mitralFocus), false);
+    await page.locator('[data-mode=angiography]').click();
+    await page.locator('[data-view=mitral]').click();
+    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
+    await page.waitForSelector('.mitral-scallops:not([hidden])');
+    await page.evaluate(() => window.heart.setAngioProjection(20, 10));
+    await page.waitForSelector('.mitral-scallops[hidden]', { state: 'attached' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('[data-view=mitral]').click();
+    await page.waitForSelector('#viewport[data-camera-settled=true]');
+    assert.equal(await page.locator('.mitral-scallop-label:visible').count(), 6);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    assert.deepEqual(errors, []);
+    console.log('PASS: six mitral regions, leaflet visibility, animation, focus exit, reset and mobile layout');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

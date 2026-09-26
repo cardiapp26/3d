@@ -312,7 +312,13 @@ const fs = require('node:fs');
     assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm starts collapsed in anatomy mode');
     assert.equal(await page.locator('#carm-toggle-btn').textContent(), '+');
 
+    const cardiacVeinIds = ['cs', 'gcv', 'mcv', 'piv'];
+    const cardiacVeinsBeforeAngio = await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).map(s => s.visible), cardiacVeinIds);
     await page.locator('[data-mode="angiography"]').click();
+    const angioVeins = await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)), cardiacVeinIds);
+    assert.ok(angioVeins.length >= 4 && angioVeins.every(s => !s.visible), 'cardiac veins are excluded from angiography');
+    await page.evaluate(() => window.heart.setLayer('cardiac-veins', true));
+    assert.ok(await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).every(s => !s.visible), cardiacVeinIds), 'cardiac vein toggle cannot reveal veins in angiography');
     assert.ok(!await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm auto-expands in angiography mode');
     assert.equal(await page.locator('#carm-toggle-btn').textContent(), '−');
 
@@ -368,6 +374,7 @@ const fs = require('node:fs');
 
     await page.locator('[data-mode="anatomy"]').click();
     assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm collapses when returning to anatomy mode');
+    assert.deepEqual(await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).map(s => s.visible), cardiacVeinIds), cardiacVeinsBeforeAngio, 'cardiac vein visibility returns after leaving angiography');
 
     // 8. Reset equality (Key '0' vs #reset button)
     const alterState = async () => {
