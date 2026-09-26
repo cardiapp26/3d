@@ -18,9 +18,13 @@ Unregistered legacy catheter curves are no longer superimposed on this anatomy. 
 - **Schematic 3D models** (`SCHEMATIC CONCEPT / 3D ILLUSTRATION`): Procedural conduction landmarks (SA node, halo, AV node, bundle branches) and microscopic myocyte illustrations.
 - **Reference notes** (`REFERENCE NOTE / NO REGISTERED MESH`): Contextual learning landmarks without dedicated 3D geometry.
 
-## Atria and LAA inspection
+## Atrial inspection (Modes 09 & 10)
 
-Mode **09 Atria & LAA** shows only the left atrium, right atrium and LAA orifice marker. Focus buttons and the filtered structure selector inspect each target. LA and RA wall sliders expose the interiors; the viewport opacity control remains available. LAA tissue belongs to the atlas LA mesh, with a schematic orifice ring rather than a separate segmented appendage. Other anatomy and flow stay hidden within this mode, and stored layer preferences return when leaving it. Keyboard shortcut: **9**. Deep link: `#/mode/atria?structure=laa`.
+Mode **09 Sol atriyum & LAA / Left atrium & LAA** shows only the left atrium and the LAA orifice marker (the schematic gold ring indicating the transition from the LA body to the left atrial appendage). Focus buttons and the filtered structure selector inspect LA and LAA. The LA wall cut slider exposes the internal cavity and ridge anatomy.
+
+Mode **10 Sağ atriyum / Right atrium** provides an isolated view of the right atrium alone. It includes its own RA focus button and wall section slider to inspect internal pectinate muscles and caval inflows without interference from other chambers.
+
+Both modes isolate their respective anatomy, keep surrounding structures and flow hidden, and automatically restore original layer preferences when navigating back to other modes. Deep links: `#/mode/atria?structure=laa` and `#/mode/ra?structure=ra`.
 
 Run `APP_URL=http://127.0.0.1:5177 npm run test:atria` against the development server.
 

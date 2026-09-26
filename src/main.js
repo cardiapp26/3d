@@ -21,7 +21,8 @@ const modes = [
   ['bachmann', '06'],
   ['cath', '07'],
   ['exam', '08'],
-  ['atria', '09']
+  ['atria', '09'],
+  ['ra', '10']
 ];
 
 const app = document.querySelector('#app');
@@ -47,8 +48,13 @@ app.innerHTML = `
     </nav>
     <section id="atria-tools" hidden>
       <p data-i18n="atriaNote">${getTranslation('atriaNote')}</p>
-      ${[['la','atriaFocusLa'],['ra','atriaFocusRa'],['laa','atriaFocusLaa']].map(([id,key])=>`<button data-atria-focus="${id}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
-      ${[['la','wallLa'],['ra','wallRa']].map(([id,key])=>`<label class="slider-label"><span data-i18n="${key}">${getTranslation(key)}</span><output id="atria-cut-${id}">0%</output></label><input data-atria-wall="${id}" aria-label="${id.toUpperCase()} wall section" type="range" min="0" max="80" value="0">`).join('')}
+      ${[['la','atriaFocusLa'],['laa','atriaFocusLaa']].map(([id,key])=>`<button data-atria-focus="${id}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
+      <label class="slider-label"><span data-i18n="wallLa">${getTranslation('wallLa')}</span><output id="atria-cut-la">0%</output></label><input data-atria-wall="la" aria-label="LA wall section" type="range" min="0" max="80" value="0">
+    </section>
+    <section id="ra-tools" hidden>
+      <p data-i18n="raNote">${getTranslation('raNote')}</p>
+      <button data-ra-focus="ra" data-i18n="raFocusRa">${getTranslation('raFocusRa')}</button>
+      <label class="slider-label"><span data-i18n="wallRa">${getTranslation('wallRa')}</span><output id="ra-cut-ra">0%</output></label><input data-ra-wall="ra" aria-label="RA wall section" type="range" min="0" max="80" value="0">
     </section>
     <section id="layers">
       <div class="section-heading"><span data-i18n="layersHeading">${getTranslation('layersHeading')}</span> <span>08</span></div>
@@ -460,7 +466,8 @@ function inspect(id, flyTo = true, updateUrl = true) {
   // A 3D catheter station adds its channel to the hemodynamics tracing.
   if (typeof id === 'string' && id.startsWith('cath-')) hemoMode?.focusStation(id);
   const cleanId = resolveStructureId(id);
-  if (mode === 'atria' && !['la','ra','laa'].includes(cleanId)) return;
+  if (mode === 'atria' && !['la','laa'].includes(cleanId)) return;
+  if (mode === 'ra' && cleanId !== 'ra') return;
   const s = structures[cleanId];
   if (!s) return;
   currentSelectedId = cleanId;
@@ -608,7 +615,7 @@ heart?.ready.then(() => {
     heart.setMode(mode);
     if (lessons[mode]) showStep();
   }
-  inspect(currentSelectedId, mode === 'atria', false);
+  inspect(currentSelectedId, mode === 'atria' || mode === 'ra', false);
 }).catch(error => console.error('Atlas loading failed:', error));
 select.addEventListener('change', () => inspect(select.value));
 function formatWallReadout(value) {
@@ -627,6 +634,16 @@ document.querySelector('#restore-walls').addEventListener('click', () => {
     heart?.setWallCut(input.dataset.wall, 0);
     const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
     if (out) out.textContent = formatWallReadout(0);
+  });
+  document.querySelectorAll('[data-atria-wall]').forEach(input => {
+    input.value = 0;
+    const out = document.querySelector(`#atria-cut-${input.dataset.atriaWall}`);
+    if (out) out.textContent = '0%';
+  });
+  document.querySelectorAll('[data-ra-wall]').forEach(input => {
+    input.value = 0;
+    const out = document.querySelector(`#ra-cut-${input.dataset.raWall}`);
+    if (out) out.textContent = '0%';
   });
 });
 document.querySelector('#coronary-system').addEventListener('change', e => {heart?.setCoronarySystem(e.target.value);const value=e.target.value==='all'?100:20;heart?.setOpacity(value/100);document.querySelector('#opacity').value=value;document.querySelector('#opacity-value').textContent=`${value}%`;});
@@ -709,16 +726,36 @@ carmDockBtn?.addEventListener('click', toggleCarmPanel);
 
 function filterAtrialOptions() {
   for (const option of select.options) {
-    option.hidden = option.disabled = mode === 'atria' && !['la','ra','laa'].includes(option.value);
+    if (mode === 'atria') {
+      option.hidden = option.disabled = !['la','laa'].includes(option.value);
+    } else if (mode === 'ra') {
+      option.hidden = option.disabled = option.value !== 'ra';
+    } else {
+      option.hidden = option.disabled = false;
+    }
   }
 }
 document.querySelectorAll('[data-atria-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.atriaFocus)));
 document.querySelectorAll('[data-atria-wall]').forEach(input => input.addEventListener('input', () => {
   const id = input.dataset.atriaWall;
   heart?.setWallCut(id, Number(input.value) / 100);
-  document.querySelector(`#atria-cut-${id}`).textContent = `${input.value}%`;
-  document.querySelector(`[data-wall=${id}]`).value = input.value;
-  document.querySelector(`#wall-value-${id}`).textContent = formatWallReadout(input.value);
+  const out = document.querySelector(`#atria-cut-${id}`);
+  if (out) out.textContent = `${input.value}%`;
+  const wallInput = document.querySelector(`[data-wall=${id}]`);
+  if (wallInput) wallInput.value = input.value;
+  const wallVal = document.querySelector(`#wall-value-${id}`);
+  if (wallVal) wallVal.textContent = formatWallReadout(input.value);
+}));
+document.querySelectorAll('[data-ra-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.raFocus)));
+document.querySelectorAll('[data-ra-wall]').forEach(input => input.addEventListener('input', () => {
+  const id = input.dataset.raWall;
+  heart?.setWallCut(id, Number(input.value) / 100);
+  const out = document.querySelector(`#ra-cut-${id}`);
+  if (out) out.textContent = `${input.value}%`;
+  const wallInput = document.querySelector(`[data-wall=${id}]`);
+  if (wallInput) wallInput.value = input.value;
+  const wallVal = document.querySelector(`#wall-value-${id}`);
+  if (wallVal) wallVal.textContent = formatWallReadout(input.value);
 }));
 function setMode(newMode, updateUrl = true) {
   mode = newMode;
@@ -744,14 +781,23 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#opacity-value').textContent = `${opacity}%`;
   heart?.setOpacity(opacity / 100);
 
-  document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria';
+  document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria' || mode === 'ra';
   document.querySelector('#atria-tools').hidden = mode !== 'atria';
+  document.querySelector('#ra-tools').hidden = mode !== 'ra';
   filterAtrialOptions();
   if (mode === 'atria') {
     document.querySelectorAll('[data-atria-wall]').forEach(input => {
       const value = Math.round((heart?.getState().wallCuts[input.dataset.atriaWall] || 0) * 100);
       input.value = value;
-      document.querySelector(`#atria-cut-${input.dataset.atriaWall}`).textContent = `${value}%`;
+      const out = document.querySelector(`#atria-cut-${input.dataset.atriaWall}`);
+      if (out) out.textContent = `${value}%`;
+    });
+  } else if (mode === 'ra') {
+    document.querySelectorAll('[data-ra-wall]').forEach(input => {
+      const value = Math.round((heart?.getState().wallCuts[input.dataset.raWall] || 0) * 100);
+      input.value = value;
+      const out = document.querySelector(`#ra-cut-${input.dataset.raWall}`);
+      if (out) out.textContent = `${value}%`;
     });
   }
   document.querySelector('#lesson').hidden = !lessons[mode];
@@ -761,7 +807,7 @@ function setMode(newMode, updateUrl = true) {
     document.querySelector('#lesson-intro').textContent = lessons[mode].intro;
     showStep();
   } else {
-    inspect(mode === 'micro' ? 'micro' : mode === 'atria' ? 'la' : 'lv', true, false);
+    inspect(mode === 'micro' ? 'micro' : mode === 'atria' ? 'la' : mode === 'ra' ? 'ra' : 'lv', true, false);
   }
 
   if (updateUrl && !isUpdatingRoute) {
@@ -1252,6 +1298,16 @@ function resetAll() {
     input.value = 0;
     const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
     if (out) out.textContent = formatWallReadout(0);
+  });
+  document.querySelectorAll('[data-atria-wall]').forEach(input => {
+    input.value = 0;
+    const out = document.querySelector(`#atria-cut-${input.dataset.atriaWall}`);
+    if (out) out.textContent = '0%';
+  });
+  document.querySelectorAll('[data-ra-wall]').forEach(input => {
+    input.value = 0;
+    const out = document.querySelector(`#ra-cut-${input.dataset.raWall}`);
+    if (out) out.textContent = '0%';
   });
 
   setVeinsState(true);

@@ -1297,10 +1297,13 @@ export const uiTranslations = {
       ['bachmann', '06', 'Bachmann demeti & pacing'],
       ['cath', '07', 'Kateterizasyon ve hemodinami'],
       ['exam', '08', 'Fizik muayene'],
-      ['atria', '09', 'Atriyumlar & LAA']
+      ['atria', '09', 'Sol atriyum & LAA'],
+      ['ra', '10', 'Sağ atriyum']
     ],
-    atriaNote: 'Yalnız LA, RA ve LAA. LAA, sol atriyumun parçasıdır; halka ostiyumu işaretler.',
-    atriaFocusLa: 'Sol atriyum', atriaFocusRa: 'Sağ atriyum', atriaFocusLaa: 'LAA ostiyumu',
+    atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; sarı halka ostiyumu işaretler.',
+    atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
+    raNote: 'Yalnız sağ atriyum (RA). Düz venöz bileşen, pektinat kas bölgesi ve triküspit kapağı komşuluğu.',
+    raFocusRa: 'Sağ atriyum',
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Odacıklar (Chambers)',
     vessels: 'Büyük damarlar',
@@ -1404,10 +1407,13 @@ export const uiTranslations = {
       ['bachmann', '06', 'Bachmann bundle & pacing'],
       ['cath', '07', 'Catheterization and hemodynamics'],
       ['exam', '08', 'Physical examination'],
-      ['atria', '09', 'Atria & LAA']
+      ['atria', '09', 'Left atrium & LAA'],
+      ['ra', '10', 'Right atrium']
     ],
-    atriaNote: 'Only LA, RA and LAA. The LAA is part of the left atrium; the ring marks its orifice.',
-    atriaFocusLa: 'Left atrium', atriaFocusRa: 'Right atrium', atriaFocusLaa: 'LAA orifice',
+    atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the yellow ring marks its orifice.',
+    atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',
+    raNote: 'Isolated right atrium (RA). Smooth venous component, pectinate muscle region, and tricuspid relation.',
+    raFocusRa: 'Right atrium',
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Chambers',
     vessels: 'Great vessels',
@@ -1511,7 +1517,8 @@ const viewerTitles = {
     bachmann: 'Bachmann: anatomi ve atriyal pacing.',
     cath: 'Basınç eğrisini oku.',
     exam: 'Dinle, manevrayı yap.',
-    atria: 'Atriyumları ve LAA’yı incele.'
+    atria: 'Sol atriyumu ve LAA’yı incele.',
+    ra: 'Sağ atriyumu incele.'
   },
   en: {
     anatomy: 'A new perspective.',
@@ -1523,7 +1530,8 @@ const viewerTitles = {
     bachmann: 'Bachmann: anatomy and atrial pacing.',
     cath: 'Read the pressure tracing.',
     exam: 'Listen, then maneuver.',
-    atria: 'Explore the atria and LAA.'
+    atria: 'Explore the left atrium and LAA.',
+    ra: 'Explore the right atrium.'
   }
 };
 
