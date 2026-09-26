@@ -1296,8 +1296,11 @@ export const uiTranslations = {
       ['transseptal', '05', 'Transseptal & septostomi'],
       ['bachmann', '06', 'Bachmann demeti & pacing'],
       ['cath', '07', 'Kateterizasyon ve hemodinami'],
-      ['exam', '08', 'Fizik muayene']
+      ['exam', '08', 'Fizik muayene'],
+      ['atria', '09', 'Atriyumlar & LAA']
     ],
+    atriaNote: 'Yalnız LA, RA ve LAA. LAA, sol atriyumun parçasıdır; halka ostiyumu işaretler.',
+    atriaFocusLa: 'Sol atriyum', atriaFocusRa: 'Sağ atriyum', atriaFocusLaa: 'LAA ostiyumu',
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Odacıklar (Chambers)',
     vessels: 'Büyük damarlar',
@@ -1400,8 +1403,11 @@ export const uiTranslations = {
       ['transseptal', '05', 'Transseptal & septostomy'],
       ['bachmann', '06', 'Bachmann bundle & pacing'],
       ['cath', '07', 'Catheterization and hemodynamics'],
-      ['exam', '08', 'Physical examination']
+      ['exam', '08', 'Physical examination'],
+      ['atria', '09', 'Atria & LAA']
     ],
+    atriaNote: 'Only LA, RA and LAA. The LAA is part of the left atrium; the ring marks its orifice.',
+    atriaFocusLa: 'Left atrium', atriaFocusRa: 'Right atrium', atriaFocusLaa: 'LAA orifice',
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Chambers',
     vessels: 'Great vessels',
@@ -1504,7 +1510,8 @@ const viewerTitles = {
     transseptal: 'Septumu geç.',
     bachmann: 'Bachmann: anatomi ve atriyal pacing.',
     cath: 'Basınç eğrisini oku.',
-    exam: 'Dinle, manevrayı yap.'
+    exam: 'Dinle, manevrayı yap.',
+    atria: 'Atriyumları ve LAA’yı incele.'
   },
   en: {
     anatomy: 'A new perspective.',
@@ -1515,7 +1522,8 @@ const viewerTitles = {
     transseptal: 'Cross the septum.',
     bachmann: 'Bachmann: anatomy and atrial pacing.',
     cath: 'Read the pressure tracing.',
-    exam: 'Listen, then maneuver.'
+    exam: 'Listen, then maneuver.',
+    atria: 'Explore the atria and LAA.'
   }
 };
 

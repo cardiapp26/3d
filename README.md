@@ -18,6 +18,12 @@ Unregistered legacy catheter curves are no longer superimposed on this anatomy. 
 - **Schematic 3D models** (`SCHEMATIC CONCEPT / 3D ILLUSTRATION`): Procedural conduction landmarks (SA node, halo, AV node, bundle branches) and microscopic myocyte illustrations.
 - **Reference notes** (`REFERENCE NOTE / NO REGISTERED MESH`): Contextual learning landmarks without dedicated 3D geometry.
 
+## Atria and LAA inspection
+
+Mode **09 Atria & LAA** shows only the left atrium, right atrium and LAA orifice marker. Focus buttons and the filtered structure selector inspect each target. LA and RA wall sliders expose the interiors; the viewport opacity control remains available. LAA tissue belongs to the atlas LA mesh, with a schematic orifice ring rather than a separate segmented appendage. Other anatomy and flow stay hidden within this mode, and stored layer preferences return when leaving it. Keyboard shortcut: **9**. Deep link: `#/mode/atria?structure=laa`.
+
+Run `APP_URL=http://127.0.0.1:5177 npm run test:atria` against the development server.
+
 ## Mitral scallop view
 
 Use **Mitral** in the camera controls, or select a mitral structure in anatomy mode, to open an isolated atrial view. A1–A3 anterior segments and P1–P3 posterior scallops have paired colors and labels that follow leaflet animation. Leaflet visibility controls remain active. Another camera preset, selecting another structure, or reset restores the surrounding anatomy.

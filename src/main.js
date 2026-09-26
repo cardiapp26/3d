@@ -20,7 +20,8 @@ const modes = [
   ['transseptal', '05'],
   ['bachmann', '06'],
   ['cath', '07'],
-  ['exam', '08']
+  ['exam', '08'],
+  ['atria', '09']
 ];
 
 const app = document.querySelector('#app');
@@ -44,6 +45,11 @@ app.innerHTML = `
     <nav aria-label="Learning modes">
       ${getUiModes().map(([id,n,t])=>`<button class="mode ${id==='anatomy'?'active':''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> <kbd class="mode-kbd">${n.replace(/^0/,'')}</kbd><b>↗</b></button>`).join('')}
     </nav>
+    <section id="atria-tools" hidden>
+      <p data-i18n="atriaNote">${getTranslation('atriaNote')}</p>
+      ${[['la','atriaFocusLa'],['ra','atriaFocusRa'],['laa','atriaFocusLaa']].map(([id,key])=>`<button data-atria-focus="${id}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
+      ${[['la','wallLa'],['ra','wallRa']].map(([id,key])=>`<label class="slider-label"><span data-i18n="${key}">${getTranslation(key)}</span><output id="atria-cut-${id}">0%</output></label><input data-atria-wall="${id}" aria-label="${id.toUpperCase()} wall section" type="range" min="0" max="80" value="0">`).join('')}
+    </section>
     <section id="layers">
       <div class="section-heading"><span data-i18n="layersHeading">${getTranslation('layersHeading')}</span> <span>08</span></div>
       <label class="layer"><i style="background:#c76260"></i><span data-i18n="chambers">${getTranslation('chambers')}</span><input type="checkbox" data-layer="chambers" checked></label>
@@ -454,6 +460,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
   // A 3D catheter station adds its channel to the hemodynamics tracing.
   if (typeof id === 'string' && id.startsWith('cath-')) hemoMode?.focusStation(id);
   const cleanId = resolveStructureId(id);
+  if (mode === 'atria' && !['la','ra','laa'].includes(cleanId)) return;
   const s = structures[cleanId];
   if (!s) return;
   currentSelectedId = cleanId;
@@ -601,7 +608,7 @@ heart?.ready.then(() => {
     heart.setMode(mode);
     if (lessons[mode]) showStep();
   }
-  inspect(currentSelectedId, false, false);
+  inspect(currentSelectedId, mode === 'atria', false);
 }).catch(error => console.error('Atlas loading failed:', error));
 select.addEventListener('change', () => inspect(select.value));
 function formatWallReadout(value) {
@@ -700,6 +707,19 @@ function toggleCarmPanel() {
 carmToggleBtn?.addEventListener('click', toggleCarmPanel);
 carmDockBtn?.addEventListener('click', toggleCarmPanel);
 
+function filterAtrialOptions() {
+  for (const option of select.options) {
+    option.hidden = option.disabled = mode === 'atria' && !['la','ra','laa'].includes(option.value);
+  }
+}
+document.querySelectorAll('[data-atria-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.atriaFocus)));
+document.querySelectorAll('[data-atria-wall]').forEach(input => input.addEventListener('input', () => {
+  const id = input.dataset.atriaWall;
+  heart?.setWallCut(id, Number(input.value) / 100);
+  document.querySelector(`#atria-cut-${id}`).textContent = `${input.value}%`;
+  document.querySelector(`[data-wall=${id}]`).value = input.value;
+  document.querySelector(`#wall-value-${id}`).textContent = formatWallReadout(input.value);
+}));
 function setMode(newMode, updateUrl = true) {
   mode = newMode;
   step = 0;
@@ -724,7 +744,16 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#opacity-value').textContent = `${opacity}%`;
   heart?.setOpacity(opacity / 100);
 
-  document.querySelector('#layers').hidden = mode === 'micro';
+  document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria';
+  document.querySelector('#atria-tools').hidden = mode !== 'atria';
+  filterAtrialOptions();
+  if (mode === 'atria') {
+    document.querySelectorAll('[data-atria-wall]').forEach(input => {
+      const value = Math.round((heart?.getState().wallCuts[input.dataset.atriaWall] || 0) * 100);
+      input.value = value;
+      document.querySelector(`#atria-cut-${input.dataset.atriaWall}`).textContent = `${value}%`;
+    });
+  }
   document.querySelector('#lesson').hidden = !lessons[mode];
 
   if (lessons[mode]) {
@@ -732,7 +761,7 @@ function setMode(newMode, updateUrl = true) {
     document.querySelector('#lesson-intro').textContent = lessons[mode].intro;
     showStep();
   } else {
-    inspect(mode === 'micro' ? 'micro' : 'lv', true, false);
+    inspect(mode === 'micro' ? 'micro' : mode === 'atria' ? 'la' : 'lv', true, false);
   }
 
   if (updateUrl && !isUpdatingRoute) {
@@ -1337,6 +1366,7 @@ function updateLanguageUI() {
       selectEl.append(opt);
     }
     selectEl.value = prevVal;
+    filterAtrialOptions();
   }
 
   inspect(currentSelectedId, false, false);
@@ -1465,7 +1495,7 @@ const shortcutsModal = document.querySelector('#shortcuts-modal');
 document.querySelector('#shortcuts-btn').addEventListener('click', () => shortcutsModal.showModal());
 document.querySelector('#close-shortcuts').addEventListener('click', () => shortcutsModal.close());
 
-// Keyboard shortcuts (1-8, A, P, R, L, S, C, 0, Space, ?, N)
+// Keyboard shortcuts (1-9, A, P, R, L, S, C, 0, Space, ?, N)
 window.addEventListener('keydown', e => {
   if (dialog.open || shortcutsModal.open) return;
   // Keep text inputs and native dialog controls independent of scene shortcuts.
@@ -1473,7 +1503,7 @@ window.addEventListener('keydown', e => {
 
   const key = e.key;
 
-  if (key >= '1' && key <= '8') {
+  if (key >= '1' && key <= '9') {
     const modeIndex = parseInt(key, 10) - 1;
     if (modes[modeIndex]) {
       setMode(modes[modeIndex][0]);

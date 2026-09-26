@@ -11,7 +11,7 @@ import {
 const previous = getContentLanguage();
 
 setContentLanguage('en');
-assert.equal(getUiModes().length, 8);
+assert.equal(getUiModes().length, 9);
 assert.deepEqual(getUiModes().map(([id]) => id), [
   'anatomy',
   'angiography',
@@ -20,17 +20,20 @@ assert.deepEqual(getUiModes().map(([id]) => id), [
   'transseptal',
   'bachmann',
   'cath',
-  'exam'
+  'exam',
+  'atria'
 ]);
 assert.match(getViewerTitle('angiography'), /projection/i);
 assert.match(getAngioDescription('spider'), /spider/i);
 assert.match(getAngioDescription('custom', { laoRaoStr: 'LAO 12°', craCauStr: 'CRA 4°' }), /LAO 12°/);
 assert.equal(getTranslation('wallClosed'), 'Closed');
+assert.equal(getUiModes().find(([id]) => id === 'atria')[2], 'Atria & LAA');
 const englishSpider = getAngioDescription('spider');
 
 setContentLanguage('tr');
-assert.equal(getUiModes().length, 8);
+assert.equal(getUiModes().length, 9);
 assert.equal(getTranslation('wallClosed'), 'Kapalı');
+assert.equal(getUiModes().find(([id]) => id === 'atria')[2], 'Atriyumlar & LAA');
 assert.match(getAngioDescription('spider'), /Spider|bifurk/i);
 assert.notEqual(getAngioDescription('spider'), englishSpider);
 assert.match(getViewerTitle('bachmann'), /Bachmann/);

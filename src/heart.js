@@ -137,10 +137,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
-    layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro' && !mitralFocus;
+    layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro' && !mitralFocus && mode !== 'atria';
     if(bloodFlow) bloodFlow.setVisible(layers.flow.visible);
     for(const m of meshes){
       if(m.userData.micro)continue;
+      if(mode==='atria'&&!['la','ra','laa'].includes(m.userData.id)){m.visible=false;continue;}
       if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
       const {id,layer,system:branch}=m.userData;
       if (mode === 'angiography' && m.userData.veinGroup === 'cardiac-veins') {
@@ -163,7 +164,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers'||branch==='veins'||layer==='vessels';
       const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
-      m.visible=visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
+      m.visible=mode==='atria'||visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
       const tissue=layer==='chambers';
       // Catheters run inside these vessels in the transseptal lesson; keep them
       // see-through. The pulmonary trunk and bifurcation sit on the LA roof in
@@ -202,7 +203,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     requestRender();
   }
-  function selectStructure(id,flyTo=true){if(mitralFocus&&!id?.startsWith('mitral')){mitralFocus=false;applyState();}if(flyTo&&id?.startsWith('mitral')&&mode==='anatomy'){selected=id;setView('mitral');return;}selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+  function selectStructure(id,flyTo=true){if(mitralFocus&&!id?.startsWith('mitral')){mitralFocus=false;applyState();}if(flyTo&&id?.startsWith('mitral')&&mode==='anatomy'){selected=id;setView('mitral');return;}selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength(mode==='atria'?3.1:['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
 
   // Conceptual cellular illustration is separate from the source atlas.
   const micro=new THREE.Group();scene.add(micro);micro.visible=false;
