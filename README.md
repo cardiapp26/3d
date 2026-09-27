@@ -28,6 +28,8 @@ Both modes isolate their respective anatomy, keep surrounding structures and flo
 
 Run `APP_URL=http://127.0.0.1:5177 npm run test:atria` against the development server.
 
+LA surface shading shares normals at coincident vertices without changing atlas positions or openings. The LAA marker follows a closed intersection of the LA surface with the estimated neck plane when available; otherwise it retains the circular estimate. The thinner contour moves with LA contraction. LA focus fits the full chamber to the viewport; LAA focus uses an oblique view and translucent surrounding tissue to expose the neck. These changes improve inspection, not anatomical segmentation or source mesh resolution.
+
 ## Mitral scallop view
 
 Use **Mitral** in the camera controls, or select a mitral structure in anatomy mode, to open an isolated atrial view. A1–A3 anterior segments and P1–P3 posterior scallops have paired colors and labels that follow leaflet animation. Leaflet visibility controls remain active. Another camera preset, selecting another structure, or reset restores the surrounding anatomy.

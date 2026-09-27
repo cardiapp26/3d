@@ -214,11 +214,11 @@ function writeAvLeaflet(mesh, opening, frame) {
   attr.needsUpdate = true;
 }
 
-function writeChamber(mesh, weight, lockAtMaxY) {
+function writeChamber(mesh, weight, lockAtMaxY, referenceMotion = null) {
   const attr = rememberRest(mesh);
   if (!attr) return;
   const rest = mesh.userData.restPosition;
-  const { minY, maxY, cx, cz } = mesh.userData.motion;
+  const { minY, maxY, cx, cz } = referenceMotion || mesh.userData.motion;
   const height = Math.max(1e-4, maxY - minY);
   const out = attr.array;
   const radial = lockAtMaxY ? 0.11 : 0.08;
@@ -334,6 +334,8 @@ export function createAnimationChannels({ meshMap }) {
     deform('lv', weights.ventricularContraction, true);
     deform('rv', weights.ventricularContraction, true);
     deform('la', weights.atrialContraction, false);
+    const laMotion = meshMap.get('la')?.[0]?.userData.motion;
+    if (laMotion) for (const marker of meshMap.get('laa') || []) writeChamber(marker, weights.atrialContraction, false, laMotion);
     deform('ra', weights.atrialContraction, false);
     applyValves(weights);
     return weights;
@@ -351,7 +353,7 @@ export function createAnimationChannels({ meshMap }) {
   }
 
   function reset() {
-    for (const id of ['lv', 'rv', 'la', 'ra', 'lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'lv-papillary', 'rv-papillary']) {
+    for (const id of ['lv', 'rv', 'la', 'laa', 'ra', 'lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'lv-papillary', 'rv-papillary']) {
       for (const mesh of meshMap.get(id) || []) restoreMesh(mesh);
     }
   }

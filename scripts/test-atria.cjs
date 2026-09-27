@@ -16,7 +16,39 @@ const assert = require('node:assert/strict');
     for (const id of ['la','laa']) {
       await page.locator(`[data-atria-focus=${id}]`).click();
       assert.equal(await page.locator('#structure-select').inputValue(), id);
+      await page.waitForSelector('#viewport[data-camera-settled=true]');
+      await page.screenshot({ path: `research/screenshots/${id}-model.png` });
+      if (id === 'la') {
+        const fit = await page.evaluate(async () => {
+          const THREE = await import('/node_modules/three/build/three.module.js');
+          let la, camera;
+          window.heart.scene.traverse(o => { if (o.isMesh && o.userData.id === 'la') la = o; if (o.isPerspectiveCamera) camera = o; });
+          const points = la.geometry.attributes.position;
+          let max = 0;
+          for (let i = 0; i < points.count; i++) {
+            const v = new THREE.Vector3().fromBufferAttribute(points, i).applyMatrix4(la.matrixWorld).project(camera);
+            max = Math.max(max, Math.abs(v.x), Math.abs(v.y));
+          }
+          return max;
+        });
+        assert.ok(fit < .95, 'LA fits inside viewport instead of being cropped');
+      }
+
     }
+    assert.equal(await page.evaluate(() => {
+      let marker;
+      window.heart.scene.traverse(o => { if (o.isMesh && o.userData.id === 'laa') marker = o; });
+      return marker.userData.contourMethod;
+    }), 'surface-intersection', 'real atlas supplies a noncircular neck contour');
+    const laOpacity = () => page.evaluate(() => {
+      let opacity;
+      window.heart.scene.traverse(o => { if (o.isMesh && o.userData.id === 'la') opacity = o.material.opacity; });
+      return opacity;
+    });
+    assert.ok(await laOpacity() <= .32, 'LAA focus reveals neck through surrounding tissue');
+    await page.locator('[data-atria-focus=la]').click();
+    assert.equal(await laOpacity(), 1, 'LA focus restores tissue opacity');
+    await page.locator('[data-atria-focus=laa]').click();
     await page.locator('[data-atria-wall=la]').fill('50');
     assert.equal(await page.evaluate(() => window.heart.getState().wallCuts.la), .5);
     await page.evaluate(() => { window.heart.setLayer('vessels', true); window.heart.setFlowVisible(true); });

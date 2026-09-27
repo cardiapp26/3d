@@ -175,3 +175,26 @@ console.log('Running Animation Channels Unit Tests...\n');
 }
 
 console.log('\nALL ANIMATION CHANNEL TESTS PASSED!');
+
+// LAA marker follows the parent LA deformation, rather than its own tiny bounds.
+{
+  const la = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 2));
+  const marker = new THREE.Mesh(new THREE.SphereGeometry(.2, 8, 6));
+  marker.geometry.translate(.6, .8, .3);
+  const channels = createAnimationChannels({ meshMap: new Map([['la', [la]], ['laa', [marker]]]) });
+  const rest = marker.geometry.attributes.position.array.slice();
+  channels.applyChannels({ phase: .38 });
+  const weight = computeChannelWeights(.38).atrialContraction;
+  const { minY, maxY, cx, cz } = la.userData.motion;
+  const next = marker.geometry.attributes.position.array;
+  for (let i = 0; i < rest.length; i += 3) {
+    const k = weight * ((rest[i + 1] - minY) / (maxY - minY)) ** 2;
+    assert.ok(Math.abs(next[i] - (rest[i] - (rest[i] - cx) * .08 * k)) < 1e-6);
+    assert.ok(Math.abs(next[i + 1] - (rest[i + 1] + (minY - rest[i + 1]) * .05 * k)) < 1e-6);
+    assert.ok(Math.abs(next[i + 2] - (rest[i + 2] - (rest[i + 2] - cz) * .08 * k)) < 1e-6);
+  }
+  assert.notDeepEqual(next, rest);
+  channels.reset();
+  assert.deepEqual(next, rest, 'LAA rest pose is restored exactly');
+  console.log('PASS: LAA marker follows LA motion and resets');
+}

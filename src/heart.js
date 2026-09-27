@@ -8,7 +8,7 @@ import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createMitralScallops } from './mitral-scallops.js';
 import { createAnnuli } from './annuli.js';
 import { addSchematicAvLeaflets } from './schematic-leaflets.js';
-import { addLaaMarker } from './la-landmarks.js';
+import { addLaaMarker, smoothLaNormals } from './la-landmarks.js';
 import { createAuscultationMarkers } from './auscultation-points.js';
 import { createThorax } from './thorax.js';
 import { createTransseptal } from './transseptal.js';
@@ -173,7 +173,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const catheterVessel=(mode==='transseptal'&&['aorta','pa','cs','svc','ivc'].includes(id))||(mode==='cath'&&['aorta','pa','svc','ivc'].includes(id));
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
       const faintPa=visibility['pa-faint']&&id==='pa';
-      const alpha=tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
+      const alpha=mode==='atria'&&selected==='laa'?(id==='la'?Math.min(opacity,.32):1):tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
       m.material.clippingPlanes=vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
@@ -204,7 +204,43 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     requestRender();
   }
-  function selectStructure(id,flyTo=true){if(mitralFocus&&!id?.startsWith('mitral')){mitralFocus=false;applyState();}if(flyTo&&id?.startsWith('mitral')&&mode==='anatomy'){selected=id;setView('mitral');return;}selected=id;paintSelection();if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength((mode==='atria'||mode==='ra')?3.1:['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+  function selectStructure(id,flyTo=true){if(mitralFocus&&!id?.startsWith('mitral')){mitralFocus=false;applyState();}if(flyTo&&id?.startsWith('mitral')&&mode==='anatomy'){selected=id;setView('mitral');return;}selected=id;paintSelection();if(mode==='atria')applyState();if(flyTo&&mode==='atria'&&['la','laa'].includes(id)){focusLeftAtrium(id);return;}if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength((mode==='atria'||mode==='ra')?3.1:['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+
+  function focusLeftAtrium(id) {
+    const la = meshMap.get('la')?.[0];
+    if (!la) return;
+    const box = new THREE.Box3().setFromObject(la);
+    const marker = meshMap.get('laa')?.[0];
+    const data = marker?.userData;
+    let direction = camera.position.clone().sub(controls.target).normalize();
+    if (direction.lengthSq() < .5) direction.set(0, 0, 1);
+    if (id === 'laa' && data) {
+      const neck = new THREE.Vector3(...data.orifice), tip = new THREE.Vector3(...data.tip);
+      box.setFromPoints([neck, tip]).expandByScalar(data.radius * 1.8);
+      // Look obliquely across the appendage axis so body and neck remain legible.
+      direction.set(1, .4, 1).normalize();
+    }
+    box.getCenter(lookTarget);
+    const points = [];
+    if(id==='la'){
+      const p=la.geometry.attributes.position;
+      for(let i=0;i<p.count;i++)points.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(la.matrixWorld));
+    }else{
+      for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z])points.push(new THREE.Vector3(x,y,z));
+    }
+    const vertical = THREE.MathUtils.degToRad(camera.fov / 2);
+    const horizontal = Math.atan(Math.tan(vertical) * camera.aspect);
+    const right=new THREE.Vector3().crossVectors(camera.up,direction).normalize();
+    if(right.lengthSq()<.1)right.set(1,0,0);
+    const up=new THREE.Vector3().crossVectors(direction,right).normalize();
+    let distance=0;
+    for(const point of points){
+      const relative=point.clone().sub(lookTarget), depth=relative.dot(direction);
+      distance=Math.max(distance,depth+Math.abs(relative.dot(right))/(Math.tan(horizontal)*.82),depth+Math.abs(relative.dot(up))/(Math.tan(vertical)*.82));
+    }
+    cameraTarget.copy(lookTarget).addScaledVector(direction, Math.min(15, Math.max(1.2, distance)));
+    transition=true;container.dataset.cameraSettled='false';requestRender();
+  }
 
   // Conceptual cellular illustration is separate from the source atlas.
   const micro=new THREE.Group();scene.add(micro);micro.visible=false;
@@ -228,6 +264,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       // Baking matrixWorld before applying the SAME affine transform preserves registration.
       const geometry=obj.geometry.clone().applyMatrix4(obj.matrixWorld);
       geometry.translate(-center.x,-center.y,-center.z);geometry.scale(scale,scale,scale);
+      if(part.id==='la')smoothLaNormals(geometry);
       const mesh=new THREE.Mesh(geometry,material(part.color));mesh.name=part.sourceName;mesh.userData={...part, provenance: 'atlas'};layers[part.layer].add(mesh);register(mesh,part.id);
     }
     disposeScene(gltf.scene);decoder.dispose();
@@ -238,7 +275,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     buildConductionSystem();
     annuli.build();
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
-    addLaaMarker({ meshVertices, register, parent: layers.chambers });
+    addLaaMarker({ meshVertices, getMeshes: id => meshMap.get(id) || [], register, parent: layers.chambers });
     mitralScallops.build();
     thorax.build();
     computeVesselTrims();
@@ -590,7 +627,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){const id=pick(e);if(id)onSelect(id);}}
   function pointerLeave(){hovered=null;down=null;paintSelection();onHover(null);}
   renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointerleave',pointerLeave);
-  const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();requestRender();};
+  const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();if(modelReady&&mode==='atria'&&['la','laa'].includes(selected))focusLeftAtrium(selected);requestRender();};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
   let lastTime = performance.now();
   function animate(now){
