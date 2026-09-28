@@ -25,6 +25,12 @@ Atlas axes: +x patient left, +y superior, +z anterior. "Septal contact" is the R
 
 These are broad teaching categories. Geography and border classification overlap, particularly for inlet/outlet VSD. Shared AV junction defects belong to the AVSD category. PFO is not presented as a tissue-deficiency ASD. Shunt direction is conditional, not fixed; the view does not calculate pressures, vascular resistance or flows.
 
+## 2D atrial map (revision 3)
+
+The atrial map is a right lateral view of the opened RA, superior up and anterior to the right, with a small orientation mark. Fossa central; limbus a horseshoe over the superior, anterior and posterior fossa margins, open inferiorly toward the IVC; SVC superior, IVC posteroinferior with the Eustachian valve; tricuspid orifice anteroinferior inside the atrial outline (previously drawn as an arc outside the atrium reaching SVC level); CS ostium between the IVC and the tricuspid orifice, one septal isthmus from it (previously touching the annulus); primum defect on the AV valve margin, anteroinferior to the fossa; superior and inferior sinus venosus at the caval mouths. Positions are authored, not measured.
+
+The ventricular map is the RV opened from the front, superior up and the patient's left to the right. It now shows the supraventricular crest between the tricuspid and pulmonary valves, clasped by the limbs of the septomarginal trabeculation; the aortic root behind the membranous septum; and the moderator band reaching the anterior papillary muscle. Perimembranous sits between the limbs under the crest, inlet beneath the septal tricuspid leaflet, outlet directly under the pulmonary valve above the crest, muscular in the trabecular septum.
+
 ## Clinical summary fields
 
 Per category, `prevalence`, `associations`, `conduction` and `closure` are short bilingual paraphrases of the cited reviews:
