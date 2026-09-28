@@ -11,7 +11,7 @@ import {
 const previous = getContentLanguage();
 
 setContentLanguage('en');
-assert.equal(getUiModes().length, 10);
+assert.equal(getUiModes().length, 11);
 assert.deepEqual(getUiModes().map(([id]) => id), [
   'anatomy',
   'angiography',
@@ -22,7 +22,8 @@ assert.deepEqual(getUiModes().map(([id]) => id), [
   'cath',
   'exam',
   'atria',
-  'ra'
+  'ra',
+  'defects'
 ]);
 assert.match(getViewerTitle('angiography'), /projection/i);
 assert.match(getAngioDescription('spider'), /spider/i);
@@ -33,7 +34,7 @@ assert.equal(getUiModes().find(([id]) => id === 'ra')[2], 'Right atrium');
 const englishSpider = getAngioDescription('spider');
 
 setContentLanguage('tr');
-assert.equal(getUiModes().length, 10);
+assert.equal(getUiModes().length, 11);
 assert.equal(getTranslation('wallClosed'), 'Kapalı');
 assert.equal(getUiModes().find(([id]) => id === 'atria')[2], 'Sol atriyum & LAA');
 assert.equal(getUiModes().find(([id]) => id === 'ra')[2], 'Sağ atriyum');

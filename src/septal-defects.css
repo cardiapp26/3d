@@ -1,0 +1,31 @@
+.defect-panel{display:grid;gap:9px;min-width:0;color:#263e3b;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.defect-panel *{box-sizing:border-box}
+.defect-panel .defect-heading,.defect-panel .defect-title{margin:0;font-size:13px;color:#244f43}
+.defect-panel p{margin:0}
+.defect-panel .defect-intro{color:#51664e}
+.defect-panel .defect-families{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.defect-panel .defect-types{display:grid;grid-template-columns:1fr;gap:4px}
+.defect-panel button{min-width:0;min-height:36px;padding:7px 9px;border:1px solid #c4d2bc;border-radius:5px;background:#fff;color:#31573f;text-align:left;font:inherit;line-height:1.35;cursor:pointer;white-space:normal;overflow-wrap:anywhere}
+.defect-panel button:hover{background:#edf2e9}
+.defect-panel button[aria-pressed="true"]{background:#244f43;color:#fff;border-color:#244f43}
+.defect-panel button:focus-visible,.defect-panel a:focus-visible{outline:2px solid #168471;outline-offset:2px}
+.defect-panel .defect-card{display:grid;gap:8px;padding:10px;border:1px solid #dce4d7;border-radius:7px;background:#fcfdfb;min-width:0}
+.defect-panel .defect-location{font-weight:600}
+.defect-panel .defect-map{margin:0;min-width:0}
+.defect-panel .defect-map svg{display:block;width:100%;height:auto;max-height:250px}
+.defect-panel .defect-map text{font:10px system-ui,sans-serif;fill:#344b45}
+.defect-panel .defect-map-tissue{fill:#e4b7a5;stroke:#a77465;stroke-width:2}
+.defect-panel .defect-map-fossa{fill:none;stroke:#a77465;stroke-width:1.5;stroke-dasharray:4 3}
+.defect-panel .defect-map-vessel{fill:none;stroke:#527d97;stroke-width:5}
+.defect-panel .defect-map-junction{fill:none;stroke:#486c58;stroke-width:7;stroke-linecap:round}
+.defect-panel .defect-map-sinus{fill:#b6cce1;stroke:#527d97;stroke-width:2}
+.defect-panel .defect-map-hole{fill:#fff9dc;stroke:#b7541a;stroke-width:4}
+.defect-panel figcaption,.defect-panel .defect-note{color:#586b54;font-size:10px;line-height:1.45}
+.defect-panel .defect-focus{text-align:center;background:#edf2e9;font-weight:600}
+.defect-panel .defect-source{color:#286255;font-size:10px;display:block;text-underline-offset:2px}
+
+#defect-tools{padding:12px;min-width:0}
+#defect-tools[hidden],.defect-overlay[hidden],.defect-site-label[hidden],#cycle-panel[hidden]{display:none}
+.defect-overlay{position:absolute;inset:0;pointer-events:none;z-index:5}
+.defect-site-label{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border:1px solid #41685e;border-radius:50%;min-width:30px;height:30px;padding:3px;background:#f5f8ee;color:#244f43;font:600 10px system-ui;cursor:pointer}
+.defect-site-label.selected{background:#244f43;color:#fff;outline:2px solid #e7a34f;outline-offset:2px}

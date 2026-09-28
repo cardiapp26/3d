@@ -1,7 +1,9 @@
+import { DEFECT_TYPES } from './septal-defects-data.js';
 import { initialLanguage } from './entry-language.js';
 
 const atlas = 'Kardiyak anatomi atlası';
 const av = 'Ho et al., 2003, PDF pp. 3–4';
+const koch2022 = 'Tretter et al., Europace 2022;24:455–463 (doi:10.1093/europace/euab285)';
 const la = 'Ho et al., 2012, PDF pp. 2–3';
 const rv = 'Anatomy for right ventricular lead implantation, PDF p. 2';
 
@@ -31,6 +33,11 @@ export function getContentLanguage() {
 }
 
 export const rawStructures = {
+  ...Object.fromEntries(DEFECT_TYPES.map(d => [d.id, {
+    tr: { title: d.title.tr, description: d.location.tr, clinical: d.detail.tr },
+    en: { title: d.title.en, description: d.location.en, clinical: d.detail.en },
+    source: `${d.source.title}: ${d.source.url}`
+  }])),
   ra: {
     tr: {
       title: 'Sağ atriyum • RA',
@@ -243,34 +250,49 @@ export const rawStructures = {
     source: 'Standard hemodynamic normals (adult, supine); schematic'
   },
   'koch-triangle': {
-    tr: { title: 'Koch üçgeni', description: 'Sağ atriyum alt septumunda; taban CS ostiyumu, kenarları Todaro tendonu ve triküspit septal yaprakçık menteşesi, apeksi kompakt AV düğüm.', clinical: 'Hem kaçınılacak bölgeyi (AV düğüm, hızlı yol) hem hedefi (yavaş yol) içerdiği için AVNRT ablasyonunun temel haritasıdır.' },
-    en: { title: 'Triangle of Koch', description: 'Lower septal right atrium; base = CS ostium, sides = tendon of Todaro and the septal tricuspid hinge, apex = compact AV node.', clinical: 'Holds both the zone to avoid (AV node, fast pathway) and the target (slow pathway): the core map for AVNRT ablation.' },
-    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+    tr: { title: 'Koch üçgeni', description: 'İnferior piramidal boşluğun sağ atriyal yüzü; atitüdinal konumda apeksi süperiora bakar. Kenarlar: Todaro tendonu ve triküspit septal yaprakçık menteşesi (membranöz septum düzeyinde birleşir). Taban: CS ostiyumu hizasındaki inferior (kavotriküspit) istmus. Apeks: kompakt AV düğüm.', clinical: 'Gerçek bir septum değil, paraseptal bir "AV kas sandviçi"dir: sağ atriyal duvar ile müsküler septum krestini fibro-adipöz doku ayırır. Hem kaçınılacak bölgeyi (AV düğüm, hızlı yol) hem hedefi (septal istmus / yavaş yol) içerir.' },
+    en: { title: 'Triangle of Koch', description: 'The right atrial face of the inferior pyramidal space; in attitudinal orientation its apex points superiorly. Sides: tendon of Todaro and the septal tricuspid hinge (converging at the membranous septum). Base: the inferior (cavotricuspid) isthmus at the CS ostium. Apex: compact AV node.', clinical: 'Not a true septum but a paraseptal "AV muscular sandwich": fibro-adipose tissue separates the RA wall from the crest of the muscular septum. Holds both the zone to avoid (AV node, fast pathway) and the target (septal isthmus / slow pathway).' },
+    source: `${koch2022}; ${av}; schematic`
   },
   'koch-todaro': {
-    tr: { title: 'Todaro tendonu', description: 'Eustachian valf / sırtın devamı olan fibröz kordon; Koch üçgeninin posterosüperior kenarı, santral fibröz gövdeye uzanır.', clinical: 'Hızlı yol bu kenara komşu, apekse yakındır; yakın bölgede ablasyon PR uzaması veya AV blok riski taşır.' },
-    en: { title: 'Tendon of Todaro', description: 'Fibrous cord continuing the Eustachian valve / ridge; the posterosuperior side of Koch\'s triangle, running to the central fibrous body.', clinical: 'The fast pathway lies next to it near the apex; ablating close by risks PR prolongation or AV block.' },
-    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+    tr: { title: 'Todaro tendonu', description: 'Eustachian (İVK) ve Thebesian (CS) valflerinin komissüründen doğan fibröz kordon; süperiora uzanıp triküspit septal menteşesiyle membranöz septum düzeyinde birleşerek Koch üçgeninin posterosüperior kenarını yapar.', clinical: 'Hızlı yolun septal girdisi bu kenarın septal (atriyal buttress) tarafından apekse ulaşır; apekse yakın ablasyon PR uzaması veya AV blok riski taşır.' },
+    en: { title: 'Tendon of Todaro', description: 'Fibrous cord arising at the commissure of the Eustachian (IVC) and Thebesian (CS) valves; it runs superiorly and meets the septal tricuspid hinge at the membranous septum, forming the posterosuperior side of Koch\'s triangle.', clinical: 'The septal input of the fast pathway reaches the apex from the septal (atrial buttress) side of this border; ablating near the apex risks PR prolongation or AV block.' },
+    source: `${koch2022}; schematic`
   },
   'koch-base': {
-    tr: { title: 'CS ostiyumu (Koch tabanı)', description: 'Koroner sinüsün sağ atriyuma açıldığı ağız; Koch üçgeninin tabanı. Floroskopide proksimal CS elektrotları tabanı işaretler.', clinical: 'Yavaş yol tabanın hemen üstünde, CS ağzı ile triküspit septal yaprakçık arasındadır.' },
-    en: { title: 'CS ostium (Koch base)', description: 'The opening of the coronary sinus into the right atrium; the base of Koch\'s triangle. On fluoroscopy the proximal CS electrodes mark it.', clinical: 'The slow pathway sits just above the base, between the CS ostium and the septal tricuspid leaflet.' },
-    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+    tr: { title: 'CS ostiyumu / inferior istmus (Koch tabanı)', description: 'Koch üçgeninin tabanı inferior (kavotriküspit) istmustur; CS ostiyumu bu tabanda yer alır. CS, sol AV bileşkenin parçasıdır. İVK ile CS ağzı arasındaki "sinüs septumu" fibro-adipöz dokulu bir kıvrımdır. Floroskopide proksimal CS elektrotları tabanı işaretler.', clinical: 'CS ağzı ile triküspit septal menteşesi arasındaki septal istmus, yavaş yol ablasyonunun olağan yeridir.' },
+    en: { title: 'CS ostium / inferior isthmus (Koch base)', description: 'The base of Koch\'s triangle is the inferior (cavotricuspid) isthmus, where the CS ostium sits. The CS belongs to the left AV junction. The "sinus septum" between the IVC and CS mouths is a fold filled with fibro-adipose tissue. On fluoroscopy the proximal CS electrodes mark the base.', clinical: 'The septal isthmus, between the CS mouth and the septal tricuspid hinge, is the usual site for slow-pathway ablation.' },
+    source: `${koch2022}; schematic`
   },
   'koch-avnode': {
-    tr: { title: 'Kompakt AV düğüm (Koch apeksi)', description: 'Koch üçgeninin apeksinde, triküspit septal menteşesinin membranöz septumla birleştiği yerde; His demeti buradan santral fibröz gövdeyi deler. Floroskopide His kateteri apeksi gösterir.', clinical: 'Bu bölgeye ablasyon kalıcı tam AV blok yapar: kesin kaçınılacak bölge.' },
-    en: { title: 'Compact AV node (Koch apex)', description: 'At the apex of Koch\'s triangle, where the septal tricuspid hinge meets the membranous septum; the His bundle penetrates the central fibrous body from here. On fluoroscopy the His catheter marks the apex.', clinical: 'Ablation here causes permanent complete AV block: strictly the zone to avoid.' },
-    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+    tr: { title: 'Kompakt AV düğüm (Koch apeksi)', description: 'Apekste, inferior uzantıların (yavaş yol) atriyal septum buttress\'ından gelen septal girdilerle (hızlı yol) birleşmesiyle oluşur; çoğu kez inferior piramidal boşluğun çatısını yapan fibröz plak üzerinde durur. Mitral-triküspit fibröz devamlılığını delerek dallanmayan His demetine dönüşür. Floroskopide His kateteri apeksi gösterir.', clinical: 'Düğümün Koch apeksine göre yeri bireyler arasında belirgin değişkendir; anatomik nirengi kesin konum vermez. Bu bölgeye ablasyon kalıcı tam AV blok yapar.' },
+    en: { title: 'Compact AV node (Koch apex)', description: 'Formed at the apex by union of the inferior extensions (slow pathway) with septal inputs from the buttress of the atrial septum (fast pathway); often carried on a fibrous plate roofing the inferior pyramidal space. It penetrates the mitral-tricuspid fibrous continuity to become the non-branching His bundle. On fluoroscopy the His catheter marks the apex.', clinical: 'The node\'s position relative to the Koch apex varies markedly between individuals, so landmarks do not give its exact site. Ablation here causes permanent complete AV block.' },
+    source: `${koch2022}; ${av}; schematic`
   },
   'koch-fast': {
-    tr: { title: 'Hızlı yol (kaçınılacak bölge)', description: 'Todaro tendonuna komşu, apeksin hemen altındaki süperior atriyal giriş; tipik AVNRT\'de retrograd kol.', clinical: 'Hızlı yol modifikasyonu yüksek AV blok riski nedeniyle günümüzde tercih edilmez.' },
-    en: { title: 'Fast pathway (zone to avoid)', description: 'Superior atrial input next to the tendon of Todaro, just below the apex; the retrograde limb in typical AVNRT.', clinical: 'Fast-pathway modification is avoided today because of the high AV block risk.' },
-    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+    tr: { title: 'Hızlı yol (septal girdi, kaçınılacak bölge)', description: 'Atriyal septumun buttress\'ından (fossa ovalisin antero-inferior kenarı, gerçek ikincil septum) gelen septal girdiler; düğüme son atriyal bağlantı fibromiyokardiyal AV septum içinde, apekste gerçekleşir. Tipik AVNRT\'de retrograd kol.', clinical: 'Hızlı yol modifikasyonu yüksek AV blok riski nedeniyle günümüzde tercih edilmez.' },
+    en: { title: 'Fast pathway (septal input, zone to avoid)', description: 'Septal inputs from the buttress of the atrial septum (the antero-inferior rim of the oval fossa, the true second septum); the last atrial connection to the node is made within the fibromyocardial AV septum at the apex. The retrograde limb in typical AVNRT.', clinical: 'Fast-pathway modification is avoided today because of the high AV block risk.' },
+    source: `${koch2022}; schematic`
   },
   'koch-slow': {
-    tr: { title: 'Yavaş yol (ablasyon hedefi)', description: 'İnferior atrial giriş; CS ostiyumu ile triküspit septal yaprakçığı arasında, Koch tabanına yakın. Tipik AVNRT\'de antegrad kol.', clinical: 'Tipik AVNRT\'de standart hedef: tabandan başlayıp apekse doğru kademeli RF uygulanır, junctional ritim başarı işaretidir.' },
-    en: { title: 'Slow pathway (ablation target)', description: 'Inferior atrial input between the CS ostium and the septal tricuspid leaflet, near the base of Koch\'s triangle; the antegrade limb in typical AVNRT.', clinical: 'The standard target in typical AVNRT: RF starts at the base and moves stepwise toward the apex; junctional rhythm marks success.' },
-    source: 'Koch triangle anatomy (Cardiac Physiology in Practice, Anatomy Spotlight); schematic'
+    tr: { title: 'Yavaş yol / septal istmus (ablasyon hedefi)', description: 'AV düğümün sağa uzanan inferior uzantısının septal istmustan (CS ağzı ile triküspit septal menteşesi arası) geçtiği bölge. Tipik AVNRT\'de antegrad kol.', clinical: 'Standart hedef: tabandan başlayıp apekse doğru kademeli RF uygulanır, junctional ritim başarı işaretidir. Küçük bir hasta grubunda mitral vestibüldeki sol uzantıyı hedefleyen sol taraflı yaklaşım gerekir.' },
+    en: { title: 'Slow pathway / septal isthmus (ablation target)', description: 'Where the rightward inferior extension of the AV node crosses the septal isthmus (between the CS mouth and the septal tricuspid hinge). The antegrade limb in typical AVNRT.', clinical: 'The standard target: RF starts at the base and moves stepwise toward the apex; junctional rhythm marks success. A small minority needs a left-sided approach to the leftward extension in the mitral vestibule.' },
+    source: `${koch2022}; schematic`
+  },
+  'koch-ext-right': {
+    tr: { title: 'Sağ inferior uzantı (triküspit vestibülü)', description: 'Triküspit vestibülünde uzanan özelleşmiş miyokard; sol uzantıdan belirgin uzundur ve septal istmustan geçerek apekste kompakt düğüme katılır.', clinical: 'Yavaş yolun anatomik substratı; septal istmustaki lezyonlar bu uzantıyı hedefler. Şematik çizim.' },
+    en: { title: 'Rightward inferior extension (tricuspid vestibule)', description: 'Specialized myocardium running in the tricuspid vestibule; much longer than the leftward extension, it crosses the septal isthmus and joins the compact node at the apex.', clinical: 'Anatomical substrate of the slow pathway; lesions in the septal isthmus target this extension. Schematic.' },
+    source: `${koch2022}; schematic`
+  },
+  'koch-ext-left': {
+    tr: { title: 'Sol inferior uzantı (mitral vestibülü)', description: 'Mitral vestibülünde uzanan, sağ uzantıdan kısa özelleşmiş miyokard; apekste kompakt düğüme katılır.', clinical: 'Sağ taraflı ablasyona dirençli az sayıda AVNRT\'de sol taraflı (mitral vestibül) yavaş yol ablasyonu gerekir. Şematik çizim; septumun sol tarafındadır.' },
+    en: { title: 'Leftward inferior extension (mitral vestibule)', description: 'Specialized myocardium in the mitral vestibule, shorter than the rightward extension; it joins the compact node at the apex.', clinical: 'A small minority of AVNRT needs left-sided (mitral vestibular) slow-pathway ablation. Schematic; lies on the left side of the septum.' },
+    source: `${koch2022}; schematic`
+  },
+  'koch-pyramid': {
+    tr: { title: 'İnferior piramidal boşluk (Koch piramidi)', description: 'Koch üçgeninin arkasındaki, inferior AV oluğun devamı olan fibro-adipöz boşluk. Duvarları: sağ atriyal duvar (Koch üçgeni), sol atriyal (mitral) vestibül ve müsküler ventrikül septumu krestidir; tabanı inferior AV oluğa açılır. Süperior apeksi çoğu kalpte subaortik çıkışın infero-septal girintisiyle örtüşür; His demeti buradan doğrudan septum krestine geçer.', clinical: 'Bölge septal değil paraseptaldir. Parahisian aritmilerin substratı, AVNRT varyantları ve infero-bazal LV odakları (sağ atriyumdan veya infero-septal girintiden ablasyon) buradan anlaşılır. Şematik kama.' },
+    en: { title: 'Inferior pyramidal space (pyramid of Koch)', description: 'The fibro-adipose space behind Koch\'s triangle, continuous with the inferior AV groove. Walls: the RA wall (Koch\'s triangle), the left atrial (mitral) vestibule and the crest of the muscular ventricular septum; its base opens onto the inferior AV groove. Its superior apex overlaps the infero-septal recess of the subaortic outflow in most hearts, letting the His bundle pass directly to the septal crest.', clinical: 'The region is paraseptal, not septal. It explains para-Hisian substrates, AVNRT variants and infero-basal LV foci (ablated from the RA or via the infero-septal recess). Schematic wedge.' },
+    source: `${koch2022}; schematic`
   },
   'cti-line': {
     tr: { title: 'CTI ablasyon hattı', description: 'Triküspit anulusunun inferior kenarından (LAO saat 6) İVC ağzına uzanan lineer RF hattı; CS ostiyumunun lateralinde, santral istmusta.', clinical: 'Tipik flatterde hedef çift yönlü istmus blokudur; kalın Eustachian sırtı ve subeustachian cep başarıyı zorlaştırabilir.' },
@@ -360,12 +382,12 @@ export const rawStructures = {
   'tricuspid-annulus': {
     tr: {
       title: 'Triküspit anulus',
-      description: 'Sağ atriyum ile sağ ventrikül arasındaki non-planar, oval fibröz halka; septal segmenti Koch üçgeninin tabanını yapar.',
+      description: 'Sağ atriyum ile sağ ventrikül arasındaki non-planar, oval fibröz halka; septal yaprakçık menteşesi Koch üçgeninin anterior kenarını yapar (taban inferior istmustur).',
       clinical: 'Fonksiyonel triküspit yetersizliğinde anulus dilatasyonu tipiktir; CTI hattı anulusun inferior kenarına komşudur. Şematik halka.'
     },
     en: {
       title: 'Tricuspid annulus',
-      description: 'The non-planar oval fibrous ring between the right atrium and ventricle; its septal segment forms the base of Koch\'s triangle.',
+      description: 'The non-planar oval fibrous ring between the right atrium and ventricle; the septal leaflet hinge forms the anterior side of Koch\'s triangle (the base is the inferior isthmus).',
       clinical: 'Annular dilation drives functional tricuspid regurgitation; the CTI line abuts the inferior annulus. Schematic ring.'
     },
     source: 'Ho et al., tricuspid annulus anatomy; schematic'
@@ -426,12 +448,12 @@ export const rawStructures = {
     tr: {
       title: 'Koroner sinüs ana gövdesi • CS Trunk',
       description: 'İnferior atriyoventriküler olukta yer alan, miyokardiyal venöz kanın %75\'ini toplayıp Thebesian kapağı yoluyla sağ atriyuma boşaltan ana toplayıcı venöz kanaldır.',
-      clinical: 'Ostiyumu Koch üçgeninin tabanını belirler. Biventriküler pacing (CRT) sol ventrikül lead yerleşimi ve elektrofizyolojik haritalama kateterleri için birincil vasküler giriş yoludur.'
+      clinical: 'Ostiyumu Koch üçgeninin tabanında (inferior istmus) yer alır; CS sol AV bileşkenin parçasıdır. Biventriküler pacing (CRT) sol ventrikül lead yerleşimi ve elektrofizyolojik haritalama kateterleri için birincil vasküler giriş yoludur.'
     },
     en: {
       title: 'Coronary sinus main trunk • CS Trunk',
       description: 'The primary venous collector in the posterior atrioventricular groove that drains ~75% of cardiac venous blood into the right atrium via the Thebesian valve.',
-      clinical: 'Its ostium frames the base of Koch’s triangle. Crucial vascular gateway for cardiac resynchronization therapy (CRT) lead delivery and EP mapping.'
+      clinical: 'Its ostium sits at the base of Koch’s triangle (the inferior isthmus); the CS belongs to the left AV junction. Crucial vascular gateway for cardiac resynchronization therapy (CRT) lead delivery and EP mapping.'
     },
     source: 'Coronary sinus and cardiac venous anatomy, PDF p. 3; Ho et al., 2012, PDF pp. 2–3'
   },
@@ -466,27 +488,27 @@ export const rawStructures = {
     tr: {
       title: 'Atriyoventriküler düğüm (AV) • Şematik',
       description: 'Sağ atriyum septal duvarında, Koch üçgeninin apeksinde (Todaro tendonu, triküspit septal anulusu ve koroner sinüs ostiyumu arasında) yer alır.',
-      clinical: 'Atriyumlardan ventriküllere geçişte fizyolojik gecikmeyi sağlar. AVNRT kateter ablasyonunda yavaş yol hedefi bu bölgenin inferoposteriorundadır. Şematik çizimdir.'
+      clinical: 'Atriyumlardan ventriküllere geçişte fizyolojik gecikmeyi sağlar. İnferior uzantıların (yavaş yol) ve atriyal septum buttress\'ından gelen girdilerin (hızlı yol) apekste birleşmesiyle oluşur; Koch apeksine göre yeri bireyler arasında değişkendir. Yavaş yol ablasyonu septal istmusta, düğümün inferiorunda yapılır. Şematik çizimdir.'
     },
     en: {
       title: 'Atrioventricular node (AV) • Schematic',
-      description: 'Located in the subendocardium of the right atrial septum at the apex of the triangle of Koch.',
-      clinical: 'Provides physiological delay for ventricular filling. Slow-pathway ablation for AVNRT targets its inferoposterior margin. Note: Schematic illustration.'
+      description: 'Located at the apex of the triangle of Koch, on the atrial face of the inferior pyramidal space, often on a fibrous plate roofing that space.',
+      clinical: 'Provides physiological delay for ventricular filling. Formed by union of the inferior extensions (slow pathway) with septal inputs from the atrial buttress (fast pathway); its position relative to the Koch apex varies between individuals. Slow-pathway ablation is made in the septal isthmus, inferior to the node. Note: Schematic illustration.'
     },
-    source: av
+    source: `${av}; ${koch2022}`
   },
   his: {
     tr: {
       title: 'His demeti & İleti dalları • Şematik',
-      description: 'AV düğümden doğan His demeti santral fibröz gövdeyi delerek interventriküler septum krestine geçer; Sağ Demet Dalı (RBB) ve Sol Demet Dalı (LBB) olarak ikiye ayrılır.',
-      clinical: 'RBB moderator band ile RV apekse uzanır; LBB sol ventrikülde fasiküllere ayrılarak Purkinje ağı ile ventriküler senkron kasılmayı yönetir. Şematik 3D modeldir.'
+      description: 'AV düğüm, mitral ve triküspit yaprakçıkları arasındaki fibröz devamlılığı (membranöz septum düzeyi) delerek dallanmayan His demetine dönüşür; infero-septal girinti sayesinde doğrudan müsküler septum krestine geçer ve aort kökünün inferior ucunda Sağ (RBB) ve Sol Demet Dalı (LBB) olarak ayrılır.',
+      clinical: 'RBB moderator band ile RV apekse uzanır; LBB sol ventrikülde fasiküllere ayrılarak Purkinje ağı ile ventriküler senkron kasılmayı yönetir. Dallanmayan demetin uzunluğu ve septum krestine göre yeri değişkendir: His/LBB pacing ve TAVI sonrası AV blok riski için önemlidir. Şematik 3D modeldir.'
     },
     en: {
       title: 'Bundle of His & Purkinje system • Schematic',
-      description: 'Arises from the AV node, penetrates the central fibrous body, and bifurcates along the crest of the muscular interventricular septum into RBB and LBB.',
-      clinical: 'RBB courses toward the moderator band; LBB arborizes into fascicles over the LV septum. Critical for physiological conduction pacing. Note: Schematic 3D illustration.'
+      description: 'The AV node penetrates the fibrous continuity between the mitral and tricuspid leaflets (at the membranous septum) to become the non-branching His bundle; via the infero-septal recess it reaches the crest of the muscular septum and branches into RBB and LBB at the inferior extent of the aortic root.',
+      clinical: 'RBB courses toward the moderator band; LBB arborizes into fascicles over the LV septum. The length of the non-branching bundle and its position relative to the septal crest vary, which matters for His/LBB pacing and post-TAVI AV block. Note: Schematic 3D illustration.'
     },
-    source: av
+    source: `${av}; ${koch2022}`
   },
   fossa: {
     tr: {
@@ -977,7 +999,7 @@ export const rawLessons = {
         },
         {
           title: 'Koch Üçgeni ve Yavaş Yol • AVNRT',
-          text: 'Koch üçgeni sağ atriyumun alt septal bölgesindedir. Taban: koroner sinüs (CS) ostiyumu (yeşil). Posterosüperior kenar: Eustachian sırtının devamı olan Todaro tendonu (beyaz). Anterior kenar: triküspit septal yaprakçığının menteşesi (turkuaz). Apeks: kompakt AV düğüm / His (kırmızı; ablasyon kalıcı AV blok yapar). Hızlı yol Todaro\'ya komşu, apeksin hemen altındadır (turuncu, kaçınılacak bölge). Yavaş yol CS ostiyumu ile septal yaprakçık arasında, tabana yakındır (yeşil, AVNRT ablasyon hedefi). Floroskopide RAO projeksiyonu üçgeni en iyi gösterir: taban proksimal CS elektrotlarından çizilen yatay hat, apeks His kateteri, anterior kenar His\'ten tabana inen dikey hat (TV septal yaprakçığı).',
+          text: 'Koch üçgeni, sağ atriyumun alt paraseptal bölgesinde inferior piramidal boşluğun sağ atriyal yüzüdür; atitüdinal konumda apeksi süperiora bakar. Taban: CS ostiyumu hizasındaki inferior istmus (yeşil). Posterosüperior kenar: Eustachian ve Thebesian valflerinin komissüründen doğan Todaro tendonu (beyaz). Anterior kenar: triküspit septal yaprakçık menteşesi (turkuaz). İki kenar membranöz septumda birleşir. Apeks: kompakt AV düğüm (kırmızı; ablasyon kalıcı AV blok yapar, yeri bireyler arasında değişkendir). Düğüm, inferior uzantıların (açık yeşil: uzun sağ uzantı triküspit vestibülünde, kısa sol uzantı mitral vestibülünde) atriyal septum buttress\'ından gelen septal girdilerle (turuncu, hızlı yol) birleşmesiyle oluşur. Yavaş yol hedefi septal istmustur: CS ağzı ile septal menteşe arası (yeşil küre). Sarı kama inferior piramidal boşluktur: sağ atriyal duvar ile müsküler septum arasındaki fibro-adipöz "AV kas sandviçi"; apeksi infero-septal girintiyle örtüşür ve His buradan septum krestine geçer. Floroskopide RAO projeksiyonu üçgeni en iyi gösterir: taban proksimal CS elektrotlarından çizilen yatay hat, apeks His kateteri, anterior kenar His\'ten tabana inen dikey hat (TV septal yaprakçığı).',
           landmark: 'av',
           view: 'rao'
         },
@@ -1007,7 +1029,7 @@ export const rawLessons = {
         },
         {
           title: 'Triangle of Koch & Slow Pathway • AVNRT',
-          text: 'The triangle of Koch lies in the lower septal right atrium. Base: the coronary sinus (CS) ostium (green). Posterosuperior side: the tendon of Todaro, continuing the Eustachian ridge (white). Anterior side: the hinge of the septal tricuspid leaflet (cyan). Apex: the compact AV node / His (red; ablation causes permanent AV block). The fast pathway runs next to Todaro just below the apex (orange, zone to avoid). The slow pathway lies between the CS ostium and the septal leaflet near the base (green, the AVNRT ablation target). On fluoroscopy the RAO view shows the triangle best: base = a horizontal line through the proximal CS electrodes, apex = the His catheter, anterior side = the vertical drop from His to the base (septal tricuspid leaflet).',
+          text: 'The triangle of Koch is the right atrial face of the inferior pyramidal space in the lower paraseptal right atrium; in attitudinal orientation its apex points superiorly. Base: the inferior isthmus at the CS ostium (green). Posterosuperior side: the tendon of Todaro, arising at the commissure of the Eustachian and Thebesian valves (white). Anterior side: the septal tricuspid hinge (cyan). The two sides converge at the membranous septum. Apex: the compact AV node (red; ablation causes permanent AV block, and its position varies between individuals). The node forms where the inferior extensions (light green: the long rightward one in the tricuspid vestibule, the short leftward one in the mitral vestibule) join septal inputs from the atrial buttress (orange, fast pathway). The slow-pathway target is the septal isthmus, between the CS mouth and the septal hinge (green sphere). The amber wedge is the inferior pyramidal space: the fibro-adipose "AV muscular sandwich" between the RA wall and the muscular septum; its apex overlaps the infero-septal recess, where the His bundle passes to the septal crest. On fluoroscopy the RAO view shows the triangle best: base = a horizontal line through the proximal CS electrodes, apex = the His catheter, anterior side = the vertical drop from His to the base (septal tricuspid leaflet).',
           landmark: 'av',
           view: 'rao'
         },
@@ -1298,7 +1320,8 @@ export const uiTranslations = {
       ['cath', '07', 'Kateterizasyon ve hemodinami'],
       ['exam', '08', 'Fizik muayene'],
       ['atria', '09', 'Sol atriyum & LAA'],
-      ['ra', '10', 'Sağ atriyum']
+      ['ra', '10', 'Sağ atriyum'],
+      ['defects', '11', 'ASD & VSD']
     ],
     atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; sarı halka ostiyumu işaretler.',
     atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
@@ -1408,7 +1431,8 @@ export const uiTranslations = {
       ['cath', '07', 'Catheterization and hemodynamics'],
       ['exam', '08', 'Physical examination'],
       ['atria', '09', 'Left atrium & LAA'],
-      ['ra', '10', 'Right atrium']
+      ['ra', '10', 'Right atrium'],
+      ['defects', '11', 'ASD & VSD']
     ],
     atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the yellow ring marks its orifice.',
     atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',

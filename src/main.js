@@ -1,3 +1,5 @@
+import { createSeptalDefectsPanel } from './septal-defects-panel.js';
+import { DEFECT_TYPES } from './septal-defects-data.js';
 import * as THREE from 'three';
 import './style.css';
 import {createHeart} from './heart.js';
@@ -22,7 +24,8 @@ const modes = [
   ['cath', '07'],
   ['exam', '08'],
   ['atria', '09'],
-  ['ra', '10']
+  ['ra', '10'],
+  ['defects', '11']
 ];
 
 const app = document.querySelector('#app');
@@ -46,6 +49,7 @@ app.innerHTML = `
     <nav aria-label="Learning modes">
       ${getUiModes().map(([id,n,t])=>`<button class="mode ${id==='anatomy'?'active':''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> <kbd class="mode-kbd">${n.replace(/^0/,'')}</kbd><b>↗</b></button>`).join('')}
     </nav>
+    <section id="defect-tools" hidden></section>
     <section id="atria-tools" hidden>
       <p data-i18n="atriaNote">${getTranslation('atriaNote')}</p>
       ${[['la','atriaFocusLa'],['laa','atriaFocusLaa']].map(([id,key])=>`<button data-atria-focus="${id}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
@@ -466,6 +470,10 @@ function inspect(id, flyTo = true, updateUrl = true) {
   // A 3D catheter station adds its channel to the hemodynamics tracing.
   if (typeof id === 'string' && id.startsWith('cath-')) hemoMode?.focusStation(id);
   const cleanId = resolveStructureId(id);
+  const defect = DEFECT_TYPES.find(d => d.id === cleanId);
+  if(mode==='defects'&&!defect)return;
+  if(defect&&mode!=='defects'){setMode('defects',false);}
+  if(defect)defectPanel.select(cleanId);
   if (mode === 'atria' && !['la','laa'].includes(cleanId)) return;
   if (mode === 'ra' && cleanId !== 'ra') return;
   const s = structures[cleanId];
@@ -480,7 +488,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
 
   heart?.selectStructure(cleanId, flyTo);
   const listed = heart?.getState().structures || [];
-  const stMatch = listed.find(item => item.id === cleanId) || listed.find(item => item.valveId === cleanId);
+  const stMatch = defect ? { provenance: 'schematic' } : listed.find(item => item.id === cleanId) || listed.find(item => item.valveId === cleanId);
   const indexEl = document.querySelector('.structure-index');
   if (indexEl) {
     if (stMatch) {
@@ -607,6 +615,10 @@ const examMode = heart ? createExamMode({
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
   onArea: areaId => inspect(`ausc-${areaId}`, false, false)
 }) : null;
+const defectPanel = createSeptalDefectsPanel({
+  mount: document.querySelector('#defect-tools'), getLang: getContentLanguage,
+  onSelect: id => inspect(id), onFocus: id => inspect(id)
+});
 heart?.subscribeCycle(updateCycleUI);
 heart?.ready.then(() => {
   // Lesson overlays are built only once the atlas exists; a deep link or a
@@ -615,7 +627,7 @@ heart?.ready.then(() => {
     heart.setMode(mode);
     if (lessons[mode]) showStep();
   }
-  inspect(currentSelectedId, mode === 'atria' || mode === 'ra', false);
+  inspect(currentSelectedId, mode === 'atria' || mode === 'ra' || mode === 'defects', false);
 }).catch(error => console.error('Atlas loading failed:', error));
 select.addEventListener('change', () => inspect(select.value));
 function formatWallReadout(value) {
@@ -726,7 +738,9 @@ carmDockBtn?.addEventListener('click', toggleCarmPanel);
 
 function filterAtrialOptions() {
   for (const option of select.options) {
-    if (mode === 'atria') {
+    if (mode === 'defects') {
+      option.hidden = option.disabled = !DEFECT_TYPES.some(d => d.id === option.value);
+    } else if (mode === 'atria') {
       option.hidden = option.disabled = !['la','laa'].includes(option.value);
     } else if (mode === 'ra') {
       option.hidden = option.disabled = option.value !== 'ra';
@@ -762,6 +776,8 @@ function setMode(newMode, updateUrl = true) {
   step = 0;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
+  if(mode==='defects'){defectPanel.show();setFluoroscopyActive(false);}else defectPanel.hide();
+  document.querySelector('#cycle-panel').hidden=mode==='defects';
 
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();
@@ -781,7 +797,7 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#opacity-value').textContent = `${opacity}%`;
   heart?.setOpacity(opacity / 100);
 
-  document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria' || mode === 'ra';
+  document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria' || mode === 'ra' || mode === 'defects';
   document.querySelector('#atria-tools').hidden = mode !== 'atria';
   document.querySelector('#ra-tools').hidden = mode !== 'ra';
   filterAtrialOptions();
@@ -807,7 +823,7 @@ function setMode(newMode, updateUrl = true) {
     document.querySelector('#lesson-intro').textContent = lessons[mode].intro;
     showStep();
   } else {
-    inspect(mode === 'micro' ? 'micro' : mode === 'atria' ? 'la' : mode === 'ra' ? 'ra' : 'lv', true, false);
+    inspect(mode === 'micro' ? 'micro' : mode === 'atria' ? 'la' : mode === 'ra' ? 'ra' : mode === 'defects' ? defectPanel.getSelected() : 'lv', true, false);
   }
 
   if (updateUrl && !isUpdatingRoute) {
@@ -1090,6 +1106,7 @@ function setFluoroscopyActive(active) {
 }
 
 function toggleFluoroscopy() {
+  if(mode==='defects')return;
   setFluoroscopyActive(!fluoroActive);
 }
 
@@ -1388,6 +1405,7 @@ function applyChromeTranslations() {
 }
 
 function updateLanguageUI() {
+  defectPanel.refresh();
   applyChromeTranslations();
   const currentLang = getContentLanguage();
   const langBtn = document.querySelector('#lang-btn');

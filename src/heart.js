@@ -1,3 +1,4 @@
+import { createSeptalDefects, DEFECT_IDS } from './septal-defects.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -127,6 +128,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   const transseptal = createTransseptal({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], isReady });
   heart.add(transseptal.group);
+  const septalDefects = createSeptalDefects({ container, sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], onSelect });
+  heart.add(septalDefects.group);
   const auscultation = createAuscultationMarkers({ sourceCenter, meshVertices });
   heart.add(auscultation.group);
   const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getVesselTrim:(name)=>vesselTrims.get(name)||null, isReady });
@@ -137,10 +140,16 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
-    layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro' && !mitralFocus && mode !== 'atria' && mode !== 'ra';
+    layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro' && !mitralFocus && mode !== 'atria' && mode !== 'ra' && mode !== 'defects';
     if(bloodFlow) bloodFlow.setVisible(layers.flow.visible);
     for(const m of meshes){
       if(m.userData.micro)continue;
+      if(mode==='defects'){
+        const ids=septalDefects.getState().family==='asd'
+          ? ['la','ra','svc','ivc','cs','mitral-annulus','tricuspid-annulus']
+          : ['lv','rv','lcc','rcc','ncc','pulmonary-valve','mitral-annulus','tricuspid-annulus'];
+        if(!ids.includes(m.userData.id)){m.visible=false;continue;}
+      }
       if(mode==='atria'&&!['la','laa'].includes(m.userData.id)){m.visible=false;continue;}
       if(mode==='ra'&&m.userData.id!=='ra'){m.visible=false;continue;}
       if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
@@ -150,7 +159,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         continue;
       }
       const isVein = branch === 'veins' || ['svc', 'ivc', 'pv', 'cs', 'gcv', 'mcv', 'piv', 'lspv', 'lipv', 'rspv', 'ripv', 'cardiac-veins'].includes(id);
-      if (!visibility.veins && isVein) {
+      if (mode !== 'defects' && !visibility.veins && isVein) {
         m.visible = false;
         continue;
       }
@@ -165,7 +174,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers'||branch==='veins'||layer==='vessels';
       const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
-      m.visible=(mode==='atria'||mode==='ra')||visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
+      m.visible=(mode==='atria'||mode==='ra'||mode==='defects')||visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
       const tissue=layer==='chambers';
       // Catheters run inside these vessels in the transseptal lesson; keep them
       // see-through. The pulmonary trunk and bifurcation sit on the LA roof in
@@ -173,9 +182,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const catheterVessel=(mode==='transseptal'&&['aorta','pa','cs','svc','ivc'].includes(id))||(mode==='cath'&&['aorta','pa','svc','ivc'].includes(id));
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
       const faintPa=visibility['pa-faint']&&id==='pa';
-      const alpha=mode==='atria'&&selected==='laa'?(id==='la'?Math.min(opacity,.32):1):tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
+      const alpha=mode==='defects'?(layer==='chambers'?.16:layer==='valves'?.55:.22):mode==='atria'&&selected==='laa'?(id==='la'?Math.min(opacity,.32):1):tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
-      m.material.clippingPlanes=vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
+      m.material.clippingPlanes=mode==='defects'?[]:vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
         m.material.roughness=0.65;
         m.material.metalness=0;
@@ -204,7 +213,16 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     requestRender();
   }
-  function selectStructure(id,flyTo=true){if(mitralFocus&&!id?.startsWith('mitral')){mitralFocus=false;applyState();}if(flyTo&&id?.startsWith('mitral')&&mode==='anatomy'){selected=id;setView('mitral');return;}selected=id;paintSelection();if(mode==='atria')applyState();if(flyTo&&mode==='atria'&&['la','laa'].includes(id)){focusLeftAtrium(id);return;}if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength((mode==='atria'||mode==='ra')?3.1:['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+  function selectStructure(id,flyTo=true){if(DEFECT_IDS.includes(id)){selected=id;septalDefects.select(id);applyState();if(flyTo)focusDefect(id);return;}if(mitralFocus&&!id?.startsWith('mitral')){mitralFocus=false;applyState();}if(flyTo&&id?.startsWith('mitral')&&mode==='anatomy'){selected=id;setView('mitral');return;}selected=id;paintSelection();if(mode==='atria')applyState();if(flyTo&&mode==='atria'&&['la','laa'].includes(id)){focusLeftAtrium(id);return;}if(flyTo){const p=sourceCenter(id);if(p){const offset=camera.position.clone().sub(controls.target);offset.setLength((mode==='atria'||mode==='ra')?3.1:['lm','lcc','rcc','ncc','mitral','tricuspid','mitral-posterior','mitral-anterior','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','sa','av','his','laa'].includes(id)?3.1:6.5);lookTarget.copy(p);cameraTarget.copy(p).add(offset);transition=true;container.dataset.cameraSettled='false';requestRender();}}}
+
+  function focusDefect(id) {
+    const site=septalDefects.getSite(id);
+    if(!site)return;
+    lookTarget.copy(site.point);
+    const distance=Math.max(6.2,4/Math.max(camera.aspect,.35));
+    cameraTarget.copy(site.point).addScaledVector(site.normal,-distance);
+    transition=true;container.dataset.cameraSettled='false';requestRender();
+  }
 
   function focusLeftAtrium(id) {
     const la = meshMap.get('la')?.[0];
@@ -283,6 +301,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     epLandmarks.init();
     pacemakerLeads.init();
     transseptal.init();
+    septalDefects.build(transseptal.group.getObjectByName('Fossa ovalis')?.position);
     cathLab.init();
     catheterPickables=null;
     channels = createAnimationChannels({ meshMap, sourceCenter });
@@ -398,7 +417,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       avCenter.clone()
     ], 0.015, 'sa', 'Posterior internodal tract (Thorel)');
 
-    // 4. Bundle of His penetrating central fibrous body into interventricular septum.
+    // 4. Bundle of His: the node penetrates the mitral-tricuspid fibrous
+    // continuity (membranous septum level) and, via the infero-septal recess,
+    // reaches the crest of the muscular septum (Tretter et al., Europace 2022).
     // Its distal (branching) end is measured on the crest of the muscular
     // septum under the NCC/RCC commissure, 1-2 cm from the AV node; the LBB
     // trunk runs ~1.3 cm on toward the apex and ends in LV subendocardium.
@@ -410,7 +431,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const hisSeptum = (commissure && hisBundleEnd(septum, avCenter, commissure)) || new THREE.Vector3(-0.10, -0.32, 0.06);
     const rvApex = rvVerts.length ? rvVerts.reduce((b, v) => v.y < b.y ? v : b).clone() : null;
     const lbbSite = rvApex ? septalSiteNear(septum, hisSeptum.clone().add(rvApex.clone().sub(hisSeptum).setLength(0.35))) : null;
-    // Penetrating His: through the central fibrous body toward the crest of
+    // Penetrating His: through the fibrous continuity toward the crest of
     // the muscular septum.
     const hisPenetrating = avCenter.clone().lerp(hisSeptum, .45).add(new THREE.Vector3(0, -.04, .02));
     makeTract([
@@ -597,6 +618,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let catheterPickables=null;
   function pickTargets(){
+    if(mode==='defects')return meshes.concat(septalDefects.group.children);
     if(!transseptal.group.visible&&!cathLab.group.visible&&!epLandmarks.group.visible&&!auscultation.group.visible)return meshes;
     if(!catheterPickables||!catheterPickables.length){
       catheterPickables=[];
@@ -662,6 +684,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   // Swap only during rendering so selection, lesson updates and resets retain originals.
   const projectionMaterials = new Map();
   function renderScene(){
+    septalDefects.updateLabels(camera);
     mitralScallops.update(camera,mitralFocus&&!fluoroscopy&&mode==='anatomy');
     if(!fluoroscopy || mode==='micro'){renderer.render(scene,camera);return;}
     const originals=[];
@@ -737,6 +760,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setMode(name){
       mitralFocus=false;
       mode=name;
+      septalDefects.group.visible=name==='defects';
+      if(name==='defects'){cardiacCycle.setPlaying(false);beating=false;if(channels)channels.reset();}
       opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
@@ -766,9 +791,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setView,setAngioProjection,getAngioAngles,setFluoroscopy,selectStructure,clearSelection(){selectStructure(null,false);},
     setOpacity(value){opacity=THREE.MathUtils.clamp(Number(value),.08,1);applyState();},
     setBeating(value){
-      beating=Boolean(value);
+      beating=mode==='defects'?false:Boolean(value);
       cardiacCycle.setPlaying(beating);
-      if(channels) channels.applyChannels(cardiacCycle.getCycleState());
+      if(channels && mode!=='defects') channels.applyChannels(cardiacCycle.getCycleState());
       requestRender();
     },
     setBpm(value){cardiacCycle.setBpm(value);requestRender();},
@@ -776,7 +801,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     seekCycle(phase){
       cardiacCycle.seekCycle(phase);
       const state = cardiacCycle.getCycleState();
-      if(channels) channels.applyChannels(state);
+      if(channels && mode!=='defects') channels.applyChannels(state);
       if(bloodFlow && visibility.flow) bloodFlow.update(state);
       requestRender();
     },
@@ -798,7 +823,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const val = Boolean(value);
       cardiacCycle.setReducedMotion(val);
       if(bloodFlow) bloodFlow.setLowPower(val);
-      if(channels) channels.applyChannels(cardiacCycle.getCycleState());
+      if(channels && mode!=='defects') channels.applyChannels(cardiacCycle.getCycleState());
       requestRender();
     },
     setAblationStep(step){epLandmarks.setStep(Number(step));requestRender();},
@@ -814,6 +839,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){
+      septalDefects.group.visible=false;septalDefects.select(DEFECT_IDS[0]);
       beating=false;
       cardiacCycle.setPlaying(false);
       cardiacCycle.seekCycle(0);
@@ -843,7 +869,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {mitralFocus,mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
-    dispose(){mitralScallops.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
+    getState(){return {defects:septalDefects.getState(),mitralFocus,mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    dispose(){septalDefects.dispose();mitralScallops.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

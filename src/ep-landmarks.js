@@ -140,12 +140,16 @@ export function createEPLandmarks(helpers) {
     targets.cti = ctiGroup;
 
     // -------------------------------------------------------------
-    // 2. Triangle of Koch (AVNRT)
-    //    Base: CS ostium. Posterosuperior side: tendon of Todaro (continuation
-    //    of the Eustachian ridge). Anterior side: hinge of the septal tricuspid
-    //    leaflet. Apex: compact AV node. Fast pathway: superior, next to
-    //    Todaro near the apex (danger). Slow pathway: inferior, between the CS
-    //    ostium and the septal leaflet (target).
+    // 2. Triangle of Koch (AVNRT), after Tretter et al., Europace 2022;24:455.
+    //    The triangle is the right atrial face of the inferior pyramidal space,
+    //    apex pointing superiorly (attitudinal). Base: inferior (cavotricuspid)
+    //    isthmus at the CS ostium. Sides: tendon of Todaro (from the commissure
+    //    of the Eustachian and Thebesian valves) and the septal tricuspid hinge,
+    //    converging at the membranous septum. Compact AV node at the apex,
+    //    formed by union of the inferior extensions (slow pathway: rightward in
+    //    the tricuspid vestibule via the septal isthmus, shorter leftward in the
+    //    mitral vestibule) with septal inputs from the atrial buttress (fast
+    //    pathway). Septal isthmus (CS ostium to septal hinge) = usual target.
     // -------------------------------------------------------------
     const kochGroup = new THREE.Group();
     kochGroup.name = 'Triangle of Koch';
@@ -198,7 +202,7 @@ export function createEPLandmarks(helpers) {
     const matBase = new THREE.MeshStandardMaterial({ color: 0x4bd18a, emissive: 0x1d8a52, emissiveIntensity: 0.5, roughness: 0.4 });
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(todaroCurve, 32, 0.017, 8, false), matTodaro), 'koch-todaro', 'Tendon of Todaro'));
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(hingeCurve, 40, 0.015, 8, false), matHinge), 'tricuspid-septal', 'Septal tricuspid hinge (Koch side)'));
-    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(baseCurve, 20, 0.014, 8, false), matBase), 'koch-base', 'CS ostium (Koch base)'));
+    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(baseCurve, 20, 0.014, 8, false), matBase), 'koch-base', 'CS ostium / inferior isthmus (Koch base)'));
 
     // Translucent triangle fill: fan from the apex over hinge + base + Todaro.
     const outline = [
@@ -224,20 +228,78 @@ export function createEPLandmarks(helpers) {
     avDanger.position.copy(apexLift);
     kochGroup.add(tag(avDanger, 'koch-avnode', 'Compact AV node (Koch apex)'));
 
-    // Fast pathway: superior zone along Todaro just below the apex (danger).
-    const fastCenter = lift(todaroCurve.getPointAt(0.78).lerp(hingeCurve.getPointAt(0.85), 0.25));
-    const fastZone = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), new THREE.MeshStandardMaterial({
+    // Fast pathway: septal input from the buttress of the atrial septum, the
+    // "last" atrial connection at the apex (danger). Drawn as a short input
+    // entering over Todaro from the septal side, ending at the node.
+    const matFast = new THREE.MeshStandardMaterial({
       color: 0xff9f0a, emissive: 0xff7a00, emissiveIntensity: 0.8, roughness: 0.3, transparent: true, opacity: 0.9
-    }));
+    });
+    const fastCenter = lift(todaroCurve.getPointAt(0.8).lerp(hingeCurve.getPointAt(0.85), 0.2));
+    // Buttress (antero-inferior rim of the oval fossa) lies beyond Todaro,
+    // away from the hinge and slightly above the fast-pathway zone.
+    const buttressPt = todaroCurve.getPointAt(0.85);
+    buttressPt.add(buttressPt.clone().sub(hingeCurve.getPointAt(0.85)).setLength(0.09)).add(new THREE.Vector3(0, 0.02, 0));
+    const fastInput = new THREE.CatmullRomCurve3([buttressPt, fastCenter, apexLift]);
+    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(fastInput, 20, 0.012, 8, false), matFast), 'koch-fast', 'Fast pathway (septal input)'));
+    const fastZone = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), matFast);
     fastZone.position.copy(fastCenter);
     kochGroup.add(tag(fastZone, 'koch-fast', 'Fast pathway (danger zone)'));
 
-    // Slow pathway: inferior zone between the CS ostium and the septal
-    // leaflet, just above the base (ablation target).
+    // Slow pathway: septal isthmus between the CS ostium and the septal
+    // tricuspid hinge, just above the base (ablation target).
     const slowPathwayCenter = lift(baseAnterior.clone().lerp(csOs, 0.45).lerp(apexPt, 0.18));
     const slowTarget = new THREE.Mesh(new THREE.SphereGeometry(0.045, 18, 18), matSafeTarget);
     slowTarget.position.copy(slowPathwayCenter);
-    kochGroup.add(tag(slowTarget, 'koch-slow', 'Slow pathway (ablation target)'));
+    kochGroup.add(tag(slowTarget, 'koch-slow', 'Slow pathway / septal isthmus (ablation target)'));
+
+    // Inferior extensions of the AV node. Rightward: long, in the tricuspid
+    // vestibule just atrial to the septal hinge, through the septal isthmus.
+    const matExtension = new THREE.MeshStandardMaterial({
+      color: 0x9be15d, emissive: 0x3f8f1f, emissiveIntensity: 0.6, roughness: 0.4, transparent: true, opacity: 0.85
+    });
+    const rightExtPts = [slowPathwayCenter.clone()];
+    [0.35, 0.6, 0.82].forEach(t => rightExtPts.push(lift(hingeCurve.getPointAt(t).lerp(todaroCurve.getPointAt(t), 0.2))));
+    rightExtPts.push(apexLift.clone());
+    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rightExtPts), 40, 0.011, 8, false), matExtension),
+      'koch-ext-right', 'Rightward inferior extension (tricuspid vestibule)'));
+
+    // Leftward: shorter, toward the septal mitral vestibule (left-sided slow
+    // pathway, a minority of AVNRT). Its inferoseptal mitral point also closes
+    // the inferior pyramidal space below.
+    const mvRim = sharedRim(getMeshes('la')[0], getMeshes('lv')[0]);
+    const mitralSeptal = mvRim
+      ? mvRim.reduce((best, v) => v.distanceTo(csOs) < best.distanceTo(csOs) ? v : best).clone()
+      : null;
+    if (mitralSeptal) {
+      const leftEnd = apexPt.clone().lerp(mitralSeptal.clone().lerp(la, 0.06), 0.45);
+      const leftMid = apexPt.clone().lerp(leftEnd, 0.5).add(new THREE.Vector3(0, -0.03, 0));
+      const leftExt = new THREE.CatmullRomCurve3([apexLift, leftMid, leftEnd]);
+      kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(leftExt, 24, 0.01, 8, false), matExtension),
+        'koch-ext-left', 'Leftward inferior extension (mitral vestibule)'));
+
+      // Inferior pyramidal space: fibro-adipose wedge behind the triangle.
+      // Faces: RA wall (Koch), LA vestibule, crest of the muscular septum;
+      // base opens onto the inferior AV groove. Apex under the AV node.
+      const crux = mitralSeptal.clone();
+      const corners = [apexPt, baseAnterior, basePosterior, crux];
+      const faces = [[0, 2, 3], [0, 1, 3], [1, 2, 3]];
+      const pyrPos = [];
+      faces.forEach(f => f.forEach(i => pyrPos.push(...corners[i].toArray())));
+      const pyrGeom = new THREE.BufferGeometry();
+      pyrGeom.setAttribute('position', new THREE.Float32BufferAttribute(pyrPos, 3));
+      pyrGeom.computeVertexNormals();
+      kochGroup.add(tag(new THREE.Mesh(pyrGeom, new THREE.MeshBasicMaterial({
+        color: 0xf2c46d, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false
+      })), 'koch-pyramid', 'Inferior pyramidal space (pyramid of Koch)'));
+      const edgePairs = [[0, 3], [1, 3], [2, 3]];
+      const edgePos = [];
+      edgePairs.forEach(([a, b]) => edgePos.push(...corners[a].toArray(), ...corners[b].toArray()));
+      const edgeGeom = new THREE.BufferGeometry();
+      edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(edgePos, 3));
+      const edges = new THREE.LineSegments(edgeGeom, new THREE.LineBasicMaterial({ color: 0xf2c46d, transparent: true, opacity: 0.7 }));
+      edges.name = 'Inferior pyramidal space edges';
+      kochGroup.add(edges);
+    }
 
     // RF lesion cluster at the slow pathway, spread along the hinge direction.
     const axis = apexPt.clone().sub(baseAnterior).normalize();
@@ -344,9 +406,8 @@ export function createEPLandmarks(helpers) {
     pviGroup.add(tagLine(wallLine(roofA, roofB, new THREE.Vector3(0, 0.25, 0)), 'la-roof-line', 'LA roof line'));
 
     // Mitral isthmus line: from the LIPV ostium to the lateral mitral annulus.
-    const mitralRim = sharedRim(getMeshes('la')[0], getMeshes('lv')[0]);
-    if (lipv && mitralRim) {
-      const lateralMitral = mitralRim.reduce((best, v) => v.distanceTo(lipv) < best.distanceTo(lipv) ? v : best).clone();
+    if (lipv && mvRim) {
+      const lateralMitral = mvRim.reduce((best, v) => v.distanceTo(lipv) < best.distanceTo(lipv) ? v : best).clone();
       pviGroup.add(tagLine(wallLine(lipv, lateralMitral), 'mitral-isthmus-line', 'Mitral isthmus line'));
     }
 
