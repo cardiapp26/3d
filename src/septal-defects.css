@@ -5,6 +5,8 @@
 .defect-panel .defect-intro{color:#51664e}
 .defect-panel .defect-families{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 .defect-panel .defect-types{display:grid;grid-template-columns:1fr;gap:4px}
+.defect-panel .defect-types button{display:flex;align-items:flex-start;gap:6px}
+.defect-panel .defect-type-mark{flex:none;margin-top:1px}
 .defect-panel button{min-width:0;min-height:36px;padding:7px 9px;border:1px solid #c4d2bc;border-radius:5px;background:#fff;color:#31573f;text-align:left;font:inherit;line-height:1.35;cursor:pointer;white-space:normal;overflow-wrap:anywhere}
 .defect-panel button:hover{background:#edf2e9}
 .defect-panel button[aria-pressed="true"]{background:#244f43;color:#fff;border-color:#244f43}
@@ -19,13 +21,40 @@
 .defect-panel .defect-map-vessel{fill:none;stroke:#527d97;stroke-width:5}
 .defect-panel .defect-map-junction{fill:none;stroke:#486c58;stroke-width:7;stroke-linecap:round}
 .defect-panel .defect-map-sinus{fill:#b6cce1;stroke:#527d97;stroke-width:2}
+.defect-panel .defect-map-limbus{fill:none;stroke:#8a5a4d;stroke-width:4;stroke-linecap:round}
+.defect-panel .defect-map-vessel-thin{stroke-width:3;stroke-dasharray:3 3}
+.defect-panel .defect-map-band{fill:none;stroke:#c9927f;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.defect-panel .defect-map-membranous{fill:#f3e3d9;stroke:#8a5a4d;stroke-width:1.5;stroke-dasharray:2 2}
+.defect-panel .defect-map-outflow{stroke:#5c7a94}
+.defect-panel .defect-map-site{fill:#fff;fill-opacity:.55;stroke:#b7541a;stroke-width:1.5;stroke-dasharray:3 2}
+.defect-panel .defect-map-code{font:600 8px system-ui,sans-serif;fill:#8a4a20}
+.defect-panel .defect-map-code.selected{font-size:9px;fill:#5a2f10}
+.defect-panel .defect-map-glow{fill:#e7a34f;fill-opacity:.28;stroke:none}
 .defect-panel .defect-map-hole{fill:#fff9dc;stroke:#b7541a;stroke-width:4}
+.defect-panel .defect-legend{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:10px;color:#586b54}
+.defect-panel .defect-legend-chip{display:inline-block;min-width:22px;padding:1px 5px;border:1px solid #c9b48f;border-radius:10px;background:#fbf4e6;color:#7a4a1c;text-align:center;font-weight:600}
+.defect-panel .defect-legend-chip.selected{background:#b7541a;border-color:#b7541a;color:#fff}
+.defect-panel .defect-legend-note{margin-left:2px}
+.defect-panel .defect-facts{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;margin:0;font-size:11px;line-height:1.5}
+.defect-panel .defect-facts dt{font-weight:600;color:#244f43;white-space:nowrap}
+.defect-panel .defect-facts dd{margin:0;color:#394f41}
+.defect-panel .defect-type-mark{display:inline-block;min-width:26px;padding:0 4px;border-radius:9px;background:#e8efe3;color:#244f43;font-size:9px;font-weight:700;text-align:center;line-height:16px;vertical-align:middle}
+.defect-panel button[aria-pressed="true"] .defect-type-mark{background:#fff;color:#244f43}
+.defect-panel .defect-source-extra{color:#51664e}
 .defect-panel figcaption,.defect-panel .defect-note{color:#586b54;font-size:10px;line-height:1.45}
 .defect-panel .defect-focus{text-align:center;background:#edf2e9;font-weight:600}
 .defect-panel .defect-source{color:#286255;font-size:10px;display:block;text-underline-offset:2px}
 
 #defect-tools{padding:12px;min-width:0}
-#defect-tools[hidden],.defect-overlay[hidden],.defect-site-label[hidden],#cycle-panel[hidden]{display:none}
+#defect-details{padding:0;min-width:0}
+#defect-tools[hidden],#defect-details[hidden],.defect-overlay[hidden],.defect-site-label[hidden],#cycle-panel[hidden]{display:none}
+.defect-details{display:grid;gap:10px;margin-top:4px}
+.defect-details .defect-card{display:grid;gap:10px;padding:14px;border:1px solid #dce4d7;border-radius:8px;background:#fcfdfb}
+.defect-details .defect-title{font-size:18px;font-weight:600;color:#244f43;margin:0 0 2px;letter-spacing:-0.3px}
+.defect-details .defect-location{font-size:12px;font-weight:600;color:#51664e;margin:0 0 6px}
+.defect-details .defect-detail{font-size:12px;line-height:1.6;color:#394f41;margin:8px 0}
+.defect-details .defect-focus{width:100%;margin-top:4px;padding:8px 10px;border-radius:5px}
+.defect-details .defect-note{font-size:11px;line-height:1.55;color:#586b54;margin:6px 0}
 .defect-overlay{position:absolute;inset:0;pointer-events:none;z-index:5}
 .defect-site-label{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border:1px solid #41685e;border-radius:50%;min-width:30px;height:30px;padding:3px;background:#f5f8ee;color:#244f43;font:600 10px system-ui;cursor:pointer}
 .defect-site-label.selected{background:#244f43;color:#fff;outline:2px solid #e7a34f;outline-offset:2px}

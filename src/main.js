@@ -342,15 +342,18 @@ app.innerHTML = `
       </div>
     </div>
     <div class="structure-index">01 / ANATOMY</div>
-    <h2 id="structure-title">Left ventricle</h2>
-    <div class="divider"></div>
-    <p id="description"></p>
-    <div class="clinical">
-      <div class="eyebrow">WHY IT MATTERS</div>
-      <p id="clinical"></p>
+    <div id="structure-info">
+      <h2 id="structure-title">Left ventricle</h2>
+      <div class="divider"></div>
+      <p id="description"></p>
+      <div class="clinical">
+        <div class="eyebrow">WHY IT MATTERS</div>
+        <p id="clinical"></p>
+      </div>
+      <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
+      <select id="structure-select"></select>
     </div>
-    <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
-    <select id="structure-select"></select>
+    <section id="defect-details" class="defect-details-mount" hidden></section>
     <section id="lesson" hidden>
       <div class="divider"></div>
       <div class="eyebrow">GUIDED EXPLORATION</div>
@@ -616,7 +619,9 @@ const examMode = heart ? createExamMode({
   onArea: areaId => inspect(`ausc-${areaId}`, false, false)
 }) : null;
 const defectPanel = createSeptalDefectsPanel({
-  mount: document.querySelector('#defect-tools'), getLang: getContentLanguage,
+  mount: document.querySelector('#defect-tools'),
+  mountDetails: document.querySelector('#defect-details'),
+  getLang: getContentLanguage,
   onSelect: id => inspect(id), onFocus: id => inspect(id)
 });
 heart?.subscribeCycle(updateCycleUI);
@@ -776,8 +781,11 @@ function setMode(newMode, updateUrl = true) {
   step = 0;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
-  if(mode==='defects'){defectPanel.show();setFluoroscopyActive(false);}else defectPanel.hide();
-  document.querySelector('#cycle-panel').hidden=mode==='defects';
+  const isDefects = mode === 'defects';
+  if(isDefects){defectPanel.show();setFluoroscopyActive(false);}else defectPanel.hide();
+  document.querySelector('#cycle-panel').hidden=isDefects;
+  const structInfoEl = document.querySelector('#structure-info');
+  if (structInfoEl) structInfoEl.hidden = isDefects;
 
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();

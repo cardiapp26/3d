@@ -1,53 +1,95 @@
 import * as THREE from 'three';
 import { centroid, contactPatch, nearestLoop, inferiorCavalOstium, septalPairs, septalSiteNear } from './mesh-utils.js';
+import { DEFECT_TYPES } from './septal-defects-data.js';
 
-const ASD_IDS = ['asd-secundum', 'asd-primum', 'asd-sinus-superior', 'asd-sinus-inferior', 'asd-coronary-sinus'];
-const VSD_IDS = ['vsd-perimembranous', 'vsd-muscular', 'vsd-inlet', 'vsd-outlet'];
-export const DEFECT_IDS = [...ASD_IDS, ...VSD_IDS];
-const codes = ['II', 'I', 'SV↑', 'SV↓', 'CS', 'PM', 'M', 'IN', 'OUT'];
+export const DEFECT_IDS = DEFECT_TYPES.map(item => item.id);
+const MARKS = Object.fromEntries(DEFECT_TYPES.map(item => [item.id, item.mark]));
 const nearest = (points, target) => points.length ? points.reduce((a, b) => a.distanceToSquared(target) < b.distanceToSquared(target) ? a : b).clone() : null;
+const meshCenter = mesh => {
+  if (!mesh) return null;
+  mesh.updateWorldMatrix(true, false);
+  return new THREE.Box3().setFromObject(mesh).getCenter(new THREE.Vector3());
+};
+
+/**
+ * Unroofed coronary sinus: the point of the terminal (near-ostial) sinus
+ * segment that lies closest to the LA wall, with the roof normal pointing
+ * from the sinus toward the LA. The distal sinus under the LA is excluded
+ * because the teaching site is the shunt route beside the orifice.
+ */
+function coronarySinusRoof(cs, la, ostium, reach = .65) {
+  let roof = null, toward = null, separation = Infinity;
+  for (let i = 0; i < cs.length; i += 3) {
+    if (ostium && cs[i].distanceTo(ostium) > reach) continue;
+    for (let j = 0; j < la.length; j += 5) {
+      const d = cs[i].distanceToSquared(la[j]);
+      if (d < separation) { separation = d; roof = cs[i]; toward = la[j]; }
+    }
+  }
+  if (!roof) return null;
+  const normal = toward.clone().sub(roof);
+  return { point: roof.clone(), normal: normal.lengthSq() > 1e-8 ? normal.normalize() : null };
+}
 
 /** Illustrative sites measured from atlas landmarks, never segmented defects. */
 export function measureDefectSites({ getMeshes, sourceCenter, meshVertices, fossa }) {
   const la = sourceCenter('la'), ra = sourceCenter('ra'), lv = sourceCenter('lv'), rv = sourceCenter('rv');
   if (!la || !ra || !lv || !rv) return [];
   const patch = contactPatch(getMeshes('ra')[0], getMeshes('la')[0]);
+  const septum = patch ? patch.points : [];
   const tv = sourceCenter('tricuspid-annulus'), mv = sourceCenter('mitral-annulus');
   const svc = nearestLoop(getMeshes('svc')[0], ra)?.center;
   const ivc = inferiorCavalOstium(getMeshes('ra')[0]) || nearestLoop(getMeshes('ivc')[0], ra)?.center;
-  const cs = meshVertices('cs');
-  const laVertices = meshVertices('la');
-  // Coronary-sinus type belongs to the CS roof adjacent to LA, not the oval fossa.
-  let csRoof = null, separation = Infinity;
-  for (let i = 0; i < cs.length; i += 3) for (let j = 0; j < laVertices.length; j += 5) {
-    const d = cs[i].distanceToSquared(laVertices[j]);
-    if (d < separation) { separation = d; csRoof = cs[i].clone(); }
-  }
+  const rspv = sourceCenter('rspv');
+  const csVertices = meshVertices('cs');
+  const csOstium = nearest(csVertices, ra);
   const atrialNormal = la.clone().sub(ra).normalize();
-  const ventricularNormal = lv.clone().sub(rv).normalize();
   const sites = [];
   const add = (id, point, normal, anchor) => {
-    if (point) sites.push({ id, point: point.clone(), normal: normal.clone(), anchor, family: id.startsWith('asd') ? 'asd' : 'vsd' });
+    if (point && normal) sites.push({ id, point: point.clone(), normal: normal.clone(), anchor, family: id.startsWith('asd') ? 'asd' : 'vsd' });
   };
+
+  // Secundum: the oval fossa itself. Primum: the atrioventricular septal
+  // region between the anteroinferior fossa margin and the AV valves.
   add('asd-secundum', fossa, atrialNormal, 'oval-fossa');
-  add('asd-primum', patch && tv && mv ? nearest(patch.points, tv.clone().lerp(mv, .5)) : null, atrialNormal, 'av-junction');
-  add('asd-sinus-superior', svc && fossa ? svc.clone().lerp(fossa, .18) : null, atrialNormal, 'svc-ra-junction');
-  add('asd-sinus-inferior', ivc && fossa ? ivc.clone().lerp(fossa, .15) : null, atrialNormal, 'ivc-ra-junction');
-  add('asd-coronary-sinus', csRoof, atrialNormal, 'coronary-sinus-roof');
+  const annuli = tv && mv ? tv.clone().lerp(mv, .5) : null;
+  add('asd-primum', fossa && annuli ? nearest(septum, fossa.clone().lerp(annuli, .6)) : null, atrialNormal, 'av-junction');
+  // Sinus venosus: where the caval mouth overrides the interatrial wall
+  // (superior: beside the right upper pulmonary vein), not inside the lumen.
+  const superiorTarget = svc && rspv ? svc.clone().lerp(rspv, .5) : svc;
+  const inferiorTarget = ivc;
+  add('asd-sinus-superior', superiorTarget ? nearest(septum, superiorTarget) || (fossa && svc.clone().lerp(fossa, .18)) : null, atrialNormal, 'svc-ra-junction');
+  // The inferior defect straddles the caval mouth: halfway between the
+  // lowest septal contact and the inferior caval orifice itself.
+  const inferiorSeptal = inferiorTarget ? nearest(septum, inferiorTarget) : null;
+  add('asd-sinus-inferior', inferiorSeptal ? inferiorSeptal.lerp(ivc, .45) : (ivc && fossa ? ivc.clone().lerp(fossa, .15) : null), atrialNormal, 'ivc-ra-junction');
+  const roof = coronarySinusRoof(csVertices, meshVertices('la'), csOstium);
+  add('asd-coronary-sinus', roof?.point, roof?.normal || atrialNormal, 'coronary-sinus-roof');
 
   const pairs = septalPairs(meshVertices('rv'), meshVertices('lv'));
   const mid = pair => pair.rvSide.clone().lerp(pair.lvSide, .5);
+  const across = pair => {
+    const n = pair.lvSide.clone().sub(pair.rvSide);
+    return n.lengthSq() > 1e-8 ? n.normalize() : lv.clone().sub(rv).normalize();
+  };
   const site = target => target ? septalSiteNear(pairs, target) : null;
   const root = sourceCenter('ncc'), rightCusp = sourceCenter('rcc'), pulmonary = sourceCenter('pulmonary-valve');
+  const septalLeaflet = meshCenter(getMeshes('tricuspid').find(m => m.userData.leaflet === 'septal'));
+  // Perimembranous: beneath the commissure between the right and non-coronary
+  // cusps, where the membranous septum meets the septal tricuspid leaflet.
   const pm = site(root && rightCusp ? root.clone().lerp(rightCusp, .5).add(new THREE.Vector3(0, -.12, 0)) : null);
-  const muscularTarget = pairs.length ? centroid(pairs.map(mid)).add(new THREE.Vector3(0, -.3, 0)) : null;
-  const muscle = site(muscularTarget);
-  const inlet = site(tv ? tv.clone().add(new THREE.Vector3(0, -.3, -.22)) : null);
-  const outlet = site(rightCusp && pulmonary ? rightCusp.clone().lerp(pulmonary, .5).add(new THREE.Vector3(0, -.15, 0)) : null);
-  add('vsd-perimembranous', pm && mid(pm), ventricularNormal, 'aortic-tricuspid-region');
-  add('vsd-muscular', muscle && mid(muscle), ventricularNormal, 'muscular-septum');
-  add('vsd-inlet', inlet && mid(inlet), ventricularNormal, 'av-inlet-septum');
-  add('vsd-outlet', outlet && mid(outlet), ventricularNormal, 'ventricular-outlet-septum');
+  // Trabecular muscular: a representative mid-to-apical septal site.
+  const muscle = site(pairs.length ? centroid(pairs.map(mid)).add(new THREE.Vector3(0, -.3, 0)) : null);
+  // Inlet: under the septal tricuspid leaflet, posteroinferior to the membranous septum.
+  const inletTarget = septalLeaflet ? septalLeaflet.add(new THREE.Vector3(0, -.3, -.2)) : tv ? tv.clone().add(new THREE.Vector3(.25, -.3, -.15)) : null;
+  const inlet = site(inletTarget);
+  // Outlet: the infundibular septum beneath the pulmonary valve, between the
+  // subpulmonary infundibulum and the subaortic outflow.
+  const outlet = site(rightCusp && pulmonary ? rightCusp.clone().lerp(pulmonary, .65).add(new THREE.Vector3(0, -.12, 0)) : null);
+  add('vsd-perimembranous', pm && mid(pm), pm && across(pm), 'aortic-tricuspid-region');
+  add('vsd-muscular', muscle && mid(muscle), muscle && across(muscle), 'muscular-septum');
+  add('vsd-inlet', inlet && mid(inlet), inlet && across(inlet), 'av-inlet-septum');
+  add('vsd-outlet', outlet && mid(outlet), outlet && across(outlet), 'ventricular-outlet-septum');
   return sites;
 }
 
@@ -74,7 +116,7 @@ export function createSeptalDefects({ container, ...helpers }) {
       mesh.name = site.id;
       mesh.renderOrder = 20;
       const label = document.createElement('button');
-      label.type = 'button'; label.className = 'defect-site-label'; label.textContent = codes[DEFECT_IDS.indexOf(site.id)];
+      label.type = 'button'; label.className = 'defect-site-label'; label.textContent = MARKS[site.id];
       label.dataset.defectSite = site.id;
       label.setAttribute('aria-label', site.id);
       label.addEventListener('click', () => helpers.onSelect(site.id));
