@@ -426,3 +426,51 @@ export function inferiorCavalOstium(raMesh) {
   if (floor.length < 10) return null;
   return centroid(floor).lerp(center, 0.1);
 }
+
+function worldVertices(mesh, step = 1) {
+  mesh.updateWorldMatrix(true, false);
+  const p = mesh.geometry.attributes.position;
+  const out = [];
+  for (let i = 0; i < p.count; i += step) out.push(new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(mesh.matrixWorld));
+  return out;
+}
+
+/**
+ * Coronary sinus ostium measured on the right atrial endocardium. The atlas
+ * coronary sinus ends in the atrioventricular groove on the tricuspid hinge
+ * and has no intra-atrial mouth, so the orifice is taken as the RA wall point
+ * on the atrial side of the tricuspid plane, one septal isthmus (`isthmus`,
+ * about 1 cm) from the hinge, nearest the sinus termination and the
+ * interatrial wall, at Koch-triangle height (`height`) below the AV node.
+ * Returns the mouth centre, its hinge point, the posterior lip (Eustachian /
+ * Thebesian commissure side) and the sinus termination.
+ */
+export function coronarySinusOstium({ raMesh, laMesh, csMesh, tvRim, towardVentricle, avNode, isthmus = 0.3, height = 0.5 }) {
+  if (!raMesh || !csMesh || !tvRim || tvRim.length < 8 || !towardVentricle) return null;
+  const ra = worldVertices(raMesh);
+  if (ra.length < 50) return null;
+  const raCenter = centroid(ra);
+  const sinusEnd = nearestLoop(csMesh, raCenter)?.center;
+  if (!sinusEnd) return null;
+  const frame = annulusFrame(tvRim, towardVentricle);
+  const la = laMesh ? worldVertices(laMesh, 4) : [];
+  const rim = tvRim.filter((_, i) => i % 2 === 0);
+  let best = null, bestCost = Infinity;
+  for (const p of ra) {
+    if (p.distanceTo(sinusEnd) > isthmus * 2) continue;
+    if (p.clone().sub(frame.center).dot(frame.normal) > -0.05) continue;
+    let dRim = Infinity;
+    for (const r of rim) dRim = Math.min(dRim, r.distanceTo(p));
+    let dLa = 0;
+    if (la.length) { dLa = Infinity; for (const q of la) dLa = Math.min(dLa, q.distanceTo(p)); }
+    const dAv = avNode ? p.distanceTo(avNode) : height;
+    const cost = 4 * (dRim - isthmus) ** 2 + 3 * (dAv - height) ** 2 + 1.5 * p.distanceToSquared(sinusEnd) + dLa * dLa;
+    if (cost < bestCost) { bestCost = cost; best = p; }
+  }
+  if (!best) return null;
+  const hinge = tvRim.reduce((a, b) => b.distanceTo(best) < a.distanceTo(best) ? b : a);
+  const lipTarget = best.clone().add(best.clone().sub(hinge).setLength(isthmus * .5));
+  let lip = best, lipD = Infinity;
+  for (const p of ra) { const d = p.distanceToSquared(lipTarget); if (d < lipD) { lipD = d; lip = p; } }
+  return { center: best.clone(), hinge: hinge.clone(), posteriorLip: lip.clone(), sinusEnd: sinusEnd.clone(), radius: isthmus * .45 };
+}

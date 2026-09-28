@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { sharedRim, nearestLoop, inferiorCavalOstium } from './mesh-utils.js';
+import { sharedRim, nearestLoop, inferiorCavalOstium, coronarySinusOstium } from './mesh-utils.js';
 
 /**
  * Procedural 3D Clinical Electrophysiology (EP) Landmarks and Ablation Targets.
@@ -72,10 +72,17 @@ export function createEPLandmarks(helpers) {
     const ivcLoop = nearestLoop(getMeshes('ivc')[0], ra);
     const ivcOs = ivcLoop ? ivcLoop.center.clone()
       : (inferiorCavalOstium(getMeshes('ra')[0]) || new THREE.Vector3(-1.05, -0.93, -0.39));
-    const csLoop = nearestLoop(getMeshes('cs')[0], ra);
-    const csOs = csLoop ? csLoop.center.clone() : (nearEndCentroid(meshVertices('cs'), ra) || new THREE.Vector3(-0.70, -0.41, -0.30));
-
     const tvRim = sharedRim(getMeshes('ra')[0], getMeshes('rv')[0]);
+    // The atlas sinus ends on the tricuspid hinge in the AV groove; the RA
+    // mouth is measured one septal isthmus up the paraseptal wall from it.
+    const csMouth = coronarySinusOstium({
+      raMesh: getMeshes('ra')[0], laMesh: getMeshes('la')[0], csMesh: getMeshes('cs')[0],
+      tvRim, towardVentricle: sourceCenter('rv'), avNode: av
+    });
+    const csLoop = csMouth ? null : nearestLoop(getMeshes('cs')[0], ra);
+    const csOs = csMouth ? csMouth.center.clone()
+      : csLoop ? csLoop.center.clone()
+      : (nearEndCentroid(meshVertices('cs'), ra) || new THREE.Vector3(-0.70, -0.41, -0.30));
     // Inferior tricuspid hinge: rim point nearest the IVC ostium.
     let tvInferior = new THREE.Vector3(-0.75, -0.75, 0.0);
     // Septal tricuspid hinge: rim point nearest the left heart (septal side).
@@ -180,10 +187,10 @@ export function createEPLandmarks(helpers) {
       hingeArc[hingeArc.length - 1] = apexPt.clone();
       baseAnterior = hingeArc[0].clone();
     }
-    // Posterior base corner: CS-ostium rim point farthest from the tricuspid
-    // annulus (the lip the Eustachian ridge / Todaro rises from).
+    // Posterior base corner: the mouth's posterior lip, farthest from the
+    // tricuspid annulus (where the Eustachian ridge / Todaro rises).
     const csRim = csLoop ? csLoop.pts : [csOs.clone()];
-    const basePosterior = csRim.reduce((best, v) => {
+    const basePosterior = csMouth ? csMouth.posteriorLip.clone() : csRim.reduce((best, v) => {
       const d = Math.min(...(tvRim || [septalHinge]).map(r => r.distanceTo(v)));
       return d > best.d ? { v, d } : best;
     }, { v: csOs.clone(), d: -1 }).v.clone();
@@ -203,6 +210,11 @@ export function createEPLandmarks(helpers) {
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(todaroCurve, 32, 0.017, 8, false), matTodaro), 'koch-todaro', 'Tendon of Todaro'));
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(hingeCurve, 40, 0.015, 8, false), matHinge), 'tricuspid-septal', 'Septal tricuspid hinge (Koch side)'));
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(baseCurve, 20, 0.014, 8, false), matBase), 'koch-base', 'CS ostium / inferior isthmus (Koch base)'));
+    // The mouth itself: a ring on the wall, facing the cavity.
+    const csRing = new THREE.Mesh(new THREE.TorusGeometry(csMouth ? csMouth.radius : 0.13, 0.012, 8, 32), matBase);
+    csRing.position.copy(lift(csOs));
+    csRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), ra.clone().sub(csOs).normalize());
+    kochGroup.add(tag(csRing, 'koch-base', 'Coronary sinus ostium (measured)'));
 
     // Translucent triangle fill: fan from the apex over hinge + base + Todaro.
     const outline = [
