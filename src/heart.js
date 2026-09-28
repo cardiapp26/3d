@@ -19,7 +19,8 @@ import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
 import { measuredFlowRoutes } from './flow-routes.js';
-import { vesselTrimPlane, sharedRim, septalPairs, septalSiteNear, hisBundleEnd } from './mesh-utils.js';
+import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd } from './mesh-utils.js';
+import { measureLeftBundle, measureRightBundle } from './conduction-paths.js';
 import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
@@ -290,6 +291,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     rootHeight=Math.max(lmCenter?.y??.6,rccCenter?.y??.6)+.13;rootPlane.constant=rootHeight;
     ivcPlane.constant=-(chamberBounds.min.y-center.y)*scale+.45;
     initializeWallPlanes();
+    seatCoronarySinus();
     buildConductionSystem();
     annuli.build();
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
@@ -429,8 +431,6 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const nccCenter = sourceCenter('ncc'), rccCenter = sourceCenter('rcc');
     const commissure = nccCenter && rccCenter ? nccCenter.clone().lerp(rccCenter, 0.5) : null;
     const hisSeptum = (commissure && hisBundleEnd(septum, avCenter, commissure)) || new THREE.Vector3(-0.10, -0.32, 0.06);
-    const rvApex = rvVerts.length ? rvVerts.reduce((b, v) => v.y < b.y ? v : b).clone() : null;
-    const lbbSite = rvApex ? septalSiteNear(septum, hisSeptum.clone().add(rvApex.clone().sub(hisSeptum).setLength(0.35))) : null;
     // Penetrating His: through the fibrous continuity toward the crest of
     // the muscular septum.
     const hisPenetrating = avCenter.clone().lerp(hisSeptum, .45).add(new THREE.Vector3(0, -.04, .02));
@@ -440,8 +440,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       hisSeptum.clone()
     ], 0.024, 'his', 'Bundle of His');
 
-    // 5. Right Bundle Branch (RBB)
-    makeTract([
+    // 5. Right bundle branch: measured on the RV septal subendocardium down
+    // the septomarginal trabeculation, then the moderator band to the base
+    // of the anterior papillary muscle.
+    const rvCenter = sourceCenter('rv');
+    const tvRimForAxis = sharedRim(meshMap.get('ra')?.[0], meshMap.get('rv')?.[0]);
+    const tvCenter = tvRimForAxis ? tvRimForAxis.reduce((sum, v) => sum.add(v), new THREE.Vector3()).multiplyScalar(1 / tvRimForAxis.length) : null;
+    const rvApex = tvCenter && rvVerts.length
+      ? rvVerts.reduce((b, v) => v.distanceToSquared(tvCenter) > b.distanceToSquared(tvCenter) ? v : b).clone()
+      : null;
+    const anteriorPapMesh = (meshMap.get('rv-papillary') || []).find(m => /anterior papillary/i.test(m.name));
+    const anteriorPap = anteriorPapMesh ? new THREE.Box3().setFromObject(anteriorPapMesh).getCenter(new THREE.Vector3()) : null;
+    const rbb = measureRightBundle({ hisEnd: hisSeptum, hisFrom: hisPenetrating, septum, rvVerts, rvCenter, rvApex, anteriorPapillary: anteriorPap });
+    makeTract(rbb ? rbb.path : [
       hisSeptum.clone(),
       new THREE.Vector3(-0.06, -0.52, 0.22),
       new THREE.Vector3(0.04, -0.78, 0.42),
@@ -449,36 +460,53 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       new THREE.Vector3(0.18, -0.65, 0.72)
     ], 0.018, 'his', 'Right bundle branch');
 
-    // 6. Left Bundle Branch (LBB) trunk & fascicles
-    const lbbStart = lbbSite ? lbbSite.lvSide.clone().lerp(lbbSite.rvSide, 0.1) : new THREE.Vector3(0.05, -0.42, 0.05);
-    makeTract([
-      hisSeptum.clone(),
-      lbbStart.clone()
-    ], 0.022, 'his', 'Left bundle branch trunk');
+    // 6. Left bundle branch: measured on the LV septal subendocardium from
+    // the distal His, descending toward the apex, then fanning into the
+    // anterior and posterior fascicles toward the papillary muscle bases.
+    const lvVerts = meshVertices('lv');
+    // The annulus meshes are built after this; take the mitral orifice from
+    // the LA/LV shared rim directly.
+    const mitralRim = sharedRim(meshMap.get('la')?.[0], meshMap.get('lv')?.[0]);
+    const mitralCenter = mitralRim ? mitralRim.reduce((sum, v) => sum.add(v), new THREE.Vector3()).multiplyScalar(1 / mitralRim.length) : null;
+    const lvApex = mitralCenter && lvVerts.length
+      ? lvVerts.reduce((b, v) => v.distanceToSquared(mitralCenter) > b.distanceToSquared(mitralCenter) ? v : b).clone()
+      : null;
+    const lbb = measureLeftBundle({ hisEnd: hisSeptum, hisFrom: hisPenetrating, septum, lvVerts, mitralCenter, lvApex, papillary: sourceCenter('lv-papillary') });
+    const fallbackStart = new THREE.Vector3(0.05, -0.42, 0.05);
+    makeTract(lbb ? lbb.trunk : [hisSeptum.clone(), fallbackStart], 0.022, 'his', 'Left bundle branch trunk');
+    makeTract(lbb ? lbb.anterior : [fallbackStart, new THREE.Vector3(0.25, -0.60, 0.22), new THREE.Vector3(0.50, -0.85, 0.26), new THREE.Vector3(0.72, -0.72, 0.28)], 0.016, 'his', 'LBB Anterior fascicle');
+    makeTract(lbb ? lbb.posterior : [fallbackStart, new THREE.Vector3(0.28, -0.55, -0.10), new THREE.Vector3(0.52, -0.78, -0.12), new THREE.Vector3(0.85, -0.72, 0.05)], 0.017, 'his', 'LBB Posterior fascicle');
 
-    makeTract([
-      lbbStart.clone(),
-      new THREE.Vector3(0.25, -0.60, 0.22),
-      new THREE.Vector3(0.50, -0.85, 0.26),
-      new THREE.Vector3(0.72, -0.72, 0.28)
-    ], 0.016, 'his', 'LBB Anterior fascicle');
-
-    makeTract([
-      lbbStart.clone(),
-      new THREE.Vector3(0.28, -0.55, -0.10),
-      new THREE.Vector3(0.52, -0.78, -0.12),
-      new THREE.Vector3(0.85, -0.72, 0.05)
-    ], 0.017, 'his', 'LBB Posterior fascicle');
-
-    // 7. Purkinje subendocardial arborizations
+    // 7. Purkinje subendocardial arborizations: the RV one from the RBB, the
+    // LV ones from the measured fascicle ends toward the apex.
     const purkinjeBranches = [
-      [new THREE.Vector3(0.14, -1.02, 0.52), new THREE.Vector3(0.08, -1.22, 0.35), new THREE.Vector3(0.18, -1.28, 0.22)],
-      [new THREE.Vector3(0.50, -0.85, 0.26), new THREE.Vector3(0.42, -1.15, 0.18), new THREE.Vector3(0.32, -1.25, 0.10)],
-      [new THREE.Vector3(0.52, -0.78, -0.12), new THREE.Vector3(0.60, -1.05, -0.05), new THREE.Vector3(0.48, -1.22, 0.02)]
+      rbb ? rbb.purkinje : [new THREE.Vector3(0.14, -1.02, 0.52), new THREE.Vector3(0.08, -1.22, 0.35), new THREE.Vector3(0.18, -1.28, 0.22)],
+      ...(lbb ? lbb.purkinje.slice(0, 2) : [
+        [new THREE.Vector3(0.50, -0.85, 0.26), new THREE.Vector3(0.42, -1.15, 0.18), new THREE.Vector3(0.32, -1.25, 0.10)],
+        [new THREE.Vector3(0.52, -0.78, -0.12), new THREE.Vector3(0.60, -1.05, -0.05), new THREE.Vector3(0.48, -1.22, 0.02)]
+      ])
     ];
     purkinjeBranches.forEach((pts, i) => {
       makeTract(pts, 0.011, 'his', `Purkinje network branch ${i+1}`);
     });
+  }
+
+  // The atlas coronary sinus ends in the AV groove on the tricuspid hinge.
+  // Bend its proximal end onto the measured right atrial ostium (atrial side
+  // of the annulus, one septal isthmus above the hinge, facing the cavity) so
+  // every consumer (Koch base, CS catheters, CRT lead, venous flow) starts at
+  // the real mouth.
+  function seatCoronarySinus(){
+    const cs=meshMap.get('cs')?.[0],ra=meshMap.get('ra')?.[0],rv=meshMap.get('rv')?.[0];
+    const raCenter=sourceCenter('ra'),ncc=sourceCenter('ncc');
+    const tvRim=sharedRim(ra,rv);
+    if(!cs||!raCenter||!tvRim)return;
+    const avApprox=ncc?tvRim.reduce((b,v)=>v.distanceTo(ncc)<b.distanceTo(ncc)?v:b).clone().lerp(raCenter,.06):null;
+    const mouth=coronarySinusOstium({raMesh:ra,laMesh:meshMap.get('la')?.[0],csMesh:cs,tvRim,towardVentricle:sourceCenter('rv'),avNode:avApprox});
+    if(!mouth)return;
+    // Sit the rim just outside the endocardium; the RA wall carries the hole.
+    const facing=raCenter.clone().sub(mouth.center).normalize();
+    seatVesselEnd(cs,{from:mouth.sinusEnd,target:mouth.center.clone().addScaledVector(facing,-.02),facing});
   }
 
   function initializeWallPlanes(){

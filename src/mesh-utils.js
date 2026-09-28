@@ -474,3 +474,48 @@ export function coronarySinusOstium({ raMesh, laMesh, csMesh, tvRim, towardVentr
   for (const p of ra) { const d = p.distanceToSquared(lipTarget); if (d < lipD) { lipD = d; lip = p; } }
   return { center: best.clone(), hinge: hinge.clone(), posteriorLip: lip.clone(), sinusEnd: sinusEnd.clone(), radius: isthmus * .45 };
 }
+
+/**
+ * Re-seat the open end of a vessel mesh at `target`, facing `facing`: the
+ * boundary loop nearest `from` is rotated about its centre and translated,
+ * with the change fading out along the vessel over `reach` so the rest of
+ * the vessel is untouched. Used for the atlas coronary sinus, which ends in
+ * the AV groove on the tricuspid hinge instead of opening into the atrium.
+ * Mutates the geometry; returns the moved loop centre or null.
+ */
+export function seatVesselEnd(mesh, { from, target, facing, reach = 0.7 }) {
+  const loop = mesh && from && target ? nearestLoop(mesh, from) : null;
+  if (!loop || loop.pts.length < 3) return null;
+  mesh.updateWorldMatrix(true, false);
+  const toWorld = mesh.matrixWorld, toLocal = toWorld.clone().invert();
+  const p = mesh.geometry.attributes.position;
+  const world = [];
+  for (let i = 0; i < p.count; i++) world.push(new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(toWorld));
+  const end = loop.center.clone();
+  // Outward tangent of the vessel at its end: from the lumen a little way in.
+  const inner = world.filter(v => { const d = v.distanceTo(end); return d > reach * .2 && d < reach * .45; });
+  if (inner.length < 3) return null;
+  const tangent = end.clone().sub(centroid(inner)).normalize();
+  const turn = new THREE.Quaternion().setFromUnitVectors(tangent, facing ? facing.clone().normalize() : tangent);
+  const shift = target.clone().sub(end);
+  const partial = new THREE.Quaternion();
+  const identity = new THREE.Quaternion();
+  for (let i = 0; i < world.length; i++) {
+    const v = world[i];
+    const along = end.clone().sub(v).dot(tangent);
+    const d = v.distanceTo(end);
+    if (d > reach * 1.5) continue;
+    const s = THREE.MathUtils.clamp(Math.max(along, 0) / reach, 0, 1);
+    const w = 1 - s * s * (3 - 2 * s);
+    if (w <= 0) continue;
+    partial.slerpQuaternions(identity, turn, w);
+    const moved = v.clone().sub(end).applyQuaternion(partial).add(end).addScaledVector(shift, w);
+    moved.applyMatrix4(toLocal);
+    p.setXYZ(i, moved.x, moved.y, moved.z);
+  }
+  p.needsUpdate = true;
+  mesh.geometry.computeVertexNormals();
+  mesh.geometry.computeBoundingBox();
+  mesh.geometry.computeBoundingSphere();
+  return target.clone();
+}
