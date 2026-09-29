@@ -74,7 +74,7 @@ dialog#references a{color:#21493f}
 .fluoro-btn:hover{background:rgba(36,79,67,0.9);color:#e5f5ee}
 .fluoro-btn.active{background:#14352b;border-color:#4ef2b7;color:#4ef2b7;box-shadow:0 0 12px rgba(57,232,173,0.4)}
 .carm-dock-btn{color:#1a4d3f !important;font-weight:600}
-.fluoro-dock-btn{color:#1a4d3f !important;font-weight:600}
+.view-controls .fluoro-dock-btn{color:#1a4d3f;font-weight:600}
 .view-controls .fluoro-dock-btn.active{background:#1d4237;color:#4ef2b7;font-weight:600}
 .view-controls .fluoro-dock-btn.active kbd{background:#122d25;color:#7cf4c7;border-color:#275748}
 main.fluoroscopy-active{background:#c9c9c9 !important}
