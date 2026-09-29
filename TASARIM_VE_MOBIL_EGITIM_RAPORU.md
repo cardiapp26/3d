@@ -396,3 +396,24 @@ Doğrulama: Gerçek Android/iPhone üzerinde FPS, kare süresi ve ısınma; dü�
 **İlk teslim Faz A+B olmalı:** mevcut atım sırasında koronerlerin, papiller kasların ve kapak bağlantılarının yüzeyden kopmasını gideren küçük, karşılaştırılabilir örnek. Ardından Faz C ile hareket kalitesi; Faz D ile tüm eğitim öğeleri; Faz E ile mobil optimizasyon.
 
 Her fazın çıktısı: değişen dosyalar, aynı kamera/fazda önce-sonra görselleri, bağlantı ölçümleri, çalıştırılan testler ve kalan sınırlılıklar. Bu plan için testler veya performans ölçümleri henüz çalıştırılmadı.
+
+## 13. LAA görünümü ve Bachmann demeti yerleşimi: öncelikli inceleme
+
+Kullanıcı gözlemi: LAA, LA gövdesine göre çok büyük görünüyor; Bachmann demeti yerleşimi de şüpheli. Paylaşılan kesit görüntüsü tek başına boyut oranını veya demet konumunu doğrulamaya yeterli değil.
+
+**Önce işaret kimliği ayrılmalı.** `src/la-landmarks.js` LAA ostiyumu için ince altın renkli tüp halka oluşturuyor. `src/heart.js` içindeki `atria` modu yalnızca `la` ve `laa` yapılarını gösteriyor; Bachmann bu görünümde gizleniyor. Dolayısıyla ekran görüntüsü bu moddan alınmışsa ince sarı çizgi Bachmann demeti değil, LAA ostiyum işaretidir. Ekran kırpımında aktif mod görünmediği için bu çıkarım koşulludur.
+
+Bachmann yerleşim kodunda ayrıca somut inceleme gerektiren yaklaşım var: `src/bachmann.js`, atriyum kutu sınırları ve sabit koordinatlarla en yakın vertexleri seçiyor; ara eğriyi yüzeye bağlamıyor. Kod yorumu, aorttan kaçınmak için posterior ağırlıklı çatı noktaları seçildiğini söylüyor. Bu yöntem anatomik ön interatriyal oluğu doğrudan tanımlamadığından, bandın gereğinden posterior/süperior kalması veya yüzeyden ayrılması riski var. Mevcut koordinatlar anatomik doğruluğun kanıtı değil.
+
+Anatomik referans: Bachmann demeti anterior interatriyal oluğu geçen subepikardiyal kas bandıdır; sol atriyal apendiks yönüne uzanır. Sadece LA çatısı üzerinden geçen herhangi bir eğriyle temsil edilmemeli. [Diseksiyon ve histoloji görselleri: Anatomical Basis for the Cardiac Interventional Electrophysiologist](https://pmc.ncbi.nlm.nih.gov/articles/PMC4668306/)
+
+Önerilen sıra:
+
+1. Aktif modu ve seçili yapıyı görünür etiketle kaydet; LAA halkası ve Bachmann bandını ayrı renk/etiketle göster.
+2. LA kesitini kapat; ortografik veya aynı ölçekli anterior, superior ve lateral görüntüler al. LAA gövde sınırını, ostiyum işaretini ve perspektif etkisini ayrı değerlendir. Keyfî ölçek küçültmesi yapma.
+3. RA, LA, SVC, aort kökü ve LAA tabanını birlikte göster; Bachmann rotasını anatomik referansla bu ilişkiler üzerinden belirle.
+4. Sabit koordinat tahminlerinin yerine doğrulanmış yüzey bağlantıları ve anterior oluk boyunca kontrollü bant yerleşimi kullan. Aorttan kaçınma koşulu anatomik hedefin yerine geçmesin.
+5. Epikardiyal bandı ve sağ atriyal endokardiyal pacing hedefini ayrı işaretle; aynı yapı gibi sunma.
+6. Statik yerleşim doğrulandıktan sonra bandı atriyal deformasyona bağla. Atımın farklı fazlarında yüzeyden kopma, aortla kesişme ve etiket kayması kontrol edilsin.
+
+Öncelik: Atım estetiğini geliştirmeden önce LAA sınırı/işaret kimliği ve Bachmann statik yerleşimi doğrulanmalı. Bu bölüm tespit ve düzeltme planıdır; geometri henüz değiştirilmedi.
