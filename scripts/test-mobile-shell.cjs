@@ -90,6 +90,26 @@ const visibleArticle = page => page.evaluate(() => getComputedStyle(document.que
     await page.locator('#carm-header .carm-title-group').click();
     assert.equal(await page.locator('#carm-panel').isVisible(), false, 'C-Arm header closes the drawer');
 
+    // Scene dock: presets scroll, the tools stay on screen, clear of the cycle panel, and are tappable.
+    const dockCheck = () => page.evaluate(() => {
+      const box = s => document.querySelector(s).getBoundingClientRect();
+      const tools = ['#carm-toggle-dock', '#fluoro-toggle-dock', '#reset'].map(box);
+      const cycle = box('#cycle-panel'), dock = box('.view-controls');
+      return { inside: tools.every(r => r.left >= 0 && r.right <= innerWidth), clear: dock.bottom <= cycle.top, minH: Math.min(...tools.map(r => r.height)) };
+    });
+    for (const [w, h] of [[390, 844], [320, 568]]) {
+      await page.setViewportSize({ width: w, height: h });
+      await page.waitForTimeout(200);
+      const dock = await dockCheck();
+      assert.ok(dock.inside, `${w} px: C-Arm, fluoroscopy and reset stay on screen`);
+      assert.ok(dock.clear, `${w} px: dock clear of the cycle panel`);
+      assert.ok(dock.minH >= 32, `${w} px: dock tools tappable (${dock.minH})`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('#fluoro-toggle-dock').click();
+    assert.equal(await page.locator('main').evaluate(el => el.classList.contains('fluoroscopy-active')), true, 'fluoroscopy toggles from the phone dock');
+    await page.locator('#fluoro-toggle-dock').click();
+
     // Small phone: still usable, no overflow, scene visible.
     await page.setViewportSize({ width: 320, height: 568 });
     await page.waitForTimeout(200);
@@ -113,6 +133,6 @@ const visibleArticle = page => page.evaluate(() => getComputedStyle(document.que
     assert.equal(await page.locator('#panel-learn').isVisible(), true, 'arrow keys switch tabs');
 
     assert.deepEqual(errors, []);
-    console.log('PASS: phone sheets (one at a time, focus, sizes, Escape), shared selection, mode tools, TR/EN, C-Arm drawer, 320 px, desktop Learn/Sources tabs');
+    console.log('PASS: phone sheets (one at a time, focus, sizes, Escape), shared selection, mode tools, TR/EN, C-Arm drawer, dock tools on screen, 320 px, desktop Learn/Sources tabs');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

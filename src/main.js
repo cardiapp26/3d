@@ -142,11 +142,15 @@ app.innerHTML = `
     <div id="viewport" aria-label="Interactive 3D heart. Drag to rotate, scroll to zoom."></div>
 
     <div class="view-controls" aria-label="Camera presets">
+      <div class="view-presets">
       ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}" title="${id==='root'?'Root & Cusps':t} (${k})">${t} <kbd>${k}</kbd></button>`).join('')}
       <button data-view="mitral" title="Mitral scallops · A1–A3 / P1–P3">Mitral</button>
+      </div>
+      <div class="view-tools">
       <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm Gantry & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
       <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
       <button id="reset" title="Reset camera (0)">↺</button>
+      </div>
     </div>
     <div id="cycle-panel" class="cycle-panel">
       <div class="cycle-top-row">

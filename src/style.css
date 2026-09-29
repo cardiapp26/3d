@@ -74,6 +74,7 @@ dialog#references a{color:#21493f}
 .fluoro-btn:hover{background:rgba(36,79,67,0.9);color:#e5f5ee}
 .fluoro-btn.active{background:#14352b;border-color:#4ef2b7;color:#4ef2b7;box-shadow:0 0 12px rgba(57,232,173,0.4)}
 .carm-dock-btn{color:#1a4d3f !important;font-weight:600}
+.view-presets,.view-tools{display:flex;align-items:center;gap:3px;flex:0 0 auto}
 .view-controls .fluoro-dock-btn{color:#1a4d3f;font-weight:600}
 .view-controls .fluoro-dock-btn.active{background:#1d4237;color:#4ef2b7;font-weight:600}
 .view-controls .fluoro-dock-btn.active kbd{background:#122d25;color:#7cf4c7;border-color:#275748}
@@ -302,9 +303,15 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .ecg-valves { right: 8px; }
 .view-controls { bottom: calc(var(--cycle-h, 128px) + 20px); z-index: 4; }
 @media (max-width: 768px) {
-  .view-controls { bottom: calc(var(--cycle-h, 128px) + 14px); max-width: calc(100% - 12px); flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
+  /* The cycle panel sits 24px above the viewer bottom: keep the dock clear of it. */
+  .view-controls { bottom: calc(var(--cycle-h, 128px) + 32px); max-width: calc(100% - 12px); flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
   .view-controls::-webkit-scrollbar { display: none; }
   .view-controls button { padding: 3px 5px; font-size: 9.5px; flex: 0 0 auto; }
+  /* Presets scroll; the tools (C-Arm, fluoroscopy, reset) never scroll away. */
+  .view-controls { overflow: visible; }
+  .view-presets { flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .view-presets::-webkit-scrollbar { display: none; }
+  .view-tools { border-left: 1px solid #d9e0d6; padding-left: 3px; }
   .ecg-strip { height: 44px; }
 }
 .cycle-disclaimer {
@@ -708,6 +715,9 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   body[data-sheet] .carm-panel{display:none}
   /* Transient notices sit above the tab bar, not over it. */
   .app-toast{bottom:calc(var(--tabbar-h) + 12px)}
+  /* No keyboard on a phone: key hints only take room from the dock. */
+  .view-controls button kbd{display:none}
+  .view-controls button{min-height:32px;padding:0 9px;font-size:11px}
 }
 @media (max-width:640px) and (prefers-reduced-motion:no-preference){
   .workspace>aside,.workspace>article{transition:height .18s ease}
