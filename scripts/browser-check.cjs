@@ -35,7 +35,8 @@ const fs = require('node:fs');
     await page.locator('#structure-select').selectOption('lm');
     assert.match(await page.locator('#structure-title').textContent(), /ana koroner|main/i);
 
-    // 2. Wall controls
+    // 2. Wall controls (the cutaway group starts collapsed)
+    await page.evaluate(() => { document.querySelector('.wall-tools').open = true; });
     for (const id of ['rv','lv','la','ra']) {
       await page.locator(`[data-wall=${id}]`).fill('50');
       assert.equal(await page.locator(`#wall-value-${id}`).textContent(), '50% kesit');
@@ -97,7 +98,7 @@ const fs = require('node:fs');
 
     await page.locator('#structure-select').selectOption('amc');
     assert.equal(await page.locator('.structure-index').getAttribute('data-provenance'), 'reference');
-    assert.match(await page.locator('.structure-index').textContent(), /REFERANS|REFERENCE/);
+    assert.match(await page.locator('.structure-index').textContent(), /BİLGİ NOTU|REFERENCE NOTE/);
     const schematicLeaflets = await page.evaluate(() => window.heart.getState().structures.filter(item =>
       /Anterior mitral leaflet|Anterior tricuspid leaflet/i.test(item.name)
     ));
@@ -389,7 +390,7 @@ const fs = require('node:fs');
       conductionChecked: document.querySelector('input[data-layer="conduction"]')?.checked,
       veinsChecked: document.querySelector('input[data-layer="veins"]')?.checked,
       coronarySystem: document.querySelector('#coronary-system')?.value,
-      opacity: document.querySelector('#opacity')?.value,
+      opacity: document.querySelector('#myo-opacity')?.value,
       rootWindow: document.querySelector('#root-window')?.checked,
       viewSelected: document.querySelector('[data-view].selected')?.getAttribute('data-view'),
       visibility: window.heart.getState().visibility

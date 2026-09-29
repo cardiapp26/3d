@@ -610,3 +610,188 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 #atria-tools[hidden], #ra-tools[hidden]{display:none}
 #atria-tools button, #ra-tools button{display:block;width:100%;text-align:left;margin:8px 0;padding:10px;border:1px solid #cbd5cf;border-radius:6px;background:#fff;color:#25473e}
 #atria-tools input[type=range], #ra-tools input[type=range]{width:100%}
+
+/* Left panel: grouped modes and collapsible layer groups (controls only). */
+.mode-group-label{font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;font-weight:700;color:#8a9a90;padding:10px 8px 3px}
+.mode-group-label:first-child{padding-top:0}
+.layer-group{margin:0}
+.layer.layer-group-head{margin:12px 0}
+.group-toggle{flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:0;background:none;padding:4px 0;margin:-4px 0;min-height:30px;font:inherit;font-size:12px;color:#52685b;text-align:left;cursor:pointer;border-radius:4px}
+.group-toggle:hover{color:#1e4336}
+.group-toggle:focus-visible{outline:2px solid #168471;outline-offset:2px}
+.group-caret{display:inline-block;width:10px;font-size:10px;color:#8a9a90;transition:transform .12s}
+.group-toggle[aria-expanded="true"] .group-caret{transform:rotate(90deg)}
+.group-toggle i{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.group-count{margin-left:auto;margin-right:8px;font-size:10px;color:#9aa49d;font-variant-numeric:tabular-nums}
+.layer-subgroup[hidden]{display:none}
+
+/* Right panel: contextual explanation moved out of the left panel. */
+.context-note{margin:0 0 16px;padding:10px 12px;border:1px solid #dce4d7;border-left:3px solid #7fae98;border-radius:6px;background:#f7faf5}
+.context-note[hidden]{display:none}
+.context-note .eyebrow{margin-bottom:6px}
+.context-note p{margin:0 0 6px;font-size:12px;line-height:1.55;color:#394f41}
+.context-note p:last-child{margin-bottom:0}
+
+@media (max-width:640px){
+  #layers .layer-group,#layers .wall-tools{grid-column:1/-1}
+  .mode-group-label{grid-column:1/-1}
+  .group-toggle,.wall-tools>summary{min-height:44px}
+  .layer input{width:20px;height:20px}
+  .layer.sublayer{min-height:36px;margin:2px 0}
+}
+
+/* Compact rhythm for the left panel: less whitespace, same type and targets. */
+@media (min-width:641px){
+  aside nav{gap:1px;margin-bottom:10px}
+  aside .mode{padding:5px 8px}
+  .mode-group-label{padding:7px 8px 2px}
+  #layers .section-heading{margin-bottom:6px}
+  #layers .layer{margin:7px 0}
+  #layers .layer.sublayer{margin:6px 0}
+  #layers .layer.layer-group-head{margin:5px 0}
+  .aside-bottom{padding-top:16px}
+}
+.layer-advanced>summary,.wall-tools>summary{font-size:11.5px;color:#52685b;cursor:pointer;padding:4px 0;list-style:none;display:flex;align-items:center;gap:10px;min-height:30px}
+.layer-advanced>summary::-webkit-details-marker,.wall-tools>summary::-webkit-details-marker{display:none}
+.layer-advanced>summary::before,.wall-tools>summary::before{content:'▸';display:inline-block;width:10px;font-size:10px;color:#8a9a90;transition:transform .12s}
+.layer-advanced[open]>summary::before,.wall-tools[open]>summary::before{transform:rotate(90deg)}
+.layer-advanced{margin:6px 0}
+@media (max-width:640px){
+  #layers .layer-advanced{grid-column:1/-1}
+  .layer-advanced>summary{min-height:44px;display:flex;align-items:center}
+}
+
+/* Right panel tabs: Learn / Sources (all sizes). */
+.panel-tabs{display:flex;gap:2px;border-bottom:1px solid #dee4de;margin:0 0 12px}
+.panel-tabs [role=tab]{flex:1;border:0;background:none;padding:8px 6px;min-height:36px;font-size:11.5px;font-weight:600;color:#6b7d74;border-bottom:2px solid transparent;margin-bottom:-1px}
+.panel-tabs [role=tab]:hover{color:#1e4336}
+.panel-tabs [role=tab][aria-selected=true]{color:#1e4336;border-bottom-color:#244f43}
+.source-card{display:grid;gap:4px}
+.source-card h3{margin:0 0 8px}
+.source-card .eyebrow{margin-top:8px}
+.source-card p{margin:0}
+.source-text{color:#394f41}
+.source-all{margin-top:12px;justify-self:start;border:1px solid #cbd5cf;background:#fff;color:#29483e;border-radius:5px;padding:8px 12px;font-size:11.5px}
+.sheet-head,.mobile-tabs{display:none}
+
+/* Phones: the scene is the screen; panels open as one bottom sheet at a time. */
+@media (max-width:640px){
+  :root{--tabbar-h:calc(58px + env(safe-area-inset-bottom,0px))}
+  body{overflow:hidden}
+  footer{display:none}
+  .workspace{display:block;height:calc(100dvh - 60px - var(--tabbar-h));min-height:0;overflow:hidden}
+  .workspace>main{height:100%;min-height:0}
+  .workspace>aside,.workspace>article{position:fixed;left:0;right:0;bottom:var(--tabbar-h);z-index:90;background:#fbfcf9;border:0;border-top:1px solid #d8e0d5;border-radius:14px 14px 0 0;box-shadow:0 -8px 24px #0000001f;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 16px;visibility:hidden;pointer-events:none;max-height:none}
+  .workspace>aside{max-height:72dvh}
+  .workspace>article{height:38dvh;font-size:16px}
+  body[data-sheet=modes] .workspace>aside,body[data-sheet=layers] .workspace>aside,body[data-sheet=tools] .workspace>aside,body[data-sheet=learn] .workspace>article{visibility:visible;pointer-events:auto}
+  body[data-sheet-size=half] .workspace>article{height:62dvh}
+  body[data-sheet-size=full] .workspace>article{height:calc(100dvh - 60px - var(--tabbar-h))}
+  .workspace>aside>nav,.workspace>aside>#layers,.workspace>aside>#atria-tools,.workspace>aside>#ra-tools,.workspace>aside>#defect-tools,.workspace>aside>.aside-bottom{display:none}
+  body[data-sheet=modes] .workspace>aside>nav{display:grid}
+  body[data-sheet=layers] .workspace>aside>#layers{display:grid}
+  body[data-sheet=tools] .workspace>aside>#atria-tools,body[data-sheet=tools] .workspace>aside>#ra-tools,body[data-sheet=tools] .workspace>aside>#defect-tools{display:block}
+  .workspace>article p,.workspace>article #step-detail{font-size:15px;line-height:1.55}
+  .sheet-head{display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:2;background:#fbfcf9;padding:8px 0;margin:0 0 8px;border-bottom:1px solid #e3e8df}
+  .sheet-title{flex:1;font-size:15px;color:#1e4336}
+  .sheet-btn{min-height:44px;min-width:44px;padding:0 14px;border:1px solid #cbd5cf;border-radius:8px;background:#fff;color:#29483e;font-size:14px}
+  .panel-tabs [role=tab]{min-height:44px;font-size:14px}
+  .mobile-tabs{display:flex;margin:0;gap:0;position:fixed;left:0;right:0;bottom:0;height:var(--tabbar-h);padding-bottom:env(safe-area-inset-bottom,0px);background:#ffffffee;backdrop-filter:blur(8px);border-top:1px solid #d8e0d5;z-index:110}
+  .mobile-tab{flex:1;min-height:44px;border:0;background:none;font-size:14px;font-weight:600;color:#52685b;position:relative}
+  .mobile-tab[aria-expanded=true]{color:#fff;background:#244f43}
+  .mobile-tab[data-badge]::after{content:'';position:absolute;top:10px;right:calc(50% - 32px);width:8px;height:8px;border-radius:50%;background:#e7a34f}
+  .mobile-tab:focus-visible,.sheet-btn:focus-visible{outline:3px solid #299f8a;outline-offset:-3px}
+  /* C-Arm stays a tool drawer: hidden when collapsed, above the tab bar when open. */
+  .carm-panel{bottom:var(--tabbar-h);z-index:120;visibility:visible;pointer-events:auto}
+  .carm-panel.collapsed{display:none}
+  /* One drawer at a time: an open sheet hides the C-Arm drawer (state kept). */
+  body[data-sheet] .carm-panel{display:none}
+  /* Transient notices sit above the tab bar, not over it. */
+  .app-toast{bottom:calc(var(--tabbar-h) + 12px)}
+}
+@media (max-width:640px) and (prefers-reduced-motion:no-preference){
+  .workspace>aside,.workspace>article{transition:height .18s ease}
+}
+
+/* Quick search: top bar on desktop, top of the Modes/Layers sheets on phones. */
+.header-search{flex:1;max-width:420px;margin:0 24px;min-width:0}
+.aside-search{display:none}
+.quick-search{position:relative}
+.quick-search input{width:100%;min-height:36px;border:1px solid #cbd5cf;border-radius:6px;background:#fff;padding:7px 60px 7px 12px;font-size:12.5px;color:#263e3b}
+.quick-search input:focus{outline:2px solid #299f8a;outline-offset:1px;border-color:#299f8a}
+.quick-search input::-webkit-search-cancel-button{display:none}
+.quick-search-hint{position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:9.5px}
+.quick-search-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:400;max-height:min(60vh,460px);overflow-y:auto;background:#fff;border:1px solid #d8e0d5;border-radius:8px;box-shadow:0 12px 32px #0000002a;padding:4px}
+.quick-search-group{font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:#8a9a90;padding:8px 10px 3px}
+.quick-search-option{display:flex;align-items:baseline;gap:8px;padding:8px 10px;border-radius:5px;cursor:pointer;font-size:12.5px;color:#29483e;min-height:36px}
+.quick-search-option small{margin-left:auto;font-size:10px;color:#8a9a90;white-space:nowrap}
+.quick-search-option[aria-selected=true]{background:#e2ebdc}
+.quick-search-option[aria-current=true]{font-weight:700}
+.quick-search-empty{padding:10px;font-size:12px;color:#6b7d74}
+@media (max-width:1100px){.header-search{margin:0 12px}}
+@media (max-width:640px){
+  .header-search{display:none}
+  body[data-sheet=modes] .workspace>aside>.aside-search,body[data-sheet=layers] .workspace>aside>.aside-search{display:block;margin:0 0 12px}
+  .aside-search .quick-search input{min-height:44px;font-size:16px}
+  .aside-search .quick-search-hint{display:none}
+  .quick-search-option{min-height:44px;font-size:15px;align-items:center}
+}
+
+/* Practice loop: Explore / Learn / Test yourself. */
+.practice{display:grid;gap:10px;margin:0 0 14px}
+.practice-styles{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #cbd5cf;border-radius:7px;overflow:hidden}
+.practice-style{border:0;border-right:1px solid #cbd5cf;background:#fff;padding:7px 4px;min-height:34px;font-size:11.5px;font-weight:600;color:#52685b}
+.practice-style:last-child{border-right:0}
+.practice-style[aria-checked=true]{background:#244f43;color:#fff}
+.practice-style:focus-visible,.practice-btn:focus-visible{outline:3px solid #299f8a;outline-offset:-3px}
+.practice-card{display:grid;gap:8px;padding:12px;border:1px solid #cfdcc9;border-left:3px solid #244f43;border-radius:7px;background:#f5f9f2}
+.practice-card h3{margin:0}
+.practice-prompt{margin:0;font-size:14px !important;font-weight:600;color:#1e4336 !important}
+.practice-note{margin:0;font-size:11px !important;color:#6b7d74 !important}
+.practice-feedback{margin:0;padding:8px 10px;border-radius:5px;font-size:12px !important;line-height:1.5}
+.practice-feedback.is-correct{background:#e3f3e8;color:#1f5a36 !important}
+.practice-feedback.is-correct::before{content:'✓ ';font-weight:700}
+.practice-feedback.is-wrong{background:#fbece6;color:#8a3a1c !important}
+.practice-feedback.is-wrong::before{content:'✗ ';font-weight:700}
+.practice-feedback.is-hint{background:#fdf5e3;color:#6f5210 !important}
+.practice-feedback.is-hint::before{content:'💡 '}
+.practice-feedback.is-revealed{background:#eef1f5;color:#3b4a5c !important}
+.practice-actions{display:flex;flex-wrap:wrap;gap:6px}
+.practice-btn{border:1px solid #cbd5cf;background:#fff;color:#29483e;border-radius:5px;padding:7px 11px;min-height:34px;font-size:11.5px;font-weight:600}
+.practice-btn.primary-soft{background:#244f43;border-color:#244f43;color:#fff}
+.practice-summary{display:grid;grid-template-columns:auto auto;justify-content:start;gap:3px 14px;margin:0;font-size:12px}
+.practice-summary dt{color:#52685b}
+.practice-summary dd{margin:0;font-weight:700;color:#1e4336;font-variant-numeric:tabular-nums}
+.practice-review{font-size:11.5px !important;color:#394f41 !important}
+.practice-findings{display:grid;gap:6px}
+.practice-findings h3{margin:0 0 4px}
+.practice-records{margin:0;padding-left:18px;font-size:12px;color:#394f41;display:grid;gap:3px}
+.practice-records .is-revealed{color:#8a3a1c}
+.practice-last{border:1px solid #dce4d7;border-radius:6px;padding:8px 10px;display:grid;gap:4px}
+.practice-banner{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:6;max-width:min(560px,60%);background:#1d3f35ee;color:#e8f6ef;border:1px solid #3d7966;border-radius:20px;padding:7px 14px;font-size:12px;line-height:1.35;box-shadow:0 4px 14px #0000002a;text-align:center}
+.practice-banner strong{color:#8fe0c2}
+.practice-banner-state.is-correct{color:#8fe0c2;font-weight:700}
+.practice-banner-state.is-wrong{color:#ffb4a0;font-weight:700}
+@media (max-width:640px){
+  .practice-banner{top:58px;left:8px;right:8px;transform:none;max-width:none;font-size:14px;border-radius:12px}
+  .practice-style,.practice-btn{min-height:44px;font-size:14px}
+  .practice-prompt{font-size:16px !important}
+}
+
+/* Header fit: tablets hide only the tagline (not every button label);
+   phones show the update control as a 44 px icon (name from its title). */
+@media (max-width:1100px){
+  .header-right{font-size:11px}
+  .header-right>.dot,.header-right>span[data-i18n=headerTitle]{display:none}
+}
+@media (max-width:640px){
+  .header-update-btn .update-label{display:none}
+  .header-right .header-update-btn{min-width:44px;min-height:44px;justify-content:center;padding:0}
+  .header-right .lang-btn{min-width:44px;min-height:44px;justify-content:center}
+}
+@media (max-width:360px){
+  header{padding:0 8px}
+  .brand strong{letter-spacing:0}
+  .header-right button{margin-left:2px}
+  #sources{max-width:34vw}
+}

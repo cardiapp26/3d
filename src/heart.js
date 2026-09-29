@@ -307,6 +307,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     cathLab.init();
     catheterPickables=null;
     channels = createAnimationChannels({ meshMap, sourceCenter });
+    // Surface-follower binding is a one-time cost; do it while idle rather
+    // than on the first beat.
+    (window.requestIdleCallback || (fn => setTimeout(fn, 200)))(() => channels?.prepare());
     bloodFlow = createBloodFlow({ resolveRoutes: () => measuredFlowRoutes({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], getVesselTrim: name => vesselTrims.get(name) || null }) });
     layers.flow.add(bloodFlow.group);
     applyState();computeFit();setView('anterior',false);loading.remove();container.dataset.modelReady='true';

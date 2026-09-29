@@ -3,9 +3,16 @@ import * as THREE from 'three';
 import {
   avLeafletOffset,
   avLeafletWeight,
+  bindFollower,
+  chamberFieldOffset,
   computeChannelWeights,
   createAnimationChannels,
-  leafletOffset
+  FOLLOW_CONTACT,
+  FOLLOW_FADE,
+  followWeight,
+  isSurfaceFollower,
+  leafletOffset,
+  writeFollower
 } from '../src/animation-channels.js';
 import { annulusFrame } from '../src/mesh-utils.js';
 
@@ -198,3 +205,78 @@ console.log('\nALL ANIMATION CHANNEL TESTS PASSED!');
   assert.deepEqual(next, rest, 'LAA rest pose is restored exactly');
   console.log('PASS: LAA marker follows LA motion and resets');
 }
+
+// Surface followers (report section 12, phase B).
+{
+  const I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+  assert.equal(followWeight(0), 1);
+  assert.equal(followWeight(FOLLOW_CONTACT), 1);
+  assert.equal(followWeight(FOLLOW_FADE), 0);
+  const mid = followWeight((FOLLOW_CONTACT + FOLLOW_FADE) / 2);
+  assert.ok(mid > 0.4 && mid < 0.6, 'smooth fade between contact and fade distance');
+  assert.equal(isSurfaceFollower({ layer: 'coronaries', id: 'lad' }), true);
+  assert.equal(isSurfaceFollower({ layer: 'valves', id: 'lv-papillary' }), true);
+  assert.equal(isSurfaceFollower({ layer: 'valves', id: 'mitral' }), false, 'leaflets keep their own motion');
+  assert.equal(isSurfaceFollower({ layer: 'chambers', id: 'lv' }), false, 'owners do not follow');
+  assert.equal(isSurfaceFollower({ layer: 'thorax', id: 'vertebrae' }), false, 'surroundings stay still');
+
+  // Two walls: A at x = 0, B at x = 1 (planes of vertices).
+  const plane = x => { const a = []; for (let y = -1; y <= 1; y += 0.05) for (let z = -1; z <= 1; z += 0.05) a.push(x, y, z); return new Float32Array(a); };
+  const ownerA = { rest: plane(0), matrix: I }, ownerB = { rest: plane(1), matrix: I };
+  ownerA.current = new Float32Array(ownerA.rest); ownerB.current = new Float32Array(ownerB.rest);
+  // Follower: one vertex on A, one in the fade zone, one far away.
+  const rest = new Float32Array([0.02, 0, 0, 0.3, 0, 0, 0.5, 0.5, 0.5]);
+  // (the third vertex is beyond FOLLOW_FADE of both walls)
+  const follower = { rest, out: new Float32Array(rest), matrix: I, matrixInverse: [1, 0, 0, 0, 1, 0, 0, 0, 1] };
+  const binding = bindFollower([ownerA, ownerB], follower);
+  // Move wall A by +0.1 in y everywhere, wall B stays.
+  for (let i = 1; i < ownerA.current.length; i += 3) ownerA.current[i] = ownerA.rest[i] + 0.1;
+  writeFollower(follower, binding, [ownerA, ownerB]);
+  assert.ok(Math.abs(follower.out[1] - 0.1) < 1e-6, 'vertex in contact moves exactly with its wall');
+  assert.ok(follower.out[4] > 0 && follower.out[4] < 0.1, 'fade-zone vertex moves partly');
+  assert.equal(follower.out[7], 0.5, 'vertex beyond the fade distance stays still');
+  // A second wall close to A (x = 0.2) for the groove cases.
+  const near = { rest: plane(0.2), matrix: I }; near.current = new Float32Array(near.rest);
+  {
+    // Midway between the two close walls: half of each.
+    const midway = { rest: new Float32Array([0.1, 0, 0]), out: new Float32Array(3), matrix: I, matrixInverse: [1, 0, 0, 0, 1, 0, 0, 0, 1] };
+    const bindMid = bindFollower([ownerA, near], midway);
+    for (let i = 1; i < ownerA.current.length; i += 3) ownerA.current[i] = ownerA.rest[i] + 0.1;
+    writeFollower(midway, bindMid, [ownerA, near]);
+    assert.ok(Math.abs(midway.out[1] - 0.05) < 0.005, 'vertex midway between two walls takes half of each');
+  }
+  // Back to rest: the follower returns exactly (computed from rest, no drift).
+  ownerA.current.set(ownerA.rest);
+  writeFollower(follower, binding, [ownerA, ownerB]);
+  assert.deepEqual([...follower.out], [...rest]);
+
+  // A tube in the groove between the walls: without smoothing its two sides
+  // follow different walls; smoothing over its edges moves it as one piece.
+  const ring = []; const tri = [];
+  for (let k = 0; k < 2; k++) for (let a = 0; a < 8; a++) ring.push(0.1 + 0.04 * Math.cos(a / 8 * 2 * Math.PI), k * 0.1, 0.04 * Math.sin(a / 8 * 2 * Math.PI));
+  for (let a = 0; a < 8; a++) { const b = (a + 1) % 8; tri.push(a, b, 8 + a, b, 8 + b, 8 + a); }
+  const tubeRest = new Float32Array(ring);
+  const spread = smooth => {
+    const tube = { rest: tubeRest, out: new Float32Array(tubeRest), matrix: I, matrixInverse: [1, 0, 0, 0, 1, 0, 0, 0, 1], index: new Uint16Array(tri), smooth };
+    const bind = bindFollower([ownerA, near], tube);
+    for (let i = 1; i < ownerA.current.length; i += 3) ownerA.current[i] = ownerA.rest[i] + 0.1;
+    writeFollower(tube, bind, [ownerA, near]);
+    ownerA.current.set(ownerA.rest);
+    const ys = []; for (let v = 0; v < 8; v++) ys.push(tube.out[v * 3 + 1] - tubeRest[v * 3 + 1]);
+    return Math.max(...ys) - Math.min(...ys);
+  };
+  // Six smoothing steps: enough to pull the cross-section together (about
+  // 40% less spread here) without smearing owners far along the vessel.
+  assert.ok(spread(true) < spread(false) * 0.67, 'smoothing pulls the tube cross-section together');
+
+  // Cavity field: continuous, zero at the valve plane, clamped outside.
+  const motion = { minY: -1, maxY: 1, cx: 0, cz: 0 };
+  assert.ok(chamberFieldOffset(0.5, 1, 0.5, motion, 1, true).every(v => Math.abs(v) < 1e-12), 'valve plane stays put');
+  const apex = chamberFieldOffset(0.5, -1, 0, motion, 1, true);
+  assert.ok(apex[0] < 0 && apex[1] > 0, 'apex moves inward and toward the base');
+  assert.deepEqual(chamberFieldOffset(0.5, -3, 0, motion, 1, true), apex, 'below the apex it is clamped, not overdriven');
+  const a = chamberFieldOffset(0.3, 0, 0.2, motion, 1, true), b = chamberFieldOffset(0.3001, 0, 0.2, motion, 1, true);
+  assert.ok(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 1e-4, 'field is continuous');
+  console.log('PASS: surface followers bind, fade, blend two walls, smooth grooves, return to rest; cavity field continuous and clamped');
+}
+

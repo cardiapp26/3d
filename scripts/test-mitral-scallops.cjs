@@ -15,6 +15,8 @@ const assert = require('node:assert/strict');
     assert.equal(await page.evaluate(() => window.heart.getState().mitralFocus), true);
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'la').visible), false);
     await page.screenshot({ path: 'research/screenshots/mitral-scallops.png' });
+    // Valve substructures start collapsed in the layer panel.
+    await page.locator('[data-group=valves] .group-toggle').click();
     await page.locator('input[data-layer="mitral-posterior"]').uncheck();
     await page.waitForFunction(() => [...document.querySelectorAll('.mitral-scallop-label')].filter(el => !el.hidden).length === 3);
     assert.deepEqual((await page.locator('.mitral-scallop-label:visible').allTextContents()).sort(), ['A1','A2','A3']);

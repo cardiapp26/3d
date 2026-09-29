@@ -214,6 +214,25 @@ function writeAvLeaflet(mesh, opening, frame) {
   attr.needsUpdate = true;
 }
 
+/**
+ * The chamber's displacement field at any point (the same law writeChamber
+ * applies to the wall), with the valve distance clamped to the chamber so
+ * points above the base or below the apex are not overdriven. Continuous in
+ * space, so structures inside a cavity can follow it directly.
+ */
+export function chamberFieldOffset(x, y, z, motion, weight, lockAtMaxY) {
+  const { minY, maxY, cx, cz } = motion;
+  const height = Math.max(1e-4, maxY - minY);
+  const radial = lockAtMaxY ? 0.11 : 0.08;
+  const axial = lockAtMaxY ? 0.07 : 0.05;
+  const amount = Math.max(0, Math.min(1, weight));
+  // Clamp to the chamber's height: the valve distance and the axial lever.
+  const yc = Math.max(minY, Math.min(maxY, y));
+  const fromValve = lockAtMaxY ? (maxY - yc) / height : (yc - minY) / height;
+  const k = amount * fromValve * fromValve;
+  return [-(x - cx) * radial * k, (lockAtMaxY ? (maxY - yc) : (minY - yc)) * axial * k, -(z - cz) * radial * k];
+}
+
 function writeChamber(mesh, weight, lockAtMaxY, referenceMotion = null) {
   const attr = rememberRest(mesh);
   if (!attr) return;
@@ -237,6 +256,199 @@ function writeChamber(mesh, weight, lockAtMaxY, referenceMotion = null) {
   attr.needsUpdate = true;
 }
 
+/*
+ * Surface followers (report section 12, phase B). Structures lying on or near
+ * a chamber (coronary arteries and veins, great-vessel roots, papillary
+ * muscles, annuli, conduction markers) are bound once, at rest, to the
+ * nearest vertex of up to two chambers. Every frame they take that vertex's
+ * current displacement, weighted by distance, starting again from the rest
+ * pose so nothing drifts. Within FOLLOW_CONTACT they move fully with the
+ * wall; the weight fades to zero at FOLLOW_FADE, so the far aortic arch or a
+ * distant pulmonary vein stays still.
+ */
+export const FOLLOW_CONTACT = 0.15;
+export const FOLLOW_FADE = 0.45;
+const FOLLOW_CELL = 0.15;
+const OWNER_IDS = ['lv', 'rv', 'la', 'ra'];
+const FOLLOWER_IDS = new Set(['mitral-annulus', 'tricuspid-annulus', 'lv-papillary', 'rv-papillary']);
+// Anatomical owners: a papillary muscle belongs to its ventricle, an annulus
+// to its atrium and ventricle. Others may bind to any chamber.
+export const FOLLOWER_OWNERS = {
+  'lv-papillary': ['lv'], 'rv-papillary': ['rv'],
+  'mitral-annulus': ['la', 'lv'], 'tricuspid-annulus': ['ra', 'rv'],
+};
+
+/** Which meshes follow the chamber walls. Leaflets keep their own opening motion. */
+export function isSurfaceFollower(userData = {}) {
+  if (userData.micro || OWNER_IDS.includes(userData.id) || userData.id === 'laa') return false;
+  return FOLLOWER_IDS.has(userData.id) || ['coronaries', 'vessels', 'conduction'].includes(userData.layer);
+}
+
+/** Full weight in contact, smooth fade to zero at FOLLOW_FADE. */
+export function followWeight(distance) {
+  if (distance <= FOLLOW_CONTACT) return 1;
+  if (distance >= FOLLOW_FADE) return 0;
+  const t = (distance - FOLLOW_CONTACT) / (FOLLOW_FADE - FOLLOW_CONTACT);
+  return 1 - t * t * (3 - 2 * t);
+}
+
+const worldPoint = (e, x, y, z, out, o) => {
+  out[o] = e[0] * x + e[4] * y + e[8] * z + e[12];
+  out[o + 1] = e[1] * x + e[5] * y + e[9] * z + e[13];
+  out[o + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
+};
+
+const FOLLOW_SMOOTH_STEPS = 6;
+
+/**
+ * Bind follower vertices to owner vertices. `owners` are { rest (local),
+ * matrix (world elements) }, `follower` is { rest, matrix, index? }. Each
+ * vertex keeps, per owner, its nearest owner vertex within FOLLOW_FADE; the
+ * owner mix is then smoothed over the follower's own edges (coincident seam
+ * vertices welded) so a vessel lying in a groove between two chambers moves
+ * as one tube instead of tearing along the groove. Returns flat arrays of
+ * length count * owners.length: owner vertex index (-1 unbound) and weight.
+ */
+export function bindFollower(owners, follower) {
+  const n = owners.length;
+  const ownerWorld = owners.map(o => { const w = new Float32Array(o.rest.length); for (let i = 0; i < o.rest.length; i += 3) worldPoint(o.matrix, o.rest[i], o.rest[i + 1], o.rest[i + 2], w, i); return w; });
+  const grid = new Map();
+  // Numeric cell key (cells within +-1024 of the origin; the heart spans ~30).
+  const key = (x, y, z) => ((x + 1024) * 2048 + (y + 1024)) * 2048 + (z + 1024);
+  ownerWorld.forEach((w, c) => {
+    for (let i = 0; i < w.length; i += 3) {
+      const k = key(Math.floor(w[i] / FOLLOW_CELL), Math.floor(w[i + 1] / FOLLOW_CELL), Math.floor(w[i + 2] / FOLLOW_CELL));
+      let list = grid.get(k); if (!list) grid.set(k, list = []);
+      list.push(c, i);
+    }
+  });
+  const count = follower.rest.length / 3;
+  const index = new Int32Array(count * n).fill(-1);
+  const dist = new Float32Array(count * n).fill(Infinity); // squared while scanning
+  const p = new Float32Array(3);
+  const reach = Math.ceil(FOLLOW_FADE / FOLLOW_CELL);
+  const scan = (v, cx, cy, cz, r) => {
+    for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) for (let dz = -r; dz <= r; dz++) {
+      const list = grid.get(key(cx + dx, cy + dy, cz + dz)); if (!list) continue;
+      for (let j = 0; j < list.length; j += 2) {
+        const c = list[j], i = list[j + 1], w = ownerWorld[c];
+        const dx = w[i] - p[0], dy = w[i + 1] - p[1], dz = w[i + 2] - p[2];
+        const d = dx * dx + dy * dy + dz * dz;
+        if (d < dist[v * n + c]) { dist[v * n + c] = d; index[v * n + c] = i; }
+      }
+    }
+  };
+  for (let v = 0; v < count; v++) {
+    worldPoint(follower.matrix, follower.rest[v * 3], follower.rest[v * 3 + 1], follower.rest[v * 3 + 2], p, 0);
+    const cx = Math.floor(p[0] / FOLLOW_CELL), cy = Math.floor(p[1] / FOLLOW_CELL), cz = Math.floor(p[2] / FOLLOW_CELL);
+    scan(v, cx, cy, cz, 1);
+    // Widen only when no allowed owner is in contact: the fade zone. A second
+    // owner beyond the first ring would carry a negligible fourth-power share.
+    let found = false;
+    for (let c = 0; c < n; c++) if (dist[v * n + c] <= FOLLOW_CONTACT * FOLLOW_CONTACT && (!follower.allowed || follower.allowed.includes(c))) found = true;
+    if (!found) scan(v, cx, cy, cz, reach);
+    for (let c = 0; c < n; c++) {
+      const d = Math.sqrt(dist[v * n + c]);
+      if (d > FOLLOW_FADE || (follower.allowed && !follower.allowed.includes(c))) { dist[v * n + c] = Infinity; index[v * n + c] = -1; } else dist[v * n + c] = d;
+    }
+  }
+  // Owner mix per vertex (inverse fourth power: the nearer wall dominates),
+  // and the overall attachment.
+  const mix = new Float32Array(count * n);
+  const attach = new Float32Array(count);
+  for (let v = 0; v < count; v++) {
+    let sum = 0, nearest = Infinity;
+    for (let c = 0; c < n; c++) { const d = dist[v * n + c]; if (d === Infinity) continue; const f = 1 / (d ** 4 + 1e-10); mix[v * n + c] = f; sum += f; nearest = Math.min(nearest, d); }
+    if (sum > 0) for (let c = 0; c < n; c++) mix[v * n + c] /= sum;
+    // Papillary muscles ride their ventricle's field over their whole length.
+    attach[v] = nearest === Infinity ? 0 : follower.fullAttach ? 1 : followWeight(nearest);
+  }
+  // Smooth the mix over the follower's edges (welded by position). Only thin
+  // tubes that can lie in a groove need it; great vessels and muscles do not.
+  if (follower.smooth && follower.index && follower.index.length) {
+    const weld = new Int32Array(count);
+    const seen = new Map();
+    for (let v = 0; v < count; v++) {
+      const k = `${Math.round(follower.rest[v * 3] * 1e4)},${Math.round(follower.rest[v * 3 + 1] * 1e4)},${Math.round(follower.rest[v * 3 + 2] * 1e4)}`;
+      if (!seen.has(k)) seen.set(k, v);
+      weld[v] = seen.get(k);
+    }
+    const neighbors = Array.from({ length: count }, () => new Set());
+    const tri = follower.index;
+    for (let t = 0; t + 2 < tri.length; t += 3) {
+      const a = weld[tri[t]], b = weld[tri[t + 1]], c = weld[tri[t + 2]];
+      neighbors[a].add(b).add(c); neighbors[b].add(a).add(c); neighbors[c].add(a).add(b);
+    }
+    const next = new Float32Array(mix.length);
+    for (let step = 0; step < FOLLOW_SMOOTH_STEPS; step++) {
+      for (let v = 0; v < count; v++) {
+        const root = weld[v];
+        if (root !== v) continue;
+        const list = neighbors[v];
+        for (let c = 0; c < n; c++) {
+          let acc = 0;
+          for (const u of list) acc += mix[u * n + c];
+          next[v * n + c] = list.size ? 0.5 * mix[v * n + c] + 0.5 * acc / list.size : mix[v * n + c];
+        }
+      }
+      for (let v = 0; v < count; v++) { const root = weld[v]; for (let c = 0; c < n; c++) mix[v * n + c] = next[root * n + c]; }
+    }
+  }
+  // An owner without a bound vertex cannot contribute; renormalize the rest.
+  const weight = new Float32Array(count * n);
+  for (let v = 0; v < count; v++) {
+    let sum = 0;
+    for (let c = 0; c < n; c++) if (index[v * n + c] >= 0) sum += mix[v * n + c];
+    if (sum <= 0) continue;
+    for (let c = 0; c < n; c++) if (index[v * n + c] >= 0) weight[v * n + c] = attach[v] * mix[v * n + c] / sum;
+  }
+  return { index, weight, owners: n };
+}
+
+/** Invert the linear part of a column-major 4x4 matrix (rigid or uniform-scale use). */
+function inverseLinear(e) {
+  const a = e[0], b = e[4], c = e[8], d = e[1], f = e[5], g = e[9], h = e[2], i = e[6], j = e[10];
+  const det = a * (f * j - g * i) - b * (d * j - g * h) + c * (d * i - f * h) || 1;
+  return [(f * j - g * i) / det, (c * i - b * j) / det, (b * g - c * f) / det,
+    (g * h - d * j) / det, (a * j - c * h) / det, (c * d - a * g) / det,
+    (d * i - f * h) / det, (b * h - a * i) / det, (a * f - b * d) / det];
+}
+
+/**
+ * Write one follower frame: rest + sum of weighted owner displacements, the
+ * displacement taken in world space and brought back to the follower frame.
+ */
+export function writeFollower(follower, binding, owners) {
+  const { rest, out, matrixInverse: m } = follower;
+  if (follower.field) {
+    // Inside a cavity: evaluate the owner's field at the vertex itself.
+    const { motion, weight, lock } = follower.field;
+    for (let o = 0; o < rest.length; o += 3) {
+      const d = chamberFieldOffset(rest[o], rest[o + 1], rest[o + 2], motion, weight(), lock);
+      out[o] = rest[o] + d[0]; out[o + 1] = rest[o + 1] + d[1]; out[o + 2] = rest[o + 2] + d[2];
+    }
+    return;
+  }
+  const { index, weight, owners: n } = binding;
+  const count = rest.length / 3;
+  for (let v = 0; v < count; v++) {
+    let wx = 0, wy = 0, wz = 0;
+    for (let c = 0; c < n; c++) {
+      const wt = weight[v * n + c];
+      if (!wt) continue;
+      const o = owners[c], i = index[v * n + c], e = o.matrix;
+      const lx = o.current[i] - o.rest[i], ly = o.current[i + 1] - o.rest[i + 1], lz = o.current[i + 2] - o.rest[i + 2];
+      wx += wt * (e[0] * lx + e[4] * ly + e[8] * lz);
+      wy += wt * (e[1] * lx + e[5] * ly + e[9] * lz);
+      wz += wt * (e[2] * lx + e[6] * ly + e[10] * lz);
+    }
+    const o = v * 3;
+    out[o] = rest[o] + m[0] * wx + m[1] * wy + m[2] * wz;
+    out[o + 1] = rest[o + 1] + m[3] * wx + m[4] * wy + m[5] * wz;
+    out[o + 2] = rest[o + 2] + m[6] * wx + m[7] * wy + m[8] * wz;
+  }
+}
+
 /**
  * Creates an anatomical animation channel controller attached to a Heart instance.
  */
@@ -249,6 +461,54 @@ const VALVE_GROUPS = [
 
 export function createAnimationChannels({ meshMap }) {
   const valveCache = new Map();
+  let followers = null;
+  let lastWeights = {};
+  const isIdentity = e => e.every((v, i) => Math.abs(v - (i % 5 === 0 ? 1 : 0)) < 1e-9);
+
+  // Bound lazily on the first frame, when every mesh (including conduction
+  // tracts built after the atlas) exists.
+  function followerSetup() {
+    if (followers) return followers;
+    const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    const matrixOf = mesh => { mesh.updateWorldMatrix?.(true, false); return mesh.matrixWorld?.elements?.slice() || IDENTITY.slice(); };
+    const owners = [];
+    for (const id of OWNER_IDS) {
+      const mesh = (meshMap.get(id) || [])[0];
+      const attr = mesh && rememberRest(mesh);
+      if (attr) owners.push({ mesh, rest: mesh.userData.restPosition, current: attr.array, matrix: matrixOf(mesh) });
+    }
+    const seen = new Set();
+    const ownerIndex = new Map(owners.map((o, i) => [o.mesh.userData.id, i]));
+    followers = [];
+    for (const list of meshMap.values()) for (const mesh of list) {
+      if (!owners.length || seen.has(mesh) || !isSurfaceFollower(mesh.userData) || !mesh.geometry?.attributes?.position) continue;
+      seen.add(mesh);
+      const attr = rememberRest(mesh);
+      const matrix = matrixOf(mesh);
+      const follower = { mesh, attr, rest: mesh.userData.restPosition, out: attr.array, matrix, matrixInverse: inverseLinear(matrix), index: mesh.geometry.index?.array, smooth: ['coronaries', 'conduction'].includes(mesh.userData.layer) || !!FOLLOWER_OWNERS[mesh.userData.id], fullAttach: /papillary/.test(mesh.userData.id),
+        allowed: FOLLOWER_OWNERS[mesh.userData.id]?.map(id => ownerIndex.get(id)).filter(i => i !== undefined) };
+      const ownerId = FOLLOWER_OWNERS[mesh.userData.id]?.[0];
+      const owner = follower.fullAttach && owners[ownerIndex.get(ownerId)];
+      if (owner && isIdentity(matrix) && isIdentity(owner.matrix)) {
+        const lock = ownerId === 'lv' || ownerId === 'rv';
+        follower.field = { motion: owner.mesh.userData.motion, lock, weight: () => lastWeights[lock ? 'ventricularContraction' : 'atrialContraction'] || 0 };
+        followers.push({ follower, binding: null });
+        continue;
+      }
+      const binding = bindFollower(owners, follower);
+      if (binding.weight.some(w => w > 0)) followers.push({ follower, binding });
+    }
+    followers.owners = owners;
+    return followers;
+  }
+
+  function applyFollowers() {
+    const setup = followerSetup();
+    for (const { follower, binding } of setup) {
+      writeFollower(follower, binding, setup.owners);
+      follower.attr.needsUpdate = true;
+    }
+  }
 
   function deform(id, weight, lockAtMaxY) {
     for (const mesh of meshMap.get(id) || []) writeChamber(mesh, weight, lockAtMaxY);
@@ -331,12 +591,14 @@ export function createAnimationChannels({ meshMap }) {
       return;
     }
     const weights = computeChannelWeights(cycleState.phase);
+    lastWeights = weights;
     deform('lv', weights.ventricularContraction, true);
     deform('rv', weights.ventricularContraction, true);
     deform('la', weights.atrialContraction, false);
     const laMotion = meshMap.get('la')?.[0]?.userData.motion;
     if (laMotion) for (const marker of meshMap.get('laa') || []) writeChamber(marker, weights.atrialContraction, false, laMotion);
     deform('ra', weights.atrialContraction, false);
+    applyFollowers();
     applyValves(weights);
     return weights;
   }
@@ -356,11 +618,18 @@ export function createAnimationChannels({ meshMap }) {
     for (const id of ['lv', 'rv', 'la', 'laa', 'ra', 'lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'lv-papillary', 'rv-papillary']) {
       for (const mesh of meshMap.get(id) || []) restoreMesh(mesh);
     }
+    for (const { follower } of followers || []) {
+      follower.out.set(follower.rest);
+      follower.attr.needsUpdate = true;
+    }
   }
 
   return {
     applyChannels,
     computeChannelWeights,
-    reset
+    reset,
+    // Bind the surface followers ahead of the first beat (idle time).
+    prepare: () => { followerSetup(); },
+    followerCount: () => followerSetup().length
   };
 }

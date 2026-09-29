@@ -1,9 +1,12 @@
 import { createSeptalDefectsPanel } from './septal-defects-panel.js';
+import { createPanelShell } from './panel-shell.js';
+import { createQuickSearch, rememberMode } from './quick-search.js';
+import { createPractice } from './practice.js';
 import { DEFECT_TYPES } from './septal-defects-data.js';
 import * as THREE from 'three';
 import './style.css';
 import {createHeart} from './heart.js';
-import {structures,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
+import {structures,rawStructures,uiTranslations,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
 import { fetchCountryCode, languageForCountry } from './entry-language.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
@@ -28,10 +31,42 @@ const modes = [
   ['defects', '11']
 ];
 
+// Right-panel tabs and phone sheets; created once the panels exist.
+let panelShell = null;
+// Explore / Learn / Test yourself loop; created with the panel shell.
+let practice = null;
+
+// Mode list grouped by learning domain; numbers and shortcuts are unchanged.
+const MODE_GROUPS = [
+  ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'defects']],
+  ['modeGroupIntervention', ['angiography', 'ablation', 'pacemaker', 'transseptal', 'bachmann']],
+  ['modeGroupPhysiology', ['cath', 'exam']]
+];
+function renderModeNav() {
+  const byId = new Map(getUiModes().map(entry => [entry[0], entry]));
+  const button = ([id, n, t]) => `<button class="mode ${id === 'anatomy' ? 'active' : ''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> <kbd class="mode-kbd">${n.replace(/^0/, '')}</kbd><b>↗</b></button>`;
+  const grouped = new Set(MODE_GROUPS.flatMap(([, ids]) => ids));
+  const rest = getUiModes().filter(([id]) => !grouped.has(id));
+  return MODE_GROUPS.map(([key, ids]) => `<div class="mode-group-label" data-i18n="${key}">${getTranslation(key)}</div>${ids.filter(id => byId.has(id)).map(id => button(byId.get(id))).join('')}`).join('') + rest.map(button).join('');
+}
+function layerRow(id, key, color, checked = true) {
+  return `<label class="layer"><i style="background:${color}"></i><span data-i18n="${key}">${getTranslation(key)}</span><input type="checkbox" data-layer="${id}"${checked ? ' checked' : ''}></label>`;
+}
+// A layer with substructures: the disclosure button opens the list, the
+// checkbox toggles visibility; both are separate controls.
+function layerGroup(id, color, children) {
+  const subId = `layer-sub-${id}`;
+  return `<div class="layer-group" data-group="${id}">
+      <div class="layer layer-group-head"><button type="button" class="group-toggle" aria-expanded="false" aria-controls="${subId}" title="${getTranslation('groupToggle')}"><span class="group-caret" aria-hidden="true">▸</span><i style="background:${color}"></i><span data-i18n="${id}">${getTranslation(id)}</span><small class="group-count" data-group-count="${id}">${children.length}/${children.length}</small></button><input type="checkbox" data-layer="${id}" checked aria-label="${getTranslation(id)}"></div>
+      <div class="layer-subgroup" id="${subId}" hidden>${children.map(([cid, key, c]) => `<label class="layer sublayer"><i style="background:${c}"></i><span data-i18n="${key}">${getTranslation(key)}</span><input type="checkbox" data-layer="${cid}" checked></label>`).join('')}</div>
+    </div>`;
+}
+
 const app = document.querySelector('#app');
 app.innerHTML = `
 <header>
   <a class="brand" href="#/">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
+  <div id="header-search" class="header-search"></div>
   <div class="header-right">
     <span class="dot"></span> <span data-i18n="headerTitle">${getTranslation('headerTitle')}</span>
     <button id="lang-btn" class="lang-btn" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
@@ -46,84 +81,37 @@ app.innerHTML = `
 </header>
 <div class="workspace">
   <aside>
-    <nav aria-label="Learning modes">
-      ${getUiModes().map(([id,n,t])=>`<button class="mode ${id==='anatomy'?'active':''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> <kbd class="mode-kbd">${n.replace(/^0/,'')}</kbd><b>↗</b></button>`).join('')}
-    </nav>
+    <div id="aside-search" class="aside-search"></div>
+    <nav aria-label="Learning modes">${renderModeNav()}</nav>
     <section id="defect-tools" hidden></section>
     <section id="atria-tools" hidden>
-      <p data-i18n="atriaNote">${getTranslation('atriaNote')}</p>
       ${[['la','atriaFocusLa'],['laa','atriaFocusLaa']].map(([id,key])=>`<button data-atria-focus="${id}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
       <label class="slider-label"><span data-i18n="wallLa">${getTranslation('wallLa')}</span><output id="atria-cut-la">0%</output></label><input data-atria-wall="la" aria-label="LA wall section" type="range" min="0" max="80" value="0">
     </section>
     <section id="ra-tools" hidden>
-      <p data-i18n="raNote">${getTranslation('raNote')}</p>
       <button data-ra-focus="ra" data-i18n="raFocusRa">${getTranslation('raFocusRa')}</button>
       <label class="slider-label"><span data-i18n="wallRa">${getTranslation('wallRa')}</span><output id="ra-cut-ra">0%</output></label><input data-ra-wall="ra" aria-label="RA wall section" type="range" min="0" max="80" value="0">
     </section>
     <section id="layers">
-      <div class="section-heading"><span data-i18n="layersHeading">${getTranslation('layersHeading')}</span> <span>08</span></div>
-      <label class="layer"><i style="background:#c76260"></i><span data-i18n="chambers">${getTranslation('chambers')}</span><input type="checkbox" data-layer="chambers" checked></label>
-      <div class="layer-subgroup">
-        ${[
-          ['lv', 'Left ventricle (LV)', '#9b3238'],
-          ['rv', 'Right ventricle (RV)', '#a43d42'],
-          ['la', 'Left atrium (LA)', '#b55157'],
-          ['ra', 'Right atrium (RA)', '#aa484e'],
-          ['laa', 'LAA orifice (left atrial appendage)', '#d9a066']
-        ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
-      </div>
-      <details class="wall-tools" open><summary data-i18n="wallToolsSummary">${getTranslation('wallToolsSummary')}</summary><p data-i18n="wallToolsNote">${getTranslation('wallToolsNote')}</p>
-      ${[['rv','wallRv'],['lv','wallLv'],['la','wallLa'],['ra','wallRa']].map(([id,key])=>`<label for="wall-${id}"><span data-i18n="${key}">${getTranslation(key)}</span><output id="wall-value-${id}">${getTranslation('wallClosed')}</output></label><input id="wall-${id}" data-wall="${id}" type="range" min="0" max="80" value="0" aria-label="${getTranslation(key)}">`).join('')}
+      <div class="section-heading"><span data-i18n="layersHeading">${getTranslation('layersHeading')}</span></div>
+      ${layerGroup('chambers', '#c76260', [['lv','layerLv','#9b3238'],['rv','layerRv','#a43d42'],['la','layerLa','#b55157'],['ra','layerRa','#aa484e'],['laa','layerLaa','#d9a066']])}
+      <details class="wall-tools"><summary data-i18n="wallToolsSummary">${getTranslation('wallToolsSummary')}</summary>
+      ${[['rv','wallRv'],['lv','wallLv'],['la','wallLa'],['ra','wallRa']].map(([id,key])=>`<label for="wall-${id}"><span data-i18n="${key}">${getTranslation(key)}</span><output id="wall-value-${id}">${getTranslation('wallClosed')}</output></label><input id="wall-${id}" data-wall="${id}" aria-label="${getTranslation(key)}" type="range" min="0" max="80" value="0">`).join('')}
       <button id="restore-walls" data-i18n="restoreWalls">${getTranslation('restoreWalls')}</button></details>
-      ${[
-        ['vessels', 'vessels', '#729fca'],
-        ['coronaries', 'coronaries', '#ebba70']
-      ].map(([id, key, c]) => `<label class="layer"><i style="background:${c}"></i><span data-i18n="${key}">${getTranslation(key)}</span><input type="checkbox" data-layer="${id}" checked></label>`).join('')}
-      <label class="layer"><i style="background:#5187a0"></i><span data-i18n="veins">${getTranslation('veins')}</span><input type="checkbox" data-layer="veins" checked></label>
-      <div class="layer-subgroup">
-        ${[
-          ['cs', 'Koroner sinüs (CS Trunk)', '#5187a0'],
-          ['gcv', 'Büyük kardiyak ven (GCV)', '#679db2'],
-          ['mcv', 'Orta kardiyak ven (MCV)', '#679db2'],
-          ['piv', 'Sol ventrikül posterior veni (PVLV)', '#679db2'],
-          ['pv', 'Pulmoner venler (LSPV/LIPV/RSPV/RIPV)', '#b9827a'],
-          ['svc', 'Vena kava süperior (SVC)', '#62889c'],
-          ['ivc', 'Vena kava inferior (IVC)', '#62889c']
-        ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
-      </div>
-      ${[
-        ['conduction', 'conduction', '#f5df76'],
-        ['bachmann', null, '#f6b64b']
-      ].map(([id, key, c]) => `<label class="layer"><i style="background:${c}"></i>${key ? `<span data-i18n="${key}">${getTranslation(key)}</span>` : 'Bachmann'}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
-      ${[
-        ['pa-faint', 'Pulmoner arteri silikleştir', '#9fc2d0', false]
-      ].map(([id, t, c, on]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}"${on ? ' checked' : ''}></label>`).join('')}
-      ${[
-        ['diaphragm', 'Diyafram', '#c98f76', true],
-        ['phrenic', 'Frenik sinirler', '#e8e29a', false],
-        ['vertebrae', 'Vertebra kolonu (silik)', '#bdb7ac', true]
-      ].map(([id, t, c, on]) => `<label class="layer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}"${on ? ' checked' : ''}></label>`).join('')}
-      <label class="layer"><i style="background:#e74c3c"></i>Kan akışı (Yollar ve partiküller)<input type="checkbox" data-layer="flow"></label>
-      <label class="layer"><i style="background:#d6c7bc"></i><span data-i18n="valves">${getTranslation('valves')}</span><input type="checkbox" data-layer="valves" checked></label>
-      <div class="layer-subgroup">
-        ${[
-          ['aortic-valve', 'Aort kapağı (LCC, RCC, NCC)', '#d9c5a8'],
-          ['mitral', 'Mitral kapak', '#e2d5c4'],
-          ['mitral-posterior', 'PML · atlas yaprakçığı', '#efe6d8'],
-          ['mitral-anterior', 'AML · şematik', '#f4efe4'],
-          ['tricuspid', 'Triküspit kapak', '#e2d5c4'],
-          ['tricuspid-septal', 'TV septal yaprakçık', '#efe6d8'],
-          ['tricuspid-inferior', 'TV inferior yaprakçık', '#efe6d8'],
-          ['tricuspid-anterior', 'TV anterior · şematik', '#f4efe4'],
-          ['mitral-annulus', 'Mitral anulus', '#f5f3ea'],
-          ['tricuspid-annulus', 'Triküspit anulus', '#f5f3ea'],
-          ['pulmonary-valve', 'Pulmoner kapak', '#e2d5c4'],
-          ['papillary', 'Papiller kaslar (RV / LV)', '#b57368']
-        ].map(([id, t, c]) => `<label class="layer sublayer"><i style="background:${c}"></i>${t}<input type="checkbox" data-layer="${id}" checked></label>`).join('')}
-      </div>
-      <label class="slider-label"><span data-i18n="opacityLabel">${getTranslation('opacityLabel')}</span> <span id="opacity-value">100%</span></label>
-      <input id="opacity" aria-label="${getTranslation('opacityLabel')}" type="range" min="15" max="100" value="100">
-      <div class="coronary-tools"><div class="section-heading" data-i18n="coronaryToolsHeading">${getTranslation('coronaryToolsHeading')}</div><label for="coronary-system"><span data-i18n="coronarySystemLabel">${getTranslation('coronarySystemLabel')}</span></label><select id="coronary-system"><option value="all">Tüm anatomi</option><option value="both">İki koroner sistem</option><option value="left">Sol sistem · LM / LAD / LCx</option><option value="right">Sağ sistem · RCA</option></select><label class="layer"><input id="root-window" type="checkbox"> <span data-i18n="rootWindowLabel">${getTranslation('rootWindowLabel')}</span></label><small data-i18n="rootWindowNote">${getTranslation('rootWindowNote')}</small></div>
+      ${layerRow('vessels', 'vessels', '#729fca')}
+      ${layerRow('coronaries', 'coronaries', '#ebba70')}
+      ${layerGroup('veins', '#5187a0', [['cs','layerCs','#5187a0'],['gcv','layerGcv','#679db2'],['mcv','layerMcv','#679db2'],['piv','layerPiv','#679db2'],['pv','layerPv','#b9827a'],['svc','layerSvc','#62889c'],['ivc','layerIvc','#62889c']])}
+      ${layerRow('conduction', 'conduction', '#f5df76')}
+      ${layerRow('bachmann', 'layerBachmann', '#f6b64b')}
+      ${layerGroup('valves', '#d6c7bc', [['aortic-valve','layerAorticValve','#d9c5a8'],['mitral','layerMitral','#e2d5c4'],['mitral-posterior','layerMitralPost','#efe6d8'],['mitral-anterior','layerMitralAnt','#f4efe4'],['tricuspid','layerTricuspid','#e2d5c4'],['tricuspid-septal','layerTvSeptal','#efe6d8'],['tricuspid-inferior','layerTvInferior','#efe6d8'],['tricuspid-anterior','layerTvAnterior','#f4efe4'],['mitral-annulus','layerMitralAnnulus','#f5f3ea'],['tricuspid-annulus','layerTricuspidAnnulus','#f5f3ea'],['pulmonary-valve','layerPulmonaryValve','#e2d5c4'],['papillary','layerPapillary','#b57368']])}
+      ${layerRow('flow', 'layerFlow', '#e74c3c', false)}
+      <details class="layer-advanced"><summary data-i18n="advancedLayers">${getTranslation('advancedLayers')}</summary>
+      ${layerRow('pa-faint', 'layerPaFaint', '#9fc2d0', false)}
+      ${layerRow('diaphragm', 'layerDiaphragm', '#c98f76')}
+      ${layerRow('phrenic', 'layerPhrenic', '#e8e29a', false)}
+      ${layerRow('vertebrae', 'layerVertebrae', '#bdb7ac')}
+      </details>
+      <div class="coronary-tools"><div class="section-heading" data-i18n="coronaryToolsHeading">${getTranslation('coronaryToolsHeading')}</div><label for="coronary-system"><span data-i18n="coronarySystemLabel">${getTranslation('coronarySystemLabel')}</span></label><select id="coronary-system">${[['all','coronaryAll'],['both','coronaryBoth'],['left','coronaryLeft'],['right','coronaryRight']].map(([v,k])=>`<option value="${v}" data-i18n="${k}">${getTranslation(k)}</option>`).join('')}</select><label class="layer"><input id="root-window" type="checkbox"> <span data-i18n="rootWindowLabel">${getTranslation('rootWindowLabel')}</span></label></div>
       <div id="transseptal-layers" class="transseptal-tools" hidden>
         <div class="section-heading" data-i18n="tsCathHeading">${getTranslation('tsCathHeading')}</div>
         <label class="layer"><i style="background:#3aa0ff"></i><span data-i18n="tsCathPigtail">${getTranslation('tsCathPigtail')}</span><input type="checkbox" data-ts-cath="pigtail" checked></label>
@@ -136,15 +124,16 @@ app.innerHTML = `
     </section>
     <div class="aside-bottom">
       <span class="outline-icon">i</span>
-      <p>Atlas anatomy + conceptual lessons<br><small>Not for clinical decision-making</small></p>
+      <p><span data-i18n="asideDisclaimer">${getTranslation('asideDisclaimer')}</span><br><small data-i18n="asideDisclaimerSmall">${getTranslation('asideDisclaimerSmall')}</small></p>
     </div>
   </aside>
   <main>
     <div class="myo-control" id="myo-control">
       <button id="myo-toggle" class="myo-btn" aria-pressed="false" title="Dış miyokardı saydamlaştır (M)">◐ Miyokard <kbd>M</kbd></button>
-      <input id="myo-opacity" type="range" min="15" max="100" value="100" aria-label="Miyokard opaklığı">
+      <input id="myo-opacity" type="range" min="15" max="100" value="100" aria-label="${getTranslation('opacityLabel')}">
       <output id="myo-value">100%</output>
     </div>
+    <div id="practice-banner" class="practice-banner" hidden></div>
     <div class="viewer-top">
       <div class="top-badges">
         <span id="hover-badge" class="hover-badge" hidden></span>
@@ -342,31 +331,35 @@ app.innerHTML = `
       </div>
     </div>
     <div class="structure-index">01 / ANATOMY</div>
+    <section id="context-note" class="context-note" hidden aria-live="polite">
+      <div class="eyebrow" data-i18n="contextNoteTitle">${getTranslation('contextNoteTitle')}</div>
+      <div id="context-note-body"></div>
+    </section>
     <div id="structure-info">
       <h2 id="structure-title">Left ventricle</h2>
       <div class="divider"></div>
       <p id="description"></p>
       <div class="clinical">
-        <div class="eyebrow">WHY IT MATTERS</div>
+        <div class="eyebrow" data-i18n="whyItMatters">${getTranslation('whyItMatters')}</div>
         <p id="clinical"></p>
       </div>
-      <label class="eyebrow" for="structure-select">INSPECT STRUCTURE</label>
+      <label class="eyebrow" for="structure-select" data-i18n="inspectStructure">${getTranslation('inspectStructure')}</label>
       <select id="structure-select"></select>
     </div>
     <section id="defect-details" class="defect-details-mount" hidden></section>
     <section id="lesson" hidden>
       <div class="divider"></div>
-      <div class="eyebrow">GUIDED EXPLORATION</div>
+      <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
       <h3 id="lesson-title"></h3>
       <p id="lesson-intro"></p>
       <div id="steps"></div>
       <div id="step-detail"></div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div id="exam-panel" class="exam-panel-mount" hidden></div>
-      <button class="primary" id="next-step">Next landmark →</button>
-      <label class="slider-label" for="progress" id="progress-label">Lead ilerletme / Yerleşim <span id="progress-value">100%</span></label>
+      <button class="primary" id="next-step">${getTranslation('nextLandmark')}</button>
+      <label class="slider-label" for="progress" id="progress-label">${getTranslation('leadProgressLabel')} <span id="progress-value">100%</span></label>
       <input id="progress" type="range" min="0" max="100" value="100">
-      <small id="progress-note">3D transvenöz lead modelleri ve fizyolojik ileti sistemi (CSP/LBBAP) hedefleri eğitim amaçlı modellenmiştir.</small>
+      <small id="progress-note">${getTranslation('leadProgressNote')}</small>
     </section>
   </article>
 </div>
@@ -507,6 +500,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
       indexEl.dataset.provenance = 'reference';
     }
   }
+  panelShell?.setStructure({ title: s.title, source: s.source, provenance: indexEl?.dataset.provenance || '' });
 
   if (updateUrl && !isUpdatingRoute) {
     syncUrl();
@@ -514,7 +508,8 @@ function inspect(id, flyTo = true, updateUrl = true) {
 }
 
 function onHoverStructure(id) {
-  if (!id) {
+  // Test yourself: no name on hover, it would give the answer away.
+  if (!id || practice?.hidesLabels()) {
     hoverBadge.hidden = true;
     return;
   }
@@ -532,7 +527,7 @@ let heart;
 try {
   heart = createHeart(
     document.querySelector('#viewport'),
-    (id) => inspect(id, true, true),
+    (id) => { inspect(id, true, true); practice?.onScenePick(resolveStructureId(id)); },
     onHoverStructure,
     (angles) => updateJoystickFromCamera(angles)
   );
@@ -624,6 +619,78 @@ const defectPanel = createSeptalDefectsPanel({
   getLang: getContentLanguage,
   onSelect: id => inspect(id), onFocus: id => inspect(id)
 });
+panelShell = createPanelShell({
+  getLang: getContentLanguage,
+  // The panel shows its own heading; drop the text's leading label.
+  getLimits: () => getTranslation('referencesLimits').replace(/^[^:]{1,40}:\s*/, ''),
+  openReferences: () => document.querySelector('#sources')?.click()
+});
+
+const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'Bulgu', en: 'Findings' }, onShow: () => practice?.refresh() });
+practice = createPractice({
+  mount: document.querySelector('#panel-learn'),
+  findings: findingsPanel,
+  banner: document.querySelector('#practice-banner'),
+  getLang: getContentLanguage,
+  getTitle: id => structures[id]?.title || id,
+  onStart: () => {
+    if (mode !== 'anatomy') setMode('anatomy');
+    hoverBadge.hidden = true;
+    panelShell?.closeSheet();
+  },
+  onReveal: id => inspect(id, true)
+});
+// Test hook, like window.heart: lets browser tests drive scene picks.
+window.cardiaPractice = practice;
+
+// Quick search: modes and structures by name or abbreviation, both languages.
+function otherLang() { return getContentLanguage() === 'en' ? 'tr' : 'en'; }
+function searchItems() {
+  const modeGroupOf = id => MODE_GROUPS.find(([, ids]) => ids.includes(id))?.[0];
+  const otherModes = new Map((uiTranslations[otherLang()]?.modes || []).map(([id, , label]) => [id, label]));
+  const modes = getUiModes().map(([id, n, label]) => ({ kind: 'mode', id, label, alt: otherModes.get(id), meta: `${n} · ${modeGroupOf(id) ? getTranslation(modeGroupOf(id)) : ''}` }));
+  const items = [...select.options].map(option => ({ kind: 'structure', id: option.value, label: option.text, alt: rawStructures[option.value]?.[otherLang()]?.title }));
+  return [...modes, ...items];
+}
+function searchModeGroups() {
+  const modes = new Map(searchItems().filter(item => item.kind === 'mode').map(item => [item.id, item]));
+  return MODE_GROUPS.map(([key, ids]) => [getTranslation(key), ids.map(id => modes.get(id)).filter(Boolean)]);
+}
+// Make a found structure visible and focus it: leave a mode that cannot show
+// it, switch its layer and checkbox on, open its group, then inspect.
+function pickStructure(id) {
+  const option = [...select.options].find(o => o.value === id);
+  if (option?.disabled) setMode('anatomy');
+  const turnOn = box => { if (box && !box.checked) { box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); } };
+  const layer = heart?.getState().structures.find(item => item.id === id || item.valveId === id)?.layer;
+  if (layer) turnOn(document.querySelector(`input[data-layer="${layer}"]`));
+  const box = document.querySelector(`input[data-layer="${CSS.escape(id)}"]`);
+  if (box) {
+    const group = box.closest('.layer-group');
+    const parent = group?.querySelector('.layer-group-head input');
+    if (parent && !parent.checked && !parent.indeterminate) turnOn(parent);
+    turnOn(box);
+    const toggle = group?.querySelector('.group-toggle');
+    if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
+  }
+  inspect(id, true);
+  if (panelShell?.isMobile()) panelShell.open('learn');
+}
+function onSearchPick(item) {
+  if (item.kind === 'mode') {
+    panelShell?.closeSheet();
+    setMode(item.id);
+  } else pickStructure(item.id);
+}
+const quickSearches = ['#header-search', '#aside-search'].map(sel => document.querySelector(sel)).filter(Boolean).map(mount => createQuickSearch({
+  mount, getLang: getContentLanguage, getItems: searchItems, getModeGroups: searchModeGroups, getMode: () => mode, onPick: onSearchPick
+}));
+function focusQuickSearch() {
+  if (panelShell?.isMobile()) {
+    panelShell.open('modes');
+    quickSearches[1]?.focus();
+  } else quickSearches[0]?.focus();
+}
 heart?.subscribeCycle(updateCycleUI);
 heart?.ready.then(() => {
   // Lesson overlays are built only once the atlas exists; a deep link or a
@@ -644,6 +711,7 @@ document.querySelectorAll('[data-wall]').forEach(input => input.addEventListener
   heart?.setWallCut(input.dataset.wall, Number(input.value) / 100);
   const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
   if (out) out.textContent = formatWallReadout(input.value);
+  updateContextNote();
 }));
 document.querySelector('#restore-walls').addEventListener('click', () => {
   document.querySelectorAll('[data-wall]').forEach(input => {
@@ -662,9 +730,10 @@ document.querySelector('#restore-walls').addEventListener('click', () => {
     const out = document.querySelector(`#ra-cut-${input.dataset.raWall}`);
     if (out) out.textContent = '0%';
   });
+  updateContextNote();
 });
-document.querySelector('#coronary-system').addEventListener('change', e => {heart?.setCoronarySystem(e.target.value);const value=e.target.value==='all'?100:20;heart?.setOpacity(value/100);document.querySelector('#opacity').value=value;document.querySelector('#opacity-value').textContent=`${value}%`;});
-document.querySelector('#root-window').addEventListener('change', e => heart?.setRootWindow(e.target.checked));
+document.querySelector('#coronary-system').addEventListener('change', e => {heart?.setCoronarySystem(e.target.value);setTissueOpacity(e.target.value==='all'?100:20);});
+document.querySelector('#root-window').addEventListener('change', e => {heart?.setRootWindow(e.target.checked);updateContextNote();});
 
 function showStep() {
   const isPacemaker = mode === 'pacemaker';
@@ -764,6 +833,7 @@ document.querySelectorAll('[data-atria-wall]').forEach(input => input.addEventLi
   if (wallInput) wallInput.value = input.value;
   const wallVal = document.querySelector(`#wall-value-${id}`);
   if (wallVal) wallVal.textContent = formatWallReadout(input.value);
+  updateContextNote();
 }));
 document.querySelectorAll('[data-ra-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.raFocus)));
 document.querySelectorAll('[data-ra-wall]').forEach(input => input.addEventListener('input', () => {
@@ -775,9 +845,50 @@ document.querySelectorAll('[data-ra-wall]').forEach(input => input.addEventListe
   if (wallInput) wallInput.value = input.value;
   const wallVal = document.querySelector(`#wall-value-${id}`);
   if (wallVal) wallVal.textContent = formatWallReadout(input.value);
+  updateContextNote();
 }));
+// Layer groups start collapsed; the disclosure opens the substructure list,
+// the checkbox keeps toggling visibility. The count shows visible children.
+function updateLayerGroupCounts() {
+  document.querySelectorAll('.layer-group').forEach(group => {
+    const boxes = [...group.querySelectorAll('.layer-subgroup input[type=checkbox]')];
+    const out = group.querySelector('[data-group-count]');
+    if (out) out.textContent = `${boxes.filter(box => box.checked).length}/${boxes.length}`;
+  });
+}
+document.querySelectorAll('.group-toggle').forEach(button => button.addEventListener('click', () => {
+  const open = button.getAttribute('aria-expanded') !== 'true';
+  button.setAttribute('aria-expanded', String(open));
+  const list = document.getElementById(button.getAttribute('aria-controls'));
+  if (list) list.hidden = !open;
+}));
+document.querySelector('#layers')?.addEventListener('change', updateLayerGroupCounts);
+
+// Explanations live in the right panel; the left panel keeps controls only.
+function updateContextNote() {
+  const box = document.querySelector('#context-note');
+  const body = document.querySelector('#context-note-body');
+  if (!box || !body) return;
+  const notes = [];
+  if (mode === 'atria') notes.push('atriaNote');
+  if (mode === 'ra') notes.push('raNote');
+  const cut = [...document.querySelectorAll('[data-wall], [data-atria-wall], [data-ra-wall]')].some(input => Number(input.value) > 0);
+  if (cut) notes.push('wallToolsNote');
+  if (document.querySelector('#root-window')?.checked) notes.push('rootWindowNote');
+  body.replaceChildren(...notes.map(key => {
+    const p = document.createElement('p');
+    p.dataset.i18n = key;
+    p.textContent = getTranslation(key);
+    return p;
+  }));
+  box.hidden = notes.length === 0;
+}
+
 function setMode(newMode, updateUrl = true) {
+  // The example lesson runs in general anatomy; leaving it ends the task.
+  if (newMode !== 'anatomy' && practice?.isActive()) practice.setStyle('explore');
   mode = newMode;
+  rememberMode(newMode);
   step = 0;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
@@ -796,18 +907,13 @@ function setMode(newMode, updateUrl = true) {
   }
 
   const opacity = lessons[mode] ? Math.round(LESSON_TISSUE_OPACITY * 100) : 100;
-  document.querySelector('#opacity').value = opacity;
-  const myoSlider = document.querySelector('#myo-opacity');
-  if (myoSlider) myoSlider.value = opacity;
-  const myoValue = document.querySelector('#myo-value');
-  if (myoValue) myoValue.textContent = `${opacity}%`;
-  document.querySelector('#myo-toggle')?.classList.toggle('active', opacity < 100);
-  document.querySelector('#opacity-value').textContent = `${opacity}%`;
-  heart?.setOpacity(opacity / 100);
+  setTissueOpacity(opacity);
 
   document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria' || mode === 'ra' || mode === 'defects';
   document.querySelector('#atria-tools').hidden = mode !== 'atria';
   document.querySelector('#ra-tools').hidden = mode !== 'ra';
+  updateContextNote();
+  panelShell?.refresh();
   filterAtrialOptions();
   if (mode === 'atria') {
     document.querySelectorAll('[data-atria-wall]').forEach(input => {
@@ -1172,7 +1278,7 @@ function setCameraPreset(viewName) {
     inspect('mitral', false);
   }
   heart?.setView(viewName, true);
-  if (viewName === 'root') document.querySelector('#root-window').checked = true;
+  if (viewName === 'root') { document.querySelector('#root-window').checked = true; updateContextNote(); }
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('selected', b.dataset.view === viewName));
   const presetText = getAngioDescription(viewName);
   if (presetText) {
@@ -1185,16 +1291,12 @@ document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('clic
   setCameraPreset(el.dataset.view);
 }));
 
-// Tissue opacity has two controls (sidebar slider, viewport myocardium
-// control); both route through setTissueOpacity so they stay in sync.
+// Tissue opacity has one control (the viewport myocardium slider and its
+// toggle); every caller routes through setTissueOpacity.
 let myoRestoreOpacity = 30;
 function setTissueOpacity(percent) {
   const value = Math.round(Math.min(100, Math.max(15, Number(percent) || 100)));
   heart?.setOpacity(value / 100);
-  const sidebar = document.querySelector('#opacity');
-  if (sidebar) sidebar.value = value;
-  const sidebarLabel = document.querySelector('#opacity-value');
-  if (sidebarLabel) sidebarLabel.textContent = `${value}%`;
   const myo = document.querySelector('#myo-opacity');
   if (myo) myo.value = value;
   const myoLabel = document.querySelector('#myo-value');
@@ -1214,7 +1316,6 @@ function toggleMyocardium() {
     setTissueOpacity(myoRestoreOpacity);
   }
 }
-document.querySelector('#opacity').addEventListener('input', e => setTissueOpacity(e.target.value));
 document.querySelector('#myo-opacity')?.addEventListener('input', e => setTissueOpacity(e.target.value));
 document.querySelector('#myo-toggle')?.addEventListener('click', toggleMyocardium);
 
@@ -1313,11 +1414,7 @@ function resetAll() {
   const cs = document.querySelector('#coronary-system');
   if (cs) cs.value = 'all';
 
-  const opacityEl = document.querySelector('#opacity');
-  if (opacityEl) opacityEl.value = 100;
-  const opacityValEl = document.querySelector('#opacity-value');
-  if (opacityValEl) opacityValEl.textContent = '100%';
-  heart?.setOpacity(1);
+  setTissueOpacity(100);
 
   document.querySelectorAll('[data-wall]').forEach(input => {
     input.value = 0;
@@ -1355,6 +1452,8 @@ function resetAll() {
 
   const descEl = document.querySelector('#carm-projection-desc');
   if (descEl) descEl.textContent = getAngioDescription('anterior');
+  updateContextNote();
+  updateLayerGroupCounts();
 }
 
 function syncLayerCheckboxesFromHeart() {
@@ -1379,6 +1478,7 @@ function syncLayerCheckboxesFromHeart() {
     valvesCheckbox.checked = allChecked;
     valvesCheckbox.indeterminate = anyChecked && !allChecked;
   }
+  updateLayerGroupCounts();
 }
 
 document.querySelector('#reset')?.addEventListener('click', resetAll);
@@ -1394,8 +1494,13 @@ function applyChromeTranslations() {
     const label = labels.get(btn.dataset.mode);
     if (labelEl && label) labelEl.textContent = label;
   });
-  const opacityInput = document.querySelector('#opacity');
+  const opacityInput = document.querySelector('#myo-opacity');
   if (opacityInput) opacityInput.setAttribute('aria-label', getTranslation('opacityLabel'));
+  document.querySelectorAll('.layer-group').forEach(group => {
+    group.querySelector('.layer-group-head input')?.setAttribute('aria-label', getTranslation(group.dataset.group));
+    group.querySelector('.group-toggle')?.setAttribute('title', getTranslation('groupToggle'));
+  });
+  updateContextNote();
   const wallKeys = { rv: 'wallRv', lv: 'wallLv', la: 'wallLa', ra: 'wallRa' };
   document.querySelectorAll('[data-wall]').forEach(input => {
     const key = wallKeys[input.dataset.wall];
@@ -1414,6 +1519,9 @@ function applyChromeTranslations() {
 
 function updateLanguageUI() {
   defectPanel.refresh();
+  panelShell?.refresh();
+  quickSearches.forEach(search => search.refresh());
+  practice?.refresh();
   applyChromeTranslations();
   const currentLang = getContentLanguage();
   const langBtn = document.querySelector('#lang-btn');
@@ -1580,6 +1688,11 @@ document.querySelector('#close-shortcuts').addEventListener('click', () => short
 // Keyboard shortcuts (1-9, A, P, R, L, S, C, 0, Space, ?, N)
 window.addEventListener('keydown', e => {
   if (dialog.open || shortcutsModal.open) return;
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    focusQuickSearch();
+    return;
+  }
   // Keep text inputs and native dialog controls independent of scene shortcuts.
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
 

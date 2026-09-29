@@ -27,12 +27,12 @@ assert.match(indexContent, /name=["']app-build["']\s+content=["']v9["']/, 'index
 
 // 4. Verify translation strings
 setContentLanguage('tr');
-assert.equal(getTranslation('updateBtn'), 'Güncelle');
+assert.equal(getTranslation('updateBtn'), 'Güncelleme denetle');
 assert.equal(getTranslation('upTitle'), 'Yeni sürüm hazır');
 assert.equal(getTranslation('upReload'), 'Güncellemek için yenile');
 
 setContentLanguage('en');
-assert.equal(getTranslation('updateBtn'), 'Update');
+assert.equal(getTranslation('updateBtn'), 'Check for updates');
 assert.equal(getTranslation('upTitle'), 'New version ready');
 assert.equal(getTranslation('upReload'), 'Reload to update');
 
