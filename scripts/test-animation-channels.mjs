@@ -4,7 +4,7 @@ import {
   avLeafletOffset,
   avLeafletWeight,
   bindFollower,
-  chamberFieldOffset,
+  frameFromMotion,
   CHAMBER_LAW,
   computeChannelWeights,
   createAnimationChannels,
@@ -114,20 +114,22 @@ console.log('Running Animation Channels Unit Tests...\n');
   const baseY = chamberMesh.geometry.attributes.position.getY(0);
   const apexY = chamberMesh.geometry.attributes.position.getY(1);
   const sideX = chamberMesh.geometry.attributes.position.getX(2);
-  assert.ok(Math.abs(baseY - 1) < 1e-6, 'Valve-plane vertex stays fixed in systole');
-  assert.ok(apexY > -1, 'Apex shortens toward the base during ejection');
+  // Phase D: longitudinal shortening is the AV plane descending toward a
+  // still apex (it was the apex rising toward a fixed valve plane).
+  assert.ok(baseY < 1, 'AV-plane vertex descends toward the apex in systole');
+  assert.ok(Math.abs(apexY + 1) < 1e-6, 'Apex stays in place');
   assert.ok(sideX < 1, 'Free wall moves inward during ejection');
 
   // Phase C: size follows the volume proxy, not tension. The ventricle is
   // smallest at aortic closure, keeps that size through isovolumetric
   // relaxation, refills in rapid filling and is fully relaxed at end-diastole.
-  const apexAt = phase => { channels.applyChannels({ phase, reducedMotion: false }); return chamberMesh.geometry.attributes.position.getY(1); };
-  const endSystole = apexAt(0.879), relaxation = apexAt(0.885), lateRelaxation = apexAt(0.99), filling = apexAt(0.12), endDiastole = apexAt(0.45);
+  const baseAt = phase => { channels.applyChannels({ phase, reducedMotion: false }); return chamberMesh.geometry.attributes.position.getY(0); };
+  const endSystole = baseAt(0.879), relaxation = baseAt(0.885), lateRelaxation = baseAt(0.99), filling = baseAt(0.12), endDiastole = baseAt(0.45);
   assert.equal(relaxation, lateRelaxation, 'Isovolumetric relaxation keeps one size throughout');
   assert.ok(Math.abs(endSystole - relaxation) < 1e-4, 'That size is the end-systolic one');
-  assert.ok(filling < relaxation && filling > -1, 'Rapid filling is re-expanding the ventricle');
-  assert.equal(endDiastole, -1, 'Ventricle is fully relaxed at end-diastole');
-  assert.equal(apexAt(0.5), -1, 'Isovolumetric contraction keeps the end-diastolic size');
+  assert.ok(filling > relaxation && filling < 1, 'Rapid filling is re-expanding the ventricle');
+  assert.equal(endDiastole, 1, 'Ventricle is fully relaxed at end-diastole');
+  assert.equal(baseAt(0.5), 1, 'Isovolumetric contraction keeps the end-diastolic size');
   channels.applyChannels({ phase: 0.12, reducedMotion: false });
   assert.equal(mitralMesh.position.length(), 0, 'Partial mitral atlas mesh stays attached');
 
@@ -284,11 +286,14 @@ console.log('\nALL ANIMATION CHANNEL TESTS PASSED!');
   // 40% less spread here) without smearing owners far along the vessel.
   assert.ok(spread(true) < spread(false) * 0.67, 'smoothing pulls the tube cross-section together');
 
-  // Cavity field: continuous, zero at the valve plane, clamped outside.
+  // Cavity field: continuous, the valve plane descends as one, clamped outside.
   const motion = { minY: -1, maxY: 1, cx: 0, cz: 0 };
-  assert.ok(chamberFieldOffset(0.5, 1, 0.5, motion, 1, true).every(v => Math.abs(v) < 1e-12), 'valve plane stays put');
+  const noTwist = { ...CHAMBER_LAW.lv, torsion: 0 };
+  const chamberFieldOffset = (x, y, z, m, w) => frameDisplacement(x, y, z, frameFromMotion(m, true), w, noTwist);
+  const valvePlane = chamberFieldOffset(0.5, 1, 0.5, motion, 1, true);
+  assert.ok(Math.abs(valvePlane[0]) < 1e-12 && Math.abs(valvePlane[2]) < 1e-12 && Math.abs(valvePlane[1] + 0.07 * 2) < 1e-9, 'valve plane descends by axial x length, without squeeze');
   const apex = chamberFieldOffset(0.5, -1, 0, motion, 1, true);
-  assert.ok(apex[0] < 0 && apex[1] > 0, 'apex moves inward and toward the base');
+  assert.ok(apex[0] < 0 && Math.abs(apex[1]) < 1e-12, 'apex moves inward only');
   assert.deepEqual(chamberFieldOffset(0.5, -3, 0, motion, 1, true), apex, 'below the apex it is clamped, not overdriven');
   const a = chamberFieldOffset(0.3, 0, 0.2, motion, 1, true), b = chamberFieldOffset(0.3001, 0, 0.2, motion, 1, true);
   assert.ok(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 1e-4, 'field is continuous');
@@ -323,12 +328,20 @@ console.log('\nALL ANIMATION CHANNEL TESTS PASSED!');
   const frame = measureChamberFrame(new Float32Array(rest), base, true);
   assert.ok(Math.abs(frame.axis[0] - tiltedAxis[0]) < 0.05 && Math.abs(frame.axis[1] - tiltedAxis[1]) < 0.05, 'axis runs from the orifice to the apex, not along world Y');
   const law = CHAMBER_LAW.lv;
-  const d0 = frameDisplacement(0.2, 0, 0.3, frame, 1, law);
-  assert.ok(Math.hypot(...d0) < 1e-3, 'the valve plane stays put');
+  const d0 = frameDisplacement(0, 0, 0, frame, 1, law);
+  const descent = law.axial * frame.length;
+  assert.ok(Math.hypot(d0[0] - frame.axis[0] * descent, d0[1] - frame.axis[1] * descent, d0[2] - frame.axis[2] * descent) < 1e-3, 'the AV plane descends along the long axis, not along world Y');
   const apex = [tiltedAxis[0] * 2, tiltedAxis[1] * 2, 0];
-  const dA = frameDisplacement(...apex, frame, 1, law);
+  const tip = frame.axis.map((a, i) => frame.base[i] + a * frame.length);
+  const dA = frameDisplacement(...tip, frame, 1, law);
   const along = dA[0] * frame.axis[0] + dA[1] * frame.axis[1] + dA[2] * frame.axis[2];
-  assert.ok(along < -0.1, 'the apex moves back along the long axis toward the base');
+  assert.ok(Math.abs(along) < 1e-6, 'the apex does not move along the axis');
+  // An atrium carries its ventricle's descent at the valve plane, none at its roof.
+  const atrialFrame = { base: [0, 0, 0], axis: [-tiltedAxis[0], -tiltedAxis[1], 0], length: 1 };
+  const carried = [frame.axis[0] * descent, frame.axis[1] * descent, 0];
+  const atBase = frameDisplacement(0, 0, 0, atrialFrame, 0, CHAMBER_LAW.la, [0, 0, 0], carried);
+  const atRoof = frameDisplacement(-tiltedAxis[0] * 1.5, -tiltedAxis[1] * 1.5, 0, atrialFrame, 0, CHAMBER_LAW.la, [0, 0, 0], carried);
+  assert.ok(Math.hypot(atBase[0] - carried[0], atBase[1] - carried[1]) < 1e-9 && Math.hypot(...atRoof) < 1e-9, 'atrial base follows the AV plane, roof stays');
   // Torsion keeps the distance to the axis apart from the radial squeeze.
   const p = [apex[0], apex[1], 0.3];
   const noTwist = frameDisplacement(...p, frame, 1, { ...law, torsion: 0 });

@@ -1,5 +1,5 @@
 /**
- * Beat attachment measurement (report section 12, phase A/B).
+ * Beat attachment measurement (report section 12, phases A to D).
  * For structures that touch a chamber wall at rest, the offset to the nearest
  * chamber vertex should stay constant while the heart beats. This samples 24
  * phases (plus both sides of each phase boundary) and reports the largest
@@ -149,6 +149,42 @@ const assertMode = process.argv.includes('--assert');
         for (const [c, i, o, j, d0] of pairs) { const a = cur[c], b = cur[o]; const d = Math.hypot(a[i] - b[j], a[i + 1] - b[j + 1], a[i + 2] - b[j + 2]); worst = Math.max(worst, Math.abs(d - d0)); } }
       return { pairs: pairs.length, maxSeparationChangePctOfHeart: +(worst / 3.3 * 100).toFixed(2) };
     });
+    // Leaflets on their supports: hinge vertices on the annulus ring or root
+    // wall and chordal tips on the papillary heads should keep their offset
+    // (phase D carries the leaflets with the ventricle). Measured while the
+    // valve is closed, so the opening motion itself is not counted: AV valves
+    // through ventricular systole, semilunar valves through diastole.
+    result.leaflets = await page.evaluate(() => {
+      const HEART_LENGTH = 3.3, CONTACT = 0.06;
+      const pairs = { mitral: [['mitral'], ['mitral-annulus', 'lv-papillary'], 'av'], tricuspid: [['tricuspid'], ['tricuspid-annulus', 'rv-papillary'], 'av'], aortic: [['lcc', 'rcc', 'ncc'], ['aorta'], 'semilunar'], pulmonary: [['pulmonary-valve'], ['pa'], 'semilunar'] };
+      const meshesOf = ids => { const list = []; window.heart.scene.traverse(o => { if (o.isMesh && ids.includes(o.userData.id)) list.push(o); }); return list; };
+      window.heart.setReducedMotion(true);
+      const snap = list => list.map(m => Float32Array.from(m.geometry.attributes.position.array));
+      const setup = Object.entries(pairs).map(([name, [leafIds, partIds, kind]]) => {
+        const leaves = meshesOf(leafIds), parts = meshesOf(partIds), lr = snap(leaves), pr = snap(parts);
+        const samples = [];
+        lr.forEach((a, m) => { for (let i = 0; i < a.length; i += 3) { let best = CONTACT * CONTACT, bp = -1, bi = -1;
+          pr.forEach((b, p) => { for (let j = 0; j < b.length; j += 3) { const d = (a[i] - b[j]) ** 2 + (a[i + 1] - b[j + 1]) ** 2 + (a[i + 2] - b[j + 2]) ** 2; if (d < best) { best = d; bp = p; bi = j; } } });
+          if (bp >= 0) samples.push({ m, i, p: bp, j: bi, part: parts[bp].userData.id, off: [a[i] - pr[bp][bi], a[i + 1] - pr[bp][bi + 1], a[i + 2] - pr[bp][bi + 2]] }); } });
+        return { name, kind, leaves, parts, samples };
+      });
+      window.heart.setReducedMotion(false);
+      // Closed windows from the shared cycle marks (cardiac-cycle.js): AV
+      // valves shut from 0.45 to 0.88, semilunar valves open from 0.53 to 0.88.
+      const closed = { av: p => p > 0.46 && p < 0.87, semilunar: p => p < 0.52 || p > 0.9 };
+      const phases = []; for (let k = 0; k < 48; k++) phases.push(k / 48);
+      const worst = {};
+      for (const phase of phases) {
+        window.heart.seekCycle(phase);
+        for (const { name, kind, leaves, parts, samples } of setup) {
+          if (!closed[kind](phase)) continue;
+          const lc = leaves.map(m => m.geometry.attributes.position.array), pc = parts.map(m => m.geometry.attributes.position.array);
+          for (const s of samples) { const a = lc[s.m], b = pc[s.p]; const dev = Math.hypot(a[s.i] - b[s.j] - s.off[0], a[s.i + 1] - b[s.j + 1] - s.off[1], a[s.i + 2] - b[s.j + 2] - s.off[2]);
+            const key = `${name}:${s.part}`; worst[key] = Math.max(worst[key] || 0, dev); }
+        }
+      }
+      return Object.fromEntries(setup.flatMap(({ name, samples }) => [...new Set(samples.map(s => s.part))].map(part => [`${name}:${part}`, { contacts: samples.filter(s => s.part === part).length, maxDeviationPct: +((worst[`${name}:${part}`] || 0) / HEART_LENGTH * 100).toFixed(2) }])));
+    });
     if (shotPrefix) {
       for (const [view, phase] of [['anterior', 0.65], ['posterior', 0.65], ['lao', 0.65], ['rao', 0.65]]) {
         await page.evaluate(([v, p]) => { window.heart.setView(v); window.heart.seekCycle(p); }, [view, phase]);
@@ -163,10 +199,11 @@ const assertMode = process.argv.includes('--assert');
       // Phase C shares the field across seams, so the gate includes them.
       const bad = Object.entries(result).filter(([k, r]) => r.contacts && r.maxDeviationPct >= limit && ['coronaries', 'cardiacVeins', 'papillary', 'annuli', 'greatVessels', 'conduction'].includes(k));
       if (result.seams.maxSeparationChangePctOfHeart >= limit) bad.push(['seams', result.seams]);
+      for (const [k, r] of Object.entries(result.leaflets)) if (r.maxDeviationPct >= limit) bad.push([`leaflet ${k}`, r]);
       if (result.integrity.driftAfter100Cycles > 1e-6) bad.push(['drift', result.integrity.driftAfter100Cycles]);
       if (result.integrity.resetGap > 1e-6) bad.push(['reset', result.integrity.resetGap]);
       if (bad.length || errors.length) { console.error('FAIL', bad, errors); process.exit(1); }
-      console.log('PASS: attached structures (seams included) stay within 1% of heart length of their wall; chamber seams do not separate; no drift; exact reset');
+      console.log('PASS: attached structures (seams included) stay within 1% of heart length of their wall; chamber seams do not separate; closed leaflets stay on their annulus, papillary heads and roots; no drift; exact reset');
     }
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

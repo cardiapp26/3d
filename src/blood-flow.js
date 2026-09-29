@@ -9,7 +9,7 @@
  */
 
 import * as THREE from 'three';
-import { computeChannelWeights } from './animation-channels.js';
+import { computeChannelWeights } from './cycle-channels.js';
 
 // Define flow streams with Catmull-Rom 3D control points
 export const FLOW_STREAMS = [
@@ -337,6 +337,9 @@ export function createBloodFlow(options = {}) {
   const meshOxy = new THREE.InstancedMesh(geomParticle, matOxy, TOTAL_OXY_CAPACITY);
   meshOxy.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   meshOxy.name = 'Oxygenated Flow Particles';
+  // Particles move every frame; a bounding sphere computed once would cull them wrongly.
+  meshDeoxy.frustumCulled = false;
+  meshOxy.frustumCulled = false;
 
   group.add(meshDeoxy);
   group.add(meshOxy);
@@ -389,6 +392,29 @@ export function createBloodFlow(options = {}) {
 
   let visible = true;
   let lowPower = false;
+  // Optional point field (overlay-follow.js): particles ride the beating
+  // heart. Each curve is sampled once; per frame the samples are displaced
+  // and a particle takes the interpolated displacement at its parameter.
+  const FIELD_SAMPLES = 48;
+  let field = null;
+  const fieldOffset = new THREE.Vector3();
+  function streamOffset(s, t, out) {
+    out.set(0, 0, 0);
+    if (!field) return out;
+    if (s.fieldCurve !== s.curve) {
+      const pts = new Float32Array((FIELD_SAMPLES + 1) * 3);
+      for (let i = 0; i <= FIELD_SAMPLES; i++) { s.curve.getPointAt(i / FIELD_SAMPLES, point); pts[i * 3] = point.x; pts[i * 3 + 1] = point.y; pts[i * 3 + 2] = point.z; }
+      s.fieldBinding = field.bind(pts);
+      s.fieldDisp = new Float32Array(pts.length);
+      s.fieldCurve = s.curve;
+      s.fieldStamp = null;
+    }
+    if (!s.fieldBinding) return out;
+    const stamp = field.stamp();
+    if (s.fieldStamp !== stamp) { field.displace(s.fieldBinding, s.fieldDisp); s.fieldStamp = stamp; }
+    const f = t * FIELD_SAMPLES, i = Math.min(FIELD_SAMPLES - 1, Math.floor(f)), u = f - i, d = s.fieldDisp;
+    return out.set(d[i * 3] * (1 - u) + d[i * 3 + 3] * u, d[i * 3 + 1] * (1 - u) + d[i * 3 + 4] * u, d[i * 3 + 2] * (1 - u) + d[i * 3 + 5] * u);
+  }
 
   function updateInstances(mesh, particles, weights, dtMs, bpm, countLimit) {
     const count = lowPower ? Math.floor(countLimit / 2) : countLimit;
@@ -414,7 +440,7 @@ export function createBloodFlow(options = {}) {
       s.curve.getPointAt(p.t, point);
       s.curve.getTangentAt(p.t, tangent);
 
-      dummy.position.copy(point);
+      dummy.position.copy(point).add(streamOffset(s, p.t, fieldOffset));
       dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
 
       // Taper particle size at spline extremities for smooth enter/exit
@@ -463,6 +489,11 @@ export function createBloodFlow(options = {}) {
     },
     getVisible() {
       return visible;
+    },
+    /** Attach a point field ({ bind, displace, stamp }) so particles follow the beat. */
+    setField(value) {
+      field = value || null;
+      for (const stream of streams) stream.fieldCurve = null;
     },
     setLowPower(val) {
       lowPower = Boolean(val);

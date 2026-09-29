@@ -18,6 +18,7 @@ import { createBachmannGeometry } from './bachmann.js';
 import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
+import { createOverlayFollow } from './overlay-follow.js';
 import { measuredFlowRoutes } from './flow-routes.js';
 import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd } from './mesh-utils.js';
 import { measureLeftBundle, measureRightBundle } from './conduction-paths.js';
@@ -62,7 +63,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const meshes = [], meshMap = new Map();
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
   const cardiacCycle = createCardiacCycle({ bpm: 72, phase: 0.0, playing: false, rhythm: 'sinus' });
-  let channels = null, bloodFlow = null;
+  let channels = null, bloodFlow = null, overlayFollow = null;
   let fluoroscopy=false, lastEmittedKey='';
   let center=new THREE.Vector3(), scale=1, frame, down=null, transition=false;
   const cameraTarget=camera.position.clone(), lookTarget=new THREE.Vector3();
@@ -116,6 +117,15 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     // RSPV: keep a stump comparable to the other pulmonary veins.
     const rspv=vesselTrimPlane(verts('Right superior pulmonary vein'),la,0.55);
     if(rspv)vesselTrims.set('Right superior pulmonary vein',rspv);
+  }
+  // Builders that measure the live geometry (flow routes, auscultation
+  // markers) run lazily; measure the rest anatomy even mid-beat, then return
+  // to the current pose.
+  function withRestPose(fn){
+    if(!channels?.isDeformed()) return fn();
+    channels.reset();
+    try{ return fn(); }
+    finally{ channels.applyChannels(cardiacCycle.getCycleState()); }
   }
   function meshVertices(id,nameFilter){
     const out=[];
@@ -309,8 +319,14 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     channels = createAnimationChannels({ meshMap, sourceCenter });
     // Surface-follower binding is a one-time cost; do it while idle rather
     // than on the first beat.
-    (window.requestIdleCallback || (fn => setTimeout(fn, 200)))(() => channels?.prepare());
-    bloodFlow = createBloodFlow({ resolveRoutes: () => measuredFlowRoutes({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], getVesselTrim: name => vesselTrims.get(name) || null }) });
+    // Then the lesson overlays, in short idle slices.
+    const idle = window.requestIdleCallback || (fn => setTimeout(fn, 200));
+    idle(() => { channels?.prepare(); const step = () => { if (!disposed && !overlayFollow?.prepare(channels?.fieldContext())) idle(step); }; idle(step); });
+    // Lesson overlays, devices and flow ride the beating heart (phase D).
+    // Before the first beat (or with the heart at rest) there is no field.
+    overlayFollow = createOverlayFollow({ getContext: () => channels?.isDeformed() ? channels.fieldContext() : null, roots: () => [epLandmarks.group, pacemakerLeads.group, transseptal.group, cathLab.group] });
+    bloodFlow = createBloodFlow({ resolveRoutes: () => withRestPose(() => measuredFlowRoutes({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], getVesselTrim: name => vesselTrims.get(name) || null })) });
+    bloodFlow.setField(overlayFollow.points);
     layers.flow.add(bloodFlow.group);
     applyState();computeFit();setView('anterior',false);loading.remove();container.dataset.modelReady='true';
     container.dataset.meshCount=String(found.length);
@@ -715,6 +731,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   // Swap only during rendering so selection, lesson updates and resets retain originals.
   const projectionMaterials = new Map();
   function renderScene(){
+    overlayFollow?.sync();
     septalDefects.updateLabels(camera);
     mitralScallops.update(camera,mitralFocus&&!fluoroscopy&&mode==='anatomy');
     if(!fluoroscopy || mode==='micro'){renderer.render(scene,camera);return;}
@@ -798,7 +815,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       transseptal.setVisible(name==='transseptal');
       cathLab.setVisible(name==='cath');
-      auscultation.setVisible(name==='exam');
+      withRestPose(() => auscultation.setVisible(name==='exam'));
       catheterPickables=null;
       if(name==='ablation'){
         epLandmarks.setStep(0);
@@ -837,6 +854,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       requestRender();
     },
     getCycleState(){return cardiacCycle.getCycleState();},
+    // Diagnostics for the beat tests: overlays currently bound to the beating heart.
+    overlayFollowCount(){return overlayFollow?.recordCount() ?? 0;},
     subscribeCycle(listener){return cardiacCycle.subscribeCycle(listener);},
     setFlowVisible(value){
       visibility.flow = Boolean(value);
