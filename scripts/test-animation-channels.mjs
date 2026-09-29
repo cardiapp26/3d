@@ -5,8 +5,14 @@ import {
   avLeafletWeight,
   bindFollower,
   chamberFieldOffset,
+  CHAMBER_LAW,
   computeChannelWeights,
   createAnimationChannels,
+  frameDisplacement,
+  measureChamberFrame,
+  SEAM_BAND,
+  seamWeight,
+  shapeChannels,
   FOLLOW_CONTACT,
   FOLLOW_FADE,
   followWeight,
@@ -112,9 +118,18 @@ console.log('Running Animation Channels Unit Tests...\n');
   assert.ok(apexY > -1, 'Apex shortens toward the base during ejection');
   assert.ok(sideX < 1, 'Free wall moves inward during ejection');
 
+  // Phase C: size follows the volume proxy, not tension. The ventricle is
+  // smallest at aortic closure, keeps that size through isovolumetric
+  // relaxation, refills in rapid filling and is fully relaxed at end-diastole.
+  const apexAt = phase => { channels.applyChannels({ phase, reducedMotion: false }); return chamberMesh.geometry.attributes.position.getY(1); };
+  const endSystole = apexAt(0.879), relaxation = apexAt(0.885), lateRelaxation = apexAt(0.99), filling = apexAt(0.12), endDiastole = apexAt(0.45);
+  assert.equal(relaxation, lateRelaxation, 'Isovolumetric relaxation keeps one size throughout');
+  assert.ok(Math.abs(endSystole - relaxation) < 1e-4, 'That size is the end-systolic one');
+  assert.ok(filling < relaxation && filling > -1, 'Rapid filling is re-expanding the ventricle');
+  assert.equal(endDiastole, -1, 'Ventricle is fully relaxed at end-diastole');
+  assert.equal(apexAt(0.5), -1, 'Isovolumetric contraction keeps the end-diastolic size');
   channels.applyChannels({ phase: 0.12, reducedMotion: false });
   assert.equal(mitralMesh.position.length(), 0, 'Partial mitral atlas mesh stays attached');
-  assert.equal(chamberMesh.geometry.attributes.position.getY(1), -1, 'Ventricle is relaxed during filling');
 
   // Apply reduced motion -> should immediately reset
   channels.applyChannels({ phase: 0.65, reducedMotion: true });
@@ -191,7 +206,7 @@ console.log('\nALL ANIMATION CHANNEL TESTS PASSED!');
   const channels = createAnimationChannels({ meshMap: new Map([['la', [la]], ['laa', [marker]]]) });
   const rest = marker.geometry.attributes.position.array.slice();
   channels.applyChannels({ phase: .38 });
-  const weight = computeChannelWeights(.38).atrialContraction;
+  const weight = computeChannelWeights(.38).atrialShape;
   const { minY, maxY, cx, cz } = la.userData.motion;
   const next = marker.geometry.attributes.position.array;
   for (let i = 0; i < rest.length; i += 3) {
@@ -278,5 +293,57 @@ console.log('\nALL ANIMATION CHANNEL TESTS PASSED!');
   const a = chamberFieldOffset(0.3, 0, 0.2, motion, 1, true), b = chamberFieldOffset(0.3001, 0, 0.2, motion, 1, true);
   assert.ok(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 1e-4, 'field is continuous');
   console.log('PASS: surface followers bind, fade, blend two walls, smooth grooves, return to rest; cavity field continuous and clamped');
+}
+
+// Phase C: size channels, chamber frames, torsion, seams.
+{
+  const v = p => shapeChannels(p).ventricularShape, a = p => shapeChannels(p).atrialShape;
+  assert.equal(v(0.46), 0); assert.equal(v(0.52), 0, 'isovolumetric contraction: end-diastolic size');
+  assert.equal(v(0.89), 1); assert.equal(v(0.99), 1, 'isovolumetric relaxation: end-systolic size');
+  for (let p = 0.53; p < 0.88; p += 0.01) assert.ok(v(p + 0.01) >= v(p), 'ejection only shrinks');
+  for (let p = 0; p < 0.44; p += 0.01) assert.ok(v(p + 0.01) <= v(p) + 1e-12, 'filling only enlarges');
+  assert.ok(v(0.09) - v(0.17) > v(0.20) - v(0.30), 'rapid filling is faster than diastasis');
+  assert.ok(v(0.33) - v(0.44) > 0.1, 'atrial kick completes ventricular filling (sinus)');
+  assert.ok(Math.abs(v(0) - v(0.9999)) < 1e-3 && Math.abs(a(0) - a(0.9999)) < 1e-3, 'cycle closes without a jump');
+  assert.ok(a(0.44) > 0.95 && a(0.44) > a(0.3), 'atrial booster contraction at end of atrial systole');
+  for (let p = 0.46; p < 0.99; p += 0.01) assert.ok(a(p + 0.01) <= a(p) + 1e-12, 'atria refill during ventricular systole');
+  const af = p => shapeChannels(p, 'afib');
+  assert.equal(af(0.40).atrialShape, af(0.30).atrialShape, 'AF: no atrial booster');
+  assert.ok(Math.abs((af(0.33).ventricularShape - af(0.44).ventricularShape) - (af(0.20).ventricularShape - af(0.31).ventricularShape)) < 0.02, 'AF: no atrial kick, filling runs on evenly');
+  for (let p = 0; p <= 1; p += 0.01) { const w = computeChannelWeights(p); assert.ok(w.ventricularShape >= 0 && w.ventricularShape <= 1 && w.atrialShape >= 0 && w.atrialShape <= 1); }
+
+  // Measured frame: a tilted ventricle whose apex is not below its base.
+  const base = [0, 0, 0];
+  const tiltedAxis = [Math.SQRT1_2, -Math.SQRT1_2, 0];
+  const rest = [];
+  for (let t = 0; t <= 1.0001; t += 0.1) for (let k = 0; k < 8; k++) {
+    const ang = k / 8 * 2 * Math.PI, r = 0.4 * (1 - 0.6 * t);
+    rest.push(tiltedAxis[0] * 2 * t + r * Math.cos(ang) * Math.SQRT1_2, tiltedAxis[1] * 2 * t + r * Math.cos(ang) * Math.SQRT1_2, r * Math.sin(ang));
+  }
+  const frame = measureChamberFrame(new Float32Array(rest), base, true);
+  assert.ok(Math.abs(frame.axis[0] - tiltedAxis[0]) < 0.05 && Math.abs(frame.axis[1] - tiltedAxis[1]) < 0.05, 'axis runs from the orifice to the apex, not along world Y');
+  const law = CHAMBER_LAW.lv;
+  const d0 = frameDisplacement(0.2, 0, 0.3, frame, 1, law);
+  assert.ok(Math.hypot(...d0) < 1e-3, 'the valve plane stays put');
+  const apex = [tiltedAxis[0] * 2, tiltedAxis[1] * 2, 0];
+  const dA = frameDisplacement(...apex, frame, 1, law);
+  const along = dA[0] * frame.axis[0] + dA[1] * frame.axis[1] + dA[2] * frame.axis[2];
+  assert.ok(along < -0.1, 'the apex moves back along the long axis toward the base');
+  // Torsion keeps the distance to the axis apart from the radial squeeze.
+  const p = [apex[0], apex[1], 0.3];
+  const noTwist = frameDisplacement(...p, frame, 1, { ...law, torsion: 0 });
+  const twist = frameDisplacement(...p, frame, 1, law);
+  const moved = (d) => [p[0] + d[0], p[1] + d[1], p[2] + d[2]];
+  const radiusOf = q => { const dx = q[0] - frame.base[0], dy = q[1] - frame.base[1], dz = q[2] - frame.base[2]; const pr = dx * frame.axis[0] + dy * frame.axis[1] + dz * frame.axis[2]; return Math.hypot(dx - pr * frame.axis[0], dy - pr * frame.axis[1], dz - pr * frame.axis[2]); };
+  assert.ok(Math.abs(radiusOf(moved(twist)) - radiusOf(moved(noTwist))) < 1e-6, 'torsion rotates without changing the radius');
+  assert.ok(Math.hypot(twist[0] - noTwist[0], twist[1] - noTwist[1], twist[2] - noTwist[2]) > 1e-3, 'LV torsion is present');
+  const twistAngle = law.torsion * 180 / Math.PI;
+  assert.ok(twistAngle > 3 && twistAngle < 10, 'low-amplitude apical torsion');
+  assert.equal(CHAMBER_LAW.rv.torsion, 0, 'no RV torsion');
+  // Seams: half of each wall's field at contact, none beyond the band.
+  assert.equal(seamWeight(0), 0.5);
+  assert.equal(seamWeight(SEAM_BAND), 0);
+  assert.ok(seamWeight(SEAM_BAND / 2) > 0 && seamWeight(SEAM_BAND / 2) < 0.5);
+  console.log('PASS: phase C size channels (isovolumetric, ejection, filling, kick, AF), measured tilted frames, torsion, seam weights');
 }
 

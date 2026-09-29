@@ -37,10 +37,9 @@ const assertMode = process.argv.includes('--assert');
       window.heart.scene.traverse(o => { if (o.isMesh && o.userData.id) meshes.push(o); });
       const world = m => { m.updateWorldMatrix(true, false); const p = m.geometry.attributes.position, e = m.matrixWorld.elements, a = new Float32Array(p.count * 3);
         for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); a[i * 3] = e[0] * x + e[4] * y + e[8] * z + e[12]; a[i * 3 + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; a[i * 3 + 2] = e[2] * x + e[6] * y + e[10] * z + e[14]; } return a; };
-      window.heart.seekCycle(0.2); // a filling phase: ventricles relaxed
-      // Rest reference: phase where every chamber weight is zero.
-      const zeroPhase = 0.25;
-      window.heart.seekCycle(zeroPhase);
+      // Rest reference: the atlas pose. With the phase C size law no phase is
+      // undeformed, so take it with reduced motion (animation reset).
+      window.heart.setReducedMotion(true);
       const chamberMeshes = chambers.map(id => meshes.find(m => m.userData.id === id)).filter(Boolean);
       const chamberRest = chamberMeshes.map(world);
       // Coarse grid over chamber vertices for nearest queries.
@@ -61,6 +60,7 @@ const assertMode = process.argv.includes('--assert');
           for (let v = 0; v < rest.length / 3; v += step) { const i = v * 3; const n = nearest(rest[i], rest[i + 1], rest[i + 2]); if (n.d <= CONTACT) list.push({ m, i, c: n.c, ci: n.i, seam: (() => { const d = perChamber(rest[i], rest[i + 1], rest[i + 2]); return d[1] - d[0] < 0.05; })(), off: [rest[i] - chamberRest[n.c][n.i], rest[i + 1] - chamberRest[n.c][n.i + 1], rest[i + 2] - chamberRest[n.c][n.i + 2]] }); } }
         samples[name] = list;
       }
+      window.heart.setReducedMotion(false);
       const phases = [];
       for (let k = 0; k < 24; k++) phases.push(k / 24);
       for (const b of [0.08, 0.32, 0.45, 0.53, 0.60, 0.84, 0.88]) phases.push(b - 0.002, b + 0.002);
@@ -78,7 +78,6 @@ const assertMode = process.argv.includes('--assert');
           if (dev > s.max) s.max = dev;
         }
       }
-      window.heart.seekCycle(zeroPhase);
       // Distribution, and how close the worst contact is to a second chamber
       // (a groove between two walls that move differently).
       const secondGap = s => { const p = world(s.m); let d1 = Infinity, d2 = Infinity;
@@ -97,8 +96,9 @@ const assertMode = process.argv.includes('--assert');
     const integrity = await page.evaluate(() => {
       const followers = [];
       window.heart.scene.traverse(o => { if (o.isMesh && o.userData.id && (o.userData.layer === 'coronaries' || /papillary|annulus/.test(o.userData.id)) && o.geometry.index) followers.push(o); });
-      window.heart.seekCycle(0.25);
+      window.heart.setReducedMotion(true);
       const rest = new Map(followers.map(m => [m, Float32Array.from(m.geometry.attributes.position.array)]));
+      window.heart.setReducedMotion(false);
       const edgeLen = (a, i, j) => Math.hypot(a[i * 3] - a[j * 3], a[i * 3 + 1] - a[j * 3 + 1], a[i * 3 + 2] - a[j * 3 + 2]);
       let stretch = 0, stretchAbs = 0, stretchMesh = '';
       const byGroup = {};
@@ -115,10 +115,13 @@ const assertMode = process.argv.includes('--assert');
           }
         }
       }
+      // Drift: the same phase before and after 100 cycles gives the same pose.
+      window.heart.seekCycle(0.3);
+      const before = new Map(followers.map(m => [m, Float32Array.from(m.geometry.attributes.position.array)]));
       for (let c = 0; c < 100; c++) for (const f of [0.1, 0.38, 0.55, 0.65, 0.8, 0.95]) window.heart.seekCycle(c + f);
-      window.heart.seekCycle(0.25);
+      window.heart.seekCycle(0.3);
       let drift = 0;
-      for (const m of followers) { const cur = m.geometry.attributes.position.array, r = rest.get(m); for (let i = 0; i < r.length; i++) drift = Math.max(drift, Math.abs(cur[i] - r[i])); }
+      for (const m of followers) { const cur = m.geometry.attributes.position.array, r = before.get(m); for (let i = 0; i < r.length; i++) drift = Math.max(drift, Math.abs(cur[i] - r[i])); }
       window.heart.seekCycle(0.65);
       document.querySelector('#reset').click();
       let resetGap = 0;
@@ -127,6 +130,25 @@ const assertMode = process.argv.includes('--assert');
       return { maxEdgeStretchPct: +(stretch * 100).toFixed(1), maxEdgeChangePctOfHeart: +(stretchAbs / 3.3 * 100).toFixed(2), worstEdgeMesh: stretchMesh, edgeChangePctOfHeartByGroup: Object.fromEntries(Object.entries(byGroup).map(([k, v]) => [k, +(v / 3.3 * 100).toFixed(2)])), driftAfter100Cycles: drift, resetGap };
     });
     result.integrity = integrity;
+    // Seam integrity: vertex pairs of two different chambers within 0.06 at
+    // rest (septa, grooves, AV junction) should not drift apart.
+    result.seams = await page.evaluate(() => {
+      const ids = ['lv', 'rv', 'la', 'ra'];
+      const ch = []; window.heart.scene.traverse(o => { if (o.isMesh && ids.includes(o.userData.id) && !ch.find(c => c.userData.id === o.userData.id)) ch.push(o); });
+      window.heart.setReducedMotion(true);
+      const rest = ch.map(m => Float32Array.from(m.geometry.attributes.position.array));
+      window.heart.setReducedMotion(false);
+      const cell = 0.06, grid = new Map();
+      rest.forEach((a, c) => { for (let i = 0; i < a.length; i += 3) { const k = `${Math.floor(a[i] / cell)},${Math.floor(a[i + 1] / cell)},${Math.floor(a[i + 2] / cell)}`; (grid.get(k) || grid.set(k, []).get(k)).push(c, i); } });
+      const pairs = [];
+      rest.forEach((a, c) => { for (let i = 0; i < a.length; i += 9) { const cx = Math.floor(a[i] / cell), cy = Math.floor(a[i + 1] / cell), cz = Math.floor(a[i + 2] / cell); let best = cell * cell, bo = -1, bi = -1;
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) { const l = grid.get(`${cx + dx},${cy + dy},${cz + dz}`); if (!l) continue; for (let j = 0; j < l.length; j += 2) { if (l[j] === c) continue; const b = rest[l[j]], k = l[j + 1]; const d = (a[i] - b[k]) ** 2 + (a[i + 1] - b[k + 1]) ** 2 + (a[i + 2] - b[k + 2]) ** 2; if (d < best) { best = d; bo = l[j]; bi = k; } } }
+        if (bo >= 0) pairs.push([c, i, bo, bi, Math.sqrt(best)]); } });
+      let worst = 0;
+      for (let k = 0; k < 24; k++) { window.heart.seekCycle(k / 24); const cur = ch.map(m => m.geometry.attributes.position.array);
+        for (const [c, i, o, j, d0] of pairs) { const a = cur[c], b = cur[o]; const d = Math.hypot(a[i] - b[j], a[i + 1] - b[j + 1], a[i + 2] - b[j + 2]); worst = Math.max(worst, Math.abs(d - d0)); } }
+      return { pairs: pairs.length, maxSeparationChangePctOfHeart: +(worst / 3.3 * 100).toFixed(2) };
+    });
     if (shotPrefix) {
       for (const [view, phase] of [['anterior', 0.65], ['posterior', 0.65], ['lao', 0.65], ['rao', 0.65]]) {
         await page.evaluate(([v, p]) => { window.heart.setView(v); window.heart.seekCycle(p); }, [view, phase]);
@@ -138,12 +160,13 @@ const assertMode = process.argv.includes('--assert');
     console.log(JSON.stringify({ errors, result }, null, 1));
     if (assertMode) {
       const limit = 1; // report target: below 1% of heart length
-      // Seams between two chambers inherit the walls' own divergence (phase C).
-      const bad = Object.entries(result).filter(([k, r]) => r.contacts && r.maxOffSeamPct >= limit && ['coronaries', 'cardiacVeins', 'papillary', 'annuli', 'greatVessels', 'conduction'].includes(k));
+      // Phase C shares the field across seams, so the gate includes them.
+      const bad = Object.entries(result).filter(([k, r]) => r.contacts && r.maxDeviationPct >= limit && ['coronaries', 'cardiacVeins', 'papillary', 'annuli', 'greatVessels', 'conduction'].includes(k));
+      if (result.seams.maxSeparationChangePctOfHeart >= limit) bad.push(['seams', result.seams]);
       if (result.integrity.driftAfter100Cycles > 1e-6) bad.push(['drift', result.integrity.driftAfter100Cycles]);
       if (result.integrity.resetGap > 1e-6) bad.push(['reset', result.integrity.resetGap]);
       if (bad.length || errors.length) { console.error('FAIL', bad, errors); process.exit(1); }
-      console.log('PASS: away from two-chamber seams, attached structures stay within 1% of heart length of their wall');
+      console.log('PASS: attached structures (seams included) stay within 1% of heart length of their wall; chamber seams do not separate; no drift; exact reset');
     }
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

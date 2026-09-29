@@ -5,13 +5,13 @@
  * put so leaflet hinges are not pulled off the atlas orifice.
  */
 
-import { CYCLE_SYNC as SYNC } from './cardiac-cycle.js';
+import { CYCLE_SYNC as SYNC, CARDIAC_INTERVALS } from './cardiac-cycle.js';
 
 /**
  * Computes normalized channel weights (0..1) for any phase in [0, 1).
  * Valve open/close times are the same marks as the ECG (P, QRS, T/S2).
  */
-export function computeChannelWeights(phase) {
+export function computeChannelWeights(phase, options = {}) {
   const p = ((phase % 1) + 1) % 1;
 
   // P wave / atrial systole. Contraction ends as the AV valves finish closing.
@@ -73,7 +73,8 @@ export function computeChannelWeights(phase) {
     ventricularContraction,
     avValveOpening,
     semilunarValveOpening,
-    chordaeTension
+    chordaeTension,
+    ...shapeChannels(p, options.rhythm)
   };
 }
 
@@ -214,46 +215,136 @@ function writeAvLeaflet(mesh, opening, frame) {
   attr.needsUpdate = true;
 }
 
-/**
- * The chamber's displacement field at any point (the same law writeChamber
- * applies to the wall), with the valve distance clamped to the chamber so
- * points above the base or below the apex are not overdriven. Continuous in
- * space, so structures inside a cavity can follow it directly.
+/*
+ * Phase C (report section 12). Geometry follows a schematic chamber size
+ * proxy, separate from tension: `ventricularContraction` / `atrialContraction`
+ * keep their meaning (tension, flow narrative); the shape channels below move
+ * the walls. See research/BEAT_MOTION.md for the phase-motion table.
  */
-export function chamberFieldOffset(x, y, z, motion, weight, lockAtMaxY) {
-  const { minY, maxY, cx, cz } = motion;
-  const height = Math.max(1e-4, maxY - minY);
-  const radial = lockAtMaxY ? 0.11 : 0.08;
-  const axial = lockAtMaxY ? 0.07 : 0.05;
-  const amount = Math.max(0, Math.min(1, weight));
-  // Clamp to the chamber's height: the valve distance and the axial lever.
-  const yc = Math.max(minY, Math.min(maxY, y));
-  const fromValve = lockAtMaxY ? (maxY - yc) / height : (yc - minY) / height;
-  const k = amount * fromValve * fromValve;
-  return [-(x - cx) * radial * k, (lockAtMaxY ? (maxY - yc) : (minY - yc)) * axial * k, -(z - cz) * radial * k];
+const clamp01s = t => Math.max(0, Math.min(1, t));
+const smooth01 = t => { const u = clamp01s(t); return u * u * (3 - 2 * u); };
+const fastThenSlow = t => { const u = clamp01s(t); return 1 - (1 - u) * (1 - u); };
+const lerp = (a, b, t) => a + (b - a) * t;
+const RAPID_FILLING_END = CARDIAC_INTERVALS.find(i => i.id === 'rapid-filling')?.end ?? 0.18;
+const CONDUIT_SHAPE = 0.35;   // atrial size fraction lost by passive emptying
+const DIASTASIS_SHAPE = 0.18; // ventricular size still to fill before the atrial kick
+
+/**
+ * Chamber size channels, 0 = largest, 1 = smallest. Ventricles: fill in
+ * rapid filling and diastasis, atrial kick to end-diastole, unchanged in the
+ * isovolumetric intervals, shrink through ejection. Atria: conduit emptying,
+ * booster contraction, reservoir filling during ventricular systole. In
+ * atrial fibrillation there is no booster and no atrial kick.
+ */
+export function shapeChannels(phase, rhythm = 'sinus') {
+  const p = ((phase % 1) + 1) % 1;
+  const af = rhythm === 'afib';
+  let v;
+  if (p < RAPID_FILLING_END) v = lerp(1, 0.25, fastThenSlow(p / RAPID_FILLING_END));
+  else if (p < SYNC.avClosed) {
+    if (af) v = lerp(0.25, 0, (p - RAPID_FILLING_END) / (SYNC.avClosed - RAPID_FILLING_END));
+    else if (p < SYNC.atrialStart) v = lerp(0.25, DIASTASIS_SHAPE, (p - RAPID_FILLING_END) / (SYNC.atrialStart - RAPID_FILLING_END));
+    else v = lerp(DIASTASIS_SHAPE, 0, smooth01((p - SYNC.atrialStart) / (SYNC.avClosed - SYNC.atrialStart)));
+  } else if (p < SYNC.ejectionStart) v = 0;
+  else if (p < SYNC.ivrStart) v = fastThenSlow((p - SYNC.ejectionStart) / (SYNC.ivrStart - SYNC.ejectionStart));
+  else v = 1;
+  let a;
+  if (p < RAPID_FILLING_END) a = lerp(0, CONDUIT_SHAPE, fastThenSlow(p / RAPID_FILLING_END));
+  else if (p < SYNC.atrialStart) a = CONDUIT_SHAPE;
+  else if (p < SYNC.avClosed) a = af ? CONDUIT_SHAPE : lerp(CONDUIT_SHAPE, 1, smooth01((p - SYNC.atrialStart) / (SYNC.avClosed - SYNC.atrialStart)));
+  else a = lerp(af ? CONDUIT_SHAPE : 1, 0, smooth01((p - SYNC.avClosed) / (1 - SYNC.avClosed)));
+  return { ventricularShape: v, atrialShape: a };
 }
 
-function writeChamber(mesh, weight, lockAtMaxY, referenceMotion = null) {
+/** Deformation law per chamber: fractions at the far end of the long axis. */
+export const CHAMBER_LAW = {
+  lv: { radial: 0.11, axial: 0.07, torsion: 0.10, shape: 'ventricularShape', ventricle: true },
+  rv: { radial: 0.11, axial: 0.07, torsion: 0, shape: 'ventricularShape', ventricle: true },
+  la: { radial: 0.08, axial: 0.05, torsion: 0, shape: 'atrialShape', ventricle: false },
+  ra: { radial: 0.08, axial: 0.05, torsion: 0, shape: 'atrialShape', ventricle: false },
+};
+
+/** Fallback frame from bounding bounds (world Y): the pre-phase-C law. */
+export function frameFromMotion(motion, ventricle) {
+  return { base: [motion.cx, ventricle ? motion.maxY : motion.minY, motion.cz], axis: [0, ventricle ? -1 : 1, 0], length: Math.max(1e-4, motion.maxY - motion.minY) };
+}
+
+/**
+ * Measured chamber frame: from the valve orifice centre along the long axis,
+ * to the apex (ventricles: farthest vertex) or into the chamber body (atria:
+ * toward the centroid, as far as the chamber reaches).
+ */
+export function measureChamberFrame(rest, base, ventricle) {
+  let ax = 0, ay = 0, az = 0;
+  if (ventricle) {
+    let best = -1;
+    for (let i = 0; i < rest.length; i += 3) {
+      const d = (rest[i] - base[0]) ** 2 + (rest[i + 1] - base[1]) ** 2 + (rest[i + 2] - base[2]) ** 2;
+      if (d > best) { best = d; ax = rest[i] - base[0]; ay = rest[i + 1] - base[1]; az = rest[i + 2] - base[2]; }
+    }
+  } else {
+    const n = rest.length / 3;
+    for (let i = 0; i < rest.length; i += 3) { ax += rest[i] / n; ay += rest[i + 1] / n; az += rest[i + 2] / n; }
+    ax -= base[0]; ay -= base[1]; az -= base[2];
+  }
+  const len = Math.hypot(ax, ay, az) || 1;
+  const axis = [ax / len, ay / len, az / len];
+  let length = 1e-4;
+  for (let i = 0; i < rest.length; i += 3) length = Math.max(length, (rest[i] - base[0]) * axis[0] + (rest[i + 1] - base[1]) * axis[1] + (rest[i + 2] - base[2]) * axis[2]);
+  return { base: [...base], axis, length };
+}
+
+/**
+ * Displacement of a point by a chamber of the given frame, size `shape` and
+ * law: radial toward the long axis, longitudinal toward the valve plane,
+ * optional torsion about the axis. Grows with (distance from the valve)^2,
+ * clamped to the chamber, so the valve plane stays put. Writes into `out`.
+ */
+export function frameDisplacement(x, y, z, frame, shape, law, out = [0, 0, 0]) {
+  const [bx, by, bz] = frame.base, [ax, ay, az] = frame.axis;
+  const dx = x - bx, dy = y - by, dz = z - bz;
+  const proj = dx * ax + dy * ay + dz * az;
+  const t = clamp01s(proj / frame.length);
+  const tc = Math.max(0, Math.min(frame.length, proj));
+  const rx = dx - proj * ax, ry = dy - proj * ay, rz = dz - proj * az;
+  const k = clamp01s(shape) * t * t;
+  out[0] = -rx * law.radial * k - ax * tc * law.axial * k;
+  out[1] = -ry * law.radial * k - ay * tc * law.axial * k;
+  out[2] = -rz * law.radial * k - az * tc * law.axial * k;
+  if (law.torsion) {
+    // Rotate the already squeezed radial vector, so twist does not change
+    // the radius the squeeze produced.
+    const q = 1 - law.radial * k;
+    const th = law.torsion * k, c = (Math.cos(th) - 1) * q, sn = Math.sin(th) * q;
+    out[0] += c * rx + sn * (ay * rz - az * ry);
+    out[1] += c * ry + sn * (az * rx - ax * rz);
+    out[2] += c * rz + sn * (ax * ry - ay * rx);
+  }
+  return out;
+}
+
+/** The pre-phase-C field (bounding-box frame), kept for callers and tests. */
+export function chamberFieldOffset(x, y, z, motion, weight, lockAtMaxY) {
+  const law = lockAtMaxY ? { radial: 0.11, axial: 0.07, torsion: 0 } : { radial: 0.08, axial: 0.05, torsion: 0 };
+  return frameDisplacement(x, y, z, frameFromMotion(motion, lockAtMaxY), weight, law);
+}
+
+/** Write a mesh displaced by one chamber field (used for the LAA marker). */
+function writeWithFrame(mesh, frame, shape, law) {
   const attr = rememberRest(mesh);
   if (!attr) return;
-  const rest = mesh.userData.restPosition;
-  const { minY, maxY, cx, cz } = referenceMotion || mesh.userData.motion;
-  const height = Math.max(1e-4, maxY - minY);
-  const out = attr.array;
-  const radial = lockAtMaxY ? 0.11 : 0.08;
-  const axial = lockAtMaxY ? 0.07 : 0.05;
-  const amount = Math.max(0, Math.min(1, weight));
+  const rest = mesh.userData.restPosition, out = attr.array, d = [0, 0, 0];
   for (let i = 0; i < rest.length; i += 3) {
-    const x = rest[i];
-    const y = rest[i + 1];
-    const z = rest[i + 2];
-    const fromValve = lockAtMaxY ? (maxY - y) / height : (y - minY) / height;
-    const k = amount * fromValve * fromValve;
-    out[i] = x - (x - cx) * radial * k;
-    out[i + 1] = lockAtMaxY ? y + (maxY - y) * axial * k : y + (minY - y) * axial * k;
-    out[i + 2] = z - (z - cz) * radial * k;
+    frameDisplacement(rest[i], rest[i + 1], rest[i + 2], frame, shape, law, d);
+    out[i] = rest[i] + d[0]; out[i + 1] = rest[i + 1] + d[1]; out[i + 2] = rest[i + 2] + d[2];
   }
   attr.needsUpdate = true;
+}
+
+export const SEAM_BAND = 0.25;
+/** Share of the neighbouring chamber's field at distance d from it (half at contact). */
+export function seamWeight(d) {
+  return d >= SEAM_BAND ? 0 : 0.5 * (1 - smooth01(d / SEAM_BAND));
 }
 
 /*
@@ -402,7 +493,17 @@ export function bindFollower(owners, follower) {
     if (sum <= 0) continue;
     for (let c = 0; c < n; c++) if (index[v * n + c] >= 0) weight[v * n + c] = attach[v] * mix[v * n + c] / sum;
   }
-  return { index, weight, owners: n };
+  // Compact form: only non-zero (owner, vertex, weight) entries per vertex.
+  const offsets = new Uint32Array(count + 1);
+  let nnz = 0;
+  for (let v = 0; v < count; v++) { for (let c = 0; c < n; c++) if (weight[v * n + c] > 0) nnz++; offsets[v + 1] = nnz; }
+  const cOwner = new Uint8Array(nnz), cIndex = new Int32Array(nnz), cWeight = new Float32Array(nnz);
+  for (let v = 0, k = 0; v < count; v++) for (let c = 0; c < n; c++) if (weight[v * n + c] > 0) { cOwner[k] = c; cIndex[k] = index[v * n + c]; cWeight[k] = weight[v * n + c]; k++; }
+  // Vertices with no owner never move; only the others are written per frame.
+  const active = new Uint32Array(count);
+  let na = 0;
+  for (let v = 0; v < count; v++) if (offsets[v + 1] > offsets[v]) active[na++] = v;
+  return { index, weight, owners: n, offsets, cOwner, cIndex, cWeight, active: active.subarray(0, na) };
 }
 
 /** Invert the linear part of a column-major 4x4 matrix (rigid or uniform-scale use). */
@@ -422,31 +523,50 @@ export function writeFollower(follower, binding, owners) {
   const { rest, out, matrixInverse: m } = follower;
   if (follower.field) {
     // Inside a cavity: evaluate the owner's field at the vertex itself.
-    const { motion, weight, lock } = follower.field;
+    const { frame, law, weight } = follower.field;
+    const shape = weight(), d = [0, 0, 0];
     for (let o = 0; o < rest.length; o += 3) {
-      const d = chamberFieldOffset(rest[o], rest[o + 1], rest[o + 2], motion, weight(), lock);
+      frameDisplacement(rest[o], rest[o + 1], rest[o + 2], frame, shape, law, d);
       out[o] = rest[o] + d[0]; out[o + 1] = rest[o + 1] + d[1]; out[o + 2] = rest[o + 2] + d[2];
     }
     return;
   }
-  const { index, weight, owners: n } = binding;
-  const count = rest.length / 3;
-  for (let v = 0; v < count; v++) {
+  const { offsets, cOwner, cIndex, cWeight, active } = binding;
+  // World displacement of every owner vertex, computed once per frame by the
+  // caller (owner.disp) or here when called on its own.
+  for (const o of owners) if (owners.stamp === undefined || !o.disp || o.dispStamp !== owners.stamp) ownerDisplacement(o, owners.stamp);
+  const identity = follower.identityInverse ??= isIdentityLinear(m);
+  const disps = owners.map(o => o.disp);
+  for (let a = 0; a < active.length; a++) {
+    const v = active[a];
     let wx = 0, wy = 0, wz = 0;
-    for (let c = 0; c < n; c++) {
-      const wt = weight[v * n + c];
-      if (!wt) continue;
-      const o = owners[c], i = index[v * n + c], e = o.matrix;
-      const lx = o.current[i] - o.rest[i], ly = o.current[i + 1] - o.rest[i + 1], lz = o.current[i + 2] - o.rest[i + 2];
-      wx += wt * (e[0] * lx + e[4] * ly + e[8] * lz);
-      wy += wt * (e[1] * lx + e[5] * ly + e[9] * lz);
-      wz += wt * (e[2] * lx + e[6] * ly + e[10] * lz);
+    for (let k = offsets[v], end = offsets[v + 1]; k < end; k++) {
+      const d = disps[cOwner[k]], i = cIndex[k], wt = cWeight[k];
+      wx += wt * d[i]; wy += wt * d[i + 1]; wz += wt * d[i + 2];
     }
     const o = v * 3;
+    if (identity) { out[o] = rest[o] + wx; out[o + 1] = rest[o + 1] + wy; out[o + 2] = rest[o + 2] + wz; continue; }
     out[o] = rest[o] + m[0] * wx + m[1] * wy + m[2] * wz;
     out[o + 1] = rest[o + 1] + m[3] * wx + m[4] * wy + m[5] * wz;
     out[o + 2] = rest[o + 2] + m[6] * wx + m[7] * wy + m[8] * wz;
   }
+}
+
+const isIdentityLinear = m => [1, 0, 0, 0, 1, 0, 0, 0, 1].every((x, i) => Math.abs(m[i] - x) < 1e-12);
+
+/** Owner vertex displacement in world space (current - rest through the matrix). */
+function ownerDisplacement(o, stamp) {
+  const n = o.rest.length;
+  if (!o.disp || o.disp.length !== n) o.disp = new Float32Array(n);
+  const e = o.matrix, identity = e[0] === 1 && e[5] === 1 && e[10] === 1 && !e[1] && !e[2] && !e[4] && !e[6] && !e[8] && !e[9];
+  for (let i = 0; i < n; i += 3) {
+    const lx = o.current[i] - o.rest[i], ly = o.current[i + 1] - o.rest[i + 1], lz = o.current[i + 2] - o.rest[i + 2];
+    if (identity) { o.disp[i] = lx; o.disp[i + 1] = ly; o.disp[i + 2] = lz; continue; }
+    o.disp[i] = e[0] * lx + e[4] * ly + e[8] * lz;
+    o.disp[i + 1] = e[1] * lx + e[5] * ly + e[9] * lz;
+    o.disp[i + 2] = e[2] * lx + e[6] * ly + e[10] * lz;
+  }
+  o.dispStamp = stamp;
 }
 
 /**
@@ -459,7 +579,7 @@ const VALVE_GROUPS = [
   { ids: ['tricuspid'], kind: 'av', channel: 'avValveOpening' }
 ];
 
-export function createAnimationChannels({ meshMap }) {
+export function createAnimationChannels({ meshMap, sourceCenter = null }) {
   const valveCache = new Map();
   let followers = null;
   let lastWeights = {};
@@ -489,9 +609,9 @@ export function createAnimationChannels({ meshMap }) {
         allowed: FOLLOWER_OWNERS[mesh.userData.id]?.map(id => ownerIndex.get(id)).filter(i => i !== undefined) };
       const ownerId = FOLLOWER_OWNERS[mesh.userData.id]?.[0];
       const owner = follower.fullAttach && owners[ownerIndex.get(ownerId)];
-      if (owner && isIdentity(matrix) && isIdentity(owner.matrix)) {
-        const lock = ownerId === 'lv' || ownerId === 'rv';
-        follower.field = { motion: owner.mesh.userData.motion, lock, weight: () => lastWeights[lock ? 'ventricularContraction' : 'atrialContraction'] || 0 };
+      const ownerChamber = owner && chamberSetup().find(ch => ch.mesh === owner.mesh);
+      if (owner && ownerChamber && isIdentity(matrix) && isIdentity(owner.matrix)) {
+        follower.field = { frame: ownerChamber.frame, law: ownerChamber.law, weight: () => lastWeights[ownerChamber.law.shape] || 0 };
         followers.push({ follower, binding: null });
         continue;
       }
@@ -504,14 +624,165 @@ export function createAnimationChannels({ meshMap }) {
 
   function applyFollowers() {
     const setup = followerSetup();
+    setup.owners.stamp = (setup.owners.stamp || 0) + 1;
     for (const { follower, binding } of setup) {
       writeFollower(follower, binding, setup.owners);
       follower.attr.needsUpdate = true;
     }
   }
 
-  function deform(id, weight, lockAtMaxY) {
-    for (const mesh of meshMap.get(id) || []) writeChamber(mesh, weight, lockAtMaxY);
+  // Chambers: every positioned mesh of LV, RV, LA, RA gets its frame (the
+  // measured valve-to-apex axis when the annulus centre is known, else the
+  // bounding-box frame), its rest normals, and seam links to the nearest
+  // other chamber so shared walls move together.
+  let chambers = null;
+  function chamberSetup() {
+    if (chambers) return chambers;
+    chambers = [];
+    const baseOf = id => {
+      // Left heart axes start at the mitral orifice, right heart at the tricuspid.
+      const center = sourceCenter?.(id === 'lv' || id === 'la' ? 'mitral-annulus' : 'tricuspid-annulus');
+      return center ? [center.x, center.y, center.z] : null;
+    };
+    for (const id of OWNER_IDS) {
+      const law = CHAMBER_LAW[id];
+      let primary = true;
+      for (const mesh of meshMap.get(id) || []) {
+        const attr = rememberRest(mesh);
+        if (!attr) continue;
+        const rest = mesh.userData.restPosition;
+        // The measured frame belongs to the chamber's first positioned mesh.
+        const base = primary ? baseOf(id) : null;
+        primary = false;
+        const frame = base ? measureChamberFrame(rest, base, law.ventricle) : frameFromMotion(mesh.userData.motion, law.ventricle);
+        const normal = mesh.geometry.attributes.normal;
+        chambers.push({ id, mesh, attr, rest, law, frame, normal, restNormal: normal ? Float32Array.from(normal.array) : null, seamOther: null, seamWeight: null });
+      }
+    }
+    // Seam links: nearest vertex of another chamber within SEAM_BAND.
+    const cell = SEAM_BAND, grid = new Map();
+    const key = (x, y, z) => ((x + 1024) * 2048 + (y + 1024)) * 2048 + (z + 1024);
+    chambers.forEach((ch, c) => { for (let i = 0; i < ch.rest.length; i += 3) { const k = key(Math.floor(ch.rest[i] / cell), Math.floor(ch.rest[i + 1] / cell), Math.floor(ch.rest[i + 2] / cell)); let l = grid.get(k); if (!l) grid.set(k, l = []); l.push(c, i); } });
+    chambers.forEach((ch, c) => {
+      const n = ch.rest.length / 3;
+      const other = new Int8Array(n).fill(-1), weight = new Float32Array(n);
+      for (let v = 0; v < n; v++) {
+        const x = ch.rest[v * 3], y = ch.rest[v * 3 + 1], z = ch.rest[v * 3 + 2];
+        const cx = Math.floor(x / cell), cy = Math.floor(y / cell), cz = Math.floor(z / cell);
+        let best = SEAM_BAND * SEAM_BAND, bc = -1;
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+          const l = grid.get(key(cx + dx, cy + dy, cz + dz)); if (!l) continue;
+          for (let j = 0; j < l.length; j += 2) {
+            const o = l[j]; if (o === c || chambers[o].id === ch.id) continue;
+            const r = chambers[o].rest, i = l[j + 1];
+            const d = (r[i] - x) ** 2 + (r[i + 1] - y) ** 2 + (r[i + 2] - z) ** 2;
+            if (d < best) { best = d; bc = o; }
+          }
+        }
+        if (bc >= 0) { other[v] = bc; weight[v] = seamWeight(Math.sqrt(best)); }
+      }
+      ch.seamOther = other; ch.seamWeight = weight;
+    });
+    // Per-vertex frame terms are constant: cache them so a frame is only
+    // multiply-adds (own frame, and the seam neighbour's frame where blended).
+    const terms = (rest, frame, only) => {
+      const n = rest.length / 3, r = new Float32Array(n * 3), t2 = new Float32Array(n), tc = new Float32Array(n);
+      const [bx, by, bz] = frame.base, [ax, ay, az] = frame.axis;
+      for (let v = 0; v < n; v++) {
+        if (only && !only(v)) continue;
+        const i = v * 3, dx = rest[i] - bx, dy = rest[i + 1] - by, dz = rest[i + 2] - bz;
+        const proj = dx * ax + dy * ay + dz * az, t = clamp01s(proj / frame.length);
+        r[i] = dx - proj * ax; r[i + 1] = dy - proj * ay; r[i + 2] = dz - proj * az;
+        t2[v] = t * t; tc[v] = Math.max(0, Math.min(frame.length, proj));
+      }
+      return { r, t2, tc };
+    };
+    for (const ch of chambers) {
+      ch.own = terms(ch.rest, ch.frame);
+      // Seam neighbour terms aligned to this chamber's vertices (each vertex
+      // has at most one neighbour), merged from one pass per neighbour.
+      const n = ch.rest.length / 3;
+      const merged = { r: new Float32Array(n * 3), t2: new Float32Array(n), tc: new Float32Array(n) };
+      for (const o of new Set(ch.seamOther)) {
+        if (o < 0) continue;
+        const part = terms(ch.rest, chambers[o].frame, u => ch.seamOther[u] === o && ch.seamWeight[u] > 0);
+        for (let v = 0; v < n; v++) if (ch.seamOther[v] === o) { merged.r[v * 3] = part.r[v * 3]; merged.r[v * 3 + 1] = part.r[v * 3 + 1]; merged.r[v * 3 + 2] = part.r[v * 3 + 2]; merged.t2[v] = part.t2[v]; merged.tc[v] = part.tc[v]; }
+      }
+      ch.neighbourTerms = merged;
+    }
+    return chambers;
+  }
+
+  // Deform every chamber from its rest pose by its own field, blended with
+  // the neighbour's field near a shared wall; rotate normals with torsion.
+  // Same law as frameDisplacement, from cached per-vertex terms, written
+  // inline for speed. Torsion uses the small-angle expansion (angle <= 0.1
+  // rad, error below 1e-4).
+  function deformChambers(weights) {
+    const list = chamberSetup();
+    for (const ch of list) {
+      const shape = weights[ch.law.shape] || 0;
+      const { rest, attr } = ch;
+      const out = attr.array;
+      const own = fieldCoefficients(ch, shape);
+      const seamOther = ch.seamOther, seamWeight = ch.seamWeight;
+      const others = list.map(o => (o === ch ? null : fieldCoefficients(o, weights[o.law.shape] || 0)));
+      const nr = ch.neighbourTerms.r, nt2 = ch.neighbourTerms.t2, ntc = ch.neighbourTerms.tc;
+      const r = ch.own.r, t2 = ch.own.t2, tc = ch.own.tc;
+      for (let v = 0, i = 0; i < rest.length; v++, i += 3) {
+        let dx, dy, dz;
+        {
+          const k = own.s * t2[v], rx = r[i], ry = r[i + 1], rz = r[i + 2], a = tc[v] * own.axial * k, q = own.radial * k;
+          dx = -rx * q - own.ax * a; dy = -ry * q - own.ay * a; dz = -rz * q - own.az * a;
+          if (own.torsion) {
+            const th = own.torsion * k, qq = 1 - q, c = -0.5 * th * th * qq, sn = th * (1 - th * th / 6) * qq;
+            dx += c * rx + sn * (own.ay * rz - own.az * ry);
+            dy += c * ry + sn * (own.az * rx - own.ax * rz);
+            dz += c * rz + sn * (own.ax * ry - own.ay * rx);
+          }
+        }
+        const b = seamWeight[v];
+        if (b > 0) {
+          const f = others[seamOther[v]];
+          const k = f.s * nt2[v], rx = nr[i], ry = nr[i + 1], rz = nr[i + 2], a = ntc[v] * f.axial * k, q = f.radial * k;
+          let ox = -rx * q - f.ax * a, oy = -ry * q - f.ay * a, oz = -rz * q - f.az * a;
+          if (f.torsion) {
+            const th = f.torsion * k, qq = 1 - q, c = -0.5 * th * th * qq, sn = th * (1 - th * th / 6) * qq;
+            ox += c * rx + sn * (f.ay * rz - f.az * ry);
+            oy += c * ry + sn * (f.az * rx - f.ax * rz);
+            oz += c * rz + sn * (f.ax * ry - f.ay * rx);
+          }
+          dx += (ox - dx) * b; dy += (oy - dy) * b; dz += (oz - dz) * b;
+        }
+        out[i] = rest[i] + dx; out[i + 1] = rest[i + 1] + dy; out[i + 2] = rest[i + 2] + dz;
+      }
+      attr.needsUpdate = true;
+      if (ch.law.torsion && ch.restNormal) rotateNormals(ch, shape);
+    }
+  }
+
+  // Per-frame scalars of a chamber's field.
+  function fieldCoefficients(ch, shape) {
+    const [ax, ay, az] = ch.frame.axis;
+    return { s: clamp01s(shape), radial: ch.law.radial, axial: ch.law.axial, torsion: ch.law.torsion, ax, ay, az };
+  }
+
+  // Normals follow the twist: rotate each rest normal about the long axis by
+  // the vertex's torsion angle (the squeeze tilt is small and ignored).
+  function rotateNormals(ch, shape) {
+    const { restNormal, normal, frame, law } = ch;
+    const [ax, ay, az] = frame.axis;
+    const out = normal.array, t2 = ch.own.t2;
+    for (let v = 0, i = 0; i < restNormal.length; v++, i += 3) {
+      const th = law.torsion * clamp01s(shape) * t2[v];
+      const nx = restNormal[i], ny = restNormal[i + 1], nz = restNormal[i + 2];
+      if (!th) { out[i] = nx; out[i + 1] = ny; out[i + 2] = nz; continue; }
+      const c = 1 - th * th / 2, sn = th * (1 - th * th / 6), dot = nx * ax + ny * ay + nz * az;
+      out[i] = nx * c + (ay * nz - az * ny) * sn + ax * dot * (1 - c);
+      out[i + 1] = ny * c + (az * nx - ax * nz) * sn + ay * dot * (1 - c);
+      out[i + 2] = nz * c + (ax * ny - ay * nx) * sn + az * dot * (1 - c);
+    }
+    normal.needsUpdate = true;
   }
 
   function valveGroup(ids) {
@@ -590,14 +861,12 @@ export function createAnimationChannels({ meshMap }) {
       reset();
       return;
     }
-    const weights = computeChannelWeights(cycleState.phase);
+    const weights = computeChannelWeights(cycleState.phase, { rhythm: cycleState.rhythm });
     lastWeights = weights;
-    deform('lv', weights.ventricularContraction, true);
-    deform('rv', weights.ventricularContraction, true);
-    deform('la', weights.atrialContraction, false);
-    const laMotion = meshMap.get('la')?.[0]?.userData.motion;
-    if (laMotion) for (const marker of meshMap.get('laa') || []) writeChamber(marker, weights.atrialContraction, false, laMotion);
-    deform('ra', weights.atrialContraction, false);
+    deformChambers(weights);
+    // The LAA marker rides the LA field (it has no wall of its own here).
+    const la = chamberSetup().find(ch => ch.id === 'la');
+    if (la) for (const marker of meshMap.get('laa') || []) writeWithFrame(marker, la.frame, weights.atrialShape, la.law);
     applyFollowers();
     applyValves(weights);
     return weights;
@@ -622,6 +891,7 @@ export function createAnimationChannels({ meshMap }) {
       follower.out.set(follower.rest);
       follower.attr.needsUpdate = true;
     }
+    for (const ch of chambers || []) if (ch.restNormal) { ch.normal.array.set(ch.restNormal); ch.normal.needsUpdate = true; }
   }
 
   return {
@@ -629,7 +899,7 @@ export function createAnimationChannels({ meshMap }) {
     computeChannelWeights,
     reset,
     // Bind the surface followers ahead of the first beat (idle time).
-    prepare: () => { followerSetup(); },
+    prepare: () => { chamberSetup(); followerSetup(); },
     followerCount: () => followerSetup().length
   };
 }
