@@ -62,6 +62,8 @@ function layerGroup(id, color, children) {
     </div>`;
 }
 
+// Short dock labels on narrow screens so Ant, Post, RAO and LAO fit without scrolling.
+const VIEW_SHORT = { anterior: 'Ant', posterior: 'Post' };
 const app = document.querySelector('#app');
 app.innerHTML = `
 <header>
@@ -143,7 +145,7 @@ app.innerHTML = `
 
     <div class="view-controls" aria-label="Camera presets">
       <div class="view-presets">
-      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}" title="${id==='root'?'Root & Cusps':t} (${k})">${t} <kbd>${k}</kbd></button>`).join('')}
+      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}" title="${id==='root'?'Root & Cusps':t} (${k})">${VIEW_SHORT[id]?`<span class="view-long">${t}</span><span class="view-short">${VIEW_SHORT[id]}</span>`:t} <kbd>${k}</kbd></button>`).join('')}
       <button data-view="mitral" title="Mitral scallops · A1–A3 / P1–P3">Mitral</button>
       </div>
       <div class="view-tools">

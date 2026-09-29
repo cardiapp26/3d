@@ -106,6 +106,11 @@ const visibleArticle = page => page.evaluate(() => getComputedStyle(document.que
       assert.ok(dock.minH >= 32, `${w} px: dock tools tappable (${dock.minH})`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
+    const firstViews = await page.evaluate(() => {
+      const strip = document.querySelector('.view-presets').getBoundingClientRect();
+      return ['anterior', 'posterior', 'rao', 'lao'].filter(id => document.querySelector(`[data-view=${id}]`).getBoundingClientRect().right <= strip.right + 0.5);
+    });
+    assert.deepEqual(firstViews, ['anterior', 'posterior', 'rao', 'lao'], 'Ant, Post, RAO and LAO fit without scrolling');
     await page.locator('#fluoro-toggle-dock').click();
     assert.equal(await page.locator('main').evaluate(el => el.classList.contains('fluoroscopy-active')), true, 'fluoroscopy toggles from the phone dock');
     await page.locator('#fluoro-toggle-dock').click();
