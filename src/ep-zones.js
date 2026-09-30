@@ -34,10 +34,11 @@ export function createEpZones(helpers) {
   const zones = new Map();      // zoneId -> THREE.Group
   const labels = [];            // { mesh, tone, text, zone } for scene-labels
   const circuits = new Map();   // 'orthodromic' | 'antidromic' -> THREE.Group (left free wall AVRT)
+  const paths = new Map();      // 'avn' | 'ap' -> THREE.Group (atrial pacing laboratory, test beat routes)
   let rvMarker = null;
   let halo = null;
   let active = null;
-  let options = { halo: false, circuit: null };
+  let options = { halo: false, circuit: null, paths: [] };
   let initialized = false;
 
   function arcOf(rim, anchor, lift, span) {
@@ -48,6 +49,28 @@ export function createEpZones(helpers) {
     const pts = [];
     for (let d = -k; d <= k; d++) pts.push(rim[((i0 + d) % n + n) % n].clone().lerp(lift, 0.06));
     return pts;
+  }
+
+  /** Tube with arrow cones along the points, drawn over the walls (no depth test) so it stays readable. */
+  function arrowTube(name, points, colour, arrowName) {
+    const curve = new THREE.CatmullRomCurve3(points);
+    const out = new THREE.Group();
+    out.name = name;
+    const overlay = (mat) => Object.assign(mat, { depthTest: false, depthWrite: false, transparent: true });
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.016, 8, false), overlay(new THREE.MeshBasicMaterial({ color: colour, opacity: 0.9 })));
+    tube.renderOrder = 20;
+    out.add(tube);
+    for (const t of [0.15, 0.35, 0.55, 0.75, 0.92]) {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 12), overlay(new THREE.MeshBasicMaterial({ color: colour, opacity: 1 })));
+      cone.renderOrder = 21;
+      cone.position.copy(curve.getPointAt(t));
+      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), curve.getTangentAt(t).normalize());
+      cone.name = arrowName;
+      out.add(cone);
+    }
+    out.visible = false;
+    group.add(out);
+    return out;
   }
 
   function zoneMesh(id, points, closed = false) {
@@ -195,27 +218,21 @@ export function createEpZones(helpers) {
       const loop = [atrial, av.clone(), hisSite.clone(), septalV, ventricular, apMid.clone(), atrial.clone().lerp(apMid, 0.2)];
       for (const kind of ['orthodromic', 'antidromic']) {
         const pts = kind === 'orthodromic' ? loop : [...loop].reverse();
-        const curve = new THREE.CatmullRomCurve3(pts);
-        const circuit = new THREE.Group();
-        circuit.name = `EP circuit: ${kind}`;
-        const colour = kind === 'orthodromic' ? 0x38bdf8 : 0xf97316;
-        // Drawn over the walls (no depth test): the circuit runs through tissue and must stay readable.
-        const overlay = (mat) => Object.assign(mat, { depthTest: false, depthWrite: false, transparent: true });
-        const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.016, 8, false), overlay(new THREE.MeshBasicMaterial({ color: colour, opacity: 0.9 })));
-        tube.renderOrder = 20;
-        circuit.add(tube);
-        for (const t of [0.15, 0.35, 0.55, 0.75, 0.92]) {
-          const cone = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 12), overlay(new THREE.MeshBasicMaterial({ color: colour, opacity: 1 })));
-          cone.renderOrder = 21;
-          cone.position.copy(curve.getPointAt(t));
-          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), curve.getTangentAt(t).normalize());
-          cone.name = `EP circuit arrow (${kind})`;
-          circuit.add(cone);
-        }
+        const circuit = arrowTube(`EP circuit: ${kind}`, pts, kind === 'orthodromic' ? 0x38bdf8 : 0xf97316, `EP circuit arrow (${kind})`);
         circuit.userData = { direction: kind, from: pts[0].toArray(), to: pts[pts.length - 1].toArray(), pathway: apMid.toArray(), avNode: av.toArray() };
-        circuit.visible = false;
-        group.add(circuit);
         circuits.set(kind, circuit);
+      }
+      // Antegrade routes of the atrial pacing laboratory's test beat: over the
+      // AV node (septal atrium, node, His, septal ventricle) and over the left
+      // free wall pathway (atrium, pathway, free wall ventricle).
+      const routes = {
+        avn: [av.clone().lerp(ra, 0.35), av.clone(), hisSite.clone(), septalV.clone()],
+        ap: [atrial.clone(), apMid.clone(), ventricular.clone()]
+      };
+      for (const [kind, pts] of Object.entries(routes)) {
+        const route = arrowTube(`EP pacing path: ${kind}`, pts, kind === 'avn' ? 0x22c55e : 0xf472b6, `EP pacing arrow (${kind})`);
+        route.userData = { route: kind, from: pts[0].toArray(), to: pts[pts.length - 1].toArray() };
+        paths.set(kind, route);
       }
     }
 
@@ -249,16 +266,18 @@ export function createEpZones(helpers) {
     if (rvMarker) rvMarker.visible = Boolean(active && zones.has(active));
     if (halo) halo.visible = Boolean(active && options.halo);
     for (const [kind, circuit] of circuits) circuit.visible = Boolean(active && options.circuit === kind);
+    for (const [kind, route] of paths) route.visible = options.paths.includes(kind);
   }
 
   /**
    * Show one zone (and the RV pacing reference), or null for none.
    * extra.halo shows the Halo catheter; extra.circuit ('orthodromic' |
-   * 'antidromic') draws the reentry direction over the left free wall pathway.
+   * 'antidromic') draws the reentry direction over the left free wall pathway;
+   * extra.paths (['avn', 'ap']) draws the pacing laboratory's antegrade routes.
    */
   function setZone(zoneId, extra = {}) {
     active = zoneId || null;
-    options = { halo: Boolean(extra.halo), circuit: extra.circuit || null };
+    options = { halo: Boolean(extra.halo), circuit: extra.circuit || null, paths: Array.isArray(extra.paths) ? [...extra.paths] : [] };
     init();
     if (initialized) applyZone();
   }
@@ -269,7 +288,7 @@ export function createEpZones(helpers) {
     labels,
     setZone,
     getZone: () => active,
-    getOptions: () => ({ ...options }),
+    getOptions: () => ({ ...options, paths: [...options.paths] }),
     isActive: (zoneId) => group.visible && (zoneId === '*' ? Boolean(active && zones.has(active))
       : zoneId === '#halo' ? Boolean(active && options.halo)
         : zoneId === active && zones.has(zoneId)),

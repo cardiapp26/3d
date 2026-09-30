@@ -140,6 +140,24 @@ export const EP_MANEUVERS = Object.freeze({
       pitfall: 'An AH jump alone is not proof of clinical AVNRT; dual physiology exists without tachycardia.'
     }
   },
+  'a-incremental': {
+    tr: {
+      name: 'Artan hızda atriyal pacing',
+      goal: 'AV düğümün hıza bağlı iletimini izlemek: AH\'nin atımdan atıma uzaması, Wenckebach siklusu; AP varsa preeksitasyonun hızla değişimi.',
+      precondition: 'Her uyarı atriyumu yakalamalı; siklus her adımda sabit tutulmalı.',
+      expected: 'Siklus kısaldıkça AH uzar; düğümün 1:1 sınırının altında AH ilerleyici uzayıp bir atım bloke olur. Decremental olmayan yolda uyarı-delta sabit kalır.',
+      inference: 'Wenckebach siklusu düğümün hıza bağlı iletimini gösterir; preeksitasyonun artması düğüm gecikmesinin yolu öne çıkardığını gösterir.',
+      pitfall: 'Tek bir Wenckebach siklusu tanı değildir; otonom tonus ve ilaçlar siklusu değiştirir. Dizi içinde yavaş yola geçiş de olabilir (çift yol Wenckebach\'ı).'
+    },
+    en: {
+      name: 'Incremental atrial pacing',
+      goal: 'Follow rate-dependent AV nodal conduction: beat-to-beat AH prolongation and the Wenckebach cycle length; with a pathway, how preexcitation changes with rate.',
+      precondition: 'Every stimulus must capture the atrium; hold each cycle length steady.',
+      expected: 'The AH lengthens as the cycle shortens; below the node\'s 1:1 limit the AH lengthens progressively until a beat blocks. Over a non-decremental pathway the stimulus-to-delta stays constant.',
+      inference: 'The Wenckebach cycle length reflects rate-dependent nodal conduction; rising preexcitation shows nodal delay unmasking the pathway.',
+      pitfall: 'One Wenckebach cycle length is not a diagnosis; autonomic tone and drugs shift it. A shift to the slow pathway can occur within the train (dual pathway Wenckebach).'
+    }
+  },
   'v-overdrive': {
     tr: {
       name: 'Ventriküler overdrive pacing',

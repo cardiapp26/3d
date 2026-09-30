@@ -849,6 +849,7 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .egm-scenarios{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
 .egm-scenarios button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:5px 7px;font-size:10.5px}
 .egm-scenarios button[aria-pressed=true]{background:#0e1815;color:#fcd34d;border-color:#0e1815}
+.egm-canvas[hidden],.ep-view[hidden],.ep-inspect[hidden],.ep-size[hidden]{display:none}
 .egm-canvas{display:block;width:100%;height:240px;border-radius:6px;background:#0e1815}
 .egm-canvas.is-large{height:420px}
 .ep-view{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 6px;font-size:10.5px}
@@ -860,23 +861,40 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .ep-channel-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:2px 8px;padding:6px;margin-top:4px;background:#f6f8f5;border:1px solid #e0e7dd;border-radius:4px;min-width:220px}
 .ep-channel{display:flex;gap:4px;align-items:center;font-size:10.5px;color:#3f5c4b}
 .ep-inspect{font-size:10px!important;color:#5f6f64!important;margin:3px 0!important;font-family:ui-monospace,monospace}
-.ep-sim{border:1px solid #d8e2d4;border-radius:6px;padding:8px 10px;margin:6px 0;background:#f8faf7}
-.ep-sim[hidden]{display:none}
-.ep-sim-title{font-size:12px;margin:0 0 6px}
-.ep-sim-field{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:10.5px;color:#4d5e52;margin:3px 0}
-.ep-sim-field[hidden]{display:none}
-.ep-sim-field select{margin:0;padding:2px 6px;width:auto;max-width:100%;font-size:10.5px}
-.ep-sim-field input[type=range]{flex:1 1 120px;min-width:100px;margin:0}
-.ep-sim-field output{font-family:ui-monospace,monospace;font-size:10.5px;color:#244f43;min-width:62px}
-.ep-sim-actions{display:flex;gap:6px;margin:6px 0}
-.ep-sim-deliver{border:0;background:#244f43;color:#fff;border-radius:4px;padding:5px 14px;font-size:11px;font-weight:600;min-height:32px}
-.ep-sim-retry{border:1px solid #cbd7c5;background:#fff;color:#3f5c4b;border-radius:4px;padding:5px 10px;font-size:11px;min-height:32px}
-.ep-sim-feedback{list-style:none;padding:0;margin:4px 0;display:flex;flex-wrap:wrap;gap:4px}
-.ep-sim-feedback li{font-size:10px;border-radius:10px;padding:2px 8px;background:#e7f0e9;color:#2d4a3e}
-.ep-sim-feedback li[data-state=false]{background:#f9ece6;color:#8a3b1c}
-.ep-sim-result{font-size:11px!important;font-weight:700;margin:4px 0!important;color:#2f5a73!important}
-.ep-sim-result[data-result=invalidCapture],.ep-sim-result[data-result=insufficientEvidence]{color:#8a3b1c!important}
-.ep-sim-reason{font-size:10.5px!important;line-height:1.5!important;color:#4d5e52!important}
+.ep-sim,.ep-pace{border:1px solid #d8e2d4;border-radius:6px;padding:8px 10px;margin:6px 0;background:#f8faf7}
+.ep-sim[hidden],.ep-pace[hidden]{display:none}
+.ep-sim-title,.ep-pace-title{font-size:12px;margin:0 0 6px}
+.ep-sim-field,.ep-pace-field{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:10.5px;color:#4d5e52;margin:3px 0}
+.ep-sim-field[hidden],.ep-pace-field[hidden]{display:none}
+.ep-sim-field select,.ep-pace-field select{margin:0;padding:2px 6px;width:auto;max-width:100%;font-size:10.5px}
+.ep-sim-field input[type=range],.ep-pace-field input[type=range]{flex:1 1 120px;min-width:100px;margin:0}
+.ep-sim-field output,.ep-pace-field output{font-family:ui-monospace,monospace;font-size:10.5px;color:#244f43;min-width:62px}
+.ep-sim-actions,.ep-pace-actions{display:flex;gap:6px;margin:6px 0}
+.ep-sim-deliver,.ep-pace-deliver{border:0;background:#244f43;color:#fff;border-radius:4px;padding:5px 14px;font-size:11px;font-weight:600;min-height:32px}
+.ep-sim-retry,.ep-pace-retry{border:1px solid #cbd7c5;background:#fff;color:#3f5c4b;border-radius:4px;padding:5px 10px;font-size:11px;min-height:32px}
+.ep-sim-feedback,.ep-pace-feedback{list-style:none;padding:0;margin:4px 0;display:flex;flex-wrap:wrap;gap:4px}
+.ep-sim-feedback li,.ep-pace-feedback li{font-size:10px;border-radius:10px;padding:2px 8px;background:#e7f0e9;color:#2d4a3e}
+.ep-sim-feedback li[data-state=false],.ep-pace-feedback li[data-state=false]{background:#f9ece6;color:#8a3b1c}
+.ep-sim-result,.ep-pace-result{font-size:11px!important;font-weight:700;margin:4px 0!important;color:#2f5a73!important}
+.ep-sim-result[data-result=invalidCapture],.ep-pace-result[data-result=invalidCapture],.ep-sim-result[data-result=insufficientEvidence],.ep-pace-result[data-result=insufficientEvidence]{color:#8a3b1c!important}
+.ep-sim-reason,.ep-pace-reason{font-size:10.5px!important;line-height:1.5!important;color:#4d5e52!important}
+/* Atrial pacing laboratory: route question, graded answer, evidence and limits. */
+.ep-pace-note{font-size:10px!important;line-height:1.5!important;color:#66786c!important;margin:2px 0 6px!important}
+.ep-pace-compare[data-jump=true]{color:#2f5a73!important;font-weight:600}
+.ep-pace-quiz{border-top:1px solid #dde6da;margin-top:8px;padding-top:6px}
+.ep-pace-quiz[hidden],.ep-pace-answers[hidden],.ep-pace-quiz [hidden]{display:none}
+.ep-pace-question{font-size:11px!important;font-weight:700;margin:0 0 2px!important;color:#24463b!important}
+.ep-pace-answers{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.ep-pace-answers button{border:1px solid #cbd7c5;background:#fff;color:#2d4a3e;border-radius:4px;padding:4px 8px;font-size:10.5px;min-height:30px}
+.ep-pace-answers button:hover{background:#eef4ec}
+.ep-pace-answers button[aria-pressed=true]{background:#244f43;border-color:#244f43;color:#fff}
+.ep-pace-grade{font-size:11px!important;font-weight:700;margin:4px 0!important}
+.ep-pace-grade[data-grade=correct]{color:#256b45!important}
+.ep-pace-grade[data-grade=partial]{color:#8a6a1c!important}
+.ep-pace-grade[data-grade=incorrect]{color:#8a3b1c!important}
+.ep-pace-subtitle{font-size:9.5px!important;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:#7a8b80!important;margin:6px 0 2px!important}
+.ep-pace-list{margin:0 0 4px;padding-left:16px;font-size:10.5px;line-height:1.5;color:#3f5347}
+.ep-pace-limits{border-top:1px dashed #dde6da;padding-top:4px;margin-top:6px!important}
 .ep-compare-card{margin:6px 0;overflow-x:auto}
 .ep-compare-title{font-size:11px!important;font-weight:700;margin:0 0 4px!important;color:#2d4a3e!important}
 .ep-compare-card table{border-collapse:collapse;font-size:10px;width:100%;min-width:320px}

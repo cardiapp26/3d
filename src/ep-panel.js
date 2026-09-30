@@ -3,6 +3,7 @@ import { EP_TEXT, EP_CASE_TEXT, EP_CLIP_TEXT, EP_MANEUVERS, EP_ZONE_TEXT, EP_CIT
 import { drawEgm, selectableChannels, timeAtX, eventsNear } from './ep-egm.js';
 import { activationSequence, drawActivationMap } from './ep-activation-map.js';
 import { createSimPanel } from './ep-sim-panel.js';
+import { createPacingPanel } from './ep-pacing-panel.js';
 import { createEpFullscreen } from './ep-fullscreen.js';
 
 /*
@@ -14,8 +15,9 @@ import { createEpFullscreen } from './ep-fullscreen.js';
  * timeline, so the heart clock draws no cursor over it. One view state
  * (visible channels, time zoom and pan, inspection cursor) is shared by the
  * panel canvas and the full-screen view and survives clip changes. In the
- * Maneuvers tab the learner can also deliver a maneuver (ep-sim-panel.js);
- * its recording replaces the clip until another clip is chosen.
+ * Maneuvers tab the learner can also deliver a maneuver (ep-sim-panel.js) or
+ * run the atrial pacing laboratory (ep-pacing-panel.js); the recording
+ * replaces the clip until another clip is chosen.
  */
 
 // Short button labels for the clip row (titles live in ep-case-text.js).
@@ -141,6 +143,12 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     getLang: () => lang,
     onRecording(recording) { state.sim = recording; view.cursorMs = null; render(); }
   });
+  const pacingPanel = createPacingPanel(doc, {
+    getLang: () => lang,
+    onRecording(recording) { state.sim = recording; view.cursorMs = null; render(); },
+    // Answering releases the 3D conduction routes of the test beat.
+    onAnswer() { render(); }
+  });
   const compareBox = el('div', 'ep-compare-card');
   const mapBox = el('div', 'ep-map');
   const mapTitle = el('p', 'ep-map-title');
@@ -162,7 +170,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
   const compare = el('p', 'ep-compare');
   const endpoint = el('p', 'ep-endpoint');
   const sources = el('p', 'ep-sources');
-  root.append(eyebrow, tabs, caseRow, title, row, simPanel.element, viewBar, canvas, inspect, measures, sizeBtn, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
+  root.append(eyebrow, tabs, caseRow, title, row, simPanel.element, pacingPanel.element, viewBar, canvas, inspect, measures, sizeBtn, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -179,12 +187,14 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
   const visibleChannels = (recording) => selectableChannels(recording)
     .filter((ch) => (view.overrides.has(ch) ? view.overrides.get(ch) : recording.channels.includes(ch)));
   const currentCase = () => EP_CASES.find((c) => c.id === state.caseId);
+  // A case belongs to a section when it has clips there; the Maneuvers tab also lists the pacing laboratory's cases.
+  const inSection = (caseId, section) => clipsOf(caseId, section).length > 0 || (section === 'maneuver' && pacingPanel.supports(caseId));
 
   function setSection(section) {
     if (!EP_SECTIONS.includes(section) || section === state.section) return;
     state.section = section;
-    if (!clipsOf(state.caseId, section).length) {
-      state.caseId = EP_CASES.find((c) => clipsOf(c.id, section).length)?.id || state.caseId;
+    if (!inSection(state.caseId, section)) {
+      state.caseId = EP_CASES.find((c) => inSection(c.id, section))?.id || state.caseId;
     }
     state.clipId = clipsOf(state.caseId, section)[0] || null;
     state.evidence = false;
@@ -227,7 +237,9 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
   // Channel chooser, zoom, pan and the inspection readout.
   function renderView() {
     const recording = current();
-    if (!recording) return;
+    // A pacing-only case in the Maneuvers tab has no clip until the first delivery: show no stale strip.
+    for (const node of [viewBar, canvas, inspect, sizeBtn]) node.hidden = !recording;
+    if (!recording) { lastDrawn = null; return; }
     const shown = new Set(visibleChannels(recording));
     channelSummary.textContent = `${lang === 'en' ? 'Channels' : 'Kanallar'} (${shown.size})`;
     channelList.replaceChildren(...selectableChannels(recording).map((ch) => {
@@ -272,7 +284,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
       button.setAttribute('aria-selected', String(EP_SECTIONS[i] === state.section));
     });
     // In diagnosis the case names stay hidden (numbered cases) until the evidence view.
-    const cases = EP_CASES.filter((c) => clipsOf(c.id, state.section).length);
+    const cases = EP_CASES.filter((c) => inSection(c.id, state.section));
     caseName.textContent = t.caseLabel;
     caseSelect.replaceChildren(...cases.map((c, i) => {
       const option = doc.createElement('option');
@@ -303,9 +315,14 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     const simName = state.sim ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
     const clipTitle = clipText?.title || '';
     // Do not repeat the case name when the clip title already starts with it.
-    title.textContent = state.sim ? `${caseText.name}: ${simName}` : revealed ? (clipTitle.startsWith(caseText.name) ? clipTitle : `${caseText.name}: ${clipTitle}`) : t.neutralTitle;
+    title.textContent = state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t.neutralTitle;
     simPanel.setCase(state.caseId);
     simPanel.element.hidden = state.section !== 'maneuver' || !simPanel.supports(state.caseId);
+    pacingPanel.setCase(state.caseId);
+    pacingPanel.element.hidden = state.section !== 'maneuver' || !pacingPanel.supports(state.caseId);
+    // Each panel shows its result only while its own recording is on the strip.
+    simPanel.setActive(Boolean(state.sim) && state.sim === simPanel.getLast());
+    pacingPanel.setActive(Boolean(state.sim) && state.sim === pacingPanel.getLast());
     sizeBtn.textContent = state.large ? (lang === 'en' ? 'Shrink' : 'Küçült') : (lang === 'en' ? 'Enlarge' : 'Büyüt');
     canvas.classList?.toggle?.('is-large', state.large);
     evidenceBtn.hidden = !diagnosis;
@@ -341,7 +358,10 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     zoneLine.textContent = zoneText ? `${lang === 'en' ? 'Zone' : 'Zon'}: ${pick(zoneText, lang).name}. ${pick(zoneText, lang).risk}` : '';
     zoneLine.hidden = !zoneLine.textContent;
     const halo = Boolean(recording && (recording.catheters || []).includes('halo'));
-    if (typeof onZone === 'function') onZone(zoneId && EP_ZONE_TEXT[zoneId] ? zoneId : null, { halo: Boolean(zoneId) && halo, circuit: revealed ? recording?.circuit || null : null });
+    // A pacing laboratory recording shows its conduction routes only once the learner answered.
+    const pacing = state.sim?.lab === 'pacing' ? pacingPanel.getScene() : null;
+    const circuit = state.sim?.lab === 'pacing' ? pacing?.circuit || null : revealed ? recording?.circuit || null : null;
+    if (typeof onZone === 'function') onZone(zoneId && EP_ZONE_TEXT[zoneId] ? zoneId : null, { halo: Boolean(zoneId) && halo, circuit, paths: pacing?.paths || [] });
     // Annotated comparison card (focal AT against AVNRT/AVRT, antidromic AVRT against VT).
     const cmp = revealed && !state.sim && EP_COMPARE[state.clipId];
     compareBox.replaceChildren();
@@ -384,6 +404,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, sim: state.sim ? state.sim.choices : null }),
     getRecording: () => current(),
     sim: simPanel,
+    pacing: pacingPanel,
     fullscreen: () => fullscreen(),
     /** Zone of the active case; null while the diagnosis view is still neutral. */
     getZone: () => (state.section === 'diagnosis' && !state.evidence ? null : currentCase()?.pathwayZone || null),

@@ -25,8 +25,8 @@ document.documentElement.lang = getContentLanguage();
 const MODE_GROUPS = [
   ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'defects']],
   ['modeGroupPhysiology', ['cath', 'exam']],
-  ['modeGroupIntervention', ['angiography', 'transseptal']],
-  ['modeGroupEp', ['ablation', 'pacemaker', 'bachmann']],
+  ['modeGroupIntervention', ['angiography']],
+  ['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']],
   ['modeGroupImaging', ['echo', 'tee']]
 ];
 // TTE and TEE are one echo module; the mode fixes the modality.

@@ -24,6 +24,7 @@ export function createSimPanel(doc, { getLang, onRecording }) {
   let caseId = 'avnrt-typical';
   let choices = defaultChoices(caseId);
   let last = null;
+  let active = true;   // false while another recording (clip, pacing laboratory) is on the strip
 
   const root = el('section', 'ep-sim', { 'data-ep-sim': '' });
   const heading = el('h4', 'ep-sim-title');
@@ -96,8 +97,8 @@ export function createSimPanel(doc, { getLang, onRecording }) {
     feedback.replaceChildren();
     result.textContent = '';
     reason.textContent = '';
-    result.hidden = reason.hidden = feedback.hidden = !last;
-    if (!last) return;
+    result.hidden = reason.hidden = feedback.hidden = !last || !active;
+    if (!last || !active) return;
     for (const [key, value] of Object.entries(last.feedback)) {
       const li = el('li');
       li.textContent = `${t.feedback[key]}: ${value ? t.feedback.yes : t.feedback.no}`;
@@ -124,6 +125,8 @@ export function createSimPanel(doc, { getLang, onRecording }) {
       render();
     },
     render,
+    /** Show the feedback only while this panel's recording is on the strip. */
+    setActive(flag) { if (Boolean(flag) !== active) { active = Boolean(flag); render(); } },
     getChoices: () => ({ ...choices }),
     getLast: () => last,
     supports: (id) => Boolean(SIM_CASES[id])

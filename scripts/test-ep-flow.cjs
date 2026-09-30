@@ -174,11 +174,61 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     }
     await page.setViewportSize({ width: 1300, height: 900 });
 
+    // Atrial pacing laboratory (EasyECG report phase A): the manifest pathway case is listed in the
+    // Maneuvers tab, the input changes the recording, the route question grades the test beat, and
+    // the 3D routes appear only after the answer; a non-capturing S2 asks no route question.
+    await page.locator('[data-ep-section=maneuver]').click();
+    await page.locator('[data-ep-case]').selectOption('ap-left-manifest');
+    assert.equal(await page.locator('[data-ep-pace]').isVisible(), true, 'pacing laboratory in the Maneuvers tab');
+    const pace = (key, value) => page.evaluate(([key, value]) => { const el = document.querySelector(`[data-ep-pace-control="${key}"]`); el.value = String(value); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); }, [key, value]);
+    await pace('site', 'cs-dist');
+    await page.locator('[data-ep-pace-action=deliver]').click();
+    const paced = await page.evaluate(() => window.cardiaEp.getRecording());
+    assert.equal(paced.lab, 'pacing');
+    assert.equal(paced.test.answer, 'ap', 'distal CS pacing: full preexcitation');
+    assert.deepEqual(await page.evaluate(() => window.heart.getEpZoneOptions().paths), [], '3D routes hidden before the answer');
+    await page.locator('[data-ep-pace-answer=ap]').click();
+    assert.equal(await page.locator('.ep-pace-grade').getAttribute('data-grade'), 'correct');
+    assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('EP pacing path: ap').visible), true, 'pathway route drawn after the answer');
+    await pace('site', 'hra');
+    await pace('s2', 260);
+    await page.locator('[data-ep-pace-action=deliver]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().reason), 'apRefractoryEcho', 'S2 below the pathway refractory period');
+    await page.locator('[data-ep-pace-answer=fusion]').click();
+    assert.equal(await page.locator('.ep-pace-grade').getAttribute('data-grade'), 'incorrect');
+    assert.deepEqual(await page.evaluate(() => window.heart.getEpZoneOptions()), { halo: false, circuit: 'orthodromic', paths: ['avn'] }, 'nodal route and orthodromic echo circuit');
+    await pace('s2', 190);
+    await page.locator('[data-ep-pace-action=deliver]').click();
+    assert.equal(await page.locator('.ep-pace-result').getAttribute('data-result'), 'invalidCapture');
+    assert.equal(await page.locator('.ep-pace-answers').isHidden(), true, 'no route question without capture');
+    await page.locator('[data-ep-case]').selectOption('avnrt-typical');
+    await pace('s2', 310);
+    await page.locator('[data-ep-pace-action=deliver]').click();
+    await pace('s2', 300);
+    await page.locator('[data-ep-pace-action=deliver]').click();
+    assert.equal(await page.locator('.ep-pace-compare').getAttribute('data-jump'), 'true', 'AH jump measured against the previous delivery');
+    await page.locator('[data-ep-pace-answer=avn-slow]').click();
+    // Another recording on the strip hides the laboratory's result and question (no stale answer).
+    await page.locator('#egm-panel [data-egm-scenario]').first().click();
+    assert.equal(await page.locator('.ep-pace-quiz').isHidden(), true, 'quiz hidden while a clip is shown');
+    assert.deepEqual(await page.evaluate(() => window.heart.getEpZoneOptions().paths), [], 'no pacing routes for a clip');
+    await page.locator('[data-ep-pace-control=mode]').selectOption('incremental');
+    await page.locator('[data-ep-pace-action=deliver]').click();
+    assert.equal(await page.locator('.ep-pace-compare').isHidden(), true, 'no stale comparison after an incremental delivery');
+    // A pacing-only case entered from Diagnosis shows no stale strip before the first delivery.
+    await page.locator('[data-ep-section=diagnosis]').click();
+    await page.locator('[data-ep-case]').selectOption('ap-left-manifest');
+    await page.locator('[data-ep-section=maneuver]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getState().caseId), 'ap-left-manifest', 'case kept in the Maneuvers tab');
+    assert.equal(await page.locator('#egm-panel .egm-canvas').isHidden(), true, 'no strip before a delivery');
+    await page.locator('[data-ep-pace-action=deliver]').click();
+    assert.equal(await page.locator('#egm-panel .egm-canvas').isVisible(), true, 'strip after the delivery');
+
     // Leaving the mode clears the zone and the circuit.
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.getEpZone()), null);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape');
+    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape, atrial pacing laboratory');
   } finally {
     await browser.close();
   }
