@@ -12,18 +12,19 @@ const previous = getContentLanguage();
 
 setContentLanguage('en');
 assert.equal(getUiModes().length, 11);
+// Listed (and numbered) in the order the grouped mode menu shows them.
 assert.deepEqual(getUiModes().map(([id]) => id), [
   'anatomy',
+  'atria',
+  'ra',
+  'defects',
   'angiography',
   'ablation',
   'pacemaker',
   'transseptal',
   'bachmann',
   'cath',
-  'exam',
-  'atria',
-  'ra',
-  'defects'
+  'exam'
 ]);
 assert.match(getViewerTitle('angiography'), /projection/i);
 assert.match(getAngioDescription('spider'), /spider/i);

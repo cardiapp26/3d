@@ -57,8 +57,9 @@ const assert = require('node:assert/strict');
 
     // Test RA mode
     await page.locator('[data-mode=ra]').click();
-    assert.deepEqual(await visible(), ['ra']);
-    assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 1);
+    // The RA and its inner landmark, the crista terminalis (report section 13).
+    assert.deepEqual(await visible(), ['crista-terminalis', 'ra']);
+    assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 2);
     assert.equal(await page.locator('#structure-select').inputValue(), 'ra');
     assert.equal(await page.locator('#ra-tools').isVisible(), true);
     assert.equal(await page.locator('#atria-tools').isVisible(), false);

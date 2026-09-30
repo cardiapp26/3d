@@ -166,7 +166,8 @@ export function addLaaMarker({ meshVertices, getMeshes = () => [], register, par
   }
   const mesh = new THREE.Mesh(
     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points, true), 128, RING_TUBE, 8, true),
-    new THREE.MeshStandardMaterial({ color: 0xd9a066, roughness: 0.4, metalness: 0.1, side: THREE.DoubleSide })
+    // Teal, so it is never mistaken for the amber Bachmann band (report section 13).
+    new THREE.MeshStandardMaterial({ color: 0x1fb5a8, roughness: 0.4, metalness: 0.1, side: THREE.DoubleSide })
   );
   mesh.name = 'Left atrial appendage orifice (schematic ring)';
   mesh.userData = {

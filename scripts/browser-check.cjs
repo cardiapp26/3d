@@ -607,7 +607,7 @@ const fs = require('node:fs');
     assert.ok(Math.abs(panelBox.width - 390) < 2, `C-Arm bottom drawer spans mobile width (actual: ${panelBox.width})`);
     await page.setViewportSize({ width: 1440, height: 1050 });
 
-    // 12. Educational modes: Angiography (03), Ablation anatomy (04), Pacemaker leads (05)
+    // 12. Educational modes: Angiography (05), Ablation anatomy (06), Pacemaker leads (07)
     // Mode 03 Angiography
     await page.locator('[data-mode="angiography"]').click();
     assert.equal(await page.locator('#carm-panel').evaluate(el => !el.classList.contains('collapsed')), true, 'C-Arm opens in angiography mode');

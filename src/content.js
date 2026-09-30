@@ -51,6 +51,19 @@ export const rawStructures = {
     },
     source: `${atlas}, PDF pp. 12–16; ${av}`
   },
+  'crista-terminalis': {
+    tr: {
+      title: 'Krista terminalis (terminal krest)',
+      description: 'Sağ atriyum iç yüzünde, düz duvarlı venöz sinüsü (arkada) pektinat kaslı bölgeden ve apendiksten (önde) ayıran kas sırtı. SVC ağzının önünde septum tarafında başlar, ağzın ön-lateralinden kıvrılır, lateral duvar boyunca iner ve IVC ağzının önünde Östaki sırtına doğru incelir. Dış yüzdeki karşılığı sulcus terminalistir; sinüs düğümü üst ucunda, bu olukta epikarda yakın yerleşir. Sırt, atlas RA ağının iç yüzüne ölçülen işaretlerden (SVC ağzı, lateral duvar, IVC ağzı) oturtulmuş şematik bir çizimdir; atlasta ayrı krista düğümü yoktur.',
+      clinical: 'Fokal atriyal taşikardilerin en sık kaynağıdır (kristal taşikardi). Tipik atriyal flutterda krista boyunca ileti bloğu, halkanın arka sınırını oluşturur; CTI ablasyonu kristanın alt ucu ile triküspit anulusu arasındaki isthmusa yapılır. Sinüs düğümü modifikasyonunda ve uygunsuz sinüs taşikardisinde üst uç hedeflenir; frenik sinir lateral duvarda yakındır.'
+    },
+    en: {
+      title: 'Crista terminalis (terminal crest)',
+      description: 'The muscular ridge on the right atrial endocardium separating the smooth-walled venous sinus (posterior) from the pectinate region and the appendage (anterior). It starts in front of the superior caval orifice on the septal side, arches anterolaterally around it, descends along the lateral wall and tapers in front of the inferior caval orifice toward the Eustachian ridge. Its external counterpart is the sulcus terminalis; the sinus node lies near the epicardium in that groove at the upper end. The ridge is a schematic drawing fitted to the inner face of the atlas RA mesh from measured landmarks (SVC orifice, lateral wall, IVC orifice); the atlas has no separate crista node.',
+      clinical: 'The commonest source of focal atrial tachycardia (cristal tachycardia). In typical atrial flutter, conduction block along the crista forms the posterior boundary of the circuit; CTI ablation targets the isthmus between the lower crista and the tricuspid annulus. The upper end is targeted in sinus node modification for inappropriate sinus tachycardia; the phrenic nerve runs close to the lateral wall.'
+    },
+    source: 'Ho and Sánchez-Quintana, Anatomical basis for the cardiac interventional electrophysiologist (PMC4668306); schematic ridge on the measured atlas RA'
+  },
   la: {
     tr: {
       title: 'Sol atriyum • LA',
@@ -1312,18 +1325,18 @@ export const uiTranslations = {
     workspaceMuted: 'Yapıyı keşfedin. İlişkileri anlayın.',
     modes: [
       ['anatomy', '01', 'Genel anatomi'],
-      ['angiography', '02', 'Anjiyografi'],
-      ['ablation', '03', 'Ablasyon anatomisi'],
-      ['pacemaker', '04', 'Kalp pili elektrotları'],
-      ['transseptal', '05', 'Transseptal & septostomi'],
-      ['bachmann', '06', 'Bachmann demeti & pacing'],
-      ['cath', '07', 'Kateterizasyon ve hemodinami'],
-      ['exam', '08', 'Fizik muayene'],
-      ['atria', '09', 'Sol atriyum & LAA'],
-      ['ra', '10', 'Sağ atriyum'],
-      ['defects', '11', 'ASD & VSD']
+      ['atria', '02', 'Sol atriyum & LAA'],
+      ['ra', '03', 'Sağ atriyum'],
+      ['defects', '04', 'ASD & VSD'],
+      ['angiography', '05', 'Anjiyografi'],
+      ['ablation', '06', 'Ablasyon anatomisi'],
+      ['pacemaker', '07', 'Kalp pili elektrotları'],
+      ['transseptal', '08', 'Transseptal & septostomi'],
+      ['bachmann', '09', 'Bachmann demeti & pacing'],
+      ['cath', '10', 'Kateterizasyon ve hemodinami'],
+      ['exam', '11', 'Fizik muayene']
     ],
-    atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; sarı halka ostiyumu işaretler.',
+    atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; turkuaz halka ostiyumu işaretler (Bachmann demeti değildir, bu modda gizlidir).',
     atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
     raNote: 'Sağ atriyumun düz duvarlı venöz bölümünü, pektinat kaslarını ve triküspit kapakla ilişkisini inceleyin.',
     raFocusRa: 'Sağ atriyum',
@@ -1353,6 +1366,7 @@ export const uiTranslations = {
     explorerPrefix: 'İNCELEME',
     viewerHint: 'Sürükle: döndür · Kaydır: yakınlaştır · Tıkla: incele',
     modeShortcut: 'Öğrenme modu kısayolları: 1–9 (01–09 numaralı modlar)',
+    sceneSelected: 'Seçili',
     flowShortcut: 'Kan akışını aç veya kapat',
     carmTitle: 'C-ARM GANTRY',
     carmPill: 'ANJİYOGRAFİ',
@@ -1443,18 +1457,18 @@ export const uiTranslations = {
     workspaceMuted: 'Explore structure. Understand relationships.',
     modes: [
       ['anatomy', '01', 'Gross anatomy'],
-      ['angiography', '02', 'Angiography'],
-      ['ablation', '03', 'Ablation anatomy'],
-      ['pacemaker', '04', 'Pacemaker leads'],
-      ['transseptal', '05', 'Transseptal & septostomy'],
-      ['bachmann', '06', 'Bachmann bundle & pacing'],
-      ['cath', '07', 'Catheterization and hemodynamics'],
-      ['exam', '08', 'Physical examination'],
-      ['atria', '09', 'Left atrium & LAA'],
-      ['ra', '10', 'Right atrium'],
-      ['defects', '11', 'ASD & VSD']
+      ['atria', '02', 'Left atrium & LAA'],
+      ['ra', '03', 'Right atrium'],
+      ['defects', '04', 'ASD & VSD'],
+      ['angiography', '05', 'Angiography'],
+      ['ablation', '06', 'Ablation anatomy'],
+      ['pacemaker', '07', 'Pacemaker leads'],
+      ['transseptal', '08', 'Transseptal & septostomy'],
+      ['bachmann', '09', 'Bachmann bundle & pacing'],
+      ['cath', '10', 'Catheterization and hemodynamics'],
+      ['exam', '11', 'Physical examination']
     ],
-    atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the yellow ring marks its orifice.',
+    atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the teal ring marks its orifice (it is not Bachmann\'s bundle, which is hidden in this mode).',
     atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',
     raNote: 'Explore the right atrium’s smooth-walled venous component, pectinate muscles, and relationship to the tricuspid valve.',
     raFocusRa: 'Right atrium',
@@ -1484,6 +1498,7 @@ export const uiTranslations = {
     explorerPrefix: 'EXPLORER',
     viewerHint: 'Drag to rotate · Scroll to zoom · Click to inspect',
     modeShortcut: 'Learning mode shortcuts: 1–9 (modes 01–09)',
+    sceneSelected: 'Selected',
     flowShortcut: 'Toggle blood flow',
     carmTitle: 'C-ARM GANTRY',
     carmPill: 'ANGIOGRAPHY',

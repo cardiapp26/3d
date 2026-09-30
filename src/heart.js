@@ -9,7 +9,7 @@ import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createMitralScallops } from './mitral-scallops.js';
 import { createAnnuli } from './annuli.js';
 import { addSchematicAvLeaflets } from './schematic-leaflets.js';
-import { addLaaMarker, smoothLaNormals } from './la-landmarks.js';
+import { addLaaMarker, smoothLaNormals, laaOrifice } from './la-landmarks.js';
 import { createAuscultationMarkers } from './auscultation-points.js';
 import { createThorax } from './thorax.js';
 import { createTransseptal } from './transseptal.js';
@@ -19,8 +19,11 @@ import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
 import { createOverlayFollow } from './overlay-follow.js';
+import { createSceneLabels } from './scene-labels.js';
+import { separateAtriaFromAorta } from './transverse-sinus.js';
+import { createCristaTerminalis } from './crista-terminalis.js';
 import { measuredFlowRoutes } from './flow-routes.js';
-import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd } from './mesh-utils.js';
+import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd, inferiorCavalOstium } from './mesh-utils.js';
 import { measureLeftBundle, measureRightBundle } from './conduction-paths.js';
 import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
 
@@ -98,11 +101,13 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function sourceCenter(id){const list=meshMap.get(id)||[];const box=new THREE.Box3();list.forEach(m=>box.expandByObject(m));if(id==='ivc')box.min.y=Math.max(box.min.y,-ivcPlane.constant);return box.isEmpty()?null:box.getCenter(new THREE.Vector3());}
   let mitralFocus=false;
   const mitralScallops=createMitralScallops(container,id=>meshMap.get(id)||[]);
+  const sceneLabels=createSceneLabels(container);
   let modelReady=false;
   const isReady=()=>modelReady;
   const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
   heart.add(epLandmarks.group);
   let bachmannTarget = null;
+  const atlasAdjustments = {};
   const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getBachmannTarget: () => bachmannTarget, isReady });
   heart.add(pacemakerLeads.group);
   function computeVesselTrims(){
@@ -143,6 +148,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   heart.add(septalDefects.group);
   const auscultation = createAuscultationMarkers({ sourceCenter, meshVertices });
   heart.add(auscultation.group);
+  // RA endocardial pacing target for the Bachmann lesson: its own marker,
+  // never part of the epicardial band (report section 13).
+  const bachmannTargetGroup = new THREE.Group();
+  bachmannTargetGroup.name = 'Bachmann pacing target';
+  bachmannTargetGroup.visible = false;
+  heart.add(bachmannTargetGroup);
   const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getVesselTrim:(name)=>vesselTrims.get(name)||null, isReady });
   heart.add(cathLab.group);
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
@@ -162,7 +173,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         if(!ids.includes(m.userData.id)){m.visible=false;continue;}
       }
       if(mode==='atria'&&!['la','laa'].includes(m.userData.id)){m.visible=false;continue;}
-      if(mode==='ra'&&m.userData.id!=='ra'){m.visible=false;continue;}
+      if(mode==='ra'&&!['ra','crista-terminalis'].includes(m.userData.id)){m.visible=false;continue;}
       if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
       const {id,layer,system:branch}=m.userData;
       if (mode === 'angiography' && m.userData.veinGroup === 'cardiac-veins') {
@@ -186,7 +197,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers'||branch==='veins'||layer==='vessels';
       const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
       m.visible=(mode==='atria'||mode==='ra'||mode==='defects')||visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
-      const tissue=layer==='chambers';
+      // The crista is a ridge inside the RA: it stays opaque when the walls are faded.
+      const tissue=layer==='chambers'&&id!=='crista-terminalis';
       // Catheters run inside these vessels in the transseptal lesson; keep them
       // see-through. The pulmonary trunk and bifurcation sit on the LA roof in
       // front of the fossa in LAO/RAO, so they are faded there too.
@@ -297,15 +309,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const mesh=new THREE.Mesh(geometry,material(part.color));mesh.name=part.sourceName;mesh.userData={...part, provenance: 'atlas'};layers[part.layer].add(mesh);register(mesh,part.id);
     }
     disposeScene(gltf.scene);decoder.dispose();
+    // Transverse sinus: atria no longer enter the aortic root (before any measurement).
+    atlasAdjustments.transverseSinus = separateAtriaFromAorta([...(meshMap.get('ra')||[]), ...(meshMap.get('la')||[])], meshMap.get('aorta')||[]);
     const lmCenter=sourceCenter('lm'),rccCenter=sourceCenter('rcc');
     rootHeight=Math.max(lmCenter?.y??.6,rccCenter?.y??.6)+.13;rootPlane.constant=rootHeight;
     ivcPlane.constant=-(chamberBounds.min.y-center.y)*scale+.45;
     initializeWallPlanes();
     seatCoronarySinus();
+    buildCristaTerminalis();
     buildConductionSystem();
     annuli.build();
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
-    addLaaMarker({ meshVertices, getMeshes: id => meshMap.get(id) || [], register, parent: layers.chambers });
+    const laaRing = addLaaMarker({ meshVertices, getMeshes: id => meshMap.get(id) || [], register, parent: layers.chambers });
+    sceneLabels.add({ mesh: laaRing, index: 0, tone: 'laa', text: { tr: 'LAA ostiyum işareti', en: 'LAA orifice marker' }, when: () => ['atria', 'bachmann'].includes(mode) && !fluoroscopy });
     mitralScallops.build();
     thorax.build();
     computeVesselTrims();
@@ -324,7 +340,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     idle(() => { channels?.prepare(); const step = () => { if (!disposed && !overlayFollow?.prepare(channels?.fieldContext())) idle(step); }; idle(step); });
     // Lesson overlays, devices and flow ride the beating heart (phase D).
     // Before the first beat (or with the heart at rest) there is no field.
-    overlayFollow = createOverlayFollow({ getContext: () => channels?.isDeformed() ? channels.fieldContext() : null, roots: () => [epLandmarks.group, pacemakerLeads.group, transseptal.group, cathLab.group] });
+    overlayFollow = createOverlayFollow({ getContext: () => channels?.isDeformed() ? channels.fieldContext() : null, roots: () => [epLandmarks.group, pacemakerLeads.group, transseptal.group, cathLab.group, bachmannTargetGroup] });
     bloodFlow = createBloodFlow({ resolveRoutes: () => withRestPose(() => measuredFlowRoutes({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], getVesselTrim: name => vesselTrims.get(name) || null })) });
     bloodFlow.setField(overlayFollow.points);
     layers.flow.add(bloodFlow.group);
@@ -332,6 +348,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     container.dataset.meshCount=String(found.length);
     return {count:found.length,normalization:{center:center.toArray(),scale},source:ATLAS_URL};
   }).catch(error=>{loading.textContent='Anatomical asset could not load. Reload to retry; no substitute geometry is shown.';decoder.dispose();throw error;});
+
+  // Crista terminalis on the RA endocardium; its sulcus guides Bachmann's inferior right limb.
+  let cristaSulcus = null;
+  function buildCristaTerminalis() {
+    const crista = createCristaTerminalis({ raMeshes: meshMap.get('ra') || [], svcMeshes: meshMap.get('svc') || [], ivcOstium: inferiorCavalOstium(meshMap.get('ra')?.[0]) });
+    const mesh = new THREE.Mesh(crista.geometry, material(0xa3443d));
+    mesh.name = 'Crista terminalis (schematic ridge on the RA endocardium)';
+    mesh.userData = { id: 'crista-terminalis', layer: 'chambers', provenance: 'schematic', sourceName: mesh.name, path: crista.path.map(p => p.toArray()), landmarks: Object.fromEntries(Object.entries(crista.landmarks).map(([k, v]) => [k, v.toArray()])), sulcus: crista.sulcus.toArray() };
+    layers.chambers.add(mesh);
+    register(mesh, 'crista-terminalis');
+    cristaSulcus = crista.sulcus;
+    sceneLabels.add({ mesh, tone: 'crista', text: { tr: 'Krista terminalis', en: 'Crista terminalis' }, when: () => mode === 'ra' && !fluoroscopy });
+  }
 
   function buildConductionSystem() {
     const conductionGroup = layers.conduction;
@@ -412,16 +441,22 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       avCenter.clone()
     ], 0.016, 'sa', 'Anterior internodal tract');
 
-    const bachmann = createBachmannGeometry(meshVertices);
+    const bachmann = createBachmannGeometry(id => meshMap.get(id) || [], laaOrifice(meshVertices('la')), { saNode: saCenter, cristaSulcus });
     bachmannTarget = bachmann.target;
+    const targetMarker = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshStandardMaterial({ color: 0xc03bb8, emissive: 0x5a1456, roughness: 0.4 }));
+    targetMarker.position.copy(bachmann.target);
+    targetMarker.name = 'Bachmann-region pacing target (RA endocardium, schematic)';
+    bachmannTargetGroup.add(targetMarker);
+    sceneLabels.add({ mesh: targetMarker, tone: 'target', text: { tr: 'Pacing hedefi (RA endokardı)', en: 'Pacing target (RA endocardium)' }, when: () => mode === 'bachmann' && !fluoroscopy });
     const bandMaterial = matPath.clone();
     bandMaterial.color.setHex(0xf6b64b);
     bandMaterial.side = THREE.DoubleSide;
     const band = new THREE.Mesh(bachmann.geometry, bandMaterial);
     band.name = "Bachmann's bundle (schematic atrial roof band)";
-    band.userData = {id:'bachmann', layer:'conduction', provenance:'schematic', bandAnchor:bachmann.bandAnchor.toArray(), pacingTarget:bachmann.target.toArray()};
+    band.userData = {id:'bachmann', layer:'conduction', provenance:'schematic', bandAnchor:bachmann.bandAnchor.toArray(), pacingTarget:bachmann.target.toArray(), landmarks:Object.fromEntries(Object.entries(bachmann.landmarks).filter(([,v])=>v).map(([k,v])=>[k,v.toArray()])), path:bachmann.path.map(p=>p.toArray()), inferiorLimb:bachmann.inferiorLimb.map(p=>p.toArray())};
     conductionGroup.add(band);
     register(band, 'bachmann');
+    sceneLabels.add({ mesh: band, tone: 'bachmann', text: { tr: 'Bachmann demeti (epikardiyal)', en: "Bachmann's bundle (epicardial)" }, when: () => mode === 'bachmann' && !fluoroscopy });
 
     makeTract([
       saCenter.clone(),
@@ -734,6 +769,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     overlayFollow?.sync();
     septalDefects.updateLabels(camera);
     mitralScallops.update(camera,mitralFocus&&!fluoroscopy&&mode==='anatomy');
+    sceneLabels.update(camera);
     if(!fluoroscopy || mode==='micro'){renderer.render(scene,camera);return;}
     const originals=[];
     heart.traverseVisible(object=>{
@@ -813,6 +849,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
+      bachmannTargetGroup.visible=name==='bachmann';
       transseptal.setVisible(name==='transseptal');
       cathLab.setVisible(name==='cath');
       withRestPose(() => auscultation.setVisible(name==='exam'));
@@ -856,6 +893,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     getCycleState(){return cardiacCycle.getCycleState();},
     // Diagnostics for the beat tests: overlays currently bound to the beating heart.
     overlayFollowCount(){return overlayFollow?.recordCount() ?? 0;},
+    atlasAdjustments(){return {...atlasAdjustments};},
     subscribeCycle(listener){return cardiacCycle.subscribeCycle(listener);},
     setFlowVisible(value){
       visibility.flow = Boolean(value);
@@ -903,6 +941,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       epLandmarks.setVisible(false);
       pacemakerLeads.setVisible(false);
+      bachmannTargetGroup.visible=false;
       transseptal.setVisible(false);
       cathLab.setVisible(false);
       rootWindow=false;
@@ -920,6 +959,6 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       requestRender();
     },
     getState(){return {defects:septalDefects.getState(),mitralFocus,mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
-    dispose(){septalDefects.dispose();mitralScallops.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
+    dispose(){septalDefects.dispose();mitralScallops.dispose();sceneLabels.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

@@ -17,34 +17,25 @@ import {initUpdater, updateUpdaterLanguage} from './updater.js';
 
 document.documentElement.lang = getContentLanguage();
 
-const modes = [
-  ['anatomy', '01'],
-  ['angiography', '02'],
-  ['ablation', '03'],
-  ['pacemaker', '04'],
-  ['transseptal', '05'],
-  ['bachmann', '06'],
-  ['cath', '07'],
-  ['exam', '08'],
-  ['atria', '09'],
-  ['ra', '10'],
-  ['defects', '11']
+// Mode list grouped by learning domain. Mode numbers follow this displayed
+// order (content.js carries the same numbers); keys 1-9 open modes 01-09.
+const MODE_GROUPS = [
+  ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'defects']],
+  ['modeGroupIntervention', ['angiography', 'ablation', 'pacemaker', 'transseptal', 'bachmann']],
+  ['modeGroupPhysiology', ['cath', 'exam']]
 ];
+const modes = MODE_GROUPS.flatMap(([, ids]) => ids).map((id, i) => [id, String(i + 1).padStart(2, '0')]);
+const MODE_KEYS = 9;
 
 // Right-panel tabs and phone sheets; created once the panels exist.
 let panelShell = null;
 // Explore / Learn / Test yourself loop; created with the panel shell.
 let practice = null;
 
-// Mode list grouped by learning domain; numbers and shortcuts are unchanged.
-const MODE_GROUPS = [
-  ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'defects']],
-  ['modeGroupIntervention', ['angiography', 'ablation', 'pacemaker', 'transseptal', 'bachmann']],
-  ['modeGroupPhysiology', ['cath', 'exam']]
-];
 function renderModeNav() {
   const byId = new Map(getUiModes().map(entry => [entry[0], entry]));
-  const button = ([id, n, t]) => `<button class="mode ${id === 'anatomy' ? 'active' : ''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> <kbd class="mode-kbd">${n.replace(/^0/, '')}</kbd><b>↗</b></button>`;
+  // Only modes 01-09 have a single-key shortcut.
+  const button = ([id, n, t]) => `<button class="mode ${id === 'anatomy' ? 'active' : ''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> ${Number(n) <= MODE_KEYS ? `<kbd class="mode-kbd">${Number(n)}</kbd>` : ''}<b>↗</b></button>`;
   const grouped = new Set(MODE_GROUPS.flatMap(([, ids]) => ids));
   const rest = getUiModes().filter(([id]) => !grouped.has(id));
   return MODE_GROUPS.map(([key, ids]) => `<div class="mode-group-label" data-i18n="${key}">${getTranslation(key)}</div>${ids.filter(id => byId.has(id)).map(id => button(byId.get(id))).join('')}`).join('') + rest.map(button).join('');
@@ -138,6 +129,7 @@ app.innerHTML = `
     <div id="practice-banner" class="practice-banner" hidden></div>
     <div class="viewer-top">
       <div class="top-badges">
+        <span id="scene-context" class="scene-context" aria-live="polite"></span>
         <span id="hover-badge" class="hover-badge" hidden></span>
       </div>
     </div>
@@ -392,7 +384,7 @@ app.innerHTML = `
   <h2 data-i18n="keyboardHelpTitle">${getTranslation('keyboardHelpTitle')}</h2>
   <p class="muted">Fast navigation inspired by neuroanatomy atlas conventions.</p>
   <div class="shortcuts-grid">
-    <div class="shortcut-row"><kbd>1</kbd>–<kbd>6</kbd><span data-i18n="modeShortcut">${getTranslation('modeShortcut')}</span></div>
+    <div class="shortcut-row"><kbd>1</kbd>–<kbd>9</kbd><span data-i18n="modeShortcut">${getTranslation('modeShortcut')}</span></div>
     <div class="shortcut-row"><kbd>A</kbd><span>Anterior View</span></div>
     <div class="shortcut-row"><kbd>P</kbd><span>Posterior View</span></div>
     <div class="shortcut-row"><kbd>R</kbd><span>RAO (Right Anterior Oblique)</span></div>
@@ -477,7 +469,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
   if(defect&&mode!=='defects'){setMode('defects',false);}
   if(defect)defectPanel.select(cleanId);
   if (mode === 'atria' && !['la','laa'].includes(cleanId)) return;
-  if (mode === 'ra' && cleanId !== 'ra') return;
+  if (mode === 'ra' && !['ra', 'crista-terminalis'].includes(cleanId)) return;
   const s = structures[cleanId];
   if (!s) return;
   currentSelectedId = cleanId;
@@ -489,6 +481,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
   }
 
   heart?.selectStructure(cleanId, flyTo);
+  updateSceneContext();
   const listed = heart?.getState().structures || [];
   const stMatch = defect ? { provenance: 'schematic' } : listed.find(item => item.id === cleanId) || listed.find(item => item.valveId === cleanId);
   const indexEl = document.querySelector('.structure-index');
@@ -823,7 +816,7 @@ function filterAtrialOptions() {
     } else if (mode === 'atria') {
       option.hidden = option.disabled = !['la','laa'].includes(option.value);
     } else if (mode === 'ra') {
-      option.hidden = option.disabled = option.value !== 'ra';
+      option.hidden = option.disabled = !['ra', 'crista-terminalis'].includes(option.value);
     } else {
       option.hidden = option.disabled = false;
     }
@@ -870,8 +863,19 @@ document.querySelectorAll('.group-toggle').forEach(button => button.addEventList
 }));
 document.querySelector('#layers')?.addEventListener('change', updateLayerGroupCounts);
 
+// The active mode and selection are written on the scene itself, so a
+// screenshot always says what it shows (report section 13).
+function updateSceneContext() {
+  const el = document.querySelector('#scene-context');
+  if (!el) return;
+  const entry = getUiModes().find(([id]) => id === mode);
+  const selected = currentSelectedId && structures[currentSelectedId]?.title;
+  el.textContent = [entry && `${entry[1]} · ${entry[2]}`, selected && `${getTranslation('sceneSelected')}: ${selected}`].filter(Boolean).join(' · ');
+}
+
 // Explanations live in the right panel; the left panel keeps controls only.
 function updateContextNote() {
+  updateSceneContext();
   const box = document.querySelector('#context-note');
   const body = document.querySelector('#context-note-body');
   if (!box || !body) return;
