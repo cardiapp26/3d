@@ -60,7 +60,7 @@ export const JVP_PARAMETERS = Object.freeze([
   p('af.seed', 'rhythm-af', 7, '', 'fixed seed: the same seed gives the same RR sequence', 'none'),
   p('avd.ventricularRate', 'rhythm-avd', 40, 'bpm', 'escape rhythm in complete AV block', 'none', STATUS.review),
   p('avd.atrialRate', 'rhythm-avd', 75, 'bpm', 'independent sinus P waves', 'none', STATUS.review),
-  p('avd.contractionDelay', 'rhythm-avd', 0.11, 's', 'P wave to atrial contraction peak (template 0.27 to 0.40 at 72 bpm)', 'none'),
+  p('avd.contractionDelay', 'rhythm-avd', 'template pPeak to mid atrial systole at the atrial rate (about 0.1)', 's', 'schematic electromechanical delay; the same for the JVP a/cannon waves and the 3D atria', 'none'),
   p('avd.aAmplitude', 'rhythm-avd', 2.5, 'mmHg', 'atrial contraction with the tricuspid valve open', 'none'),
   p('avd.cannonAmplitude', 'rhythm-avd', 10, 'mmHg', 'atrial contraction against the closed tricuspid valve', 'stanford25', STATUS.review),
   // Abdominojugular test (jvp-timeline.js AJR_PROTOCOL).

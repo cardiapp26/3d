@@ -49,7 +49,7 @@ function fillSelect(select, items, key) {
 
 /**
  * @param {HTMLElement} mount
- * @param {{ getLang: () => 'tr'|'en', getCycleState: () => object, onSeek: (phase: number) => void, onFreeze: (frozen: boolean) => void, onSlow: (slow: boolean) => void }} deps
+ * @param {{ getLang: () => 'tr'|'en', getCycleState: () => object, onSeek: (phase: number, options?: { atrialPhase?: number }) => void, onFreeze: (frozen: boolean) => void, onSlow: (slow: boolean) => void }} deps
  */
 export function createJvpPanel(mount, deps) {
   let lang = deps.getLang() === 'en' ? 'en' : 'tr';
@@ -169,7 +169,7 @@ export function createJvpPanel(mount, deps) {
         if (s.id === 'ajr') { state.t = s.duration - 0.001; state.stripPlaying = false; } else state.t %= s.duration;
       }
     }
-    deps.onSeek(s.phaseAt(state.t));
+    deps.onSeek(s.phaseAt(state.t), s.atrialPhaseAt ? { atrialPhase: s.atrialPhaseAt(state.t) } : undefined);
     draw();
     live();
     raf = requestAnimationFrame(loop);
@@ -408,7 +408,7 @@ export function createJvpPanel(mount, deps) {
       if (!s) return;
       state.t = Math.max(0, Math.min(s.duration - 0.001, t));
       state.stripPlaying = false;
-      deps.onSeek(s.phaseAt(state.t));
+      deps.onSeek(s.phaseAt(state.t), s.atrialPhaseAt ? { atrialPhase: s.atrialPhaseAt(state.t) } : undefined);
       render();
     },
     /** CSV text of the current view (the same content the download button saves). */

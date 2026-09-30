@@ -159,6 +159,49 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.locator('#beat').click();
     if (SHOTS) await page.locator('article').screenshot({ path: `${SHOTS}/egm-panel.png` });
 
+    // Pathway zones (report section 5): the active case draws its annulus arc
+    // and the RV pacing reference; a neutral diagnosis view hides them.
+    const zones = () => page.evaluate(() => {
+      const list = [];
+      window.heart.scene.traverse(o => { if (o.name.startsWith('EP zone:') && o.visible && o.parent.visible) list.push(o.name.slice(9)); });
+      return { zone: window.heart.getEpZone(), visible: list, rv: window.heart.scene.getObjectByName('RV pacing reference (schematic)').visible };
+    });
+    assert.deepEqual(await zones(), { zone: 'koch-slow-pathway', visible: ['koch-slow-pathway'], rv: true }, 'treatment: Koch slow pathway zone');
+    await page.locator('[data-ep-section=maneuver]').click();
+    await page.locator('[data-ep-case]').selectOption('ap-left-lateral');
+    assert.deepEqual((await zones()).visible, ['left-free-wall'], 'left free wall arc on the mitral annulus');
+    assert.match(await page.locator('.ep-zone').textContent(), /mitral anulus/);
+    await page.locator('[data-ep-section=diagnosis]').click();
+    assert.deepEqual(await zones(), { zone: null, visible: [], rv: false }, 'neutral diagnosis hides the zone');
+    await page.locator('[data-ep-evidence]').click();
+    assert.deepEqual((await zones()).visible, ['left-free-wall'], 'evidence reveals the zone');
+
+    // New catalog clips: AH jump, orthodromic AVRT, preexcited AF.
+    await page.locator('[data-ep-section=maneuver]').click();
+    await page.locator('[data-ep-case]').selectOption('avnrt-typical');
+    await page.locator('[data-egm-scenario="avnrt-dual-echo"]').click();
+    assert.match(await page.locator('.ep-measures').textContent(), /AH \(S1\) 80 ms.*AH \(S2\) 180 ms/);
+    await page.locator('[data-ep-section=diagnosis]').click();
+    const csCases = await page.locator('[data-ep-case] option').count();
+    assert.equal(csCases, 9, 'nine numbered diagnosis cases');
+    await page.locator('[data-ep-case]').selectOption('ap-left-manifest');
+    await page.locator('[data-egm-scenario="af-preexcited"]').click();
+    assert.match(await page.locator('.ep-measures').textContent(), /SPERRI 220 ms/);
+    assert.match(await page.locator('.egm-text').textContent(), /dar QRS taşikardi algoritması bu kayda uygulanmaz/);
+    assert.equal((await zones()).zone, null, 'neutral: no zone even in the emergency case');
+    // Para-Hisian pair and the enlarge toggle (state preserved).
+    await page.locator('[data-ep-section=maneuver]').click();
+    await page.locator('[data-ep-case]').selectOption('ap-inf-paraseptal');
+    await page.locator('[data-egm-scenario="ap-ips-parahis"]').click();
+    assert.match(await page.locator('.ep-measures').textContent(), /S-A \(His\+RV\) 95 ms.*S-A \(RV\) 95 ms/);
+    await page.locator('[data-ep-size]').click();
+    assert.equal(await page.evaluate(() => document.querySelector('.egm-canvas').clientHeight), 420, 'enlarged canvas');
+    assert.equal(await page.evaluate(() => document.querySelector('[data-egm-scenario="ap-ips-parahis"]').getAttribute('aria-pressed')), 'true', 'enlarge keeps the clip');
+    await page.locator('[data-ep-size]').click();
+    assert.equal(await page.evaluate(() => document.querySelector('.egm-canvas').clientHeight), 240);
+    await page.locator('#steps [data-step="1"]').click();
+    assert.deepEqual((await zones()).visible, [], 'leaving the panel step clears the zone');
+
     // English labels.
     await page.locator('#steps [data-step="1"]').click();
     await page.locator('#lang-btn').click();

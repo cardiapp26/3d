@@ -258,7 +258,7 @@ export function createAnimationChannels({ meshMap, sourceCenter = null }) {
       reset();
       return;
     }
-    const weights = computeChannelWeights(cycleState.phase, { rhythm: cycleState.rhythm });
+    const weights = computeChannelWeights(cycleState.phase, { rhythm: cycleState.rhythm, atrialPhase: cycleState.atrialPhase });
     lastWeights = weights;
     deformed = true;
     const coefs = chamberCoefficients(weights);

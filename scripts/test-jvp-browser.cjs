@@ -98,6 +98,18 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-jvp-control=slow]').uncheck();
     await page.locator('[data-jvp-action=restart]').click();
     assert.ok((await jvpState()).t < 0.3, 'restart returns to t = 0');
+    // Acceptance 16: in the 3D heart the atria follow the atrial clock and the ventricles the ventricular clock.
+    const beatWeights = await page.evaluate(async () => {
+      const j = window.cardiaExam.getJvp(), s = j.getStrip(), out = [];
+      for (const e of s.atrial) { j.seekStrip(e.t); out.push({ kind: e.kind, ...window.heart.getBeatWeights(), vPhase: window.heart.getCycleState().phase }); }
+      j.seekStrip(0); window.cardiaExam.getJvp().getState();
+      return out;
+    });
+    assert.ok(beatWeights.every(w => w.atrialContraction > 0.95), '3D atria contract on every atrial event');
+    const vAtA = beatWeights.map(w => w.vPhase);
+    assert.ok(Math.max(...vAtA) - Math.min(...vAtA) > 0.3, '3D ventricles are at different phases at each atrial contraction (dissociated)');
+    assert.ok(beatWeights.some(w => w.kind === 'cannon' && w.ventricularContraction > 0.3), 'a cannon a coincides with 3D ventricular contraction');
+    await page.locator('[data-jvp-action=freeze]').click();
     const cannons = async () => (await page.locator('.jvp-readout').textContent()).match(/cannon a: (\d+)\/(\d+)/).slice(1).join('/');
     const at75 = await cannons();
     await page.locator('[data-jvp-control=atrialRate]').selectOption('60');

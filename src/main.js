@@ -13,7 +13,7 @@ import {drawEcgTrace, formatValveSync, ecgPhaseAt} from './ecg-trace.js';
 import {drawWiggers, formatCycleTiming, wiggersPhaseAt} from './wiggers.js';
 import { createHemoMode } from './hemo-mode.js';
 import { createExamMode } from './exam-mode.js';
-import { createEgmPanel } from './ep-egm.js';
+import { createEpPanel } from './ep-panel.js';
 import { createEchoMode } from './echo-mode.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 
@@ -623,10 +623,14 @@ let egmPanel = null;
 function syncEgm(lessonStep) {
   const scenario = mode === 'ablation' ? lessonStep?.egm : null;
   egmMount.hidden = !scenario;
-  if (!scenario) return;
-  egmPanel ??= createEgmPanel(egmMount, { getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en') });
-  egmPanel?.setScenario(scenario);
-  egmPanel?.draw(heart?.getCycleState());
+  if (!scenario) { heart?.setEpZone?.(null); return; }
+  egmPanel ??= createEpPanel(egmMount, {
+    getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
+    // 3D arc of the active case's pathway zone (hidden while the diagnosis view is neutral).
+    onZone: (zoneId, extra) => heart?.setEpZone?.(zoneId, extra)
+  });
+  window.cardiaEp = egmPanel;   // test and console hook, like window.cardiaExam
+  egmPanel?.openLesson(scenario);
 }
 // Built before the cycle subscription: subscribeCycle calls updateCycleUI at once.
 const hemoMode = heart ? createHemoMode({

@@ -14,14 +14,14 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     { kind: 'structure', id: 'lv', label: 'Sol ventrikül • LV', alt: 'Left ventricle • LV' },
     { kind: 'structure', id: 'lad', label: 'Sol ön inen arter • LAD', alt: 'Left anterior descending • LAD' },
     { kind: 'structure', id: 'tricuspid', label: 'Triküspit kapak', alt: 'Tricuspid valve' },
-    { kind: 'mode', id: 'ablation', label: 'Ablasyon anatomisi', alt: 'Ablation anatomy' },
+    { kind: 'mode', id: 'ablation', label: 'Elektrofizyolojik anatomi', alt: 'Electrophysiological anatomy' },
     { kind: 'structure', id: 'koch', label: 'Koch üçgeni (ablasyon)', alt: 'Triangle of Koch' },
   ];
   assert.equal(rankSearch('lv', items)[0].id, 'lv', 'abbreviation wins');
   assert.equal(rankSearch('triküs', items)[0].id, 'tricuspid', 'Turkish prefix');
   assert.equal(rankSearch('trikus', items)[0].id, 'tricuspid', 'without diacritics');
   assert.equal(rankSearch('tricuspid', items)[0].id, 'tricuspid', 'other language');
-  assert.equal(rankSearch('ablas', items)[0].id, 'ablation', 'mode before structure on a tie');
+  assert.equal(rankSearch('elektrofiz', items)[0].id, 'ablation', 'mode matches its new name');
   assert.equal(rankSearch('sol on', items)[0].id, 'lad', 'multi-word prefixes');
   assert.deepEqual(rankSearch('', items), []);
   assert.deepEqual(rankSearch('zzz', items), []);
@@ -41,7 +41,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(await page.locator('#header-search [aria-current=true]').first().getAttribute('data-id'), 'anatomy');
 
     // Pick a mode by typing; the recent list remembers the previous one.
-    await input.fill('ablas');
+    await input.fill('elektrofiz');
     await page.keyboard.press('Enter');
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'ablation');
     await input.focus();

@@ -840,7 +840,66 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .egm-scenarios button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:5px 7px;font-size:10.5px}
 .egm-scenarios button[aria-pressed=true]{background:#0e1815;color:#fcd34d;border-color:#0e1815}
 .egm-canvas{display:block;width:100%;height:240px;border-radius:6px;background:#0e1815}
+.egm-canvas.is-large{height:420px}
+.ep-view{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 6px;font-size:10.5px}
+.ep-view select{margin:0;padding:2px 6px;width:auto;font-size:10.5px}
+.ep-view input[type=range]{width:120px;margin:0}
+.ep-channels{position:relative}
+.ep-channels summary{cursor:pointer;border:1px solid #cbd7c5;border-radius:4px;padding:3px 8px;color:#3f5c4b;list-style:none}
+.ep-channels summary::-webkit-details-marker{display:none}
+.ep-channel-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:2px 8px;padding:6px;margin-top:4px;background:#f6f8f5;border:1px solid #e0e7dd;border-radius:4px;min-width:220px}
+.ep-channel{display:flex;gap:4px;align-items:center;font-size:10.5px;color:#3f5c4b}
+.ep-inspect{font-size:10px!important;color:#5f6f64!important;margin:3px 0!important;font-family:ui-monospace,monospace}
+.ep-sim{border:1px solid #d8e2d4;border-radius:6px;padding:8px 10px;margin:6px 0;background:#f8faf7}
+.ep-sim[hidden]{display:none}
+.ep-sim-title{font-size:12px;margin:0 0 6px}
+.ep-sim-field{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:10.5px;color:#4d5e52;margin:3px 0}
+.ep-sim-field[hidden]{display:none}
+.ep-sim-field select{margin:0;padding:2px 6px;width:auto;max-width:100%;font-size:10.5px}
+.ep-sim-field input[type=range]{flex:1 1 120px;min-width:100px;margin:0}
+.ep-sim-field output{font-family:ui-monospace,monospace;font-size:10.5px;color:#244f43;min-width:62px}
+.ep-sim-actions{display:flex;gap:6px;margin:6px 0}
+.ep-sim-deliver{border:0;background:#244f43;color:#fff;border-radius:4px;padding:5px 14px;font-size:11px;font-weight:600;min-height:32px}
+.ep-sim-retry{border:1px solid #cbd7c5;background:#fff;color:#3f5c4b;border-radius:4px;padding:5px 10px;font-size:11px;min-height:32px}
+.ep-sim-feedback{list-style:none;padding:0;margin:4px 0;display:flex;flex-wrap:wrap;gap:4px}
+.ep-sim-feedback li{font-size:10px;border-radius:10px;padding:2px 8px;background:#e7f0e9;color:#2d4a3e}
+.ep-sim-feedback li[data-state=false]{background:#f9ece6;color:#8a3b1c}
+.ep-sim-result{font-size:11px!important;font-weight:700;margin:4px 0!important;color:#2f5a73!important}
+.ep-sim-result[data-result=invalidCapture],.ep-sim-result[data-result=insufficientEvidence]{color:#8a3b1c!important}
+.ep-sim-reason{font-size:10.5px!important;line-height:1.5!important;color:#4d5e52!important}
+.ep-compare-card{margin:6px 0;overflow-x:auto}
+.ep-compare-title{font-size:11px!important;font-weight:700;margin:0 0 4px!important;color:#2d4a3e!important}
+.ep-compare-card table{border-collapse:collapse;font-size:10px;width:100%;min-width:320px}
+.ep-compare-card th,.ep-compare-card td{border:1px solid #e0e7dd;padding:3px 5px;text-align:left;vertical-align:top;color:#3f5c4b}
+.ep-compare-card th{background:#eef3ec}
+.ep-map-title{font-size:10.5px!important;font-weight:600;color:#2d4a3e!important;margin:6px 0 3px!important}
+.ep-map-canvas{display:block;width:100%;height:150px;border-radius:6px;background:#0e1815}
+.ep-fullscreen{position:fixed;inset:0;z-index:1000;background:#0e1815;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.ep-fullscreen[hidden]{display:none}
+.ep-fs-bar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#15241f;color:#d7f5e4;flex-wrap:wrap}
+.ep-fs-title{flex:1 1 160px;font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ep-fs-bar button{min-width:44px;min-height:40px;border:1px solid #3c5a4e;background:#1d302a;color:#d7f5e4;border-radius:6px;font-size:14px}
+.ep-fs-pan{flex:1 1 120px;min-width:100px}
+.ep-fs-canvas{flex:1 1 auto;width:100%;min-height:0;touch-action:pan-y}
+.ep-fs-info{margin:0;padding:4px 8px;font-size:10.5px;color:#9fc7b6}
 .egm-text{font-size:11px;line-height:1.55}
+.ep-sections{display:inline-grid;grid-auto-flow:column;border:1px solid #cbd7c5;border-radius:5px;overflow:hidden;margin-bottom:6px}
+.ep-sections button{border:0;background:#fff;color:#3f5c4b;padding:4px 12px;font-size:11px;font-weight:600}
+.ep-sections button[aria-selected=true]{background:#244f43;color:#fff}
+.ep-case{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#5f7365;margin-bottom:6px}
+.ep-case select{margin:0;padding:3px 6px;width:auto;max-width:100%;font-size:11px}
+.ep-measures{font-size:10.5px!important;color:#2d4a3e!important;font-weight:600;margin:6px 0 2px!important}
+.ep-evidence,.ep-size{border:1px solid #cbd7c5;background:transparent;border-radius:4px;padding:3px 9px;font-size:10.5px;color:#3f5c4b;margin:4px 4px 4px 0}
+.ep-result{font-size:10.5px!important;font-weight:600;margin:4px 0!important;padding:3px 8px;border-radius:4px;background:#eef3f6;color:#2f5a73!important}
+.ep-result[data-result=invalidCapture],.ep-result[data-result=insufficientEvidence]{background:#f9ece6;color:#8a3b1c!important}
+.ep-card{font-size:10.5px;line-height:1.5;margin:6px 0;background:#f3f6f2;border-left:3px solid #244f43;border-radius:4px;padding:6px 9px}
+.ep-card dt{font-weight:700;color:#2d4a3e;margin-top:4px}
+.ep-card dt:first-child{margin-top:0}
+.ep-card dd{margin:0;color:#4d5e52}
+.ep-zone{font-size:10.5px!important;color:#4d5e52!important;background:#f3f6f2;border-left:3px solid #8b5cf6;border-radius:4px;padding:5px 8px}
+.ep-compare{font-size:10.5px!important;color:#2f6f8f!important;font-weight:600}
+.ep-endpoint{font-size:10.5px!important;color:#4d5e52!important;background:#f6eff2;border-left:3px solid #b83b5e;border-radius:4px;padding:5px 8px}
+.ep-sources{font-size:9.5px!important;color:#7a877e!important;line-height:1.5!important}
 
 /* Echocardiography mode: modality, views, sector, feedback and probe controls (compact) */
 [data-app-mode=echo] #carm-panel,[data-app-mode=echo] .practice{display:none!important}

@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { ATLAS_URL, normalizedParts, normalizeAtlasName } from './atlas.js';
 import { createEPLandmarks } from './ep-landmarks.js';
+import { createEpZones } from './ep-zones.js';
 import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createMitralScallops } from './mitral-scallops.js';
 import { createAnnuli } from './annuli.js';
@@ -111,9 +112,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const mitralScallops=createMitralScallops(container,id=>meshMap.get(id)||[]);
   const sceneLabels=createSceneLabels(container);
   let modelReady=false;
+  let lastAtrialPhase=null;   // separate atrial clock of the last seek (AV dissociation), or null
   const isReady=()=>modelReady;
   const epLandmarks = createEPLandmarks({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
   heart.add(epLandmarks.group);
+  const epZones = createEpZones({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
+  heart.add(epZones.group);
   let bachmannTarget = null;
   const atlasAdjustments = {};
   const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getBachmannTarget: () => bachmannTarget, isReady });
@@ -343,6 +347,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     modelReady=true;
     epLandmarks.init();
     for (const label of epLandmarks.labels) sceneLabels.add({ ...label, when: () => mode === 'ablation' && KOCH_LABEL_STEPS.includes(ablationStep) && !fluoroscopy });
+    epZones.init();
+    for (const label of epZones.labels) sceneLabels.add({ ...label, when: () => mode === 'ablation' && epZones.isActive(label.zone) && !fluoroscopy });
     pacemakerLeads.init();
     transseptal.init();
     septalDefects.build(transseptal.group.getObjectByName('Fossa ovalis')?.position);
@@ -887,6 +893,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       if(name==='defects'){cardiacCycle.setPlaying(false);beating=false;if(channels)channels.reset();}
       opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath','echo'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
+      epZones.setVisible(name==='ablation');
+      if(name!=='ablation')epZones.setZone(null);
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       bachmannTargetGroup.visible=name==='bachmann';
       transseptal.setVisible(name==='transseptal');
@@ -917,6 +925,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setOpacity(value){opacity=THREE.MathUtils.clamp(Number(value),.08,1);applyState();},
     setBeating(value){
       beating=mode==='defects'?false:Boolean(value);
+      if(beating)lastAtrialPhase=null;   // the shared clock drives atria and ventricles together again
       cardiacCycle.setPlaying(beating);
       if(channels && mode!=='defects') channels.applyChannels(cardiacCycle.getCycleState());
       requestRender();
@@ -925,14 +934,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     // Playback speed of the shared clock (slow motion in the venous pulse lesson).
     setCycleSpeed(value){cardiacCycle.setSpeed(value);requestRender();},
     setRhythm(name){cardiacCycle.setRhythm(name);requestRender();},
-    seekCycle(phase){
+    // options.atrialPhase: the atria on their own clock (AV dissociation strip);
+    // omitted, atria and ventricles share the phase.
+    seekCycle(phase,options={}){
       cardiacCycle.seekCycle(phase);
-      const state = cardiacCycle.getCycleState();
+      const state = Number.isFinite(options.atrialPhase) ? { ...cardiacCycle.getCycleState(), atrialPhase: options.atrialPhase } : cardiacCycle.getCycleState();
+      lastAtrialPhase = Number.isFinite(options.atrialPhase) ? options.atrialPhase : null;
       if(channels && mode!=='defects') channels.applyChannels(state);
       if(bloodFlow && visibility.flow) bloodFlow.update(state);
       requestRender();
     },
     getCycleState(){return cardiacCycle.getCycleState();},
+    /** Channel weights of the last applied pose (atrial and ventricular tension and size), for checks. */
+    getBeatWeights(){const w=channels?.computeChannelWeights(cardiacCycle.getCycleState().phase,{rhythm:cardiacCycle.getCycleState().rhythm,atrialPhase:lastAtrialPhase??undefined});return w?{atrialContraction:w.atrialContraction,ventricularContraction:w.ventricularContraction,atrialShape:w.atrialShape,ventricularShape:w.ventricularShape,atrialPhase:lastAtrialPhase}:null;},
     // Echo module: atlas meshes by id, measurements at rest, overlays in heart coordinates.
     getMeshes(id){return meshMap.get(id)||[];},
     withRestPose,
@@ -971,6 +985,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setAblationStep(step){ablationStep=Number(step);epLandmarks.setStep(ablationStep);requestRender();},
     // Koch step layers: 'his' and 'cs' reference catheters, 'lesions' (example RF, off by default).
     setEpOptional(key,value){epLandmarks.setOptional(key,value);catheterPickables=null;requestRender();},
+    // Accessory pathway zone of the signal panel's active case (ep-zones.js); null hides it.
+    // extra: { halo, circuit } (Halo catheter, reentry direction arrows).
+    setEpZone(zoneId,extra){epZones.setZone(zoneId||null,extra||{});requestRender();},
+    getEpZone(){return epZones.getZone();},
+    getEpZoneOptions(){return epZones.getOptions();},
     getEpOptional(){return epLandmarks.getOptional();},
     setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
     setBachmannStep(step){pacemakerLeads.setBachmannStep(Number(step));requestRender();},
@@ -997,6 +1016,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         bloodFlow.update(cardiacCycle.getCycleState());
       }
       epLandmarks.setVisible(false);
+      epZones.setVisible(false);
+      epZones.setZone(null);
       pacemakerLeads.setVisible(false);
       bachmannTargetGroup.visible=false;
       transseptal.setVisible(false);

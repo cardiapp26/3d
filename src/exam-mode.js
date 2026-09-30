@@ -43,7 +43,7 @@ export function createExamMode({ heart, mount, getLang, onArea }) {
     jvp = createJvpPanel(sections.jvp, {
       getLang,
       getCycleState: () => heart.getCycleState(),
-      onSeek: phase => heart.seekCycle(phase),
+      onSeek: (phase, options) => heart.seekCycle(phase, options),
       onFreeze: frozen => heart.setBeating(!frozen),
       onSlow: slow => heart.setCycleSpeed(slow ? 0.35 : 1)
     });

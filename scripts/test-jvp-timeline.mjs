@@ -63,6 +63,20 @@ assert.ok(peakTimes(avd.ecg, avd).length === avd.cycles.length, 'AVD: one QRS pe
 assert.ok(tricuspidOpen(WAVE_PHASE.a) && !tricuspidOpen(WAVE_PHASE.cannon));
 assert.ok(Math.abs(avd.pressure(avd.duration - 1e-6) - avd.pressure(0)) < 0.05, 'AVD: seamless loop');
 
+// Separate atrial clock for the 3D atria: the atrial contraction channel peaks
+// on each atrial contraction event, and the atrial and ventricular phases drift.
+{
+  const { computeChannelWeights } = await import('../src/cycle-channels.js');
+  for (const e of avd.atrial) {
+    const w = computeChannelWeights(avd.phaseAt(e.t), { atrialPhase: avd.atrialPhaseAt(e.t) });
+    assert.ok(w.atrialContraction > 0.97, `atrial contraction peaks on the event at ${e.t.toFixed(2)} s (${w.atrialContraction.toFixed(2)})`);
+  }
+  const gap = avd.atrial.map(e => ((avd.atrialPhaseAt(e.t) - avd.phaseAt(e.t)) % 1 + 1) % 1);
+  assert.ok(Math.max(...gap) - Math.min(...gap) > 0.3, 'atrial and ventricular phases drift apart (no fixed A to V coupling)');
+  const sinusW = computeChannelWeights(0.385);
+  assert.equal(sinusW.atrialPhase, undefined, 'without an atrial clock the phases stay shared');
+}
+
 // Ventricular-only ECG has no P wave; sinus has one.
 assert.ok(Math.abs(ecgSample(S.pPeak, 'ventricular')) < 0.01 && ecgSample(S.pPeak, 'sinus') > 0.15);
 

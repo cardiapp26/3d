@@ -12,11 +12,16 @@ import { CYCLE_SYNC as SYNC, CARDIAC_INTERVALS } from './cardiac-cycle.js';
  */
 export function computeChannelWeights(phase, options = {}) {
   const p = ((phase % 1) + 1) % 1;
+  // AV dissociation: the atria can run on their own clock (options.atrialPhase,
+  // the same template phase, aligned so its P wave sits on the atrial event).
+  // Without it atria and ventricles share one phase, as in sinus rhythm.
+  const dissociated = Number.isFinite(options.atrialPhase);
+  const pa = dissociated ? ((options.atrialPhase % 1) + 1) % 1 : p;
 
   // P wave / atrial systole. Contraction ends as the AV valves finish closing.
   let atrialContraction = 0;
-  if (p >= SYNC.atrialStart && p < SYNC.atrialEnd) {
-    const t = (p - SYNC.atrialStart) / (SYNC.atrialEnd - SYNC.atrialStart);
+  if (pa >= SYNC.atrialStart && pa < SYNC.atrialEnd) {
+    const t = (pa - SYNC.atrialStart) / (SYNC.atrialEnd - SYNC.atrialStart);
     atrialContraction = Math.sin(Math.PI * t);
   }
 
@@ -73,7 +78,9 @@ export function computeChannelWeights(phase, options = {}) {
     avValveOpening,
     semilunarValveOpening,
     chordaeTension,
-    ...shapeChannels(p, options.rhythm)
+    ...shapeChannels(p, options.rhythm),
+    // Separate atrial clock: the atrial size follows its own phase.
+    ...(dissociated ? { atrialShape: shapeChannels(pa, options.rhythm).atrialShape, atrialPhase: pa } : {})
   };
 }
 

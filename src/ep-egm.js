@@ -1,157 +1,51 @@
-// Synthetic intracardiac electrogram (EGM) strip for the AVNRT slow pathway lesson.
-// It is a teaching schematic built from Gaussian-derivative spikes, never a
-// clinical recording and never a decision rule.
+// Synthetic intracardiac electrogram renderer for the electrophysiological
+// anatomy module. It draws a recording from ep-cases.js: a teaching schematic
+// built from Gaussian-derivative spikes, never a clinical recording and never
+// a decision rule. Calipers are measured from the events at draw time.
 
-/** Recorder channels, top to bottom. */
-export const EGM_CHANNELS = Object.freeze([
-  { id: 'hra', label: 'HRA' }, { id: 'his-p', label: 'His p' }, { id: 'his-d', label: 'His d' },
-  { id: 'cs-p', label: 'CS 9-10' }, { id: 'cs-d', label: 'CS 1-2' }, { id: 'abl-d', label: 'ABL d' }
-].map(Object.freeze));
+import { EP_CHANNELS, measure, resolveRef } from './ep-cases.js';
 
-/** Scenario ids in lesson order. */
-export const EGM_SCENARIOS = Object.freeze(['sinus', 'slow-target', 'junctional-rf', 'junctional-va-block']);
-
-const WINDOW_MS = 1200;
-const AH = 80;
-const HV = 45;
-const VA = 70;
-
-// Colours of the 3D catheters: His magenta, CS blue, ABL purple; HRA (not drawn in 3D) grey.
+// Colours match the 3D catheters: His magenta, CS blue, ABL purple; surface leads green.
 const COLORS = {
-  hra: '#c9d6cf', 'his-p': '#f0abfc', 'his-d': '#e879f9', 'cs-p': '#7fb2ff', 'cs-d': '#5b8cff', 'abl-d': '#b99bff'
+  'ecg-ii': '#8fdc9f', 'ecg-v1': '#6fc48b', hra: '#c9d6cf', 'his-p': '#f0abfc', 'his-d': '#e879f9',
+  'cs-910': '#7fb2ff', 'cs-78': '#74a6f2', 'cs-56': '#699ae6', 'cs-34': '#6090dd', 'cs-12': '#5b8cff',
+  rv: '#ffd28a', 'abl-d': '#b99bff', 'abl-uni': '#d8c7ff',
+  'halo-910': '#86efac', 'halo-78': '#6ee7a0', 'halo-56': '#4ade80', 'halo-34': '#34d17a', 'halo-12': '#22c55e'
 };
-
-const BUTTON_LABELS = {
-  sinus: { tr: 'Sinüs', en: 'Sinus' },
-  'slow-target': { tr: 'Yavaş yol', en: 'Slow pathway' },
-  'junctional-rf': { tr: 'RF junctional', en: 'RF junctional' },
-  'junctional-va-block': { tr: 'VA blok', en: 'VA block' }
-};
-
-// Near-field: sharp and large. Far-field: broad and small.
-function ev(type, t, amp, sigma = 5, far = false) {
-  return { type, t, amp, sigma, far };
-}
-
-function sinusBeat(t0, fragmented) {
-  const aHis = t0 + 35;
-  const h = aHis + AH;
-  const v = h + HV;
-  // At the slow pathway the local A is small (sometimes two components), V is large, no H.
-  const ablA = fragmented
-    ? [ev('A', t0 + 46, 0.2, 4), ev('A', t0 + 62, 0.16, 4)]
-    : [ev('A', t0 + 48, 0.24, 5)];
-  return {
-    kind: 'sinus',
-    vaBlock: false,
-    his: { a: aHis, h, v },
-    events: {
-      hra: [ev('A', t0, 0.9), ev('V', v + 10, 0.22, 15, true)],
-      'his-p': [ev('A', aHis - 3, 0.6), ev('H', h, 0.35, 4), ev('V', v, 0.7, 6)],
-      'his-d': [ev('A', aHis, 0.35), ev('H', h, 0.75, 4), ev('V', v, 0.9)],
-      'cs-p': [ev('A', t0 + 45, 0.8), ev('V', v + 15, 0.45, 6)],
-      'cs-d': [ev('A', t0 + 75, 0.7), ev('V', v + 25, 0.5, 6)],
-      'abl-d': [...ablA, ev('V', v + 5, 0.8)]
-    }
-  };
-}
-
-// Junctional beat: H then V, retrograde A earliest on His / proximal CS (concentric).
-function junctionalBeat(h, vaBlock) {
-  const v = h + HV;
-  const a = v + VA;
-  const retro = (list) => (vaBlock ? [] : list);
-  return {
-    kind: 'junctional',
-    vaBlock,
-    his: { a: vaBlock ? null : a, h, v },
-    events: {
-      hra: [ev('V', v + 10, 0.22, 15, true), ...retro([ev('A', a + 40, 0.9)])],
-      'his-p': [ev('H', h, 0.35, 4), ev('V', v, 0.7, 6), ...retro([ev('A', a - 2, 0.6)])],
-      'his-d': [ev('H', h, 0.75, 4), ev('V', v, 0.9), ...retro([ev('A', a, 0.35)])],
-      'cs-p': [ev('V', v + 15, 0.45, 6), ...retro([ev('A', a + 6, 0.8)])],
-      'cs-d': [ev('V', v + 25, 0.5, 6), ...retro([ev('A', a + 28, 0.7)])],
-      'abl-d': [ev('V', v + 5, 0.8), ...retro([ev('A', a + 4, 0.22)])]
-    }
-  };
-}
-
-const DISCLAIMER = { tr: 'Sentetik kayıt: klinik kayıt değildir.', en: 'Synthetic strip: not a clinical recording.' };
-
-const DEFS = {
-  sinus: {
-    beats: [sinusBeat(100, false), sinusBeat(700, false)],
-    intervals: { cl: 600, ah: AH, hv: HV, pa: 35, pr: 35 + AH + HV },
-    rf: false,
-    title: { tr: 'Sinüs ritmi: AH ve HV', en: 'Sinus rhythm: AH and HV' },
-    text: {
-      tr: `${DISCLAIMER.tr} Sinüs ritminde aktivasyon önce HRA'da görülür, ardından His kanallarına ve CS'de proksimalden distale yayılır. His d kanalında sırasıyla A, keskin H ve V izlenir: AH yaklaşık ${AH} ms (AV düğüm iletimi), HV yaklaşık ${HV} ms (His-Purkinje iletimi). Değerler öğretim amaçlı yaklaşık değerlerdir, karar kuralı değildir.`,
-      en: `${DISCLAIMER.en} In sinus rhythm activation appears first on HRA, then on the His channels and along the CS from proximal to distal. His d shows A, a sharp H, then V: AH about ${AH} ms (AV nodal conduction) and HV about ${HV} ms (His-Purkinje conduction). The numbers are teaching approximations, not a decision rule.`
-    }
-  },
-  'slow-target': {
-    beats: [sinusBeat(100, true), sinusBeat(700, true)],
-    intervals: { cl: 600, ah: AH, hv: HV, ablAtoV: 0.25 },
-    rf: false,
-    title: { tr: 'Yavaş yol hedefi (ABL d)', en: 'Slow pathway target (ABL d)' },
-    text: {
-      tr: `${DISCLAIMER.tr} Ablasyon kateteri Koch üçgeninin alt kısmında, koroner sinüs ağzı ile triküspit halka arasındaki yavaş yol bölgesindedir. ABL d kanalında küçük, bazen iki bileşenli (fragmante) A ve büyük V vardır; His potansiyeli görülmez. Hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesine dayanır; sabit bir A:V oranı karar kuralı değildir.`,
-      en: `${DISCLAIMER.en} The ablation catheter sits in the inferior Koch triangle, in the slow pathway region between the coronary sinus ostium and the tricuspid annulus. ABL d shows a small, sometimes two-component (fragmented) A and a large V, with no His potential. Target choice relies on anatomy plus the electrogram together; a fixed A:V ratio is not a decision rule.`
-    }
-  },
-  'junctional-rf': {
-    beats: [junctionalBeat(130, false), junctionalBeat(870, false)],
-    intervals: { cl: 740, hv: HV, va: VA },
-    rf: true,
-    title: { tr: 'RF sırasında junctional ritim', en: 'Junctional rhythm during RF' },
-    text: {
-      tr: `${DISCLAIMER.tr} Yavaş yol bölgesine RF uygulanırken junctional atımlar görülebilir: His kanalında H ve ardından V, V'den kısa süre sonra da retrograd A gelir (VA yaklaşık ${VA} ms, 1:1 VA iletim). En erken retrograd A His ve proksimal CS'dedir, HRA daha geç aktive olur (konsantrik). Junctional ritim tek başına başarı göstergesi değildir; temel sonlanım, AV iletim korunarak AVNRT'nin indüklenememesidir. Bu şerit karar kuralı değildir.`,
-      en: `${DISCLAIMER.en} Junctional beats may appear while RF is delivered at the slow pathway: on the His channel H is followed by V, and a retrograde A follows shortly after V (VA about ${VA} ms, 1:1 VA conduction). Earliest retrograde A is on His and proximal CS, HRA activates later (concentric). Junctional rhythm alone does not establish success; the key endpoint is noninducibility of AVNRT with preserved AV conduction. This strip is not a decision rule.`
-    }
-  },
-  'junctional-va-block': {
-    beats: [junctionalBeat(70, false), junctionalBeat(540, true), junctionalBeat(1010, false)],
-    intervals: { cl: 470, hv: HV, va: VA, vaBlockBeats: [1] },
-    rf: true,
-    title: { tr: 'Junctional ritim + VA blok (uyarı)', en: 'Junctional rhythm + VA block (warning)' },
-    text: {
-      tr: `${DISCLAIMER.tr} RF sırasında hızlı junctional ritim vardır (siklus yaklaşık 470 ms) ve ikinci atımda V'den sonra retrograd A gelmez: VA blok. RF sırasında VA blok veya hızlı junctional ritim, enerjiyi durdurma uyarısıdır; AV iletim hasarı riski vardır. Bu şerit öğretim amaçlıdır, karar kuralı değildir.`,
-      en: `${DISCLAIMER.en} Fast junctional rhythm appears during RF (cycle about 470 ms) and the second beat has V with no retrograde A: VA block. VA block or fast junctional rhythm during RF is a warning to stop energy delivery, because AV conduction is at risk. This strip is for teaching, not a decision rule.`
-    }
-  }
-};
-
-function deepFreeze(value) {
-  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    Object.values(value).forEach(deepFreeze);
-    Object.freeze(value);
-  }
-  return value;
-}
-
-const SCENARIOS = new Map(EGM_SCENARIOS.map((id) => [id, deepFreeze({ id, windowMs: WINDOW_MS, ...DEFS[id] })]));
-
-// Flat per-channel event lists so sampling does not walk the beat tree.
-const EVENTS = new Map(EGM_SCENARIOS.map((id) => [id, new Map(EGM_CHANNELS.map((ch) => (
-  [ch.id, SCENARIOS.get(id).beats.flatMap((beat) => beat.events[ch.id])]
-)))]));
-
-const CHANNEL_INDEX = new Map(EGM_CHANNELS.map((ch, i) => [ch.id, i]));
 
 /**
- * Frozen description of a synthetic EGM scenario.
- * @param {string} id one of EGM_SCENARIOS
- * @returns {object|null} { id, windowMs, rf, beats, intervals, title, text } or null
+ * Channels a recording can show: its default list plus any channel that
+ * carries events, in recorder order (the channel chooser offers all of them).
  */
-export function egmScenario(id) {
-  return SCENARIOS.get(id) || null;
+export function selectableChannels(recording) {
+  if (!recording) return [];
+  const withEvents = new Set([...recording.channels, ...Object.keys(recording.events)]);
+  return EP_CHANNELS.map((ch) => ch.id).filter((id) => withEvents.has(id));
 }
 
-// Derivative-of-Gaussian spike, normalised so the peak equals amp.
-function biphasic(t, center, sigma, amp) {
-  const x = (t - center) / sigma;
+/**
+ * Visible time window for a zoom factor and a pan fraction (0 = start,
+ * 1 = end): the zoom keeps the time scale uniform across channels.
+ */
+export function timeWindow(recording, zoom = 1, pan = 0) {
+  const span = recording.windowMs / Math.max(1, zoom);
+  const from = Math.max(0, Math.min(recording.windowMs - span, pan * (recording.windowMs - span)));
+  return { from, to: from + span };
+}
+
+const CHANNEL_BY_ID = new Map(EP_CHANNELS.map((ch) => [ch.id, ch]));
+const LABEL_W = 58;
+const HEADER_H = 18;
+const FOOTER_H = 16;
+const FONT = '10px ui-monospace, monospace';
+
+// Derivative-of-Gaussian spike, normalised so the peak equals amp; mono events
+// (P wave, delta) are plain Gaussian bumps.
+function spike(t, e) {
+  const x = (t - e.t) / e.sigma;
   if (Math.abs(x) > 6) return 0;
-  return -amp * x * Math.exp(0.5 - 0.5 * x * x);
+  if (e.mono) return e.amp * Math.exp(-0.5 * x * x);
+  return -e.amp * x * Math.exp(0.5 - 0.5 * x * x);
 }
 
 // Deterministic baseline: sums of sines, seeded by channel index.
@@ -164,26 +58,22 @@ function baseline(t, seed, rf) {
 }
 
 /**
- * Synthetic EGM value for one channel at time tMs within the scenario window.
- * @returns {number} finite, roughly -1..1; 0 for unknown ids
+ * Synthetic value of one channel at tMs within the recording window.
+ * @returns {number} finite, roughly -1..1; 0 for unknown channels
  */
-export function egmSample(scenarioId, channelId, tMs) {
-  const list = EVENTS.get(scenarioId)?.get(channelId);
+export function egmSample(recording, channelId, tMs) {
+  const list = recording?.events?.[channelId];
   const t = Number(tMs);
-  if (!list || !Number.isFinite(t)) return 0;
+  const index = EP_CHANNELS.findIndex((ch) => ch.id === channelId);
+  if (index < 0 || !Number.isFinite(t)) return 0;
   // RF artifact rides only on the ablation channel.
-  const rf = SCENARIOS.get(scenarioId).rf && channelId === 'abl-d';
-  let value = baseline(t, CHANNEL_INDEX.get(channelId), rf);
-  for (const e of list) value += biphasic(t, e.t, e.sigma, e.amp);
+  const rf = Boolean(recording.rf) && channelId === 'abl-d';
+  let value = baseline(t, index, rf);
+  for (const e of list || []) value += spike(t, e);
   return value;
 }
 
-const LABEL_W = 58;
-const HEADER_H = 18;
-const FOOTER_H = 16;
-const FONT = '10px ui-monospace, monospace';
-
-const pick = (obj, lang) => (lang === 'en' ? obj.en : obj.tr);
+const pick = (obj, lang) => (obj && typeof obj === 'object' ? (lang === 'en' ? obj.en : obj.tr) : obj);
 
 function tag(ctx, text, x, y, color) {
   const w = ctx.measureText(text)?.width || text.length * 6;
@@ -193,51 +83,59 @@ function tag(ctx, text, x, y, color) {
   ctx.fillText(text, x, y);
 }
 
-function polyline(ctx, points, color, lineWidth = 1) {
+function polyline(ctx, points, color, lineWidth = 1, dash = []) {
   ctx.strokeStyle = color;
   ctx.lineWidth = lineWidth;
+  ctx.setLineDash(dash);
   ctx.beginPath();
   points.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
   ctx.stroke();
+  ctx.setLineDash([]);
 }
 
-// Labels hang off the shared H tick (AH to its left, HV to its right) so they never overlap.
-function bracket(ctx, x0, x1, y, label, color, align = 'center') {
-  polyline(ctx, [[x0, y - 4], [x0, y], [x1, y], [x1, y - 4]], color);
+function bracket(ctx, x0, x1, y, label, color) {
+  const [a, b] = x0 <= x1 ? [x0, x1] : [x1, x0];
+  polyline(ctx, [[a, y - 4], [a, y], [b, y], [b, y - 4]], color);
   const w = ctx.measureText(label)?.width || label.length * 6;
-  const x = align === 'right' ? x1 - w - 2 : align === 'left' ? x0 + 2 : (x0 + x1 - w) / 2;
-  tag(ctx, label, x, y + 11, color);
+  tag(ctx, label, Math.max(LABEL_W, (a + b - w) / 2), y + 11, color);
 }
 
-function drawCalipers(ctx, scenario, lang, geo) {
-  const row = geo.rowTop(CHANNEL_INDEX.get('his-d'));
-  const bottom = row + geo.rowH - 4;
+function drawCalipers(ctx, recording, geo, rows) {
+  const inside = (t) => t >= geo.from - 1 && t <= geo.to + 1;
   ctx.font = '9px ui-monospace, monospace';
-  for (const beat of scenario.beats) {
-    const { a, h, v } = beat.his;
-    if (beat.kind === 'sinus') {
-      bracket(ctx, geo.x(a), geo.x(h), bottom - 10, `AH ${h - a}`, '#ffeca8', 'right');
-      bracket(ctx, geo.x(h), geo.x(v), bottom - 10, `HV ${v - h}`, '#ffeca8', 'left');
-      continue;
-    }
-    tag(ctx, 'V', geo.x(v) - 3, row + 9, '#d7f5e4');
-    if (beat.vaBlock) {
-      tag(ctx, lang === 'en' ? 'VA block' : 'VA blok', geo.x(v) + 10, bottom - 2, '#ff8a65');
-      continue;
-    }
-    tag(ctx, 'A', geo.x(a) - 3, row + 9, '#d7f5e4');
-    bracket(ctx, geo.x(v), geo.x(a), bottom - 10, `VA ${a - v}`, '#ffeca8');
+  const used = new Map();   // stagger calipers sharing a row so labels never overlap
+  for (const caliper of recording.calipers) {
+    const a = resolveRef(recording, caliper.a);
+    const b = resolveRef(recording, caliper.b);
+    const rowIndex = rows.get(caliper.row);
+    if (!a || !b || rowIndex === undefined || !inside(a.t) || !inside(b.t)) continue;
+    const level = used.get(rowIndex) || 0;
+    used.set(rowIndex, level + 1);
+    const y = geo.rowTop(rowIndex) + geo.rowH - 6 - level * 15;
+    bracket(ctx, geo.x(a.t), geo.x(b.t), y, `${caliper.label} ${measure(recording, caliper)}`, '#ffeca8');
   }
 }
 
-function drawFrame(ctx, width, height, scenario, lang, geo) {
+function drawMarkers(ctx, recording, geo, lang, height) {
+  ctx.font = '9px ui-monospace, monospace';
+  for (const marker of recording.markers) {
+    if (marker.t < geo.from || marker.t > geo.to) continue;
+    const x = geo.x(marker.t);
+    polyline(ctx, [[x, HEADER_H], [x, height - FOOTER_H]], 'rgba(255, 178, 120, 0.55)', 1, [4, 4]);
+    const label = pick(marker.label, lang);
+    const w = ctx.measureText(label)?.width || label.length * 6;
+    tag(ctx, label, Math.max(LABEL_W, Math.min(x + 3, geo.x(geo.to) - w - 4)), HEADER_H + 10, '#ffb278');
+  }
+}
+
+function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
   ctx.fillStyle = '#0e1815';
   ctx.fillRect(0, 0, width, height);
   // Faint grid: one vertical line every 100 ms.
   ctx.strokeStyle = 'rgba(120, 170, 150, 0.14)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  for (let t = 0; t <= scenario.windowMs; t += 100) {
+  for (let t = Math.ceil(geo.from / 100) * 100; t <= geo.to; t += 100) {
     const x = Math.round(geo.x(t)) + 0.5;
     ctx.moveTo(x, HEADER_H);
     ctx.lineTo(x, height - FOOTER_H);
@@ -245,14 +143,14 @@ function drawFrame(ctx, width, height, scenario, lang, geo) {
   ctx.stroke();
   ctx.font = FONT;
   ctx.textBaseline = 'middle';
-  EGM_CHANNELS.forEach((ch, i) => {
-    ctx.fillStyle = COLORS[ch.id];
+  channels.forEach((ch, i) => {
+    ctx.fillStyle = COLORS[ch.id] || '#c9d6cf';
     ctx.fillText(ch.label, 6, geo.rowTop(i) + geo.rowH / 2);
   });
   ctx.textBaseline = 'alphabetic';
-  if (width >= 520) {
+  if (width >= 520 && title) {
     ctx.fillStyle = '#9fc7b6';
-    ctx.fillText(pick(scenario.title, lang), LABEL_W, 13);
+    ctx.fillText(title, LABEL_W, 13);
   }
   ctx.font = 'bold 13px ui-monospace, monospace';
   ctx.textAlign = 'right';
@@ -261,137 +159,86 @@ function drawFrame(ctx, width, height, scenario, lang, geo) {
   ctx.textAlign = 'left';
   // Scale bar: 100 ms, bottom left.
   const y = height - 5;
-  polyline(ctx, [[geo.x(0), y], [geo.x(100), y]], '#d7f5e4', 1.5);
+  polyline(ctx, [[geo.x(geo.from), y], [geo.x(geo.from + 100), y]], '#d7f5e4', 1.5);
   ctx.font = FONT;
   ctx.fillStyle = '#d7f5e4';
-  ctx.fillText('100 ms', geo.x(100) + 6, y + 3);
+  ctx.fillText('100 ms', geo.x(geo.from + 100) + 6, y + 3);
+  if (geo.to - geo.from < recording.windowMs - 1) {
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.round(geo.from)}–${Math.round(geo.to)} ms`, width - 6, y + 3);
+    ctx.textAlign = 'left';
+  }
 }
 
 /**
- * Draw the synthetic EGM strip on a canvas (DPR aware, dark recorder look).
+ * Draw a synthetic recording on a canvas (DPR aware, dark recorder look).
  * @param {HTMLCanvasElement} canvas
- * @param {string} scenarioId
- * @param {{ lang?: string, cursor?: number|null }} [options] cursor is a 0..1 fraction of the window
+ * @param {object} recording from ep-cases.js (epRecording(id)) or ep-maneuver-sim.js
+ * @param {{ lang?: string, cursor?: number|null, cursorMs?: number|null, title?: string,
+ *   channels?: string[], zoom?: number, pan?: number }} [options]
+ *   cursor: 0..1 fraction of the window; cursorMs: inspection time in ms;
+ *   channels: the rows to draw (default: the recording's list); zoom/pan: time window
+ * @returns {{ from: number, to: number, plotLeft: number, plotW: number }|undefined} the drawn time window
  */
-export function drawEgm(canvas, scenarioId, { lang = 'tr', cursor = null } = {}) {
+export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0 } = {}) {
   const width = canvas?.clientWidth;
   const height = canvas?.clientHeight;
-  if (!(width >= 2) || !(height >= 2)) return;
+  if (!recording || !(width >= 2) || !(height >= 2)) return;
   const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
   if (canvas.width !== Math.floor(width * dpr)) canvas.width = Math.floor(width * dpr);
   if (canvas.height !== Math.floor(height * dpr)) canvas.height = Math.floor(height * dpr);
   const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
   if (!ctx) return;
-  const scenario = SCENARIOS.get(scenarioId) || SCENARIOS.get('sinus');
+  const channels = (only || recording.channels).map((id) => CHANNEL_BY_ID.get(id)).filter(Boolean);
+  if (!channels.length) return;
+  const rows = new Map(channels.map((ch, i) => [ch.id, i]));
   const plotW = Math.max(1, width - LABEL_W - 6);
-  const rowH = (height - HEADER_H - FOOTER_H) / EGM_CHANNELS.length;
-  const geo = { rowH, rowTop: (i) => HEADER_H + i * rowH, x: (t) => LABEL_W + (t / scenario.windowMs) * plotW };
+  const rowH = (height - HEADER_H - FOOTER_H) / channels.length;
+  const { from, to } = timeWindow(recording, zoom, pan);
+  const geo = { rowH, from, to, rowTop: (i) => HEADER_H + i * rowH, x: (t) => LABEL_W + ((t - from) / (to - from)) * plotW };
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  drawFrame(ctx, width, height, scenario, lang, geo);
+  drawFrame(ctx, width, height, recording, lang, geo, channels, title);
+  drawMarkers(ctx, recording, geo, lang, height);
 
   const gain = rowH * 0.42;
   const steps = Math.max(120, Math.floor(plotW));
   ctx.lineWidth = 1.3;
   ctx.lineJoin = 'round';
-  EGM_CHANNELS.forEach((ch, i) => {
+  channels.forEach((ch, i) => {
     const mid = geo.rowTop(i) + rowH / 2;
-    ctx.strokeStyle = COLORS[ch.id];
+    ctx.strokeStyle = COLORS[ch.id] || '#c9d6cf';
     ctx.beginPath();
     for (let s = 0; s <= steps; s++) {
-      const t = (s / steps) * scenario.windowMs;
-      const y = mid - egmSample(scenario.id, ch.id, t) * gain;
+      const t = from + (s / steps) * (to - from);
+      const y = mid - egmSample(recording, ch.id, t) * gain;
       if (s === 0) ctx.moveTo(geo.x(t), y);
       else ctx.lineTo(geo.x(t), y);
     }
     ctx.stroke();
   });
-  drawCalipers(ctx, scenario, lang, geo);
+  drawCalipers(ctx, recording, geo, rows);
 
-  if (typeof cursor === 'number' && Number.isFinite(cursor)) {
-    const x = geo.x(Math.min(1, Math.max(0, cursor)) * scenario.windowMs);
+  const cursorAt = Number.isFinite(cursorMs) ? cursorMs
+    : typeof cursor === 'number' && Number.isFinite(cursor) ? Math.min(1, Math.max(0, cursor)) * recording.windowMs : null;
+  if (cursorAt != null && cursorAt >= from && cursorAt <= to) {
+    const x = geo.x(cursorAt);
     polyline(ctx, [[x, HEADER_H], [x, height - FOOTER_H]], 'rgba(255, 236, 168, 0.85)', 1.2);
   }
+  return { from, to, plotLeft: LABEL_W, plotW };
 }
 
-/**
- * Build the synthetic EGM panel inside mount.
- * @param {HTMLElement} mount
- * @param {{ getLang?: () => string, onScenario?: (id: string) => void }} [options]
- * @returns {{ setScenario, getScenario, setLanguage, draw, show, hide, element }|null}
- */
-export function createEgmPanel(mount, { getLang, onScenario } = {}) {
-  const doc = mount?.ownerDocument || globalThis.document;
-  if (!mount || !doc) return null;
-  let lang = (typeof getLang === 'function' && getLang()) || 'tr';
-  let scenarioId = 'sinus';
-  let cursor = null;
+/** Time (ms) under a canvas x coordinate for the drawn window, or null outside the plot. */
+export function timeAtX(x, drawn) {
+  if (!drawn || x < drawn.plotLeft || x > drawn.plotLeft + drawn.plotW) return null;
+  return drawn.from + ((x - drawn.plotLeft) / drawn.plotW) * (drawn.to - drawn.from);
+}
 
-  const el = (tagName, className) => {
-    const node = doc.createElement(tagName);
-    if (className) node.className = className;
-    return node;
-  };
-  const root = el('section', 'egm-panel');
-  const eyebrow = el('p', 'eyebrow');
-  const title = el('h3', 'egm-title');
-  const row = el('div', 'egm-scenarios');
-  row.setAttribute('role', 'group');
-  const buttons = EGM_SCENARIOS.map((id) => {
-    const button = el('button');
-    button.type = 'button';
-    button.setAttribute('data-egm-scenario', id);
-    button.addEventListener('click', () => {
-      setScenario(id);
-      if (typeof onScenario === 'function') onScenario(id);
-    });
-    row.appendChild(button);
-    return button;
-  });
-  const canvas = el('canvas', 'egm-canvas');
-  canvas.setAttribute('role', 'img');
-  const text = el('p', 'egm-text');
-  root.append(eyebrow, title, row, canvas, text);
-  mount.appendChild(root);
-
-  const redraw = () => drawEgm(canvas, scenarioId, { lang, cursor });
-
-  function render() {
-    const scenario = SCENARIOS.get(scenarioId);
-    eyebrow.textContent = lang === 'en' ? 'SYNTHETIC ELECTROGRAM' : 'SENTETİK ELEKTROGRAM';
-    title.textContent = pick(scenario.title, lang);
-    text.textContent = pick(scenario.text, lang);
-    row.setAttribute('aria-label', lang === 'en' ? 'EGM scenario' : 'EGM senaryosu');
-    canvas.setAttribute('aria-label', `${lang === 'en' ? 'Synthetic electrogram strip, not a clinical recording' : 'Sentetik elektrogram şeridi, klinik kayıt değil'}: ${pick(scenario.title, lang)}`);
-    buttons.forEach((button, i) => {
-      const id = EGM_SCENARIOS[i];
-      button.textContent = pick(BUTTON_LABELS[id], lang);
-      button.setAttribute('aria-pressed', String(id === scenarioId));
-    });
-    redraw();
+/** Events within `radius` ms of t on each channel (the inspection readout). */
+export function eventsNear(recording, t, channels, radius = 25) {
+  const out = [];
+  for (const ch of channels) {
+    for (const e of recording.events[ch] || []) if (Math.abs(e.t - t) <= radius) out.push({ ch, type: e.type, t: e.t });
   }
-
-  function setScenario(id) {
-    if (!SCENARIOS.has(id)) return;
-    scenarioId = id;
-    render();
-  }
-
-  render();
-  return {
-    element: root,
-    setScenario,
-    getScenario: () => scenarioId,
-    setLanguage(next) {
-      lang = next === 'en' ? 'en' : 'tr';
-      render();
-    },
-    draw(cycleState) {
-      const phase = cycleState?.phase;
-      cursor = typeof phase === 'number' && Number.isFinite(phase) ? phase : null;
-      redraw();
-    },
-    show() { root.hidden = false; redraw(); },
-    hide() { root.hidden = true; }
-  };
+  return out.sort((a, b) => a.t - b.t);
 }

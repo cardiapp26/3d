@@ -111,7 +111,11 @@ export function afStrip({ seed = AF_RHYTHM.seed, beats = AF_RHYTHM.beats, rrMin 
 // ventricular clocks; each atrial contraction is a normal a wave when the
 // tricuspid valve is open and a cannon a when it meets the closed valve.
 // ---------------------------------------------------------------------------
-export const AVD_RHYTHM = Object.freeze({ ventricularRate: 40, ventricularBeats: 7, atrialRate: 75, atrialOffset: 0.3, contractionDelay: 0.11, aAmplitude: 2.5, cannonAmplitude: 10, width: 0.06 });
+export const AVD_RHYTHM = Object.freeze({ ventricularRate: 40, ventricularBeats: 7, atrialRate: 75, atrialOffset: 0.3, aAmplitude: 2.5, cannonAmplitude: 10, width: 0.06 });
+// Atrial contraction peak on the template (middle of atrial systole): the
+// schematic electromechanical delay from the P wave is the template interval
+// pPeak to this phase at the atrial rate, the same for the 3D atria and the JVP.
+const ATRIAL_PEAK = (S.atrialStart + S.atrialEnd) / 2;
 
 export function avdStrip({ ventricularRate = AVD_RHYTHM.ventricularRate, atrialRate = AVD_RHYTHM.atrialRate, atrialOffset = AVD_RHYTHM.atrialOffset } = {}) {
   const rr = 60 / ventricularRate;
@@ -120,9 +124,14 @@ export function avdStrip({ ventricularRate = AVD_RHYTHM.ventricularRate, atrialR
   // Whole number of atrial beats in the strip (seamless loop); the rate actually used is reported.
   const atrialBeats = Math.max(1, Math.round(atrialRate * duration / 60));
   const pp = duration / atrialBeats;
+  const atrialBpm = 60 / pp;
+  const contractionDelay = (phaseToTime(ATRIAL_PEAK, atrialBpm) - phaseToTime(S.pPeak, atrialBpm)) * pp;
+  // Atrial clock: the template phase of the atria, with its P wave on each P event.
+  const atrialStart = atrialOffset - phaseToTime(S.pPeak, atrialBpm) * pp;
+  const atrialPhaseAt = t => timeToPhase(wrapTime(t - atrialStart, pp) / pp, atrialBpm);
   const atrial = Array.from({ length: atrialBeats }, (_, k) => {
     const p = atrialOffset + k * pp;
-    const contraction = p + AVD_RHYTHM.contractionDelay;
+    const contraction = p + contractionDelay;
     const open = tricuspidOpen(clock.phaseAt(contraction));
     return Object.freeze({ p, t: contraction, kind: open ? 'a' : 'cannon', valveOpen: open });
   });
@@ -141,8 +150,10 @@ export function avdStrip({ ventricularRate = AVD_RHYTHM.ventricularRate, atrialR
   const pWave = t => atrial.reduce((sum, e) => sum + [-duration, 0, duration].reduce((a, s) => a + 0.2 * bell(t - e.p - s, 0.035), 0), 0);
   return strip({
     id: 'avd', clock, duration, scopes: ['cannon', 'rhythm-avd'],
-    atrialRate: atrialBeats * 60 / duration, ventricularRate,
+    atrialRate: atrialBeats * 60 / duration, ventricularRate, contractionDelay,
     phaseAt: clock.phaseAt,
+    /** Template phase of the separate atrial clock (drives the 3D atria). */
+    atrialPhaseAt,
     pressure: t => offset + raw(wrapTime(t, duration)),
     ecg: t => ecgSample(clock.phaseAt(t), 'ventricular') + pWave(wrapTime(t, duration)),
     atrial

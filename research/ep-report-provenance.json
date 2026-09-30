@@ -1,0 +1,100 @@
+{
+  "task": "EP module research and development report",
+  "created_utc": "2026-09-30T09:05:22.894469+00:00",
+  "client_date": "2026-09-30",
+  "authority": "edit report only",
+  "report": {
+    "path": "/Users/yh/Documents/projects/3d card visualization/research/ELEKTROFIZYOLOJIK_ANATOMI_GELISTIRME_RAPORU.md",
+    "sha256": "4d1e010643b6ae2cadf101079ba199a3103c183010be6a9310f8719700f42bba",
+    "note": "sha256 regenerated on 2026-09-30 after the implementation-status section was added by the implementation task (separate user instruction); the original research-only hash was 033d6201056885578e0c761a648547c84ce680fd3b4fe90ea2a2d180a052b869"
+  },
+  "inputs": [
+    {
+      "path": "README.md",
+      "sha256": "9e4d20c32ba3fbd36eec9e4c62519762edc00f69ee83c1fa1fefa9e499335923"
+    },
+    {
+      "path": "package.json",
+      "sha256": "9ce520cc5108cdc6b3c252d7847ca627bcd84c48bad1cdb320c9eead4b12e3ca"
+    },
+    {
+      "path": "src/content.js",
+      "sha256": "a87ab007258191ae3e4bb91abbba8e33553e4bb8b03a92fa9cfb32db76afe8ec"
+    },
+    {
+      "path": "src/main.js",
+      "sha256": "ca689569a9b4a5f237433e1be2d33585efc640113f76362b71dc4e4630afce99"
+    },
+    {
+      "path": "src/ep-egm.js",
+      "sha256": "3d24f60f7b9baf15aaa5cd2d1eea5d54acf0f4a71aa34ddfb04e5602c819e3d6"
+    },
+    {
+      "path": "src/ep-landmarks.js",
+      "sha256": "95676fbac04b8fb2f900848c1a98eb7d71eeb9824e2aaa1081f6e73a0b8d7131"
+    },
+    {
+      "path": "scripts/test-ep-egm.mjs",
+      "sha256": "8cd75abd31d70d552d54fdded8c0e9fba4c14c4f7e424d8bf767a1b72544ae12"
+    },
+    {
+      "path": "research/ABLASYON_IYILESTIRME_RAPORU.md",
+      "sha256": "104913b628b5d061e3d237078a7f9e5b70020c68221d7c46e518f64b1550601f"
+    }
+  ],
+  "environment": {
+    "python": "3.10.7",
+    "platform": "macOS-26.5.1-arm64-arm-64bit"
+  },
+  "checks": {
+    "reference_definitions_14": true,
+    "references_resolve": true,
+    "first_appearance_order": true,
+    "scenario_rows_24": true,
+    "no_parenthetical_em_dash": true,
+    "all_requested_sections": true,
+    "open_items_7": true
+  },
+  "verification_scope": "Report structure and source fact-check; application tests not run; no application code edits",
+  "source_access": "Primary publisher text, PubMed primary abstracts, targeted web search, scite metadata/Smart Citations. R2 readable fulltext unavailable; ESC corrigendum read directly at publisher.",
+  "independent_review": "Separate model fact-check completed; no human EP review",
+  "clinical_data": false,
+  "statistical_estimation": false,
+  "numbers": "Scenario times are authored teaching proposals, not patient estimates; no statistical uncertainty quantified",
+  "graph_discovery": "Project path not indexed; only project 3dN available, targeted query returned 0; fallback local reads",
+  "search_queries": [
+    "accessory pathway concealed para-Hisian coronary sinus ablation",
+    "His refractory PVC ventricular overdrive pacing",
+    "junctional VA block atypical AVNRT",
+    "coronary sinus-ventricular accessory connections",
+    "unipolar accessory pathway"
+  ],
+  "dois_checked_scite": [
+    "10.1093/eurheartj/ehz467",
+    "10.1093/eurheartj/ehz827",
+    "10.1093/europace/eun151",
+    "10.1016/j.jacep.2018.09.012",
+    "10.1161/01.cir.0000028464.12047.a6",
+    "10.1161/01.cir.94.5.1027",
+    "10.1161/CIRCEP.113.000986",
+    "10.1016/j.hrcr.2018.06.002"
+  ],
+  "updated_utc": "2026-09-30T10:13:16.690589+00:00",
+  "amendments": [
+    {
+      "reason": "User reports 3D ventricular-only animation during AV dissociation; add explicit limitation, independent atrial/ventricular event animation requirement and acceptance criterion.",
+      "evidence": "User observation; not independently reproduced in live application.",
+      "application_code_changed": false
+    },
+    {
+      "reason": "Record seven user-reported open deliverables with implementation scope and closure evidence.",
+      "evidence": "User status report; application not rerun.",
+      "application_code_changed": false
+    },
+    {
+      "reason": "Implementation round 4 status (section 15 items, AV dissociation 3D atria) and reference R15 added by the implementation task on user instruction.",
+      "evidence": "npm run check, npm test, npm run build and 16 browser tests passed on 2026-09-30; no human EP review.",
+      "application_code_changed": true
+    }
+  ]
+}
