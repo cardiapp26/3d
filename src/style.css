@@ -912,9 +912,10 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .ep-sources{font-size:9.5px!important;color:#7a877e!important;line-height:1.5!important}
 
 /* Echocardiography mode: modality, views, sector, feedback and probe controls (compact) */
-[data-app-mode=echo] #carm-panel{display:none!important}
+[data-app-mode=echo] #carm-panel,[data-app-mode=tee] #carm-panel{display:none!important}
 [data-practice=off] .practice{display:none!important}
 .echo-panel-mount{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e3e8df}
+.echo-modality[hidden]{display:none}
 .echo-modality{display:inline-grid;grid-template-columns:auto auto;gap:0;margin:0 0 6px;border:1px solid #cbd7c5;border-radius:4px;overflow:hidden}
 .echo-modality button{border:0;border-radius:0;padding:3px 12px;font-size:10.5px;background:transparent;color:#3f5c4b}
 .echo-modality button[aria-pressed=true]{background:#244f43;color:#fff;font-weight:600}
@@ -1013,6 +1014,13 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .header-tabs{padding:0 16px}
   .mode-group-tab{padding:0 9px}
   .mode-group-current{display:none}
+}
+/* Narrow tablets: five group tabs need the room; Layers / Tools keep only their icon. */
+@media (min-width:641px) and (max-width:900px){
+  .header-tabs{gap:4px;padding:0 10px}
+  .mode-group-tab{padding:0 7px;font-size:11.5px;gap:5px}
+  .drawer-tab{padding:6px 9px}
+  .drawer-tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 }
 @media (max-width:640px){
   .header-tabs{display:none}

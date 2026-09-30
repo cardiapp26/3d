@@ -619,8 +619,8 @@ const openDrawer = async (page, id) => {
     assert.ok(Math.abs(panelBox.width - 390) < 2, `C-Arm bottom drawer spans mobile width (actual: ${panelBox.width})`);
     await page.setViewportSize({ width: 1440, height: 1050 });
 
-    // 12. Educational modes: Angiography (05), Ablation anatomy (06), Pacemaker leads (07)
-    // Mode 03 Angiography
+    // 12. Educational modes: Coronary angiography (07), EP anatomy (09), Pacemaker leads (10)
+    // Coronary angiography
     await page.locator('[data-mode="angiography"]').dispatchEvent('click');
     assert.equal(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), true, 'C-Arm is hidden at the right edge when a mode opens (also angiography)');
     await page.locator('#steps button[data-step="1"]').click(); // Spider view step

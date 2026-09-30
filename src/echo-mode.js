@@ -24,6 +24,7 @@ export function createEchoMode({ heart, mount, getLang }) {
   let active = false, anatomy = null, items = null, path = null, hull = null, chest = null, panel = null, overlay = null;
   const state = {
     modality: 'tte', view: 'plax', style: 'anatomy', labels: true, sectorAngle: SECTOR_ANGLE,
+    locked: null,  // modality fixed by the app mode (TTE or TEE); the panel then hides its switch
     tte: { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 }, tee: null, depth: 4,
     task: null,  // { target: viewId, done: boolean, start: probe pose at the start }
     frozen: false  // stopped with the panel's freeze button (the badge says so)
@@ -194,11 +195,16 @@ export function createEchoMode({ heart, mount, getLang }) {
   }
 
   return {
-    enter() {
+    /** `modality`: the mode's fixed modality (TTE and TEE are separate modes). */
+    enter(modality = 'tte') {
       active = true;
+      state.locked = modality;
       ensurePanel();
       mount.hidden = false;
-      if (ensureAnatomy()) { overlay.group.visible = true; refresh(true); }
+      if (!ensureAnatomy()) return;
+      overlay.group.visible = true;
+      if (state.modality !== modality) selectView((modality === 'tee' ? TEE_VIEWS : TTE_VIEWS)[0].id);
+      else refresh(true);
     },
     exit() {
       active = false;

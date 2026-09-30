@@ -18,19 +18,19 @@ Unregistered legacy catheter curves are no longer superimposed on this anatomy. 
 - **Schematic 3D models** (`SCHEMATIC CONCEPT / 3D ILLUSTRATION`): Procedural conduction landmarks (SA node, halo, AV node, bundle branches) and microscopic myocyte illustrations.
 - **Reference notes** (`REFERENCE NOTE / NO REGISTERED MESH`): Contextual learning landmarks without dedicated 3D geometry.
 
-## Ablation: Koch close-up, reference catheters, synthetic EGM (Mode 06)
+## Ablation: Koch close-up, reference catheters, synthetic EGM (Mode 09)
 
 The Koch step opens in a Koch · RAO 30 close-up (Koch · LAO 45 in the header Tools tab); the camera stays outside the heart and the coronaries and valve apparatus are hidden in front of the triangle. Scene labels state their source (CS mouth estimated, septal hinge from the atlas rim, AV node and slow-pathway target schematic). Magenta His and blue CS reference catheters and the optional example RF lesions (off by default) toggle in the same Tools tab. Step 5 shows an explicitly synthetic six-channel electrogram (sinus, slow-pathway target, junctional rhythm during RF, VA block warning). Record: `research/ABLASYON_IYILESTIRME_RAPORU.md`. Run `npm run test:ep-koch` against the development server.
 
-## Echocardiography (Mode 12)
+## Echocardiography (Modes 12 TTE, 13 TEE)
 
 TTE and TEE anatomical section training: the probe and its imaging fan in the 3D scene, the 2D sector section of the same plane (same beat phase) in the right panel, 8 TTE and 8 TEE starting views, separate TEE motions, explainable feedback and a find-the-view task. It is not an ultrasound simulator (no B-mode, Doppler or measurement) and the presets were tuned automatically on this atlas without expert review. Record: `research/echo/README.md`. Run `npm run test:echo`, `npm run echo:calibrate` and `npm run echo:audit` against the development server.
 
-## Atrial inspection (Modes 09 & 10)
+## Atrial inspection (Modes 02 & 03)
 
-Mode **09 Sol atriyum & LAA / Left atrium & LAA** shows only the left atrium and the LAA orifice marker (the schematic gold ring indicating the transition from the LA body to the left atrial appendage). Focus buttons and the filtered structure selector inspect LA and LAA. The LA wall cut slider exposes the internal cavity and ridge anatomy.
+Mode **02 Sol atriyum & LAA / Left atrium & LAA** shows only the left atrium and the LAA orifice marker (the schematic gold ring indicating the transition from the LA body to the left atrial appendage). Focus buttons and the filtered structure selector inspect LA and LAA. The LA wall cut slider exposes the internal cavity and ridge anatomy.
 
-Mode **10 Sağ atriyum / Right atrium** provides an isolated view of the right atrium alone. It includes its own RA focus button and wall section slider to inspect internal pectinate muscles and caval inflows without interference from other chambers.
+Mode **03 Sağ atriyum / Right atrium** provides an isolated view of the right atrium alone. It includes its own RA focus button and wall section slider to inspect internal pectinate muscles and caval inflows without interference from other chambers.
 
 Both modes isolate their respective anatomy, keep surrounding structures and flow hidden, and automatically restore original layer preferences when navigating back to other modes. Deep links: `#/mode/atria?structure=laa` and `#/mode/ra?structure=ra`.
 

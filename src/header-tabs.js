@@ -147,6 +147,7 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
       if (!tab) continue;
       tab.hidden = !available[id];
       tab.querySelector('.drawer-tab-label').textContent = w[id];
+      tab.title = w[id];
     }
     if (drawer && !available[drawer]) setDrawer(null);
     // Modes whose only controls are tools (LA, RA, septal defects) open them on entry.

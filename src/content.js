@@ -1341,7 +1341,7 @@ export const rawLessons = {
   },
   echo: {
     tr: {
-      title: 'Ekokardiyografi • TTE ve TEE anatomik kesit eğitimi',
+      title: 'Transtorasik eko (TTE) • anatomik kesit eğitimi',
       intro: 'Prob, ultrason düzlemi ve 3B anatomi solda; aynı düzlemden hesaplanan 2B sektör kesiti sağda. Kesit, atımın o anki fazındaki geometriden hesaplanır; dondurmak iki görüntüyü birlikte durdurur. Bu bir prob-kesit-anatomi eğitimidir: gerçek ultrason, Doppler veya ölçüm değildir.',
       steps: [
         {
@@ -1350,24 +1350,19 @@ export const rawLessons = {
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'plax' }
         },
         {
-          title: 'TEE: özofagus-mide yolu ve 8 temel görünüm',
-          text: 'Prob, sol atriyumun arkasındaki şematik özofagustan mideye uzanan yolda hareket eder. İlerletme/geri çekme, şaft rotasyonu, ante/retrofleksiyon, sağ/sol fleksiyon ve elektronik multiplan açısı ayrı hareketlerdir. Orta özofagus (ME): dört boşluk, mitral komissüral, iki boşluk, uzun eksen, aort kapağı kısa eksen, bikaval ve LAA. Transgastrik (TG): orta papiller kısa eksen. 0°\'de hastanın solu ekranın sağında, 90°\'de kranial taraf ekranın sağındadır. Bir açı tek başına görünümü garanti etmez: seviye ve şaft hareketi birlikte gerekir.',
-          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
-        },
-        {
           title: 'Görev: görünümü bulun',
           text: 'Prob hedef görünümden uzaklaştırılmış olarak başlar. Kontrollerle hedefi bulun. Geri bildirim yalnız açıya bakmaz: gerekli yapıların kesitte olması, olmaması gereken yapıların (ör. apikal dört boşlukta aort çıkış yolu) ve apeksin kısalmaması birlikte değerlendirilir. Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Etiketleri kapatarak kendinizi sınayın.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', task: true }
         },
         {
           title: 'Sınırlar: bu görüntü neyi göstermez?',
-          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle), artefaktlar, akustik pencere ve kaburga gölgesi yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. TTE pencereleri göğüs duvarı modellenmediği için hazır noktalardır. TEE yolu ölçülmüş bir özofagus değildir; derinlik santimetre olarak sunulmaz. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlasın kaynağı ve lisansı doğrulanmamıştır; bu nedenle modül yayın veya klinik eğitim yeterliliği iddiası taşımaz.',
+          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. Akustik pencere ve kaburga gölgesi yoktur; TTE pencereleri göğüs duvarı modellenmediği için hazır noktalardır. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlasın kaynağı ve lisansı doğrulanmamıştır; bu nedenle modül yayın veya klinik eğitim yeterliliği iddiası taşımaz.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
         }
       ]
     },
     en: {
-      title: 'Echocardiography • TTE and TEE anatomical section training',
+      title: 'Transthoracic echo (TTE) • anatomical section training',
       intro: 'Probe, ultrasound plane and 3D anatomy on the left; the 2D sector section of the same plane on the right. The section is computed from the geometry at the current phase of the beat; freezing stops both images together. This is probe-section-anatomy training: not real ultrasound, Doppler or measurement.',
       steps: [
         {
@@ -1376,19 +1371,58 @@ export const rawLessons = {
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'plax' }
         },
         {
-          title: 'TEE: oesophagus-stomach path and 8 basic views',
-          text: 'The probe moves along a schematic path from the oesophagus behind the left atrium into the stomach. Advance/withdraw, shaft rotation, ante/retroflexion, right/left flexion and the electronic multiplane angle are separate motions. Mid-oesophageal (ME): four-chamber, mitral commissural, two-chamber, long axis, aortic valve short axis, bicaval and LAA. Transgastric (TG): mid-papillary short axis. At 0 degrees the patient\'s left is on the right of the screen, at 90 degrees the cephalad side is. An angle alone does not guarantee a view: level and shaft motion are needed too.',
-          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
-        },
-        {
           title: 'Task: find the view',
           text: 'The probe starts moved away from the target view. Find the target with the controls. The feedback does not rely on the angle alone: it checks that the required structures are in the section, that structures that should not be there are absent (for example the outflow tract in the apical four-chamber view), and that the apex is not foreshortened. Thresholds are teaching values without expert calibration. Turn the labels off to test yourself.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', task: true }
         },
         {
           title: 'Limits: what this image does not show',
-          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle), artefact, acoustic window or rib shadow. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. TTE windows are preset points because the chest wall is not modelled. The TEE path is not a measured oesophagus; depth is not given in centimetres. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas source and licence are unverified; the module claims neither publication readiness nor clinical training competence.',
+          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. There is no acoustic window or rib shadow; TTE windows are preset points because the chest wall is not modelled. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas source and licence are unverified; the module claims neither publication readiness nor clinical training competence.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
+        }
+      ]
+    }
+  },
+  tee: {
+    tr: {
+      title: 'Transözofageal eko (TEE) • anatomik kesit eğitimi',
+      intro: 'Prob, ultrason düzlemi ve 3B anatomi solda; aynı düzlemden hesaplanan 2B sektör kesiti sağda. Kesit, atımın o anki fazındaki geometriden hesaplanır; dondurmak iki görüntüyü birlikte durdurur. Bu bir prob-kesit-anatomi eğitimidir: gerçek ultrason, Doppler veya ölçüm değildir.',
+      steps: [
+        {
+          title: 'TEE: özofagus-mide yolu ve 8 temel görünüm',
+          text: 'Prob, sol atriyumun arkasındaki şematik özofagustan mideye uzanan yolda hareket eder. İlerletme/geri çekme, şaft rotasyonu, ante/retrofleksiyon, sağ/sol fleksiyon ve elektronik multiplan açısı ayrı hareketlerdir. Orta özofagus (ME): dört boşluk, mitral komissüral, iki boşluk, uzun eksen, aort kapağı kısa eksen, bikaval ve LAA. Transgastrik (TG): orta papiller kısa eksen. 0°\'de hastanın solu ekranın sağında, 90°\'de kranial taraf ekranın sağındadır. Bir açı tek başına görünümü garanti etmez: seviye ve şaft hareketi birlikte gerekir.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
+        },
+        {
+          title: 'Görev: görünümü bulun',
+          text: 'Prob hedef görünümden uzaklaştırılmış olarak başlar: ilerletme, multiplan açısı ve şaft rotasyonu kaydırılmıştır. Kontrollerle hedefi bulun. Geri bildirim yalnız açıya bakmaz: gerekli yapıların kesitte olması ve olmaması gereken yapıların bulunmaması birlikte değerlendirilir. Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Etiketleri kapatarak kendinizi sınayın.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', task: true }
+        },
+        {
+          title: 'Sınırlar: bu görüntü neyi göstermez?',
+          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. TEE yolu ölçülmüş bir özofagus değildir; derinlik santimetre olarak sunulmaz. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlasın kaynağı ve lisansı doğrulanmamıştır; bu nedenle modül yayın veya klinik eğitim yeterliliği iddiası taşımaz.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
+        }
+      ]
+    },
+    en: {
+      title: 'Transoesophageal echo (TEE) • anatomical section training',
+      intro: 'Probe, ultrasound plane and 3D anatomy on the left; the 2D sector section of the same plane on the right. The section is computed from the geometry at the current phase of the beat; freezing stops both images together. This is probe-section-anatomy training: not real ultrasound, Doppler or measurement.',
+      steps: [
+        {
+          title: 'TEE: oesophagus-stomach path and 8 basic views',
+          text: 'The probe moves along a schematic path from the oesophagus behind the left atrium into the stomach. Advance/withdraw, shaft rotation, ante/retroflexion, right/left flexion and the electronic multiplane angle are separate motions. Mid-oesophageal (ME): four-chamber, mitral commissural, two-chamber, long axis, aortic valve short axis, bicaval and LAA. Transgastric (TG): mid-papillary short axis. At 0 degrees the patient\'s left is on the right of the screen, at 90 degrees the cephalad side is. An angle alone does not guarantee a view: level and shaft motion are needed too.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
+        },
+        {
+          title: 'Task: find the view',
+          text: 'The probe starts moved away from the target view: advance, multiplane angle and shaft rotation are offset. Find the target with the controls. The feedback does not rely on the angle alone: it checks that the required structures are in the section and that structures that should not be there are absent. Thresholds are teaching values without expert calibration. Turn the labels off to test yourself.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', task: true }
+        },
+        {
+          title: 'Limits: what this image does not show',
+          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. The TEE path is not a measured oesophagus; depth is not given in centimetres. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas source and licence are unverified; the module claims neither publication readiness nor clinical training competence.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
         }
       ]
     }
@@ -1436,14 +1470,15 @@ export const uiTranslations = {
       ['atria', '02', 'Sol atriyum & LAA'],
       ['ra', '03', 'Sağ atriyum'],
       ['defects', '04', 'ASD & VSD'],
-      ['angiography', '05', 'Anjiyografi'],
-      ['ablation', '06', 'Elektrofizyolojik anatomi'],
-      ['pacemaker', '07', 'Kalp pili elektrotları'],
+      ['cath', '05', 'Kateterizasyon ve hemodinami'],
+      ['exam', '06', 'Fizik muayene'],
+      ['angiography', '07', 'Koroner anjiyografi'],
       ['transseptal', '08', 'Transseptal & septostomi'],
-      ['bachmann', '09', 'Bachmann demeti & pacing'],
-      ['cath', '10', 'Kateterizasyon ve hemodinami'],
-      ['exam', '11', 'Fizik muayene'],
-      ['echo', '12', 'Ekokardiyografi (TTE/TEE)']
+      ['ablation', '09', 'Elektrofizyolojik anatomi'],
+      ['pacemaker', '10', 'Kalp pili elektrotları'],
+      ['bachmann', '11', 'Bachmann demeti & pacing'],
+      ['echo', '12', 'Transtorasik eko (TTE)'],
+      ['tee', '13', 'Transözofageal eko (TEE)']
     ],
     atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; turkuaz halka ostiyumu işaretler (Bachmann demeti değildir, bu modda gizlidir).',
     atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
@@ -1497,7 +1532,8 @@ export const uiTranslations = {
     beatPause: '♡ Atımı durdur',
     opacityLabel: 'Doku opaklığı',
     modeGroupAnatomy: 'Anatomi',
-    modeGroupIntervention: 'Girişimsel eğitim',
+    modeGroupIntervention: 'Girişimsel',
+    modeGroupEp: 'Elektrofizyoloji',
     modeGroupPhysiology: 'Fizyoloji ve muayene',
     modeGroupImaging: 'Görüntüleme',
     groupToggle: 'Alt yapıları göster veya gizle',
@@ -1576,14 +1612,15 @@ export const uiTranslations = {
       ['atria', '02', 'Left atrium & LAA'],
       ['ra', '03', 'Right atrium'],
       ['defects', '04', 'ASD & VSD'],
-      ['angiography', '05', 'Angiography'],
-      ['ablation', '06', 'Electrophysiological anatomy'],
-      ['pacemaker', '07', 'Pacemaker leads'],
+      ['cath', '05', 'Catheterization and hemodynamics'],
+      ['exam', '06', 'Physical examination'],
+      ['angiography', '07', 'Coronary angiography'],
       ['transseptal', '08', 'Transseptal & septostomy'],
-      ['bachmann', '09', 'Bachmann bundle & pacing'],
-      ['cath', '10', 'Catheterization and hemodynamics'],
-      ['exam', '11', 'Physical examination'],
-      ['echo', '12', 'Echocardiography (TTE/TEE)']
+      ['ablation', '09', 'Electrophysiological anatomy'],
+      ['pacemaker', '10', 'Pacemaker leads'],
+      ['bachmann', '11', 'Bachmann bundle & pacing'],
+      ['echo', '12', 'Transthoracic echo (TTE)'],
+      ['tee', '13', 'Transoesophageal echo (TEE)']
     ],
     atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the teal ring marks its orifice (it is not Bachmann\'s bundle, which is hidden in this mode).',
     atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',
@@ -1637,7 +1674,8 @@ export const uiTranslations = {
     beatPause: '♡ Pause beat',
     opacityLabel: 'Tissue opacity',
     modeGroupAnatomy: 'Anatomy',
-    modeGroupIntervention: 'Interventional training',
+    modeGroupIntervention: 'Interventional',
+    modeGroupEp: 'Electrophysiology',
     modeGroupPhysiology: 'Physiology and examination',
     modeGroupImaging: 'Imaging',
     groupToggle: 'Show or hide substructures',
@@ -1728,6 +1766,7 @@ const viewerTitles = {
     cath: 'Basınç eğrisini oku.',
     exam: 'Dinle, manevrayı yap.',
     echo: 'Probu yönlendir, kesiti oku.',
+    tee: 'Probu özofagusta ilerlet, kesiti oku.',
     atria: 'Sol atriyumu ve LAA’yı incele.',
     ra: 'Sağ atriyumu incele.'
   },
@@ -1742,6 +1781,7 @@ const viewerTitles = {
     cath: 'Read the pressure tracing.',
     exam: 'Listen, then maneuver.',
     echo: 'Aim the probe, read the section.',
+    tee: 'Advance the probe in the oesophagus, read the section.',
     atria: 'Explore the left atrium and LAA.',
     ra: 'Explore the right atrium.'
   }

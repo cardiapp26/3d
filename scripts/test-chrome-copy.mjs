@@ -11,21 +11,22 @@ import {
 const previous = getContentLanguage();
 
 setContentLanguage('en');
-assert.equal(getUiModes().length, 12);
+assert.equal(getUiModes().length, 13);
 // Listed (and numbered) in the order the grouped mode menu shows them.
 assert.deepEqual(getUiModes().map(([id]) => id), [
   'anatomy',
   'atria',
   'ra',
   'defects',
-  'angiography',
-  'ablation',
-  'pacemaker',
-  'transseptal',
-  'bachmann',
   'cath',
   'exam',
-  'echo'
+  'angiography',
+  'transseptal',
+  'ablation',
+  'pacemaker',
+  'bachmann',
+  'echo',
+  'tee'
 ]);
 assert.match(getViewerTitle('angiography'), /projection/i);
 assert.match(getAngioDescription('spider'), /spider/i);
@@ -36,7 +37,7 @@ assert.equal(getUiModes().find(([id]) => id === 'ra')[2], 'Right atrium');
 const englishSpider = getAngioDescription('spider');
 
 setContentLanguage('tr');
-assert.equal(getUiModes().length, 12);
+assert.equal(getUiModes().length, 13);
 assert.equal(getTranslation('wallClosed'), 'Kapalı');
 assert.equal(getUiModes().find(([id]) => id === 'atria')[2], 'Sol atriyum & LAA');
 assert.equal(getUiModes().find(([id]) => id === 'ra')[2], 'Sağ atriyum');

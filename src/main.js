@@ -24,10 +24,13 @@ document.documentElement.lang = getContentLanguage();
 // order (content.js carries the same numbers); keys 1-9 open modes 01-09.
 const MODE_GROUPS = [
   ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'defects']],
-  ['modeGroupIntervention', ['angiography', 'ablation', 'pacemaker', 'transseptal', 'bachmann']],
   ['modeGroupPhysiology', ['cath', 'exam']],
-  ['modeGroupImaging', ['echo']]
+  ['modeGroupIntervention', ['angiography', 'transseptal']],
+  ['modeGroupEp', ['ablation', 'pacemaker', 'bachmann']],
+  ['modeGroupImaging', ['echo', 'tee']]
 ];
+// TTE and TEE are one echo module; the mode fixes the modality.
+const ECHO_MODALITY = { echo: 'tte', tee: 'tee' };
 const modes = MODE_GROUPS.flatMap(([, ids]) => ids).map((id, i) => [id, String(i + 1).padStart(2, '0')]);
 const MODE_KEYS = 9;
 
@@ -847,7 +850,7 @@ function showStep({ relabel = false } = {}) {
   if (!relabel) syncEgm(s);
   if (isCath) hemoMode?.applyStep(s);
   if (mode === 'exam') examMode?.applyStep(s);
-  if (mode === 'echo' && !relabel) echoMode?.applyStep(s.echo);
+  if (ECHO_MODALITY[mode] && !relabel) echoMode?.applyStep(s.echo);
 
   if (s.view) {
     heart?.setView(s.view, true);
@@ -990,17 +993,18 @@ function setMode(newMode, updateUrl = true) {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   heart?.setMode(mode);
   const isDefects = mode === 'defects';
+  const isEcho = Boolean(ECHO_MODALITY[mode]);
   if(isDefects){defectPanel.show();setFluoroscopyActive(false);}else defectPanel.hide();
   document.querySelector('#cycle-panel').hidden=isDefects;
   const structInfoEl = document.querySelector('#structure-info');
   // Echo: the sector, controls and feedback come first; the structure card would push them down.
-  if (structInfoEl) structInfoEl.hidden = isDefects || mode === 'echo';
+  if (structInfoEl) structInfoEl.hidden = isDefects || isEcho;
   const structureIndexEl = document.querySelector('.structure-index');
-  if (structureIndexEl) structureIndexEl.hidden = mode === 'echo';
+  if (structureIndexEl) structureIndexEl.hidden = isEcho;
 
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();
-  if (mode === 'echo') echoMode?.enter(); else echoMode?.exit();
+  if (isEcho) echoMode?.enter(ECHO_MODALITY[mode]); else echoMode?.exit();
   // Mode-scoped styling (echo: no C-arm panel, no anatomy practice switcher).
   document.documentElement.dataset.appMode = mode;
   // Practice (Free / Guided / Test) and its Findings tab belong to the structure-picking anatomy modes;

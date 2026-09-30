@@ -149,6 +149,7 @@ export function createEchoPanel(mount, handlers) {
   function render({ state, result, view, playing, presetOmega }) {
     const t = T[lang];
     setText(heading, t.heading);
+    modality.hidden = Boolean(state.locked);
     modalityButtons.forEach(b => { setText(b, t[b.dataset.echoModality]); b.setAttribute('aria-pressed', String(b.dataset.echoModality === state.modality)); b.disabled = Boolean(state.task && !state.task.done); });
     renderViews(handlers.views[state.modality], state.view, state.task);
     buildProbe(state.modality);

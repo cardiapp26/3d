@@ -10,6 +10,11 @@
  */
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
+// TTE and TEE are separate modes of the one echo module.
+const useModality = async (page, modality) => {
+  await page.locator(`[data-mode=${modality === 'tee' ? 'tee' : 'echo'}]`).dispatchEvent('click');
+  await page.waitForFunction(m => window.cardiaEcho?.getState().modality === m, modality);
+};
 
 const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
 const SHOTS = process.env.SHOT_DIR || null;
@@ -28,7 +33,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     // Every starting view at its preset.
     const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'tgsax'] };
     for (const [modality, ids] of Object.entries(views)) {
-      await page.locator(`[data-echo-modality="${modality}"]`).click();
+      await useModality(page, modality);
       assert.equal(await page.locator('[data-echo-view]').count(), 8, `${modality}: 8 views`);
       for (const id of ids) {
         await page.locator(`[data-echo-view="${id}"]`).click();
@@ -51,11 +56,11 @@ const SHOTS = process.env.SHOT_DIR || null;
         return Object.fromEntries(Object.entries(s.structures).map(([k, v]) => [k, v.centroid]));
       });
     };
-    await page.locator('[data-echo-modality="tte"]').click();
+    await useModality(page, 'tte');
     const a4c = await centroids('a4c');
     assert.ok(a4c.lv[0] > a4c.rv[0] && a4c.la[0] > a4c.ra[0], 'A4C: left heart on the right of the screen');
     assert.ok(a4c.lv[1] < a4c.la[1], 'A4C: apex (LV) near the transducer, atria far');
-    await page.locator('[data-echo-modality="tee"]').click();
+    await useModality(page, 'tee');
     const me4c = await centroids('me4c');
     assert.ok(me4c.la[1] < me4c.lv[1], 'ME 4C: LA nearest the transducer');
     assert.ok(me4c.lv[0] > me4c.ra[0], 'ME 4C at 0 degrees: patient left on the screen right');
@@ -104,7 +109,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/echo-look.png` });
 
     // Find the view.
-    await page.locator('[data-echo-modality="tte"]').click();
+    await useModality(page, 'tte');
     await page.locator('[data-echo-action="task"]').click();
     const task = await page.evaluate(() => window.cardiaEcho.getState().task);
     assert.ok(task && task.target, 'task has a target');
@@ -153,7 +158,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.deepEqual(phases, [], 'all 16 views meet their criteria at 4 phases of the beat');
 
     // A seeded task is reproducible and solvable with the keyboard alone (slider arrow keys).
-    await page.locator('[data-echo-modality="tte"]').click();
+    await useModality(page, 'tte');
     const seeded = await page.evaluate(() => { window.cardiaEcho.startTask('tte', { seed: 7 }); const a = window.cardiaEcho.getState(); window.cardiaEcho.startTask('tte', { seed: 7 }); const b = window.cardiaEcho.getState(); return { a: [a.task.target, a.tte], b: [b.task.target, b.tte] }; });
     assert.equal(JSON.stringify(seeded.a[1]), JSON.stringify(seeded.b[1]), 'same seed, same start pose');
     await page.locator('.echo-controls summary').first().evaluate(el => { el.parentElement.open = true; });
