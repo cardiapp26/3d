@@ -233,6 +233,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     requestRender();
   }
   function paintSelection(){
+    sceneLabels.setFocus(hovered,selected);
     for(const m of meshes){
       const shown=m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id;
       const isSelected=shown===selected||m.userData.id===selected,isHovered=shown===hovered;
@@ -771,10 +772,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     }
     return hits[0]?shownStructureId(hits[0].object):null;
   }
-  function pointerMove(e){hovered=pick(e);paintSelection();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered);}
+  function pointerMove(e){hovered=pick(e);sceneLabels.setFocus(hovered,selected);paintSelection();requestRender();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered);}
   function pointerDown(e){transition=false;down=[e.clientX,e.clientY];}
   function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){const id=pick(e);if(id)onSelect(id);}}
-  function pointerLeave(){hovered=null;down=null;paintSelection();onHover(null);}
+  function pointerLeave(){hovered=null;down=null;sceneLabels.setFocus(selected);paintSelection();requestRender();onHover(null);}
   renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointerleave',pointerLeave);
   const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();if(modelReady&&mode==='atria'&&['la','laa'].includes(selected))focusLeftAtrium(selected);requestRender();};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
@@ -991,6 +992,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     getEpZone(){return epZones.getZone();},
     getEpZoneOptions(){return epZones.getOptions();},
     getEpOptional(){return epLandmarks.getOptional();},
+    // Scene identity labels: 'hover' (on demand, default) or 'all'.
+    setSceneLabelMode(value){sceneLabels.setMode(value);requestRender();},
+    getSceneLabelMode(){return sceneLabels.getMode();},
     setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
     setBachmannStep(step){pacemakerLeads.setBachmannStep(Number(step));requestRender();},
     setTransseptalStep(step){transseptal.setStep(Number(step));requestRender();},

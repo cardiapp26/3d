@@ -171,21 +171,23 @@ export function createPractice({ mount, findings, banner, getLang = () => 'tr', 
   }
 
   function renderSwitch() {
-    const group = el('div', 'practice-styles');
-    group.setAttribute('role', 'radiogroup');
-    group.setAttribute('aria-label', w().styleLabel);
-    // The explanation is a tooltip: the "Learn" tab above already frames the panel.
-    group.title = w().exploreNote;
+    // One compact select instead of a three-button row: the current style is shown, the others are one click away.
+    const row = el('label', 'practice-styles');
+    row.title = w().exploreNote;
+    const name = el('span', 'practice-styles-label', w().styleLabel);
+    const select = el('select', 'practice-style-select');
+    select.dataset.practiceSelect = '';
+    select.setAttribute('aria-label', w().styleLabel);
     for (const id of ['explore', 'learn', 'test']) {
-      const b = el('button', 'practice-style', w().styles[id]);
-      b.type = 'button';
-      b.dataset.practiceStyle = id;
-      b.setAttribute('role', 'radio');
-      b.setAttribute('aria-checked', String(style === id));
-      b.addEventListener('click', () => setStyle(id));
-      group.append(b);
+      const option = el('option', '', w().styles[id]);
+      option.value = id;
+      option.dataset.practiceStyle = id;
+      select.append(option);
     }
-    return group;
+    select.value = style;
+    select.addEventListener('change', () => setStyle(select.value));
+    row.append(name, select);
+    return row;
   }
 
   function action(label, handler, cls = '') {

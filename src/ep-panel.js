@@ -301,7 +301,9 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     const revealed = !diagnosis || state.evidence;
     const caseText = pick(EP_CASE_TEXT[state.caseId], lang);
     const simName = state.sim ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
-    title.textContent = state.sim ? `${caseText.name}: ${simName}` : revealed ? `${caseText.name}: ${clipText?.title || ''}` : t.neutralTitle;
+    const clipTitle = clipText?.title || '';
+    // Do not repeat the case name when the clip title already starts with it.
+    title.textContent = state.sim ? `${caseText.name}: ${simName}` : revealed ? (clipTitle.startsWith(caseText.name) ? clipTitle : `${caseText.name}: ${clipTitle}`) : t.neutralTitle;
     simPanel.setCase(state.caseId);
     simPanel.element.hidden = state.section !== 'maneuver' || !simPanel.supports(state.caseId);
     sizeBtn.textContent = state.large ? (lang === 'en' ? 'Shrink' : 'Küçült') : (lang === 'en' ? 'Enlarge' : 'Büyüt');

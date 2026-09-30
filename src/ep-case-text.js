@@ -316,8 +316,8 @@ export const EP_CLIP_TEXT = Object.freeze({
     }
   },
   'avnrt-atyp-vablock': {
-    tr: { title: 'Atipik AVNRT: junctional VA blok', text: `${D.tr} Atipik AVNRT ablasyonunda junctional ritim sırasında retrograd A kayboluyor. Burada bu, retrograd yavaş yolun ortadan kalkmasıyla uyumludur ve tipik AVNRT'deki uyarıyla aynı anlamı taşımaz (R1). Antegrad AV iletim son sinüs atımında AH/HV ile ayrıca gösterilmiştir.` },
-    en: { title: 'Atypical AVNRT: junctional VA block', text: `${D.en} During slow pathway ablation of atypical AVNRT the retrograde A disappears in junctional rhythm. Here that fits loss of the retrograde slow pathway and does not carry the same meaning as the warning in typical AVNRT (R1). Antegrade AV conduction is shown separately on the final sinus beat with its AH/HV.` }
+    tr: { title: 'Junctional VA blok', text: `${D.tr} Atipik AVNRT ablasyonunda junctional ritim sırasında retrograd A kayboluyor. Burada bu, retrograd yavaş yolun ortadan kalkmasıyla uyumludur ve tipik AVNRT'deki uyarıyla aynı anlamı taşımaz (R1). Antegrad AV iletim son sinüs atımında AH/HV ile ayrıca gösterilmiştir.` },
+    en: { title: 'Junctional VA block', text: `${D.en} During slow pathway ablation of atypical AVNRT the retrograde A disappears in junctional rhythm. Here that fits loss of the retrograde slow pathway and does not carry the same meaning as the warning in typical AVNRT (R1). Antegrade AV conduction is shown separately on the final sinus beat with its AH/HV.` }
   },
   'ap-ll-svt': {
     tr: {

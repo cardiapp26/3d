@@ -20,6 +20,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
     await page.goto(`${APP}/#/mode/bachmann?structure=bachmann`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
+    await page.evaluate(() => window.heart.setSceneLabelMode('all'));   // labels are on demand by default; the checks read all of them
     await page.waitForSelector('#viewport[data-camera-settled=true]');
 
     const r = await page.evaluate(async () => {
@@ -111,10 +112,10 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     // Mode identity: the badge names mode and selection; the target and labels are lesson-only.
     assert.match(await page.locator('#scene-context').textContent(), /^09 · Bachmann demeti & pacing · Seçili: Bachmann/);
     const frames = () => page.evaluate(() => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res))));
-    await page.locator('#fluoroscopy-toggle').click();
+    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click();
     await frames();
     assert.equal(await page.locator('.scene-label:not([hidden])').count(), 0, 'no identity labels over the fluoroscopy image');
-    await page.locator('#fluoroscopy-toggle').click();
+    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click();
     await page.locator('[data-mode=atria]').click();
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Bachmann pacing target').visible), false);
     await page.waitForTimeout(300);

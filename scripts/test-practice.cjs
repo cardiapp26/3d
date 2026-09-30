@@ -33,11 +33,16 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.evaluate(() => localStorage.removeItem('cardia.practice.v1'));
     const state = () => page.evaluate(() => window.cardiaPractice.getState());
 
+    // Lesson modes have their own steps: no practice switcher and no Findings tab there (compact right panel).
+    assert.equal(await page.locator('.practice').isVisible(), false, 'practice switcher hidden in the EP lesson mode');
+    assert.deepEqual(await page.locator('.panel-tabs [role=tab]:visible').allInnerTexts(), ['Öğren', 'Kaynaklar']);
+    await page.locator('[data-mode=anatomy]').click();
+    assert.equal(await page.locator('.practice').isVisible(), true, 'practice switcher in the anatomy mode');
     assert.deepEqual(await page.locator('.panel-tabs [role=tab]').allInnerTexts(), ['Öğren', 'Bulgu', 'Kaynaklar']);
     assert.equal(await page.locator('#practice-banner').isVisible(), false, 'no task in Explore');
 
     // Learn: starting moves to general anatomy and shows the task on the scene.
-    await page.locator('[data-practice-style=learn]').click();
+    await page.locator('[data-practice-select]').selectOption('learn');
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
     assert.match(await page.locator('#practice-banner').innerText(), /Görev 1\/5/);
 
@@ -80,7 +85,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
 
     // Test yourself: no names on hover, hint-free wrong feedback.
     await page.locator('#panel-tab-learn').click();
-    await page.locator('[data-practice-style=test]').click();
+    await page.locator('[data-practice-select]').selectOption('test');
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.waitForTimeout(250);
     assert.equal(await page.locator('#hover-badge').isVisible(), false, 'hover name hidden while testing');
@@ -92,19 +97,20 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-mode=angiography]').click();
     assert.equal((await state()).style, 'explore');
     await page.locator('#lang-btn').click();
-    assert.deepEqual(await page.locator('.practice-style').allInnerTexts(), ['Free', 'Guided task', 'Test yourself']);
+    assert.deepEqual(await page.locator('.practice-style-select option').allInnerTexts(), ['Free', 'Guided task', 'Test yourself']);
     await page.locator('#lang-btn').click();
 
     // Phone: starting from the Learn sheet returns to the scene with the task visible.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(200);
+    await page.evaluate(() => document.querySelector('[data-mode=anatomy]').click());   // the switcher belongs to the anatomy modes
     await page.locator('.mobile-tab[data-sheet=learn]').click();
-    await page.locator('[data-practice-style=learn]').click();
+    await page.locator('[data-practice-select]').selectOption('learn');
     assert.equal(await page.evaluate(() => document.body.dataset.sheet || null), null, 'sheet closes so the scene is usable');
     const banner = await page.locator('#practice-banner').boundingBox();
     assert.ok(banner && banner.x >= 0 && banner.x + banner.width <= 390, 'task banner fits the phone');
-    const target = await page.locator('[data-practice-style=learn]').evaluate(b => b.getBoundingClientRect().height);
-    assert.ok(target >= 44, 'style buttons are 44 px targets');
+    const target = await page.locator('[data-practice-select]').evaluate(b => b.getBoundingClientRect().height);
+    assert.ok(target >= 44, 'style select is a 44 px target');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 
     assert.deepEqual(errors, []);

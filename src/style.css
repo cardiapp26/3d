@@ -13,6 +13,19 @@ dialog#references a{color:#21493f}
 /* C-ARM & ANGIOGRAPHY JOYSTICK CONTROLS */
 .carm-panel{position:relative;width:100%;margin:0 0 12px;background:rgba(14,24,21,0.94);border:1px solid rgba(52,160,137,0.38);border-radius:12px;color:#e3ede8;box-shadow:0 6px 20px rgba(0,0,0,0.18);transition:box-shadow 0.2s ease;user-select:none}
 .carm-panel.collapsed .carm-content{display:none}
+.carm-edge-tab{display:none}
+/* Desktop: the C-Arm is a drawer docked to the right edge of the window. Closed, only its edge tab shows;
+   the panel keeps its state and opens over the lesson column. Phones keep the bottom drawer below. */
+@media(min-width:769px){
+  .carm-panel{position:fixed;right:0;top:96px;width:min(360px,92vw);margin:0;border-radius:12px 0 0 12px;border-right:0;z-index:70;background:#0e1815;transition:transform .22s ease,box-shadow .2s ease}
+  .carm-panel.collapsed{transform:translateX(100%);box-shadow:none}
+  .carm-panel.collapsed .carm-header{visibility:hidden}
+  .carm-panel .carm-content{max-height:calc(100vh - 210px);overflow-y:auto}
+  .carm-edge-tab{display:flex;align-items:center;justify-content:center;position:absolute;left:-30px;top:12px;width:30px;padding:12px 0;border:1px solid rgba(52,160,137,0.45);border-right:0;border-radius:8px 0 0 8px;background:rgba(14,24,21,0.94);color:#6ce9be;cursor:pointer;box-shadow:-3px 3px 10px rgba(0,0,0,0.16)}
+  .carm-edge-tab span{writing-mode:vertical-rl;font-size:11px;font-weight:700;letter-spacing:1.4px}
+  .carm-edge-tab:hover{background:rgba(29,66,55,0.98);color:#b8f6dd}
+  .carm-edge-tab:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
+}
 .carm-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(22,38,33,0.85);border-top-left-radius:11px;border-top-right-radius:11px;border-bottom:1px solid rgba(52,160,137,0.25);cursor:pointer}
 .carm-panel.collapsed .carm-header{border-bottom:0;border-radius:11px}
 .carm-title-group{display:flex;align-items:center;gap:8px}
@@ -685,8 +698,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 }
 
 /* Right panel tabs: Learn / Sources (all sizes). */
-.panel-tabs{display:flex;gap:2px;border-bottom:1px solid #dee4de;margin:0 0 12px}
-.panel-tabs [role=tab]{flex:1;border:0;background:none;padding:8px 6px;min-height:36px;font-size:11.5px;font-weight:600;color:#6b7d74;border-bottom:2px solid transparent;margin-bottom:-1px}
+.panel-tabs{display:flex;gap:2px;border-bottom:1px solid #dee4de;margin:0 0 8px}
+.panel-tabs [role=tab]{flex:1;border:0;background:none;padding:5px 6px;min-height:30px;font-size:11px;font-weight:600;color:#6b7d74;border-bottom:2px solid transparent;margin-bottom:-1px}
 .panel-tabs [role=tab]:hover{color:#1e4336}
 .panel-tabs [role=tab][aria-selected=true]{color:#1e4336;border-bottom-color:#244f43}
 .source-card{display:grid;gap:4px}
@@ -764,12 +777,10 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 }
 
 /* Practice loop: Explore / Learn / Test yourself. */
-.practice{display:grid;gap:10px;margin:0 0 14px}
-.practice-styles{display:inline-grid;grid-template-columns:repeat(3,auto);gap:0;border:1px solid #cbd5cf;border-radius:5px;overflow:hidden}
-.practice-style{border:0;border-right:1px solid #cbd5cf;background:#fff;padding:3px 10px;min-height:24px;font-size:10.5px;font-weight:600;color:#52685b}
-.practice-style:last-child{border-right:0}
-.practice-style[aria-checked=true]{background:#244f43;color:#fff}
-.practice-style:focus-visible,.practice-btn:focus-visible{outline:3px solid #299f8a;outline-offset:-3px}
+.practice{display:grid;gap:8px;margin:0 0 10px}
+.practice-styles{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#6b7d74}
+.practice-style-select{margin:0;padding:2px 22px 2px 8px;width:auto;min-height:24px;font-size:10.5px;font-weight:600;color:#244f43;border:1px solid #cbd5cf;border-radius:5px;background-color:#fff}
+.practice-style-select:focus-visible,.practice-btn:focus-visible{outline:3px solid #299f8a;outline-offset:-3px}
 .practice-card{display:grid;gap:8px;padding:12px;border:1px solid #cfdcc9;border-left:3px solid #244f43;border-radius:7px;background:#f5f9f2}
 .practice-card h3{margin:0}
 .practice-prompt{margin:0;font-size:14px !important;font-weight:600;color:#1e4336 !important}
@@ -800,7 +811,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .practice-banner-state.is-wrong{color:#ffb4a0;font-weight:700}
 @media (max-width:640px){
   .practice-banner{top:58px;left:8px;right:8px;transform:none;max-width:none;font-size:14px;border-radius:12px}
-  .practice-style,.practice-btn{min-height:44px;font-size:14px}
+  .practice-style-select,.practice-btn{min-height:44px;font-size:14px}
+  .practice-styles{font-size:13px}
   .practice-prompt{font-size:16px !important}
 }
 
@@ -834,7 +846,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .scene-label[data-tone=danger]{background:#c0262d}
 .scene-label[data-tone=his]{background:#a21caf}
 .scene-label[data-tone=cs]{background:#2458c7}
-.egm-panel-mount{margin:10px 0}
+.egm-panel-mount{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e3e8df}
+[data-ep-open] #structure-info,[data-ep-open] .structure-index{display:none!important}
 .egm-panel .egm-title{font-size:13px;margin:2px 0 6px}
 .egm-scenarios{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
 .egm-scenarios button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:5px 7px;font-size:10.5px}
@@ -902,7 +915,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .ep-sources{font-size:9.5px!important;color:#7a877e!important;line-height:1.5!important}
 
 /* Echocardiography mode: modality, views, sector, feedback and probe controls (compact) */
-[data-app-mode=echo] #carm-panel,[data-app-mode=echo] .practice{display:none!important}
+[data-app-mode=echo] #carm-panel{display:none!important}
+[data-practice=off] .practice{display:none!important}
 .echo-panel-mount{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e3e8df}
 .echo-modality{display:inline-grid;grid-template-columns:auto auto;gap:0;margin:0 0 6px;border:1px solid #cbd7c5;border-radius:4px;overflow:hidden}
 .echo-modality button{border:0;border-radius:0;padding:3px 12px;font-size:10.5px;background:transparent;color:#3f5c4b}

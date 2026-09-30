@@ -212,6 +212,7 @@ app.innerHTML = `
   <article>
     <!-- C-ARM FLUOROSCOPY & JOYSTICK PANEL -->
     <div id="carm-panel" class="carm-panel collapsed" aria-label="C-Arm Anjiyografi Kontrolü">
+      <button id="carm-edge-tab" class="carm-edge-tab" type="button" aria-controls="carm-content" aria-expanded="false" title="C-Arm & Joystick Paneli"><span data-i18n="carmTitle">${getTranslation('carmTitle')}</span></button>
       <div class="carm-header" id="carm-header">
         <div class="carm-title-group">
           <span class="carm-led-pulse"></span>
@@ -356,6 +357,7 @@ app.innerHTML = `
     <section id="defect-details" class="defect-details-mount" hidden></section>
     <section id="lesson" hidden>
       <div id="echo-panel" class="echo-panel-mount" hidden></div>
+      <div id="egm-panel" class="egm-panel-mount" hidden></div>
       <div class="divider"></div>
       <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
       <h3 id="lesson-title"></h3>
@@ -364,7 +366,6 @@ app.innerHTML = `
       <div id="step-detail"></div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div id="exam-panel" class="exam-panel-mount" hidden></div>
-      <div id="egm-panel" class="egm-panel-mount" hidden></div>
       <button class="primary" id="next-step">${getTranslation('nextLandmark')}</button>
       <label class="slider-label" for="progress" id="progress-label">${getTranslation('leadProgressLabel')} <span id="progress-value">100%</span></label>
       <input id="progress" type="range" min="0" max="100" value="100">
@@ -623,6 +624,8 @@ let egmPanel = null;
 function syncEgm(lessonStep) {
   const scenario = mode === 'ablation' ? lessonStep?.egm : null;
   egmMount.hidden = !scenario;
+  // Like echo: the signal panel comes first, so the structure card above the lesson steps its aside.
+  if (scenario) document.documentElement.dataset.epOpen = 'true'; else delete document.documentElement.dataset.epOpen;
   if (!scenario) { heart?.setEpZone?.(null); return; }
   egmPanel ??= createEpPanel(egmMount, {
     getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
@@ -631,6 +634,7 @@ function syncEgm(lessonStep) {
   });
   window.cardiaEp = egmPanel;   // test and console hook, like window.cardiaExam
   egmPanel?.openLesson(scenario);
+  egmMount.scrollIntoView?.({ block: 'start' });   // the panel is the first thing in the aside
 }
 // Built before the cycle subscription: subscribeCycle calls updateCycleUI at once.
 const hemoMode = heart ? createHemoMode({
@@ -839,11 +843,13 @@ const carmPanel = document.querySelector('#carm-panel');
 const carmToggleBtn = document.querySelector('#carm-toggle-btn');
 const carmDockBtn = document.querySelector('#carm-toggle-dock');
 const carmHeader = document.querySelector('#carm-header');
+const carmEdgeTab = document.querySelector('#carm-edge-tab');
 
 function setCarmPanelOpen(open) {
   if (!carmPanel) return;
   carmPanel.classList.toggle('collapsed', !open);
   if (carmToggleBtn) carmToggleBtn.textContent = open ? '−' : '+';
+  carmEdgeTab?.setAttribute('aria-expanded', String(open));
 }
 
 function toggleCarmPanel() {
@@ -854,6 +860,7 @@ function toggleCarmPanel() {
 
 carmToggleBtn?.addEventListener('click', toggleCarmPanel);
 carmDockBtn?.addEventListener('click', toggleCarmPanel);
+carmEdgeTab?.addEventListener('click', toggleCarmPanel);
 
 function filterAtrialOptions() {
   for (const option of select.options) {
@@ -978,11 +985,17 @@ function setMode(newMode, updateUrl = true) {
   if (mode === 'echo') echoMode?.enter(); else echoMode?.exit();
   // Mode-scoped styling (echo: no C-arm panel, no anatomy practice switcher).
   document.documentElement.dataset.appMode = mode;
-  if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath') {
-    setCarmPanelOpen(true);
-  } else {
-    setCarmPanelOpen(false);
+  // Practice (Free / Guided / Test) and its Findings tab belong to the structure-picking anatomy modes;
+  // the lesson modes (angiography, EP, pacemaker, ...) have their own steps, so those controls stay hidden.
+  const usesPractice = ['anatomy', 'atria', 'ra'].includes(mode);
+  document.documentElement.dataset.practice = usesPractice ? 'on' : 'off';
+  const findingsTab = document.querySelector('#panel-tab-findings');
+  if (findingsTab) {
+    findingsTab.hidden = !usesPractice;
+    if (!usesPractice && findingsTab.getAttribute('aria-selected') === 'true') document.querySelector('#panel-tab-learn')?.click();
   }
+  // The C-Arm is a drawer hidden at the right edge in every mode; the edge tab, the dock button or C opens it.
+  setCarmPanelOpen(false);
 
   const opacity = lessons[mode] ? Math.round(LESSON_TISSUE_OPACITY * 100) : 100;
   setTissueOpacity(opacity);
@@ -991,7 +1004,7 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#atria-tools').hidden = mode !== 'atria';
   document.querySelector('#ra-tools').hidden = mode !== 'ra';
   document.querySelector('#ep-tools').hidden = mode !== 'ablation';
-  if (mode !== 'ablation') egmMount.hidden = true;
+  if (mode !== 'ablation') { egmMount.hidden = true; delete document.documentElement.dataset.epOpen; }
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();

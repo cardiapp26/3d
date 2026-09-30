@@ -85,7 +85,28 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.equal(routes.lesions, 5); assert.equal(routes.lesionsShown, 0, 'example RF lesions hidden by default');
     assert.deepEqual(routes.optional, { his: true, cs: true, lesions: false });
 
-    // Labels of the Koch step state their source.
+    // Labels are on demand: none while the pointer is away, the nearest one when the pointer reaches its anchor.
+    assert.equal(await page.evaluate(() => window.heart.getSceneLabelMode()), 'hover', 'labels on demand by default');
+    await page.mouse.move(2, 2);
+    await page.waitForTimeout(150);
+    assert.equal(await page.locator('.scene-label:not([hidden])').count(), 0, 'no labels until the pointer comes near');
+    await page.evaluate(() => window.heart.setSceneLabelMode('all'));
+    await page.waitForTimeout(150);
+    const anchor = await page.evaluate(() => {
+      const l = [...document.querySelectorAll('.scene-label')].find(x => !x.hidden && x.textContent === 'CS ağzı (kestirim)');
+      const r = l.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.bottom + 10 + parseFloat(getComputedStyle(l).getPropertyValue('--lift') || '0') };
+    });
+    await page.evaluate(() => window.heart.setSceneLabelMode('hover'));
+    await page.mouse.move(anchor.x, anchor.y);
+    await page.waitForTimeout(200);
+    const hoverShown = await page.locator('.scene-label:not([hidden])').allTextContents();
+    assert.ok(hoverShown.includes('CS ağzı (kestirim)'), `hovering the anchor shows its label (${hoverShown.join(', ')})`);
+    assert.ok(hoverShown.length < 6, 'only nearby labels, not all of them');
+    await page.evaluate(() => window.heart.setSceneLabelMode('all'));
+    await page.waitForTimeout(150);
+
+    // Labels of the Koch step state their source (all shown for the check).
     const labels = (await page.locator('.scene-label:not([hidden])').allTextContents()).sort();
     for (const text of ['CS ağzı (kestirim)', 'Kompakt AV düğüm (apeks, şematik)', 'Yavaş yol hedefi (şematik)', 'Septal menteşe (atlas halkası)', 'His kateteri (referans)', 'CS kateteri (referans)'])
       assert.ok(labels.includes(text), `label shown: ${text} (${labels.join(', ')})`);

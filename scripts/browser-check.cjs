@@ -320,8 +320,13 @@ const fs = require('node:fs');
     assert.ok(angioVeins.length >= 4 && angioVeins.every(s => !s.visible), 'cardiac veins are excluded from angiography');
     await page.evaluate(() => window.heart.setLayer('cardiac-veins', true));
     assert.ok(await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).every(s => !s.visible), cardiacVeinIds), 'cardiac vein toggle cannot reveal veins in angiography');
-    assert.ok(!await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm auto-expands in angiography mode');
+    assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm stays hidden at the right edge in angiography mode');
+    const edge = await page.locator('#carm-edge-tab').boundingBox();
+    assert.ok(edge && edge.x + edge.width >= page.viewportSize().width - 2, 'desktop: only the edge tab shows, at the right edge of the window');
+    await page.locator('#carm-edge-tab').click();
+    assert.ok(!await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'the edge tab opens the C-Arm drawer');
     assert.equal(await page.locator('#carm-toggle-btn').textContent(), '−');
+    assert.equal(await page.locator('#carm-edge-tab').getAttribute('aria-expanded'), 'true');
 
     // While panel is open, test C-Arm conduction quick-toggle button sync
     await page.locator('#carm-conduction-toggle').click();
@@ -610,7 +615,7 @@ const fs = require('node:fs');
     // 12. Educational modes: Angiography (05), Ablation anatomy (06), Pacemaker leads (07)
     // Mode 03 Angiography
     await page.locator('[data-mode="angiography"]').click();
-    assert.equal(await page.locator('#carm-panel').evaluate(el => !el.classList.contains('collapsed')), true, 'C-Arm opens in angiography mode');
+    assert.equal(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), true, 'C-Arm is hidden at the right edge when a mode opens (also angiography)');
     await page.locator('#steps button[data-step="1"]').click(); // Spider view step
     await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
     await page.screenshot({ path: 'research/screenshots/mode-03-angiography-spider.png' });
