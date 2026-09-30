@@ -286,6 +286,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   overflow: hidden;
   background: #10241c;
 }
+.ecg-strip canvas { cursor: ew-resize; touch-action: none; }
+.ecg-strip canvas:focus-visible { outline: 2px solid #ffeca8; outline-offset: -2px; }
 .ecg-strip canvas {
   display: block;
   width: 100%;
@@ -622,6 +624,7 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .scene-label[data-tone=bachmann]{background:#b7791f}
 .scene-label[data-tone=target]{background:#a2349d}
 .scene-label[data-tone=crista]{background:#8a332d}
+.scene-label[data-tone=ridge]{background:#8f3f39}
 .scene-context{font-size:11px;font-weight:600;background:#ffffffd9;border:1px solid #d9e0d6;color:#24463b;padding:5px 10px;border-radius:14px;box-shadow:0 2px 6px #0000000d}
 .mitral-scallop-label{position:absolute;transform:translate(-50%,-50%);border:3px solid;border-radius:18px;background:#173b35;color:white;padding:4px 9px;font-size:13px;font-weight:800;box-shadow:0 2px 8px #0003}
 .mitral-scallop-note{position:absolute;top:52px;left:50%;transform:translateX(-50%);max-width:90%;width:max-content;background:#fffffff0;color:#25473e;border:1px solid #cbd5cf;border-radius:8px;padding:7px 12px;font-size:11px;text-align:center}
@@ -818,3 +821,49 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .header-right button{margin-left:2px}
   #sources{max-width:34vw}
 }
+
+/* Ablation: Koch close-up tools, label tones and the synthetic EGM strip */
+.ep-tools{border-bottom:1px solid #d8e0d5;padding-bottom:10px;margin-bottom:6px}
+.ep-view-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ep-view-row button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:7px 6px;font-size:11px}
+.ep-view-row button[aria-pressed=true]{background:#244f43;color:#fff;border-color:#244f43}
+.ep-tools .layer{margin:11px 0}
+.ep-note{font-size:10.5px;line-height:1.6;color:#869581;margin:8px 0 0}
+.scene-label[data-tone=estimate]{background:#2f6f8f}
+.scene-label[data-tone=hinge]{background:#1b8fa3}
+.scene-label[data-tone=danger]{background:#c0262d}
+.scene-label[data-tone=his]{background:#a21caf}
+.scene-label[data-tone=cs]{background:#2458c7}
+.egm-panel-mount{margin:10px 0}
+.egm-panel .egm-title{font-size:13px;margin:2px 0 6px}
+.egm-scenarios{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.egm-scenarios button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:5px 7px;font-size:10.5px}
+.egm-scenarios button[aria-pressed=true]{background:#0e1815;color:#fcd34d;border-color:#0e1815}
+.egm-canvas{display:block;width:100%;height:240px;border-radius:6px;background:#0e1815}
+.egm-text{font-size:11px;line-height:1.55}
+
+/* Echocardiography mode: modality, views, sector, feedback and probe controls */
+.echo-panel-mount{margin:10px 0}
+.echo-modality{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0 6px}
+.echo-modality button,.echo-views button,.echo-task-row button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:5px 6px;font-size:10.5px}
+.echo-modality button[aria-pressed=true]{background:#244f43;color:#fff;border-color:#244f43;font-weight:600}
+.echo-views{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.echo-views button[aria-pressed=true]{background:#0b0f0e;color:#39e8ad;border-color:#0b0f0e}
+.echo-views button:disabled,.echo-modality button:disabled{opacity:.45;cursor:not-allowed}
+.echo-title{font-size:13px;margin:8px 0 0}
+.echo-sub{font-size:10px!important;color:#8a988e!important;margin:2px 0 6px!important}
+.echo-canvas{display:block;width:100%;height:260px;border-radius:6px;background:#050807}
+.echo-feedback{border-left:3px solid #c9a227;background:#fbf6e6;border-radius:4px;padding:6px 9px;margin:8px 0}
+.echo-feedback[data-state=ok]{border-left-color:#2f9e6d;background:#eaf6ef}
+.echo-feedback p{font-size:11px;line-height:1.45;margin:3px 0;color:#4d5e52}
+.echo-task-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.echo-task-row button[aria-pressed=true]{background:#fcd34d;border-color:#e0b72f;color:#3a2e05}
+.echo-controls{border-top:1px solid #e1e7e2;margin-top:8px;padding-top:6px}
+.echo-controls summary{font-size:11px;font-weight:600;color:#536e5b;cursor:pointer}
+.echo-slider{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:10.5px;color:#5f7365;margin:8px 0}
+.echo-slider input{grid-column:1/-1}
+.echo-slider output{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#2d5a47}
+.echo-select select{grid-column:1/-1;margin:2px 0}
+.echo-check{margin:8px 0}
+.echo-limits{font-size:10px!important;line-height:1.55!important;color:#8a988e!important}
+.echo-task-row .echo-look{grid-column:1/-1}

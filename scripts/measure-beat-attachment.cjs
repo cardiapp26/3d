@@ -31,7 +31,7 @@ const assertMode = process.argv.includes('--assert');
         greatVessels: m => ['aorta', 'pa', 'svc', 'ivc', 'lspv', 'lipv', 'rspv', 'ripv', 'pv'].includes(m.userData.id),
         // The transseptal fossa marker is a lesson overlay (phase D), not conduction tissue.
         conduction: m => m.userData.layer === 'conduction' && m.userData.id !== 'fossa',
-        crista: m => m.userData.id === 'crista-terminalis',
+        ridges: m => ['crista-terminalis', 'coumadin-ridge'].includes(m.userData.id),
       };
       const chambers = ['lv', 'rv', 'la', 'ra'];
       const meshes = [];
@@ -198,7 +198,7 @@ const assertMode = process.argv.includes('--assert');
     if (assertMode) {
       const limit = 1; // report target: below 1% of heart length
       // Phase C shares the field across seams, so the gate includes them.
-      const bad = Object.entries(result).filter(([k, r]) => r.contacts && r.maxDeviationPct >= limit && ['coronaries', 'cardiacVeins', 'papillary', 'annuli', 'greatVessels', 'conduction', 'crista'].includes(k));
+      const bad = Object.entries(result).filter(([k, r]) => r.contacts && r.maxDeviationPct >= limit && ['coronaries', 'cardiacVeins', 'papillary', 'annuli', 'greatVessels', 'conduction', 'ridges'].includes(k));
       if (result.seams.maxSeparationChangePctOfHeart >= limit) bad.push(['seams', result.seams]);
       for (const [k, r] of Object.entries(result.leaflets)) if (r.maxDeviationPct >= limit) bad.push([`leaflet ${k}`, r]);
       if (result.integrity.driftAfter100Cycles > 1e-6) bad.push(['drift', result.integrity.driftAfter100Cycles]);

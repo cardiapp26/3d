@@ -650,9 +650,16 @@ const fs = require('node:fs');
     const state = await page.evaluate(() => window.testViewer.getState());
     const report = JSON.parse(fs.readFileSync('research/coronary-geometry-report.json','utf8'));
     const n = state.normalization;
+    // Documented atlas adjustments change a structure's shape on purpose (the
+    // LAA scaled toward its neck; research/LAA_BACHMANN.md): its vertex count
+    // is still checked, its bounds are not.
+    const adjustments = await page.evaluate(() => window.testViewer.atlasAdjustments());
+    const reshaped = new Set(adjustments.laaScale ? ['la'] : []);
+    assert.ok(adjustments.laaScale?.moved > 0, 'LAA scaling recorded');
     for (const [id, source] of Object.entries(report.structures)) {
       const actual = state.structures.find(m => m.name === source.name);assert.ok(actual, `rendered ${source.name}`);
       assert.equal(actual.vertices, source.vertexCount, 'source vertex count preserved');
+      if (reshaped.has(id)) continue;
       for (const side of ['min','max']) for(let i=0;i<3;i++) {
         const expected = (source.bounds[side][i]-n.center[i])*n.scale;
         assert.ok(Math.abs(expected-actual.bounds[side][i]) < 0.0001, `${id} ${side} axis ${i}: shared transform`);

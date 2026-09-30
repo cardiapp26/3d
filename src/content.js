@@ -77,6 +77,19 @@ export const rawStructures = {
     },
     source: `${la}; Ho et al., 2012, PDF p. 8`
   },
+  'coumadin-ridge': {
+    tr: {
+      title: 'Sol lateral sırt (Coumadin sırtı)',
+      description: 'Sol atriyum iç yüzünde, apendiks ağzı (önde) ile sol süperior ve inferior pulmoner ven ağızları (arkada) arasındaki kıvrım. Dış yüzde sol atriyal duvarın katlanmasına ve içinden geçen Marshall ligamanı/veni kalıntısına karşılık gelir. Sırt, atlas LA ağının iç yüzüne, apendiks boynu ile sol ven ağız kenarlarının ortasından geçecek biçimde oturtulmuş şematik bir çizimdir; atlasta ayrı sırt düğümü yoktur.',
+      clinical: 'Adını ekokardiyografide trombüs sanılıp antikoagülan başlatılmasına yol açabilmesinden alır (Coumadin, varfarin). Pulmoner ven izolasyonunda sol WACA halkasının ön kenarı bu dar sırt üzerinden geçer; kateter stabilitesi zordur ve yeniden bağlantı (reconnection) sık görülür. LAA kapama cihazı seçiminde apendiks ağzının arka sınırını oluşturur.'
+    },
+    en: {
+      title: 'Left lateral ridge (Coumadin ridge)',
+      description: 'The fold on the left atrial endocardium between the appendage orifice (anterior) and the left superior and inferior pulmonary vein ostia (posterior). Externally it corresponds to an infolding of the left atrial wall that carries the remnant of the ligament/vein of Marshall. The ridge is a schematic drawing fitted to the inner face of the atlas LA mesh, midway between the appendage neck and the left vein rims; the atlas has no separate ridge node.',
+      clinical: 'Named because on echocardiography it can be mistaken for thrombus and prompt anticoagulation (Coumadin, warfarin). In pulmonary vein isolation the anterior edge of the left WACA ring runs over this narrow ridge; catheter stability is difficult and reconnection is common. It forms the posterior border of the appendage orifice when sizing an occluder.'
+    },
+    source: 'Ho et al., 2012 (left atrial anatomy); Cabrera et al., 2008 (left lateral ridge); schematic ridge on the measured atlas LA'
+  },
   laa: {
     tr: {
       title: 'Sol atriyal apendiks ağzı • LAA',
@@ -273,13 +286,13 @@ export const rawStructures = {
     source: `${koch2022}; schematic`
   },
   'koch-base': {
-    tr: { title: 'CS ostiyumu / inferior istmus (Koch tabanı)', description: 'Koch üçgeninin tabanı inferior (kavotriküspit) istmustur; CS ostiyumu bu tabanda yer alır. CS, sol AV bileşkenin parçasıdır. İVK ile CS ağzı arasındaki "sinüs septumu" fibro-adipöz dokulu bir kıvrımdır. Floroskopide proksimal CS elektrotları tabanı işaretler.', clinical: 'CS ağzı ile triküspit septal menteşesi arasındaki septal istmus, yavaş yol ablasyonunun olağan yeridir.' },
-    en: { title: 'CS ostium / inferior isthmus (Koch base)', description: 'The base of Koch\'s triangle is the inferior (cavotricuspid) isthmus, where the CS ostium sits. The CS belongs to the left AV junction. The "sinus septum" between the IVC and CS mouths is a fold filled with fibro-adipose tissue. On fluoroscopy the proximal CS electrodes mark the base.', clinical: 'The septal isthmus, between the CS mouth and the septal tricuspid hinge, is the usual site for slow-pathway ablation.' },
+    tr: { title: 'CS ostiyumu / inferior istmus (Koch tabanı)', description: 'Koch üçgeninin tabanı inferior (kavotriküspit) istmustur; CS ostiyumu bu tabanda yer alır. CS, sol AV bileşkenin parçasıdır. İVK ile CS ağzı arasındaki "sinüs septumu" fibro-adipöz dokulu bir kıvrımdır. Floroskopide proksimal CS elektrotları tabanı işaretler. Modeldeki CS ağzı halkası bir kestirimdir: atlasın koroner sinüsü AV olukta biter ve atriyuma açılan bir ağzı yoktur; ağız, triküspit menteşesinden bir septal istmus uzaklıkta sağ atriyal duvarda hesaplanır. Ölçülmüş bir ostiyum değildir.', clinical: 'CS ağzı ile triküspit septal menteşesi arasındaki septal istmus, yavaş yol ablasyonunun olağan yeridir.' },
+    en: { title: 'CS ostium / inferior isthmus (Koch base)', description: 'The base of Koch\'s triangle is the inferior (cavotricuspid) isthmus, where the CS ostium sits. The CS belongs to the left AV junction. The "sinus septum" between the IVC and CS mouths is a fold filled with fibro-adipose tissue. On fluoroscopy the proximal CS electrodes mark the base. The CS mouth ring in the model is an estimate: the atlas sinus ends in the AV groove with no mouth into the atrium, so the mouth is computed on the RA wall one septal isthmus from the tricuspid hinge. It is not a measured ostium.', clinical: 'The septal isthmus, between the CS mouth and the septal tricuspid hinge, is the usual site for slow-pathway ablation.' },
     source: `${koch2022}; schematic`
   },
   'koch-avnode': {
-    tr: { title: 'Kompakt AV düğüm (Koch apeksi)', description: 'Apekste, inferior uzantıların (yavaş yol) atriyal septum buttress\'ından gelen septal girdilerle (hızlı yol) birleşmesiyle oluşur; çoğu kez inferior piramidal boşluğun çatısını yapan fibröz plak üzerinde durur. Mitral-triküspit fibröz devamlılığını delerek dallanmayan His demetine dönüşür. Floroskopide His kateteri apeksi gösterir.', clinical: 'Düğümün Koch apeksine göre yeri bireyler arasında belirgin değişkendir; anatomik nirengi kesin konum vermez. Bu bölgeye ablasyon kalıcı tam AV blok yapar.' },
-    en: { title: 'Compact AV node (Koch apex)', description: 'Formed at the apex by union of the inferior extensions (slow pathway) with septal inputs from the buttress of the atrial septum (fast pathway); often carried on a fibrous plate roofing the inferior pyramidal space. It penetrates the mitral-tricuspid fibrous continuity to become the non-branching His bundle. On fluoroscopy the His catheter marks the apex.', clinical: 'The node\'s position relative to the Koch apex varies markedly between individuals, so landmarks do not give its exact site. Ablation here causes permanent complete AV block.' },
+    tr: { title: 'Kompakt AV düğüm (Koch apeksi)', description: 'Apekste, inferior uzantıların (yavaş yol) atriyal septum buttress\'ından gelen septal girdilerle (hızlı yol) birleşmesiyle oluşur; çoğu kez inferior piramidal boşluğun çatısını yapan fibröz plak üzerinde durur. Mitral-triküspit fibröz devamlılığını delerek dallanmayan His demetine dönüşür. Floroskopide His kateteri apeksi gösterir.', clinical: 'Düğümün Koch apeksine göre yeri bireyler arasında belirgin değişkendir; anatomik nirengi kesin konum vermez. Bu bölgede ablasyon kalıcı tam AV blok riski taşır.' },
+    en: { title: 'Compact AV node (Koch apex)', description: 'Formed at the apex by union of the inferior extensions (slow pathway) with septal inputs from the buttress of the atrial septum (fast pathway); often carried on a fibrous plate roofing the inferior pyramidal space. It penetrates the mitral-tricuspid fibrous continuity to become the non-branching His bundle. On fluoroscopy the His catheter marks the apex.', clinical: 'The node\'s position relative to the Koch apex varies markedly between individuals, so landmarks do not give its exact site. Ablation here risks permanent complete AV block.' },
     source: `${koch2022}; ${av}; schematic`
   },
   'koch-fast': {
@@ -287,10 +300,25 @@ export const rawStructures = {
     en: { title: 'Fast pathway (septal input, zone to avoid)', description: 'Septal inputs from the buttress of the atrial septum (the antero-inferior rim of the oval fossa, the true second septum); the last atrial connection to the node is made within the fibromyocardial AV septum at the apex. The retrograde limb in typical AVNRT.', clinical: 'Fast-pathway modification is avoided today because of the high AV block risk.' },
     source: `${koch2022}; schematic`
   },
+  'koch-catheter': {
+    tr: { title: 'Yavaş yol ablasyon kateteri (şematik)', description: 'Mor kateter femoral yoldan İVK içinde yükselir (atlasta İVK mesh\'i yoktur; sağ atriyum tabanının altındaki bölüm şematiktir), ölçülen kaval ağızdan sağ atriyal boşluğa girer ve boşluğun ortasından ilerler; beyaz uç Koch üçgeninin inferior bölümünde, CS ağzı ile triküspit septal menteşesi arasındaki öğretim hedefine uzanır.', clinical: 'Gerçek yerleşim intrakardiyak elektrogram ve anatomik görüntüleme ile değerlendirilir. His kaydı üst referans, CS kateteri ostiyum referansıdır. Çizim doku teması, güvenli mesafe veya başarılı ablasyon kanıtı değildir.' },
+    en: { title: 'Slow pathway ablation catheter (schematic)', description: 'The purple catheter rises in the IVC from the femoral route (the atlas has no IVC mesh; the part below the RA floor is schematic), enters the RA cavity at the measured caval orifice and runs through the middle of the cavity; its white tip reaches the teaching target in the inferior triangle of Koch, between the CS mouth and septal tricuspid hinge.', clinical: 'Actual placement is assessed with intracardiac electrograms and anatomical imaging. His recordings provide the superior reference and the CS catheter the ostial reference. This drawing does not establish tissue contact, safe clearance, or successful ablation.' },
+    source: 'https://doi.org/10.1056/NEJM199207303270504; schematic'
+  },
   'koch-slow': {
-    tr: { title: 'Yavaş yol / septal istmus (ablasyon hedefi)', description: 'AV düğümün sağa uzanan inferior uzantısının septal istmustan (CS ağzı ile triküspit septal menteşesi arası) geçtiği bölge. Tipik AVNRT\'de antegrad kol.', clinical: 'Standart hedef: tabandan başlayıp apekse doğru kademeli RF uygulanır, junctional ritim başarı işaretidir. Küçük bir hasta grubunda mitral vestibüldeki sol uzantıyı hedefleyen sol taraflı yaklaşım gerekir.' },
-    en: { title: 'Slow pathway / septal isthmus (ablation target)', description: 'Where the rightward inferior extension of the AV node crosses the septal isthmus (between the CS mouth and the septal tricuspid hinge). The antegrade limb in typical AVNRT.', clinical: 'The standard target: RF starts at the base and moves stepwise toward the apex; junctional rhythm marks success. A small minority needs a left-sided approach to the leftward extension in the mitral vestibule.' },
+    tr: { title: 'Yavaş yol / septal istmus (ablasyon hedefi)', description: 'AV düğümün sağa uzanan inferior uzantısının septal istmustan (CS ağzı ile triküspit septal menteşesi arası) geçtiği bölge. Tipik AVNRT\'de antegrad kol.', clinical: 'Olağan hedef inferior paraseptal bölgedir. Apekse otomatik ilerleme öğretilmemelidir. Junctional ritim tek başına başarı kanıtı değildir; temel sonlanım AVNRT’nin yeniden indüklenememesi ve AV iletimin korunmasıdır. Küçük bir hasta grubunda mitral vestibüldeki sol uzantıyı hedefleyen sol taraflı yaklaşım gerekir. Örnek RF lezyonları varsayılan olarak gizlidir; sayıları ve dağılımları bir tedavi protokolü değildir.' },
+    en: { title: 'Slow pathway / septal isthmus (ablation target)', description: 'Where the rightward inferior extension of the AV node crosses the septal isthmus (between the CS mouth and the septal tricuspid hinge). The antegrade limb in typical AVNRT.', clinical: 'The usual target is the inferior paraseptal region. Automatic progression toward the apex must not be taught. Junctional rhythm alone does not establish success; the key endpoint is noninducibility of AVNRT with preserved AV conduction. A small minority needs a left-sided approach to the leftward extension in the mitral vestibule. The example RF lesions are hidden by default; their number and spread are not a treatment protocol.' },
     source: `${koch2022}; schematic`
+  },
+  'ep-his-cath': {
+    tr: { title: 'His referans kateteri (şematik)', description: 'Fuşya dört kutuplu kateter femoral yoldan sağ atriyuma girer ve triküspit septal menteşesini His demeti hizasında geçer; distal çift sağ ventrikülün hemen içindedir. Distal elektrotlarda A, keskin H ve V birlikte görülür.', clinical: 'His kaydı Koch üçgeninin üst (apeks) referansıdır: ablasyon kateteri His potansiyelinin görüldüğü bölgeden uzak, inferior tutulur. Floroskopide His kateteri ucu apeksi işaretler; tek başına projeksiyon konumu doğrulamaz. Çizim temas veya kayıt kalitesi modellemez.' },
+    en: { title: 'His reference catheter (schematic)', description: 'The magenta quadripolar catheter enters the RA from the femoral route and crosses the septal tricuspid hinge at the level of the His bundle; its distal pair lies just inside the right ventricle. The distal electrodes record A, a sharp H and V together.', clinical: 'The His recording is the superior (apex) reference of Koch\'s triangle: the ablation catheter is kept inferior, away from where a His potential is seen. On fluoroscopy the His catheter tip marks the apex; a projection alone does not confirm position. The drawing models neither contact nor signal quality.' },
+    source: `${koch2022}; https://doi.org/10.1056/NEJM199207303270504; schematic`
+  },
+  'ep-cs-cath': {
+    tr: { title: 'CS referans kateteri (dekapolar, şematik)', description: 'Mavi on kutuplu kateter SVC yoluyla sağ atriyumun arka bölümünden iner, kestirilen CS ağzından girer ve sinüs boyunca ilerler. Proksimal çift (CS 9-10) ağızda, distal çift (CS 1-2) sinüsün en uzak noktasındadır.', clinical: 'Proksimal CS elektrotları Koch üçgeninin tabanını (CS ağzı) floroskopide işaretler ve atriyal aktivasyon sırasını gösterir. Model CS ağzını kestirir; kateter yolu lümen içi mesafe veya temas hesaplamaz.' },
+    en: { title: 'CS reference catheter (decapolar, schematic)', description: 'The blue ten-pole catheter comes down the SVC through the posterior RA, enters the estimated CS mouth and runs along the sinus. The proximal pair (CS 9-10) sits at the mouth, the distal pair (CS 1-2) farthest along the sinus.', clinical: 'The proximal CS electrodes mark the base of Koch\'s triangle (CS mouth) on fluoroscopy and show the atrial activation sequence. The model estimates the CS mouth; the catheter path computes neither lumen clearance nor contact.' },
+    source: `${koch2022}; https://pubmed.ncbi.nlm.nih.gov/32782644/; schematic`
   },
   'koch-ext-right': {
     tr: { title: 'Sağ inferior uzantı (triküspit vestibülü)', description: 'Triküspit vestibülünde uzanan özelleşmiş miyokard; sol uzantıdan belirgin uzundur ve septal istmustan geçerek apekste kompakt düğüme katılır.', clinical: 'Yavaş yolun anatomik substratı; septal istmustaki lezyonlar bu uzantıyı hedefler. Şematik çizim.' },
@@ -1012,9 +1040,9 @@ export const rawLessons = {
         },
         {
           title: 'Koch Üçgeni ve Yavaş Yol • AVNRT',
-          text: 'Koch üçgeni, sağ atriyumun alt paraseptal bölgesinde inferior piramidal boşluğun sağ atriyal yüzüdür; atitüdinal konumda apeksi süperiora bakar. Taban: CS ostiyumu hizasındaki inferior istmus (yeşil). Posterosüperior kenar: Eustachian ve Thebesian valflerinin komissüründen doğan Todaro tendonu (beyaz). Anterior kenar: triküspit septal yaprakçık menteşesi (turkuaz). İki kenar membranöz septumda birleşir. Apeks: kompakt AV düğüm (kırmızı; ablasyon kalıcı AV blok yapar, yeri bireyler arasında değişkendir). Düğüm, inferior uzantıların (açık yeşil: uzun sağ uzantı triküspit vestibülünde, kısa sol uzantı mitral vestibülünde) atriyal septum buttress\'ından gelen septal girdilerle (turuncu, hızlı yol) birleşmesiyle oluşur. Yavaş yol hedefi septal istmustur: CS ağzı ile septal menteşe arası (yeşil küre). Sarı kama inferior piramidal boşluktur: sağ atriyal duvar ile müsküler septum arasındaki fibro-adipöz "AV kas sandviçi"; apeksi infero-septal girintiyle örtüşür ve His buradan septum krestine geçer. Floroskopide RAO projeksiyonu üçgeni en iyi gösterir: taban proksimal CS elektrotlarından çizilen yatay hat, apeks His kateteri, anterior kenar His\'ten tabana inen dikey hat (TV septal yaprakçığı).',
+          text: 'Koch üçgeni, sağ atriyumun alt paraseptal bölgesinde inferior piramidal boşluğun sağ atriyal yüzüdür; atitüdinal konumda apeksi süperiora bakar. Taban: CS ostiyumu hizasındaki inferior istmus (yeşil). Posterosüperior kenar: Eustachian ve Thebesian valflerinin komissüründen doğan Todaro tendonu (beyaz). Anterior kenar: triküspit septal yaprakçık menteşesi (turkuaz). İki kenar membranöz septumda birleşir. Apeks: kompakt AV düğüm (kırmızı; ablasyon kalıcı AV blok riski taşır, yeri bireyler arasında değişkendir). Düğüm, inferior uzantıların (açık yeşil: uzun sağ uzantı triküspit vestibülünde, kısa sol uzantı mitral vestibülünde) atriyal septum buttress\'ından gelen septal girdilerle (turuncu, hızlı yol) birleşmesiyle oluşur. Mor şematik kateter İVK ağzından sağ atriyuma girer; beyaz ucu inferior yavaş yol hedefine uzanır. Doku teması ve güvenli mesafe modellenmez. Junctional ritim tek başına başarı değildir; AVNRT indüklenebilirliği ve AV iletim değerlendirilir. Yavaş yol hedefi septal istmustur: CS ağzı ile septal menteşe arası (yeşil küre). Sarı kama inferior piramidal boşluktur: sağ atriyal duvar ile müsküler septum arasındaki fibro-adipöz "AV kas sandviçi"; apeksi infero-septal girintiyle örtüşür ve His buradan septum krestine geçer. Floroskopide RAO projeksiyonu üçgeni en iyi gösterir: taban proksimal CS elektrotlarından çizilen yatay hat, apeks His kateteri, anterior kenar His\'ten tabana inen dikey hat (TV septal yaprakçığı). Yakın plan: fuşya His kateteri üst (apeks) referansı, mavi CS kateteri taban (ostiyum) referansıdır; sol paneldeki Koch · RAO 30 ve Koch · LAO 45 düğmeleriyle karşılaştırın. RAO septumu önden, LAO septumu yandan gösterir: hedefin apeksten uzaklığı RAO\'da, septuma göre konumu LAO\'da okunur. Projeksiyon tek başına kateter konumunu doğrulamaz. Etiketler kaynağı söyler: CS ağzı kestirimdir, septal menteşe atlas halkasından ölçülür, AV düğüm ve yavaş yol hedefi şematiktir. Örnek RF lezyonları varsayılan olarak gizlidir; sayı ve dağılım tedavi protokolü değildir.',
           landmark: 'av',
-          view: 'rao'
+          view: 'koch_rao'
         },
         {
           title: 'Pulmoner Ven İzolasyonu (WACA / PVI) • AF',
@@ -1027,6 +1055,13 @@ export const rawLessons = {
           text: 'Tüm hedefler bir arada. Çatı hattı iki süperior veni LA tavanında birleştirir (çatıya bağlı flatter). Mitral istmus hattı LIPV\'den lateral mitral anulusa uzanır (perimitral flatter); blok için çoğu zaman koroner sinüs içinden de uygulama gerekir, sirkumfleks arter yakındır. Sağda CTI hattı ve Koch üçgeni. Doğal iletim bariyerleri (crista terminalis, fossa ovalis, venöz ostiyumlar) makro-reentry devrelerini yönlendirir.',
           landmark: 'la',
           view: 'posterior'
+        },
+        {
+          title: 'Sentetik elektrogram • A, H, V ve junctional ritim',
+          text: 'Aşağıdaki şerit sentetiktir; klinik kayıt değildir ve karar kuralı vermez. Sinüs ritminde His kateterinde A, keskin H ve V görülür (AH ve HV aralıkları). Yavaş yol hedefinde ablasyon kateteri küçük (bazen bölünmüş) A ve büyük V kaydeder, His potansiyeli yoktur; hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesidir, sabit bir oran değildir. RF sırasında junctional ritim görülebilir, fakat tek başına başarı göstergesi değildir: temel sonlanım AV iletim korunarak AVNRT\'nin yeniden indüklenememesidir. Junctional atımlarda VA blok veya hızlı junctional ritim enerjiyi durdurma uyarısıdır. Senaryoları şeridin üstündeki düğmelerle değiştirin; imleç kalp döngüsüyle ilerler.',
+          landmark: 'koch-slow',
+          view: 'koch_rao',
+          egm: 'sinus'
         }
       ]
     },
@@ -1042,9 +1077,9 @@ export const rawLessons = {
         },
         {
           title: 'Triangle of Koch & Slow Pathway • AVNRT',
-          text: 'The triangle of Koch is the right atrial face of the inferior pyramidal space in the lower paraseptal right atrium; in attitudinal orientation its apex points superiorly. Base: the inferior isthmus at the CS ostium (green). Posterosuperior side: the tendon of Todaro, arising at the commissure of the Eustachian and Thebesian valves (white). Anterior side: the septal tricuspid hinge (cyan). The two sides converge at the membranous septum. Apex: the compact AV node (red; ablation causes permanent AV block, and its position varies between individuals). The node forms where the inferior extensions (light green: the long rightward one in the tricuspid vestibule, the short leftward one in the mitral vestibule) join septal inputs from the atrial buttress (orange, fast pathway). The slow-pathway target is the septal isthmus, between the CS mouth and the septal hinge (green sphere). The amber wedge is the inferior pyramidal space: the fibro-adipose "AV muscular sandwich" between the RA wall and the muscular septum; its apex overlaps the infero-septal recess, where the His bundle passes to the septal crest. On fluoroscopy the RAO view shows the triangle best: base = a horizontal line through the proximal CS electrodes, apex = the His catheter, anterior side = the vertical drop from His to the base (septal tricuspid leaflet).',
+          text: 'The triangle of Koch is the right atrial face of the inferior pyramidal space in the lower paraseptal right atrium; in attitudinal orientation its apex points superiorly. Base: the inferior isthmus at the CS ostium (green). Posterosuperior side: the tendon of Todaro, arising at the commissure of the Eustachian and Thebesian valves (white). Anterior side: the septal tricuspid hinge (cyan). The two sides converge at the membranous septum. Apex: the compact AV node (red; ablation risks permanent AV block, and its position varies between individuals). The node forms where the inferior extensions (light green: the long rightward one in the tricuspid vestibule, the short leftward one in the mitral vestibule) join septal inputs from the atrial buttress (orange, fast pathway). The purple schematic catheter enters the RA from the IVC mouth; its white tip reaches the inferior slow-pathway target. Tissue contact and safe clearance are not modeled. Junctional rhythm alone does not establish success; AVNRT inducibility and AV conduction are assessed. The slow-pathway target is the septal isthmus, between the CS mouth and the septal hinge (green sphere). The amber wedge is the inferior pyramidal space: the fibro-adipose "AV muscular sandwich" between the RA wall and the muscular septum; its apex overlaps the infero-septal recess, where the His bundle passes to the septal crest. On fluoroscopy the RAO view shows the triangle best: base = a horizontal line through the proximal CS electrodes, apex = the His catheter, anterior side = the vertical drop from His to the base (septal tricuspid leaflet). Close-up: the magenta His catheter is the superior (apex) reference and the blue CS catheter the base (ostial) reference; compare with the Koch · RAO 30 and Koch · LAO 45 buttons in the left panel. RAO shows the septum en face, LAO along its edge: the target\'s distance from the apex reads in RAO, its position relative to the septum in LAO. A projection alone does not confirm catheter position. Labels state their source: the CS mouth is estimated, the septal hinge is measured from the atlas rim, the AV node and slow-pathway target are schematic. The example RF lesions are hidden by default; their number and spread are not a treatment protocol.',
           landmark: 'av',
-          view: 'rao'
+          view: 'koch_rao'
         },
         {
           title: 'Wide Area Circumferential Ablation (WACA) • AF',
@@ -1057,6 +1092,13 @@ export const rawLessons = {
           text: 'All targets together. The roof line joins the two superior veins across the LA roof (roof-dependent flutter). The mitral isthmus line runs from the LIPV to the lateral mitral annulus (perimitral flutter); block often needs lesions from inside the coronary sinus, and the circumflex artery lies close. On the right: the CTI line and Koch\'s triangle. Natural barriers (crista terminalis, oval fossa, venous orifices) channel macro-reentrant circuits.',
           landmark: 'la',
           view: 'posterior'
+        },
+        {
+          title: 'Synthetic electrogram • A, H, V and junctional rhythm',
+          text: 'The strip below is synthetic; it is not a clinical recording and gives no decision rule. In sinus rhythm the His catheter records A, a sharp H and V (AH and HV intervals). At the slow-pathway target the ablation catheter records a small (sometimes fragmented) A and a large V with no His potential; target choice weighs anatomy and electrograms together, not a fixed ratio. Junctional rhythm may appear during RF, but it alone does not indicate success: the key endpoint is noninducibility of AVNRT with preserved AV conduction. VA block in junctional beats, or a fast junctional rhythm, is a warning to stop energy delivery. Switch scenarios with the buttons above the strip; the cursor follows the cardiac cycle.',
+          landmark: 'koch-slow',
+          view: 'koch_rao',
+          egm: 'sinus'
         }
       ]
     }
@@ -1284,6 +1326,60 @@ export const rawLessons = {
         { title: 'Innocent murmur', text: 'A short, soft, early-peaking ejection murmur with normal S2 splitting and no other abnormal sounds. It becomes softer on standing and with Valsalva. A murmur that is loud (≥ 3/6), diastolic, holosystolic or radiating is not innocent.', finding: 'innocent', maneuver: 'stand', area: 'erb', view: 'anterior' }
       ]
     }
+  },
+  echo: {
+    tr: {
+      title: 'Ekokardiyografi • TTE ve TEE anatomik kesit eğitimi',
+      intro: 'Prob, ultrason düzlemi ve 3B anatomi solda; aynı düzlemden hesaplanan 2B sektör kesiti sağda. Kesit, atımın o anki fazındaki geometriden hesaplanır; dondurmak iki görüntüyü birlikte durdurur. Bu bir prob-kesit-anatomi eğitimidir: gerçek ultrason, Doppler veya ölçüm değildir.',
+      steps: [
+        {
+          title: 'TTE: pencereler ve 8 temel görünüm',
+          text: 'Parasternal pencere: PLAX (LV, mitral kapak, LVOT ve aort kökü ilişkisi) ve üç kısa eksen düzeyi (aort kapağı, mitral kapak, papiller kaslar). Apikal pencere: dört, iki ve üç boşluk; prob LV ekseni etrafında döndürülerek elde edilir. Subkostal dört boşluk. İşaret (yeşil nokta) ekranın sağ tarafına karşılık gelir. Rotasyon işaretin yönünü, tilt düzlemi dik yönde, rock düzlem içinde açıyı değiştirir. Apikal görünümlerde geri bildirim, LV\'nin kısalıp kısalmadığını (foreshortening) da değerlendirir.',
+          landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'plax' }
+        },
+        {
+          title: 'TEE: özofagus-mide yolu ve 8 temel görünüm',
+          text: 'Prob, sol atriyumun arkasındaki şematik özofagustan mideye uzanan yolda hareket eder. İlerletme/geri çekme, şaft rotasyonu, ante/retrofleksiyon, sağ/sol fleksiyon ve elektronik multiplan açısı ayrı hareketlerdir. Orta özofagus (ME): dört boşluk, mitral komissüral, iki boşluk, uzun eksen, aort kapağı kısa eksen, bikaval ve LAA. Transgastrik (TG): orta papiller kısa eksen. 0°\'de hastanın solu ekranın sağında, 90°\'de kranial taraf ekranın sağındadır. Bir açı tek başına görünümü garanti etmez: seviye ve şaft hareketi birlikte gerekir.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
+        },
+        {
+          title: 'Görev: görünümü bulun',
+          text: 'Prob hedef görünümden uzaklaştırılmış olarak başlar. Kontrollerle hedefi bulun. Geri bildirim yalnız açıya bakmaz: gerekli yapıların kesitte olması, olmaması gereken yapıların (ör. apikal dört boşlukta aort çıkış yolu) ve apeksin kısalmaması birlikte değerlendirilir. Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Etiketleri kapatarak kendinizi sınayın.',
+          landmark: 'lv', view: 'anterior', echo: { modality: 'tte', task: true }
+        },
+        {
+          title: 'Sınırlar: bu görüntü neyi göstermez?',
+          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle), artefaktlar, akustik pencere ve kaburga gölgesi yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. TTE pencereleri göğüs duvarı modellenmediği için hazır noktalardır. TEE yolu ölçülmüş bir özofagus değildir; derinlik santimetre olarak sunulmaz. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlasın kaynağı ve lisansı doğrulanmamıştır; bu nedenle modül yayın veya klinik eğitim yeterliliği iddiası taşımaz.',
+          landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
+        }
+      ]
+    },
+    en: {
+      title: 'Echocardiography • TTE and TEE anatomical section training',
+      intro: 'Probe, ultrasound plane and 3D anatomy on the left; the 2D sector section of the same plane on the right. The section is computed from the geometry at the current phase of the beat; freezing stops both images together. This is probe-section-anatomy training: not real ultrasound, Doppler or measurement.',
+      steps: [
+        {
+          title: 'TTE: windows and 8 basic views',
+          text: 'Parasternal window: PLAX (relation of the LV, mitral valve, LVOT and aortic root) and three short-axis levels (aortic valve, mitral valve, papillary muscles). Apical window: four, two and three chambers, obtained by rotating the probe about the LV axis. Subcostal four-chamber. The index marker (green dot) corresponds to the right side of the screen. Rotation turns the marker, tilt moves the plane across itself, rock changes the angle within the plane. In apical views the feedback also checks whether the LV is foreshortened.',
+          landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'plax' }
+        },
+        {
+          title: 'TEE: oesophagus-stomach path and 8 basic views',
+          text: 'The probe moves along a schematic path from the oesophagus behind the left atrium into the stomach. Advance/withdraw, shaft rotation, ante/retroflexion, right/left flexion and the electronic multiplane angle are separate motions. Mid-oesophageal (ME): four-chamber, mitral commissural, two-chamber, long axis, aortic valve short axis, bicaval and LAA. Transgastric (TG): mid-papillary short axis. At 0 degrees the patient\'s left is on the right of the screen, at 90 degrees the cephalad side is. An angle alone does not guarantee a view: level and shaft motion are needed too.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
+        },
+        {
+          title: 'Task: find the view',
+          text: 'The probe starts moved away from the target view. Find the target with the controls. The feedback does not rely on the angle alone: it checks that the required structures are in the section, that structures that should not be there are absent (for example the outflow tract in the apical four-chamber view), and that the apex is not foreshortened. Thresholds are teaching values without expert calibration. Turn the labels off to test yourself.',
+          landmark: 'lv', view: 'anterior', echo: { modality: 'tte', task: true }
+        },
+        {
+          title: 'Limits: what this image does not show',
+          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle), artefact, acoustic window or rib shadow. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. TTE windows are preset points because the chest wall is not modelled. The TEE path is not a measured oesophagus; depth is not given in centimetres. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas source and licence are unverified; the module claims neither publication readiness nor clinical training competence.',
+          landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
+        }
+      ]
+    }
   }
 
 };
@@ -1334,12 +1430,18 @@ export const uiTranslations = {
       ['transseptal', '08', 'Transseptal & septostomi'],
       ['bachmann', '09', 'Bachmann demeti & pacing'],
       ['cath', '10', 'Kateterizasyon ve hemodinami'],
-      ['exam', '11', 'Fizik muayene']
+      ['exam', '11', 'Fizik muayene'],
+      ['echo', '12', 'Ekokardiyografi (TTE/TEE)']
     ],
     atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; turkuaz halka ostiyumu işaretler (Bachmann demeti değildir, bu modda gizlidir).',
     atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
     raNote: 'Sağ atriyumun düz duvarlı venöz bölümünü, pektinat kaslarını ve triküspit kapakla ilişkisini inceleyin.',
     raFocusRa: 'Sağ atriyum',
+    epToolsHeading: 'KOCH YAKIN PLANI',
+    epHisCath: 'His kateteri (referans)',
+    epCsCath: 'CS kateteri (referans)',
+    epLesions: 'Örnek RF lezyonları',
+    epNote: 'Katetrler ve hedef şematiktir. CS ağzı kestirimdir. Lezyon sayısı ve dağılımı protokol değildir; projeksiyon tek başına konumu doğrulamaz.',
     layersHeading: 'ANATOMİK KATMANLAR',
     chambers: 'Kalp boşlukları',
     vessels: 'Büyük damarlar',
@@ -1385,6 +1487,7 @@ export const uiTranslations = {
     modeGroupAnatomy: 'Anatomi',
     modeGroupIntervention: 'Girişimsel eğitim',
     modeGroupPhysiology: 'Fizyoloji ve muayene',
+    modeGroupImaging: 'Görüntüleme',
     groupToggle: 'Alt yapıları göster veya gizle',
     advancedLayers: 'Çevre yapılar ve görünüm',
     contextNoteTitle: 'Bu görünüm hakkında',
@@ -1419,6 +1522,7 @@ export const uiTranslations = {
     flowLegendTitle: 'Oksijenlenme: Kırmızı (Sol kalp / Aort / Koroner arter) · Mavi (Sağ kalp / Pulmoner arter / Venöz sistem)',
     cycleDisclaimer: 'Wiggers döngüsü · Şematik akış · Eğitim modeli (CFD / Tanısal simülasyon değildir)',
     ecgCaption: 'Şematik DII EKG · tanı kaydı değildir',
+    ecgScrubHint: 'Döngüde gezinmek için sarı imleci sürükleyin (ok tuşları da çalışır)',
     tsCathHeading: 'TRANSSEPTAL KATETERLERİ',
     tsCathPigtail: 'Pigtail (Aort Kökü)',
     tsCathCs: 'CS Kateteri (AV Oluk)',
@@ -1466,12 +1570,18 @@ export const uiTranslations = {
       ['transseptal', '08', 'Transseptal & septostomy'],
       ['bachmann', '09', 'Bachmann bundle & pacing'],
       ['cath', '10', 'Catheterization and hemodynamics'],
-      ['exam', '11', 'Physical examination']
+      ['exam', '11', 'Physical examination'],
+      ['echo', '12', 'Echocardiography (TTE/TEE)']
     ],
     atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the teal ring marks its orifice (it is not Bachmann\'s bundle, which is hidden in this mode).',
     atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',
     raNote: 'Explore the right atrium’s smooth-walled venous component, pectinate muscles, and relationship to the tricuspid valve.',
     raFocusRa: 'Right atrium',
+    epToolsHeading: 'KOCH CLOSE-UP',
+    epHisCath: 'His catheter (reference)',
+    epCsCath: 'CS catheter (reference)',
+    epLesions: 'Example RF lesions',
+    epNote: 'Catheters and target are schematic. The CS mouth is estimated. Lesion number and spread are not a protocol; a projection alone does not confirm position.',
     layersHeading: 'ANATOMICAL LAYERS',
     chambers: 'Heart chambers',
     vessels: 'Great vessels',
@@ -1517,6 +1627,7 @@ export const uiTranslations = {
     modeGroupAnatomy: 'Anatomy',
     modeGroupIntervention: 'Interventional training',
     modeGroupPhysiology: 'Physiology and examination',
+    modeGroupImaging: 'Imaging',
     groupToggle: 'Show or hide substructures',
     advancedLayers: 'Surrounding structures and display',
     contextNoteTitle: 'About this view',
@@ -1551,6 +1662,7 @@ export const uiTranslations = {
     flowLegendTitle: 'Oxygenation: Red (Left heart / Aorta / Coronaries) · Blue (Right heart / Pulmonary artery / Veins)',
     cycleDisclaimer: 'Wiggers cycle · Schematic flow · Educational model (Not CFD / diagnostic simulation)',
     ecgCaption: 'Schematic lead II ECG · not a diagnostic tracing',
+    ecgScrubHint: 'Drag the yellow cursor to move through the cycle (arrow keys work too)',
     tsCathHeading: 'TRANSSEPTAL CATHETERS',
     tsCathPigtail: 'Pigtail (Aortic Root)',
     tsCathCs: 'CS Catheter (AV Groove)',
@@ -1603,6 +1715,7 @@ const viewerTitles = {
     bachmann: 'Bachmann: anatomi ve atriyal pacing.',
     cath: 'Basınç eğrisini oku.',
     exam: 'Dinle, manevrayı yap.',
+    echo: 'Probu yönlendir, kesiti oku.',
     atria: 'Sol atriyumu ve LAA’yı incele.',
     ra: 'Sağ atriyumu incele.'
   },
@@ -1616,6 +1729,7 @@ const viewerTitles = {
     bachmann: 'Bachmann: anatomy and atrial pacing.',
     cath: 'Read the pressure tracing.',
     exam: 'Listen, then maneuver.',
+    echo: 'Aim the probe, read the section.',
     atria: 'Explore the left atrium and LAA.',
     ra: 'Explore the right atrium.'
   }

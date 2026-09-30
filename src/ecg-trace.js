@@ -51,7 +51,19 @@ const MARKS = [
   { phase: SYNC.ivrStart, label: 'S2' }
 ];
 
-export function drawEcgTrace(canvas, state) {
+/** Cycle phase under a pointer on the ECG strip (the trace spans one RR interval). */
+export function ecgPhaseAt(canvas, clientX, bpm) {
+  const rect = canvas.getBoundingClientRect();
+  const tau = Math.min(1, Math.max(0, (clientX - rect.left) / Math.max(1, rect.width)));
+  return timeToPhase(tau, bpm);
+}
+
+/**
+ * @param {{ reserveLeft?: number, reserveRight?: number }} [layout] widths (px)
+ *   taken by the caption overlays at the bottom corners; baseline marks there
+ *   are lifted above the baseline so they do not collide with the captions.
+ */
+export function drawEcgTrace(canvas, state, layout = {}) {
   if (!canvas || !state) return;
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
@@ -102,13 +114,21 @@ export function drawEcgTrace(canvas, state) {
   }
   ctx.stroke();
 
+  // The cursor is draggable: a line with a grip at the top.
   const cursor = phaseToTime(phase, bpm) * width;
   ctx.strokeStyle = 'rgba(255, 236, 168, 0.9)';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(cursor, 2);
   ctx.lineTo(cursor, height - 2);
   ctx.stroke();
+  ctx.fillStyle = '#ffeca8';
+  ctx.beginPath();
+  ctx.moveTo(cursor - 5, 0);
+  ctx.lineTo(cursor + 5, 0);
+  ctx.lineTo(cursor, 7);
+  ctx.closePath();
+  ctx.fill();
 
   if (width >= 520) {
     ctx.fillStyle = '#d7f5e4';
@@ -116,7 +136,9 @@ export function drawEcgTrace(canvas, state) {
     for (const mark of MARKS) {
       if (mark.rhythms && !mark.rhythms.has(rhythm)) continue;
       const onBaseline = mark.label === 'S1' || mark.label === 'Ao' || mark.label === 'S2';
-      ctx.fillText(mark.label, phaseToTime(mark.phase, bpm) * width + 3, onBaseline ? height - 6 : 12);
+      const x = phaseToTime(mark.phase, bpm) * width + 3;
+      const underCaption = x < (layout.reserveLeft || 0) || x + 16 > width - (layout.reserveRight || 0);
+      ctx.fillText(mark.label, x, !onBaseline ? 12 : underCaption ? mid - 6 : height - 6);
     }
   }
 }

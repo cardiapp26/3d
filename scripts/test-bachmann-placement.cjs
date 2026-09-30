@@ -118,7 +118,22 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-mode=atria]').click();
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Bachmann pacing target').visible), false);
     await page.waitForTimeout(300);
-    assert.deepEqual(await page.locator('.scene-label:not([hidden])').allTextContents(), ['LAA ostiyum işareti'], 'atria mode: only the LAA ring label');
+    assert.deepEqual((await page.locator('.scene-label:not([hidden])').allTextContents()).sort(), ['Coumadin sırtı', 'LAA ostiyum işareti'], 'atria mode: LAA ring and Coumadin ridge labels');
+    // LAA scaled toward its neck (owner's request) and the ridge between it and the left veins.
+    const la = await page.evaluate(async () => {
+      const THREE = await import('/node_modules/three/build/three.module.js');
+      const { nearestLoop } = await import('/src/mesh-utils.js');
+      const h = window.heart; const by = id => { const l = []; h.scene.traverse(o => { if (o.isMesh && o.userData.id === id) l.push(o); }); return l; };
+      const ridge = by('coumadin-ridge')[0], laMesh = by('la')[0], o = laMesh.userData.laaOrifice;
+      const path = ridge.userData.path.map(a => new THREE.Vector3(...a));
+      const veins = []; h.scene.traverse(x => { if (x.isMesh && /left (superior|inferior) pulmonary/i.test(x.name)) veins.push(x); });
+      laMesh.geometry.computeBoundingSphere();
+      const rims = veins.map(m => nearestLoop(m, laMesh.geometry.boundingSphere.center));
+      return { scale: h.atlasAdjustments().laaScale, toLaa: Math.min(...path.map(q => q.distanceTo(o.center))) - o.radius, toVeins: Math.min(...path.flatMap(q => rims.flatMap(r => r.pts.map(v => v.distanceTo(q))))), top: Math.max(...path.map(q => q.y)), bottom: Math.min(...path.map(q => q.y)), lspvY: Math.max(...rims.map(r => r.center.y)) };
+    });
+    assert.ok(la.scale.lengthAfter * 34 > 25 && la.scale.lengthAfter * 34 < 40, `LAA length near the published mean (${Math.round(la.scale.lengthAfter * 34)} mm)`);
+    assert.ok(la.toLaa < 0.2 && la.toVeins < 0.25, `Coumadin ridge between the LAA orifice and the left veins (${la.toLaa.toFixed(2)}, ${la.toVeins.toFixed(2)})`);
+    assert.ok(la.top > la.lspvY && la.bottom < la.lspvY, 'ridge runs down past the superior vein');
     assert.match(await page.locator('#scene-context').textContent(), /^02 · Sol atriyum & LAA/);
     // RA mode: the crista is shown, selectable and labelled.
     await page.locator('[data-mode=ra]').click();

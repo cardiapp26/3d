@@ -9,7 +9,7 @@ import { createPacemakerLeads } from './pacemaker-leads.js';
 import { createMitralScallops } from './mitral-scallops.js';
 import { createAnnuli } from './annuli.js';
 import { addSchematicAvLeaflets } from './schematic-leaflets.js';
-import { addLaaMarker, smoothLaNormals, laaOrifice } from './la-landmarks.js';
+import { addLaaMarker, smoothLaNormals, laaOrificeOf } from './la-landmarks.js';
 import { createAuscultationMarkers } from './auscultation-points.js';
 import { createThorax } from './thorax.js';
 import { createTransseptal } from './transseptal.js';
@@ -22,6 +22,7 @@ import { createOverlayFollow } from './overlay-follow.js';
 import { createSceneLabels } from './scene-labels.js';
 import { separateAtriaFromAorta } from './transverse-sinus.js';
 import { createCristaTerminalis } from './crista-terminalis.js';
+import { shrinkAppendage, createCoumadinRidge } from './la-appendage.js';
 import { measuredFlowRoutes } from './flow-routes.js';
 import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd, inferiorCavalOstium } from './mesh-utils.js';
 import { measureLeftBundle, measureRightBundle } from './conduction-paths.js';
@@ -67,7 +68,20 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
   const cardiacCycle = createCardiacCycle({ bpm: 72, phase: 0.0, playing: false, rhythm: 'sinus' });
   let channels = null, bloodFlow = null, overlayFollow = null;
-  let fluoroscopy=false, lastEmittedKey='';
+  let fluoroscopy=false, lastEmittedKey='', ablationStep=0;
+  // Ablation lesson steps that frame Koch's triangle (labels, close-up views).
+  const KOCH_LABEL_STEPS=[1,4];
+  // Koch close-up: C-arm style obliquity (RAO 30 en face to the septum, LAO 45 along it), close distance.
+  // The camera sits just outside the heart surface on that line (never inside tissue).
+  const KOCH_VIEWS={koch_rao:-30,koch_lao:45}, KOCH_VIEW_DISTANCE=2.1, KOCH_VIEW_CLEARANCE=0.35, KOCH_FOCUS_IDS=['cs','svc','ivc'];
+  let kochFocus=false;
+  const kochRay=new THREE.Raycaster();
+  function surfaceExit(centre,dir){
+    const far=8;
+    kochRay.set(centre.clone().addScaledVector(dir,far),dir.clone().negate());
+    const hit=kochRay.intersectObjects(meshes.filter(m=>['chambers','vessels'].includes(m.userData.layer)),false)[0];
+    return hit?far-hit.distance:0;
+  }
   let center=new THREE.Vector3(), scale=1, frame, down=null, transition=false;
   const cameraTarget=camera.position.clone(), lookTarget=new THREE.Vector3();
   let rootHeight=.7;
@@ -172,9 +186,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
           : ['lv','rv','lcc','rcc','ncc','pulmonary-valve','mitral-annulus','tricuspid-annulus'];
         if(!ids.includes(m.userData.id)){m.visible=false;continue;}
       }
-      if(mode==='atria'&&!['la','laa'].includes(m.userData.id)){m.visible=false;continue;}
+      if(mode==='atria'&&!['la','laa','coumadin-ridge'].includes(m.userData.id)){m.visible=false;continue;}
       if(mode==='ra'&&!['ra','crista-terminalis'].includes(m.userData.id)){m.visible=false;continue;}
       if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
+      // Koch close-up: chambers, conduction and the venous entries of the catheters only.
+      if(kochFocus&&!['chambers','conduction'].includes(m.userData.layer)&&!KOCH_FOCUS_IDS.includes(m.userData.id)){m.visible=false;continue;}
+      if(kochFocus&&m.userData.layer==='conduction'&&m.userData.id!=='av'&&m.name!=='Bundle of His'){m.visible=false;continue;}
       const {id,layer,system:branch}=m.userData;
       if (mode === 'angiography' && m.userData.veinGroup === 'cardiac-veins') {
         m.visible = false;
@@ -198,7 +215,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
       m.visible=(mode==='atria'||mode==='ra'||mode==='defects')||visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
       // The crista is a ridge inside the RA: it stays opaque when the walls are faded.
-      const tissue=layer==='chambers'&&id!=='crista-terminalis';
+      const tissue=layer==='chambers'&&!['crista-terminalis','coumadin-ridge'].includes(id);
       // Catheters run inside these vessels in the transseptal lesson; keep them
       // see-through. The pulmonary trunk and bifurcation sit on the LA roof in
       // front of the fossa in LAO/RAO, so they are faded there too.
@@ -309,6 +326,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const mesh=new THREE.Mesh(geometry,material(part.color));mesh.name=part.sourceName;mesh.userData={...part, provenance: 'atlas'};layers[part.layer].add(mesh);register(mesh,part.id);
     }
     disposeScene(gltf.scene);decoder.dispose();
+    // LAA scaled toward its neck to a mean-like length (owner's request; before any measurement).
+    const laMesh = meshMap.get('la')?.[0];
+    if (laMesh) atlasAdjustments.laaScale = shrinkAppendage(laMesh);
     // Transverse sinus: atria no longer enter the aortic root (before any measurement).
     atlasAdjustments.transverseSinus = separateAtriaFromAorta([...(meshMap.get('ra')||[]), ...(meshMap.get('la')||[])], meshMap.get('aorta')||[]);
     const lmCenter=sourceCenter('lm'),rccCenter=sourceCenter('rcc');
@@ -322,11 +342,13 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     addSchematicAvLeaflets({ getMeshes: id => meshMap.get(id) || [], register, parent: layers.valves });
     const laaRing = addLaaMarker({ meshVertices, getMeshes: id => meshMap.get(id) || [], register, parent: layers.chambers });
     sceneLabels.add({ mesh: laaRing, index: 0, tone: 'laa', text: { tr: 'LAA ostiyum işareti', en: 'LAA orifice marker' }, when: () => ['atria', 'bachmann'].includes(mode) && !fluoroscopy });
+    buildCoumadinRidge();
     mitralScallops.build();
     thorax.build();
     computeVesselTrims();
     modelReady=true;
     epLandmarks.init();
+    for (const label of epLandmarks.labels) sceneLabels.add({ ...label, when: () => mode === 'ablation' && KOCH_LABEL_STEPS.includes(ablationStep) && !fluoroscopy });
     pacemakerLeads.init();
     transseptal.init();
     septalDefects.build(transseptal.group.getObjectByName('Fossa ovalis')?.position);
@@ -348,6 +370,18 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     container.dataset.meshCount=String(found.length);
     return {count:found.length,normalization:{center:center.toArray(),scale},source:ATLAS_URL};
   }).catch(error=>{loading.textContent='Anatomical asset could not load. Reload to retry; no substitute geometry is shown.';decoder.dispose();throw error;});
+
+  // Left lateral (Coumadin) ridge between the LAA orifice and the left pulmonary veins.
+  function buildCoumadinRidge() {
+    const ridge = createCoumadinRidge({ laMesh: meshMap.get('la')?.[0], veins: meshMap.get('pv') || [] });
+    if (!ridge) return;
+    const mesh = new THREE.Mesh(ridge.geometry, material(0xa84a44));
+    mesh.name = 'Left lateral ridge (Coumadin ridge, schematic)';
+    mesh.userData = { id: 'coumadin-ridge', layer: 'chambers', provenance: 'schematic', sourceName: mesh.name, path: ridge.path.map(p => p.toArray()), veins: ridge.veins };
+    layers.chambers.add(mesh);
+    register(mesh, 'coumadin-ridge');
+    sceneLabels.add({ mesh, tone: 'ridge', text: { tr: 'Coumadin sırtı', en: 'Coumadin ridge' }, when: () => mode === 'atria' && !fluoroscopy });
+  }
 
   // Crista terminalis on the RA endocardium; its sulcus guides Bachmann's inferior right limb.
   let cristaSulcus = null;
@@ -441,7 +475,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       avCenter.clone()
     ], 0.016, 'sa', 'Anterior internodal tract');
 
-    const bachmann = createBachmannGeometry(id => meshMap.get(id) || [], laaOrifice(meshVertices('la')), { saNode: saCenter, cristaSulcus });
+    const bachmann = createBachmannGeometry(id => meshMap.get(id) || [], laaOrificeOf(meshMap.get('la')?.[0], meshVertices('la')), { saNode: saCenter, cristaSulcus });
     bachmannTarget = bachmann.target;
     const targetMarker = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshStandardMaterial({ color: 0xc03bb8, emissive: 0x5a1456, roughness: 0.4 }));
     targetMarker.position.copy(bachmann.target);
@@ -675,6 +709,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
 
   function setView(name,smooth=true){
     mitralFocus=name==='mitral'&&mode==='anatomy';
+    kochFocus=KOCH_VIEWS[name]!==undefined&&mode==='ablation';
     applyState();
     if(mitralFocus){
       const f=meshMap.get('mitral-annulus')?.[0]?.userData.frame;
@@ -688,6 +723,16 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     if(angioPresets[name]){
       setAngioProjection(angioPresets[name].laoRao,angioPresets[name].craCau,smooth,false);
       return;
+    }
+    const kochCentre=KOCH_VIEWS[name]!==undefined?epLandmarks.kochCentre():null;
+    if(kochCentre){
+      const theta=THREE.MathUtils.degToRad(KOCH_VIEWS[name]);
+      const dir=new THREE.Vector3(Math.sin(theta),0,Math.cos(theta));
+      lookTarget.copy(kochCentre);
+      cameraTarget.copy(kochCentre).addScaledVector(dir,Math.max(KOCH_VIEW_DISTANCE,surfaceExit(kochCentre,dir)+KOCH_VIEW_CLEARANCE));
+      transition=smooth;container.dataset.cameraSettled=String(!smooth);
+      if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
+      emitAngleChange();requestRender();return;
     }
     const root=sourceCenter('lm')||new THREE.Vector3(0,.6,0);
     const target=name==='root'?root:fitCenter.clone();
@@ -784,7 +829,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       for(let parent=object.parent;parent;parent=parent.parent){
         if(parent.userData.projectionTissue)schematicTissue=true;
         if(deviceTint===null && parent.userData.fluoroTint!=null)deviceTint=parent.userData.fluoroTint;
-        if(parent===pacemakerLeads.group || parent===transseptal.group || parent===cathLab.group){device=true;break;}
+        if(parent.userData.fluoroDevice || parent===pacemakerLeads.group || parent===transseptal.group || parent===cathLab.group){device=true;break;}
       }
       device=device && !schematicTissue && !original.isMeshBasicMaterial;
       let projected=projectionMaterials.get(object);
@@ -842,11 +887,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     },
     setConductionVisible(value){visibility.conduction=Boolean(value);applyState();},
     setMode(name){
-      mitralFocus=false;
+      mitralFocus=false;kochFocus=false;
       mode=name;
       septalDefects.group.visible=name==='defects';
       if(name==='defects'){cardiacCycle.setPlaying(false);beating=false;if(channels)channels.reset();}
-      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
+      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath','echo'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       pacemakerLeads.setVisible(name==='pacemaker'||name==='bachmann');
       bachmannTargetGroup.visible=name==='bachmann';
@@ -855,6 +900,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       withRestPose(() => auscultation.setVisible(name==='exam'));
       catheterPickables=null;
       if(name==='ablation'){
+        ablationStep=0;
         epLandmarks.setStep(0);
       }else if(name==='pacemaker'){
         pacemakerLeads.setStep(0);
@@ -891,6 +937,18 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       requestRender();
     },
     getCycleState(){return cardiacCycle.getCycleState();},
+    // Echo module: atlas meshes by id, measurements at rest, overlays in heart coordinates.
+    getMeshes(id){return meshMap.get(id)||[];},
+    withRestPose,
+    addOverlay(object){heart.add(object);requestRender();},
+    // Camera square to a plane (echo imaging plane): on the side of the current camera, framing depth units.
+    lookAlong(origin,normal,beam,depth){
+      const n=new THREE.Vector3(...normal),centre=new THREE.Vector3(...origin).addScaledVector(new THREE.Vector3(...beam),depth/2);
+      if(camera.position.clone().sub(centre).dot(n)<0)n.negate();
+      lookTarget.copy(centre);cameraTarget.copy(centre).addScaledVector(n,Math.max(3,depth*1.9));
+      transition=true;container.dataset.cameraSettled='false';emitAngleChange();requestRender();
+    },
+    requestRender,
     // Diagnostics for the beat tests: overlays currently bound to the beating heart.
     overlayFollowCount(){return overlayFollow?.recordCount() ?? 0;},
     atlasAdjustments(){return {...atlasAdjustments};},
@@ -914,7 +972,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       if(channels && mode!=='defects') channels.applyChannels(cardiacCycle.getCycleState());
       requestRender();
     },
-    setAblationStep(step){epLandmarks.setStep(Number(step));requestRender();},
+    setAblationStep(step){ablationStep=Number(step);epLandmarks.setStep(ablationStep);requestRender();},
+    // Koch step layers: 'his' and 'cs' reference catheters, 'lesions' (example RF, off by default).
+    setEpOptional(key,value){epLandmarks.setOptional(key,value);catheterPickables=null;requestRender();},
+    getEpOptional(){return epLandmarks.getOptional();},
     setPacemakerStep(step){pacemakerLeads.setStep(Number(step));requestRender();},
     setBachmannStep(step){pacemakerLeads.setBachmannStep(Number(step));requestRender();},
     setTransseptalStep(step){transseptal.setStep(Number(step));requestRender();},
@@ -958,7 +1019,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {defects:septalDefects.getState(),mitralFocus,mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    getState(){return {defects:septalDefects.getState(),mitralFocus,kochFocus,mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
     dispose(){septalDefects.dispose();mitralScallops.dispose();sceneLabels.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

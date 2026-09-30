@@ -149,9 +149,21 @@ export function laaNeckContour(mesh, { center, axis, radius }) {
   return loops.sort((a, b) => a.distance - b.distance)[0]?.points ?? null;
 }
 
+/**
+ * The appendage orifice of the LA mesh: measured once, before any change to
+ * the lobe (the neck detection reads the lobe's profile), then kept on the
+ * mesh so every later consumer uses the same neck.
+ */
+export function laaOrificeOf(laMesh, laVerts) {
+  if (laMesh?.userData.laaOrifice) return laMesh.userData.laaOrifice;
+  const orifice = laaOrifice(laVerts);
+  if (laMesh && orifice) laMesh.userData.laaOrifice = orifice;
+  return orifice;
+}
+
 /** Schematic orifice ring on the measured appendage neck, registered as `laa`. */
 export function addLaaMarker({ meshVertices, getMeshes = () => [], register, parent }) {
-  const orifice = laaOrifice(meshVertices('la'));
+  const orifice = laaOrificeOf(getMeshes('la')[0], meshVertices('la'));
   if (!orifice) return null;
   const { center, axis, radius, tip } = orifice;
   const u = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0));

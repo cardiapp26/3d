@@ -1,0 +1,228 @@
+{
+  "task": "TTE/TEE integration feasibility research",
+  "date": "2026-09-30",
+  "generated_at": "2026-09-30T02:40:02.977411+00:00",
+  "authority": "Read application code; write research artifacts only",
+  "base_commit": "445e3b80ec46e8b1a0610207a7487aa1d6d18dd2",
+  "working_tree": "Pre-existing uncommitted changes retained; hashes identify inspected files",
+  "environment": {
+    "node": "v22.14.0",
+    "os": "Darwin arm64"
+  },
+  "inputs": [
+    {
+      "path": "README.md",
+      "sha256": "883e2df3f23a051594cdc7ef814c398a5126056964733c8e1dcdd82f2b02dcd5",
+      "bytes": 10112
+    },
+    {
+      "path": "package.json",
+      "sha256": "2c794401563b43581b05d213702d712de31d40450b858775d5d2736ee96b392a",
+      "bytes": 5534
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "6a3c05d0941d743afd14ad44c4d27c939f98804a26f16013fc2c5bf7665d678d",
+      "bytes": 24508
+    },
+    {
+      "path": "src/atlas.js",
+      "sha256": "abf646074cbf3e262d97e1e7b33197f0e80d57aa9c5a7ed470d1ab89bb4f2489",
+      "bytes": 3858
+    },
+    {
+      "path": "src/heart.js",
+      "sha256": "3eb29e318667f5a32b8ff4eaf3ae8f8d4c65713b11863205910daf4872656fdc",
+      "bytes": 55996
+    },
+    {
+      "path": "src/thorax.js",
+      "sha256": "6c67afcc66d7c387eb4d7277a957d7d59b53a07ca558548d5a155778e3cc1ba5",
+      "bytes": 5433
+    },
+    {
+      "path": "src/content.js",
+      "sha256": "9eee4c64f8cd82b527134529878054825fb80c01fb8d0450a743cccd8cc52ecb",
+      "bytes": 147158
+    },
+    {
+      "path": "src/la-landmarks.js",
+      "sha256": "feccf19ed0751b79049cf4c9f738727a9cc9eef0af393af1a0717e89adaf62e4",
+      "bytes": 8553
+    },
+    {
+      "path": "src/cardiac-cycle.js",
+      "sha256": "c67419ea86dc6a1af9eb181f4a662bd22a4a4f313c396be326fa537a972692d5",
+      "bytes": 9204
+    },
+    {
+      "path": "src/animation-channels.js",
+      "sha256": "bca41433852ec268dcde767d6b1d1e7f1b687deca9ade1dc16327b0712c74118",
+      "bytes": 17236
+    },
+    {
+      "path": "src/hemo-mode.js",
+      "sha256": "ea7dc92a0bd09dd774ce8ff8ca4de834ad02fa273d4a2ccceeb6309ba28ac881",
+      "bytes": 4082
+    },
+    {
+      "path": "src/main.js",
+      "sha256": "4ed1959aa520dd54767753de34ee7dbbf38673a6c9b450c634ab96cf0791bb62",
+      "bytes": 86433
+    },
+    {
+      "path": "src/panel-shell.js",
+      "sha256": "2d6667e1014b976fd0ff7129051ffe4acbcfe479ff8b5e2494b570363c8766b5",
+      "bytes": 11589
+    },
+    {
+      "path": "public/models/cardiovascular.glb",
+      "sha256": "05f373a294ab809b9a628bc1474a66028642997330fddc553a33d4ac6409b757",
+      "bytes": 7217588
+    }
+  ],
+  "outputs": [
+    {
+      "path": "research/TTE_TEE_ENTEGRASYON_RAPORU.md",
+      "sha256": "391804ecaaa732f6b3cdea61f84dffa5b528e3aa4145e9d9bdacf8b8756f6992",
+      "bytes": 25099
+    },
+    {
+      "path": "research/tte-tee-scite-evidence.json",
+      "sha256": "2915396495dd3db5c8940e73f99cfad90205385e967d59445d7850ba79582e37",
+      "bytes": 3202
+    }
+  ],
+  "web_sources": [
+    {
+      "url": "https://jamanetwork.com/journals/jamacardiology/fullarticle/2800011",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.asecho.org/guideline/comprehensive-tte-in-adults/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.asecho.org/wp-content/uploads/2025/04/2019_Comprehensive-TTE.pdf",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.asecho.org/guideline/comprehensive-tee/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.asecho.org/wp-content/uploads/2014/05/2013_Performing-Comprehensive-TEE.pdf",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://threejs.org/manual/pages/rendertargets.html",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://kitware.github.io/vtk-js/api/Rendering_Core_ImageResliceMapper.html",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://plustoolkit.github.io/features",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://github.com/PlusToolkit/PlusLib/blob/master/docs/devices/DeviceUsSimulatorVideo.md",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.k-wave.org/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.k-wave.org/documentation/example_us_bmode_linear_transducer.php",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.k-wave.org/license.php",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://pie.med.utoronto.ca/tte/index.htm",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://pie.med.utoronto.ca/TEE/index.htm",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://surgicalscience.com/simulators/heartworks/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://surgicalscience.com/simulators/heartworks/3d-echo/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://elevatehealth.net/product/vimedix/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://github.com/SlicerHeart/SlicerHeart",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://github.com/SlicerHeart/SlicerHeart/blob/master/LICENSE",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://github.com/osamamalik/TEESimulator",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.asecho.org/practice-clinical-resources/ase-guidelines/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://echonet.github.io/dynamic/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.creatis.insa-lyon.fr/Challenge/camus/scientificInterests.html",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.creatis.insa-lyon.fr/Challenge/camus/files/tmi_2019_leclerc.pdf",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://www.asecho.org/guideline/tee-screening-for-structural-heart-intervention/",
+      "accessed": "2026-09-30"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.echo.2022.01.011",
+      "accessed": "2026-09-30"
+    }
+  ],
+  "search_topics": [
+    "ASE comprehensive adult TTE 2019 and TEE 2013",
+    "Toronto Virtual TTE TEE HTML5 copyright",
+    "HeartWorks Vimedix official products",
+    "PLUS SlicerHeart k-Wave vtk.js documentation",
+    "EchoNet-Dynamic research use agreement CAMUS scope",
+    "Simulation training primary randomized trial and Scite citation context"
+  ],
+  "method": "Read-only code inspection plus targeted primary-source web research. Narrative engineering synthesis; not systematic review.",
+  "verification": {
+    "prototype_run": false,
+    "clinical_validation": false,
+    "performance_benchmark": false,
+    "application_tests": "Not run; no application code modified",
+    "reference_check": "Primary pages/PDFs plus Scite metadata and bounded incoming citation sample",
+    "scite_graph_limit": 8,
+    "external_site_interactive_modules_run": false,
+    "separate_review": "Independent agent checked ASE view count and example angles, EchoNet terms, SIMULATOR endpoint limits; no blocking error found. No human clinical validation."
+  },
+  "limitations": [
+    "Live web content can change; URLs and dated evidence notes retained, not full website snapshots",
+    "No clinical effect estimates calculated",
+    "No dataset downloaded or license accepted",
+    "No API/SDK absence asserted from missing public documentation"
+  ],
+  "seed": "not applicable; no stochastic computation"
+}

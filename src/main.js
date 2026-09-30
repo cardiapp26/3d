@@ -9,10 +9,12 @@ import {createHeart} from './heart.js';
 import {structures,rawStructures,uiTranslations,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
 import { fetchCountryCode, languageForCountry } from './entry-language.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
-import {drawEcgTrace, formatValveSync} from './ecg-trace.js';
+import {drawEcgTrace, formatValveSync, ecgPhaseAt} from './ecg-trace.js';
 import {drawWiggers, formatCycleTiming, wiggersPhaseAt} from './wiggers.js';
 import { createHemoMode } from './hemo-mode.js';
 import { createExamMode } from './exam-mode.js';
+import { createEgmPanel } from './ep-egm.js';
+import { createEchoMode } from './echo-mode.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 
 document.documentElement.lang = getContentLanguage();
@@ -22,7 +24,8 @@ document.documentElement.lang = getContentLanguage();
 const MODE_GROUPS = [
   ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'defects']],
   ['modeGroupIntervention', ['angiography', 'ablation', 'pacemaker', 'transseptal', 'bachmann']],
-  ['modeGroupPhysiology', ['cath', 'exam']]
+  ['modeGroupPhysiology', ['cath', 'exam']],
+  ['modeGroupImaging', ['echo']]
 ];
 const modes = MODE_GROUPS.flatMap(([, ids]) => ids).map((id, i) => [id, String(i + 1).padStart(2, '0')]);
 const MODE_KEYS = 9;
@@ -84,6 +87,12 @@ app.innerHTML = `
     <section id="ra-tools" hidden>
       <button data-ra-focus="ra" data-i18n="raFocusRa">${getTranslation('raFocusRa')}</button>
       <label class="slider-label"><span data-i18n="wallRa">${getTranslation('wallRa')}</span><output id="ra-cut-ra">0%</output></label><input data-ra-wall="ra" aria-label="RA wall section" type="range" min="0" max="80" value="0">
+    </section>
+    <section id="ep-tools" class="ep-tools" hidden>
+      <div class="section-heading"><span data-i18n="epToolsHeading">${getTranslation('epToolsHeading')}</span></div>
+      <div class="ep-view-row">${[['koch_rao','RAO 30'],['koch_lao','LAO 45']].map(([id,t])=>`<button type="button" data-ep-view="${id}" aria-pressed="false">Koch · ${t}</button>`).join('')}</div>
+      ${[['his','epHisCath','#d946ef',true],['cs','epCsCath','#3b82f6',true],['lesions','epLesions','#ff3b30',false]].map(([id,key,color,on])=>`<label class="layer"><i style="background:${color}"></i><span data-i18n="${key}">${getTranslation(key)}</span><input type="checkbox" data-ep-optional="${id}"${on?' checked':''}></label>`).join('')}
+      <p class="ep-note" data-i18n="epNote">${getTranslation('epNote')}</p>
     </section>
     <section id="layers">
       <div class="section-heading"><span data-i18n="layersHeading">${getTranslation('layersHeading')}</span></div>
@@ -186,7 +195,7 @@ app.innerHTML = `
         <span id="wiggers-timing" class="wiggers-timing"></span>
       </div>
       <div class="ecg-strip">
-        <canvas id="ecg-canvas" aria-label="${getTranslation('ecgCaption')}"></canvas>
+        <canvas id="ecg-canvas" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="${getTranslation('ecgScrubHint')}" title="${getTranslation('ecgScrubHint')}"></canvas>
         <span class="ecg-caption" data-i18n="ecgCaption">${getTranslation('ecgCaption')}</span>
         <span id="ecg-valve-state" class="ecg-valves"></span>
       </div>
@@ -354,6 +363,8 @@ app.innerHTML = `
       <div id="step-detail"></div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div id="exam-panel" class="exam-panel-mount" hidden></div>
+      <div id="egm-panel" class="egm-panel-mount" hidden></div>
+      <div id="echo-panel" class="echo-panel-mount" hidden></div>
       <button class="primary" id="next-step">${getTranslation('nextLandmark')}</button>
       <label class="slider-label" for="progress" id="progress-label">${getTranslation('leadProgressLabel')} <span id="progress-value">100%</span></label>
       <input id="progress" type="range" min="0" max="100" value="100">
@@ -468,7 +479,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
   if(mode==='defects'&&!defect)return;
   if(defect&&mode!=='defects'){setMode('defects',false);}
   if(defect)defectPanel.select(cleanId);
-  if (mode === 'atria' && !['la','laa'].includes(cleanId)) return;
+  if (mode === 'atria' && !['la', 'laa', 'coumadin-ridge'].includes(cleanId)) return;
   if (mode === 'ra' && !['ra', 'crista-terminalis'].includes(cleanId)) return;
   const s = structures[cleanId];
   if (!s) return;
@@ -587,10 +598,17 @@ function updateCycleUI(state) {
   document.querySelectorAll('.cycle-preset-btn').forEach(btn => {
     btn.classList.toggle('active', Number(btn.dataset.bpm) === state.bpm);
   });
-  drawEcgTrace(document.querySelector('#ecg-canvas'), state);
+  const ecgCanvas = document.querySelector('#ecg-canvas');
+  drawEcgTrace(ecgCanvas, state, {
+    reserveLeft: (document.querySelector('.ecg-caption')?.offsetWidth || 0) + 12,
+    reserveRight: (valveState?.offsetWidth || 0) + 12,
+  });
+  ecgCanvas?.setAttribute('aria-valuenow', String(Math.round(state.phase * 100)));
   lastCycleState = state;
   hemoMode?.tick(state);
   examMode?.tick(state);
+  if (egmPanel && !egmMount.hidden) egmPanel.draw(state);
+  echoMode?.tick(state);
   const wigStrip = document.querySelector('#wiggers-strip');
   if (wigStrip && !wigStrip.hidden) {
     drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en');
@@ -599,6 +617,17 @@ function updateCycleUI(state) {
   }
 }
 
+// Synthetic EGM strip of the ablation lesson (steps with an `egm` scenario); built on first use.
+const egmMount = document.querySelector('#egm-panel');
+let egmPanel = null;
+function syncEgm(lessonStep) {
+  const scenario = mode === 'ablation' ? lessonStep?.egm : null;
+  egmMount.hidden = !scenario;
+  if (!scenario) return;
+  egmPanel ??= createEgmPanel(egmMount, { getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en') });
+  egmPanel?.setScenario(scenario);
+  egmPanel?.draw(heart?.getCycleState());
+}
 // Built before the cycle subscription: subscribeCycle calls updateCycleUI at once.
 const hemoMode = heart ? createHemoMode({
   heart,
@@ -611,6 +640,11 @@ const examMode = heart ? createExamMode({
   mount: document.querySelector('#exam-panel'),
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
   onArea: areaId => inspect(`ausc-${areaId}`, false, false)
+}) : null;
+const echoMode = heart ? createEchoMode({
+  heart,
+  mount: document.querySelector('#echo-panel'),
+  getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en')
 }) : null;
 const defectPanel = createSeptalDefectsPanel({
   mount: document.querySelector('#defect-tools'),
@@ -639,8 +673,9 @@ practice = createPractice({
   },
   onReveal: id => inspect(id, true)
 });
-// Test hook, like window.heart: lets browser tests drive scene picks.
+// Test hooks, like window.heart: let browser tests drive scene picks and the echo module.
 window.cardiaPractice = practice;
+window.cardiaEcho = echoMode;
 
 // Quick search: modes and structures by name or abbreviation, both languages.
 function otherLang() { return getContentLanguage() === 'en' ? 'tr' : 'en'; }
@@ -772,14 +807,18 @@ function showStep() {
     heart?.setBachmannStep(step);
   } else if (mode === 'ablation') {
     heart?.setAblationStep(step);
+    syncEpTools(s.view);
+    setTissueOpacity(String(s.view).startsWith('koch_') ? KOCH_TISSUE_PERCENT : Math.round(LESSON_TISSUE_OPACITY * 100));
   }
 
   if (isTransseptal) {
     syncCatheterUI();
   }
 
+  syncEgm(s);
   if (isCath) hemoMode?.applyStep(s);
   if (mode === 'exam') examMode?.applyStep(s);
+  if (mode === 'echo') echoMode?.applyStep(s.echo);
 
   if (s.view) {
     heart?.setView(s.view, true);
@@ -814,7 +853,7 @@ function filterAtrialOptions() {
     if (mode === 'defects') {
       option.hidden = option.disabled = !DEFECT_TYPES.some(d => d.id === option.value);
     } else if (mode === 'atria') {
-      option.hidden = option.disabled = !['la','laa'].includes(option.value);
+      option.hidden = option.disabled = !['la', 'laa', 'coumadin-ridge'].includes(option.value);
     } else if (mode === 'ra') {
       option.hidden = option.disabled = !['ra', 'crista-terminalis'].includes(option.value);
     } else {
@@ -822,6 +861,22 @@ function filterAtrialOptions() {
     }
   }
 }
+// Ablation (Koch step): close-up projections and optional layers.
+function syncEpTools(view = null) {
+  const optional = heart?.getEpOptional?.() || {};
+  document.querySelectorAll('[data-ep-optional]').forEach(box => { box.checked = Boolean(optional[box.dataset.epOptional]); });
+  document.querySelectorAll('[data-ep-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.epView === view)));
+}
+// The close-ups look through the free walls at the septum: fainter tissue.
+const KOCH_TISSUE_PERCENT = 15;
+document.querySelectorAll('[data-ep-view]').forEach(button => button.addEventListener('click', () => {
+  // The close-ups frame Koch's triangle: go to the Koch step first if another target is shown.
+  if (mode === 'ablation' && ![1, 4].includes(step)) { step = 1; showStep(); }
+  setTissueOpacity(KOCH_TISSUE_PERCENT);
+  heart?.setView(button.dataset.epView, true);
+  syncEpTools(button.dataset.epView);
+}));
+document.querySelectorAll('[data-ep-optional]').forEach(box => box.addEventListener('change', () => heart?.setEpOptional(box.dataset.epOptional, box.checked)));
 document.querySelectorAll('[data-atria-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.atriaFocus)));
 document.querySelectorAll('[data-atria-wall]').forEach(input => input.addEventListener('input', () => {
   const id = input.dataset.atriaWall;
@@ -910,6 +965,7 @@ function setMode(newMode, updateUrl = true) {
 
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();
+  if (mode === 'echo') echoMode?.enter(); else echoMode?.exit();
   if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath') {
     setCarmPanelOpen(true);
   } else {
@@ -922,6 +978,9 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria' || mode === 'ra' || mode === 'defects';
   document.querySelector('#atria-tools').hidden = mode !== 'atria';
   document.querySelector('#ra-tools').hidden = mode !== 'ra';
+  document.querySelector('#ep-tools').hidden = mode !== 'ablation';
+  if (mode !== 'ablation') egmMount.hidden = true;
+  if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
   filterAtrialOptions();
@@ -1386,6 +1445,34 @@ wiggersToggle?.addEventListener('click', () => {
   setWiggersOpen(document.querySelector('#wiggers-strip')?.hidden);
 });
 
+// The ECG cursor is draggable: the heart follows the phase under the pointer.
+// Playback pauses while dragging and resumes on release.
+const ecgStrip = document.querySelector('#ecg-canvas');
+let ecgDrag = null;
+function ecgSeek(e) {
+  const bpm = heart?.getCycleState?.().bpm || 72;
+  heart?.seekCycle(ecgPhaseAt(ecgStrip, e.clientX, bpm));
+}
+ecgStrip?.addEventListener('pointerdown', e => {
+  const playing = Boolean(heart?.getCycleState?.().playing);
+  if (playing) heart?.setBeating(false);
+  ecgDrag = { resume: playing };
+  try { ecgStrip.setPointerCapture(e.pointerId); } catch (_) {}
+  ecgSeek(e);
+});
+ecgStrip?.addEventListener('pointermove', e => { if (ecgDrag) ecgSeek(e); });
+const ecgRelease = () => { if (ecgDrag?.resume) heart?.setBeating(true); ecgDrag = null; };
+ecgStrip?.addEventListener('pointerup', ecgRelease);
+ecgStrip?.addEventListener('pointercancel', ecgRelease);
+ecgStrip?.addEventListener('keydown', e => {
+  const step = { ArrowRight: 0.01, ArrowUp: 0.01, ArrowLeft: -0.01, ArrowDown: -0.01, PageUp: 0.1, PageDown: -0.1 }[e.key];
+  if (step === undefined) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const phase = heart?.getCycleState?.().phase || 0;
+  heart?.seekCycle(((phase + step) % 1 + 1) % 1);
+});
+
 // Click / drag on the diagram scrubs the cycle phase.
 const wiggersCanvas = document.querySelector('#wiggers-canvas');
 let wiggersDragging = false;
@@ -1601,6 +1688,8 @@ function updateLanguageUI() {
   updateUpdaterLanguage();
   hemoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   examMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
+  egmPanel?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
+  echoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   updateCycleUI(heart?.getCycleState());
 }
 

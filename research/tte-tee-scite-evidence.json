@@ -1,0 +1,111 @@
+{
+  "echo-scite-meta": {
+    "hits": [
+      {
+        "doi": "10.1001/jamacardio.2022.5016",
+        "title": "Effectiveness of Simulation-Based Training on Transesophageal Echocardiography Learning",
+        "year": 2023,
+        "tally": {
+          "total": 17,
+          "supporting": 1,
+          "contrasting": 0,
+          "mentioning": 16,
+          "citingPublications": 28
+        },
+        "editorialNotices": null
+      },
+      {
+        "doi": "10.1016/j.echo.2018.06.004",
+        "title": "Guidelines for Performing a Comprehensive Transthoracic Echocardiographic Examination in Adults: Recommendations from the American Society of Echocardiography",
+        "year": 2019,
+        "tally": {
+          "total": 1927,
+          "supporting": 6,
+          "contrasting": 0,
+          "mentioning": 1854,
+          "citingPublications": 2695
+        },
+        "editorialNotices": null
+      },
+      {
+        "doi": "10.1016/j.echo.2013.07.009",
+        "title": "Guidelines for Performing a Comprehensive Transesophageal Echocardiographic Examination: Recommendations from the American Society of Echocardiography and the Society of Cardiovascular Anesthesiologists",
+        "year": 2013,
+        "tally": {
+          "total": 1055,
+          "supporting": 2,
+          "contrasting": 1,
+          "mentioning": 1007,
+          "citingPublications": 1448
+        },
+        "editorialNotices": null
+      }
+    ],
+    "notice": "Missing notice fields do not establish absence of corrections or retractions."
+  },
+  "echo-scite-graph": {
+    "seeds": [
+      "10.1016/j.echo.2013.07.009",
+      "10.1016/j.echo.2018.06.004",
+      "10.1001/jamacardio.2022.5016"
+    ],
+    "edge_count": 8,
+    "truncated": true,
+    "seed_coverage": {
+      "10.1016/j.echo.2013.07.009": 0,
+      "10.1016/j.echo.2018.06.004": 0,
+      "10.1001/jamacardio.2022.5016": 8
+    },
+    "low_coverage_seeds": [
+      "10.1016/j.echo.2013.07.009",
+      "10.1016/j.echo.2018.06.004"
+    ],
+    "edges": [
+      {
+        "s": "10.1001/jamacardio.2022.5030",
+        "t": "10.1001/jamacardio.2022.5016",
+        "type": [
+          "mentioning"
+        ]
+      },
+      {
+        "s": "10.1161/circimaging.123.016148",
+        "t": "10.1001/jamacardio.2022.5016",
+        "type": [
+          "mentioning"
+        ]
+      },
+      {
+        "s": "10.1016/j.acvd.2023.05.002",
+        "t": "10.1001/jamacardio.2022.5016"
+      },
+      {
+        "s": "10.1016/j.jscai.2026.105499",
+        "t": "10.1001/jamacardio.2022.5016",
+        "type": [
+          "mentioning"
+        ]
+      },
+      {
+        "s": "10.7759/cureus.55779",
+        "t": "10.1001/jamacardio.2022.5016",
+        "type": [
+          "mentioning"
+        ]
+      },
+      {
+        "s": "10.17816/dd586551",
+        "t": "10.1001/jamacardio.2022.5016"
+      },
+      {
+        "s": "10.2196/preprints.60485",
+        "t": "10.1001/jamacardio.2022.5016"
+      },
+      {
+        "s": "10.1016/j.cpcardiol.2024.102679",
+        "t": "10.1001/jamacardio.2022.5016"
+      }
+    ],
+    "interpretation": "Sampled citation context cautions that simulator learning does not establish patient-level outcomes. No verbatim excerpts retained."
+  }
+}

@@ -10,9 +10,9 @@ const assert = require('node:assert/strict');
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     const visible = () => page.evaluate(() => window.heart.getState().structures.filter(s => s.visible).map(s => s.id).sort());
-    assert.deepEqual(await visible(), ['la','laa']);
+    assert.deepEqual(await visible(), ['coumadin-ridge','la','laa']); // with the left lateral ridge
     assert.equal(await page.locator('#structure-select').inputValue(), 'laa');
-    assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 2);
+    assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 3); // LA, LAA, Coumadin ridge
     for (const id of ['la','laa']) {
       await page.locator(`[data-atria-focus=${id}]`).click();
       assert.equal(await page.locator('#structure-select').inputValue(), id);
@@ -52,7 +52,7 @@ const assert = require('node:assert/strict');
     await page.locator('[data-atria-wall=la]').fill('50');
     assert.equal(await page.evaluate(() => window.heart.getState().wallCuts.la), .5);
     await page.evaluate(() => { window.heart.setLayer('vessels', true); window.heart.setFlowVisible(true); });
-    assert.deepEqual(await visible(), ['la','laa']);
+    assert.deepEqual(await visible(), ['coumadin-ridge','la','laa']); // with the left lateral ridge
     await page.screenshot({ path: 'research/screenshots/atria.png' });
 
     // Test RA mode
@@ -70,7 +70,7 @@ const assert = require('node:assert/strict');
     assert.ok((await visible()).includes('lv'));
     await page.evaluate(() => window.heart.setLayer('la', false));
     await page.locator('[data-mode=atria]').click();
-    assert.deepEqual(await visible(), ['la','laa']);
+    assert.deepEqual(await visible(), ['coumadin-ridge','la','laa']); // with the left lateral ridge
     await page.locator('[data-mode=anatomy]').click();
     assert.ok(!(await visible()).includes('la'), 'original layer preference restored');
     await page.locator('[data-mode=atria]').click();

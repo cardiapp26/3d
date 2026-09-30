@@ -77,3 +77,34 @@ export function placeOnSurface(samples, listAt, offset) {
   }
   return placed;
 }
+
+const RADIAL_SEGMENTS = 10;
+
+/** A tube whose radius follows `radiusAt(t)`, oriented by the wall normal at each sample. */
+export function taperedTube(path, radiusAt) {
+  const positions = [], indices = [];
+  const ring = RADIAL_SEGMENTS + 1;
+  let lastB = null;
+  path.forEach((s, i) => {
+    const prev = path[Math.max(0, i - 1)].p, next = path[Math.min(path.length - 1, i + 1)].p;
+    const tangent = next.clone().sub(prev).normalize();
+    const n = s.n.clone().projectOnPlane(tangent).normalize();
+    const b = new THREE.Vector3().crossVectors(tangent, n).normalize();
+    if (lastB && b.dot(lastB) < 0) { b.negate(); n.negate(); }
+    lastB = b;
+    const r = radiusAt(i / (path.length - 1));
+    for (let k = 0; k <= RADIAL_SEGMENTS; k++) {
+      const a = (k / RADIAL_SEGMENTS) * Math.PI * 2;
+      positions.push(...s.p.clone().addScaledVector(n, Math.cos(a) * r).addScaledVector(b, Math.sin(a) * r).toArray());
+    }
+    if (i < path.length - 1) for (let k = 0; k < RADIAL_SEGMENTS; k++) {
+      const a = i * ring + k, c = a + ring;
+      indices.push(a, c, a + 1, a + 1, c, c + 1);
+    }
+  });
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}

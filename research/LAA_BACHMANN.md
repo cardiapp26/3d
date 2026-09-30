@@ -23,7 +23,13 @@ Orthographic, same-scale views of the LA alone (anterior, superior, left lateral
 | Largest cross-section of the lobe | 1.13 units, about 38 mm | width, mean 31 mm |
 | Share of LA vertices in the lobe | 20 % | |
 
-The atlas appendage is long and broad, at the upper end of the published range, but not outside it. It is the atlas's own segmentation and was not rescaled (the report asks for no arbitrary scale change). The larger impression also has two viewing causes: the LA mode frames the LA closely in perspective, and the anterior appendage is the part nearest the camera. The orthographic views above remove the perspective effect.
+The atlas appendage is long and broad, at the upper end of the published range, but not outside it. The larger impression also has two viewing causes: the LA mode frames the LA closely in perspective, and the anterior appendage is the part nearest the camera.
+
+Follow-up (2026-09-30): after seeing the result, the project owner still found the appendage too large and asked for it to be reduced. `src/la-appendage.js` (`shrinkAppendage`) now scales the lobe toward its measured neck at load, before any landmark is measured: the lobe is the part of the LA mesh beyond the neck plane connected to the tip (20 % of the LA vertices, 511 moved); the scale is 1 at the neck and reaches 0.68 over 0.25 units, so the neck (orifice, 13 mm) is unchanged and there is no crease. Length from the neck to the tip: 50 mm before, 34 mm after, near the published mean (30 mm). The neck is measured once before the change and kept on the mesh for every later consumer (orifice ring, Bachmann, ridge). This is a deliberate, recorded change to the atlas shape (`heart.atlasAdjustments().laaScale`), not a measurement.
+
+## 2a. Left lateral (Coumadin) ridge
+
+The fold of the LA endocardium between the appendage orifice (anterior) and the left pulmonary vein ostia (posterior), added as its own structure (`coumadin-ridge`, schematic, `src/la-appendage.js`). In the atlas the appendage points anteriorly and the left superior vein opens just behind its neck, so the ridge runs vertically on the lateral wall: for each left vein, the crest is midway between the closest pair of appendage-rim and vein-rim points; the ridge runs from just above the superior vein down past the inferior one, and is placed on the wall by casting from the LA centre (the exact triangle, not a vertex average), 0.015 units into the cavity. Length 19 mm. It follows the LA in the beat, is shown, selectable and labelled in the LA and LAA mode, and has TR/EN text (echo pseudo-thrombus, the anterior edge of the left WACA ring, the posterior border of the orifice in occluder sizing).
 
 ## 3. Bachmann's bundle: what was wrong
 
@@ -88,5 +94,5 @@ The band follows the beat as before (conduction layer). The beat and overlay gat
 ## 7. Limits
 
 - The pacing target is a teaching point on the atlas wall, not a measured lead position: the atlas has no wall-thickness layers, so "endocardial" means the inner face of the RA mesh. Adding a wall thickness would be invented data.
-- The LAA is the atlas geometry, at the upper end of normal; it was not rescaled, as the report asks.
+- The LAA was scaled toward its neck at the owner's request (section 2): its shape is the atlas shape reduced, not a segmented appendage of another heart. The Coumadin ridge is drawn from landmarks; its height and thickness are schematic.
 - The crista terminalis is drawn from landmarks, not segmented: the atlas has neither the ridge nor open caval orifices, and pectinate muscles are not modelled.

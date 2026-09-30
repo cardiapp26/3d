@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { sharedRim, nearestLoop, inferiorCavalOstium, coronarySinusOstium } from './mesh-utils.js';
+import { sharedRim, nearestLoop, inferiorCavalOstium, coronarySinusOstium, vesselCenterline, centroid } from './mesh-utils.js';
+import { surface } from './atrial-surface.js';
 
 /**
  * Procedural 3D Clinical Electrophysiology (EP) Landmarks and Ablation Targets.
@@ -14,6 +15,12 @@ export function createEPLandmarks(helpers) {
   group.visible = false;
 
   const targets = {};
+  // Scene labels for the Koch close-up (heart.js shows them in that step).
+  const labels = [];
+  // Optional layers of the Koch step: reference catheters and example RF lesions.
+  const optional = { his: [], cs: [], lesions: [] };
+  const shown = { his: true, cs: true, lesions: false };
+  let kochCentre = null;
 
   // Materials
   const matLesion = new THREE.MeshStandardMaterial({
@@ -208,13 +215,17 @@ export function createEPLandmarks(helpers) {
     const matHinge = new THREE.MeshStandardMaterial({ color: 0x61d6e8, emissive: 0x1b8fa3, emissiveIntensity: 0.5, roughness: 0.4 });
     const matBase = new THREE.MeshStandardMaterial({ color: 0x4bd18a, emissive: 0x1d8a52, emissiveIntensity: 0.5, roughness: 0.4 });
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(todaroCurve, 32, 0.017, 8, false), matTodaro), 'koch-todaro', 'Tendon of Todaro'));
-    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(hingeCurve, 40, 0.015, 8, false), matHinge), 'tricuspid-septal', 'Septal tricuspid hinge (Koch side)'));
+    const hingeCurveMesh = tag(new THREE.Mesh(new THREE.TubeGeometry(hingeCurve, 40, 0.015, 8, false), matHinge), 'tricuspid-septal', 'Septal tricuspid hinge (Koch side)');
+    kochGroup.add(hingeCurveMesh);
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(baseCurve, 20, 0.014, 8, false), matBase), 'koch-base', 'CS ostium / inferior isthmus (Koch base)'));
     // The mouth itself: a ring on the wall, facing the cavity.
     const csRing = new THREE.Mesh(new THREE.TorusGeometry(csMouth ? csMouth.radius : 0.13, 0.012, 8, 32), matBase);
     csRing.position.copy(lift(csOs));
     csRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), ra.clone().sub(csOs).normalize());
-    kochGroup.add(tag(csRing, 'koch-base', 'Coronary sinus ostium (measured)'));
+    // The mouth is estimated (mesh-utils coronarySinusOstium): the atlas sinus
+    // ends in the AV groove and has no intra-atrial orifice.
+    kochGroup.add(tag(csRing, 'koch-base', csMouth ? 'Coronary sinus ostium (estimated)' : 'Coronary sinus ostium (fallback)'));
+    labels.push({ mesh: csRing, tone: 'estimate', text: { tr: 'CS ağzı (kestirim)', en: 'CS ostium (estimated)' } });
 
     // Translucent triangle fill: fan from the apex over hinge + base + Todaro.
     const outline = [
@@ -234,11 +245,14 @@ export function createEPLandmarks(helpers) {
       color: 0x7fe3ee, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false
     }));
     kochGroup.add(tag(fill, 'koch-triangle', 'Triangle of Koch'));
+    kochCentre = centroid(outline);
+    labels.push({ mesh: hingeCurveMesh, tone: 'hinge', text: { tr: 'Septal menteşe (atlas halkası)', en: 'Septal hinge (atlas rim)' } });
 
     // Compact AV node at the apex (do not ablate: complete heart block).
     const avDanger = new THREE.Mesh(new THREE.SphereGeometry(0.05, 18, 18), matDanger);
     avDanger.position.copy(apexLift);
     kochGroup.add(tag(avDanger, 'koch-avnode', 'Compact AV node (Koch apex)'));
+    labels.push({ mesh: avDanger, tone: 'danger', text: { tr: 'Kompakt AV düğüm (apeks, şematik)', en: 'Compact AV node (apex, schematic)' } });
 
     // Fast pathway: septal input from the buttress of the atrial septum, the
     // "last" atrial connection at the apex (danger). Drawn as a short input
@@ -260,9 +274,106 @@ export function createEPLandmarks(helpers) {
     // Slow pathway: septal isthmus between the CS ostium and the septal
     // tricuspid hinge, just above the base (ablation target).
     const slowPathwayCenter = lift(baseAnterior.clone().lerp(csOs, 0.45).lerp(apexPt, 0.18));
-    const slowTarget = new THREE.Mesh(new THREE.SphereGeometry(0.045, 18, 18), matSafeTarget);
+    const slowTarget = new THREE.Mesh(new THREE.SphereGeometry(0.045, 18, 18), new THREE.MeshBasicMaterial({
+      color: 0x30d158, wireframe: true, transparent: true, opacity: 0.4, depthWrite: false
+    }));
     slowTarget.position.copy(slowPathwayCenter);
     kochGroup.add(tag(slowTarget, 'koch-slow', 'Slow pathway / septal isthmus (ablation target)'));
+    labels.push({ mesh: slowTarget, tone: 'target', text: { tr: 'Yavaş yol hedefi (şematik)', en: 'Slow pathway target (schematic)' } });
+
+    // Catheter routes. Teaching routes only: lumen clearance, tissue contact
+    // and contact force are not modelled. They run through the RA cavity:
+    // the centroid of the inner wall in a horizontal slab (the atlas RA is
+    // double-sheeted in places; atrial-surface.js splits the faces).
+    const raInner = surface(getMeshes('ra')).inner.map(v => v.p);
+    const cavityAt = (y, fallback) => {
+      const slab = raInner.filter(p => Math.abs(p.y - y) < 0.06);
+      return slab.length >= 8 ? centroid(slab) : fallback.clone();
+    };
+    const between = (a, b, f) => a + (b - a) * f;
+    // The atlas has no IVC mesh: the femoral catheters rise in the IVC lumen
+    // under the RA floor, pass the measured caval ostium, then the cavity.
+    const femoral = (shift = new THREE.Vector3()) => [
+      ivcOs.clone().add(new THREE.Vector3(0, -0.5, 0)).add(shift),
+      ivcOs.clone().add(new THREE.Vector3(0, -0.25, 0)).addScaledVector(shift, 0.5),
+      ivcOs.clone()
+    ];
+    const matElectrode = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.25 });
+    // A catheter group: body tube and electrodes at curve fractions `rings`.
+    // `cavity`: the route points between which it runs in the RA cavity (for checks).
+    function catheter({ name, pickId, color, points, radius, rings, tint, cavity }) {
+      const catheterGroup = new THREE.Group();
+      catheterGroup.name = name;
+      catheterGroup.userData = { fluoroDevice: true, fluoroTint: tint, cavity: cavity.map(p => p.toArray()) };
+      const curve = new THREE.CatmullRomCurve3(points);
+      catheterGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(curve, 96, radius, 8, false), new THREE.MeshStandardMaterial({ color, roughness: 0.4 })), pickId, name));
+      const electrodes = rings.map((t, i) => {
+        const electrode = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.5, 12, 12), matElectrode);
+        electrode.position.copy(curve.getPointAt(t));
+        return tag(electrode, pickId, `${name} electrode ${i + 1}`);
+      });
+      electrodes.forEach(e => catheterGroup.add(e));
+      return { group: catheterGroup, curve, electrodes };
+    }
+
+    // Slow pathway ablation catheter (femoral): up the RA cavity, onto the
+    // inferior paraseptal target from the cavity side.
+    const ablation = catheter({
+      name: 'Slow pathway ablation catheter (schematic)', pickId: 'koch-catheter', color: 0xa78bfa, radius: 0.014, tint: 0x3b2a6b, cavity: [ivcOs, slowPathwayCenter],
+      points: [...femoral(), cavityAt(between(ivcOs.y, slowPathwayCenter.y, 0.4), ra), cavityAt(between(ivcOs.y, slowPathwayCenter.y, 0.7), ra),
+        slowPathwayCenter.clone().lerp(ra, 0.3), slowPathwayCenter.clone()],
+      rings: [0.88, 0.93, 0.97, 1]
+    });
+    ablation.electrodes[3].name = 'Slow pathway catheter tip';
+    kochGroup.add(ablation.group);
+
+    // His reference catheter (femoral quadripolar): across the septal
+    // tricuspid hinge next to the His bundle, distal pair just inside the RV.
+    const rvCentre = sourceCenter('rv') || new THREE.Vector3(-0.08, -0.16, 0.64);
+    const hisVerts = meshVertices('his', /bundle of his/i);
+    const hisNear = hisVerts.filter(v => { const d = v.distanceTo(av); return d > 0.08 && d < 0.2; });
+    const hisSite = hisNear.length ? centroid(hisNear) : apexPt.clone().lerp(rvCentre, 0.15);
+    const hisHinge = (tvRim || [septalHinge]).reduce((best, v) => v.distanceTo(hisSite) < best.distanceTo(hisSite) ? v : best).clone();
+    const hisTip = hisHinge.clone().add(rvCentre.clone().sub(hisHinge).setLength(0.1));
+    const hisApproach = hisHinge.clone().add(ra.clone().sub(hisHinge).setLength(0.16));
+    const his = catheter({
+      name: 'His reference catheter (schematic)', pickId: 'ep-his-cath', color: 0xd946ef, radius: 0.013, tint: 0x5b1a63, cavity: [ivcOs, hisApproach],
+      points: [...femoral(new THREE.Vector3(0.07, 0, 0.05)), cavityAt(between(ivcOs.y, hisHinge.y, 0.45), ra), cavityAt(between(ivcOs.y, hisHinge.y, 0.8), ra),
+        hisApproach, hisTip],
+      rings: [0.9, 0.94, 0.97, 1]
+    });
+    his.group.userData.hisSite = hisSite.toArray();
+    his.group.userData.hisHinge = hisHinge.toArray();
+    his.group.userData.tip = hisTip.toArray();
+    kochGroup.add(his.group);
+    optional.his.push(his.group);
+    labels.push({ mesh: his.electrodes[2], tone: 'his', text: { tr: 'His kateteri (referans)', en: 'His catheter (reference)' } });
+
+    // CS reference catheter (decapolar, from the SVC): down the posterior RA,
+    // into the estimated mouth and along the sinus. Proximal pair (CS 9-10)
+    // at the ostium, distal pair (CS 1-2) farthest along the sinus.
+    const svcVerts = meshVertices('svc');
+    const svcTop = svcVerts.length ? centroid(svcVerts.filter(v => v.y > Math.max(...svcVerts.map(w => w.y)) - 0.12)) : ra.clone().add(new THREE.Vector3(0, 1.8, -0.2));
+    const svcBottom = svcVerts.length ? centroid(svcVerts.filter(v => v.y < Math.min(...svcVerts.map(w => w.y)) + 0.12)) : ra.clone().add(new THREE.Vector3(0, 1.1, -0.2));
+    const csBody = vesselCenterline(meshVertices('cs'), csOs, 0.1).slice(1, 9);
+    const csCatheter = catheter({
+      name: 'CS reference catheter (schematic)', pickId: 'ep-cs-cath', color: 0x3b82f6, radius: 0.013, tint: 0x1c3f8f, cavity: [svcBottom, csOs.clone().lerp(ra, 0.25)],
+      points: [svcTop, svcTop.clone().lerp(svcBottom, 0.5), svcBottom, cavityAt(between(svcBottom.y, csOs.y, 0.4), ra), cavityAt(between(svcBottom.y, csOs.y, 0.8), ra),
+        csOs.clone().lerp(ra, 0.25), csOs.clone(), ...csBody],
+      rings: []
+    });
+    // Ten electrodes as five bipoles on the part inside the sinus.
+    const csIn = new THREE.CatmullRomCurve3([csOs.clone(), ...csBody]);
+    for (let i = 0; i < (csBody.length >= 2 ? 10 : 0); i++) {
+      const u = Math.min(0.98, 0.04 + Math.floor(i / 2) * 0.2 + (i % 2) * 0.05);
+      const electrode = new THREE.Mesh(new THREE.SphereGeometry(0.019, 12, 12), matElectrode);
+      electrode.position.copy(csIn.getPointAt(u));
+      csCatheter.group.add(tag(electrode, 'ep-cs-cath', `CS ${10 - i} electrode`));
+      csCatheter.electrodes.push(electrode);
+    }
+    kochGroup.add(csCatheter.group);
+    optional.cs.push(csCatheter.group);
+    labels.push({ mesh: csCatheter.electrodes[1] || csCatheter.group.children[0], tone: 'cs', text: { tr: 'CS kateteri (referans)', en: 'CS catheter (reference)' } });
 
     // Inferior extensions of the AV node. Rightward: long, in the tricuspid
     // vestibule just atrial to the septal hinge, through the septal isthmus.
@@ -313,7 +424,8 @@ export function createEPLandmarks(helpers) {
       kochGroup.add(edges);
     }
 
-    // RF lesion cluster at the slow pathway, spread along the hinge direction.
+    // Example RF lesion cluster at the slow pathway, hidden by default: the
+    // number and spread are not a treatment protocol.
     const axis = apexPt.clone().sub(baseAnterior).normalize();
     const side = new THREE.Vector3().crossVectors(axis, csOs.clone().sub(baseAnterior)).cross(axis).normalize();
     for (let i = 0; i < 5; i++) {
@@ -322,7 +434,9 @@ export function createEPLandmarks(helpers) {
       rf.position.copy(slowPathwayCenter)
         .addScaledVector(axis, Math.cos(angle) * 0.04)
         .addScaledVector(side, Math.sin(angle) * 0.04);
-      kochGroup.add(tag(rf, 'koch-slow', 'Slow pathway RF lesion'));
+      rf.visible = shown.lesions;
+      kochGroup.add(tag(rf, 'koch-slow', 'Slow pathway RF lesion (example, optional)'));
+      optional.lesions.push(rf);
     }
 
     group.add(kochGroup);
@@ -436,10 +550,17 @@ export function createEPLandmarks(helpers) {
 
   function setStep(stepIndex) {
     init();
-    // stepIndex: 0: CTI, 1: Koch/AVNRT, 2: PVI/AF, 3: Full Overview
+    // stepIndex: 0: CTI, 1: Koch/AVNRT, 2: PVI/AF, 3: Full Overview, 4: Koch with synthetic EGM
     if (targets.cti) targets.cti.visible = (stepIndex === 0 || stepIndex === 3);
-    if (targets.koch) targets.koch.visible = (stepIndex === 1 || stepIndex === 3);
+    if (targets.koch) targets.koch.visible = (stepIndex === 1 || stepIndex === 3 || stepIndex === 4);
     if (targets.pvi) targets.pvi.visible = (stepIndex === 2 || stepIndex === 3);
+  }
+
+  /** Show or hide an optional Koch layer: 'his', 'cs' (reference catheters) or 'lesions' (example RF). */
+  function setOptional(key, visible) {
+    if (!(key in shown)) return;
+    shown[key] = Boolean(visible);
+    for (const object of optional[key]) object.visible = shown[key];
   }
 
   function setVisible(visible) {
@@ -452,6 +573,10 @@ export function createEPLandmarks(helpers) {
     init,
     setVisible,
     setStep,
+    setOptional,
+    getOptional: () => ({ ...shown }),
+    kochCentre: () => kochCentre?.clone() ?? null,
+    labels,
     targets
   };
 }
