@@ -24,7 +24,7 @@ import { separateAtriaFromAorta } from './transverse-sinus.js';
 import { createCristaTerminalis } from './crista-terminalis.js';
 import { shrinkAppendage, createCoumadinRidge } from './la-appendage.js';
 import { measuredFlowRoutes } from './flow-routes.js';
-import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd, inferiorCavalOstium } from './mesh-utils.js';
+import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd, inferiorCavalOstium, surfaceExit } from './mesh-utils.js';
 import { measureLeftBundle, measureRightBundle } from './conduction-paths.js';
 import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
 
@@ -75,13 +75,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   // The camera sits just outside the heart surface on that line (never inside tissue).
   const KOCH_VIEWS={koch_rao:-30,koch_lao:45}, KOCH_VIEW_DISTANCE=2.1, KOCH_VIEW_CLEARANCE=0.35, KOCH_FOCUS_IDS=['cs','svc','ivc'];
   let kochFocus=false;
-  const kochRay=new THREE.Raycaster();
-  function surfaceExit(centre,dir){
-    const far=8;
-    kochRay.set(centre.clone().addScaledVector(dir,far),dir.clone().negate());
-    const hit=kochRay.intersectObjects(meshes.filter(m=>['chambers','vessels'].includes(m.userData.layer)),false)[0];
-    return hit?far-hit.distance:0;
-  }
+  const heartSurfaceExit=(centre,dir)=>surfaceExit(centre,dir,meshes.filter(m=>['chambers','vessels'].includes(m.userData.layer)));
   let center=new THREE.Vector3(), scale=1, frame, down=null, transition=false;
   const cameraTarget=camera.position.clone(), lookTarget=new THREE.Vector3();
   let rootHeight=.7;
@@ -729,7 +723,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const theta=THREE.MathUtils.degToRad(KOCH_VIEWS[name]);
       const dir=new THREE.Vector3(Math.sin(theta),0,Math.cos(theta));
       lookTarget.copy(kochCentre);
-      cameraTarget.copy(kochCentre).addScaledVector(dir,Math.max(KOCH_VIEW_DISTANCE,surfaceExit(kochCentre,dir)+KOCH_VIEW_CLEARANCE));
+      cameraTarget.copy(kochCentre).addScaledVector(dir,Math.max(KOCH_VIEW_DISTANCE,heartSurfaceExit(kochCentre,dir)+KOCH_VIEW_CLEARANCE));
       transition=smooth;container.dataset.cameraSettled=String(!smooth);
       if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
       emitAngleChange();requestRender();return;

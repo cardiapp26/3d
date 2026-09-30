@@ -353,8 +353,9 @@ export function createEPLandmarks(helpers) {
     // into the estimated mouth and along the sinus. Proximal pair (CS 9-10)
     // at the ostium, distal pair (CS 1-2) farthest along the sinus.
     const svcVerts = meshVertices('svc');
-    const svcTop = svcVerts.length ? centroid(svcVerts.filter(v => v.y > Math.max(...svcVerts.map(w => w.y)) - 0.12)) : ra.clone().add(new THREE.Vector3(0, 1.8, -0.2));
-    const svcBottom = svcVerts.length ? centroid(svcVerts.filter(v => v.y < Math.min(...svcVerts.map(w => w.y)) + 0.12)) : ra.clone().add(new THREE.Vector3(0, 1.1, -0.2));
+    const svcY = svcVerts.reduce((r, v) => [Math.min(r[0], v.y), Math.max(r[1], v.y)], [Infinity, -Infinity]);
+    const svcTop = svcVerts.length ? centroid(svcVerts.filter(v => v.y > svcY[1] - 0.12)) : ra.clone().add(new THREE.Vector3(0, 1.8, -0.2));
+    const svcBottom = svcVerts.length ? centroid(svcVerts.filter(v => v.y < svcY[0] + 0.12)) : ra.clone().add(new THREE.Vector3(0, 1.1, -0.2));
     const csBody = vesselCenterline(meshVertices('cs'), csOs, 0.1).slice(1, 9);
     const csCatheter = catheter({
       name: 'CS reference catheter (schematic)', pickId: 'ep-cs-cath', color: 0x3b82f6, radius: 0.013, tint: 0x1c3f8f, cavity: [svcBottom, csOs.clone().lerp(ra, 0.25)],

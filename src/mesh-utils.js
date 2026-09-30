@@ -519,3 +519,15 @@ export function seatVesselEnd(mesh, { from, target, facing, reach = 0.7 }) {
   mesh.geometry.computeBoundingSphere();
   return target.clone();
 }
+
+/**
+ * Distance from `point` along `dir` to where the ray leaves the outermost
+ * surface of `meshes` (0 if nothing is hit). Vector3 or [x, y, z] inputs.
+ * Used to put cameras and probes just outside the heart.
+ */
+export function surfaceExit(point, dir, meshes, far = 8) {
+  const p = point.isVector3 ? point : new THREE.Vector3(...point);
+  const d = (dir.isVector3 ? dir.clone() : new THREE.Vector3(...dir)).normalize();
+  const hit = new THREE.Raycaster(p.clone().addScaledVector(d, far), d.clone().negate()).intersectObjects(meshes, false)[0];
+  return hit ? far - hit.distance : 0;
+}

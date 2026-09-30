@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { centroid, inferiorCavalOstium } from './mesh-utils.js';
+import { centroid, inferiorCavalOstium, surfaceExit } from './mesh-utils.js';
 import { appendageLobe } from './la-appendage.js';
 
 /*
@@ -142,14 +142,5 @@ const OESOPHAGUS_GAP = 0.35;
 const STOMACH_GAP = 0.3;
 const STOMACH_LEVEL = 0.6;      // fraction of the mitral-to-apex axis (mid-papillary)
 
-/**
- * Distance from `point` along `dir` to where the ray leaves the heart
- * (outermost chamber or vessel surface), 0 if nothing is hit.
- */
-export function surfaceExit(point, dir, meshes) {
-  const far = 8;
-  const origin = new THREE.Vector3(...point).addScaledVector(new THREE.Vector3(...dir), far);
-  const ray = new THREE.Raycaster(origin, new THREE.Vector3(...dir).negate());
-  const hit = ray.intersectObjects(meshes, false)[0];
-  return hit ? far - hit.distance : 0;
-}
+// Heart-surface exit distance (TTE windows): shared with the Koch close-up camera.
+export { surfaceExit };

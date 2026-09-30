@@ -18,7 +18,7 @@ const T = {
     advance: 'İlerlet / geri çek (göreli)', shaft: 'Şaft rotasyonu (sağ +)', flexion: 'Antefleksiyon (+) / retrofleksiyon (−)', lateralFlexion: 'Sol (+) / sağ (−) fleksiyon', omega: 'Multiplan açı',
     probe: 'Prob hareketleri', display: 'Görüntü ayarları', feedback: 'Geri bildirim', target: 'Hedef', done: 'Hedef görünüm bulundu.', guideline: 'Kılavuz açı aralığı',
     window: { parasternal: 'Parasternal pencere', apical: 'Apikal pencere', subcostal: 'Subkostal pencere' },
-    limits: 'Anatomik kesit simülatörüdür: gerçek B-mod, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE pencereleri hazır noktalardır (göğüs duvarı ve kaburgalar modelde yok); serbest yüzey taraması öğretildiği iddia edilmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; derinlik gerçek santimetre değildir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlasın kaynağı ve lisansı doğrulanmamıştır.'
+    limits: 'Geri bildirim dinlenme (diyastol sonu) geometrisinde değerlendirilir; eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Anatomik kesit simülatörüdür: gerçek B-mod, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE pencereleri hazır noktalardır (göğüs duvarı ve kaburgalar modelde yok); serbest yüzey taraması öğretildiği iddia edilmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; derinlik gerçek santimetre değildir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlasın kaynağı ve lisansı doğrulanmamıştır.'
   },
   en: {
     heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', views: 'Views', reset: 'Back to the view', restart: 'Back to the start', task: 'Task: find the view', endTask: 'End task', newTask: 'New task',
@@ -27,7 +27,7 @@ const T = {
     advance: 'Advance / withdraw (relative)', shaft: 'Shaft rotation (right +)', flexion: 'Anteflexion (+) / retroflexion (−)', lateralFlexion: 'Left (+) / right (−) flexion', omega: 'Multiplane angle',
     probe: 'Probe motions', display: 'Display', feedback: 'Feedback', target: 'Target', done: 'Target view found.', guideline: 'Guideline angle range',
     window: { parasternal: 'Parasternal window', apical: 'Apical window', subcostal: 'Subcostal window' },
-    limits: 'An anatomical section simulator: no real B-mode, Doppler or measurement. The section is computed from the atlas surfaces; open contours are drawn as lines, no tissue thickness is invented. TTE windows are preset points (the model has no chest wall or ribs); free surface scanning is not claimed to be taught. The TEE path is a schematic oesophagus and stomach placed behind the left atrium; depth is not real centimetres. Presets were tuned automatically on this atlas; no echocardiographer has reviewed them. The atlas source and licence are unverified.'
+    limits: 'The feedback is judged on the rest (end-diastolic) geometry; thresholds are teaching values without expert calibration. An anatomical section simulator: no real B-mode, Doppler or measurement. The section is computed from the atlas surfaces; open contours are drawn as lines, no tissue thickness is invented. TTE windows are preset points (the model has no chest wall or ribs); free surface scanning is not claimed to be taught. The TEE path is a schematic oesophagus and stomach placed behind the left atrium; depth is not real centimetres. Presets were tuned automatically on this atlas; no echocardiographer has reviewed them. The atlas source and licence are unverified.'
   }
 };
 const MAX_DEPTH = 6;
@@ -133,14 +133,16 @@ export function createEchoPanel(mount, handlers) {
     }
     for (const b of viewRow.children) {
       b.setAttribute('aria-pressed', String(!task && b.dataset.echoView === current));
-      b.disabled = Boolean(task);
+      b.disabled = Boolean(task && !task.done);
     }
   }
 
+  const setText = (node, text) => { if (node.textContent !== text) node.textContent = text; };
+  let feedbackKey = '';
   function render({ state, result, view, playing }) {
     const t = T[lang];
-    heading.textContent = t.heading;
-    modalityButtons.forEach(b => { b.textContent = t[b.dataset.echoModality]; b.setAttribute('aria-pressed', String(b.dataset.echoModality === state.modality)); b.disabled = Boolean(state.task); });
+    setText(heading, t.heading);
+    modalityButtons.forEach(b => { setText(b, t[b.dataset.echoModality]); b.setAttribute('aria-pressed', String(b.dataset.echoModality === state.modality)); b.disabled = Boolean(state.task && !state.task.done); });
     renderViews(handlers.views[state.modality], state.view, state.task);
     buildProbe(state.modality);
     const probe = state[state.modality];
@@ -148,26 +150,30 @@ export function createEchoPanel(mount, handlers) {
       const value = key === 'sectorAngle' ? (state.sectorAngle * 180) / Math.PI : key === 'depth' ? state.depth : probe[key];
       if (value === undefined) continue;
       if (doc.activeElement !== s.input) s.input.value = String(value);
-      s.out.textContent = s.unit === 'depth' ? `${Math.round((value / MAX_DEPTH) * 100)}%` : format(value, s.unit);
+      setText(s.out, s.unit === 'depth' ? `${Math.round((value / MAX_DEPTH) * 100)}%` : format(value, s.unit));
     }
     if (state.task) {
-      title.textContent = `${t.target}: ${view.title[lang]}`;
-    } else title.textContent = view.title[lang];
-    sub.textContent = state.modality === 'tte' ? `${t.window[view.window]} · ${view.source}` : `${t.guideline}: ${view.omega} · ${view.source}`;
+      setText(title, `${t.target}: ${view.title[lang]}`);
+    } else setText(title, view.title[lang]);
+    setText(sub, state.modality === 'tte' ? `${t.window[view.window]} · ${view.source}` : `${t.guideline}: ${view.omega} · ${view.source}`);
     canvas.setAttribute('aria-label', `${view.title[lang]}: ${lang === 'en' ? 'anatomical section, not an ultrasound image' : 'anatomik kesit, ultrason görüntüsü değil'}`);
     feedback.dataset.state = state.task?.done || (!state.task && result.achieved) ? 'ok' : 'hint';
-    feedback.replaceChildren(...[(state.task?.done ? t.done : null), ...result.messages].filter(Boolean).map(text => { const p = el('p'); p.textContent = text; return p; }));
-    resetBtn.textContent = state.task ? t.restart : t.reset;
+    // Rebuilt only when the messages change (live region: no re-announcing every frame).
+    const messages = [(state.task?.done ? t.done : null), ...result.messages].filter(Boolean);
+    if (messages.join('|') !== feedbackKey) {
+      feedbackKey = messages.join('|');
+      feedback.replaceChildren(...messages.map(text => { const p = el('p'); p.textContent = text; return p; }));
+    }
+    setText(resetBtn, state.task ? t.restart : t.reset);
     taskBtn.dataset.mode = state.task ? (state.task.done ? 'new' : 'end') : 'start';
-    taskBtn.textContent = state.task ? (state.task.done ? t.newTask : t.endTask) : t.task;
-    freezeBtn.textContent = playing ? t.freeze : t.play;
-    freezeBtn.setAttribute('aria-pressed', String(state.frozen));
-    lookBtn.textContent = t.look;
-    probeSummary.textContent = t.probe; displaySummary.textContent = t.display;
-    styleName.textContent = t.style; styleOptions.forEach(o => { o.textContent = t[o.value]; });
+    setText(taskBtn, state.task ? (state.task.done ? t.newTask : t.endTask) : t.task);
+    setText(freezeBtn, playing ? t.freeze : t.play);
+    setText(lookBtn, t.look);
+    setText(probeSummary, t.probe); setText(displaySummary, t.display);
+    setText(styleName, t.style); styleOptions.forEach(o => setText(o, t[o.value]));
     styleSelect.value = state.style;
-    labelsName.textContent = t.labels; labelsBox.checked = state.labels;
-    limits.textContent = t.limits;
+    setText(labelsName, t.labels); labelsBox.checked = state.labels;
+    setText(limits, t.limits);
   }
 
   return {

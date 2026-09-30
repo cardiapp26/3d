@@ -843,7 +843,7 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .egm-text{font-size:11px;line-height:1.55}
 
 /* Echocardiography mode: modality, views, sector, feedback and probe controls */
-.echo-panel-mount{margin:10px 0}
+.echo-panel-mount{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e3e8df}
 .echo-modality{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0 6px}
 .echo-modality button,.echo-views button,.echo-task-row button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:5px 6px;font-size:10.5px}
 .echo-modality button[aria-pressed=true]{background:#244f43;color:#fff;border-color:#244f43;font-weight:600}
@@ -851,9 +851,9 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .echo-views button[aria-pressed=true]{background:#0b0f0e;color:#39e8ad;border-color:#0b0f0e}
 .echo-views button:disabled,.echo-modality button:disabled{opacity:.45;cursor:not-allowed}
 .echo-title{font-size:13px;margin:8px 0 0}
-.echo-sub{font-size:10px!important;color:#8a988e!important;margin:2px 0 6px!important}
+.echo-sub{font-size:10px!important;color:#5f6f64!important;margin:2px 0 6px!important}
 .echo-canvas{display:block;width:100%;height:260px;border-radius:6px;background:#050807}
-.echo-feedback{border-left:3px solid #c9a227;background:#fbf6e6;border-radius:4px;padding:6px 9px;margin:8px 0}
+.echo-feedback{min-height:3.4em;border-left:3px solid #c9a227;background:#fbf6e6;border-radius:4px;padding:6px 9px;margin:8px 0}
 .echo-feedback[data-state=ok]{border-left-color:#2f9e6d;background:#eaf6ef}
 .echo-feedback p{font-size:11px;line-height:1.45;margin:3px 0;color:#4d5e52}
 .echo-task-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
@@ -865,5 +865,5 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .echo-slider output{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#2d5a47}
 .echo-select select{grid-column:1/-1;margin:2px 0}
 .echo-check{margin:8px 0}
-.echo-limits{font-size:10px!important;line-height:1.55!important;color:#8a988e!important}
+.echo-limits{font-size:10px!important;line-height:1.55!important;color:#5f6f64!important}
 .echo-task-row .echo-look{grid-column:1/-1}

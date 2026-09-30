@@ -62,6 +62,5 @@ export function evaluateView(section, view, ctx) {
   if (fs && !fs.ok) messages.push(tr
     ? `LV kısalmış olabilir (görünen uzunluk %${Math.round(fs.ratio * 100)}, apeks düzlemden ${fs.apexOffPlane.toFixed(2)} birim): kesit gerçek apeksten geçmiyor.`
     : `The LV may be foreshortened (visible length ${Math.round(fs.ratio * 100)}%, apex ${fs.apexOffPlane.toFixed(2)} units off the plane): the plane misses the true apex.`);
-  messages.push(tr ? 'Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir.' : 'Thresholds are teaching values without expert calibration.');
   return { achieved, missing, wrong, foreshortening: fs, lengths, messages };
 }

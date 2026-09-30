@@ -118,6 +118,13 @@ const SHOTS = process.env.SHOT_DIR || null;
     const solved = await page.evaluate(() => ({ task: window.cardiaEcho.getState().task, r: window.cardiaEcho.getResult() }));
     assert.equal(solved.r.view, task.target); assert.equal(solved.task.done, true, `back at the target view: task done (${task.target}: missing ${solved.r.missing}, wrong ${solved.r.wrong}, phase ${await page.evaluate(() => window.heart.getCycleState().phase)})`);
     assert.match(await page.locator('.echo-feedback').textContent(), /Hedef görünüm bulundu/);
+    // A solved task unlocks the views; the language switch keeps the task and the pose.
+    assert.equal(await page.locator('[data-echo-view]:disabled').count(), 0, 'views unlocked once the task is solved');
+    await page.locator('[data-echo-action="task"]').click();
+    const running = await page.evaluate(() => JSON.stringify({ task: window.cardiaEcho.getState().task?.target, tte: window.cardiaEcho.getState().tte }));
+    await page.locator('#lang-btn').click();
+    assert.equal(await page.evaluate(() => JSON.stringify({ task: window.cardiaEcho.getState().task?.target, tte: window.cardiaEcho.getState().tte })), running, 'language switch keeps the task');
+    await page.locator('#lang-btn').click();
     await page.locator('.echo-controls summary').nth(1).click();
     await page.locator('[data-echo-control="labels"]').uncheck();
     assert.equal(await page.evaluate(() => window.cardiaEcho.getState().labels), false);

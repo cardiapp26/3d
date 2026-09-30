@@ -129,8 +129,43 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
       const veins = []; h.scene.traverse(x => { if (x.isMesh && /left (superior|inferior) pulmonary/i.test(x.name)) veins.push(x); });
       laMesh.geometry.computeBoundingSphere();
       const rims = veins.map(m => nearestLoop(m, laMesh.geometry.boundingSphere.center));
-      return { scale: h.atlasAdjustments().laaScale, toLaa: Math.min(...path.map(q => q.distanceTo(o.center))) - o.radius, toVeins: Math.min(...path.flatMap(q => rims.flatMap(r => r.pts.map(v => v.distanceTo(q))))), top: Math.max(...path.map(q => q.y)), bottom: Math.min(...path.map(q => q.y)), lspvY: Math.max(...rims.map(r => r.center.y)) };
+      // Both leaves of the double-sheeted appendage are scaled. On the original
+      // atlas LA (same normalization), the leaf reached from the tip over the
+      // far side of the neck plane misses the other leaf; every vertex beyond
+      // the neck, in either leaf, must have moved. A leaf left in place stays
+      // full size around the scaled one (the double contour of 2026-09-30).
+      const { GLTFLoader } = await import('/node_modules/three/examples/jsm/loaders/GLTFLoader.js');
+      const { DRACOLoader } = await import('/node_modules/three/examples/jsm/loaders/DRACOLoader.js');
+      const { LAA_SCALE } = await import('/src/la-appendage.js');
+      const gltf = await new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('/draco/')).loadAsync('/models/cardiovascular.glb');
+      gltf.scene.updateMatrixWorld(true);
+      let source = null; gltf.scene.traverse(x => { if (x.isMesh && gltf.parser.json.nodes[gltf.parser.associations.get(x)?.nodes]?.name === 'Left atrium') source = x; });
+      const { center: nc, scale: ns } = h.getState().normalization;
+      const original = source.geometry.clone().applyMatrix4(source.matrixWorld).translate(-nc[0], -nc[1], -nc[2]).scale(ns, ns, ns).attributes.position;
+      const pts = Array.from({ length: original.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(original, i));
+      const depth = v => v.clone().sub(o.center).dot(o.axis);
+      const key = v => `${Math.round(v.x * 1e4)},${Math.round(v.y * 1e4)},${Math.round(v.z * 1e4)}`;
+      const first = new Map(), root = pts.map((v, i) => { const k = key(v); if (!first.has(k)) first.set(k, i); return first.get(k); });
+      const adj = new Map(); const link = (a, b) => { if (!adj.has(a)) adj.set(a, []); adj.get(a).push(b); };
+      const index = laMesh.geometry.index;
+      for (let t = 0; t < index.count; t += 3) { const [a, b, c] = [0, 1, 2].map(j => root[index.getX(t + j)]); link(a, b); link(a, c); link(b, a); link(b, c); link(c, a); link(c, b); }
+      const tip = o.center.clone().add(o.tip.clone().sub(o.center).divideScalar(LAA_SCALE));
+      const start = root[pts.reduce((bi, v, i) => v.distanceToSquared(tip) < pts[bi].distanceToSquared(tip) ? i : bi, 0)];
+      const leaf = new Set([start]), stack = [start];
+      while (stack.length) for (const n of adj.get(stack.pop()) || []) if (!leaf.has(n) && depth(pts[n]) > 0) { leaf.add(n); stack.push(n); }
+      const current = laMesh.geometry.attributes.position;
+      const beyondNeck = [...adj.keys()].filter(r => depth(pts[r]) > 0.03);
+      const otherLeaf = beyondNeck.filter(r => !leaf.has(r));
+      // The transverse sinus later nudges some of these vertices, so compare the
+      // typical (median) scale of the other leaf beyond the ramp with the tip leaf's.
+      const ratio = r => new THREE.Vector3().fromBufferAttribute(current, r).distanceTo(o.center) / pts[r].distanceTo(o.center);
+      const median = list => { const v = list.map(ratio).sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; };
+      const deep = r => depth(pts[r]) > 0.3;
+      const otherScale = median(otherLeaf.filter(deep)), leafScale = median([...leaf].filter(deep));
+      return { otherLeaf: otherLeaf.length, otherScale, leafScale, scale: h.atlasAdjustments().laaScale, toLaa: Math.min(...path.map(q => q.distanceTo(o.center))) - o.radius, toVeins: Math.min(...path.flatMap(q => rims.flatMap(r => r.pts.map(v => v.distanceTo(q))))), top: Math.max(...path.map(q => q.y)), bottom: Math.min(...path.map(q => q.y)), lspvY: Math.max(...rims.map(r => r.center.y)) };
     });
+    assert.ok(la.otherLeaf > 50, `the atlas appendage is double-sheeted (${la.otherLeaf} vertices off the tip leaf)`);
+    assert.ok(Math.abs(la.otherScale - la.leafScale) < 0.05, `both appendage leaves scaled alike (other leaf ${la.otherScale.toFixed(2)}, tip leaf ${la.leafScale.toFixed(2)}): no double contour`);
     assert.ok(la.scale.lengthAfter * 34 > 25 && la.scale.lengthAfter * 34 < 40, `LAA length near the published mean (${Math.round(la.scale.lengthAfter * 34)} mm)`);
     assert.ok(la.toLaa < 0.2 && la.toVeins < 0.25, `Coumadin ridge between the LAA orifice and the left veins (${la.toLaa.toFixed(2)}, ${la.toVeins.toFixed(2)})`);
     assert.ok(la.top > la.lspvY && la.bottom < la.lspvY, 'ridge runs down past the superior vein');

@@ -3,7 +3,7 @@ import { measureEchoAnatomy, echoItems, surfaceExit, ECHO_STRUCTURES } from './e
 import { TTE_VIEWS, TEE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset } from './echo-views.js';
 import { tteFrame, teeFrame } from './echo-probe.js';
 import { sectionMeshes } from './echo-section.js';
-import { evaluateView } from './echo-training.js';
+import { evaluateView, visibleLengths } from './echo-training.js';
 import { drawEchoSector } from './echo-renderer.js';
 import { createEchoPanel } from './echo-panel.js';
 
@@ -40,7 +40,12 @@ export function createEchoMode({ heart, mount, getLang }) {
       console.error('Echo landmarks unavailable:', error);
       return false;
     }
-    items = echoItems(getMeshes);
+    // At rest: the LA/LAA split and the vertex welds are cached from this pose.
+    items = heart.withRestPose(() => {
+      const list = echoItems(getMeshes);
+      sectionMeshes(list, { origin: [0, 0, 0], beam: [0, 0, 1], lateral: [1, 0, 0], normal: [0, 1, 0] });
+      return list;
+    });
     hull = HULL_IDS.flatMap(getMeshes);
     path = teePath(anatomy);
     overlay = createOverlay(path);
@@ -86,12 +91,33 @@ export function createEchoMode({ heart, mount, getLang }) {
     const target = pool[Math.floor(Math.random() * pool.length)];
     selectView(target.id, { keepTask: true });
     const jitter = (range) => Math.round((Math.random() * 2 - 1) * range);
-    if (modality === 'tte') state.tte = { ...state.tte, rotation: jitter(45), tilt: jitter(20), rock: jitter(15) };
-    else state.tee = { ...state.tee, advance: Math.min(1, Math.max(0, state.tee.advance + jitter(6) / 100)), omega: Math.max(0, Math.min(180, state.tee.omega + jitter(60))), rotation: jitter(30) };
+    const preset = { tte: { ...state.tte }, tee: state.tee && { ...state.tee } };
+    // A start that already shows the target is no task: draw again (a few tries).
+    for (let attempt = 0; attempt < 8; attempt++) {
+      if (modality === 'tte') state.tte = { ...preset.tte, rotation: jitter(45), tilt: jitter(20), rock: jitter(15) };
+      else state.tee = { ...preset.tee, advance: Math.min(1, Math.max(0, preset.tee.advance + jitter(6) / 100)), omega: Math.max(0, Math.min(180, preset.tee.omega + jitter(60))), rotation: jitter(30) };
+      if (!solved(target)) break;
+    }
     // "Back" during a task returns to this starting pose, not to the answer.
     state.task = { target: target.id, done: false, start: { tte: { ...state.tte }, tee: state.tee && { ...state.tee } } };
     refresh(true);
   }
+
+  // The view is judged on the rest (end-diastolic) geometry, recomputed only
+  // when the probe, view or display changes: the feedback does not flicker
+  // with the beat, while the image itself follows the phase.
+  let judged = { key: '', result: null };
+  function judge(view, frame) {
+    const lang = getLang();
+    const key = JSON.stringify([view.id, frame.origin, frame.beam, frame.lateral, state.depth, state.sectorAngle, lang]);
+    if (key !== judged.key) {
+      const label = id => STRUCTURE_INFO[id]?.label[lang] || id;
+      const result = heart.withRestPose(() => evaluateView(sectionMeshes(items, frame), view, { sectorAngle: state.sectorAngle, depth: state.depth, frame, anatomy, label, lang }));
+      judged = { key, result };
+    }
+    return judged.result;
+  }
+  const solved = view => judge(view, currentFrame()).achieved;
 
   let trailing = null, pendingTick = false;
   function refresh(force = false) {
@@ -108,10 +134,9 @@ export function createEchoMode({ heart, mount, getLang }) {
     const section = sectionMeshes(items, frame);
     const lang = getLang();
     const view = viewById(state.task ? state.task.target : state.view);
-    const label = id => STRUCTURE_INFO[id]?.label[lang] || id;
-    const result = evaluateView(section, view, { sectorAngle: state.sectorAngle, depth: state.depth, frame, anatomy, label, lang });
+    const result = judge(view, frame);
     if (state.task && result.achieved) state.task.done = true;
-    lastResult = { frame, section, result, view };
+    lastResult = { frame, section, result, view, live: visibleLengths(section, state.sectorAngle, state.depth) };
     overlay.update(frame, state);
     heart.requestRender();
     const playing = heart.getCycleState().playing;
@@ -129,6 +154,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     panel = createEchoPanel(mount, {
       getLang,
       views: { tte: TTE_VIEWS, tee: TEE_VIEWS },
+      // Picking a view (allowed once a task is solved) ends the task.
       onView: id => selectView(id),
       onModality: modality => selectView((modality === 'tte' ? TTE_VIEWS : TEE_VIEWS)[0].id),
       onControl: (group, key, value) => {
@@ -140,6 +166,7 @@ export function createEchoMode({ heart, mount, getLang }) {
         if (!state.task) { selectView(state.view); return; }
         state.tte = { ...state.task.start.tte };
         state.tee = state.task.start.tee && { ...state.task.start.tee };
+        state.task.done = false;
         refresh(true);
       },
       onTask: () => startTask(),
@@ -164,6 +191,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     },
     exit() {
       active = false;
+      state.frozen = false;
       mount.hidden = true;
       if (overlay) { overlay.group.visible = false; heart.requestRender(); }
     },
@@ -184,7 +212,8 @@ export function createEchoMode({ heart, mount, getLang }) {
     setLanguage(lang) { panel?.setLanguage(lang); refresh(true); },
     // Diagnostics for tests.
     getState: () => ({ ...state, tte: { ...state.tte }, tee: state.tee && { ...state.tee } }),
-    getResult: () => lastResult && { achieved: lastResult.result.achieved, missing: lastResult.result.missing, wrong: lastResult.result.wrong, lengths: lastResult.result.lengths, stats: lastResult.section.stats, view: lastResult.view.id, frame: lastResult.frame },
+    // lengths: the live (current phase) section; achieved/missing/wrong: the rest-pose judgement.
+    getResult: () => lastResult && { achieved: lastResult.result.achieved, missing: lastResult.result.missing, wrong: lastResult.result.wrong, lengths: lastResult.live, stats: lastResult.section.stats, view: lastResult.view.id, frame: lastResult.frame },
     selectView, startTask, isActive: () => active
   };
 }
@@ -195,10 +224,14 @@ function createOverlay(path) {
   group.name = 'Echo probe and imaging plane';
   group.visible = false;
   const fanMaterial = new THREE.MeshBasicMaterial({ color: 0x39e8ad, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
-  const fan = new THREE.Mesh(new THREE.BufferGeometry(), fanMaterial);
+  const FAN_STEPS = 24;
+  const fanGeometry = new THREE.BufferGeometry();
+  fanGeometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(FAN_STEPS * 9), 3));
+  const fan = new THREE.Mesh(fanGeometry, fanMaterial);
   fan.name = 'Echo imaging plane (sector)';
   fan.renderOrder = 5;
   const edge = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x1f9e78 }));
+  edge.frustumCulled = false;       // its points move every update
   const probeMaterial = new THREE.MeshStandardMaterial({ color: 0x3c4a46, roughness: 0.5 });
   const tteProbe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.5, 20), probeMaterial);
   tteProbe.name = 'TTE probe (schematic)';
@@ -215,15 +248,20 @@ function createOverlay(path) {
   function update(frame, state) {
     const o = new THREE.Vector3(...frame.origin), b = new THREE.Vector3(...frame.beam), l = new THREE.Vector3(...frame.lateral);
     const pts = [o.clone()];
-    const steps = 24;
-    for (let i = 0; i <= steps; i++) {
-      const a = -state.sectorAngle / 2 + (state.sectorAngle * i) / steps;
+    for (let i = 0; i <= FAN_STEPS; i++) {
+      const a = -state.sectorAngle / 2 + (state.sectorAngle * i) / FAN_STEPS;
       pts.push(o.clone().addScaledVector(b, Math.cos(a) * state.depth).addScaledVector(l, Math.sin(a) * state.depth));
     }
-    const positions = [];
-    for (let i = 1; i < pts.length - 1; i++) positions.push(...pts[0].toArray(), ...pts[i].toArray(), ...pts[i + 1].toArray());
-    fan.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    fan.geometry.computeBoundingSphere();
+    // One buffer for the life of the overlay, written in place.
+    const position = fanGeometry.attributes.position;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const k = (i - 1) * 3;
+      position.setXYZ(k, pts[0].x, pts[0].y, pts[0].z);
+      position.setXYZ(k + 1, pts[i].x, pts[i].y, pts[i].z);
+      position.setXYZ(k + 2, pts[i + 1].x, pts[i + 1].y, pts[i + 1].z);
+    }
+    position.needsUpdate = true;
+    fanGeometry.computeBoundingSphere();
     edge.geometry.setFromPoints(pts);
     // Index marker on the screen-right side of the transducer.
     marker.position.copy(o).addScaledVector(l, 0.14);
@@ -234,7 +272,7 @@ function createOverlay(path) {
       tteProbe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().negate());
     } else {
       // The shaft follows the path down to the tip (rebuilt only when the tip moves).
-      const key = `${state.tee.advance.toFixed(3)}_${frame.tip.map(v => v.toFixed(3)).join('_')}`;
+      const key = [state.tee.advance, ...frame.tip, ...frame.shaft].map(v => v.toFixed(3)).join('_');
       if (key !== shaftKey) {
         shaftKey = key;
         const along = [];

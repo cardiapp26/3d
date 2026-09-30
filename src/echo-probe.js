@@ -37,14 +37,16 @@ export const TTE_LIMITS = Object.freeze({ rotation: 90, tilt: 35, rock: 30, slid
 export function tteFrame(base, adj = {}) {
   const clamp = (v, lim) => Math.max(-lim, Math.min(lim, Number(v) || 0));
   const start = imageFrame(base.origin, base.beam, base.lateral);
-  const origin = add(add(start.origin, start.lateral, clamp(adj.slideLateral, TTE_LIMITS.slide)), start.normal, clamp(adj.slideElevation, TTE_LIMITS.slide));
-  // Rock: within the plane (about the elevation axis).
-  let beam = rotate(start.beam, start.normal, clamp(adj.rock, TTE_LIMITS.rock));
-  let lateral = rotate(start.lateral, start.normal, clamp(adj.rock, TTE_LIMITS.rock));
-  // Tilt: across the plane (about the lateral axis), sweeping the fan through the elevation.
+  // Rotation about the beam turns the marker and the plane first; tilt, rock
+  // and slide then act on the turned plane, so their names stay true at any rotation.
+  let lateral = rotate(start.lateral, start.beam, clamp(adj.rotation, TTE_LIMITS.rotation));
+  const normal = cross(start.beam, lateral);
+  const origin = add(add(start.origin, lateral, clamp(adj.slideLateral, TTE_LIMITS.slide)), normal, clamp(adj.slideElevation, TTE_LIMITS.slide));
+  // Rock: within the plane (about its normal).
+  let beam = rotate(start.beam, normal, clamp(adj.rock, TTE_LIMITS.rock));
+  lateral = rotate(lateral, normal, clamp(adj.rock, TTE_LIMITS.rock));
+  // Tilt: across the plane (about its lateral axis), sweeping the fan through the elevation.
   beam = rotate(beam, lateral, clamp(adj.tilt, TTE_LIMITS.tilt));
-  // Rotation: about the beam (the index marker turns).
-  lateral = rotate(lateral, beam, clamp(adj.rotation, TTE_LIMITS.rotation));
   return imageFrame(origin, beam, lateral);
 }
 

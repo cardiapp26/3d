@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { laaOrifice, laaNeckContour, smoothLaNormals, laaOrificeOf } from './la-landmarks.js';
+import { laaNeckContour, smoothLaNormals, laaOrificeOf } from './la-landmarks.js';
 import { nearestLoop } from './mesh-utils.js';
 import { surface, taperedTube, resample } from './atrial-surface.js';
 
@@ -19,6 +19,7 @@ import { surface, taperedTube, resample } from './atrial-surface.js';
  */
 export const LAA_SCALE = 0.68;
 const SCALE_RAMP = 0.25;          // units beyond the neck over which the scale reaches LAA_SCALE
+const LOBE_REACH = 0.3;           // a piece beyond the neck reaching this share of the tip depth is lobe
 const RIDGE_EXTEND = 0.12;       // ridge continues this far above the superior vein
 const RIDGE_OFFSET = 0.015;       // crest this far into the cavity from the wall
 
@@ -58,8 +59,9 @@ export function shrinkAppendage(mesh, factor = LAA_SCALE) {
 }
 
 /**
- * The appendage lobe of the LA mesh: the part beyond the measured neck plane
- * connected to the tip, as welded vertex roots (coincident vertices share one).
+ * The appendage lobe of the LA mesh: the pieces beyond the measured neck
+ * plane that reach toward the tip (both leaves of the double-sheeted wall),
+ * as welded vertex roots (coincident vertices share one).
  * @param {THREE.Mesh} mesh the LA mesh (atlas coordinates)
  * @param {THREE.Vector3[]} [verts] its vertices, if already read
  * @returns {{ orifice: object, lobe: Set<number>, root: Int32Array, weldCount: number } | null}
@@ -83,11 +85,18 @@ export function appendageLobe(mesh, verts = null) {
     const [a, b, c] = [0, 1, 2].map(j => root[index.getX(t + j)]);
     link(a, b); link(a, c); link(b, a); link(b, c); link(c, a); link(c, b);
   }
-  let start = 0;
-  points.forEach((v, i) => { if (v.distanceToSquared(tip) < points[start].distanceToSquared(tip)) start = i; });
-  start = root[start];
-  const lobe = new Set([start]), stack = [start];
-  while (stack.length) for (const n of adjacency.get(stack.pop()) || []) if (!lobe.has(n) && depth(points[n]) > 0) { lobe.add(n); stack.push(n); }
+  // The atlas appendage is double-sheeted (inner and outer leaf, joined only
+  // at the neck): each leaf is its own piece beyond the neck plane. Every
+  // piece that reaches well past the neck belongs to the lobe; a leaf left
+  // out would stay full size around the scaled one (a double contour).
+  const lobe = new Set(), seen = new Set();
+  for (const [r] of adjacency) {
+    if (seen.has(r) || depth(points[r]) <= 0) continue;
+    const piece = [r], stack = [r];
+    seen.add(r);
+    while (stack.length) for (const n of adjacency.get(stack.pop()) || []) if (!seen.has(n) && depth(points[n]) > 0) { seen.add(n); piece.push(n); stack.push(n); }
+    if (Math.max(...piece.map(i => depth(points[i]))) > LOBE_REACH * depth(tip)) piece.forEach(i => lobe.add(i));
+  }
   return { orifice, lobe, root, weldCount: weld.size };
 }
 

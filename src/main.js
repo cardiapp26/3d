@@ -355,6 +355,7 @@ app.innerHTML = `
     </div>
     <section id="defect-details" class="defect-details-mount" hidden></section>
     <section id="lesson" hidden>
+      <div id="echo-panel" class="echo-panel-mount" hidden></div>
       <div class="divider"></div>
       <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
       <h3 id="lesson-title"></h3>
@@ -364,7 +365,6 @@ app.innerHTML = `
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div id="exam-panel" class="exam-panel-mount" hidden></div>
       <div id="egm-panel" class="egm-panel-mount" hidden></div>
-      <div id="echo-panel" class="echo-panel-mount" hidden></div>
       <button class="primary" id="next-step">${getTranslation('nextLandmark')}</button>
       <label class="slider-label" for="progress" id="progress-label">${getTranslation('leadProgressLabel')} <span id="progress-value">100%</span></label>
       <input id="progress" type="range" min="0" max="100" value="100">
@@ -769,7 +769,9 @@ document.querySelector('#restore-walls').addEventListener('click', () => {
 document.querySelector('#coronary-system').addEventListener('change', e => {heart?.setCoronarySystem(e.target.value);setTissueOpacity(e.target.value==='all'?100:20);});
 document.querySelector('#root-window').addEventListener('change', e => {heart?.setRootWindow(e.target.checked);updateContextNote();});
 
-function showStep() {
+// relabel: only the language changed; keep the step's interactive state
+// (echo probe and task, EGM scenario, tissue opacity).
+function showStep({ relabel = false } = {}) {
   const isPacemaker = mode === 'pacemaker';
   const isBachmann = mode === 'bachmann';
   const isTransseptal = mode === 'transseptal';
@@ -808,17 +810,17 @@ function showStep() {
   } else if (mode === 'ablation') {
     heart?.setAblationStep(step);
     syncEpTools(s.view);
-    setTissueOpacity(String(s.view).startsWith('koch_') ? KOCH_TISSUE_PERCENT : Math.round(LESSON_TISSUE_OPACITY * 100));
+    if (!relabel) setTissueOpacity(String(s.view).startsWith('koch_') ? KOCH_TISSUE_PERCENT : Math.round(LESSON_TISSUE_OPACITY * 100));
   }
 
   if (isTransseptal) {
     syncCatheterUI();
   }
 
-  syncEgm(s);
+  if (!relabel) syncEgm(s);
   if (isCath) hemoMode?.applyStep(s);
   if (mode === 'exam') examMode?.applyStep(s);
-  if (mode === 'echo') echoMode?.applyStep(s.echo);
+  if (mode === 'echo' && !relabel) echoMode?.applyStep(s.echo);
 
   if (s.view) {
     heart?.setView(s.view, true);
@@ -961,7 +963,10 @@ function setMode(newMode, updateUrl = true) {
   if(isDefects){defectPanel.show();setFluoroscopyActive(false);}else defectPanel.hide();
   document.querySelector('#cycle-panel').hidden=isDefects;
   const structInfoEl = document.querySelector('#structure-info');
-  if (structInfoEl) structInfoEl.hidden = isDefects;
+  // Echo: the sector, controls and feedback come first; the structure card would push them down.
+  if (structInfoEl) structInfoEl.hidden = isDefects || mode === 'echo';
+  const structureIndexEl = document.querySelector('.structure-index');
+  if (structureIndexEl) structureIndexEl.hidden = mode === 'echo';
 
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();
@@ -1663,7 +1668,7 @@ function updateLanguageUI() {
     if (lessonTitleEl) lessonTitleEl.textContent = lessons[mode].title;
     const lessonIntroEl = document.querySelector('#lesson-intro');
     if (lessonIntroEl) lessonIntroEl.textContent = lessons[mode].intro;
-    showStep();
+    showStep({ relabel: true });
   }
 
   if (carmVeinsToggle) {
