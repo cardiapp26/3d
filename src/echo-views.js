@@ -1,5 +1,5 @@
 import { imageFrame, cross, normalize } from './echo-section.js';
-import { createProbePath, tteFrame } from './echo-probe.js';
+import { createProbePath, tteFrame, surfaceHit } from './echo-probe.js';
 
 /*
  * The starting view sets of the echo module (report sections 4 and 5): 8 TTE
@@ -24,15 +24,24 @@ export const TTE_VIEWS = Object.freeze([
   { id: 'sc4c', window: 'subcostal', title: { tr: 'Subkostal dört boşluk', en: 'Subcostal four-chamber' }, required: ['lv', 'rv', 'la', 'ra'], avoid: [], source: ASE_TTE }
 ]);
 
+// Mitral views: commissural and two-chamber differ by how the plane crosses the
+// annulus (mitralChord: angle to the commissural axis); two-chamber and long
+// axis by the outflow tract (aorta avoided or required). On this atlas the
+// oesophagus is not aligned with the LV long axis, so the two-chamber cut
+// through the apex crosses the annulus at a large angle.
+// ase: the guideline's approximate multiplane range (ASE/SCA 2013, PDF p.11-18);
+// the atlas starting angle is the preset's (teePreset). Angles vary with the
+// patient's anatomy and are never a view's identity key; multi-angle sweeps
+// may be needed.
 export const TEE_VIEWS = Object.freeze([
-  { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, omega: '0–10°', required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, source: ASE_TEE },
-  { id: 'memc', title: { tr: 'ME mitral komissüral', en: 'ME mitral commissural' }, omega: '50–70°', required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'aorta'], source: ASE_TEE },
-  { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, omega: '80–100°', required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid'], apical: true, source: ASE_TEE },
-  { id: 'melax', title: { tr: 'ME uzun eksen', en: 'ME long axis' }, omega: '120–140°', required: ['la', 'lv', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], source: ASE_TEE },
-  { id: 'meavsax', title: { tr: 'ME aort kapağı kısa eksen', en: 'ME aortic valve SAX' }, omega: '25–45°', required: ['aortic-valve', 'la', 'ra'], avoid: ['lv', 'mitral'], source: ASE_TEE },
-  { id: 'mebicaval', title: { tr: 'ME bikaval', en: 'ME bicaval' }, omega: '90–110°', required: ['la', 'ra', 'svc'], avoid: ['lv', 'mitral'], source: ASE_TEE },
-  { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, omega: '60–90°', required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
-  { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, omega: '0–20°', required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], source: ASE_TEE }
+  { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, ase: { tr: '0–10° (triküspit anulusu için 10–20° ayar gerekebilir)', en: '0–10° (10–20° may be needed for the tricuspid annulus)' }, required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, source: ASE_TEE },
+  { id: 'memc', title: { tr: 'ME mitral komissüral', en: 'ME mitral commissural' }, ase: { tr: '50–70°', en: '50–70°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'aorta'], mitralChord: [0, 22], source: ASE_TEE },
+  { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, ase: { tr: '80–100°', en: '80–100°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'aorta'], apical: true, mitralChord: [25, 90], source: ASE_TEE },
+  { id: 'melax', title: { tr: 'ME uzun eksen', en: 'ME long axis' }, ase: { tr: '120–140°', en: '120–140°' }, required: ['la', 'lv', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], mitralChord: [55, 90], source: ASE_TEE },
+  { id: 'meavsax', title: { tr: 'ME aort kapağı kısa eksen', en: 'ME aortic valve SAX' }, ase: { tr: '25–45°', en: '25–45°' }, required: ['aortic-valve', 'la', 'ra'], avoid: ['lv', 'mitral'], source: ASE_TEE },
+  { id: 'mebicaval', title: { tr: 'ME bikaval', en: 'ME bicaval' }, ase: { tr: '90–110°, şaft sağa', en: '90–110°, shaft turned right' }, required: ['la', 'ra', 'svc'], avoid: ['lv', 'mitral'], bicaval: true, source: ASE_TEE },
+  { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, ase: { tr: 'başlangıç 90–110°; çok açılı tarama', en: 'start 90–110°; multi-angle sweep' }, required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
+  { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, ase: { tr: '0–20°', en: '0–20°' }, required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], source: ASE_TEE }
 ]);
 
 // Default sector width (full angle); the student can change it (60-90 degrees).
@@ -50,7 +59,7 @@ const inPlane = (v, n) => normalize(addv(v, n, -dot(v, n)));
 // Atlas calibration (scripts/echo-calibrate.cjs): the smallest probe
 // adjustment from each landmark preset that meets the view's structure
 // criteria on this atlas at rest and through the beat. Not an expert review.
-const TTE_CALIBRATION = Object.freeze({ plax: { tilt: -5 }, 'psax-mv': { rotation: 10, tilt: -15 }, a2c: { tilt: -5 }, a3c: { tilt: -5 } });
+const TTE_CALIBRATION = Object.freeze({ plax: { tilt: -5 }, 'psax-mv': { rotation: 10, tilt: -15 }, a2c: { tilt: -10 }, a3c: { tilt: -5 } });
 
 // The transducer sits this far outside the measured heart surface (TTE).
 const TTE_STANDOFF = 0.3;
@@ -64,9 +73,10 @@ const PSAX_AV_LIFT = 0.1;
  * @param {string} id
  * @param {object} A landmarks (echo-anatomy.js measureEchoAnatomy)
  * @param {(point: number[], dir: number[]) => number} exit distance from a point to the heart surface along dir
- * @returns {{ origin: number[], beam: number[], lateral: number[], depth: number }}
+ * @param {{ center: number[], radii: number[] }} [surface] schematic chest surface: the transducer sits on it
+ * @returns {{ origin: number[], beam: number[], lateral: number[], depth: number, surface?: object }}
  */
-export function tteBase(id, A, exit) {
+export function tteBase(id, A, exit, surface = null) {
   const axis = normalize(sub(A.apex, A.mv.center));             // base to apex
   const planeOf = (p1, p2, p3) => normalize(cross(sub(p2, p1), sub(p3, p1)));
   const apicalApproach = axis;
@@ -84,8 +94,9 @@ export function tteBase(id, A, exit) {
     case 'psax-pm':
       normal = axis; target = addv(A.mv.center, axis, dot(sub(A.papillary, A.mv.center), axis)); approach = [0, 0, 1]; right = [1, 0, 0]; break;
     case 'a4c':
+      // The transducer sits at the true apex, aimed at the middle of the two AV valves.
       normal = planeOf(A.apex, A.mv.center, A.tv.center); target = lerp(A.apex, mid(A.mv.center, A.tv.center), 0.55);
-      approach = apicalApproach; right = [1, 0, 0]; break;
+      approach = normalize(sub(A.apex, mid(A.mv.center, A.tv.center))); right = [1, 0, 0]; break;
     case 'a3c':
       normal = planeOf(A.apex, A.mv.center, A.av.center); target = lerp(A.apex, A.mv.center, 0.55);
       approach = apicalApproach; right = sub(A.av.center, A.mv.center); break;
@@ -101,17 +112,24 @@ export function tteBase(id, A, exit) {
     default: return null;
   }
   const u = inPlane(approach, normal);
-  const distance = exit(target, u) + TTE_STANDOFF;
-  const origin = addv(target, u, distance);
+  // On the chest surface where the window line leaves it, else just outside the heart.
+  const onChest = surface && surfaceHit(target, u, surface);
+  const origin = onChest || addv(target, u, exit(target, u) + TTE_STANDOFF);
+  const distance = Math.hypot(...sub(origin, target));
   const beam = u.map(v => -v);
   const landmarkFrame = imageFrame(origin, beam, lateralOf(normal, beam, right));
   const frame = tteFrame(landmarkFrame, TTE_CALIBRATION[id] || {});
-  return { origin: frame.origin, beam: frame.beam, lateral: frame.lateral, depth: Math.min(6, Math.max(3, distance + 1.9)) };
+  return { origin: frame.origin, beam: frame.beam, lateral: frame.lateral, depth: Math.min(6, Math.max(3, distance + 1.9)), surface };
 }
 
 /** The TEE probe path (oesophagus and stomach) from the landmarks. */
 export function teePath(A) {
-  return createProbePath(A.oesophagusPath);
+  // The last path segment (gastro-oesophageal junction to the stomach point) is the wide lumen.
+  const probe = createProbePath(A.oesophagusPath);
+  const gej = A.oesophagusPath[A.oesophagusPath.length - 2];
+  let wideFrom = 1;
+  for (let k = 200; k >= 0; k--) { const p = probe.at(k / 200).point; if (Math.hypot(p[0] - gej[0], p[1] - gej[1], p[2] - gej[2]) < 0.05) { wideFrom = k / 200; break; } }
+  return createProbePath(A.oesophagusPath, { wideFrom });
 }
 
 // Mid-oesophageal part of the path (advance 0..ME_END); beyond it the probe is past the cardia.
@@ -127,14 +145,14 @@ export function teePreset(id, A, path) {
   const level = y => path.levelAt(y, 0, ME_END);
   const me = level(A.mv.center[1]);
   // Level from the landmarks, pose from the atlas calibration (scripts/echo-calibrate.cjs).
-  const pose = (advance, rotation, flexion, omega, depth) => ({ advance, rotation, flexion, lateralFlexion: 0, omega, depth });
+  const pose = (advance, rotation, flexion, omega, depth, lateralFlexion = 0) => ({ advance, rotation, flexion, lateralFlexion, omega, depth });
   switch (id) {
     case 'me4c': return pose(me - 0.02, 0, -20, 0, 4.8);
-    case 'memc': return pose(me, -30, -10, 70, 3);
-    case 'me2c': return pose(me, -30, -10, 80, 4.8);
-    case 'melax': return pose(me - 0.08, 0, 10, 125, 4.8);
-    case 'meavsax': return pose(level(A.av.center[1]), 0, 10, 45, 4.8);
-    case 'mebicaval': return pose(level(A.la[1] + 0.1), 15, 0, 100, 4.8);
+    case 'memc': return pose(me - 0.04, -37.5, 10, 50, 3);
+    case 'me2c': return pose(me + 0.04, -30, -30, 105, 4.8, 10);
+    case 'melax': return pose(me - 0.06, 0, 20, 115, 4.8);
+    case 'meavsax': return pose(level(A.av.center[1]), 0, 10, 40, 4.8);
+    case 'mebicaval': return pose(level(A.la[1] + 0.1) + 0.04, 30, 0, 85, 4.8);
     case 'melaa': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 60, 3);
     case 'tgsax': return pose(TG_ADVANCE, -15, 0, 10, 4.8);
     default: return null;

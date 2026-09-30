@@ -24,7 +24,7 @@ const ROOT = path.join(__dirname, '..');
     await page.goto(`${APP}/`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     const audit = await page.evaluate(async () => {
-      const { measureEchoAnatomy, echoItems, surfaceExit, ECHO_STRUCTURES } = await import('/src/echo-anatomy.js');
+      const { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTURES } = await import('/src/echo-anatomy.js');
       const V = await import('/src/echo-views.js');
       const { tteFrame, teeFrame } = await import('/src/echo-probe.js');
       const { sectionMeshes } = await import('/src/echo-section.js');
@@ -46,7 +46,7 @@ const ROOT = path.join(__dirname, '..');
           const s = sectionMeshes(items, frame);
           views[id] = { closed: s.stats.closed, open: s.stats.open, byStructure: Object.fromEntries(Object.entries(s.structures).map(([k, v]) => [k, { closed: v.closed, open: v.open, length: +v.length.toFixed(2) }])) };
         };
-        for (const v of V.TTE_VIEWS) record(v.id, tteFrame(V.tteBase(v.id, A, (p, d) => surfaceExit(p, d, hull)), {}));
+        for (const v of V.TTE_VIEWS) record(v.id, tteFrame(V.tteBase(v.id, A, (p, d) => surfaceExit(p, d, hull), chestSurface(hull)), {}));
         for (const v of V.TEE_VIEWS) record(v.id, teeFrame(path, V.teePreset(v.id, A, path)));
         return { topology, views, landmarks: { lvLengthUnits: +A.lvLength.toFixed(3), oesophagusPath: A.oesophagusPath.map(p => p.map(x => +x.toFixed(3))) } };
       });

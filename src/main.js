@@ -150,7 +150,7 @@ app.innerHTML = `
       <button data-view="mitral" title="Mitral scallops · A1–A3 / P1–P3">Mitral</button>
       </div>
       <div class="view-tools">
-      <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm Gantry & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
+      <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
       <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
       <button id="reset" title="Reset camera (0)">↺</button>
       </div>
@@ -210,8 +210,8 @@ app.innerHTML = `
     <div class="resizer-handle"></div>
   </div>
   <article>
-    <!-- C-ARM FLUOROSCOPY & GANTRY JOYSTICK PANEL -->
-    <div id="carm-panel" class="carm-panel collapsed" aria-label="C-Arm Angiografi Gantry Kontrolü">
+    <!-- C-ARM FLUOROSCOPY & JOYSTICK PANEL -->
+    <div id="carm-panel" class="carm-panel collapsed" aria-label="C-Arm Anjiyografi Kontrolü">
       <div class="carm-header" id="carm-header">
         <div class="carm-title-group">
           <span class="carm-led-pulse"></span>
@@ -401,7 +401,7 @@ app.innerHTML = `
     <div class="shortcut-row"><kbd>R</kbd><span>RAO (Right Anterior Oblique)</span></div>
     <div class="shortcut-row"><kbd>L</kbd><span>LAO (Left Anterior Oblique)</span></div>
     <div class="shortcut-row"><kbd>S</kbd><span>Spider View (LAO 45° / CAU 30° LMCA Angiography)</span></div>
-    <div class="shortcut-row"><kbd>C</kbd><span>Toggle C-Arm Angiography Gantry & Joystick</span></div>
+    <div class="shortcut-row"><kbd>C</kbd><span>Toggle C-Arm Angiography & Joystick</span></div>
     <div class="shortcut-row"><kbd>X</kbd><span data-i18n="fluoroShortcut">${getTranslation('fluoroShortcut')}</span></div>
     <div class="shortcut-row"><kbd>O</kbd><span>Aortic Root & Cusps View</span></div>
     <div class="shortcut-row"><kbd>0</kbd><span>Reset Camera View</span></div>
@@ -676,6 +676,7 @@ practice = createPractice({
 // Test hooks, like window.heart: let browser tests drive scene picks and the echo module.
 window.cardiaPractice = practice;
 window.cardiaEcho = echoMode;
+window.cardiaExam = examMode;
 
 // Quick search: modes and structures by name or abbreviation, both languages.
 function otherLang() { return getContentLanguage() === 'en' ? 'tr' : 'en'; }
@@ -971,6 +972,8 @@ function setMode(newMode, updateUrl = true) {
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();
   if (mode === 'echo') echoMode?.enter(); else echoMode?.exit();
+  // Mode-scoped styling (echo: no C-arm panel, no anatomy practice switcher).
+  document.documentElement.dataset.appMode = mode;
   if (mode === 'angiography' || mode === 'transseptal' || mode === 'bachmann' || mode === 'cath') {
     setCarmPanelOpen(true);
   } else {

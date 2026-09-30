@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { measureEchoAnatomy, echoItems, surfaceExit, ECHO_STRUCTURES } from './echo-anatomy.js';
+import { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTURES } from './echo-anatomy.js';
 import { TTE_VIEWS, TEE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset } from './echo-views.js';
 import { tteFrame, teeFrame } from './echo-probe.js';
 import { sectionMeshes } from './echo-section.js';
-import { evaluateView, visibleLengths } from './echo-training.js';
+import { evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE } from './echo-training.js';
 import { drawEchoSector } from './echo-renderer.js';
 import { createEchoPanel } from './echo-panel.js';
 
@@ -21,7 +21,7 @@ const MIN_SECTION_INTERVAL = 30;   // ms between sections while the heart beats
  * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en' }} deps
  */
 export function createEchoMode({ heart, mount, getLang }) {
-  let active = false, anatomy = null, items = null, path = null, hull = null, panel = null, overlay = null;
+  let active = false, anatomy = null, items = null, path = null, hull = null, chest = null, panel = null, overlay = null;
   const state = {
     modality: 'tte', view: 'plax', style: 'anatomy', labels: true, sectorAngle: SECTOR_ANGLE,
     tte: { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 }, tee: null, depth: 4,
@@ -47,8 +47,9 @@ export function createEchoMode({ heart, mount, getLang }) {
       return list;
     });
     hull = HULL_IDS.flatMap(getMeshes);
+    chest = heart.withRestPose(() => chestSurface(hull));
     path = teePath(anatomy);
-    overlay = createOverlay(path);
+    overlay = createOverlay(path, chest);
     overlay.group.visible = active;
     heart.addOverlay(overlay.group);
     return true;
@@ -57,7 +58,7 @@ export function createEchoMode({ heart, mount, getLang }) {
   const exit = (point, dir) => surfaceExit(point, dir, hull);
   const tteBases = new Map();
   function baseOf(id) {
-    if (!tteBases.has(id)) tteBases.set(id, heart.withRestPose(() => tteBase(id, anatomy, exit)));
+    if (!tteBases.has(id)) tteBases.set(id, heart.withRestPose(() => tteBase(id, anatomy, exit, chest)));
     return tteBases.get(id);
   }
 
@@ -84,13 +85,15 @@ export function createEchoMode({ heart, mount, getLang }) {
   }
 
   /** "Find the view": a target view and a probe moved away from it (same window or level). */
-  function startTask(modality = state.modality) {
+  // `seed` makes the target and the start pose reproducible (tests, shared exercises).
+  function startTask(modality = state.modality, { seed = null } = {}) {
     if (!ensureAnatomy()) return;
+    const random = seed === null ? Math.random : seededRandom(seed);
     const views = modality === 'tte' ? TTE_VIEWS : TEE_VIEWS;
     const pool = views.filter(v => v.id !== state.task?.target);
-    const target = pool[Math.floor(Math.random() * pool.length)];
+    const target = pool[Math.floor(random() * pool.length)];
     selectView(target.id, { keepTask: true });
-    const jitter = (range) => Math.round((Math.random() * 2 - 1) * range);
+    const jitter = (range) => Math.round((random() * 2 - 1) * range);
     const preset = { tte: { ...state.tte }, tee: state.tee && { ...state.tee } };
     // A start that already shows the target is no task: draw again (a few tries).
     for (let attempt = 0; attempt < 8; attempt++) {
@@ -119,6 +122,12 @@ export function createEchoMode({ heart, mount, getLang }) {
   }
   const solved = view => judge(view, currentFrame()).achieved;
 
+  // The atlas has no IVC mesh: the estimated orifice is shown as a point when the cut passes near it.
+  function cavalMarker(frame) {
+    const p = imagePoint(anatomy.ivc, frame, state.sectorAngle, state.depth);
+    return p.off <= CAVAL_OFF_PLANE ? [{ point: [p.x, p.y], label: { tr: 'İVK ağzı (kestirim)', en: 'IVC orifice (estimated)' } }] : [];
+  }
+
   let trailing = null, pendingTick = false;
   function refresh(force = false) {
     if (!active || !anatomy) return;
@@ -141,11 +150,12 @@ export function createEchoMode({ heart, mount, getLang }) {
     heart.requestRender();
     const playing = heart.getCycleState().playing;
     if (playing) state.frozen = false;
-    panel?.render({ state, result, view, playing, frame });
+    panel?.render({ state, result, view, playing, frame, presetOmega: state.modality === 'tee' ? teePreset(view.id, anatomy, path)?.omega : null });
     drawEchoSector(panel?.canvas, section, {
       style: state.style, sectorAngle: state.sectorAngle, depth: state.depth, lang,
       info: state.task ? { tr: 'Görev: görünümü bulun', en: 'Task: find the view' } : view.title,
-      structureInfo: STRUCTURE_INFO, frozen: state.frozen, hideLabels: !state.labels
+      structureInfo: STRUCTURE_INFO, frozen: state.frozen, hideLabels: !state.labels,
+      markers: view.bicaval ? cavalMarker(frame) : []
     });
   }
 
@@ -177,6 +187,7 @@ export function createEchoMode({ heart, mount, getLang }) {
         heart.setBeating(!playing);
         refresh(true);
       },
+      onResize: () => refresh(true),
       onLookAtPlane: () => lastResult && heart.lookAlong(lastResult.frame.origin, lastResult.frame.normal, lastResult.frame.beam, state.depth)
     });
     return panel;
@@ -218,8 +229,20 @@ export function createEchoMode({ heart, mount, getLang }) {
   };
 }
 
-/** 3D probe, imaging fan and (TEE) oesophagus. */
-function createOverlay(path) {
+/** Deterministic pseudo-random numbers in [0, 1) (mulberry32). */
+function seededRandom(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** 3D probe, imaging fan, (TTE) schematic chest surface and (TEE) oesophagus. */
+function createOverlay(path, chest) {
   const group = new THREE.Group();
   group.name = 'Echo probe and imaging plane';
   group.visible = false;
@@ -242,7 +265,11 @@ function createOverlay(path) {
   oesophagus.name = 'Oesophagus and stomach (schematic path)';
   const shaft = new THREE.Mesh(new THREE.BufferGeometry(), probeMaterial);
   shaft.name = 'TEE probe (schematic)';
-  group.add(fan, edge, tteProbe, marker, oesophagus, shaft);
+  const chestShell = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 24), new THREE.MeshBasicMaterial({ color: 0x9fb8ad, wireframe: true, transparent: true, opacity: 0.12, depthWrite: false }));
+  chestShell.name = 'Chest surface (schematic ellipsoid, no ribs)';
+  chestShell.position.set(...chest.center);
+  chestShell.scale.set(...chest.radii);
+  group.add(fan, edge, tteProbe, marker, oesophagus, shaft, chestShell);
   let shaftKey = '';
 
   function update(frame, state) {
@@ -266,7 +293,7 @@ function createOverlay(path) {
     // Index marker on the screen-right side of the transducer.
     marker.position.copy(o).addScaledVector(l, 0.14);
     const tte = state.modality === 'tte';
-    tteProbe.visible = tte; oesophagus.visible = !tte; shaft.visible = !tte;
+    tteProbe.visible = tte; chestShell.visible = tte; oesophagus.visible = !tte; shaft.visible = !tte;
     if (tte) {
       tteProbe.position.copy(o).addScaledVector(b, -0.27);
       tteProbe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().negate());

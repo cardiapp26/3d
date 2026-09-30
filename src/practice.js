@@ -117,23 +117,23 @@ function clearProgress() {
 
 const WORDS = {
   tr: {
-    styles: { explore: 'Keşfet', learn: 'Öğren', test: 'Kendini sına' }, styleLabel: 'Kullanım biçimi',
+    styles: { explore: 'Serbest', learn: 'Rehberli görev', test: 'Kendini sına' }, styleLabel: 'Kullanım biçimi',
     task: (i, n) => `Görev ${i}/${n}`, hint: 'İpucu göster', reveal: 'Yanıtı göster', next: 'Sonraki adım', finish: 'Sonucu gör', retry: 'Yeniden dene', toTest: 'Kendini sına',
     correct: 'Doğru.', wrong: picked => `Bu ${picked ? `“${picked}”` : 'yapı'}; hedef değil.`, wrongTest: 'Doğru değil. Tekrar deneyin.', revealed: 'Yanıt sahnede gösterildi.',
     sceneOnly: 'Seçimi 3D sahnede yapın; liste ve arama yanıt sayılmaz.',
     doneTitle: 'Ders tamamlandı', independent: 'Bağımsız', withHint: 'İpucuyla', revealedLabel: 'Gösterildi', errors: 'Hata', hints: 'İpucu',
     review: 'Tekrar önerilir', none: 'Tekrar gerektiren yapı yok.', findings: 'Bulgu', last: 'Son sonuçlar', noResults: 'Henüz tamamlanmış ders yok. Öğren veya Kendini sına ile başlayın.',
-    current: 'Bu oturum', clear: 'İlerlemeyi sil', exploreNote: 'Serbest keşif: puan yok. Görevli çalışma için Öğren veya Kendini sına seçin.',
+    current: 'Bu oturum', clear: 'İlerlemeyi sil', exploreNote: 'Serbest keşif: puan yok. Görevli çalışma için Rehberli görev veya Kendini sına seçin.',
     local: 'İlerleme yalnızca bu tarayıcıda saklanır.',
   },
   en: {
-    styles: { explore: 'Explore', learn: 'Learn', test: 'Test yourself' }, styleLabel: 'Way of use',
+    styles: { explore: 'Free', learn: 'Guided task', test: 'Test yourself' }, styleLabel: 'Way of use',
     task: (i, n) => `Task ${i}/${n}`, hint: 'Show hint', reveal: 'Show answer', next: 'Next step', finish: 'See result', retry: 'Try again', toTest: 'Test yourself',
     correct: 'Correct.', wrong: picked => `That is ${picked ? `“${picked}”` : 'another structure'}, not the target.`, wrongTest: 'Not correct. Try again.', revealed: 'The answer is shown in the scene.',
     sceneOnly: 'Make the selection in the 3D scene; the list and search do not count as answers.',
     doneTitle: 'Lesson complete', independent: 'Independent', withHint: 'With hint', revealedLabel: 'Revealed', errors: 'Errors', hints: 'Hints',
     review: 'Review suggested', none: 'No structure needs review.', findings: 'Findings', last: 'Last results', noResults: 'No completed lesson yet. Start with Learn or Test yourself.',
-    current: 'This session', clear: 'Clear progress', exploreNote: 'Free exploration: no score. Choose Learn or Test yourself for guided tasks.',
+    current: 'This session', clear: 'Clear progress', exploreNote: 'Free exploration: no score. Choose Guided task or Test yourself for tasks.',
     local: 'Progress is stored only in this browser.',
   },
 };
@@ -174,6 +174,8 @@ export function createPractice({ mount, findings, banner, getLang = () => 'tr', 
     const group = el('div', 'practice-styles');
     group.setAttribute('role', 'radiogroup');
     group.setAttribute('aria-label', w().styleLabel);
+    // The explanation is a tooltip: the "Learn" tab above already frames the panel.
+    group.title = w().exploreNote;
     for (const id of ['explore', 'learn', 'test']) {
       const b = el('button', 'practice-style', w().styles[id]);
       b.type = 'button';
@@ -196,7 +198,6 @@ export function createPractice({ mount, findings, banner, getLang = () => 'tr', 
   function render() {
     root.replaceChildren(renderSwitch());
     if (!session) {
-      root.append(el('p', 'practice-note', w().exploreNote));
       banner.hidden = true;
       renderFindings();
       return;

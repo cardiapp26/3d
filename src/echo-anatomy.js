@@ -142,5 +142,17 @@ const OESOPHAGUS_GAP = 0.35;
 const STOMACH_GAP = 0.3;
 const STOMACH_LEVEL = 0.6;      // fraction of the mitral-to-apex axis (mid-papillary)
 
+/**
+ * Schematic chest surface for TTE contact: the ellipsoid around the heart's
+ * chambers and great vessels, CHEST_MARGIN beyond them (chest wall; about 12 mm).
+ */
+export const CHEST_MARGIN = 0.35;
+export function chestSurface(meshes) {
+  const box = new THREE.Box3();
+  meshes.forEach(m => box.expandByObject(m));
+  const size = box.getSize(new THREE.Vector3());
+  return { center: box.getCenter(new THREE.Vector3()).toArray(), radii: size.toArray().map(v => v / 2 * Math.SQRT2 + CHEST_MARGIN) };
+}
+
 // Heart-surface exit distance (TTE windows): shared with the Koch close-up camera.
 export { surfaceExit };

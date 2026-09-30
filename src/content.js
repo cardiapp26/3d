@@ -1260,7 +1260,7 @@ export const rawLessons = {
     },
     en: {
       title: 'Transseptal puncture & balloon atrial septostomy',
-      intro: 'Percutaneous left atrial access across the interatrial septum (fossa ovalis): femoral venous entry, fluoroscopic positioning angles, septal crossing, and balloon septostomy. Set LAO/RAO gantry angles in the C-Arm panel; use the slider to follow catheter and needle advancement.',
+      intro: 'Percutaneous left atrial access across the interatrial septum (fossa ovalis): femoral venous entry, fluoroscopic positioning angles, septal crossing, and balloon septostomy. Set LAO/RAO angles in the C-Arm panel; use the slider to follow catheter and needle advancement.',
       steps: [
         {
           title: 'Percutaneous access • Femoral vein → IVC → RA',
@@ -1291,7 +1291,7 @@ export const rawLessons = {
   },
   exam: {
     tr: {
-      title: 'Fizik muayene • Oskültasyon ve dinamik manevralar',
+      title: 'Fizik muayene • Oskültasyon, manevralar ve venöz nabız',
       intro: 'Üfürümü seçin, manevrayı uygulayın: model, manevranın ön yük, art yük, kontraktilite, kalp hızı ve sağ kalbe dönüş üzerindeki etkisinden üfürümün artıp azaldığını hesaplar ve ders kitabı tablosu ile karşılaştırır. Fonokardiyogram EKG ve 3B kalp ile aynı döngü saatindedir.',
       steps: [
         { title: 'Oskültasyon odakları ve S2 ayrılması', text: 'Göğüs duvarındaki beş odak (A, P, E, T, M) şematik olarak işaretlidir. İnspiryumda sağ kalbe dönüş artar, P2 gecikir ve S2 ayrılması genişler; ekspiryumda daralır. Normal ayrılma pulmoner odakta duyulur.', finding: 'innocent', maneuver: 'inspiration', area: 'pulmonic', view: 'anterior' },
@@ -1305,11 +1305,17 @@ export const rawLessons = {
         { title: 'Mitral kapak prolapsusu', text: 'Şiddetten çok zamanlama değişir: LV küçüldükçe (Valsalva, ayağa kalkma) klik S1\'e yaklaşır ve üfürüm uzar; LV büyüdükçe (çömelme, bacak kaldırma) klik gecikir ve üfürüm kısalır. El sıkma için kaynaklar çelişir (Lembo: üfürümü erkene alır).', finding: 'mvp', maneuver: 'valsalva_strain', area: 'mitral', view: 'anterior' },
         { title: 'Aort yetersizliği', text: 'Yüksek frekanslı dekreşendo diyastolik üfürüm; hasta öne eğilmiş, ekspiryumda nefes tutarken diyafram ile Erb noktasında dinlenir. El sıkma, çömelme ve arteriyel oklüzyon artırır, amil nitrit azaltır.', finding: 'aortic_regurgitation', maneuver: 'handgrip', area: 'erb', view: 'anterior' },
         { title: 'Mitral darlığı', text: 'Açılma sesinden sonra düşük frekanslı rulman ve sinüs ritminde presistolik belirginleşme. Sol lateral dekübitte apekste çan ile dinlenir; kısa egzersiz veya amil nitrit belirginleştirir. Atriyal fibrilasyonda presistolik belirginleşme kaybolur.', finding: 'mitral_stenosis', maneuver: 'left_lateral', area: 'mitral', view: 'anterior' },
-        { title: 'Masum üfürüm', text: 'Kısa, hafif, erken tepeli ejeksiyon üfürümü; S2 ayrılması normal, başka anormal ses yok. Ayağa kalkınca ve Valsalva ile azalır. Yüksek dereceli (≥ 3/6), diyastolik, holosistolik veya yayılan üfürüm masum sayılmaz.', finding: 'innocent', maneuver: 'stand', area: 'erb', view: 'anterior' }
+        { title: 'Masum üfürüm', text: 'Kısa, hafif, erken tepeli ejeksiyon üfürümü; S2 ayrılması normal, başka anormal ses yok. Ayağa kalkınca ve Valsalva ile azalır. Yüksek dereceli (≥ 3/6), diyastolik, holosistolik veya yayılan üfürüm masum sayılmaz.', finding: 'innocent', maneuver: 'stand', area: 'erb', view: 'anterior' },
+        { title: 'Juguler venöz nabız: dalgalar ve kalp döngüsü', text: 'Venöz basınç sekmesine geçildi. Şematik sağ atriyum basıncı EKG, S1/S2 ve triküspit açık bandıyla aynı saatte. a: atriyal kasılma (P dalgasından sonra); x: atriyal gevşeme; c: kapanan triküspitin kabarması (QRS/S1); x′: sistolde anulusun inişi; v: kapalı kapağa karşı atriyal doluş; y: kapak açılınca boşalma. Bir dalgaya tıklayın: imleç ve 3B kalp o faza gider. Ortalama basınç (mmHg) ile boyundaki yükseklik (sternal açının üstünde cm) ayrı büyüklüklerdir.', jvp: { scenario: 'normal', respiration: 'exp', wave: 'a' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Triküspit yetersizliği ve darlığı', text: 'Triküspit yetersizliğinde sistolik geri akım c ve v dalgalarını birleştirir, x′ inişi kaybolur ve y hızlı ve derindir. Triküspit darlığında (sinüs ritmi) boşalmaya direnç büyük a dalgası ve yavaş y verir. Örüntü menüsünden ikisini karşılaştırın; kesikli çizgi aynı eksende normaldir.', jvp: { scenario: 'tr', respiration: 'exp', wave: 'cv' }, landmark: 'tricuspid', view: 'anterior' },
+        { title: 'Konstriksiyon ve tamponad: y inişi', text: 'İkisinde de basınç yüksektir ama y inişi zıt davranır. Konstriksiyonda erken doluş hızlıdır, sonra perikard doluşu aniden durdurur: derin, hızlı y. Tamponadda erken diyastolik doluş baştan kısıtlıdır: y baskılanır, sistolik x′ belirgindir. Ortalama basınçlar kateterizasyon modülündeki senaryolarla aynıdır. Örüntü bir tanı değildir.', jvp: { scenario: 'constriction', respiration: 'exp', wave: 'y' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Solunum ve Kussmaul bulgusu', text: 'İnspiryum düğmesine basın. Normalde spontan inspiryumda venöz basınç düşer, sağ kalbe dönüş artar. Konstriksiyonda artan dönüşü sağ kalp kabul edemez; basınç düşmez, yükselir (Kussmaul). Saf tamponadda bu şema Kussmaul vermez: dolgun boyun venleri ile Kussmaul aynı şey değildir.', jvp: { scenario: 'constriction', respiration: 'insp' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Ritim şeritleri: AF ve cannon a', text: 'Görünüm menüsünden ritim şeridi seçildi; şerit kendi saniye saatinde oynar ve 3B kalp ventrikül fazını izler. AV dissosiyasyonunda atriyum ve ventrikül ayrı saatlerde kasılır: atriyal kasılma kapalı triküspite denk gelirse cannon a, açık kapağa denk gelirse sıradan a oluşur. Atriyal hızı değiştirip örüntüyü izleyin. Atriyal fibrilasyon şeridinde RR düzensizdir (sabit tohum) ve a dalgası yoktur.', jvp: { view: 'avd' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Abdominojuguler test ve ventilatör', text: 'Protokol zamanlamasıyla değerlendirme: 10 s karın basısı boyunca yükselişin son 5 saniyede ≥ 4 cm sürmesi ve bırakınca ≥ 4 cm düşmesi gerekir. Normal yanıtta geçici yükseliş eşiği kısa süre geçse de pozitif sayılmaz. Yanıt menüsünden ikisini karşılaştırın. Pozitif basınçlı ventilasyon ayrı bir moddur: ventilatör inspiryumunda basınç yükselir, PEEP ekspiryum sonu düzeyini artırır; değer ekspiryum sonunda okunur.', jvp: { view: 'ajr', response: 'sustained' }, landmark: 'ra', view: 'anterior' },
       ]
     },
     en: {
-      title: 'Physical examination • Auscultation and dynamic maneuvers',
+      title: 'Physical examination • Auscultation, maneuvers and venous pulse',
       intro: 'Pick a murmur and apply a maneuver: from the maneuver\'s effect on preload, afterload, contractility, heart rate and right-heart return, the model computes whether the murmur becomes louder or softer and compares it with the textbook table. The phonocardiogram shares the cycle clock with the ECG and the 3D heart.',
       steps: [
         { title: 'Auscultation areas and S2 splitting', text: 'The five chest-wall areas (A, P, E, T, M) are marked schematically. With inspiration right-heart return rises, P2 is delayed and S2 splitting widens; it narrows on expiration. Normal splitting is heard at the pulmonic area.', finding: 'innocent', maneuver: 'inspiration', area: 'pulmonic', view: 'anterior' },
@@ -1323,7 +1329,13 @@ export const rawLessons = {
         { title: 'Mitral valve prolapse', text: 'Timing changes more than loudness: as the LV gets smaller (Valsalva, standing) the click moves toward S1 and the murmur lengthens; as it enlarges (squatting, leg raise) the click is delayed and the murmur shortens. Sources disagree on handgrip (Lembo: makes the murmur earlier).', finding: 'mvp', maneuver: 'valsalva_strain', area: 'mitral', view: 'anterior' },
         { title: 'Aortic regurgitation', text: 'A high-pitched decrescendo diastolic murmur; listen at Erb\'s point with the diaphragm, patient sitting forward in held expiration. Handgrip, squatting and arterial occlusion increase it, amyl nitrite decreases it.', finding: 'aortic_regurgitation', maneuver: 'handgrip', area: 'erb', view: 'anterior' },
         { title: 'Mitral stenosis', text: 'A low-pitched rumble after an opening snap with presystolic accentuation in sinus rhythm. Listen with the bell at the apex in left lateral decubitus; brief exercise or amyl nitrite bring it out. Presystolic accentuation disappears in atrial fibrillation.', finding: 'mitral_stenosis', maneuver: 'left_lateral', area: 'mitral', view: 'anterior' },
-        { title: 'Innocent murmur', text: 'A short, soft, early-peaking ejection murmur with normal S2 splitting and no other abnormal sounds. It becomes softer on standing and with Valsalva. A murmur that is loud (≥ 3/6), diastolic, holosystolic or radiating is not innocent.', finding: 'innocent', maneuver: 'stand', area: 'erb', view: 'anterior' }
+        { title: 'Innocent murmur', text: 'A short, soft, early-peaking ejection murmur with normal S2 splitting and no other abnormal sounds. It becomes softer on standing and with Valsalva. A murmur that is loud (≥ 3/6), diastolic, holosystolic or radiating is not innocent.', finding: 'innocent', maneuver: 'stand', area: 'erb', view: 'anterior' },
+        { title: 'Jugular venous pulse: waves and the cardiac cycle', text: 'The venous pressure tab is open. The schematic right atrial pressure runs on the same clock as the ECG, S1/S2 and the tricuspid-open band. a: atrial contraction (after the P wave); x: atrial relaxation; c: bulging of the closing tricuspid valve (QRS/S1); x′: annular descent in systole; v: atrial filling against the closed valve; y: emptying when the valve opens. Click a wave: the cursor and the 3D heart go to its phase. Mean pressure (mmHg) and the height at the neck (cm above the sternal angle) are different quantities.', jvp: { scenario: 'normal', respiration: 'exp', wave: 'a' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Tricuspid regurgitation and stenosis', text: 'In tricuspid regurgitation systolic backflow merges the c and v waves, the x′ descent is lost and the y is rapid and deep. In tricuspid stenosis (sinus rhythm) resistance to emptying gives a large a wave and a slow y. Compare the two from the pattern menu; the dashed line is normal on the same axis.', jvp: { scenario: 'tr', respiration: 'exp', wave: 'cv' }, landmark: 'tricuspid', view: 'anterior' },
+        { title: 'Constriction and tamponade: the y descent', text: 'Both have high pressure, but the y descent behaves oppositely. In constriction early filling is rapid, then the pericardium stops it abruptly: a deep, rapid y. In tamponade early diastolic filling is restricted from the start: the y is blunted and the systolic x′ is prominent. The mean pressures match the catheterization scenarios. A pattern is not a diagnosis.', jvp: { scenario: 'constriction', respiration: 'exp', wave: 'y' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Breathing and Kussmaul’s sign', text: 'Press Inspiration. Normally the venous pressure falls on spontaneous inspiration while return to the right heart increases. In constriction the right heart cannot accept the extra return; the pressure does not fall but rises (Kussmaul). In pure tamponade this schematic gives no Kussmaul response: full neck veins are not the same as Kussmaul.', jvp: { scenario: 'constriction', respiration: 'insp' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Rhythm strips: AF and cannon a', text: 'A rhythm strip is selected in the View menu; it runs on its own clock in seconds and the 3D heart follows its ventricular phase. In AV dissociation atria and ventricles contract on separate clocks: an atrial contraction that meets the closed tricuspid valve gives a cannon a, one with the valve open an ordinary a. Change the atrial rate and watch the pattern. The atrial fibrillation strip has irregular RR (fixed seed) and no a wave.', jvp: { view: 'avd' }, landmark: 'ra', view: 'anterior' },
+        { title: 'Abdominojugular test and the ventilator', text: 'Judged by protocol timing: during 10 s of abdominal compression the rise must hold ≥ 4 cm through the last 5 s and fall ≥ 4 cm on release. A normal transient rise may cross the threshold briefly and is still not positive. Compare both in the Response menu. Positive pressure ventilation is a separate mode: pressure rises in ventilator inspiration and PEEP raises the end-expiratory level; read the value at end expiration.', jvp: { view: 'ajr', response: 'sustained' }, landmark: 'ra', view: 'anterior' },
       ]
     }
   },
@@ -1470,7 +1482,7 @@ export const uiTranslations = {
     modeShortcut: 'Öğrenme modu kısayolları: 1–9 (01–09 numaralı modlar)',
     sceneSelected: 'Seçili',
     flowShortcut: 'Kan akışını aç veya kapat',
-    carmTitle: 'C-ARM GANTRY',
+    carmTitle: 'C-ARM',
     carmPill: 'ANJİYOGRAFİ',
     obliqueLabel: 'OBLİK DÖNÜŞ (LAO / RAO)',
     angulationLabel: 'ANGÜLASYON (CRA / CAU)',
@@ -1610,7 +1622,7 @@ export const uiTranslations = {
     modeShortcut: 'Learning mode shortcuts: 1–9 (modes 01–09)',
     sceneSelected: 'Selected',
     flowShortcut: 'Toggle blood flow',
-    carmTitle: 'C-ARM GANTRY',
+    carmTitle: 'C-ARM',
     carmPill: 'ANGIOGRAPHY',
     obliqueLabel: 'OBLIQUE ROTATION (LAO / RAO)',
     angulationLabel: 'ANGULATION (CRA / CAU)',

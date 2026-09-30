@@ -76,7 +76,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.reload();
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.locator('#panel-tab-findings').click();
-    assert.match(await page.locator('#panel-findings').innerText(), /Öğren[\s\S]*Bağımsız/);
+    assert.match(await page.locator('#panel-findings').innerText(), /Rehberli görev[\s\S]*Bağımsız/);
 
     // Test yourself: no names on hover, hint-free wrong feedback.
     await page.locator('#panel-tab-learn').click();
@@ -92,7 +92,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-mode=angiography]').click();
     assert.equal((await state()).style, 'explore');
     await page.locator('#lang-btn').click();
-    assert.deepEqual(await page.locator('.practice-style').allInnerTexts(), ['Explore', 'Learn', 'Test yourself']);
+    assert.deepEqual(await page.locator('.practice-style').allInnerTexts(), ['Free', 'Guided task', 'Test yourself']);
     await page.locator('#lang-btn').click();
 
     // Phone: starting from the Learn sheet returns to the scene with the task visible.

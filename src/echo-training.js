@@ -1,48 +1,109 @@
 import { clipToSector } from './echo-renderer.js';
 
 /*
- * Explainable feedback for "find the view" (report section 4): not probe
- * angle alone, but which structures are in the sector, which should not be,
- * and whether the apex is foreshortened in apical views. Thresholds are
- * teaching values without expert calibration; the feedback says so.
+ * Explainable feedback for "find the view" (report section 4, and
+ * research/TTE_TEE_IYILESTIRME_RAPORU.md): not probe angle alone, but which
+ * structures are in the sector, which should not be, whether the true apex
+ * is in the plane and inside the image (apical views), the bicaval
+ * relations (both caval entries and the atrial septum) and, for the
+ * mid-oesophageal mitral views, how the plane crosses the mitral annulus.
+ * These are the model's starting criteria, teaching values without expert
+ * calibration; the wording says so and never claims a clinical view.
  */
 export const VISIBLE_LENGTH = 0.25;       // structure counts as shown with this much contour in the sector (about 8 mm)
-export const FORESHORTENING_RATIO = 0.9;  // LV length in the image / measured LV length
-export const APEX_OFF_PLANE = 0.15;       // apex farther than this from the plane: off-axis cut
+export const FORESHORTENING_RATIO = 0.9;  // LV length inside the image / measured LV length
+export const APEX_OFF_PLANE = 0.15;       // apex farther than this from the plane: the cut misses the apex
+export const CAVAL_OFF_PLANE = 0.2;       // IVC ostium farther than this from the plane: not in the bicaval cut
+export const SEPTUM_GAP = 0.2;            // LA and RA contours this close in the image: the atrial septum is in the cut
+export const MITRAL_CENTRE_OFF = 0.5;     // plane within this share of the annulus radius from its centre
 
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit = v => { const n = Math.hypot(...v) || 1; return v.map(x => x / n); };
+
+/** Contour runs of each structure inside the sector. */
+export function visibleRuns(section, sectorAngle, depth) {
+  const out = {};
+  for (const c of section.contours) for (const run of clipToSector(c.points, sectorAngle, depth)) (out[c.id] ||= []).push(run);
+  return out;
+}
 
 /** Contour length of each structure inside the sector. */
 export function visibleLengths(section, sectorAngle, depth) {
   const out = {};
-  for (const c of section.contours) {
-    for (const run of clipToSector(c.points, sectorAngle, depth)) {
-      let length = 0;
-      for (let i = 1; i < run.length; i++) length += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]);
-      out[c.id] = (out[c.id] || 0) + length;
-    }
+  for (const [id, runs] of Object.entries(visibleRuns(section, sectorAngle, depth))) {
+    out[id] = runs.reduce((sum, run) => { for (let i = 1; i < run.length; i++) sum += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]); return sum; }, 0);
   }
   return out;
 }
 
+/** A world point in image coordinates, its distance from the plane and whether the image shows it. */
+export function imagePoint(point, frame, sectorAngle, depth) {
+  const d = sub(point, frame.origin);
+  const x = dot(d, frame.lateral), y = dot(d, frame.beam), off = Math.abs(dot(d, frame.normal));
+  const r = Math.hypot(x, y), angle = Math.atan2(x, y);
+  return { x, y, off, beyondDepth: r > depth, outsideAngle: y <= 0 || Math.abs(angle) > sectorAngle / 2 };
+}
+
 /**
- * LV foreshortening in an apical image: the longest LV extent from the mitral
- * centre within the image, against the measured apex-to-mitral length.
+ * Apical checks: the true apex in the plane, the apex inside the image (depth,
+ * sector) and the LV length inside the image against the measured length.
+ * Only the part of the LV that the image shows counts (a clipped apex fails).
  */
-export function foreshortening(section, frame, anatomy) {
-  const mv = sub(anatomy.mv.center, frame.origin);
-  const m = [dot(mv, frame.lateral), dot(mv, frame.beam)];
+export function foreshortening(section, frame, anatomy, sectorAngle = Math.PI, depth = Infinity) {
+  const mv = imagePoint(anatomy.mv.center, frame, sectorAngle, depth);
+  const apex = imagePoint(anatomy.apex, frame, sectorAngle, depth);
   let reach = 0;
-  for (const c of section.contours) if (c.id === 'lv') for (const p of c.points) reach = Math.max(reach, Math.hypot(p[0] - m[0], p[1] - m[1]));
-  const apexOffPlane = Math.abs(dot(sub(anatomy.apex, frame.origin), frame.normal));
+  for (const run of visibleRuns(section, sectorAngle, depth).lv || []) for (const p of run) reach = Math.max(reach, Math.hypot(p[0] - mv.x, p[1] - mv.y));
   const ratio = reach / anatomy.lvLength;
-  return { ratio, apexOffPlane, ok: ratio >= FORESHORTENING_RATIO && apexOffPlane <= APEX_OFF_PLANE };
+  const inPlane = apex.off <= APEX_OFF_PLANE;
+  const inImage = !apex.beyondDepth && !apex.outsideAngle;
+  return { ratio, apexOffPlane: apex.off, inPlane, inImage, beyondDepth: apex.beyondDepth, outsideAngle: apex.outsideAngle, ok: inPlane && inImage && ratio >= FORESHORTENING_RATIO };
+}
+
+// Closest approach of two sets of polylines (point to segment, both ways).
+function pointSegment(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = dx * dx + dy * dy;
+  const t = len ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len)) : 0;
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+function runGap(runsA, runsB) {
+  let gap = Infinity;
+  const pass = (from, to) => { for (const run of from) for (const p of run) for (const other of to) for (let i = 1; i < other.length; i++) gap = Math.min(gap, pointSegment(p, other[i - 1], other[i])); };
+  pass(runsA, runsB); pass(runsB, runsA);
+  return gap;
+}
+
+/** Bicaval relations: the IVC ostium (estimated landmark) in the cut and image; the atrial septum (LA and RA adjacent). */
+export function bicaval(section, frame, anatomy, sectorAngle, depth) {
+  const ivc = imagePoint(anatomy.ivc, frame, sectorAngle, depth);
+  const runs = visibleRuns(section, sectorAngle, depth);
+  const gap = runGap(runs.la || [], runs.ra || []);
+  const ivcOk = ivc.off <= CAVAL_OFF_PLANE && !ivc.beyondDepth && !ivc.outsideAngle;
+  return { ivcOk, ivcOff: ivc.off, septumOk: gap <= SEPTUM_GAP, septumGap: gap, ok: ivcOk && gap <= SEPTUM_GAP };
+}
+
+/**
+ * How the plane crosses the mitral annulus: the angle (degrees, 0..90) between
+ * the chord of the cut and the commissural axis (perpendicular, in the
+ * annulus plane, to the direction of the aortic valve). About 0 in the
+ * commissural view, larger in the two-chamber view, near 90 in the long axis.
+ */
+export function mitralChord(frame, anatomy) {
+  const c = anatomy.mv.center, nm = unit(anatomy.mv.normal), r = anatomy.mv.radius;
+  const toAorta = sub(anatomy.av.center, c);
+  const aortic = unit(sub(toAorta, nm.map(v => v * dot(toAorta, nm))));
+  const commissural = unit(cross(nm, aortic));
+  const chord = unit(cross(frame.normal, nm));
+  const angle = (Math.acos(Math.min(1, Math.abs(dot(chord, commissural)))) * 180) / Math.PI;
+  const centred = Math.abs(dot(sub(c, frame.origin), frame.normal)) <= MITRAL_CENTRE_OFF * r;
+  return { angle, centred };
 }
 
 /**
  * @param {{ contours: object[] }} section
- * @param {{ required: string[], avoid: (string | { id: string, max: number })[], apical?: boolean }} view
+ * @param {{ required: string[], avoid: (string | { id: string, max: number })[], apical?: boolean, bicaval?: boolean, mitralChord?: [number, number] }} view
  * @param {{ sectorAngle: number, depth: number, frame: object, anatomy: object, label: (id: string) => string, lang: 'tr'|'en' }} ctx
  */
 export function evaluateView(section, view, ctx) {
@@ -51,16 +112,34 @@ export function evaluateView(section, view, ctx) {
   const missing = view.required.filter(id => !shown(id));
   // An avoided structure may carry its own tolerance: { id, max } (contour length allowed in the sector).
   const wrong = view.avoid.filter(a => typeof a === 'string' ? shown(a) : (lengths[a.id] || 0) > a.max).map(a => a.id || a);
-  const fs = view.apical ? foreshortening(section, ctx.frame, ctx.anatomy) : null;
-  const achieved = !missing.length && !wrong.length && (!fs || fs.ok);
+  const fs = view.apical ? foreshortening(section, ctx.frame, ctx.anatomy, ctx.sectorAngle, ctx.depth) : null;
+  const caval = view.bicaval ? bicaval(section, ctx.frame, ctx.anatomy, ctx.sectorAngle, ctx.depth) : null;
+  const chord = view.mitralChord ? mitralChord(ctx.frame, ctx.anatomy) : null;
+  const chordOk = !chord || (chord.centred && chord.angle >= view.mitralChord[0] && chord.angle <= view.mitralChord[1]);
+  const achieved = !missing.length && !wrong.length && (!fs || fs.ok) && (!caval || caval.ok) && chordOk;
   const tr = ctx.lang !== 'en';
   const names = ids => ids.map(ctx.label).join(', ');
   const messages = [];
-  if (achieved) messages.push(tr ? 'Görünüm elde edildi: gerekli yapılar kesitte, istenmeyen yapı yok.' : 'View obtained: the required structures are in the section, no unwanted structure.');
-  if (missing.length) messages.push(tr ? `Eksik: ${names(missing)}.` : `Missing: ${names(missing)}.`);
-  if (wrong.length) messages.push(tr ? `Bu görünümde olmamalı: ${names(wrong)}.${wrong.includes('aorta') && view.apical ? ' Aort çıkış yolu görünüyorsa kesit öne kaymıştır (beş boşluk); tilt ile arkaya alın.' : ''}` : `Should not be in this view: ${names(wrong)}.${wrong.includes('aorta') && view.apical ? ' If the outflow tract shows, the plane is too anterior (five-chamber); tilt it back.' : ''}`);
-  if (fs && !fs.ok) messages.push(tr
-    ? `LV kısalmış olabilir (görünen uzunluk %${Math.round(fs.ratio * 100)}, apeks düzlemden ${fs.apexOffPlane.toFixed(2)} birim): kesit gerçek apeksten geçmiyor.`
-    : `The LV may be foreshortened (visible length ${Math.round(fs.ratio * 100)}%, apex ${fs.apexOffPlane.toFixed(2)} units off the plane): the plane misses the true apex.`);
-  return { achieved, missing, wrong, foreshortening: fs, lengths, messages };
+  if (achieved) messages.push(tr ? 'Modelin başlangıç ölçütleri karşılandı (diyastol sonu geometrisi).' : 'The model’s starting criteria are met (end-diastolic geometry).');
+  if (missing.length) messages.push(tr ? `Model ölçütüne göre eksik: ${names(missing)}.` : `Missing by the model’s criteria: ${names(missing)}.`);
+  if (wrong.length) messages.push(tr
+    ? `Model ölçütüne göre kesitte beklenmeyen: ${names(wrong)}.${wrong.includes('aorta') && view.apical ? ' Aort çıkış yolu görünüyorsa kesit öne kaymış olabilir (beş boşluk); tilt ile arkaya alın.' : ''}`
+    : `Not expected in the cut by the model’s criteria: ${names(wrong)}.${wrong.includes('aorta') && view.apical ? ' If the outflow tract shows, the plane may be too anterior (five-chamber); tilt it back.' : ''}`);
+  if (fs && !fs.inPlane) messages.push(tr
+    ? `Kesit gerçek apeksten geçmiyor (apeks düzlemden ${fs.apexOffPlane.toFixed(2)} birim).`
+    : `The plane misses the true apex (apex ${fs.apexOffPlane.toFixed(2)} units off the plane).`);
+  else if (fs && !fs.inImage) messages.push(tr
+    ? (fs.beyondDepth ? 'Apeks düzlemde ama görüntü derinliğinin dışında: derinliği artırın.' : 'Apeks düzlemde ama sektörün dışında: sektörü genişletin veya probu apekse yöneltin.')
+    : (fs.beyondDepth ? 'The apex is in the plane but beyond the image depth: increase the depth.' : 'The apex is in the plane but outside the sector: widen the sector or aim at the apex.'));
+  else if (fs && !fs.ok) messages.push(tr
+    ? `Görüntüdeki LV uzunluğu ölçülen uzunluğun %${Math.round(fs.ratio * 100)}'i: LV kısalmış olabilir.`
+    : `The LV length in the image is ${Math.round(fs.ratio * 100)}% of the measured length: the LV may be foreshortened.`);
+  if (caval && !caval.ivcOk) messages.push(tr
+    ? 'İVK ağzı kesitte veya görüntüde değil (atlasta İVK mesh’i yok; ağız kestirilen bir noktadır). Tam bikaval görünüm sayılmaz.'
+    : 'The IVC orifice is not in the cut or the image (the atlas has no IVC mesh; the orifice is an estimated point). Not a full bicaval view.');
+  if (caval && !caval.septumOk) messages.push(tr ? 'İnteratriyal septum (LA ile RA komşuluğu) kesitte görünmüyor.' : 'The interatrial septum (LA next to RA) is not in the cut.');
+  if (chord && !chordOk) messages.push(tr
+    ? `Mitral kesit yönü bu görünüme uymuyor: komissür eksenine açı ${Math.round(chord.angle)}° (model aralığı ${view.mitralChord[0]}–${view.mitralChord[1]}°)${chord.centred ? '' : ', düzlem anulus merkezinden uzak'}.`
+    : `The mitral cut does not fit this view: ${Math.round(chord.angle)}° to the commissural axis (model range ${view.mitralChord[0]}–${view.mitralChord[1]}°)${chord.centred ? '' : ', plane away from the annulus centre'}.`);
+  return { achieved, missing, wrong, foreshortening: fs, bicaval: caval, mitralChord: chord, lengths, messages };
 }

@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-30",
+  "scope": "TTE/TEE read-only source review; report and screenshots added",
+  "checks": {
+    "syntax": "pass",
+    "section": "pass",
+    "renderer": "pass",
+    "build": "pass",
+    "browser": "pass after permitted retry",
+    "browser_mean_section_ms": 1.0
+  },
+  "sha256": {
+    "src/echo-training.js": "91ed9a95d3be3c32da81267408ff2644b2114a8fa30c5ba733c0892f6fd2a08b",
+    "src/echo-section.js": "4833966065bd8c8419177678ceea4145429886ed3f2965653bda488be7a94664",
+    "src/echo-mode.js": "d77383e2be335ae5d8f8bac6a773d1b97d897ea185a5ed9f2fe2180663848524",
+    "src/echo-panel.js": "665a991acabac7f1292a301e558418dfff14592d7fd368238008e337bbdce0c6",
+    "src/echo-renderer.js": "ba4125f654298e641ee306b39448c90e1c73b5c584b992b391b3ed40fc367800",
+    "src/echo-anatomy.js": "b695e26768b8352228607d16b7b4b1bcd8271b7df1bbbef01d2a65db55a62ab4",
+    "src/echo-views.js": "d8976966c5c0eb86e61b9a20471a549cc42502510fbd43e2f2ecc610d06e7824",
+    "src/echo-probe.js": "6ba99d28402c041b72d61d18c8bfaa63ea5d710efdec1689f5c7fd73f9383ce3",
+    "research/echo/README.md": "87e835d33b6fd42195b5fc509e579c499dec9372272e773fadce0546400bc8bb",
+    "research/TTE_TEE_IYILESTIRME_RAPORU.md": "f0401472e3575f1cc163b38a71611ba0ea752903166b42d1ebbd9989e72961fe"
+  }
+}

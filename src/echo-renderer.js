@@ -283,6 +283,22 @@ function drawOverlayText(ctx, width, height, geo, opts, lang, style, empty) {
  * @param {{ contours?: object[], structures?: object }} section
  * @param {object} [opts] style, sectorAngle, depth, info, lang, structureInfo, frozen, hideLabels, highlight
  */
+function runLength(run) {
+  let length = 0;
+  for (let i = 1; i < run.length; i++) length += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]);
+  return length;
+}
+
+function pointAlong(run, at) {
+  let walked = 0;
+  for (let i = 1; i < run.length; i++) {
+    const seg = Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]);
+    if (walked + seg >= at && seg > 0) { const f = (at - walked) / seg; return [run[i - 1][0] + (run[i][0] - run[i - 1][0]) * f, run[i - 1][1] + (run[i][1] - run[i - 1][1]) * f]; }
+    walked += seg;
+  }
+  return run[run.length - 1];
+}
+
 export function drawEchoSector(canvas, section, opts = {}) {
   const width = canvas?.clientWidth;
   const height = canvas?.clientHeight;
@@ -326,16 +342,30 @@ export function drawEchoSector(canvas, section, opts = {}) {
   ctx.restore();
 
   if (!o.hideLabels && items.length) {
-    const drawn = new Set(items.map((it) => it.id));
-    const labels = Object.entries(section?.structures || {})
-      .filter(([id, s]) => drawn.has(id) && Array.isArray(s?.centroid) && geo.inside(s.centroid))
-      .map(([id, s]) => ({
+    // Each label sits on its structure's longest visible run, halfway along it:
+    // always on the drawn contour and inside the fan.
+    const best = new Map();
+    for (const it of items) for (const run of it.runs) {
+      const length = runLength(run);
+      if (!best.has(it.id) || length > best.get(it.id).length) best.set(it.id, { run, length });
+    }
+    const labels = [...best.entries()]
+      .map(([id, { run, length }]) => ({
         text: String(info[id]?.label?.[lang] || info[id]?.label?.tr || id),
-        centroid: s.centroid,
+        centroid: pointAlong(run, length / 2),
         color: colorOf(id)
       }))
       .sort((a, b) => a.centroid[1] - b.centroid[1]);
     drawLabels(ctx, geo, labels, style);
+  }
+  // Landmark points without a mesh (e.g. the estimated IVC orifice), when in the image.
+  for (const m of Array.isArray(o.markers) ? o.markers : []) {
+    if (!Array.isArray(m?.point) || !geo.inside(m.point)) continue;
+    const [mx, my] = geo.toScreen(m.point);
+    ctx.strokeStyle = m.color || '#9fd3ff'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
+    ctx.beginPath(); ctx.arc(mx, my, 6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = m.color || '#9fd3ff'; ctx.font = '10px system-ui, sans-serif';
+    ctx.fillText(String(m.label?.[lang] || m.label?.tr || ''), mx + 9, my + 3);
   }
   drawOverlayText(ctx, width, height, geo, o, lang, style, items.length === 0);
 }

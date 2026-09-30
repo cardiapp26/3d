@@ -24,6 +24,9 @@ export function ecgSample(phase, rhythm = 'sinus') {
   // T peaks as the semilunar valves start to close and is back on the baseline at S2,
   // when isovolumetric relaxation begins and both valves are shut.
   const tWave = bump(p, SYNC.tPeak, 0.02, 0.32);
+  // Ventricular complexes only: the caller adds its own atrial activity
+  // (independent P waves or fibrillatory waves on a time axis, jvp-timeline.js).
+  if (rhythm === 'ventricular') return qrs + tWave;
   if (rhythm === 'afib') {
     return 0.045 * Math.sin(p * Math.PI * 36) + qrs + tWave;
   }

@@ -233,69 +233,69 @@
   },
   "views": {
     "plax": {
-      "closed": 18,
-      "open": 10,
+      "closed": 17,
+      "open": 13,
       "byStructure": {
         "lv": {
           "closed": 0,
           "open": 3,
-          "length": 10.04
+          "length": 10.05
         },
         "rv": {
           "closed": 0,
           "open": 1,
-          "length": 5.48
+          "length": 4.55
         },
         "la": {
           "closed": 0,
           "open": 2,
-          "length": 6.41
+          "length": 6.29
         },
         "aorta": {
           "closed": 0,
-          "open": 1,
-          "length": 3.34
+          "open": 3,
+          "length": 3.58
         },
         "pa": {
           "closed": 1,
           "open": 1,
-          "length": 2.46
+          "length": 3.04
         },
         "svc": {
           "closed": 0,
           "open": 1,
-          "length": 2.03
+          "length": 1.6
         },
         "cs": {
           "closed": 1,
           "open": 0,
-          "length": 0.43
+          "length": 0.45
         },
         "mitral": {
-          "closed": 8,
-          "open": 1,
-          "length": 3.24
+          "closed": 7,
+          "open": 2,
+          "length": 3.46
         },
         "aortic-valve": {
-          "closed": 3,
+          "closed": 1,
           "open": 0,
-          "length": 3.68
+          "length": 2
         },
         "pulmonary-valve": {
-          "closed": 3,
+          "closed": 5,
           "open": 0,
-          "length": 4.86
+          "length": 6.86
         },
         "lv-papillary": {
           "closed": 2,
           "open": 0,
-          "length": 1.05
+          "length": 2.82
         }
       }
     },
     "psax-av": {
-      "closed": 12,
-      "open": 9,
+      "closed": 13,
+      "open": 11,
       "byStructure": {
         "lv": {
           "closed": 0,
@@ -309,13 +309,13 @@
         },
         "la": {
           "closed": 0,
-          "open": 1,
-          "length": 9.75
+          "open": 2,
+          "length": 7.76
         },
         "laa": {
-          "closed": 0,
-          "open": 1,
-          "length": 1.84
+          "closed": 1,
+          "open": 2,
+          "length": 3.18
         },
         "ra": {
           "closed": 1,
@@ -350,53 +350,53 @@
       }
     },
     "psax-mv": {
-      "closed": 30,
-      "open": 8,
+      "closed": 21,
+      "open": 7,
       "byStructure": {
         "lv": {
           "closed": 1,
           "open": 1,
-          "length": 8.84
+          "length": 8.23
         },
         "rv": {
           "closed": 0,
           "open": 3,
-          "length": 5.29
-        },
-        "laa": {
-          "closed": 1,
-          "open": 0,
-          "length": 0.85
+          "length": 7.75
         },
         "ra": {
-          "closed": 0,
+          "closed": 1,
           "open": 2,
-          "length": 7.52
+          "length": 3.94
         },
         "pa": {
           "closed": 0,
           "open": 1,
-          "length": 1.57
+          "length": 0.95
         },
         "mitral": {
-          "closed": 7,
+          "closed": 2,
           "open": 0,
-          "length": 1.15
+          "length": 0.44
         },
         "tricuspid": {
-          "closed": 18,
-          "open": 1,
-          "length": 4.14
+          "closed": 12,
+          "open": 0,
+          "length": 1.66
         },
         "pulmonary-valve": {
           "closed": 2,
           "open": 0,
-          "length": 4.24
+          "length": 4.43
         },
         "lv-papillary": {
+          "closed": 2,
+          "open": 0,
+          "length": 1.41
+        },
+        "rv-papillary": {
           "closed": 1,
           "open": 0,
-          "length": 0.73
+          "length": 1.74
         }
       }
     },
@@ -488,79 +488,79 @@
       }
     },
     "a2c": {
-      "closed": 16,
-      "open": 11,
+      "closed": 12,
+      "open": 4,
       "byStructure": {
         "lv": {
-          "closed": 0,
-          "open": 3,
-          "length": 10.9
-        },
-        "rv": {
-          "closed": 0,
+          "closed": 1,
           "open": 1,
-          "length": 0.46
+          "length": 11.24
         },
         "la": {
-          "closed": 0,
-          "open": 2,
-          "length": 5.17
+          "closed": 1,
+          "open": 1,
+          "length": 2.53
         },
         "pa": {
           "closed": 1,
           "open": 0,
-          "length": 1.72
+          "length": 1.54
         },
         "pv": {
-          "closed": 1,
+          "closed": 0,
           "open": 2,
-          "length": 2.02
+          "length": 1.24
         },
         "cs": {
           "closed": 1,
           "open": 0,
-          "length": 0.47
+          "length": 0.63
         },
         "mitral": {
-          "closed": 13,
-          "open": 3,
-          "length": 5.01
+          "closed": 5,
+          "open": 0,
+          "length": 1.94
+        },
+        "lv-papillary": {
+          "closed": 3,
+          "open": 0,
+          "length": 2.19
         }
       }
     },
     "a3c": {
-      "closed": 16,
-      "open": 14,
+      "closed": 15,
+      "open": 15,
       "byStructure": {
         "lv": {
           "closed": 0,
           "open": 3,
-          "length": 10.1
+          "length": 10.12
         },
         "rv": {
           "closed": 0,
           "open": 1,
-          "length": 4.77
+          "length": 4.6
         },
         "la": {
           "closed": 0,
           "open": 2,
-          "length": 6.21
+          "length": 6.22
         },
         "aorta": {
           "closed": 0,
           "open": 3,
-          "length": 3.76
+          "length": 3.8
         },
         "pa": {
           "closed": 0,
           "open": 3,
-          "length": 3.18
+          "length": 3.31
         },
         "svc": {
           "closed": 0,
           "open": 1,
-          "length": 1.21
+          "length": 1.11
         },
         "cs": {
           "closed": 1,
@@ -569,23 +569,23 @@
         },
         "mitral": {
           "closed": 8,
-          "open": 1,
-          "length": 3.21
+          "open": 2,
+          "length": 3.27
         },
         "aortic-valve": {
           "closed": 1,
           "open": 0,
-          "length": 2.01
+          "length": 1.96
         },
         "pulmonary-valve": {
-          "closed": 5,
+          "closed": 4,
           "open": 0,
-          "length": 6.51
+          "length": 6.48
         },
         "lv-papillary": {
           "closed": 1,
           "open": 0,
-          "length": 0.17
+          "length": 0.42
         }
       }
     },
@@ -652,170 +652,190 @@
     },
     "me4c": {
       "closed": 19,
-      "open": 9,
+      "open": 7,
       "byStructure": {
         "lv": {
           "closed": 0,
           "open": 2,
-          "length": 8.28
+          "length": 8.22
         },
         "rv": {
-          "closed": 0,
-          "open": 2,
-          "length": 7.47
+          "closed": 1,
+          "open": 1,
+          "length": 7.26
         },
         "la": {
           "closed": 0,
           "open": 2,
-          "length": 3.67
+          "length": 3.38
         },
         "ra": {
-          "closed": 0,
-          "open": 2,
-          "length": 5.31
+          "closed": 1,
+          "open": 1,
+          "length": 5.43
         },
         "pa": {
           "closed": 1,
           "open": 0,
-          "length": 0.89
+          "length": 0.88
         },
         "cs": {
           "closed": 2,
           "open": 0,
-          "length": 0.86
+          "length": 0.87
         },
         "mitral": {
           "closed": 6,
           "open": 1,
-          "length": 4.38
+          "length": 4.36
         },
         "tricuspid": {
-          "closed": 7,
+          "closed": 5,
           "open": 0,
-          "length": 1.88
+          "length": 1.01
         },
         "lv-papillary": {
-          "closed": 2,
-          "open": 0,
-          "length": 3.27
-        },
-        "rv-papillary": {
           "closed": 1,
           "open": 0,
-          "length": 1.98
+          "length": 2.93
+        },
+        "rv-papillary": {
+          "closed": 2,
+          "open": 0,
+          "length": 2.42
         }
       }
     },
     "memc": {
       "closed": 19,
-      "open": 6,
-      "byStructure": {
-        "lv": {
-          "closed": 1,
-          "open": 2,
-          "length": 11.33
-        },
-        "rv": {
-          "closed": 0,
-          "open": 1,
-          "length": 0.52
-        },
-        "la": {
-          "closed": 1,
-          "open": 1,
-          "length": 3.42
-        },
-        "pa": {
-          "closed": 1,
-          "open": 0,
-          "length": 1.63
-        },
-        "pv": {
-          "closed": 0,
-          "open": 2,
-          "length": 0.62
-        },
-        "cs": {
-          "closed": 1,
-          "open": 0,
-          "length": 0.53
-        },
-        "mitral": {
-          "closed": 15,
-          "open": 0,
-          "length": 3.85
-        }
-      }
-    },
-    "me2c": {
-      "closed": 20,
-      "open": 3,
-      "byStructure": {
-        "lv": {
-          "closed": 1,
-          "open": 1,
-          "length": 11.58
-        },
-        "la": {
-          "closed": 1,
-          "open": 1,
-          "length": 4.89
-        },
-        "pa": {
-          "closed": 1,
-          "open": 0,
-          "length": 1.87
-        },
-        "pv": {
-          "closed": 2,
-          "open": 1,
-          "length": 2.1
-        },
-        "cs": {
-          "closed": 1,
-          "open": 0,
-          "length": 0.51
-        },
-        "mitral": {
-          "closed": 14,
-          "open": 0,
-          "length": 3.6
-        }
-      }
-    },
-    "melax": {
-      "closed": 17,
-      "open": 10,
+      "open": 7,
       "byStructure": {
         "lv": {
           "closed": 0,
           "open": 3,
-          "length": 9.78
+          "length": 8.95
         },
         "rv": {
           "closed": 1,
           "open": 1,
-          "length": 7.35
+          "length": 5.38
         },
         "la": {
           "closed": 0,
           "open": 2,
-          "length": 6.3
-        },
-        "aorta": {
-          "closed": 0,
-          "open": 1,
-          "length": 3.25
+          "length": 4.15
         },
         "pa": {
           "closed": 1,
           "open": 0,
-          "length": 1.92
+          "length": 1.37
+        },
+        "cs": {
+          "closed": 1,
+          "open": 0,
+          "length": 0.5
+        },
+        "mitral": {
+          "closed": 14,
+          "open": 1,
+          "length": 4.77
+        },
+        "rv-papillary": {
+          "closed": 2,
+          "open": 0,
+          "length": 3.58
+        }
+      }
+    },
+    "me2c": {
+      "closed": 13,
+      "open": 16,
+      "byStructure": {
+        "lv": {
+          "closed": 0,
+          "open": 3,
+          "length": 10.21
+        },
+        "rv": {
+          "closed": 0,
+          "open": 1,
+          "length": 3.93
+        },
+        "la": {
+          "closed": 0,
+          "open": 2,
+          "length": 6.24
+        },
+        "laa": {
+          "closed": 0,
+          "open": 1,
+          "length": 0.02
+        },
+        "aorta": {
+          "closed": 0,
+          "open": 3,
+          "length": 4.63
+        },
+        "pa": {
+          "closed": 0,
+          "open": 5,
+          "length": 4.51
+        },
+        "cs": {
+          "closed": 1,
+          "open": 0,
+          "length": 0.43
+        },
+        "mitral": {
+          "closed": 8,
+          "open": 1,
+          "length": 3
+        },
+        "aortic-valve": {
+          "closed": 2,
+          "open": 0,
+          "length": 1.43
+        },
+        "pulmonary-valve": {
+          "closed": 2,
+          "open": 0,
+          "length": 4.39
+        }
+      }
+    },
+    "melax": {
+      "closed": 16,
+      "open": 14,
+      "byStructure": {
+        "lv": {
+          "closed": 0,
+          "open": 3,
+          "length": 7.77
+        },
+        "rv": {
+          "closed": 0,
+          "open": 1,
+          "length": 7.74
+        },
+        "la": {
+          "closed": 0,
+          "open": 2,
+          "length": 6.09
+        },
+        "aorta": {
+          "closed": 0,
+          "open": 3,
+          "length": 4.09
+        },
+        "pa": {
+          "closed": 0,
+          "open": 3,
+          "length": 2.93
         },
         "svc": {
           "closed": 0,
           "open": 1,
-          "length": 2.09
+          "length": 0.29
         },
         "cs": {
           "closed": 1,
@@ -823,131 +843,106 @@
           "length": 0.44
         },
         "mitral": {
-          "closed": 8,
-          "open": 2,
-          "length": 3.13
+          "closed": 9,
+          "open": 1,
+          "length": 2.93
         },
         "aortic-valve": {
-          "closed": 3,
-          "open": 0,
-          "length": 4.07
-        },
-        "pulmonary-valve": {
           "closed": 2,
           "open": 0,
-          "length": 3.46
+          "length": 2.22
+        },
+        "pulmonary-valve": {
+          "closed": 3,
+          "open": 0,
+          "length": 3.77
         },
         "rv-papillary": {
           "closed": 1,
           "open": 0,
-          "length": 0.79
+          "length": 0.86
         }
       }
     },
     "meavsax": {
-      "closed": 6,
-      "open": 13,
+      "closed": 7,
+      "open": 12,
       "byStructure": {
         "rv": {
           "closed": 0,
           "open": 1,
-          "length": 1.59
+          "length": 1.58
         },
         "la": {
           "closed": 1,
           "open": 2,
-          "length": 7.88
+          "length": 8.17
         },
         "laa": {
           "closed": 0,
           "open": 1,
-          "length": 0.18
+          "length": 0.23
         },
         "ra": {
           "closed": 1,
           "open": 1,
-          "length": 11.48
+          "length": 10.7
         },
         "aorta": {
           "closed": 1,
           "open": 0,
-          "length": 2.86
+          "length": 2.87
         },
         "pa": {
           "closed": 0,
           "open": 6,
-          "length": 6.26
+          "length": 6.08
         },
         "pv": {
-          "closed": 0,
-          "open": 2,
-          "length": 1.1
+          "closed": 1,
+          "open": 1,
+          "length": 1.87
         },
         "aortic-valve": {
           "closed": 2,
           "open": 0,
-          "length": 3.61
+          "length": 3.31
         },
         "pulmonary-valve": {
           "closed": 1,
           "open": 0,
-          "length": 1.44
+          "length": 1.47
         }
       }
     },
     "mebicaval": {
-      "closed": 24,
-      "open": 8,
+      "closed": 4,
+      "open": 4,
       "byStructure": {
-        "lv": {
-          "closed": 0,
-          "open": 2,
-          "length": 1.7
-        },
-        "rv": {
+        "la": {
           "closed": 1,
           "open": 1,
-          "length": 6.97
-        },
-        "la": {
-          "closed": 0,
-          "open": 2,
-          "length": 7.23
+          "length": 6.92
         },
         "ra": {
-          "closed": 1,
-          "open": 1,
-          "length": 4.73
+          "closed": 2,
+          "open": 0,
+          "length": 11.69
         },
         "aorta": {
-          "closed": 1,
-          "open": 0,
-          "length": 3.34
+          "closed": 0,
+          "open": 1,
+          "length": 2.49
         },
         "pa": {
           "closed": 1,
           "open": 0,
-          "length": 1.81
+          "length": 1.85
         },
         "svc": {
           "closed": 0,
-          "open": 1,
-          "length": 1.6
-        },
-        "cs": {
-          "closed": 1,
-          "open": 0,
-          "length": 0.63
-        },
-        "mitral": {
-          "closed": 1,
-          "open": 1,
-          "length": 0.75
-        },
-        "tricuspid": {
-          "closed": 18,
-          "open": 0,
-          "length": 2.44
+          "open": 2,
+          "length": 1.85
         }
       }
     },
@@ -958,12 +953,12 @@
         "lv": {
           "closed": 0,
           "open": 3,
-          "length": 6.98
+          "length": 7.06
         },
         "rv": {
           "closed": 1,
           "open": 1,
-          "length": 6.27
+          "length": 6.19
         },
         "la": {
           "closed": 0,
@@ -973,7 +968,7 @@
         "laa": {
           "closed": 0,
           "open": 1,
-          "length": 1.63
+          "length": 1.59
         },
         "pa": {
           "closed": 1,
@@ -983,7 +978,7 @@
         "pv": {
           "closed": 0,
           "open": 1,
-          "length": 0.15
+          "length": 0.18
         },
         "cs": {
           "closed": 1,
@@ -998,38 +993,33 @@
         "rv-papillary": {
           "closed": 2,
           "open": 0,
-          "length": 3.93
+          "length": 3.87
         }
       }
     },
     "tgsax": {
-      "closed": 7,
+      "closed": 6,
       "open": 2,
       "byStructure": {
         "lv": {
           "closed": 1,
           "open": 1,
-          "length": 7.37
+          "length": 7.19
         },
         "rv": {
           "closed": 1,
           "open": 1,
-          "length": 10.42
-        },
-        "pulmonary-valve": {
-          "closed": 1,
-          "open": 0,
-          "length": 0.57
+          "length": 9.67
         },
         "lv-papillary": {
           "closed": 1,
           "open": 0,
-          "length": 1.52
+          "length": 1.61
         },
         "rv-papillary": {
           "closed": 3,
           "open": 0,
-          "length": 2.66
+          "length": 2.74
         }
       }
     }
@@ -1038,27 +1028,27 @@
     "lvLengthUnits": 2.512,
     "oesophagusPath": [
       [
-        -0.094,
-        2.179,
+        -0.095,
+        2.175,
         -1.874
       ],
       [
-        -0.094,
-        1.279,
+        -0.095,
+        1.275,
         -1.874
       ],
       [
-        -0.094,
-        0.479,
+        -0.095,
+        0.475,
         -1.874
       ],
       [
-        -0.094,
+        -0.095,
         -0.589,
         -1.844
       ],
       [
-        0.361,
+        0.36,
         -1.497,
         -0.83
       ],

@@ -922,6 +922,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       requestRender();
     },
     setBpm(value){cardiacCycle.setBpm(value);requestRender();},
+    // Playback speed of the shared clock (slow motion in the venous pulse lesson).
+    setCycleSpeed(value){cardiacCycle.setSpeed(value);requestRender();},
     setRhythm(name){cardiacCycle.setRhythm(name);requestRender();},
     seekCycle(phase){
       cardiacCycle.seekCycle(phase);

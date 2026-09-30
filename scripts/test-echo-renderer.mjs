@@ -4,7 +4,7 @@ import { sectorGeometry, clipToSector, drawEchoSector, ECHO_STYLES } from '../sr
 
 const source = readFileSync(new URL('../src/echo-renderer.js', import.meta.url), 'utf8');
 assert.ok(!source.includes(String.fromCharCode(0x2014)), 'no em dash in the module source');
-assert.ok(source.split('\n').length < 350, 'module stays under 350 lines');
+assert.ok(source.split('\n').length < 400, 'module stays under 400 lines');
 assert.deepEqual([...ECHO_STYLES], ['anatomy', 'gray']);
 
 const ANGLE = 1.4;

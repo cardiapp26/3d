@@ -1,0 +1,63 @@
+{
+  "date": "2026-09-30",
+  "task": "Venous pressure physical examination teaching module report",
+  "scope": "Research report only after user steering; no application edits by this task",
+  "base_commit": "631b3a1bf929f02c873f52d84485e3e7f84eef06",
+  "inputs": [
+    {
+      "path": "src/exam-mode.js",
+      "sha256": "1c45677c56c08acfc76055624f3fe487e7067cbce38b6f94d519d51009aee4e6"
+    },
+    {
+      "path": "src/exam-panel.js",
+      "sha256": "1ecde947d0cb7e8b70bceb9bc4930c357e1a592b4c7f1b20ada76df5e90c4061"
+    },
+    {
+      "path": "src/cardiac-cycle.js",
+      "sha256": "c67419ea86dc6a1af9eb181f4a662bd22a4a4f313c396be326fa537a972692d5"
+    },
+    {
+      "path": "src/hemodynamics.js",
+      "sha256": "71a3c04cc787a6354df100a475397746fd9e7c2f0f41fd965263515bd160d78a"
+    },
+    {
+      "path": "src/main.js",
+      "sha256": "522e5a95c6456848052e78efe4de88a4364082f906a788a7b55ef89e0bebf711"
+    },
+    {
+      "path": "research/PHYSICAL_EXAM.md",
+      "sha256": "bc6490aefc5ce402a554ac5adab9e801e449a327acc6421822f8e5ef0b1dbbcd"
+    }
+  ],
+  "output": {
+    "path": "research/VENOZ_BASINC_FIZIK_MUAYENE_MODUL_RAPORU.md",
+    "sha256": "99f95ed8a89da8f8ffe5d68edf66d82ff1f26958a4b254463d9f2ae30c7a9da8"
+  },
+  "sources": [
+    "https://doi.org/10.1016/j.cjco.2022.11.016",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC10066450/",
+    "https://med.stanford.edu/stanfordmedicine25/the25/neck-exam-jugular-venous-pressure-measurement.html",
+    "https://www.ncbi.nlm.nih.gov/books/NBK300/?report=printable",
+    "https://www.merckmanuals.com/professional/cardiovascular-disorders/valvular-disorders/tricuspid-regurgitation",
+    "https://www.merckmanuals.com/en-ca/professional/cardiovascular-disorders/valvular-disorders/tricuspid-stenosis",
+    "https://www.merckmanuals.com/en-ca/professional/cardiovascular-disorders/approach-to-the-cardiac-patient/cardiovascular-examination?media=print",
+    "https://www.ncbi.nlm.nih.gov/books/NBK431090/?report=printable",
+    "https://pubmed.ncbi.nlm.nih.gov/29137910/",
+    "https://pubmed.ncbi.nlm.nih.gov/10936479/",
+    "https://www.ncbi.nlm.nih.gov/books/NBK526097/",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC1495124/"
+  ],
+  "verification": {
+    "citation_numbers": "9 references; all single-number references resolve, [1–3] range checked",
+    "clinical_validation": "No human clinical validation",
+    "application_tests": "Not run, implementation cancelled before writes",
+    "scite": "DOI 10.1016/j.cjco.2022.11.016 metadata checked; excerpts and editorial notice field not returned",
+    "separate_review": "Completed; x/x-prime nomenclature clarified in scenario and acceptance tables."
+  },
+  "limits": [
+    "Some NCBI/PMC fulltext access returned reCAPTCHA; accessible indexed content used",
+    "CJC publisher fulltext returned HTTP 403",
+    "No clinical recordings, plots or efficacy data generated",
+    "Prior and concurrent user changes preserved"
+  ]
+}

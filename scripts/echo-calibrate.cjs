@@ -20,11 +20,12 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.goto(`${APP}/`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     const result = await page.evaluate(async only => {
-      const { measureEchoAnatomy, echoItems, surfaceExit } = await import('/src/echo-anatomy.js');
+      const { measureEchoAnatomy, echoItems, surfaceExit, chestSurface } = await import('/src/echo-anatomy.js');
       const V = await import('/src/echo-views.js');
       const { tteFrame, teeFrame } = await import('/src/echo-probe.js');
       const { sectionMeshes } = await import('/src/echo-section.js');
-      const { evaluateView } = await import('/src/echo-training.js');
+      const training = await import('/src/echo-training.js');
+      const evaluateView = (section, view, ctx) => ({ ...training.evaluateView(section, view, ctx), view });
       const h = window.heart;
       const getMeshes = id => { const l = []; h.scene.traverse(o => { if (o.isMesh && o.userData.id === id && !o.userData.micro) l.push(o); }); return l; };
       const A = measureEchoAnatomy({ getMeshes });
@@ -52,12 +53,16 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
       };
       const score = (e, offset) => {
         const fs = e.foreshortening;
-        return e.missing.length * 3 + e.wrong.length * 2 + (fs && !fs.ok ? 2 + Math.max(0, 0.9 - fs.ratio) * 5 + fs.apexOffPlane : 0) + offset * 0.002;
+        const chord = e.mitralChord, range = e.view?.mitralChord;
+        const chordMiss = chord && range ? Math.max(0, range[0] - chord.angle, chord.angle - range[1]) / 10 + (chord.centred ? 0 : 1) : 0;
+        const caval = e.bicaval;
+        return e.missing.length * 3 + e.wrong.length * 2 + (fs && !fs.ok ? 2 + Math.max(0, 0.9 - fs.ratio) * 5 + fs.apexOffPlane + (fs.inImage ? 0 : 1) : 0)
+          + (chord && !e.achieved ? chordMiss : 0) + (caval ? (caval.ivcOk ? 0 : 2 + caval.ivcOff) + (caval.septumOk ? 0 : 2) : 0) + offset * 0.002;
       };
       const out = {};
       for (const view of V.TTE_VIEWS) {
         if (only.length && !only.includes(view.id)) continue;
-        const base = V.tteBase(view.id, A, (p, d) => surfaceExit(p, d, hull));
+        const base = V.tteBase(view.id, A, (p, d) => surfaceExit(p, d, hull), chestSurface(hull));
         let best = null;
         const depths = [base.depth, base.depth - 0.6];
         for (const rotation of range(-40, 40, 10)) for (const tilt of range(-25, 25, 5)) for (const rock of range(-30, 30, 10)) {
@@ -65,26 +70,29 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
           const frame = tteFrame(base, adj);
           worst(frame, view, depths, Math.abs(rotation) + Math.abs(tilt) + Math.abs(rock)).forEach(({ s: raw, e }, k) => {
             const s = raw + (k ? 0.01 : 0);
-            if (!best || s < best.s) best = { s, adj: { ...adj, depthOffset: +(depths[k] - base.depth).toFixed(2) }, ok: e.achieved && raw < 1, missing: e.missing, wrong: e.wrong, fs: e.foreshortening && +e.foreshortening.ratio.toFixed(2) };
+            if (!best || s < best.s) best = { s, adj: { ...adj, depthOffset: +(depths[k] - base.depth).toFixed(2) }, ok: e.achieved && raw < 1, missing: e.missing, wrong: e.wrong, fs: e.foreshortening && { r: +e.foreshortening.ratio.toFixed(2), plane: e.foreshortening.inPlane, image: e.foreshortening.inImage } };
           });
         }
         out[view.id] = best;
       }
-      const omegaRange = { me4c: [0, 15], memc: [50, 70], me2c: [80, 100], melax: [120, 140], meavsax: [25, 50], mebicaval: [90, 115], melaa: [60, 95], tgsax: [0, 20] };
+      const omegaRange = { me4c: [0, 20], memc: [45, 75], me2c: [75, 105], melax: [115, 145], meavsax: [25, 50], mebicaval: [85, 120], melaa: [60, 110], tgsax: [0, 20] };
       for (const view of V.TEE_VIEWS) {
         if (only.length && !only.includes(view.id)) continue;
         const preset = V.teePreset(view.id, A, path);
         const tg = view.id === 'tgsax';
         let best = null;
         const depths = [4.8, 4.2, 3.6, 3];                  // deepest first: ties keep the clinical depth
+        // Mitral views: the beam must pass near the annulus centre, a cheap test before any section.
+        const wide = Boolean(view.mitralChord);
         for (const advance of range(preset.advance - (tg ? 0.03 : 0.04), Math.min(1, preset.advance + (tg ? 0.03 : 0.04)), tg ? 0.015 : 0.02))
-          for (const rotation of range(preset.rotation - 30, preset.rotation + 30, 15)) for (const flexion of range(preset.flexion - 20, preset.flexion + 20, 10))
-            for (const omega of range(...omegaRange[view.id], 5)) {
-              const state = { advance, rotation, flexion, lateralFlexion: 0, omega };
+          for (const rotation of range(preset.rotation - (wide ? 45 : 30), preset.rotation + (wide ? 45 : 30), wide ? 7.5 : 15)) for (const flexion of range(preset.flexion - (wide ? 30 : 20), preset.flexion + (wide ? 30 : 20), 10))
+            for (const lateralFlexion of wide ? [-20, -10, 0, 10, 20] : [0]) for (const omega of range(...omegaRange[view.id], 5)) {
+              const state = { advance, rotation, flexion, lateralFlexion, omega };
               const frame = teeFrame(path, state);
-              const offset = Math.abs(rotation - preset.rotation) / 5 + Math.abs(flexion - preset.flexion) / 10 + Math.abs(advance - preset.advance) * 20;
+              if (wide && !training.mitralChord(frame, A).centred) continue;
+              const offset = Math.abs(rotation - preset.rotation) / 5 + Math.abs(flexion - preset.flexion) / 10 + Math.abs(lateralFlexion) / 5 + Math.abs(advance - preset.advance) * 20;
               worst(frame, view, depths, offset).forEach(({ s, e }, k) => {
-                if (!best || s < best.s - 1e-9) best = { s, state: { ...state, depth: depths[k] }, ok: e.achieved && s < 1, missing: e.missing, wrong: e.wrong, fs: e.foreshortening && +e.foreshortening.ratio.toFixed(2), lengths: Object.fromEntries(Object.entries(e.lengths).map(([id, x]) => [id, +x.toFixed(2)])) };
+                if (!best || s < best.s - 1e-9) best = { s, state: { ...state, depth: depths[k] }, ok: e.achieved && s < 1, missing: e.missing, wrong: e.wrong, fs: e.foreshortening && { r: +e.foreshortening.ratio.toFixed(2), plane: e.foreshortening.inPlane, image: e.foreshortening.inImage }, chord: e.mitralChord && Math.round(e.mitralChord.angle), centred: e.mitralChord?.centred, caval: e.bicaval && { ivc: e.bicaval.ivcOk, off: +e.bicaval.ivcOff.toFixed(2), septum: e.bicaval.septumOk }, lengths: Object.fromEntries(Object.entries(e.lengths).map(([id, x]) => [id, +x.toFixed(2)])) };
               });
             }
         best.state.advanceOffset = +(best.state.advance - preset.advance).toFixed(3);
@@ -92,7 +100,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
       }
       return out;
     }, process.argv.slice(2));
-    for (const [id, r] of Object.entries(result)) console.log(id.padEnd(10), r.ok ? 'OK ' : 'no ', JSON.stringify(r.adj || r.state), JSON.stringify({ missing: r.missing, wrong: r.wrong, fs: r.fs }), process.env.VERBOSE ? JSON.stringify(r.lengths) : '');
+    for (const [id, r] of Object.entries(result)) console.log(id.padEnd(10), r.ok ? 'OK ' : 'no ', JSON.stringify(r.adj || r.state), JSON.stringify({ missing: r.missing, wrong: r.wrong, fs: r.fs, chord: r.chord, centred: r.centred, caval: r.caval }), process.env.VERBOSE ? JSON.stringify(r.lengths) : '');
   } finally {
     await browser.close();
   }

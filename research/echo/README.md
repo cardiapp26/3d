@@ -9,10 +9,10 @@ Mode **12 · Ekokardiyografi (TTE/TEE)**, group "Görüntüleme / Imaging". Left
 | Module | Responsibility |
 |---|---|
 | `src/echo-section.js` | Plane cut of the current (beating) triangles; cut points welded by edge, joined into contours, each closed or open; 2D image coordinates (x lateral = screen right, y depth). |
-| `src/echo-probe.js` | TTE: window base frame plus rotation (about the beam), tilt (about the lateral axis), rock (in plane), short slide. TEE: path with arc-length advance and a parallel-transported transducer face; shaft rotation, ante/retroflexion, left/right flexion and the multiplane angle are separate motions. |
+| `src/echo-probe.js` | TTE: window base frame on a schematic ellipsoid chest surface; rotation about the beam first, then tilt and rock on the turned plane, slide along the surface (contact kept). TEE: path with arc-length advance and a parallel-transported face; flexion (ante/retro, left/right) bends a 2 cm distal section into an arc, so the tip moves and stops at the lumen (0.3 units in the oesophagus, 1.2 in the stomach); the multiplane angle turns the image about the beam without moving the tip. |
 | `src/echo-anatomy.js` | Sectioned structures (LA split into body and appendage lobe), landmarks, schematic oesophagus-stomach path, heart-surface exit distance. |
 | `src/echo-views.js` | 8 TTE views (PLAX, PSAX AV/MV/PM, A4C, A2C, A3C, subcostal 4C) and 8 TEE views (ME 4C, mitral commissural, 2C, LAX, AV SAX, bicaval, LAA; TG mid SAX) with required and avoided structures, landmark presets and the atlas calibration. |
-| `src/echo-training.js` | Feedback: structures in the sector (at least 0.25 units of contour), structures that should not be there, foreshortening in apical views (LV length in the image at least 90 % of the measured apex-to-mitral length, apex within 0.15 units of the plane). |
+| `src/echo-training.js` | Feedback on the model's starting criteria: structures in the sector (at least 0.25 units of contour), structures that should not be there; apical views: the true apex in the plane (0.15 units), inside the image (depth and sector, separate messages) and the visible LV at least 90 % of the measured length; bicaval: the estimated IVC orifice in the cut and the atrial septum (LA next to RA); mitral views: angle of the annulus chord to the commissural axis (commissural 0–22°, two-chamber at least 25° without the outflow tract, long axis 55–90° with it). |
 | `src/echo-renderer.js` | 2D sector: anatomical colour or schematic grey; relative depth ticks, index marker, labels, watermark ("not an ultrasound image"). |
 | `src/echo-mode.js`, `src/echo-panel.js` | Mode lifecycle, 3D overlay (probe, fan, oesophagus, TEE shaft), panel, task. |
 
@@ -43,7 +43,8 @@ Model decisions recorded here:
 - TG mid SAX: the pulmonary artery, LAA, LA, mitral valve and aorta must stay out of the sector; the oblique atlas LV axis otherwise brings the outflow tract into the far field.
 - PSAX AV: the atlas LV reaches the aortic annulus, so the plane sits 0.1 units above the cusp centres and a short outflow-tract cut (LV contour up to 1 unit) is allowed.
 - TEE path: the atlas has no oesophagus or stomach. The oesophagus runs 0.35 units (about 12 mm) behind the posterior LA wall at the LA centre, vertically; below the mitral level it turns forward and left to a stomach point 0.3 units below the inferior LV wall at 60 % of the mitral-to-apex axis. The transducer face is carried along the bend, so a probe in the stomach faces the heart, as a real scope does.
-- TTE windows: points 0.3 units outside the measured heart surface along the window direction (parasternal: anterior; apical: along the LV axis beyond the apex; subcostal: inferior, anterior, slightly right). There is no chest wall or rib model; free surface scanning is not taught.
+- TTE windows: where the window line leaves a schematic ellipsoid chest surface around the heart (0.35 units beyond the heart's bounding box; parasternal: anterior; apical: beyond the true apex, aimed at the AV valves; subcostal: inferior, anterior, slightly right). No ribs, intercostal spaces or acoustic windows; the controls do not represent intercostal placement.
+- Review of 30 September 2026 (`research/TTE_TEE_IYILESTIRME_RAPORU.md`): the three P1 findings and the code parts of the P2 findings are addressed; counterexample tests in `scripts/test-echo-training.mjs`.
 
 ## Checks
 

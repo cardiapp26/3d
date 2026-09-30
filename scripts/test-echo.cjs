@@ -117,7 +117,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.evaluate(target => window.cardiaEcho.selectView(target, { keepTask: true }), task.target);
     const solved = await page.evaluate(() => ({ task: window.cardiaEcho.getState().task, r: window.cardiaEcho.getResult() }));
     assert.equal(solved.r.view, task.target); assert.equal(solved.task.done, true, `back at the target view: task done (${task.target}: missing ${solved.r.missing}, wrong ${solved.r.wrong}, phase ${await page.evaluate(() => window.heart.getCycleState().phase)})`);
-    assert.match(await page.locator('.echo-feedback').textContent(), /Hedef görünüm bulundu/);
+    assert.match(await page.locator('.echo-task-status').textContent(), /Görev tamamlandı/, 'past success shown apart from the current cut');
     // A solved task unlocks the views; the language switch keeps the task and the pose.
     assert.equal(await page.locator('[data-echo-view]:disabled').count(), 0, 'views unlocked once the task is solved');
     await page.locator('[data-echo-action="task"]').click();
@@ -128,6 +128,66 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.locator('.echo-controls summary').nth(1).click();
     await page.locator('[data-echo-control="labels"]').uncheck();
     assert.equal(await page.evaluate(() => window.cardiaEcho.getState().labels), false);
+
+    // Every view at every sampled phase of the beat meets its criteria at the preset.
+    const phases = await page.evaluate(async () => {
+      const { measureEchoAnatomy, echoItems } = await import('/src/echo-anatomy.js');
+      const { evaluateView } = await import('/src/echo-training.js');
+      const { sectionMeshes } = await import('/src/echo-section.js');
+      const V = await import('/src/echo-views.js');
+      const gm = id => window.heart.getMeshes(id).filter(m => !m.userData.micro);
+      const A = window.heart.withRestPose(() => measureEchoAnatomy({ getMeshes: gm }));
+      const items = echoItems(gm), failures = [];
+      for (const view of [...V.TTE_VIEWS, ...V.TEE_VIEWS]) {
+        window.cardiaEcho.selectView(view.id);
+        const { frame } = window.cardiaEcho.getResult(), st = window.cardiaEcho.getState();
+        for (const phase of [0.1, 0.4, 0.55, 0.75]) {
+          window.heart.seekCycle(phase);
+          const e = evaluateView(sectionMeshes(items, frame), view, { sectorAngle: st.sectorAngle, depth: st.depth, frame, anatomy: A, label: x => x, lang: 'en' });
+          if (!e.achieved) failures.push(`${view.id}@${phase}: ${e.messages.join(' ')}`);
+        }
+      }
+      window.heart.seekCycle(0);
+      return failures;
+    });
+    assert.deepEqual(phases, [], 'all 16 views meet their criteria at 4 phases of the beat');
+
+    // A seeded task is reproducible and solvable with the keyboard alone (slider arrow keys).
+    await page.locator('[data-echo-modality="tte"]').click();
+    const seeded = await page.evaluate(() => { window.cardiaEcho.startTask('tte', { seed: 7 }); const a = window.cardiaEcho.getState(); window.cardiaEcho.startTask('tte', { seed: 7 }); const b = window.cardiaEcho.getState(); return { a: [a.task.target, a.tte], b: [b.task.target, b.tte] }; });
+    assert.equal(JSON.stringify(seeded.a[1]), JSON.stringify(seeded.b[1]), 'same seed, same start pose');
+    await page.locator('.echo-controls summary').first().evaluate(el => { el.parentElement.open = true; });
+    for (const key of ['rotation', 'tilt', 'rock']) {
+      const value = await page.evaluate(k => window.cardiaEcho.getState().tte[k], key);
+      await page.locator(`[data-echo-control="${key}"]`).focus();
+      for (let i = 0; i < Math.abs(value); i++) await page.keyboard.press(value > 0 ? 'ArrowLeft' : 'ArrowRight');
+    }
+    const keyboard = await page.evaluate(() => ({ task: window.cardiaEcho.getState().task, tte: window.cardiaEcho.getState().tte }));
+    assert.ok(keyboard.task.done, `task solved with the keyboard (${JSON.stringify(keyboard.tte)})`);
+    await page.locator('[data-echo-action="task"]').click();   // new task
+    await page.evaluate(() => { const s = window.cardiaEcho.getState(); if (s.task) window.cardiaEcho.selectView(s.view); });
+
+    // Enlarge while frozen: the sector redraws at the new size, the frozen phase stays.
+    const before = await page.evaluate(() => ({ h: document.querySelector('.echo-canvas').height, phase: window.heart.getCycleState().phase, playing: window.heart.getCycleState().playing }));
+    await page.locator('[data-echo-action="size"]').click();
+    const after = await page.evaluate(() => ({ h: document.querySelector('.echo-canvas').height, css: document.querySelector('.echo-canvas').clientHeight, phase: window.heart.getCycleState().phase }));
+    assert.ok(after.css === 440 && after.h > before.h, 'enlarged sector redrawn');
+    assert.equal(after.phase, before.phase, 'frozen phase unchanged by the resize');
+    await page.locator('[data-echo-action="size"]').click();
+
+    // Interaction to image: probe slider input to a redrawn sector (synchronous refresh), p95.
+    const latency = await page.evaluate(() => {
+      const input = document.querySelector('[data-echo-control="rotation"]'), times = [];
+      for (let i = 0; i < 40; i++) {
+        const t0 = performance.now();
+        input.value = String((i % 20) - 10);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        times.push(performance.now() - t0);
+      }
+      times.sort((a, b) => a - b);
+      return { p50: times[20], p95: times[37] };
+    });
+    assert.ok(latency.p95 < 50, `slider-to-image p95 ${latency.p95.toFixed(1)} ms`);
 
     // Speed: sections per second on this machine (report target: interactive).
     const ms = await page.evaluate(async () => {
@@ -147,7 +207,14 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Echo probe and imaging plane').visible), false);
 
     assert.deepEqual(errors, []);
-    console.log(`PASS echo: 16 views at preset, A4C/ME4C orientation, 0/180 mirror, separate TEE motions, phase-locked section, freeze, task, ${ms.toFixed(1)} ms per section`);
+    // Phone: the echo panel fits without horizontal scrolling.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${APP}/#/mode/echo`);
+    await page.waitForSelector('#viewport[data-model-ready=true]');
+    await page.waitForFunction(() => window.cardiaEcho?.getResult());
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'phone: no horizontal overflow');
+
+    console.log(`PASS echo: 16 views at preset and at 4 phases, A4C/ME4C orientation, 0/180 mirror, separate TEE motions, phase-locked section, freeze, seeded keyboard task, enlarge while frozen, p95 ${latency.p95.toFixed(1)} ms, ${ms.toFixed(1)} ms per section, phone`);
   } finally {
     await browser.close();
   }

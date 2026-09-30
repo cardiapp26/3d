@@ -26,12 +26,37 @@ export function rotate(v, axis, deg) {
 
 const add = (a, b, s = 1) => [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s];
 
+/**
+ * Schematic chest surface for TTE contact: an ellipsoid { center, radii }
+ * around the heart. No ribs, intercostal spaces or acoustic windows.
+ */
+const ellipsoidScale = (v, surface) => Math.hypot(...v.map((x, i) => x / surface.radii[i]));
+
+/** Where the ray from `from` along `dir` leaves the ellipsoid (from inside), or null. */
+export function surfaceHit(from, dir, surface) {
+  const o = from.map((x, i) => (x - surface.center[i]) / surface.radii[i]);
+  const d = dir.map((x, i) => x / surface.radii[i]);
+  const a = d[0] ** 2 + d[1] ** 2 + d[2] ** 2, b = 2 * (o[0] * d[0] + o[1] * d[1] + o[2] * d[2]), c = o[0] ** 2 + o[1] ** 2 + o[2] ** 2 - 1;
+  const disc = b * b - 4 * a * c;
+  if (disc < 0) return null;
+  const s = (-b + Math.sqrt(disc)) / (2 * a);
+  return s > 0 ? add(from, dir, s) : null;
+}
+
+/** A point put back on the ellipsoid along the line from its centre (contact kept while sliding). */
+export function ontoSurface(point, surface) {
+  const rel = point.map((x, i) => x - surface.center[i]);
+  const k = ellipsoidScale(rel, surface) || 1;
+  return rel.map((x, i) => surface.center[i] + x / k);
+}
+
 /** Limits of the TTE adjustments (degrees and atlas units). */
 export const TTE_LIMITS = Object.freeze({ rotation: 90, tilt: 35, rock: 30, slide: 0.4 });
 
 /**
  * TTE image frame from a window's base frame and the student's adjustments.
- * @param {{ origin: number[], beam: number[], lateral: number[] }} base
+ * @param {{ origin: number[], beam: number[], lateral: number[], surface?: { center: number[], radii: number[] } }} base
+ *   with `surface`, the transducer stays on the schematic chest surface while it slides
  * @param {{ rotation?: number, tilt?: number, rock?: number, slideLateral?: number, slideElevation?: number }} adj
  */
 export function tteFrame(base, adj = {}) {
@@ -41,7 +66,8 @@ export function tteFrame(base, adj = {}) {
   // and slide then act on the turned plane, so their names stay true at any rotation.
   let lateral = rotate(start.lateral, start.beam, clamp(adj.rotation, TTE_LIMITS.rotation));
   const normal = cross(start.beam, lateral);
-  const origin = add(add(start.origin, lateral, clamp(adj.slideLateral, TTE_LIMITS.slide)), normal, clamp(adj.slideElevation, TTE_LIMITS.slide));
+  const slid = add(add(start.origin, lateral, clamp(adj.slideLateral, TTE_LIMITS.slide)), normal, clamp(adj.slideElevation, TTE_LIMITS.slide));
+  const origin = base.surface ? ontoSurface(slid, base.surface) : slid;
   // Rock: within the plane (about its normal).
   let beam = rotate(start.beam, normal, clamp(adj.rock, TTE_LIMITS.rock));
   lateral = rotate(lateral, normal, clamp(adj.rock, TTE_LIMITS.rock));
@@ -58,7 +84,7 @@ export const TEE_LIMITS = Object.freeze({ rotation: 90, flexion: [-30, 100], lat
  * carrying the transducer face (`face`: its direction at the start).
  * @param {number[][]} points
  */
-export function createProbePath(points, { smoothing = 3, face = [0, 0, 1] } = {}) {
+export function createProbePath(points, { smoothing = 3, face = [0, 0, 1], wideFrom } = {}) {
   let pts = points.map(p => [...p]);
   // Chaikin corner cutting keeps the ends and rounds the bends.
   for (let pass = 0; pass < smoothing; pass++) {
@@ -105,33 +131,60 @@ export function createProbePath(points, { smoothing = 3, face = [0, 0, 1] } = {}
     }
     return best;
   }
-  return { points: pts, length, at, levelAt };
+  return { points: pts, length, at, levelAt, wideFrom };
 }
+
+// Distal bending section of the TEE scope (atlas units, 1 unit about 34 mm):
+// flexion bends this length of the tip into an arc, so the transducer moves,
+// not only turns. The oesophagus lets the tip swing only as far as its lumen;
+// the stomach allows more. Schematic: no wall contact force is modelled.
+export const BEND_LENGTH = 0.6;
+export const LUMEN = Object.freeze({ oesophagus: 0.3, stomach: 1.2 });
+
+/** Sideways travel of the tip for a bend of `theta` radians over BEND_LENGTH. */
+const sway = theta => (theta < 1e-6 ? 0 : (BEND_LENGTH * (1 - Math.cos(theta))) / theta);
 
 /**
  * TEE image frame on a probe path.
- * @param {{ at: (s: number) => { point: number[], tangent: number[] } }} path
+ * @param {{ at: (s: number) => { point: number[], tangent: number[], face: number[] }, length: number, wideFrom?: number }} path
  * @param {{ advance?: number, rotation?: number, flexion?: number, lateralFlexion?: number, omega?: number }} state
- *   rotation: + turns the transducer toward the patient's right; flexion: + ante, - retro;
- *   lateralFlexion: + toward the patient's left; omega: multiplane angle 0..180.
+ *   rotation: + turns the shaft (transducer) toward the patient's right; flexion: + ante, - retro;
+ *   lateralFlexion: + toward the patient's left (both bend the distal section: the tip moves);
+ *   omega: electronic multiplane angle 0..180 (turns the image plane about the beam; the tip does not move).
+ * @returns image frame plus tip (transducer position), shaft (tip direction), bend (applied, radians) and limited (lumen reached)
  */
 export function teeFrame(path, state = {}) {
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0));
-  const { point, tangent, face: restFace } = path.at(state.advance ?? 0.5);
-  let t = tangent;
-  let face = restFace;
-  face = rotate(face, t, clamp(state.rotation, -TEE_LIMITS.rotation, TEE_LIMITS.rotation));
-  // Flexion bends the tip (and the transducer face with it) toward the face.
-  const hinge = normalize(cross(t, face));
-  const flexion = clamp(state.flexion, ...TEE_LIMITS.flexion);
-  t = rotate(t, hinge, flexion);
-  face = rotate(face, hinge, flexion);
-  // Lateral flexion: the tip swings about the face direction.
-  t = rotate(t, face, clamp(state.lateralFlexion, -TEE_LIMITS.lateralFlexion, TEE_LIMITS.lateralFlexion));
+  const advance = clamp(state.advance ?? 0.5, 0, 1);
+  // The bending section starts BEND_LENGTH before the advance point: unbent, the tip is at the advance point.
+  const baseAt = path.at(Math.max(0, advance - BEND_LENGTH / path.length));
+  let t = baseAt.tangent;
+  let face = rotate(baseAt.face, t, clamp(state.rotation, -TEE_LIMITS.rotation, TEE_LIMITS.rotation));
+  const left = cross(face, t);
+  const ante = (clamp(state.flexion, ...TEE_LIMITS.flexion) * Math.PI) / 180;
+  const side = (clamp(state.lateralFlexion, -TEE_LIMITS.lateralFlexion, TEE_LIMITS.lateralFlexion) * Math.PI) / 180;
+  let theta = Math.hypot(ante, side);
+  const lumen = path.wideFrom !== undefined && advance >= path.wideFrom ? LUMEN.stomach : LUMEN.oesophagus;
+  // The wall stops the tip: the largest bend whose sideways travel fits the lumen.
+  let limited = false;
+  if (sway(theta) > lumen) {
+    let lo = 0, hi = theta;
+    for (let k = 0; k < 40; k++) { const mid = (lo + hi) / 2; if (sway(mid) > lumen) hi = mid; else lo = mid; }
+    theta = lo; limited = true;
+  }
+  let tip = add(baseAt.point, t, BEND_LENGTH);
+  if (theta > 1e-6) {
+    const bend = normalize(add(face.map(v => v * ante), left, side));    // bend direction, across the shaft
+    tip = add(add(baseAt.point, t, (BEND_LENGTH * Math.sin(theta)) / theta), bend, sway(theta));
+    const hinge = normalize(cross(t, bend));
+    const deg = (theta * 180) / Math.PI;
+    t = rotate(t, hinge, deg);
+    face = rotate(face, hinge, deg);
+  }
   const omega = clamp(state.omega, ...TEE_LIMITS.omega);
-  const left = cross(face, t);                 // patient left at 0 degrees, shaft unturned
+  const imageLeft = cross(face, t);            // patient left at 0 degrees, shaft unturned
   const up = [-t[0], -t[1], -t[2]];            // cephalad at 90 degrees
   const w = (omega * Math.PI) / 180;
-  const lateral = add(left.map(v => v * Math.cos(w)), up, Math.sin(w));
-  return { ...imageFrame(add(point, face, 0.03), face, lateral), tip: point, shaft: t };
+  const lateral = add(imageLeft.map(v => v * Math.cos(w)), up, Math.sin(w));
+  return { ...imageFrame(add(tip, face, 0.03), face, lateral), tip, shaft: t, bend: theta, limited };
 }

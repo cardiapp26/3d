@@ -10,7 +10,7 @@ dialog#references a{color:#21493f}
 
 .wall-tools{border-top:1px solid #d8e0d5;border-bottom:1px solid #d8e0d5;padding:12px 0;margin:12px 0}.wall-tools summary{font-size:11px;cursor:pointer;color:#536e5b}.wall-tools p{font-size:10.5px;line-height:1.7;color:#869581}.wall-tools>label{font-size:11px;display:flex;justify-content:space-between;gap:5px;margin:14px 0 8px;color:#60745e}.wall-tools output{font-size:10px;white-space:nowrap}.wall-tools button{font-size:11px;border:1px solid #cbd7c5;background:transparent;color:#56704f;border-radius:4px;padding:7px;margin-top:12px}aside{max-height:calc(100vh - 127px);overflow:auto}@media(max-width:640px){aside{max-height:none}}
 
-/* C-ARM GANTRY & ANGIOGRAPHY JOYSTICK CONTROLS */
+/* C-ARM & ANGIOGRAPHY JOYSTICK CONTROLS */
 .carm-panel{position:relative;width:100%;margin:0 0 12px;background:rgba(14,24,21,0.94);border:1px solid rgba(52,160,137,0.38);border-radius:12px;color:#e3ede8;box-shadow:0 6px 20px rgba(0,0,0,0.18);transition:box-shadow 0.2s ease;user-select:none}
 .carm-panel.collapsed .carm-content{display:none}
 .carm-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(22,38,33,0.85);border-top-left-radius:11px;border-top-right-radius:11px;border-bottom:1px solid rgba(52,160,137,0.25);cursor:pointer}
@@ -765,8 +765,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 
 /* Practice loop: Explore / Learn / Test yourself. */
 .practice{display:grid;gap:10px;margin:0 0 14px}
-.practice-styles{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #cbd5cf;border-radius:7px;overflow:hidden}
-.practice-style{border:0;border-right:1px solid #cbd5cf;background:#fff;padding:7px 4px;min-height:34px;font-size:11.5px;font-weight:600;color:#52685b}
+.practice-styles{display:inline-grid;grid-template-columns:repeat(3,auto);gap:0;border:1px solid #cbd5cf;border-radius:5px;overflow:hidden}
+.practice-style{border:0;border-right:1px solid #cbd5cf;background:#fff;padding:3px 10px;min-height:24px;font-size:10.5px;font-weight:600;color:#52685b}
 .practice-style:last-child{border-right:0}
 .practice-style[aria-checked=true]{background:#244f43;color:#fff}
 .practice-style:focus-visible,.practice-btn:focus-visible{outline:3px solid #299f8a;outline-offset:-3px}
@@ -842,28 +842,65 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .egm-canvas{display:block;width:100%;height:240px;border-radius:6px;background:#0e1815}
 .egm-text{font-size:11px;line-height:1.55}
 
-/* Echocardiography mode: modality, views, sector, feedback and probe controls */
+/* Echocardiography mode: modality, views, sector, feedback and probe controls (compact) */
+[data-app-mode=echo] #carm-panel,[data-app-mode=echo] .practice{display:none!important}
 .echo-panel-mount{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e3e8df}
-.echo-modality{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0 6px}
-.echo-modality button,.echo-views button,.echo-task-row button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:4px;padding:5px 6px;font-size:10.5px}
-.echo-modality button[aria-pressed=true]{background:#244f43;color:#fff;border-color:#244f43;font-weight:600}
-.echo-views{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.echo-modality{display:inline-grid;grid-template-columns:auto auto;gap:0;margin:0 0 6px;border:1px solid #cbd7c5;border-radius:4px;overflow:hidden}
+.echo-modality button{border:0;border-radius:0;padding:3px 12px;font-size:10.5px;background:transparent;color:#3f5c4b}
+.echo-modality button[aria-pressed=true]{background:#244f43;color:#fff;font-weight:600}
+.echo-views{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:3px;margin-bottom:6px}
+.echo-views button,.echo-task-row button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:3px;padding:2px 4px;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .echo-views button[aria-pressed=true]{background:#0b0f0e;color:#39e8ad;border-color:#0b0f0e}
 .echo-views button:disabled,.echo-modality button:disabled{opacity:.45;cursor:not-allowed}
-.echo-title{font-size:13px;margin:8px 0 0}
-.echo-sub{font-size:10px!important;color:#5f6f64!important;margin:2px 0 6px!important}
+.echo-title{font-size:12px;margin:4px 0}
+.echo-sub{font-size:9.5px!important;color:#5f6f64!important;margin:3px 0 4px!important}
 .echo-canvas{display:block;width:100%;height:260px;border-radius:6px;background:#050807}
-.echo-feedback{min-height:3.4em;border-left:3px solid #c9a227;background:#fbf6e6;border-radius:4px;padding:6px 9px;margin:8px 0}
+.echo-canvas.is-large{height:440px}
+.echo-task-status{font-size:10.5px!important;font-weight:600;color:#1f7a52!important;background:#eaf6ef;border-radius:4px;padding:3px 8px;margin:4px 0!important}
+.echo-feedback{min-height:2.6em;border-left:3px solid #c9a227;background:#fbf6e6;border-radius:4px;padding:4px 8px;margin:4px 0 6px}
 .echo-feedback[data-state=ok]{border-left-color:#2f9e6d;background:#eaf6ef}
-.echo-feedback p{font-size:11px;line-height:1.45;margin:3px 0;color:#4d5e52}
-.echo-task-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.echo-feedback p{font-size:10.5px;line-height:1.4;margin:2px 0;color:#4d5e52}
+.echo-task-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:3px}
 .echo-task-row button[aria-pressed=true]{background:#fcd34d;border-color:#e0b72f;color:#3a2e05}
-.echo-controls{border-top:1px solid #e1e7e2;margin-top:8px;padding-top:6px}
+.echo-controls{border-top:1px solid #e1e7e2;margin-top:6px;padding-top:4px}
 .echo-controls summary{font-size:11px;font-weight:600;color:#536e5b;cursor:pointer}
-.echo-slider{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:10.5px;color:#5f7365;margin:8px 0}
+.echo-slider{display:grid;grid-template-columns:1fr auto;gap:0 8px;font-size:10.5px;color:#5f7365;margin:4px 0}
 .echo-slider input{grid-column:1/-1}
 .echo-slider output{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#2d5a47}
 .echo-select select{grid-column:1/-1;margin:2px 0}
-.echo-check{margin:8px 0}
+.echo-check{margin:6px 0}
 .echo-limits{font-size:10px!important;line-height:1.55!important;color:#5f6f64!important}
-.echo-task-row .echo-look{grid-column:1/-1}
+
+/* Physical examination: auscultation / jugular venous pulse sub-tabs and the JVP panel */
+.exam-subtabs{display:inline-grid;grid-template-columns:auto auto;border:1px solid #cbd7c5;border-radius:5px;overflow:hidden;margin:0 0 8px}
+.exam-subtabs button{border:0;background:#fff;color:#3f5c4b;padding:4px 12px;font-size:11px;font-weight:600}
+.exam-subtabs button[aria-selected=true]{background:#244f43;color:#fff}
+.jvp-panel .eyebrow{margin:0 0 6px}
+.jvp-controls{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:6px}
+.jvp-field{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#5f7365}
+.jvp-select{margin:0;padding:3px 6px;width:auto;font-size:11px}
+.jvp-resp{display:inline-grid;grid-template-columns:auto auto;border:1px solid #cbd7c5;border-radius:4px;overflow:hidden}
+.jvp-resp button{border:0;background:#fff;color:#3f5c4b;padding:3px 9px;font-size:10.5px}
+.jvp-resp button[aria-pressed=true]{background:#2f6f8f;color:#fff}
+.jvp-toggles{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:10.5px;color:#5f7365}
+.jvp-check{display:inline-flex;gap:4px;align-items:center}
+.jvp-freeze{border:1px solid #cbd7c5;background:transparent;border-radius:4px;padding:2px 8px;font-size:10.5px;color:#3f5c4b}
+.jvp-waves{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px}
+.jvp-waves button{border:1px solid #d9b8c4;background:#fff;color:#7a2e48;border-radius:3px;padding:2px 7px;font-size:10.5px}
+.jvp-waves button[aria-pressed=true]{background:#b83b5e;border-color:#b83b5e;color:#fff}
+.jvp-canvas{display:block;width:100%;height:250px;border:1px solid #e3e8df;border-radius:6px;background:#fff;cursor:pointer}
+.jvp-canvas:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
+.jvp-readout{font-size:11px!important;color:#2d4a3e!important;font-weight:600;margin:6px 0!important}
+.jvp-card{background:#f6eff2;border-left:3px solid #b83b5e;border-radius:4px;padding:6px 9px;margin:6px 0}
+.jvp-card-title{font-size:12px;margin:0 0 3px}
+.jvp-card p{font-size:11px;line-height:1.45;margin:3px 0;color:#4d5e52}
+.jvp-resp-note{color:#2f6f8f!important;font-weight:600}
+.jvp-note{font-size:10px!important;line-height:1.5!important;color:#5f6f64!important}
+.jvp-more summary{font-size:11px;font-weight:600;color:#536e5b;cursor:pointer}
+.jvp-questions{font-size:11px;color:#4d5e52;padding-left:18px;margin:4px 0}
+.jvp-panel [hidden]{display:none!important}
+.jvp-field{max-width:100%;min-width:0}
+.jvp-field .jvp-select{min-width:0;max-width:100%;flex:1 1 auto;text-overflow:ellipsis}
+.jvp-result{font-size:11px!important;font-weight:600;margin:4px 0!important;padding:4px 8px;border-radius:4px;background:#eef3f6;color:#2f5a73!important}
+.jvp-result[data-positive=true]{background:#f9ece6;color:#8a3b1c!important}
+.jvp-params{font-size:10px;color:#5f6f64;padding-left:18px;margin:2px 0 4px}
