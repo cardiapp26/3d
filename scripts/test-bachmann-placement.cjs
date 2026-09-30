@@ -116,7 +116,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await frames();
     assert.equal(await page.locator('.scene-label:not([hidden])').count(), 0, 'no identity labels over the fluoroscopy image');
     if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click();
-    await page.locator('[data-mode=atria]').click();
+    await page.locator('[data-mode=atria]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Bachmann pacing target').visible), false);
     await page.waitForTimeout(300);
     assert.deepEqual((await page.locator('.scene-label:not([hidden])').allTextContents()).sort(), ['Coumadin sırtı', 'LAA ostiyum işareti'], 'atria mode: LAA ring and Coumadin ridge labels');
@@ -172,7 +172,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.ok(la.top > la.lspvY && la.bottom < la.lspvY, 'ridge runs down past the superior vein');
     assert.match(await page.locator('#scene-context').textContent(), /^02 · Sol atriyum & LAA/);
     // RA mode: the crista is shown, selectable and labelled.
-    await page.locator('[data-mode=ra]').click();
+    await page.locator('[data-mode=ra]').dispatchEvent('click');
     await page.waitForTimeout(300);
     assert.equal(await page.evaluate(() => { let c; window.heart.scene.traverse(o => { if (o.userData.id === 'crista-terminalis') c = o; }); return c.visible; }), true, 'crista shown in the RA mode');
     await page.locator('#structure-select').selectOption('crista-terminalis');

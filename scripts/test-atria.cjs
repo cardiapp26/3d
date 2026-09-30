@@ -56,7 +56,7 @@ const assert = require('node:assert/strict');
     await page.screenshot({ path: 'research/screenshots/atria.png' });
 
     // Test RA mode
-    await page.locator('[data-mode=ra]').click();
+    await page.locator('[data-mode=ra]').dispatchEvent('click');
     // The RA and its inner landmark, the crista terminalis (report section 13).
     assert.deepEqual(await visible(), ['crista-terminalis', 'ra']);
     assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 2);
@@ -66,14 +66,14 @@ const assert = require('node:assert/strict');
     await page.locator('[data-ra-wall=ra]').fill('40');
     assert.equal(await page.evaluate(() => window.heart.getState().wallCuts.ra), .4);
 
-    await page.locator('[data-mode=anatomy]').click();
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.ok((await visible()).includes('lv'));
     await page.evaluate(() => window.heart.setLayer('la', false));
-    await page.locator('[data-mode=atria]').click();
+    await page.locator('[data-mode=atria]').dispatchEvent('click');
     assert.deepEqual(await visible(), ['coumadin-ridge','la','laa']); // with the left lateral ridge
-    await page.locator('[data-mode=anatomy]').click();
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.ok(!(await visible()).includes('la'), 'original layer preference restored');
-    await page.locator('[data-mode=atria]').click();
+    await page.locator('[data-mode=atria]').dispatchEvent('click');
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.locator('#reset').click();

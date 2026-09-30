@@ -1,5 +1,10 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
+// Layers and tools open as a drawer from the header tabs (tablet and desktop).
+const openDrawer = async (page, id) => {
+  const tab = page.locator(`[data-drawer=${id}]`);
+  if (await tab.getAttribute('aria-expanded') !== 'true') await tab.click();
+};
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
@@ -16,6 +21,7 @@ const assert = require('node:assert/strict');
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'la').visible), false);
     await page.screenshot({ path: 'research/screenshots/mitral-scallops.png' });
     // Valve substructures start collapsed in the layer panel.
+    await openDrawer(page, 'layers');
     await page.locator('[data-group=valves] .group-toggle').click();
     await page.locator('input[data-layer="mitral-posterior"]').uncheck();
     await page.waitForFunction(() => [...document.querySelectorAll('.mitral-scallop-label')].filter(el => !el.hidden).length === 3);
@@ -33,7 +39,7 @@ const assert = require('node:assert/strict');
     await page.locator('#reset').click();
     await page.waitForSelector('.mitral-scallops[hidden]', { state: 'attached' });
     assert.equal(await page.evaluate(() => window.heart.getState().mitralFocus), false);
-    await page.locator('[data-mode=angiography]').click();
+    await page.locator('[data-mode=angiography]').dispatchEvent('click');
     await page.locator('[data-view=mitral]').click();
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
     await page.waitForSelector('.mitral-scallops:not([hidden])');

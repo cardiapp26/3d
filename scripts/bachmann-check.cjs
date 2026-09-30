@@ -1,6 +1,11 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+// Layers and tools open as a drawer from the header tabs (tablet and desktop).
+const openDrawer = async (page, id) => {
+  const tab = page.locator(`[data-drawer=${id}]`);
+  if (await tab.getAttribute('aria-expanded') !== 'true') await tab.click();
+};
 (async () => {
   const { createServer } = await import('vite');
   const server = await createServer({ server: { host: '127.0.0.1', port: 5186 }, logLevel: 'error' });
@@ -40,11 +45,12 @@ const fs = require('node:fs');
     }), 'endocardial teaching target is distinct from epicardial band anchor');
     fs.mkdirSync('research/screenshots', {recursive:true});
     await page.screenshot({path:'research/screenshots/bachmann-anatomy.png'});
+    await openDrawer(page, 'layers');
     await page.locator('[data-layer=bachmann]').uncheck();
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'bachmann').visible), false);
     await page.locator('#reset').click();
     assert.equal(await page.evaluate(() => window.heart.getState().visibility.bachmann), true);
-    await page.locator('[data-mode=bachmann]').click();
+    await page.locator('[data-mode=bachmann]').dispatchEvent('click');
     await page.locator('#steps [data-step="1"]').click();
     await settle();
     assert.match((await leads())[0].name, /Appendage/);
@@ -74,19 +80,20 @@ const fs = require('node:fs');
     assert.equal(await page.evaluate(() => window.heart.getState().fluoroscopy), false);
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
     assert.deepEqual(await leads(), []);
-    await page.locator('[data-mode=bachmann]').click();
+    await page.locator('[data-mode=bachmann]').dispatchEvent('click');
     await page.locator('#steps [data-step="3"]').click();
     assert.match((await leads())[0].name, /Bachmann/, 'lesson can resume after reset');
-    await page.locator('[data-mode=pacemaker]').click();
+    await page.locator('[data-mode=pacemaker]').dispatchEvent('click');
     for (const [step, expected] of [[0,/Appendage/],[1,/RV/],[2,/CSP/],[3,/CRT/]]) {
       await page.locator(`#steps [data-step="${step}"]`).click();
       assert.equal((await leads()).length, 1);
       assert.match((await leads())[0].name, expected);
     }
-    await page.locator('[data-mode=anatomy]').click();
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.deepEqual(await leads(), []);
     await page.locator('#structure-select').selectOption('bachmann');
     assert.match(await page.locator('#structure-title').textContent(), /Bachmann/);
+    await openDrawer(page, 'layers');
     await page.locator('input[data-layer=conduction]').uncheck();
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s=>s.id==='bachmann').visible), false);
     assert.deepEqual(errors, []);

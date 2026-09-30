@@ -1,5 +1,6 @@
 import { createSeptalDefectsPanel } from './septal-defects-panel.js';
 import { createPanelShell } from './panel-shell.js';
+import { createHeaderTabs } from './header-tabs.js';
 import { createQuickSearch, rememberMode } from './quick-search.js';
 import { createPractice } from './practice.js';
 import { DEFECT_TYPES } from './septal-defects-data.js';
@@ -32,6 +33,8 @@ const MODE_KEYS = 9;
 
 // Right-panel tabs and phone sheets; created once the panels exist.
 let panelShell = null;
+// Header mode menus and the Layers / Tools drawer (tablet and desktop).
+let headerTabs = null;
 // Explore / Learn / Test yourself loop; created with the panel shell.
 let practice = null;
 
@@ -41,7 +44,14 @@ function renderModeNav() {
   const button = ([id, n, t]) => `<button class="mode ${id === 'anatomy' ? 'active' : ''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> ${Number(n) <= MODE_KEYS ? `<kbd class="mode-kbd">${Number(n)}</kbd>` : ''}<b>↗</b></button>`;
   const grouped = new Set(MODE_GROUPS.flatMap(([, ids]) => ids));
   const rest = getUiModes().filter(([id]) => !grouped.has(id));
-  return MODE_GROUPS.map(([key, ids]) => `<div class="mode-group-label" data-i18n="${key}">${getTranslation(key)}</div>${ids.filter(id => byId.has(id)).map(id => button(byId.get(id))).join('')}`).join('') + rest.map(button).join('');
+  // Each group is a header tab with a drop-down menu; on phones the tab hides
+  // and the label heads the list in the Modes sheet.
+  const group = ([key, ids]) => `<div class="mode-group" data-mode-group="${key}">
+      <button type="button" class="mode-group-tab" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${key}"><span class="mode-group-name" data-i18n="${key}">${getTranslation(key)}</span><span class="mode-group-current"></span><span class="mode-group-caret" aria-hidden="true">▾</span></button>
+      <div class="mode-group-label" data-i18n="${key}">${getTranslation(key)}</div>
+      <div class="mode-group-menu" id="menu-${key}">${ids.filter(id => byId.has(id)).map(id => button(byId.get(id))).join('')}</div>
+    </div>`;
+  return MODE_GROUPS.map(group).join('') + rest.map(button).join('');
 }
 function layerRow(id, key, color, checked = true) {
   return `<label class="layer"><i style="background:${color}"></i><span data-i18n="${key}">${getTranslation(key)}</span><input type="checkbox" data-layer="${id}"${checked ? ' checked' : ''}></label>`;
@@ -75,10 +85,16 @@ app.innerHTML = `
     <button id="sources"><span data-i18n="referencesBtn">${getTranslation('referencesBtn')}</span></button>
   </div>
 </header>
+<div id="header-tabs" class="header-tabs" role="toolbar">
+  <nav id="mode-nav" aria-label="Learning modes">${renderModeNav()}</nav>
+  <div class="drawer-tabs">
+    <button type="button" class="drawer-tab" data-drawer="layers" aria-expanded="false" aria-controls="mobile-aside-sheet"><span class="drawer-tab-icon" aria-hidden="true">◧</span><span class="drawer-tab-label"></span></button>
+    <button type="button" class="drawer-tab" data-drawer="tools" aria-expanded="false" aria-controls="mobile-aside-sheet" hidden><span class="drawer-tab-icon" aria-hidden="true">⚒</span><span class="drawer-tab-label"></span></button>
+  </div>
+</div>
 <div class="workspace">
-  <aside>
+  <aside id="mobile-aside-sheet">
     <div id="aside-search" class="aside-search"></div>
-    <nav aria-label="Learning modes">${renderModeNav()}</nav>
     <section id="defect-tools" hidden></section>
     <section id="atria-tools" hidden>
       ${[['la','atriaFocusLa'],['laa','atriaFocusLaa']].map(([id,key])=>`<button data-atria-focus="${id}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
@@ -549,11 +565,12 @@ try {
 }
 
 // The bottom bars (hint row, camera presets, viewport inset) stack on top of
-// the cycle panel; publish its live height so CSS can position them.
+// the cycle panel and the layers drawer ends above them; publish its live
+// height on the workspace so CSS can position both.
 const cyclePanelEl = document.querySelector('#cycle-panel');
-const mainPanelEl = document.querySelector('main');
-if (cyclePanelEl && mainPanelEl) {
-  const syncCycleHeight = () => mainPanelEl.style.setProperty('--cycle-h', `${cyclePanelEl.offsetHeight}px`);
+const workspaceEl = document.querySelector('.workspace');
+if (cyclePanelEl && workspaceEl) {
+  const syncCycleHeight = () => workspaceEl.style.setProperty('--cycle-h', `${cyclePanelEl.offsetHeight}px`);
   new ResizeObserver(syncCycleHeight).observe(cyclePanelEl);
   syncCycleHeight();
 }
@@ -666,6 +683,7 @@ panelShell = createPanelShell({
   getLimits: () => getTranslation('referencesLimits').replace(/^[^:]{1,40}:\s*/, ''),
   openReferences: () => document.querySelector('#sources')?.click()
 });
+headerTabs = createHeaderTabs({ getLang: getContentLanguage });
 
 const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'Bulgu', en: 'Findings' }, onShow: () => practice?.refresh() });
 practice = createPractice({
@@ -1008,6 +1026,7 @@ function setMode(newMode, updateUrl = true) {
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
+  headerTabs?.refresh();
   filterAtrialOptions();
   if (mode === 'atria') {
     document.querySelectorAll('[data-atria-wall]').forEach(input => {
@@ -1645,6 +1664,7 @@ function updateLanguageUI() {
   quickSearches.forEach(search => search.refresh());
   practice?.refresh();
   applyChromeTranslations();
+  headerTabs?.refresh();
   const currentLang = getContentLanguage();
   const langBtn = document.querySelector('#lang-btn');
   if (langBtn) langBtn.textContent = currentLang.toUpperCase();
@@ -1914,7 +1934,7 @@ function initPanelResizer() {
   function onPointerMove(e) {
     if (!isDragging) return;
     const dx = e.clientX - startX;
-    const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 252 - 320 - 8);
+    const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 320 - 8);
     const maxCap = Math.min(800, maxAllowed);
     const targetWidth = Math.round(Math.min(maxCap, Math.max(MIN_WIDTH, startWidth - dx)));
 
@@ -1959,7 +1979,7 @@ function initPanelResizer() {
       const currentWidth = article.getBoundingClientRect().width;
       const step = e.shiftKey ? 40 : 15;
       const delta = e.key === 'ArrowLeft' ? step : -step;
-      const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 252 - 320 - 8);
+      const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 320 - 8);
       const maxCap = Math.min(800, maxAllowed);
       const targetWidth = Math.round(Math.min(maxCap, Math.max(MIN_WIDTH, currentWidth + delta)));
       updateWidth(targetWidth);

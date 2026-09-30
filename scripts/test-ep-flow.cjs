@@ -175,7 +175,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.setViewportSize({ width: 1300, height: 900 });
 
     // Leaving the mode clears the zone and the circuit.
-    await page.locator('[data-mode=anatomy]').click();
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.getEpZone()), null);
     assert.deepEqual(errors, []);
     console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape');

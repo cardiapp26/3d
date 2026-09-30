@@ -10,7 +10,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/
     const page = await browser.newPage();
     await page.goto('http://127.0.0.1:5177');
     await page.waitForSelector('#viewport[data-model-ready=true]');
-    await page.locator('[data-mode="cath"]').click();
+    await page.locator('[data-mode="cath"]').dispatchEvent('click');
     await page.evaluate(() => window.heart.setCathStep(2));
     const route = await page.evaluate(() => {
       let catheter;

@@ -2,6 +2,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+// Layers and tools open as a drawer from the header tabs (tablet and desktop).
+const openDrawer = async (page, id) => {
+  const tab = page.locator(`[data-drawer=${id}]`);
+  if (await tab.getAttribute('aria-expanded') !== 'true') await tab.click();
+};
 
 const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
 
@@ -47,9 +52,10 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await input.focus();
     assert.equal(await page.locator('#header-search .quick-search-option').first().getAttribute('data-id'), 'anatomy', 'recent mode first');
     await page.keyboard.press('Escape');
-    await page.locator('[data-mode=anatomy]').click();
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
 
     // Hidden structure: search shows it, opens its group and selects it.
+    await openDrawer(page, 'layers');
     await page.locator('[data-group=valves] input[data-layer=valves]').uncheck();
     await input.fill('trikus');
     const first = page.locator('#header-search .quick-search-option').first();
@@ -71,7 +77,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(await input.inputValue(), '');
 
     // A structure outside an isolated mode leaves that mode.
-    await page.locator('[data-mode=atria]').click();
+    await page.locator('[data-mode=atria]').dispatchEvent('click');
     await input.fill('LAD');
     await page.keyboard.press('Enter');
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');

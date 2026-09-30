@@ -202,7 +202,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     // English, and leaving the mode hides the overlay and panel.
     await page.locator('#lang-btn').click();
     assert.match(await page.locator('.echo-panel .eyebrow').first().textContent(), /ECHOCARDIOGRAPHY/);
-    await page.locator('[data-mode="anatomy"]').click();
+    await page.locator('[data-mode="anatomy"]').dispatchEvent('click');
     assert.equal(await page.locator('#echo-panel').isHidden(), true);
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Echo probe and imaging plane').visible), false);
 

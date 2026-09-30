@@ -2,6 +2,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+// Layers and tools open as a drawer from the header tabs (tablet and desktop).
+const openDrawer = async (page, id) => {
+  const tab = page.locator(`[data-drawer=${id}]`);
+  if (await tab.getAttribute('aria-expanded') !== 'true') await tab.click();
+};
 
 const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
 
@@ -36,7 +41,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     // Lesson modes have their own steps: no practice switcher and no Findings tab there (compact right panel).
     assert.equal(await page.locator('.practice').isVisible(), false, 'practice switcher hidden in the EP lesson mode');
     assert.deepEqual(await page.locator('.panel-tabs [role=tab]:visible').allInnerTexts(), ['Öğren', 'Kaynaklar']);
-    await page.locator('[data-mode=anatomy]').click();
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.locator('.practice').isVisible(), true, 'practice switcher in the anatomy mode');
     assert.deepEqual(await page.locator('.panel-tabs [role=tab]').allInnerTexts(), ['Öğren', 'Bulgu', 'Kaynaklar']);
     assert.equal(await page.locator('#practice-banner').isVisible(), false, 'no task in Explore');
@@ -47,6 +52,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.match(await page.locator('#practice-banner').innerText(), /Görev 1\/5/);
 
     // A real click in the scene: hide the chambers, centre the tricuspid valve, click it.
+    await openDrawer(page, 'layers');
     for (const layer of ['chambers', 'veins', 'vessels', 'coronaries']) await page.locator(`input[data-layer=${layer}]`).uncheck();
     await page.evaluate(() => window.heart.selectStructure('tricuspid', true));
     await page.waitForTimeout(300);
@@ -94,7 +100,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(await page.getByRole('button', { name: 'Yanıtı göster' }).count(), 0, 'no reveal after one error in Test');
 
     // Leaving general anatomy ends the task; English labels.
-    await page.locator('[data-mode=angiography]').click();
+    await page.locator('[data-mode=angiography]').dispatchEvent('click');
     assert.equal((await state()).style, 'explore');
     await page.locator('#lang-btn').click();
     assert.deepEqual(await page.locator('.practice-style-select option').allInnerTexts(), ['Free', 'Guided task', 'Test yourself']);

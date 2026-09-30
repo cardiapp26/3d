@@ -20,7 +20,7 @@ Unregistered legacy catheter curves are no longer superimposed on this anatomy. 
 
 ## Ablation: Koch close-up, reference catheters, synthetic EGM (Mode 06)
 
-The Koch step opens in a Koch · RAO 30 close-up (Koch · LAO 45 in the left panel); the camera stays outside the heart and the coronaries and valve apparatus are hidden in front of the triangle. Scene labels state their source (CS mouth estimated, septal hinge from the atlas rim, AV node and slow-pathway target schematic). Magenta His and blue CS reference catheters and the optional example RF lesions (off by default) toggle in the left panel. Step 5 shows an explicitly synthetic six-channel electrogram (sinus, slow-pathway target, junctional rhythm during RF, VA block warning). Record: `research/ABLASYON_IYILESTIRME_RAPORU.md`. Run `npm run test:ep-koch` against the development server.
+The Koch step opens in a Koch · RAO 30 close-up (Koch · LAO 45 in the header Tools tab); the camera stays outside the heart and the coronaries and valve apparatus are hidden in front of the triangle. Scene labels state their source (CS mouth estimated, septal hinge from the atlas rim, AV node and slow-pathway target schematic). Magenta His and blue CS reference catheters and the optional example RF lesions (off by default) toggle in the same Tools tab. Step 5 shows an explicitly synthetic six-channel electrogram (sinus, slow-pathway target, junctional rhythm during RF, VA block warning). Record: `research/ABLASYON_IYILESTIRME_RAPORU.md`. Run `npm run test:ep-koch` against the development server.
 
 ## Echocardiography (Mode 12)
 

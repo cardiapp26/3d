@@ -164,7 +164,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-exam-view=jvp]').click();
     assert.match(await page.locator('.jvp-panel .eyebrow').textContent(), /JUGULAR VENOUS PULSE/);
     await page.locator('#lang-btn').click();
-    await page.locator('[data-mode=anatomy]').click();
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.getCycleState().speed), 1, 'slow motion restored when leaving the mode');
 
     // Phone: no horizontal overflow with the JVP panel.

@@ -9,6 +9,11 @@
  */
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
+// Layers and tools open as a drawer from the header tabs (tablet and desktop).
+const openDrawer = async (page, id) => {
+  const tab = page.locator(`[data-drawer=${id}]`);
+  if (await tab.getAttribute('aria-expanded') !== 'true') await tab.click();
+};
 
 const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
 const SHOTS = process.env.SHOT_DIR || null;
@@ -113,6 +118,7 @@ const SHOTS = process.env.SHOT_DIR || null;
 
     // Close-up views: RAO 30 and LAO 45 about the triangle, near.
     const view = async id => {
+      await openDrawer(page, 'tools');
       await page.locator(`[data-ep-view="${id}"]`).click();
       await page.waitForTimeout(100);
       await page.waitForSelector('#viewport[data-camera-settled=true]');
@@ -135,6 +141,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.equal(await page.locator('[data-ep-view="koch_lao"]').getAttribute('aria-pressed'), 'true');
 
     // Optional layers.
+    await openDrawer(page, 'tools');
     await page.locator('[data-ep-optional="his"]').uncheck();
     await page.locator('[data-ep-optional="lesions"]').check();
     const toggled = await page.evaluate(() => {
