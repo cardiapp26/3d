@@ -8,18 +8,19 @@ import { STATIONS, STATION_INFO } from './hemodynamics.js';
 import { CYCLE_SYNC as S, phaseToTime, timeToPhase } from './cardiac-cycle.js';
 import { ecgSample } from './ecg-trace.js';
 import { createCalculators, fmt, metricRows } from './hemo-panel-calculators.js';
+import { samplePvLoop, drawPvLoop } from './hemo-pv-loop.js';
 
 const TEXT = {
   tr: {
     scenario: 'Senaryo', presets: 'Hazır:', beats: 'Atım', resp: 'Solunum', pvc: 'Ekstrasistol (PVC)',
-    postPvc: 'PVC sonrası', insp: 'insp.', noChannel: 'Kanal seçin', metrics: 'Ölçümler',
+    postPvc: 'PVC sonrası', insp: 'insp.', noChannel: 'Kanal seçin', metrics: 'Ölçümler', pvLoop: 'P-V döngüsü', pvCanvas: 'Sol ventrikül basınç-hacim döngüsü (şematik)',
     gradAo: 'LV−Ao ort. gradyan', gradMi: 'LV−PCWP ort. gradyan', canvas: 'Eşzamanlı basınç traseleri ve EKG',
     badge: sc => `KH ${sc.hr}/dk · KD ${fmt(sc.co)} L/dk`,
     presetTitles: ['Aort darlığı: LV-Ao gradyanı', 'Mitral darlık: diyastolik gradyan', 'Sağ kalp: RA ve RV', 'Pulmoner arter ve kama basıncı']
   },
   en: {
     scenario: 'Scenario', presets: 'Presets:', beats: 'Beats', resp: 'Respiration', pvc: 'PVC beat',
-    postPvc: 'post-PVC', insp: 'insp', noChannel: 'Select a channel', metrics: 'Measurements',
+    postPvc: 'post-PVC', insp: 'insp', noChannel: 'Select a channel', metrics: 'Measurements', pvLoop: 'P-V loop', pvCanvas: 'Left ventricular pressure-volume loop (schematic)',
     gradAo: 'LV−Ao mean gradient', gradMi: 'LV−PCWP mean gradient', canvas: 'Simultaneous pressure tracings and ECG',
     badge: sc => `HR ${sc.hr} bpm · CO ${fmt(sc.co)} L/min`,
     presetTitles: ['Aortic stenosis: LV-Ao gradient', 'Mitral stenosis: diastolic gradient', 'Right heart: RA and RV', 'Pulmonary artery and wedge']
@@ -127,11 +128,15 @@ function buildDom() {
   const respLabel = el('label', 'hemo-control hemo-toggle');
   respLabel.append(refs.respBox, textEl('span', null, 'resp'));
   refs.pvcButton = Object.assign(textEl('button', 'hemo-pvc', 'pvc'), { type: 'button' });
+  refs.pvLoopButton = Object.assign(textEl('button', 'hemo-pvc hemo-pvloop-toggle', 'pvLoop'), { type: 'button' });
   const controls = el('div', 'hemo-controls');
-  controls.append(beatsLabel, respLabel, refs.pvcButton);
+  controls.append(beatsLabel, respLabel, refs.pvLoopButton, refs.pvcButton);
+  // LV pressure-volume loop (hemo-pv-loop.js), shown on demand or by a lesson step.
+  refs.pvWrap = el('div', 'hemo-canvas-wrap hemo-pv-wrap', null, { hidden: true });
+  refs.pvWrap.append(refs.pvCanvas = el('canvas', 'hemo-pv-canvas', null, { role: 'img' }));
   refs.hint = el('p', 'hemo-hint', null, { hidden: true });
   refs.grid = el('div', 'hemo-grid hemo-metrics');
-  refs.element.append(header, channelRow, presetRow, refs.canvasWrap, controls, refs.hint, textEl('h4', 'hemo-metrics-title', 'metrics'), refs.grid);
+  refs.element.append(header, channelRow, presetRow, refs.canvasWrap, controls, refs.pvWrap, refs.hint, textEl('h4', 'hemo-metrics-title', 'metrics'), refs.grid);
   return refs;
 }
 
@@ -272,7 +277,8 @@ export function createHemoPanel(root, options = {}) {
   const { hemo, getCycleState = () => ({}), onScenarioChange, onChannelsChange, onStationFocus } = options;
   if (!root || !hemo) throw new Error('createHemoPanel: root and options.hemo are required');
   let lang = options.lang === 'en' ? 'en' : 'tr';
-  const state = { channels: [...DEFAULT_CHANNELS], beats: 3, respiration: false, pvc: false, scenarioId: hemo.getScenario().id };
+  const state = { channels: [...DEFAULT_CHANNELS], beats: 3, respiration: false, pvc: false, pvLoop: false, scenarioId: hemo.getScenario().id };
+  let pvCache = { id: null, data: null };
   const ac = new AbortController();
   const on = (target, type, fn) => target.addEventListener(type, fn, { signal: ac.signal });
   let destroyed = false;
@@ -284,7 +290,7 @@ export function createHemoPanel(root, options = {}) {
   };
 
   root.textContent = '';
-  const { element, select, badge, pills, presetButtons, canvasWrap, canvas, beatsSelect, respBox, pvcButton, hint, grid } = buildDom();
+  const { element, select, badge, pills, presetButtons, canvasWrap, canvas, beatsSelect, respBox, pvcButton, pvLoopButton, pvWrap, pvCanvas, hint, grid } = buildDom();
   beatsSelect.value = String(state.beats);
   const calculators = createCalculators({ lang, signal: ac.signal });
   element.append(calculators.element);
@@ -309,6 +315,7 @@ export function createHemoPanel(root, options = {}) {
     for (const node of element.querySelectorAll('[data-k]')) node.textContent = T[node.dataset.k];
     presetButtons.forEach((b, i) => { b.title = T.presetTitles[i]; });
     canvas.setAttribute('aria-label', T.canvas);
+    pvCanvas.setAttribute('aria-label', T.pvCanvas);
     select.setAttribute('aria-label', T.scenario);
     badge.textContent = T.badge(hemo.getScenario());
   }
@@ -401,6 +408,16 @@ export function createHemoPanel(root, options = {}) {
     const cx = cache.g.left + phaseToTime(phase, bpm) * cache.g.beatW;   // cursor on the first beat
     Object.assign(ctx, { strokeStyle: COLORS.cursor, lineWidth: 1.3 });
     ctx.beginPath(); ctx.moveTo(cx, cache.g.top - 3); ctx.lineTo(cx, h - 3); ctx.stroke();
+    if (state.pvLoop) {
+      if (pvCache.id !== state.scenarioId) pvCache = { id: state.scenarioId, data: samplePvLoop(hemo) };
+      drawPvLoop(pvCanvas, pvCache.data, { phase, lang, dpr });
+    }
+  }
+  function applyPvLoop(enabled) {
+    state.pvLoop = Boolean(enabled);
+    pvWrap.hidden = !state.pvLoop;
+    pvLoopButton.setAttribute('aria-pressed', String(state.pvLoop));
+    draw();
   }
 
   on(select, 'change', () => {
@@ -420,6 +437,7 @@ export function createHemoPanel(root, options = {}) {
   on(beatsSelect, 'change', () => { state.beats = clampBeats(beatsSelect.value); draw(); });
   on(respBox, 'change', () => { state.respiration = respBox.checked; draw(); });
   on(pvcButton, 'click', () => panel.triggerPvc());
+  on(pvLoopButton, 'click', () => applyPvLoop(!state.pvLoop));
   const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => draw()) : null;
   observer?.observe(canvasWrap);
 
@@ -454,6 +472,9 @@ export function createHemoPanel(root, options = {}) {
     /** Toggle the post-PVC beat (the beat after the cursor's first beat). */
     triggerPvc() { state.pvc = !state.pvc; pvcButton.setAttribute('aria-pressed', String(state.pvc)); draw(); },
     setHint(text) { hint.textContent = text || ''; hint.hidden = !text; },
+    /** Show or hide the LV pressure-volume loop. */
+    setPvLoop(enabled) { applyPvLoop(enabled); },
+    getPvLoop: () => (state.pvLoop ? pvCache.data : null),
     setCalculatorsOpen(open) { calculators.element.open = Boolean(open); },
     destroy() {
       destroyed = true;
@@ -468,5 +489,6 @@ export function createHemoPanel(root, options = {}) {
   applyChannels(state.channels, false);
   calculators.prefill(hemo);
   pvcButton.setAttribute('aria-pressed', 'false');
+  pvLoopButton.setAttribute('aria-pressed', 'false');
   return panel;
 }

@@ -36,7 +36,11 @@ Three advanced cases (`src/ep-cases-advanced.js`, sources R16-R28 in the EP repo
 
 ## Blood flow view and WebXR
 
-The flow layer draws capsule streamlets stretched along their flow tangents plus a faint additive tube per stream whose opacity follows the cardiac-cycle gating (educational path cues, not CFD). On WebXR-capable devices the viewport shows AR / VR buttons (`src/xr.js`): the heart is placed room-scale in front of the viewer during the session and restored afterwards; devices without WebXR see no button.
+The flow layer draws capsule streamlets stretched along their flow tangents plus a faint additive tube per stream whose opacity follows the cardiac-cycle gating (educational path cues, not CFD). A velocity legend (relative jet scale) appears while the layer is on. On WebXR-capable devices the viewport shows AR / VR buttons (`src/xr.js`): the heart is placed room-scale in front of the viewer during the session and restored afterwards; devices without WebXR see no button. Quest browsers offer both modes; Safari on visionOS exposes WebXR VR sessions only, so no AR button appears there.
+
+## Pressure-volume loop (Mode 05, catheterization and hemodynamics)
+
+The hemodynamics panel can draw the LV pressure-volume loop of the current scenario (`src/hemo-pv-loop.js`; toggle "P-V loop" or the lesson's last step): the pressure is the scenario's LV curve, the volume the schematic LV volume curve scaled to the scenario's stroke volume and end-diastolic volume. The loop is traced by phase (filling, isovolumetric contraction, ejection, isovolumetric relaxation) with the cursor on the shared cardiac clock; ESPVR (Ees), EDPVR and the Ea line are teaching reference lines drawn through the loop corners, not fitted data, and regurgitant lesions show the forward stroke volume only (stated on the panel). Tests: `scripts/test-hemo-pv-loop.mjs`.
 
 ## Echocardiography (Modes 12 TTE, 13 TEE)
 

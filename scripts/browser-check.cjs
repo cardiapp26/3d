@@ -580,7 +580,8 @@ const openDrawer = async (page, id) => {
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
 
     // 10. Dialogs and modes
-    for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await page.locator(`[data-mode=${mode}]`).dispatchEvent('click');
+    // The EP menu also lists lesson-step entries with the same data-mode: pick the mode button itself.
+    for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await page.locator(`[data-mode=${mode}]:not([data-mode-step])`).dispatchEvent('click');
     await page.locator('#sources').click();
     assert.ok(await page.locator('dialog#references').isVisible());
     assert.match(await page.locator('#sources').textContent(), /Hakkında ve kaynaklar/);
@@ -630,7 +631,7 @@ const openDrawer = async (page, id) => {
     assert.match(angioText, /Spider|bifurkasyon/i, 'Angiography step 2 shows Spider projection clinical guide');
 
     // Mode 04 Ablation anatomy
-    await page.locator('[data-mode="ablation"]').dispatchEvent('click');
+    await page.locator('[data-mode="ablation"]:not([data-mode-step])').dispatchEvent('click');
     await page.locator('#steps button[data-step="1"]').click(); // Triangle of Koch
     await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
     await page.screenshot({ path: 'research/screenshots/mode-04-ablation-koch.png' });

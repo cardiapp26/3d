@@ -70,7 +70,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const meshes = [], meshMap = new Map();
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
   const cardiacCycle = createCardiacCycle({ bpm: 72, phase: 0.0, playing: false, rhythm: 'sinus' });
-  let channels = null, bloodFlow = null, overlayFollow = null;
+  let channels = null, bloodFlow = null, overlayFollow = null, flowLegend = null;
   let fluoroscopy=false, lastEmittedKey='', ablationStep=0;
   // Ablation lesson steps that frame Koch's triangle (labels, close-up views).
   const KOCH_LABEL_STEPS=[1,4];
@@ -181,6 +181,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     layers.conduction.visible = visibility.conduction !== false;
     layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro' && !mitralFocus && mode !== 'atria' && mode !== 'ra' && mode !== 'defects';
     if(bloodFlow) bloodFlow.setVisible(layers.flow.visible);
+  if(flowLegend) flowLegend.hidden=!layers.flow.visible;
     for(const m of meshes){
       if(m.userData.micro)continue;
       if(mode==='defects'){
@@ -817,6 +818,13 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }frame=requestAnimationFrame(animate);
   // WebXR (AR / MR / VR): feature-detected buttons on the viewport; the heart
   // group is placed room-scale during a session and restored afterwards.
+  // Velocity color legend of the flow layer (jet scale of blood-flow.js): relative speed, not measured velocity.
+  flowLegend=document.createElement('div');
+  flowLegend.className='flow-speed-legend';
+  flowLegend.hidden=!layers.flow.visible;
+  const legendLang=(globalThis.localStorage?.getItem?.('cardia_lang'))==='en'?'en':'tr';
+  flowLegend.innerHTML=`<span class="flow-speed-bar" aria-hidden="true"></span><span class="flow-speed-text" data-i18n="flowLegend">${legendLang==='en'?'Flow speed (relative): slow to fast':'Akış hızı (göreli): yavaştan hızlıya'}</span>`;
+  container.appendChild(flowLegend);
   const xrSupport=createXrSupport({renderer,subject:heart,container,getLang:()=>((globalThis.localStorage?.getItem?.('cardia_lang'))==='en'?'en':'tr'),
     onSessionStart(){cancelAnimationFrame(frame);controls.enabled=false;renderer.setAnimationLoop(animate);},
     onSessionEnd(){renderer.setAnimationLoop(null);controls.enabled=true;lastTime=performance.now();frame=requestAnimationFrame(animate);requestRender();}});

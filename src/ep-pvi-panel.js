@@ -16,7 +16,7 @@ const TEXT = {
     show: 'Kaydı göster', reset: 'Sıfırla',
     strip: (name) => `PVİ: ${name}`,
     sinus: 'Dört halka tamam: bu kayıtta sinüs ritmi ve sessiz PV kanalı gösterilir.',
-    limits: 'Sentetik öğretim egzersizi; halkalar şematiktir, lezyon seti veya enerji parametresi modellenmez. İzolasyonla AF\'nin sonlanması bu kurgunun sadeleştirmesidir: klinikte sonlanma garanti değildir ve geç rekonneksiyon nüksün başlıca nedenidir (R30). EP uzman incelemesi yapılmadı.'
+    limits: 'Sentetik öğretim egzersizi; halkalar şematiktir, lezyon seti veya enerji parametresi modellenmez. Giriş bloğu tek başına yetmeyebilir: ven içinden pacing ile çıkış bloğu da doğrulanır (R30, R31); bu egzersiz çıkış bloğunu modellemez. İzolasyonla AF\'nin sonlanması bu kurgunun sadeleştirmesidir: klinikte sonlanma garanti değildir ve geç rekonneksiyon nüksün başlıca nedenidir (R30). EP uzman incelemesi yapılmadı.'
   },
   en: {
     heading: 'Pulmonary vein isolation (interactive)',
@@ -25,7 +25,7 @@ const TEXT = {
     show: 'Show recording', reset: 'Reset',
     strip: (name) => `PVI: ${name}`,
     sinus: 'All four rings complete: this recording shows sinus rhythm and a silent PV channel.',
-    limits: 'Synthetic teaching exercise; the rings are schematic and no lesion set or energy parameter is modeled. AF ending with isolation is a simplification of this exercise: clinically termination is not guaranteed and late reconnection is the main cause of recurrence (R30). No electrophysiologist has reviewed it.'
+    limits: 'Synthetic teaching exercise; the rings are schematic and no lesion set or energy parameter is modeled. Entrance block alone may not suffice: exit block is also confirmed by pacing inside the vein (R30, R31); this exercise does not model exit block. AF ending with isolation is a simplification of this exercise: clinically termination is not guaranteed and late reconnection is the main cause of recurrence (R30). No electrophysiologist has reviewed it.'
   }
 };
 

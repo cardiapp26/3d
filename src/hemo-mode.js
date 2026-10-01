@@ -86,6 +86,7 @@ export function createHemoMode({ heart, mount, getLang, onFocus }) {
       p.setRespiration(Boolean(step.respiration));
       p.setHint?.(step.title || '');
       p.setCalculatorsOpen?.(Boolean(step.calculators));
+      p.setPvLoop?.(Boolean(step.pvLoop));
       showStations(step.channels);
       p.draw(heart.getCycleState());
     },
