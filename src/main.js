@@ -646,11 +646,13 @@ function syncEgm(lessonStep) {
   egmMount.hidden = !scenario;
   // Like echo: the signal panel comes first, so the structure card above the lesson steps its aside.
   if (scenario) document.documentElement.dataset.epOpen = 'true'; else delete document.documentElement.dataset.epOpen;
-  if (!scenario) { heart?.setEpZone?.(null); return; }
+  if (!scenario) { heart?.setEpZone?.(null); heart?.pvi?.setActive?.(false); return; }
   egmPanel ??= createEpPanel(egmMount, {
     getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
     // 3D arc of the active case's pathway zone (hidden while the diagnosis view is neutral).
-    onZone: (zoneId, extra) => heart?.setEpZone?.(zoneId, extra)
+    onZone: (zoneId, extra) => heart?.setEpZone?.(zoneId, extra),
+    // PVI exercise lesion rings (pvi-lab.js) of the Treatment tab.
+    getPvi: () => heart?.pvi || null
   });
   window.cardiaEp = egmPanel;   // test and console hook, like window.cardiaExam
   egmPanel?.openLesson(scenario);

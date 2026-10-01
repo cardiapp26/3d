@@ -239,3 +239,21 @@ export function unipolar(t, kind) {
   return { 'abl-uni': [mono('U', t - 8, 0.3, 5), mono('U', t + 6, -0.7, 8)] };
 }
 
+
+// His-refractory PVC clip: tachycardia with the third A advanced by `pull` ms
+// (and the following beat advanced with it) after a stimulus timed while the
+// His is refractory. pull = 0 models the negative (unchanged) response.
+export function hisPvcClip(tcl, aOffsets, pull, options = {}) {
+  const v1 = 150;
+  const vs = [v1, v1 + tcl];
+  const v3 = v1 + 2 * tcl;
+  const events = merge(
+    svtRun(vs, aOffsets, options),
+    // Beat 3: its H and V are already committed; the stimulus lands just after the H.
+    svtBeat(v3, {}, options),
+    Object.fromEntries(Object.entries(aOffsets).map(([ch, dt]) => [ch, [ev('A', v3 + dt - pull, ch === 'abl-d' ? 0.35 : 0.7)]])),
+    { rv: [ev('S', v3 - HV + 8, 0.5, 2)] },
+    svtBeat(v3 + tcl - pull, aOffsets, options)
+  );
+  return { events, markers: [{ t: v3 - HV + 8, label: { tr: 'S: His-refrakter PVC', en: 'S: His-refractory PVC' } }], windowMs: v3 + tcl - pull + 220 };
+}

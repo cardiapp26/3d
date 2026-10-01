@@ -99,6 +99,18 @@ export const EP_ZONE_TEXT = Object.freeze({
   'cs-mcv': {
     tr: { name: 'CS / orta kardiyak ven bağlantısı', risk: 'Koroner komşuluk ve ven hasarı: özel risk katmanı. Model gerçek arter-hedef uzaklığı veya termal hasar hesaplamaz; normal görünen CS bağlantıyı dışlamaz.' },
     en: { name: 'CS / middle cardiac vein connection', risk: 'Coronary neighbourhood and venous injury: a separate risk layer. The model computes no real artery distance or thermal injury; a normal-looking CS does not exclude the connection.' }
+  },
+  'lv-posterior-septum': {
+    tr: { name: 'LV posterior septum, posterior fasikül ağı (şematik)', risk: 'Fasiküler VT\'nin ablasyon hedefi P1/P2 potansiyelleriyle bulunur; işaret şematik bölgedir, haritalanmış devre değildir. Sol dal hasarı risk katmanıdır (R21, R23).' },
+    en: { name: 'LV posterior septum, posterior fascicular network (schematic)', risk: 'The ablation target of fascicular VT is found with the P1/P2 potentials; the marker is a schematic region, not a mapped circuit. Left bundle injury is the risk layer (R21, R23).' }
+  },
+  'right-bundle': {
+    tr: { name: 'Sağ dal (His-Purkinje, şematik)', risk: 'Sağ dal ablasyonu BBR devresini keser; kalıcı pacemaker gereksinimi ve ardından interfasiküler reentri gelişimi ayrı risklerdir (R26, R28).' },
+    en: { name: 'Right bundle branch (His-Purkinje, schematic)', risk: 'Right bundle ablation interrupts the BBR circuit; permanent pacing need and subsequent interfascicular reentry are separate risks (R26, R28).' }
+  },
+  'pv-antrum': {
+    tr: { name: 'Pulmoner ven antrumu (şematik halkalar)', risk: 'Hedef ven ağzı değil antrumdur; ven içinde enerji PV stenozu riskidir. Halkalar şematiktir, lezyon seti modellenmez; özofagus ve frenik komşuluğu ayrı risk katmanıdır (R30).' },
+    en: { name: 'Pulmonary vein antrum (schematic rings)', risk: 'The target is the antrum, not the vein lumen; energy inside the vein risks PV stenosis. The rings are schematic and no lesion set is modeled; esophageal and phrenic neighbourhood is a separate risk layer (R30).' }
   }
 });
 
@@ -230,6 +242,25 @@ export const EP_MANEUVERS = Object.freeze({
       pitfall: 'A late, concentric A alone does not prove a nodal mechanism; a decremental pathway can mimic nodal conduction.'
     }
   }
+,
+  'entrain-rv': {
+    tr: {
+      name: 'RV\'den entrainment (VT sırasında)',
+      goal: 'Taşikardinin eksitabl aralıklı reentri olduğunu ve devrenin pacing yerine uzaklığını göstermek.',
+      precondition: 'Siklus uzunluğu kararlı olmalı; pacing TCL\'den 20-40 ms kısa seçilir; her uyarı ventrikülü yakalamalı ve devrenin potansiyel dizisi (burada P1) pacing siklusuna uymalı.',
+      expected: 'P1 dizisi pacing hızına uyar ve yönü değişmez (ortodromik yakalama); son uyarıdan sonra VT kendi siklusuyla sürer.',
+      inference: 'Devre eksitabl aralıklı reentridir. PPI-TCL pacing yerinin devreye uzaklığını yansıtır; RV apeksinde uzun kalması devrenin LV septumunda olduğuyla uyumludur (R21).',
+      pitfall: 'Füzyon okunmadan "devrede" sonucu çıkarılamaz; sonlanan veya resetlenmeyen tren tanısal değildir. Değerler öğretim örneğidir, eşik değildir.'
+    },
+    en: {
+      name: 'Entrainment from the RV (during VT)',
+      goal: 'Show that the tachycardia is reentry with an excitable gap and how far the circuit sits from the pacing site.',
+      precondition: 'The cycle length must be stable; pace 20-40 ms below the TCL; every stimulus must capture the ventricle and the circuit potential sequence (P1 here) must follow the paced cycle.',
+      expected: 'The P1 sequence follows the paced rate without changing direction (orthodromic capture); after the last stimulus the VT resumes at its own cycle length.',
+      inference: 'The circuit is reentry with an excitable gap. PPI-TCL reflects the distance from the pacing site to the circuit; a long value at the RV apex fits a circuit on the LV septum (R21).',
+      pitfall: 'Without reading fusion no "in the circuit" conclusion is drawn; a terminated or non-reset train is not diagnostic. The values are teaching examples, not thresholds.'
+    }
+  }
 });
 
 const D = EP_DISCLAIMER;
@@ -277,6 +308,23 @@ export const EP_CASE_TEXT = Object.freeze({
   'ap-left-manifest': {
     tr: { name: 'Manifest sol lateral AP (WPW paterni)', endpoint: 'Mevcut AP iletim yönlerinin ortadan kalkması. Yalnız delta kaybı retrograd iletimi değerlendirmez; ayrı retrograd test gerekir (R3).' },
     en: { name: 'Manifest left lateral pathway (WPW pattern)', endpoint: 'Loss of the pathway\'s existing conduction directions. Delta loss alone does not assess retrograde conduction; a separate retrograde test is needed (R3).' }
+  }
+,
+  'at-parahisian': {
+    tr: { name: 'Para-Hisian fokal AT', endpoint: 'AT odağının kaybı. En erken A His bölgesindedir; sağ taraftan RF AV blok riski taşır ve nonkoroner kusp haritalaması alternatif penceredir. Bu katalog ablasyon reçetesi vermez; harita klibi karşılaştırma içindir (R18, R19, R20).' },
+    en: { name: 'Para-Hisian focal AT', endpoint: 'Loss of the focus. The earliest A sits in the His region; right-sided RF carries AV block risk and noncoronary cusp mapping is the alternative window. This catalog gives no ablation prescription; the mapping clip is a comparison (R18, R19, R20).' }
+  },
+  'fascicular-vt': {
+    tr: { name: 'Sol posterior fasiküler VT (verapamil duyarlı)', endpoint: 'VT\'nin yeniden indüklenememesi. Hedef P1/P2 potansiyel dizisiyle bulunur; sinüste antegrad Purkinje potansiyeli korunur ve HV değişmez. Sonlanım ölçütleri uzman incelemesi bekler (R21, R25).' },
+    en: { name: 'Left posterior fascicular VT (verapamil sensitive)', endpoint: 'Noninducibility of the VT. The target is found with the P1/P2 potential sequence; the antegrade Purkinje potential and the HV are preserved in sinus. The endpoint criteria await expert review (R21, R25).' }
+  },
+  'bbr-vt': {
+    tr: { name: 'Dal bloğu reentrisi (BBR) VT', endpoint: 'Sağ dal ablasyonuyla devrenin kesilmesi: sinüste RB potansiyeli kaybolur, QRS RBBB tipine döner ve HV uzar. Tuzak: ardından interfasiküler reentri gelişebilir; kalıcı pacing gereksinimi ayrı risktir (R26, R28).' },
+    en: { name: 'Bundle branch reentry (BBR) VT', endpoint: 'Interruption of the circuit by right bundle ablation: the sinus RB potential disappears, the QRS turns RBBB and the HV lengthens. Pitfall: interfascicular reentry can follow; permanent pacing need is a separate risk (R26, R28).' }
+  }
+  ,'af-pvi': {
+    tr: { name: 'AF: pulmoner ven izolasyonu', endpoint: 'Her venin giriş bloğu: Lasso kanalında ven potansiyellerinin kaybı (R30, R31). Bu egzersizde dört halkanın tamamlanması sinüse döner; klinikte AF sonlanımı garanti değildir ve geç rekonneksiyon nüksün başlıca nedenidir (R30).' },
+    en: { name: 'AF: pulmonary vein isolation', endpoint: 'Entrance block of each vein: loss of the vein potentials on the Lasso channel (R30, R31). In this exercise completing all four rings returns sinus; clinically AF termination is not guaranteed and late reconnection is the main cause of recurrence (R30).' }
   }
 });
 
@@ -548,6 +596,107 @@ export const EP_CLIP_TEXT = Object.freeze({
   'ap-lm-post-retro': {
     tr: { title: 'Ablasyon sonrası retrograd test', text: `${D.tr} RV pacing'de retrograd A konsantrik ve geç: AP'nin retrograd bacağı da yok. İki yön ayrı ayrı değerlendirildi; sonlanım budur.` },
     en: { title: 'Post-ablation retrograde test', text: `${D.en} With RV pacing the retrograde A is concentric and late: the retrograde limb of the pathway is gone too. Both directions were assessed separately; that is the endpoint.` }
+  }
+,
+  'pat-svt': {
+    tr: {
+      title: 'Uzun RP taşikardi, en erken A His bölgesinde',
+      neutral: `${D.tr} TCL 420 ms. En erken A kanalını, VA süresini ve P morfolojisinin dar olduğunu kendiniz okuyun.`,
+      evidence: 'Uzun RP, en erken A His kanallarında, dar P: para-Hisian fokal AT ile septal yol ve atipik AVNRT bu kayıtla ayrılmaz; manevra gerekir (R16, R19). Tek kayıt kesin tanı vermez.'
+    },
+    en: {
+      title: 'Long RP tachycardia, earliest A in the His region',
+      neutral: `${D.en} TCL 420 ms. Read the earliest A channel, the VA time and the narrow P morphology yourself.`,
+      evidence: 'Long RP, earliest A on the His channels, narrow P: a para-Hisian focal AT, a septal pathway and atypical AVNRT are not separated by this recording; maneuvers are needed (R16, R19). One recording never proves the diagnosis.'
+    }
+  },
+  'pat-hispvc': {
+    tr: { title: 'His-refrakter PVC: A değişmedi', text: `${D.tr} His refrakterken verilen PVC atriyal zamanlamayı değiştirmiyor (A-A = TCL = 420 ms). Yanıtsızlık yol katılımını desteklemez; AT ve AVNRT bu kanıtla ayrılmaz (R9).` },
+    en: { title: 'His-refractory PVC: A unchanged', text: `${D.en} The PVC delivered while the His is refractory leaves atrial timing unchanged (A-A = TCL = 420 ms). The absent response does not support pathway participation; AT and AVNRT are not separated by it (R9).` }
+  },
+  'pat-vop-dissoc': {
+    tr: { title: 'Ventriküler overdrive: VA dissosiyasyonu', text: `${D.tr} RV pacing sırasında atriyal hız değişmiyor (A-A 420 ms) ve pacing sonrası odak kendi siklusuyla sürüyor: V-A bağlantısı yok. Atriyum devreye zorunlu bağlı değildir; fokal AT lehine güçlü kanıttır (R18). AVNRT nadiren benzer görünebilir; sonuç tek başına kesinleştirmez.` },
+    en: { title: 'Ventricular overdrive: VA dissociation', text: `${D.en} During RV pacing the atrial rate does not change (A-A 420 ms) and after pacing the focus continues at its own cycle: there is no V-A linking. The atrium is not an obligatory part of a circuit; strong evidence for focal AT (R18). AVNRT can rarely look similar; the result alone is not final.` }
+  },
+  'pat-ncc-map': {
+    tr: { title: 'Haritalama: nonkoroner kusp penceresi', text: `${D.tr} ABL nonkoroner kuspta: lokal A yüzey P başlangıcından 15 ms önce ve sağ para-Hisian A kadar erken (R20). Kusp penceresi His komşuluğundaki AV blok riskine alternatif erişimdir; bu klip karşılaştırma içindir, ablasyon reçetesi vermez (R17, R19).` },
+    en: { title: 'Mapping: the noncoronary cusp window', text: `${D.en} The ABL sits in the noncoronary cusp: the local A precedes the surface P onset by 15 ms and is as early as the right para-Hisian A (R20). The cusp window is the alternative access to the AV block risk of the His neighbourhood; this clip is a comparison, not an ablation prescription (R17, R19).` }
+  },
+  'pat-post': {
+    tr: { title: 'İşlem sonrası sinüs', text: `${D.tr} AT yok; AH 80 ms ve HV 45 ms korunmuş. İleti sisteminin korunması para-Hisian bölgede ayrı sonlanım katmanıdır (R19).` },
+    en: { title: 'Post-procedure sinus', text: `${D.en} No AT; AH 80 ms and HV 45 ms are preserved. Preserved conduction is a separate endpoint layer in the para-Hisian region (R19).` }
+  },
+  'fvt-vt': {
+    tr: {
+      title: 'Fasiküler VT: P1 diastolik, P2 presistolik',
+      neutral: `${D.tr} Geniş ama görece dar QRS taşikardi, TCL 340 ms. LVS kanallarındaki diastolik ve presistolik potansiyellerin yönünü, His zamanını ve atriyal diziyi kendiniz okuyun.`,
+      evidence: 'AV dissosiyasyonu var (sinüs A-A 880 ms, V\'den bağımsız). LV septumda P1 bazalden apekse diastolde, P2 apeksten bazale presistolde; His retrograd (H, V başlangıcından sonra). Verapamil duyarlı posterior fasiküler VT ile uyumludur; SVT + aberasyon bu kayıtla dışlanır çünkü atriyum bağımsızdır (R21, R22). Tek kayıt kesin tanı vermez.'
+    },
+    en: {
+      title: 'Fascicular VT: diastolic P1, presystolic P2',
+      neutral: `${D.en} A relatively narrow wide QRS tachycardia, TCL 340 ms. Read the direction of the diastolic and presystolic potentials on the LVS channels, the His timing and the atrial sequence yourself.`,
+      evidence: 'AV dissociation is present (sinus A-A 880 ms, independent of the V). On the LV septum P1 runs base to apex in diastole and P2 apex to base presystolic; the His is retrograde (H after QRS onset). The pattern fits verapamil-sensitive posterior fascicular VT; SVT with aberrancy is excluded by the independent atrium (R21, R22). One recording never proves the diagnosis.'
+    }
+  },
+  'fvt-entrain': {
+    tr: { title: 'RV\'den entrainment: eksitabl aralıklı reentri', text: `${D.tr} 310 ms pacing P1 dizisini aynı yönde pacing hızına uyduruyor (ortodromik yakalama) ve tren sonrası VT 340 ms ile sürüyor. PPI-TCL yaklaşık 58 ms: RV apeksi devrenin dışında, devre LV septumunda (R21). Füzyon ve reset okunmadan sonuç çıkarılamaz; değerler öğretim örneğidir.` },
+    en: { title: 'Entrainment from the RV: reentry with an excitable gap', text: `${D.en} Pacing at 310 ms makes the P1 sequence follow the paced rate in the same direction (orthodromic capture) and the VT resumes at 340 ms after the train. PPI-TCL is about 58 ms: the RV apex is outside the circuit, which sits on the LV septum (R21). No conclusion without reading fusion and reset; the values are teaching examples.` }
+  },
+  'fvt-post': {
+    tr: { title: 'Ablasyon sonrası sinüs: Purkinje korunmuş', text: `${D.tr} P1 bölgesine ablasyon sonrası sinüste HV 45 ms ve LVS kanallarında antegrad Purkinje potansiyeli lokal V\'den önce: normal ileti korunmuş. Kalıcı sonlanım yeniden indüklenememedir; aks değişimi ölçütü uzman incelemesi bekler (R25).` },
+    en: { title: 'Post-ablation sinus: Purkinje preserved', text: `${D.en} After ablation at the P1 site the sinus HV is 45 ms and the LVS channels show the antegrade Purkinje potential before the local V: normal conduction is preserved. The durable endpoint is noninducibility; the axis change criterion awaits expert review (R25).` }
+  },
+  'bbr-sinus': {
+    tr: {
+      title: 'Sinüs: ileti gecikmesi ve uzun HV',
+      neutral: `${D.tr} Sinüs ritmi. AH, HV ve sağ dal (RB) potansiyelinin zamanını kendiniz ölçün; QRS\'in geniş olduğunu not edin.`,
+      evidence: 'HV 85 ms (uzamış) ve QRS\'te spesifik olmayan ileti gecikmesi: His-Purkinje hastalığı. Bu zemin dal bloğu reentrisinin ön koşuludur; dilate kardiyomiyopatide sıktır (R26). Tek kayıt tanı koymaz.'
+    },
+    en: {
+      title: 'Sinus: conduction delay and a long HV',
+      neutral: `${D.en} Sinus rhythm. Measure the AH, the HV and the right bundle (RB) potential timing yourself; note the wide QRS.`,
+      evidence: 'HV 85 ms (prolonged) with a nonspecific intraventricular delay: His-Purkinje disease. This substrate is the precondition of bundle branch reentry and is common in dilated cardiomyopathy (R26). One recording never makes the diagnosis.'
+    }
+  },
+  'bbr-vt': {
+    tr: {
+      title: 'Geniş QRS taşikardi: her V\'den önce H ve RB',
+      neutral: `${D.tr} LBBB tipi geniş QRS taşikardi, TCL 320 ms. Her V\'den önce H ve RB potansiyeli var mı, atriyal dizi bağımsız mı: kendiniz okuyun.`,
+      evidence: 'Her V\'yi H ve ardından RB potansiyeli önceler; VT sırasında HV sinüstekinden kısadır veya benzerdir ve atriyum dissosiyedir. Devre His-Purkinje makroreentrisidir: antegrad sağ dal, retrograd sol dal (R26, R27). Miyokardiyal VT\'de H genellikle V içinde kaybolur; tek kayıt kesinleştirmez.'
+    },
+    en: {
+      title: 'Wide QRS tachycardia: H and RB before every V',
+      neutral: `${D.en} An LBBB-type wide QRS tachycardia, TCL 320 ms. Is every V preceded by an H and an RB potential, and is the atrial sequence independent: read it yourself.`,
+      evidence: 'Every V is preceded by an H and then an RB potential; the HV during VT is similar to or shorter than sinus and the atrium is dissociated. The circuit is His-Purkinje macroreentry: antegrade right bundle, retrograde left bundle (R26, R27). In myocardial VT the H is usually buried in the V; one recording is never final.'
+    }
+  },
+  'bbr-hh-vv': {
+    tr: {
+      title: 'Siklus salınımı: H-H değişimi V-V\'yi öncüler',
+      neutral: `${D.tr} Aynı VT, siklus uzunluğu salınıyor. H-H ve V-V aralıklarını sırayla ölçüp hangisinin öncülük ettiğini kendiniz okuyun.`,
+      evidence: 'Siklus değişiminde H-H aralığındaki değişim aynı dönüşün V-V\'sinde yeniden görülür: His aktivasyonu ventrikülü öncüler, devre His-Purkinje sistemindedir (R26). Miyokardiyal VT\'de V-V değişimi H\'yi sürükler; ilişki terstir.'
+    },
+    en: {
+      title: 'Cycle wobble: the H-H change precedes the V-V',
+      neutral: `${D.en} The same VT with an oscillating cycle length. Measure the successive H-H and V-V intervals and read which one leads.`,
+      evidence: 'With cycle length change the H-H variation reappears in the V-V of the same return: His activation leads the ventricle, so the circuit lives in the His-Purkinje system (R26). In myocardial VT the V-V change drives the H; the relation is reversed.'
+    }
+  },
+  'af-pvi-baseline': {
+    tr: {
+      title: 'AF ve pulmoner ven potansiyelleri',
+      neutral: `${D.tr} Yüzeyde düzensiz RR ve f dalgaları. Lasso (PV) kanalındaki keskin, hızlı potansiyelleri ve uzak alan atriyal sinyali kendiniz ayırın.`,
+      evidence: 'Düzensiz dar QRS ritmi ve atriyal kanallarda f dalgaları: AF. Lasso kanalındaki keskin, hızlı potansiyeller ven kası kaynaklı yakın alan PV potansiyelleridir; AF tetikleyicileri çoğunlukla pulmoner venlerden çıkar (R29). İzolasyonun okunuşu Tedavi sekmesindeki egzersizdedir (R30, R31).'
+    },
+    en: {
+      title: 'AF and pulmonary vein potentials',
+      neutral: `${D.en} Irregular RR and f waves on the surface. Separate the sharp fast potentials on the Lasso (PV) channel from the far-field atrial signal yourself.`,
+      evidence: 'An irregular narrow QRS rhythm with f waves on the atrial channels: AF. The sharp fast Lasso potentials are near-field PV potentials from the vein musculature; AF triggers mostly arise from the pulmonary veins (R29). Reading isolation lives in the Treatment tab exercise (R30, R31).'
+    }
+  },
+  'bbr-post': {
+    tr: { title: 'Sağ dal ablasyonu sonrası sinüs', text: `${D.tr} RB potansiyeli kayboldu, QRS RBBB tipine döndü ve HV 100 ms\'ye uzadı: devre kesildi. Tuzaklar ayrı izlenir: interfasiküler reentri gelişebilir ve ileti rezervi azaldıysa kalıcı pacing gerekebilir (R27, R28).` },
+    en: { title: 'Sinus after right bundle ablation', text: `${D.en} The RB potential is gone, the QRS turned RBBB and the HV lengthened to 100 ms: the circuit is interrupted. The pitfalls are followed separately: interfascicular reentry can develop and permanent pacing may be needed if conduction reserve is low (R27, R28).` }
   }
 });
 

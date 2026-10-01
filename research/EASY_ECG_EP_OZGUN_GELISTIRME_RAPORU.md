@@ -30,6 +30,19 @@ Faz B ve C uygulandı ve test edildi; Faz D için rapor bölüm 4D'nin istediği
 | C | Tek dipolden sentetik 12 derivasyon; 6 PVC (skar karşı örneği dahil) ve 5 atriyal odak örneği; özellikler sinyalden okunur, olası bölgeler ve güven gerekçesi; atriyal odakta kateter aktivasyonu ile örnekleme sınırı; yanıttan sonra 3B bölge işaretçisi | `src/ecg12.js`, `src/ep-origin.js`, `src/ep-origin-text.js`, `src/ep-origin-panel.js`, `src/ep-zones.js`; test `scripts/test-ep-origin.mjs` |
 | D | Para-Hisian fokal AT, sol posterior fasiküler VT ve dal bloğu reentrisi VT için aday kaynak matrisi (D1-D8) ve olay storyboard'u | `research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md` bölüm 3 |
 
+### Faz D uygulaması ve PVİ egzersizi (1 Ekim 2026, üçüncü tur)
+
+Faz D, raporun "A-C ve EP uzman incelemesi tamamlanmadan uygulanmaz" önkoşuluna karşın **kullanıcının açık talebiyle** uygulandı; EP uzman incelemesi hâlâ yapılmadı ve açık maddedir. Ayrıca kullanıcı talebiyle rapor kapsamı dışından bir AF / pulmoner ven izolasyonu egzersizi eklendi. Hiçbiri klinik olarak doğrulanmadı.
+
+| Teslim | Yer |
+|---|---|
+| Para-Hisian fokal AT: uzun RP taşikardi (en erken A His'te, dar P), His-refrakter PVC yanıtsız, ventriküler overdrive'da VA dissosiyasyonu, nonkoroner kusp haritalama klibi (ABL A, P başlangıcını 15 ms önceler; R20), işlem sonrası korunmuş AH/HV | `src/ep-cases-advanced.js` (olgu `at-parahisian`), metinler `src/ep-case-text.js` |
+| Sol posterior fasiküler VT: P1 (bazalden apekse, diastolik) ve P2 (apeksten bazale, presistolik), retrograd His, AV dissosiyasyonu; RV'den entrainment (P1 pacing siklusuna uyar, VT kendi siklusuyla döner, PPI-TCL uzun); ablasyon sonrası korunmuş HV ve antegrad Purkinje | olgu `fascicular-vt`; manevra kartı `entrain-rv` |
+| BBR-VT: sinüste uzun HV + RB potansiyeli, VT'de her V'den önce H ve RB, H-H değişimi aynı dönüşün V-V'sinde; sağ dal ablasyonu sonrası RB kaybı, RBBB ve daha uzun HV; interfasiküler reentri tuzağı metinde | olgu `bbr-vt`; yeni kanallar `rb`, `lv-sep-b`, `lv-sep-a` (3B elektrot iddiası yok) |
+| Kaynaklar R16-R28 (D1-D8 matrisinin doğrulanan kısmı) `ELEKTROFIZYOLOJIK_ANATOMI_GELISTIRME_RAPORU.md` bölüm 13'e eklendi; BBR klasik ölçütleri R26 (Caceres 1989) özetinden | ilgili rapor |
+| AF / PVİ egzersizi: Tanı sekmesinde AF + PV potansiyeli temel kaydı; Tedavi sekmesinde 3B'de her ven ağzı çevresinde 10 aday noktalı şematik halka, tıklanan nokta lezyon; halka tamamlanınca Lasso kanalında giriş bloğu (yakın alan PV potansiyelleri kaybolur, uzak alan kalır; R30, R31); dört halka tamamlanınca bu kurguda sinüs (sadeleştirme metinde; R30 geç rekonneksiyon) | `src/pvi-model.js`, `src/pvi-lab.js`, `src/ep-pvi-panel.js`; kaynaklar R29-R31 |
+| Testler | `scripts/test-ep-advanced.mjs`, `scripts/test-ep-pvi.mjs` (`npm test` içinde), `scripts/test-ep-flow.cjs` genişletildi |
+
 ## 1. Soru, kapsam ve bitiş ölçütü
 
 Soru: [EasyECG makale kataloğundaki](https://www.easy-ecg.com/articles) öğrenme konularından hangileri, Cardia'nın 3B anatomi ve sentetik elektrogram altyapısıyla özgün, etkileşimli EP eğitimine dönüştürülebilir?

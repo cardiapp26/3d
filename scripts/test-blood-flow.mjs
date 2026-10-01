@@ -62,9 +62,17 @@ console.log('Running Blood Flow Unit Tests...\n');
 {
   const flow = createBloodFlow();
   assert.ok(flow.group instanceof THREE.Group, 'Group returned');
-  assert.equal(flow.group.children.length, 2, 'Two instanced meshes in group (Deoxy and Oxy)');
+  assert.equal(flow.group.children.length, 4, 'Two instanced head meshes, the tube group and the pathline trails');
 
-  const [meshDeoxy, meshOxy] = flow.group.children;
+  const meshDeoxy = flow.group.children.find((c) => c.name === 'Deoxygenated Flow Particles');
+  const meshOxy = flow.group.children.find((c) => c.name === 'Oxygenated Flow Particles');
+  const tubes = flow.group.children.find((c) => c.name === 'Flow stream tubes');
+  assert.equal(tubes.children.length, FLOW_STREAMS.length, 'One faint tube per stream');
+  assert.ok(tubes.children.every((t) => t.material.transparent && t.material.opacity < 0.3), 'Tubes stay faint');
+  // 4D-flow-MRI style: velocity-colored heads with comet trails.
+  const trails = flow.group.children.find((c) => c.name === 'Flow pathline trails');
+  assert.ok(trails && trails.isInstancedMesh, 'Pathline comet trails exist');
+  assert.equal(trails.count, (240 + 240) * 9, 'TRAIL - 1 spheres per particle');
   assert.equal(meshDeoxy.count, 240, 'Deoxygenated mesh capacity 240');
   assert.equal(meshOxy.count, 240, 'Oxygenated mesh capacity 240');
 
@@ -78,6 +86,25 @@ console.log('Running Blood Flow Unit Tests...\n');
   meshOxy.getMatrixAt(0, matAfter);
 
   assert.notDeepEqual(matBefore.elements, matAfter.elements, 'Particles advanced after tick');
+  // Velocity color coding: instance colors exist and differ between a fast
+  // ejection phase and a quiescent one for the aortic stream's particles.
+  assert.ok(meshOxy.instanceColor, 'Per-instance velocity colors');
+  const colorAt = (idx) => { const a = meshOxy.instanceColor.array; return [a[idx * 3], a[idx * 3 + 1], a[idx * 3 + 2]]; };
+  const ejectColor = colorAt(0);
+  flow.tick(16, { phase: 0.15, bpm: 72 });
+  assert.notDeepEqual(colorAt(0), ejectColor, 'Velocity color changes with the cardiac phase');
+  // Trails shrink toward the tail: the first trail sphere outscales the last.
+  const m = new THREE.Matrix4();
+  const scaleOf = (idx) => { trails.getMatrixAt(idx, m); return new THREE.Vector3().setFromMatrixScale(m).x; };
+  assert.ok(scaleOf(0) > scaleOf(8), 'Comet trail tapers');
+  assert.ok(trails.instanceColor, 'Trails carry velocity colors');
+  flow.tick(16, { phase: 0.65, bpm: 72 });
+  // Tube opacity follows the gate: the aortic tube brightens in ejection.
+  const tubeOf = (id) => tubes.children.find((t) => t.name === `Flow stream tube: ${id}`);
+  const aortaEject = tubeOf('lv-aorta').material.opacity;
+  flow.tick(16, { phase: 0.15, bpm: 72 });
+  assert.ok(tubeOf('lv-aorta').material.opacity < aortaEject, 'Aortic tube dims in filling');
+  flow.tick(16, { phase: 0.65, bpm: 72 });
 
   // Low power mode test
   flow.setLowPower(true);

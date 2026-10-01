@@ -46,7 +46,7 @@ for (const id of EP_RECORDING_IDS) {
     assert.ok(disclaimed, `${id} ${lang} carries the synthetic disclaimer`);
   }
 }
-assert.equal(EP_RECORDING_IDS.length, 43, '43 recordings in the catalog');
+assert.equal(EP_RECORDING_IDS.length, 56, '56 recordings in the catalog (43 + 12 advanced phase D + the PVI baseline)');
 
 // Cases: separate axes and citations; text and clips in every section they claim.
 for (const c of EP_CASES) {
@@ -317,7 +317,7 @@ for (const lang of ['tr', 'en']) assert.match(EP_COMPARE['ap-lm-antidromic'][lan
 
 // Section 15, Halo / unipolar: channel identity with 3D electrodes, QS vs rS.
 for (const ch of EP_CHANNELS) {
-  if (ch.surface || ch.id === 'hra') continue;
+  if (ch.surface || ch.noElectrode) continue;
   assert.ok(CHANNEL_ELECTRODES[ch.id]?.length, `${ch.id}: 3D electrode identity`);
 }
 const uni = (id) => epRecording(id).events['abl-uni'];

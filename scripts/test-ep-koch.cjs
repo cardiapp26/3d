@@ -211,7 +211,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.match(await page.locator('.ep-measures').textContent(), /AH \(S1\) 80 ms.*AH \(S2\) 180 ms/);
     await page.locator('[data-ep-section=diagnosis]').click();
     const csCases = await page.locator('[data-ep-case] option').count();
-    assert.equal(csCases, 9, 'nine numbered diagnosis cases');
+    assert.equal(csCases, 13, 'thirteen numbered diagnosis cases (phase D cases and the PVI baseline included)');
     await page.locator('[data-ep-case]').selectOption('ap-left-manifest');
     await page.locator('[data-egm-scenario="af-preexcited"]').click();
     assert.match(await page.locator('.ep-measures').textContent(), /SPERRI 220 ms/);

@@ -8,7 +8,7 @@ import { TTE_LIMITS, TEE_LIMITS } from './echo-probe.js';
  */
 const SHORT = {
   plax: 'PLAX', 'psax-av': 'PSAX AV', 'psax-mv': 'PSAX MV', 'psax-pm': 'PSAX PM', a4c: 'A4C', a2c: 'A2C', a3c: 'A3C', sc4c: 'SC 4C',
-  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: 'ME LAX', meavsax: 'ME AV SAX', mebicaval: { tr: 'ME bikaval', en: 'ME bicaval' }, melaa: 'ME LAA', tgsax: 'TG SAX'
+  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'ME LAX 120°', en: 'ME LAX 120°' }, meavsax: { tr: 'AV SAX 45°', en: 'AV SAX 45°' }, mebicaval: { tr: 'ME bikaval 90°', en: 'ME bicaval 90°' }, melaa: 'ME LAA', mervio: { tr: 'RV G-Ç 75°', en: 'RV I-O 75°' }, melaapv: { tr: 'LAA·PV 135°', en: 'LAA·PV 135°' }, tgsax: 'TG SAX'
 };
 const T = {
   tr: {

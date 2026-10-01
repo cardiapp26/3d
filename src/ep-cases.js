@@ -13,15 +13,22 @@
 export const EP_CHANNELS = Object.freeze([
   { id: 'ecg-ii', label: 'II', surface: true },
   { id: 'ecg-v1', label: 'V1', surface: true },
-  { id: 'hra', label: 'HRA' },
+  { id: 'hra', label: 'HRA', noElectrode: true },
   { id: 'his-p', label: 'His p' },
   { id: 'his-d', label: 'His d' },
+  // Right bundle potential (phase D, bundle branch reentry); no atlas electrode.
+  { id: 'rb', label: 'RB', noElectrode: true },
   { id: 'cs-910', label: 'CS 9-10' },
   { id: 'cs-78', label: 'CS 7-8' },
   { id: 'cs-56', label: 'CS 5-6' },
   { id: 'cs-34', label: 'CS 3-4' },
   { id: 'cs-12', label: 'CS 1-2' },
+  // Circular (Lasso) catheter summary channel of the PVI exercise; no atlas electrode.
+  { id: 'pv', label: 'PV (Lasso)', noElectrode: true },
   { id: 'rv', label: 'RV' },
+  // Left ventricular septal catheter, basal and apical bipoles (phase D, fascicular VT); no atlas electrode.
+  { id: 'lv-sep-b', label: 'LVS baz', noElectrode: true },
+  { id: 'lv-sep-a', label: 'LVS apx', noElectrode: true },
   { id: 'abl-d', label: 'ABL d' },
   { id: 'abl-uni', label: 'ABL uni', unipolar: true },
   // Right annular Halo (schematic decapolar, 5 bipoles): 9-10 proximal at the
@@ -54,45 +61,14 @@ export const CHANNEL_ELECTRODES = Object.freeze({
 });
 
 import {
-  FLUTTER_CCW, flutterRun, atrialSitePacing, unipolar,
+  FLUTTER_CCW, flutterRun, atrialSitePacing, unipolar, hisPvcClip,
   AH, A_ATYPICAL, A_INF_PS, A_LEFT_LAT, A_NODAL_PACED, A_PJRT, A_TYPICAL, CH_CS_FULL, CH_LEGACY, CH_SVT, HV, afBeat, atrialPacedBeat, ev, fWaves, far, junctionalBeat, merge, mono, pacedBeat, paraHisBeat, sinusBeat, surfaceBeat, svtBeat, svtRun
 } from './ep-beats.js';
+import { ref, cal, resolveRef, measure } from './ep-caliper.js';
+import { ADVANCED_DEFS, ADVANCED_CASES } from './ep-cases-advanced.js';
 
-// Caliper: value = time of event b minus time of event a; occ counts same-type events on that channel.
-export const ref = (ch, type, occ = 0) => ({ ch, type, occ });
-export const cal = (label, a, b, row = null) => ({ label, a, b, row: row || b.ch });
-
-/** Resolve one caliper reference to its event, or null. */
-export function resolveRef(recording, { ch, type, occ }) {
-  const list = (recording.events[ch] || []).filter((e) => e.type === type);
-  return list[occ] || null;
-}
-
-/** Measured caliper value in ms (from the events, not a stored number), or null. */
-export function measure(recording, caliper) {
-  const a = resolveRef(recording, caliper.a);
-  const b = resolveRef(recording, caliper.b);
-  return a && b ? Math.round(b.t - a.t) : null;
-}
-
-// His-refractory PVC clip: tachycardia with the third A advanced by `pull` ms
-// (and the following beat advanced with it) after a stimulus timed while the
-// His is refractory. pull = 0 models the negative (unchanged) response.
-function hisPvcClip(tcl, aOffsets, pull, options = {}) {
-  const v1 = 150;
-  const vs = [v1, v1 + tcl];
-  const v3 = v1 + 2 * tcl;
-  const events = merge(
-    svtRun(vs, aOffsets, options),
-    // Beat 3: its H and V are already committed; the stimulus lands just after the H.
-    svtBeat(v3, {}, options),
-    Object.fromEntries(Object.entries(aOffsets).map(([ch, dt]) => [ch, [ev('A', v3 + dt - pull, ch === 'abl-d' ? 0.35 : 0.7)]])),
-    { rv: [ev('S', v3 - HV + 8, 0.5, 2)] },
-    svtBeat(v3 + tcl - pull, aOffsets, options)
-  );
-  return { events, markers: [{ t: v3 - HV + 8, label: { tr: 'S: His-refrakter PVC', en: 'S: His-refractory PVC' } }], windowMs: v3 + tcl - pull + 220 };
-}
-
+// Calipers are measured from the events (ep-caliper.js); re-exported for the module's callers.
+export { ref, cal, resolveRef, measure };
 
 const DEFS = [];
 const define = (def) => { DEFS.push(def); return def.id; };
@@ -691,6 +667,8 @@ function deepFreeze(value) {
   return value;
 }
 
+// Advanced cases (phase D: para-Hisian AT, fascicular VT, bundle branch reentry) live in ep-cases-advanced.js.
+DEFS.push(...ADVANCED_DEFS);
 const RECORDINGS = new Map(DEFS.map((def) => [def.id, deepFreeze({ markers: [], calipers: [], ...def })]));
 
 /** Sections of the module, in order. */
@@ -709,7 +687,8 @@ export const EP_CASES = Object.freeze([
   { id: 'ap-left-manifest', mechanism: 'wpw-pattern', pathwayZone: 'left-free-wall', conduction: ['antegrade', 'retrograde'], citations: ['R3', 'R8', 'R14'] },
   { id: 'focal-at', mechanism: 'focal-at', pathwayZone: 'crista-terminalis', conduction: ['atrial-focus'], citations: ['R9', 'R10'] },
   { id: 'ap-parahisian', mechanism: 'avrt-orthodromic', pathwayZone: 'superior-paraseptal', conduction: ['retrograde-only'], citations: ['R4', 'R5', 'R13'] },
-  { id: 'flutter-cti', mechanism: 'flutter-ccw', pathwayZone: 'cavotricuspid-isthmus', conduction: ['macroreentry-ccw'], citations: ['R15', 'R9', 'R10'] }
+  { id: 'flutter-cti', mechanism: 'flutter-ccw', pathwayZone: 'cavotricuspid-isthmus', conduction: ['macroreentry-ccw'], citations: ['R15', 'R9', 'R10'] },
+  ...ADVANCED_CASES
 ].map(deepFreeze));
 
 /** The mandatory CS ostium comparison set (report section 5). */

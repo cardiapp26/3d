@@ -1063,3 +1063,14 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .mode-group,.mode-group-menu{display:contents}
   .mode-group-tab{display:none}
 }
+
+/* WebXR (AR / MR / VR) entry buttons on the 3D viewport */
+.xr-buttons { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; z-index: 30; }
+.xr-buttons[hidden] { display: none; }
+.xr-button {
+  padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(143, 220, 159, 0.5);
+  background: rgba(14, 24, 21, 0.82); color: #d7f5e4; font: 600 12px/1 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.08em; cursor: pointer;
+}
+.xr-button:hover { background: rgba(26, 42, 36, 0.92); }
+.xr-button[data-active='true'] { border-color: #ffd28a; color: #ffd28a; }

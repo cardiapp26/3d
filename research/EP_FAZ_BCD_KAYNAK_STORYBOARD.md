@@ -120,9 +120,9 @@ Kabul (test: `scripts/test-ep-task.mjs`): her kararın kullandığı ölçüm ol
 
 Kabul (test: `scripts/test-ep-origin.mjs`): Einthoven ve artırılmış derivasyon toplamı her örnekte; özellikler çizilen sinyalden okunur; kaynak bölge her zaman olası bölgeler arasındadır; örtüşme düşük güven verir; skar örneği çıkış notunu taşır; P-A ölçümü olaylardan; metinlerde doğruluk yüzdesi yoktur.
 
-## 3. Faz D: ileri olgular (uygulanmadı)
+## 3. Faz D: ileri olgular (1 Ekim 2026: kullanıcı talebiyle uygulandı)
 
-Rapor, Faz A-C ve EP uzman incelemesi tamamlanmadan D'nin uygulanmamasını ister. Aşağıdaki matris ve storyboard uygulama öncesi hazırlıktır; her satır uzman incelemesi ve birincil tam metin okuması bekler.
+Rapor, Faz A-C ve EP uzman incelemesi tamamlanmadan D'nin uygulanmamasını ister; kullanıcı 1 Ekim 2026'da açıkça uygulamayı istedi. Üç olgu `src/ep-cases-advanced.js` içinde uygulandı; doğrulanan satırlar R16-R28 olarak ana rapora taşındı. EP uzman incelemesi hâlâ yapılmadı; D7'nin klasik ölçütleri R26 (Caceres 1989) özetinden alındı, Sarkozy tam metni okunmadı.
 
 ### 3.1 Kaynak matrisi (aday)
 

@@ -19,6 +19,8 @@ import { createBachmannGeometry } from './bachmann.js';
 import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
+import { createXrSupport } from './xr.js';
+import { createPviLab } from './pvi-lab.js';
 import { createOverlayFollow } from './overlay-follow.js';
 import { createSceneLabels } from './scene-labels.js';
 import { separateAtriaFromAorta } from './transverse-sinus.js';
@@ -118,6 +120,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   heart.add(epLandmarks.group);
   const epZones = createEpZones({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
   heart.add(epZones.group);
+  // PVI exercise lesion rings; clicks are routed from pointerUp while active.
+  const pviLab = createPviLab({ sourceCenter, meshVertices, isReady, camera, dom: renderer.domElement, requestRender });
+  heart.add(pviLab.group);
   let bachmannTarget = null;
   const atlasAdjustments = {};
   const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getBachmannTarget: () => bachmannTarget, isReady });
@@ -774,7 +779,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   function pointerMove(e){hovered=pick(e);sceneLabels.setFocus(hovered,selected);paintSelection();requestRender();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered);}
   function pointerDown(e){transition=false;down=[e.clientX,e.clientY];}
-  function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){const id=pick(e);if(id)onSelect(id);}}
+  function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){if(pviLab.handleClick(e))return;const id=pick(e);if(id)onSelect(id);}}
   function pointerLeave(){hovered=null;down=null;sceneLabels.setFocus(selected);paintSelection();requestRender();onHover(null);}
   renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointerleave',pointerLeave);
   const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();if(modelReady&&mode==='atria'&&['la','laa'].includes(selected))focusLeftAtrium(selected);requestRender();};
@@ -798,16 +803,23 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       if(bloodFlow && visibility.flow) bloodFlow.tick(dt, curState);
       needsRender=true;
     }
-    if(controls.update()){
+    if(!renderer.xr.isPresenting&&controls.update()){
       needsRender=true;
     }
     container.dataset.cameraSettled=String(!transition);
     emitAngleChange();
+    // An XR session renders every frame; the headset pose changes continuously.
+    if(renderer.xr.isPresenting){renderScene();return;}
     if(needsRender){
       renderScene();
       if(!transition&&(!cycleState.playing||mode==='micro'))needsRender=false;
     }
   }frame=requestAnimationFrame(animate);
+  // WebXR (AR / MR / VR): feature-detected buttons on the viewport; the heart
+  // group is placed room-scale during a session and restored afterwards.
+  const xrSupport=createXrSupport({renderer,subject:heart,container,getLang:()=>((globalThis.localStorage?.getItem?.('cardia_lang'))==='en'?'en':'tr'),
+    onSessionStart(){cancelAnimationFrame(frame);controls.enabled=false;renderer.setAnimationLoop(animate);},
+    onSessionEnd(){renderer.setAnimationLoop(null);controls.enabled=true;lastTime=performance.now();frame=requestAnimationFrame(animate);requestRender();}});
   // Educational projection: layer attenuation, not a simulated diagnostic radiograph.
   // Swap only during rendering so selection, lesson updates and resets retain originals.
   const projectionMaterials = new Map();
@@ -989,6 +1001,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     // Accessory pathway zone of the signal panel's active case (ep-zones.js); null hides it.
     // extra: { halo, circuit } (Halo catheter, reentry direction arrows).
     setEpZone(zoneId,extra){epZones.setZone(zoneId||null,extra||{});requestRender();},
+    pvi: pviLab,
     getEpZone(){return epZones.getZone();},
     getEpZoneOptions(){return epZones.getOptions();},
     getEpOptional(){return epLandmarks.getOptional();},

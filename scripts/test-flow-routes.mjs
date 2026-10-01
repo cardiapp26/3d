@@ -116,7 +116,7 @@ function mergeTubes(a, b) {
 }
 
 const flow = createBloodFlow({ routes });
-assert.ok(flow.group.children.length === 2, 'flow particles build with measured routes');
+assert.ok(flow.group.children.length === 4, 'flow particles, stream tubes and pathline trails build with measured routes');
 flow.dispose();
 
 // Lazily measured routes are applied the first time flow is shown.

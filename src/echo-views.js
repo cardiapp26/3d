@@ -41,6 +41,8 @@ export const TEE_VIEWS = Object.freeze([
   { id: 'meavsax', title: { tr: 'ME aort kapağı kısa eksen', en: 'ME aortic valve SAX' }, ase: { tr: '25–45°', en: '25–45°' }, required: ['aortic-valve', 'la', 'ra'], avoid: ['lv', 'mitral'], source: ASE_TEE },
   { id: 'mebicaval', title: { tr: 'ME bikaval', en: 'ME bicaval' }, ase: { tr: '90–110°, şaft sağa', en: '90–110°, shaft turned right' }, required: ['la', 'ra', 'svc'], avoid: ['lv', 'mitral'], bicaval: true, source: ASE_TEE },
   { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, ase: { tr: 'başlangıç 90–110°; çok açılı tarama', en: 'start 90–110°; multi-angle sweep' }, required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
+  { id: 'mervio', title: { tr: 'ME RV giriş-çıkış', en: 'ME RV inflow-outflow' }, ase: { tr: '60–90°', en: '60–90°' }, required: ['ra', 'rv', 'tricuspid', 'pa'], avoid: ['mitral'], source: ASE_TEE },
+  { id: 'melaapv', title: { tr: 'ME LAA ve sol üst PV komşuluğu', en: 'ME LAA and left upper PV neighbourhood' }, ase: { tr: 'LAA taraması 0–180°; sol üst PV komşuluğu genelde 90–150°', en: 'LAA sweep 0–180°; the left upper PV neighbourhood usually 90–150°' }, required: ['la', 'laa', 'pv'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
   { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, ase: { tr: '0–20°', en: '0–20°' }, required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], source: ASE_TEE }
 ]);
 
@@ -150,10 +152,12 @@ export function teePreset(id, A, path) {
     case 'me4c': return pose(me - 0.02, 0, -20, 0, 4.8);
     case 'memc': return pose(me - 0.04, -37.5, 10, 50, 3);
     case 'me2c': return pose(me + 0.04, -30, -30, 105, 4.8, 10);
-    case 'melax': return pose(me - 0.06, 0, 20, 115, 4.8);
-    case 'meavsax': return pose(level(A.av.center[1]), 0, 10, 40, 4.8);
-    case 'mebicaval': return pose(level(A.la[1] + 0.1) + 0.04, 30, 0, 85, 4.8);
+    case 'melax': return pose(me - 0.04, 0, 20, 120, 4.8);
+    case 'meavsax': return pose(level(A.av.center[1]), 0, 10, 45, 4.8);
+    case 'mebicaval': return pose(level(A.la[1] + 0.1) + 0.04, 30, 0, 90, 4.8);
     case 'melaa': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 60, 3);
+    case 'mervio': return pose(me - 0.02, 10, 0, 75, 4.8);
+    case 'melaapv': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 135, 3.6);
     case 'tgsax': return pose(TG_ADVANCE, -15, 0, 10, 4.8);
     default: return null;
   }

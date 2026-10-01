@@ -6,6 +6,7 @@ import { createSimPanel } from './ep-sim-panel.js';
 import { createPacingPanel } from './ep-pacing-panel.js';
 import { createTaskPanel } from './ep-task-panel.js';
 import { createOriginPanel } from './ep-origin-panel.js';
+import { createPviPanel } from './ep-pvi-panel.js';
 import { createEpFullscreen } from './ep-fullscreen.js';
 
 /*
@@ -68,7 +69,20 @@ const BTN = {
   'ph-parahis-direct-a': { tr: 'Doğrudan A yakalama', en: 'Direct A capture' },
   'ph-post': { tr: 'RF sonrası sinüs', en: 'Post-RF sinus' },
   'ap-lm-uni-site1': { tr: 'Nokta 1 (uni rS)', en: 'Site 1 (uni rS)' },
-  'ap-lm-uni-site2': { tr: 'Nokta 2 (uni QS)', en: 'Site 2 (uni QS)' }
+  'ap-lm-uni-site2': { tr: 'Nokta 2 (uni QS)', en: 'Site 2 (uni QS)' },
+  'pat-svt': { tr: 'Taşikardi', en: 'Tachycardia' },
+  'pat-hispvc': { tr: 'His-refrakter PVC', en: 'His-refractory PVC' },
+  'pat-vop-dissoc': { tr: 'Overdrive (dissosiye)', en: 'Overdrive (dissociated)' },
+  'pat-ncc-map': { tr: 'NCC haritalama', en: 'NCC mapping' },
+  'pat-post': { tr: 'İşlem sonrası sinüs', en: 'Post-procedure sinus' },
+  'fvt-vt': { tr: 'Taşikardi', en: 'Tachycardia' },
+  'fvt-entrain': { tr: 'RV entrainment', en: 'RV entrainment' },
+  'fvt-post': { tr: 'RF sonrası sinüs', en: 'Post-RF sinus' },
+  'bbr-sinus': { tr: 'Sinüs (uzun HV)', en: 'Sinus (long HV)' },
+  'bbr-vt': { tr: 'Taşikardi', en: 'Tachycardia' },
+  'bbr-hh-vv': { tr: 'H-H / V-V salınımı', en: 'H-H / V-V wobble' },
+  'bbr-post': { tr: 'RB ablasyonu sonrası', en: 'After RB ablation' },
+  'af-pvi-baseline': { tr: 'AF + PV potansiyelleri', en: 'AF + PV potentials' }
 };
 
 const ZOOMS = [1, 2, 4];
@@ -79,7 +93,7 @@ const pick = (obj, lang) => (lang === 'en' ? obj.en : obj.tr);
  * @param {HTMLElement} mount
  * @param {{ getLang?: () => string, onScenario?: (id: string) => void }} [options]
  */
-export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
+export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {}) {
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
@@ -168,6 +182,13 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     // Answering puts an atrial focus's catheter activation on the strip and releases the 3D marker.
     onAnswer(recording) { Object.assign(state, { sim: recording, origin: true }); view.cursorMs = null; render(); }
   });
+  // Pulmonary vein isolation exercise (Treatment tab, case 'af-pvi'); the 3D
+  // lesion rings live in pvi-lab.js and are reached through getPvi.
+  const pviPanel = createPviPanel(doc, {
+    getLang: () => lang,
+    onRecording(recording) { state.sim = recording; view.cursorMs = null; render(); },
+    getPvi: typeof getPvi === 'function' ? getPvi : () => null
+  });
   const compareBox = el('div', 'ep-compare-card');
   const mapBox = el('div', 'ep-map');
   const mapTitle = el('p', 'ep-map-title');
@@ -189,7 +210,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
   const compare = el('p', 'ep-compare');
   const endpoint = el('p', 'ep-endpoint');
   const sources = el('p', 'ep-sources');
-  root.append(eyebrow, tabs, caseRow, title, row, taskPanel.element, originPanel.element, simPanel.element, pacingPanel.element, viewBar, canvas, inspect, measures, sizeBtn, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
+  root.append(eyebrow, tabs, caseRow, title, row, taskPanel.element, originPanel.element, simPanel.element, pacingPanel.element, pviPanel.element, viewBar, canvas, inspect, measures, sizeBtn, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -207,7 +228,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     .filter((ch) => (view.overrides.has(ch) ? view.overrides.get(ch) : recording.channels.includes(ch)));
   const currentCase = () => EP_CASES.find((c) => c.id === state.caseId);
   // A case belongs to a section when it has clips there; the Maneuvers tab also lists the pacing laboratory's cases.
-  const inSection = (caseId, section) => clipsOf(caseId, section).length > 0 || (section === 'maneuver' && pacingPanel.supports(caseId));
+  const inSection = (caseId, section) => clipsOf(caseId, section).length > 0 || (section === 'maneuver' && pacingPanel.supports(caseId)) || (section === 'treatment' && pviPanel.supports(caseId));
 
   function setSection(section) {
     if (!EP_SECTIONS.includes(section) || section === state.section) return;
@@ -335,11 +356,12 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     const caseText = pick(EP_CASE_TEXT[state.caseId], lang);
     const task = state.sim?.lab === 'task';
     const origin = state.sim?.lab === 'origin';
-    const simName = state.sim && !task && !origin ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
+    const pvi = state.sim?.lab === 'pvi';
+    const simName = state.sim && !task && !origin && !pvi ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
     const clipTitle = clipText?.title || '';
     // Do not repeat the case name when the clip title already starts with it.
     // A task recording keeps the case hidden: task number and evidence kind only.
-    title.textContent = task ? taskPanel.title(lang) : origin ? originPanel.stripTitle(lang) : state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t.neutralTitle;
+    title.textContent = task ? taskPanel.title(lang) : origin ? originPanel.stripTitle(lang) : pvi ? pviPanel.stripTitle(lang) : state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t.neutralTitle;
     simPanel.setCase(state.caseId);
     simPanel.element.hidden = state.section !== 'maneuver' || !simPanel.supports(state.caseId);
     pacingPanel.setCase(state.caseId);
@@ -347,6 +369,9 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     // Each panel shows its result only while its own recording is on the strip.
     simPanel.setActive(Boolean(state.sim) && state.sim === simPanel.getLast());
     pacingPanel.setActive(Boolean(state.sim) && state.sim === pacingPanel.getLast());
+    // The PVI exercise owns the Treatment tab of its case; its 3D rings show only there.
+    pviPanel.element.hidden = !(state.section === 'treatment' && pviPanel.supports(state.caseId));
+    pviPanel.setVisible(!pviPanel.element.hidden);
     taskPanel.element.hidden = state.section !== 'diagnosis';
     originPanel.element.hidden = state.section !== 'diagnosis';
     if (!originPanel.element.hidden) originPanel.draw();
@@ -437,6 +462,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     task: taskPanel,
     origin: originPanel,
     pacing: pacingPanel,
+    pvi: pviPanel,
     fullscreen: () => fullscreen(),
     /** Zone of the active case; null while the diagnosis view is still neutral. */
     getZone: () => (state.section === 'diagnosis' && !state.evidence ? null : currentCase()?.pathwayZone || null),
@@ -445,6 +471,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
       render();
       taskPanel.render();
       originPanel.render();
+      pviPanel.render();
     },
     /** The recording has its own millisecond timeline: the heart clock draws no cursor. */
     draw() { redraw(); },

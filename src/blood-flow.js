@@ -298,43 +298,65 @@ export function createBloodFlow(options = {}) {
     };
   });
 
+  // Faint additive tube per stream: the continuous path the streamlets ride,
+  // pulsing with the cardiac-cycle gate. Educational path cue, not flow volume.
+  const tubeGroup = new THREE.Group();
+  tubeGroup.name = 'Flow stream tubes';
+  function buildTube(stream) {
+    if (stream.tubeMesh) {
+      tubeGroup.remove(stream.tubeMesh);
+      stream.tubeMesh.geometry.dispose();
+    }
+    const material = stream.tubeMat || new THREE.MeshBasicMaterial({
+      color: stream.type === 'deoxygenated' ? 0x3f9fe0 : 0xe8604f,
+      transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending,
+      depthWrite: false, toneMapped: false
+    });
+    const mesh = new THREE.Mesh(new THREE.TubeGeometry(stream.curve, 60, 0.011, 6, false), material);
+    mesh.name = `Flow stream tube: ${stream.id}`;
+    mesh.raycast = () => {};
+    mesh.renderOrder = 4;
+    stream.tubeMat = material;
+    stream.tubeMesh = mesh;
+    tubeGroup.add(mesh);
+  }
+  streams.forEach(buildTube);
+  group.add(tubeGroup);
+
   function applyRoutes(measured) {
     for (const stream of streams) {
       const points = measured[stream.id];
-      if (points && points.length >= 4) Object.assign(stream, makeCurve(points.map(p => p.clone())));
+      if (points && points.length >= 4) {
+        Object.assign(stream, makeCurve(points.map(p => p.clone())));
+        buildTube(stream);
+      }
     }
   }
 
   const TOTAL_DEOXY_CAPACITY = 240;
   const TOTAL_OXY_CAPACITY = 240;
 
-  // Materials
-  const matDeoxy = new THREE.MeshStandardMaterial({
-    color: 0x3498db,
-    emissive: 0x1d6fa5,
-    emissiveIntensity: 0.85,
-    roughness: 0.25,
-    metalness: 0.15,
-    toneMapped: false
-  });
+  // 4D-flow-MRI-style rendering: velocity-color-coded pathline heads with
+  // fading comet trails along their streamline. The jet color scale maps the
+  // instantaneous particle speed (blue slow, red fast), like a 4D flow MRI
+  // pathline rendering; a relative teaching scale, not measured velocity.
+  const VELOCITY_NORM = 1.3;   // speed mapped to the top of the color scale
+  const TRAIL = 10;            // samples per comet trail (head + fading tail)
 
-  const matOxy = new THREE.MeshStandardMaterial({
-    color: 0xe74c3c,
-    emissive: 0xb03a2e,
-    emissiveIntensity: 0.85,
-    roughness: 0.25,
-    metalness: 0.15,
-    toneMapped: false
-  });
+  // Jet colormap, x in 0..1.
+  const jet = (x, out) => {
+    const clamp01 = (v) => Math.max(0, Math.min(1, v));
+    return out.setRGB(clamp01(1.5 - Math.abs(4 * x - 3)), clamp01(1.5 - Math.abs(4 * x - 2)), clamp01(1.5 - Math.abs(4 * x - 1)));
+  };
 
-  // Particle geometry (sphere)
-  const geomParticle = new THREE.SphereGeometry(0.034, 10, 10);
+  const headMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, transparent: true, opacity: 0.95 });
+  const geomParticle = new THREE.SphereGeometry(0.02, 8, 8);
 
-  const meshDeoxy = new THREE.InstancedMesh(geomParticle, matDeoxy, TOTAL_DEOXY_CAPACITY);
+  const meshDeoxy = new THREE.InstancedMesh(geomParticle, headMaterial, TOTAL_DEOXY_CAPACITY);
   meshDeoxy.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   meshDeoxy.name = 'Deoxygenated Flow Particles';
 
-  const meshOxy = new THREE.InstancedMesh(geomParticle, matOxy, TOTAL_OXY_CAPACITY);
+  const meshOxy = new THREE.InstancedMesh(geomParticle, headMaterial, TOTAL_OXY_CAPACITY);
   meshOxy.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   meshOxy.name = 'Oxygenated Flow Particles';
   // Particles move every frame; a bounding sphere computed once would cull them wrongly.
@@ -343,6 +365,19 @@ export function createBloodFlow(options = {}) {
 
   group.add(meshDeoxy);
   group.add(meshOxy);
+
+  // Shared comet trails: every particle drags TRAIL-1 shrinking, velocity-
+  // colored spheres back along its streamline, so the flow reads as liquid
+  // threads from every angle (a pathline look, like 4D flow MRI renderings).
+  const TRAIL_CAPACITY = TOTAL_DEOXY_CAPACITY + TOTAL_OXY_CAPACITY;
+  const trailMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, toneMapped: false, depthWrite: false });
+  const trailMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.016, 6, 6), trailMaterial, TRAIL_CAPACITY * (TRAIL - 1));
+  trailMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  trailMesh.name = 'Flow pathline trails';
+  trailMesh.frustumCulled = false;
+  trailMesh.renderOrder = 5;
+  trailMesh.raycast = () => {};
+  group.add(trailMesh);
 
   // Allocate particles per stream according to weights
   function buildParticleAllocation(streamsList, capacity) {
@@ -388,7 +423,8 @@ export function createBloodFlow(options = {}) {
 
   const dummy = new THREE.Object3D();
   const point = new THREE.Vector3();
-  const tangent = new THREE.Vector3();
+  const trailPoint = new THREE.Vector3();
+  const headColor = new THREE.Color();
 
   let visible = true;
   let lowPower = false;
@@ -403,7 +439,8 @@ export function createBloodFlow(options = {}) {
     if (!field) return out;
     if (s.fieldCurve !== s.curve) {
       const pts = new Float32Array((FIELD_SAMPLES + 1) * 3);
-      for (let i = 0; i <= FIELD_SAMPLES; i++) { s.curve.getPointAt(i / FIELD_SAMPLES, point); pts[i * 3] = point.x; pts[i * 3 + 1] = point.y; pts[i * 3 + 2] = point.z; }
+      const sample = new THREE.Vector3();   // own scratch: `point` may hold the caller's head position
+      for (let i = 0; i <= FIELD_SAMPLES; i++) { s.curve.getPointAt(i / FIELD_SAMPLES, sample); pts[i * 3] = sample.x; pts[i * 3 + 1] = sample.y; pts[i * 3 + 2] = sample.z; }
       s.fieldBinding = field.bind(pts);
       s.fieldDisp = new Float32Array(pts.length);
       s.fieldCurve = s.curve;
@@ -416,19 +453,30 @@ export function createBloodFlow(options = {}) {
     return out.set(d[i * 3] * (1 - u) + d[i * 3 + 3] * u, d[i * 3 + 1] * (1 - u) + d[i * 3 + 4] * u, d[i * 3 + 2] * (1 - u) + d[i * 3 + 5] * u);
   }
 
-  function updateInstances(mesh, particles, weights, dtMs, bpm, countLimit) {
+  function updateInstances(mesh, particles, weights, dtMs, bpm, countLimit, trailBase) {
     const count = lowPower ? Math.floor(countLimit / 2) : countLimit;
     mesh.count = count;
     const bpmScale = bpm / 72;
     const dtSec = dtMs / 1000;
+    const trailSteps = lowPower ? Math.floor(TRAIL / 2) : TRAIL;
 
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < countLimit; i++) {
+      const segBase = (trailBase + i) * (TRAIL - 1);
+      if (i >= count) {
+        // Hide the unused trail spheres of low-power mode.
+        dummy.scale.setScalar(0.0001);
+        dummy.updateMatrix();
+        for (let k = 0; k < TRAIL - 1; k++) trailMesh.setMatrixAt(segBase + k, dummy.matrix);
+        continue;
+      }
       const p = particles[i];
       const s = p.stream;
 
-      // Calculate speed through stream's cardiac-cycle gating
+      // Speed through the stream's cardiac-cycle gating; mapped to the jet scale.
       const gate = s.gating(weights);
       const effectiveSpeed = s.baseSpeed * gate * bpmScale;
+      const norm = Math.max(0, Math.min(1, effectiveSpeed / VELOCITY_NORM));
+      jet(norm, headColor);
 
       // Advance normalized position along curve
       if (dtMs > 0) {
@@ -436,25 +484,44 @@ export function createBloodFlow(options = {}) {
         if (p.t < 0) p.t += 1.0;
       }
 
-      // Sample curve position and tangent
+      // Head: a small velocity-colored sphere, tapered at the spline ends.
       s.curve.getPointAt(p.t, point);
-      s.curve.getTangentAt(p.t, tangent);
-
-      dummy.position.copy(point).add(streamOffset(s, p.t, fieldOffset));
-      dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
-
-      // Taper particle size at spline extremities for smooth enter/exit
+      point.add(streamOffset(s, p.t, fieldOffset));
       const edgeFactor = Math.min(1.0, Math.sin(Math.PI * p.t) * 2.5);
-      const sScale = p.baseScale * edgeFactor * s.particleScale;
-      // Slight pulse during fast flow
-      const pulse = 1.0 + Math.min(0.3, gate * 0.1);
-      dummy.scale.set(sScale * pulse, sScale * pulse * 1.3, sScale * pulse);
-
+      const sScale = Math.max(0.001, p.baseScale * edgeFactor * s.particleScale * (0.8 + norm * 0.5));
+      dummy.position.copy(point);
+      dummy.quaternion.identity();
+      dummy.scale.setScalar(sScale);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
+      mesh.setColorAt(i, headColor);
+
+      // Comet trail: shrinking spheres back along the curve. Faster particles
+      // leave longer trails (the pathline feel of a 4D flow rendering).
+      const trailLength = (0.07 + 0.34 * norm) * s.particleScale;
+      const stepFraction = trailLength / (TRAIL - 1) / Math.max(0.01, s.length);
+      for (let k = 1; k < TRAIL; k++) {
+        const instanceIndex = segBase + (k - 1);
+        if (k >= trailSteps) {
+          dummy.scale.setScalar(0.0001);
+          dummy.updateMatrix();
+          trailMesh.setMatrixAt(instanceIndex, dummy.matrix);
+          continue;
+        }
+        const tk = Math.max(0, p.t - k * stepFraction);
+        s.curve.getPointAt(tk, trailPoint);
+        trailPoint.add(streamOffset(s, tk, fieldOffset));
+        const fade = Math.pow(1 - k / TRAIL, 1.3);
+        dummy.position.copy(trailPoint);
+        dummy.scale.setScalar(Math.max(0.001, sScale * (0.5 + norm * 0.6) * fade));
+        dummy.updateMatrix();
+        trailMesh.setMatrixAt(instanceIndex, dummy.matrix);
+        trailMesh.setColorAt(instanceIndex, headColor);
+      }
     }
 
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }
 
   function tick(dt, cycleState) {
@@ -462,8 +529,15 @@ export function createBloodFlow(options = {}) {
     const weights = computeChannelWeights(cycleState.phase);
     const bpm = cycleState.bpm || 72;
 
-    updateInstances(meshDeoxy, deoxyParticles, weights, dt, bpm, TOTAL_DEOXY_CAPACITY);
-    updateInstances(meshOxy, oxyParticles, weights, dt, bpm, TOTAL_OXY_CAPACITY);
+    updateInstances(meshDeoxy, deoxyParticles, weights, dt, bpm, TOTAL_DEOXY_CAPACITY, 0);
+    updateInstances(meshOxy, oxyParticles, weights, dt, bpm, TOTAL_OXY_CAPACITY, TOTAL_DEOXY_CAPACITY);
+    trailMesh.instanceMatrix.needsUpdate = true;
+    if (trailMesh.instanceColor) trailMesh.instanceColor.needsUpdate = true;
+    for (const s of streams) {
+      if (!s.tubeMat) continue;
+      const gate = s.gating(weights);
+      s.tubeMat.opacity = Math.min(0.26, 0.05 + gate * 0.07) * (lowPower ? 0.6 : 1);
+    }
   }
 
   function update(cycleState) {
@@ -503,9 +577,15 @@ export function createBloodFlow(options = {}) {
       return lowPower;
     },
     dispose() {
+      for (const s of streams) {
+        if (s.tubeMesh) s.tubeMesh.geometry.dispose();
+        if (s.tubeMat) s.tubeMat.dispose();
+      }
       geomParticle.dispose();
-      matDeoxy.dispose();
-      matOxy.dispose();
+      headMaterial.dispose();
+      trailMesh.geometry.dispose();
+      trailMaterial.dispose();
+      trailMesh.dispose();
       meshDeoxy.dispose();
       meshOxy.dispose();
     }

@@ -31,10 +31,10 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForFunction(() => window.cardiaEcho?.getResult());
 
     // Every starting view at its preset.
-    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'tgsax'] };
+    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'mervio', 'melaapv', 'tgsax'] };
     for (const [modality, ids] of Object.entries(views)) {
       await useModality(page, modality);
-      assert.equal(await page.locator('[data-echo-view]').count(), 8, `${modality}: 8 views`);
+      assert.equal(await page.locator('[data-echo-view]').count(), ids.length, `${modality}: ${ids.length} views`);
       for (const id of ids) {
         await page.locator(`[data-echo-view="${id}"]`).click();
         const r = await page.evaluate(() => window.cardiaEcho.getResult());
@@ -219,7 +219,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForFunction(() => window.cardiaEcho?.getResult());
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'phone: no horizontal overflow');
 
-    console.log(`PASS echo: 16 views at preset and at 4 phases, A4C/ME4C orientation, 0/180 mirror, separate TEE motions, phase-locked section, freeze, seeded keyboard task, enlarge while frozen, p95 ${latency.p95.toFixed(1)} ms, ${ms.toFixed(1)} ms per section, phone`);
+    console.log(`PASS echo: 18 views at preset and at 4 phases, A4C/ME4C orientation, 0/180 mirror, separate TEE motions, phase-locked section, freeze, seeded keyboard task, enlarge while frozen, p95 ${latency.p95.toFixed(1)} ms, ${ms.toFixed(1)} ms per section, phone`);
   } finally {
     await browser.close();
   }

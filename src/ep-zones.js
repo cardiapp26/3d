@@ -22,7 +22,8 @@ const COLORS = {
   'right-lateral': 0x0ea5e9, 'right-posterior-inferior': 0x0891b2,
   'superior-paraseptal': 0xff2d55, 'mid-paraseptal': 0xff9f0a, 'inferior-paraseptal': 0x30d158,
   'koch-slow-pathway': 0x30d158, 'koch-inferior-extensions': 0x9be15d, 'cs-mcv': 0xd97706,
-  'cavotricuspid-isthmus': 0xff453a, 'crista-terminalis': 0xf472b6
+  'cavotricuspid-isthmus': 0xff453a, 'crista-terminalis': 0xf472b6,
+  'lv-posterior-septum': 0xfbbf24, 'right-bundle': 0xfca5a5
 };
 
 /** Scene labels of the PAC / PVC source regions (phase C). */
@@ -168,6 +169,22 @@ export function createEpZones(helpers) {
     zoneMesh('left-free-wall', arcOf(mvRim, leftLateralAnchor, la, SPAN));
     zoneMesh('left-anterolateral', arcOf(mvRim, leftLateralAnchor.clone().lerp(anteriorAnchor, 0.5), la, SPAN));
     zoneMesh('left-posterolateral', arcOf(mvRim, leftLateralAnchor.clone().lerp(posteriorAnchor, 0.5), la, SPAN));
+
+    // Advanced-case teaching regions (phase D): schematic ring zones, not
+    // mapped circuits. LV posterior septum (fascicular VT) and the right
+    // bundle course (BBR-VT).
+    {
+      const lv = sourceCenter('lv') || mvCentre.clone();
+      const ring = (center, radius = 0.09) => Array.from({ length: 13 }, (_, i) => {
+        const a = (i / 12) * Math.PI * 2;
+        return center.clone().add(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * 0.35 * radius, Math.sin(a) * radius));
+      });
+      const mvLow = mvRim.reduce((best, v) => (v.y < best.y ? v : best));
+      const lvSeptal = lv.clone().lerp(rv, 0.45).lerp(mvLow, 0.3);
+      zoneMesh('lv-posterior-septum', ring(lvSeptal));
+      const rbSite = hisSite.clone().lerp(rv, 0.35);
+      zoneMesh('right-bundle', ring(rbSite, 0.06));
+    }
 
     // CS / middle cardiac vein course: the venous connection zone.
     const csBody = vesselCenterline(meshVertices('cs'), csOs, 0.1).slice(0, 6);

@@ -10,6 +10,7 @@ const COLORS = {
   'ecg-ii': '#8fdc9f', 'ecg-v1': '#6fc48b', hra: '#c9d6cf', 'his-p': '#f0abfc', 'his-d': '#e879f9',
   'cs-910': '#7fb2ff', 'cs-78': '#74a6f2', 'cs-56': '#699ae6', 'cs-34': '#6090dd', 'cs-12': '#5b8cff',
   rv: '#ffd28a', 'abl-d': '#b99bff', 'abl-uni': '#d8c7ff',
+  rb: '#fca5a5', 'lv-sep-b': '#fcd34d', 'lv-sep-a': '#fbbf24', pv: '#c084fc',
   'halo-910': '#86efac', 'halo-78': '#6ee7a0', 'halo-56': '#4ade80', 'halo-34': '#34d17a', 'halo-12': '#22c55e'
 };
 

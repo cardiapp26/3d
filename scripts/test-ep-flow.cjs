@@ -266,11 +266,43 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.match(await page.locator('[data-ep-task] summary').textContent(), /narrow QRS/i, 'task panel follows the language');
     await page.evaluate(() => window.cardiaEp.setLanguage('tr'));
 
+    // Advanced cases (phase D): the BBR diagnosis carries H before V on the
+    // strip, and the fascicular VT entrainment clip lives in the Maneuvers tab.
+    await page.locator('[data-ep-section=diagnosis]').click();
+    await page.locator('[data-ep-case]').selectOption('bbr-vt');
+    await page.locator('[data-egm-scenario=bbr-vt]').click();
+    assert.match(await page.locator('.ep-measures').textContent(), /HV \(VT\) 95 ms/, 'BBR VT HV measured from events');
+    await page.locator('[data-ep-evidence]').click();
+    assert.equal(await page.evaluate(() => window.heart.getEpZone()), 'right-bundle', 'right bundle zone revealed');
+    await page.locator('[data-ep-section=maneuver]').click();
+    await page.locator('[data-ep-case]').selectOption('fascicular-vt');
+    await page.locator('[data-egm-scenario=fvt-entrain]').click();
+    assert.match(await page.locator('.ep-measures').textContent(), /P1-P1 \(pacing\) 310 ms/, 'entrainment P1 cycle measured');
+    assert.match(await page.locator('.ep-card').textContent(), /eksitabl/i, 'entrain-rv card rendered');
+
+    // PVI exercise: the Treatment tab of the AF case activates the 3D rings;
+    // burning a full ring silences the vein, all four return sinus, reset restores AF.
+    await page.locator('[data-ep-section=treatment]').click();
+    await page.locator('[data-ep-case]').selectOption('af-pvi');
+    assert.equal(await page.locator('[data-ep-pvi]').isVisible(), true, 'PVI panel in the Treatment tab');
+    assert.equal(await page.evaluate(() => window.heart.pvi.isActive() && window.heart.pvi.dotCount() === 40), true, '40 candidate dots over 4 veins');
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording()?.lab), 'pvi', 'PVI strip on open');
+    assert.equal(await page.evaluate(() => { const r = window.cardiaEp.getRecording(); return r.events.pv.some((e) => e.type === 'PV'); }), true, 'PV potentials while conducting');
+    await page.evaluate(() => { for (let i = 0; i < 10; i++) window.heart.pvi.burn('lspv', i); });
+    assert.equal(await page.evaluate(() => { const r = window.cardiaEp.getRecording(); return r.events.pv.some((e) => e.type === 'PV'); }), false, 'entrance block: PV potentials gone');
+    assert.match(await page.locator('[data-ep-pvi-veins]').textContent(), /10 \/ 10/, 'vein progress rendered');
+    await page.evaluate(() => { for (const v of ['lipv', 'rspv', 'ripv']) for (let i = 0; i < 10; i++) window.heart.pvi.burn(v, i); });
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().sinus), true, 'sinus after all four rings');
+    await page.locator('[data-ep-pvi-action=reset]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().sinus), false, 'reset restores AF');
+    await page.locator('[data-ep-section=diagnosis]').click();
+    assert.equal(await page.evaluate(() => window.heart.pvi.isActive()), false, 'rings retire outside the Treatment tab');
+
     // Leaving the mode clears the zone and the circuit.
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.getEpZone()), null);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape, atrial pacing laboratory, narrow QRS task, PAC/PVC source region');
+    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape, atrial pacing laboratory, narrow QRS task, PAC/PVC source region, phase D cases, PVI exercise');
   } finally {
     await browser.close();
   }
