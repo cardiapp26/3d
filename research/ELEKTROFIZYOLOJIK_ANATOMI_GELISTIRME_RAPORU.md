@@ -2,6 +2,12 @@
 
 Tarih: 30 Eylül 2026. Durum: araştırma ve geliştirme önerisi; ilk uygulama turu aynı gün ayrı bir çalışmayla yapıldı (aşağıda "Uygulama durumu"). Rapor gövdesi öneri metni olarak korunuyor.
 
+## Tanı akışı güncellemesi (1 Ekim 2026)
+
+Tipik AVNRT olgusunun Tanı sekmesine `avnrt-ah-jump` ve `avnrt-jump-echo` eklendi. Mevcut `avnrt-dual-echo` Manevralar sekmesinde aynı düzeltilmiş karşılaştırmayı kullanır. Her örnekte iki kısaltılmış 600 ms sürüş dizisi sonrası S1–S2 350 ve 340 ms; olaylardan ölçülen A2–H2 sırasıyla 100 ve 180 ms. Böylece 10 ms erkenlik artışına karşı AH 80 ms uzar. Önceki sürüş AH'si ile erken S2 AH'sinin karşılaştırılması, normal decremental iletimden sıçramayı ayırmaya yetmediği için kaldırıldı. Echo örneğinde son iletilen V'den 30 ms sonra His d kanalında tek uyarısız A döner; yeni H/V veya sürekli taşikardi çizilmez. Sayılar sentetik öğretim tasarımıdır. Tanı görünümünde yorum, manevra kartı ve zon kanıt açılana kadar gizlidir; pacing dizisi taşikardi aktivasyon haritasına gönderilmez.
+
+Tanımın birincil araştırma dayanağı: Bayraktarova ve ark., *Correlation between the sudden jump-like increases of the atrio-Hisian interval induced during burst atrial pacing and during programmed atrial stimulation in patients with atrioventricular nodal reentrant tachycardia*, Indian Pacing Electrophysiol J. 2018;18:49–53, DOI [10.1016/j.ipej.2017.11.003](https://doi.org/10.1016/j.ipej.2017.11.003). İndekslenen araştırma metni 10 ms S2 azaltımında ≥50 ms AH artışı tanımını doğrular; scite metadata ve özet kontrolü yapıldı, tam metin erişimi `contentDenied` döndü. Jump ve tek echo'nun klinik AVNRT tanısını tek başına kesinleştirmediği ayrımı korunur (R9, R10; atriyal pacing storyboard P4/P8). Doğrulama: olay tabanlı karşılaştırma/echo regresyonları ve Tanı sekmesindeki tarayıcı akışı.
+
 ## Uygulama durumu (30 Eylül 2026, ilk tur)
 
 Raporun 14. bölümdeki başlangıç önerisi uygulandı; faz 1-2 ve ilk karşılaştırma seti tamam, faz 3-5 açık. Kod: `src/ep-cases.js` (olgu/kayıt verisi), `src/ep-case-text.js` (TR/EN metin), `src/ep-egm.js` (genel çizici), `src/ep-panel.js` (panel). Testler: `scripts/test-ep-cases.mjs`, yeniden yazılmış `scripts/test-ep-egm.mjs` (ikisi de `npm test` içinde).

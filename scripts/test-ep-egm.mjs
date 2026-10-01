@@ -152,6 +152,26 @@ panel.setScenario('bogus');
 assert.equal(panel.getScenario(), 'avnrt-typ-vop-noncapture', 'unknown scenario ignored');
 assert.doesNotThrow(() => panel.draw({ phase: 0.3 }));
 assert.doesNotThrow(() => panel.draw(null));
+
+// Pharmacological examples own the strip only while active, and their phase
+// title follows the selected drug and language.
+panel.setScenario('avnrt-typ-parahis');
+const pharma = byClass('ep-pharma');
+const pharmaAction = (id) => pharma.children.find((n) => n.className === 'ep-pace-actions').children.find((b) => b.dataset.epPharmaAction === id);
+pharmaAction('show').listeners.click();
+assert.equal(panel.getRecording().lab, 'pharma');
+assert.equal(panel.getRecording().phase, 'after');
+assert.ok(title.textContent.includes('Atropine') && title.textContent.includes('After'));
+assert.equal(panel.getZone(), null, 'drug effect is not an ablation target');
+const phaseRow = pharma.children.find((n) => n.dataset.epPharmaPhases === '');
+phaseRow.children[0].listeners.click();
+assert.equal(panel.getRecording().phase, 'before');
+panel.setLanguage('tr');
+assert.ok(title.textContent.includes('Atropin') && title.textContent.includes('Önce'));
+panel.setScenario('avnrt-typ-parahis');
+assert.equal(pharma.children.find((n) => n.tagName === 'table').hidden, true, 'comparison retires when another strip is active');
+tabs.children[0].listeners.click();
+assert.equal(pharma.hidden, true, 'drug panel stays in Maneuvers');
 panel.hide();
 assert.equal(panel.element.hidden, true);
 panel.show();

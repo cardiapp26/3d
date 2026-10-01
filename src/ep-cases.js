@@ -157,25 +157,38 @@ define({
   });
 }
 {
-  const s2 = 1040;   // premature A2 after a 600 ms drive: the slow pathway takes over
-  const echoV = 1305;
-  define({
-    id: 'avnrt-dual-echo', caseId: 'avnrt-typical', section: 'maneuver', maneuver: 'a-extra', result: 'valid',
-    windowMs: 1560, channels: CH_SVT,
-    events: merge(
-      atrialPacedBeat(100, AH), atrialPacedBeat(700, AH), atrialPacedBeat(s2, 180),
-      // Single atrial echo: retrograde A over the fast pathway after the jump beat.
+  // Two abbreviated 600 ms drive trains, followed by S2 at 350 and 340 ms.
+  // Comparing successive S2 responses demonstrates a true AH jump; comparing
+  // a drive beat with a much earlier S2 would also include normal decrement.
+  const paced = merge(
+    atrialPacedBeat(100, AH), atrialPacedBeat(700, AH), atrialPacedBeat(1050, 100),
+    atrialPacedBeat(1900, AH), atrialPacedBeat(2500, AH), atrialPacedBeat(2840, 180)
+  );
+  const echoV = 2840 + 40 + 180 + HV;
+  for (const [id, section, echo] of [
+    ['avnrt-ah-jump', 'diagnosis', false],
+    ['avnrt-jump-echo', 'diagnosis', true],
+    ['avnrt-dual-echo', 'maneuver', true]
+  ]) define({
+    id, caseId: 'avnrt-typical', section, maneuver: 'a-extra', result: 'valid',
+    windowMs: 3450, channels: CH_SVT,
+    events: merge(paced, ...(echo ? [
       Object.fromEntries(Object.entries(A_TYPICAL).map(([ch, dt]) => [ch, [ev('A', echoV + dt, 0.7)]]))
-    ),
+    ] : [])),
     markers: [
-      { t: 100, label: { tr: 'S1', en: 'S1' } }, { t: 700, label: { tr: 'S1', en: 'S1' } },
-      { t: s2, label: { tr: 'S2 (erken)', en: 'S2 (premature)' } }
-    ],
+      ...[100, 700, 1900, 2500].map((t) => ({ t, label: { tr: 'S1', en: 'S1' } })),
+      { t: 1050, label: { tr: 'S2: 350 ms', en: 'S2: 350 ms' } },
+      { t: 2840, label: { tr: 'S2: 340 ms', en: 'S2: 340 ms' } },
+      ...(echo ? [{ t: echoV + A_TYPICAL['his-d'], label: { tr: 'Tek echo A', en: 'Single echo A' } }] : [])
+    ].sort((a, b) => a.t - b.t),
     calipers: [
-      cal('AH (S1)', ref('his-d', 'A', 1), ref('his-d', 'H', 1)),
-      cal('AH (S2)', ref('his-d', 'A', 2), ref('his-d', 'H', 2))
+      cal('AH (S2-1)', ref('his-d', 'A', 2), ref('his-d', 'H', 2)),
+      cal('AH (S2-2)', ref('his-d', 'A', 5), ref('his-d', 'H', 5)),
+      cal('S1-S2 (1)', ref('hra', 'S', 1), ref('hra', 'S', 2), 'hra'),
+      cal('S1-S2 (2)', ref('hra', 'S', 4), ref('hra', 'S', 5), 'hra'),
+      ...(echo ? [cal('VA (echo)', ref('his-d', 'V', 5), ref('his-d', 'A', 6))] : [])
     ],
-    teachingNumbers: { 'AH (S1)': AH, 'AH (S2)': 180 }
+    teachingNumbers: { 'AH (S2-1)': 100, 'AH (S2-2)': 180, 'S1-S2 (1)': 350, 'S1-S2 (2)': 340, ...(echo ? { 'VA (echo)': 30 } : {}) }
   });
 }
 define({

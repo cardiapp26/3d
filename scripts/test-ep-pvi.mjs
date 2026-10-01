@@ -4,11 +4,26 @@
 // every ring is complete, and the texts state the simplification.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import * as THREE from 'three';
+import { veinOstiumRing } from '../src/pvi-lab.js';
 import {
   PVI_VEINS, PVI_DOTS, PVI_CHANNELS, createPviState, burnDot, burnedCount, isolated, allIsolated, pviRecording
 } from '../src/pvi-model.js';
 import { resolveRef, measure, epRecording } from '../src/ep-cases.js';
 import { EP_CASE_TEXT, EP_CLIP_TEXT, EP_ZONE_TEXT } from '../src/ep-case-text.js';
+
+// A vein whose atrial end is beside the LA center: the ring must encircle
+// the whole lumen, rather than cluster on the wall nearest the LA center.
+const tube = [];
+for (let z = 0; z <= 20; z++) for (let i = 0; i < 32; i++) {
+  const a = i * Math.PI * 2 / 32;
+  tube.push(new THREE.Vector3(2 + Math.cos(a) * 0.2, Math.sin(a) * 0.2, z * 0.05));
+}
+const ring = veinOstiumRing(tube, new THREE.Vector3(0, 0, -0.5));
+assert.ok(ring, 'ostial section found');
+assert.ok(Math.abs(ring.ostium.x - 2) < 0.02, 'ring centered on lumen');
+assert.ok(ring.ostium.z < 0.25, 'ring at atrial end');
+assert.ok(Math.abs(ring.radius - 0.24) < 0.03, 'ring follows vein diameter');
 
 // State is immutable and counts are read back.
 let state = createPviState();

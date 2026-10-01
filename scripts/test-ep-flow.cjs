@@ -29,6 +29,22 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
 
     // 1. Channel choice and time zoom survive a clip change; inspection reads the events.
     await page.locator('[data-ep-section=diagnosis]').click();
+    await page.locator('[data-ep-case]').selectOption('avnrt-typical');
+    await page.locator('[data-egm-scenario=avnrt-ah-jump]').click();
+    assert.equal(await page.locator('[data-ep-section=diagnosis]').getAttribute('aria-selected'), 'true', 'AH jump stays in the diagnostic workup');
+    assert.match(await page.locator('.egm-title').textContent(), /Atriyal ekstrastimulus/);
+    assert.equal(await page.locator('.ep-card').isVisible(), false, 'neutral workup hides the inference card');
+    assert.match(await page.locator('.ep-measures').textContent(), /AH \(S2-1\) 100 ms.*AH \(S2-2\) 180 ms/);
+    assert.match(await page.locator('.ep-measures').textContent(), /S1-S2 \(1\) 350 ms.*S1-S2 \(2\) 340 ms/);
+    await page.locator('[data-ep-evidence]').click();
+    assert.match(await page.locator('.egm-text').textContent(), /10 ms kısalmaya 80 ms artış/);
+    await page.locator('[data-egm-scenario=avnrt-jump-echo]').click();
+    assert.equal(await page.locator('[data-ep-section=diagnosis]').getAttribute('aria-selected'), 'true', 'echo stays in the diagnostic workup');
+    assert.match(await page.locator('.ep-measures').textContent(), /VA \(echo\) 30 ms/);
+    assert.match(await page.locator('.egm-text').textContent(), /tek atriyal echo/);
+    assert.match(await page.locator('.egm-text').textContent(), /tanısını kesinleştirmez/);
+    await page.locator('[data-ep-evidence]').click();
+    await page.locator('[data-egm-scenario=avnrt-typ-svt]').click();
     await page.locator('.ep-channels summary').click();
     await page.locator('[data-ep-channel="cs-56"]').uncheck();
     await page.locator('[data-ep-channel="cs-78"]').check();
@@ -80,6 +96,56 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-ep-sim-control=output]').selectOption('direct-a');
     await page.locator('[data-ep-sim-action=deliver]').click();
     assert.equal(await page.locator('[data-ep-sim] .ep-sim-result').getAttribute('data-result'), 'invalidCapture', 'direct A capture: uninterpretable');
+
+    // Atropine and Isuprel: paired recordings, matching pacing rate, alternative
+    // single-echo/induced/noninduced examples, and stale-result cleanup.
+    await page.locator('[data-ep-case]').selectOption('avnrt-typical');
+    const pharma = page.locator('[data-ep-pharma]');
+    assert.equal(await pharma.isVisible(), true);
+    const pharmaMeasure = (key) => page.locator(`[data-ep-pharma-measure="${key}"]`).textContent();
+    await page.locator('[data-ep-pharma-action=show]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().lab), 'pharma');
+    assert.match(await pharmaMeasure('pp'), /850 ms650 ms/);
+    assert.match(await pharmaMeasure('drive'), /500 ms500 ms/);
+    assert.match(await pharmaMeasure('ah'), /80 ms65 ms/);
+    await page.locator('[data-ep-pharma-phase=before]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().phase), 'before');
+    assert.match(await page.locator('.egm-title').textContent(), /Atropin.*Önce/);
+    await page.locator('[data-ep-pharma-control=drug]').selectOption('isuprel');
+    assert.equal(await page.locator('[data-ep-pharma-comparison]').isHidden(), true, 'new selection retires the previous comparison');
+    assert.notEqual(await page.evaluate(() => window.cardiaEp.getRecording().lab), 'pharma', 'stale EGM cleared');
+    await page.locator('[data-ep-pharma-action=show]').click();
+    assert.match(await pharmaMeasure('pp'), /850 ms550 ms/);
+    assert.match(await pharmaMeasure('ah'), /80 ms55 ms/);
+    assert.match(await pharmaMeasure('induced'), /YokYok/);
+    await page.locator('[data-ep-pharma-control=example]').selectOption('echo-only');
+    await page.locator('[data-ep-pharma-action=show]').click();
+    assert.match(await pharmaMeasure('echo'), /YokVar/);
+    assert.match(await pharmaMeasure('induced'), /YokYok/);
+    assert.match(await pharmaMeasure('va'), /30 ms/);
+    await page.locator('[data-ep-pharma-control=example]').selectOption('induced');
+    await page.locator('[data-ep-pharma-action=show]').click();
+    assert.match(await pharmaMeasure('induced'), /YokVar/);
+    assert.match(await pharmaMeasure('tcl'), /330 ms/);
+    await page.evaluate(() => window.cardiaEp.setLanguage('en'));
+    assert.match(await page.locator('.egm-title').textContent(), /Isuprel.*After/);
+    assert.match(await pharmaMeasure('induced'), /AbsentPresent/);
+    await page.evaluate(() => window.cardiaEp.setLanguage('tr'));
+    await page.locator('[data-ep-pharma-control=example]').selectOption('noninduced');
+    await page.locator('[data-ep-pharma-action=show]').click();
+    assert.match(await pharmaMeasure('induced'), /YokYok/);
+    assert.match(await pharma.locator('.ep-pace-result').textContent(), /aritmiyi dışlamaz/);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(250);
+    if (!(await page.locator('[data-ep-pharma-phase=before]').isVisible())) await page.locator('[data-sheet=learn]').click();
+    await pharma.scrollIntoViewIfNeeded();
+    const mobilePharma = await pharma.boundingBox();
+    assert.ok(mobilePharma.x >= 0 && mobilePharma.x + mobilePharma.width <= 391, 'drug controls fit the mobile viewport');
+    await page.locator('[data-ep-pharma-phase=before]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().phase), 'before', 'mobile before button works');
+    await page.locator('[data-ep-pharma-phase=after]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().phase), 'after', 'mobile after button works');
+    await page.setViewportSize({ width: 1300, height: 900 });
 
     // 3. Circuit arrows follow the revealed clip; neutral diagnosis shows none.
     const circuits = () => page.evaluate(() => ['orthodromic', 'antidromic'].filter(k => { const o = window.heart.scene.getObjectByName(`EP circuit: ${k}`); return o && o.visible && o.parent.visible; }));
@@ -302,7 +368,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.getEpZone()), null);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape, atrial pacing laboratory, narrow QRS task, PAC/PVC source region, phase D cases, PVI exercise');
+    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuvers, atropine/Isuprel before-after examples and mobile controls, circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape, atrial pacing laboratory, narrow QRS task, PAC/PVC source region, phase D cases, PVI exercise');
   } finally {
     await browser.close();
   }

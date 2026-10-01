@@ -15,6 +15,25 @@ import { EP_TEXT, EP_CASE_TEXT, EP_CLIP_TEXT, EP_MANEUVERS, EP_ZONE_TEXT, EP_DIS
 const channelIds = new Set(EP_CHANNELS.map((c) => c.id));
 const first = (r, ch, type, occ = 0) => resolveRef(r, { ch, type, occ });
 
+// The AVNRT diagnostic workup includes a controlled S2 comparison and a
+// separate single-echo example, both available without changing tabs.
+assert.deepEqual(epClips('avnrt-typical', 'diagnosis'), ['avnrt-typ-svt', 'avnrt-ah-jump', 'avnrt-jump-echo']);
+for (const id of ['avnrt-ah-jump', 'avnrt-jump-echo', 'avnrt-dual-echo']) {
+  const r = epRecording(id);
+  const intervals = Object.fromEntries(r.calipers.map((c) => [c.label, measure(r, c)]));
+  assert.equal(intervals['S1-S2 (1)'] - intervals['S1-S2 (2)'], 10, `${id}: S2 decremented by 10 ms`);
+  assert.equal(intervals['AH (S2-1)'], 100);
+  assert.equal(intervals['AH (S2-2)'], 180);
+  const atrial = r.events['his-d'].filter((e) => e.type === 'A');
+  const his = r.events['his-d'].filter((e) => e.type === 'H');
+  assert.equal(atrial.length, id === 'avnrt-ah-jump' ? 6 : 7, `${id}: only the echo clip has a returned A`);
+  assert.equal(his.length, 6, `${id}: no sustained tachycardia`);
+  if (id !== 'avnrt-ah-jump') {
+    assert.equal(intervals['VA (echo)'], 30);
+    assert.ok(atrial[6].t > first(r, 'his-d', 'V', 5).t, `${id}: echo follows conducted S2`);
+  }
+}
+
 // Every recording: known channels, events inside the window (no clipped
 // maneuver clip, acceptance item 14), calipers measured from the events equal
 // the declared teaching numbers, and complete TR/EN text.
@@ -46,7 +65,7 @@ for (const id of EP_RECORDING_IDS) {
     assert.ok(disclaimed, `${id} ${lang} carries the synthetic disclaimer`);
   }
 }
-assert.equal(EP_RECORDING_IDS.length, 56, '56 recordings in the catalog (43 + 12 advanced phase D + the PVI baseline)');
+assert.equal(EP_RECORDING_IDS.length, 58, '58 recordings including the two AVNRT diagnostic extrastimulus clips');
 
 // Cases: separate axes and citations; text and clips in every section they claim.
 for (const c of EP_CASES) {
@@ -64,7 +83,8 @@ assert.notEqual(EP_CASES.find((c) => c.id === 'pjrt').conduction.join(), EP_CASE
 
 // Diagnosis clips hide their own mechanism in the neutral text.
 const BANNED = {
-  'avnrt-typ-svt': /AVNRT/i, 'avnrt-atyp-svt': /AVNRT/i, 'ap-ll-svt': /AVRT|serbest duvar|free wall/i,
+  'avnrt-typ-svt': /AVNRT/i, 'avnrt-atyp-svt': /AVNRT/i, 'avnrt-ah-jump': /AVNRT|çift AV nodal|dual AV nodal/i,
+  'avnrt-jump-echo': /AVNRT|çift AV nodal|dual AV nodal/i, 'ap-ll-svt': /AVRT|serbest duvar|free wall/i,
   'ap-ips-svt': /paraseptal/i, 'pjrt-svt': /PJRT/i, 'ap-lm-sinus': /WPW/i,
   'ap-lm-avrt': /AVRT|WPW/i, 'af-preexcited': /preeksit|preexcit|WPW/i,
   'ap-lm-antidromic': /antidromi|AVRT|WPW/i, 'at-svt': /fokal|focal/i,
@@ -171,12 +191,12 @@ for (const id of ['ap-ll-post-retro', 'ap-lm-post-retro']) {
 assert.match(EP_CLIP_TEXT['ap-ll-post-retro'].tr.text, /başarısız AP ablasyonu diye etiketlenmez/);
 
 // Dual AV nodal physiology (case 02): the AH jump and the single echo are a
-// finding, separated from the tachycardia diagnosis.
+// finding, included in the diagnostic workup without claiming AVNRT induction.
 const dual = epRecording('avnrt-dual-echo');
 const jump = measure(dual, dual.calipers[1]) - measure(dual, dual.calipers[0]);
 assert.ok(jump >= 50, `AH jump ${jump} ms`);
-assert.ok(first(dual, 'his-d', 'A', 3), 'a single atrial echo returns after the jump beat');
-assert.ok(!first(dual, 'his-d', 'H', 3), 'the echo does not start a tachycardia in this clip');
+assert.ok(first(dual, 'his-d', 'A', 6), 'a single atrial echo returns after the jump beat');
+assert.ok(!first(dual, 'his-d', 'H', 6), 'the echo does not start a tachycardia in this clip');
 assert.match(EP_CLIP_TEXT['avnrt-dual-echo'].tr.text, /tek başına klinik AVNRT kanıtı değildir/);
 
 // Orthodromic AVRT over the manifest pathway: narrow QRS (no delta), eccentric A.
@@ -334,4 +354,4 @@ for (const lang of ['tr', 'en']) {
 for (const file of ['../src/ep-cases.js', '../src/ep-case-text.js', '../src/ep-egm.js', '../src/ep-panel.js', '../src/ep-zones.js']) {
   assert.ok(!readFileSync(new URL(file, import.meta.url), 'utf8').includes('\u2014'), `${file}: no em dash`);
 }
-console.log('PASS ep-cases: 43 recordings with event-measured calipers, separate mechanism/zone/conduction axes, neutral diagnosis texts, His-refractory PVC and overdrive validity, decremental retrograde, corrected VA block wording, manifest fusion and post-ablation endpoints');
+console.log('PASS ep-cases: 58 recordings with event-measured calipers, AVNRT diagnostic AH jump/echo, separate mechanism/zone/conduction axes, neutral diagnosis texts, maneuver validity and post-ablation endpoints');

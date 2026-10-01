@@ -11,6 +11,44 @@ import { PVI_VEINS, PVI_DOTS, createPviState, burnDot, isolated, allIsolated, bu
 const IDLE = { color: 0xb6c2cc, opacity: 0.55 };
 const BURNED = { color: 0xf97316, opacity: 0.95 };
 
+/** Fit ostial plane at the atrial end of a vein, rather than selecting one side of its wall. */
+export function veinOstiumRing(verts, atrium) {
+  if (verts.length < 12) return null;
+  const center = verts.reduce((sum, p) => sum.add(p), new THREE.Vector3()).divideScalar(verts.length);
+  let axis = new THREE.Vector3(1, 1, 1).normalize();
+  for (let iteration = 0; iteration < 24; iteration++) {
+    const next = new THREE.Vector3();
+    for (const p of verts) {
+      const d = p.clone().sub(center);
+      next.addScaledVector(d, d.dot(axis));
+    }
+    if (next.lengthSq() < 1e-12) return null;
+    axis = next.normalize();
+  }
+  const projections = verts.map((p) => p.clone().sub(center).dot(axis));
+  const lo = projections.reduce((min, value) => Math.min(min, value), Infinity);
+  const hi = projections.reduce((max, value) => Math.max(max, value), -Infinity);
+  if (hi - lo < 1e-5) return null;
+  const lowEnd = center.clone().addScaledVector(axis, lo);
+  const highEnd = center.clone().addScaledVector(axis, hi);
+  if (highEnd.distanceToSquared(atrium) < lowEnd.distanceToSquared(atrium)) axis.negate();
+  const along = verts.map((p) => p.clone().sub(center).dot(axis));
+  const start = along.reduce((min, value) => Math.min(min, value), Infinity);
+  const end = along.reduce((max, value) => Math.max(max, value), -Infinity);
+  const section = start + (end - start) * 0.12;
+  const width = Math.max((end - start) * 0.08, 0.015);
+  const slice = verts.filter((_, i) => Math.abs(along[i] - section) <= width);
+  if (slice.length < 6) return null;
+  const ostium = slice.reduce((sum, p) => sum.add(p), new THREE.Vector3()).divideScalar(slice.length);
+  const u = new THREE.Vector3(0, 1, 0).cross(axis);
+  if (u.lengthSq() < 1e-4) u.set(1, 0, 0).cross(axis);
+  u.normalize();
+  const v = axis.clone().cross(u).normalize();
+  const radii = slice.map((p) => p.clone().sub(ostium).projectOnPlane(axis).length()).sort((a, b) => a - b);
+  const radius = Math.min(0.34, Math.max(0.09, radii[Math.floor(radii.length / 2)] * 1.2));
+  return { ostium, normal: axis, radius, u, v };
+}
+
 /**
  * @param {{ sourceCenter: (id: string) => import('three').Vector3|null,
  *   meshVertices: (id: string) => import('three').Vector3[],
@@ -31,21 +69,7 @@ export function createPviLab({ sourceCenter, meshVertices, isReady, camera, dom,
   const pointer = new THREE.Vector2();
 
   function ringOf(veinId, la) {
-    const verts = meshVertices(veinId);
-    if (verts.length < 12) return null;
-    // Ostium cluster: the fifth of the vein mesh closest to the left atrium.
-    const byLa = [...verts].sort((a, b) => a.distanceTo(la) - b.distanceTo(la));
-    const near = byLa.slice(0, Math.max(8, Math.floor(verts.length / 5)));
-    const farHalf = byLa.slice(-Math.max(8, Math.floor(verts.length / 5)));
-    const centroid = (list) => list.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / list.length);
-    const ostium = centroid(near);
-    const normal = centroid(farHalf).sub(ostium).normalize();
-    const radius = Math.min(0.3, Math.max(0.09, near.reduce((acc, v) => acc + v.distanceTo(ostium), 0) / near.length * 1.15));
-    const u = new THREE.Vector3(0, 1, 0).cross(normal);
-    if (u.lengthSq() < 1e-4) u.set(1, 0, 0).cross(normal);
-    u.normalize();
-    const v = normal.clone().cross(u).normalize();
-    return { ostium, normal, radius, u, v };
+    return veinOstiumRing(meshVertices(veinId), la);
   }
 
   function init() {

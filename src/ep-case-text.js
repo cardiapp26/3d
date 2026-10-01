@@ -23,6 +23,8 @@ export const EP_TEXT = Object.freeze({
     caseLabel: 'Olgu', clipLabel: 'Kayıt',
     evidenceShow: 'Kanıtı göster', evidenceHide: 'Kanıtı gizle',
     neutralTitle: 'Taşikardi kaydı (mekanizma gizli)',
+    extrastimulusTitle: 'Atriyal ekstrastimulus kaydı (yorum gizli)',
+    extrastimulusPrompt: 'İki S2 uygulamasında S1–S2 ve A2–H2 sürelerini karşılaştırın. Son iletilen atımdan sonra uyarısız bir A dönüyor mu? Kanıtı göster ile yorumu açın.',
     neutralPrompt: 'Önce kendiniz değerlendirin: en erken atriyal aktivasyon hangi kanalda? VA kısa mı, uzun mu? Dizilim konsantrik mi, eksantrik mi? Tek kayıt kesin tanı vermez; "Kanıtı göster" mekanizma yorumunu açar.',
     csCompare: 'CS ağzı karşılaştırması: tipik AVNRT, atipik AVNRT, inferior paraseptal AP ve PJRT kayıtlarında proksimal CS erken A benzer görünebilir. Erken proksimal A tek başına yetmez; ayrım manevrayla yapılır.',
     results: { valid: 'Geçerli manevra', invalidCapture: 'Yorumlanamaz: yakalama yok', insufficientEvidence: 'Yetersiz kanıt' },
@@ -36,6 +38,8 @@ export const EP_TEXT = Object.freeze({
     caseLabel: 'Case', clipLabel: 'Recording',
     evidenceShow: 'Show evidence', evidenceHide: 'Hide evidence',
     neutralTitle: 'Tachycardia recording (mechanism hidden)',
+    extrastimulusTitle: 'Atrial extrastimulus recording (interpretation hidden)',
+    extrastimulusPrompt: 'Compare S1–S2 and A2–H2 in the two S2 trials. Does an unstimulated A return after the last conducted beat? Show evidence opens the interpretation.',
     neutralPrompt: 'Assess it yourself first: which channel has the earliest atrial activation? Is VA short or long? Is the sequence concentric or eccentric? One recording never gives a definite diagnosis; "Show evidence" opens the mechanism reading.',
     csCompare: 'CS ostium comparison: typical AVNRT, atypical AVNRT, an inferior paraseptal pathway and PJRT can all show a similar early proximal CS A. Early proximal A alone is not enough; the maneuvers separate them.',
     results: { valid: 'Valid maneuver', invalidCapture: 'Uninterpretable: no capture', insufficientEvidence: 'Insufficient evidence' },
@@ -328,6 +332,17 @@ export const EP_CASE_TEXT = Object.freeze({
   }
 });
 
+const JUMP_ECHO_EVIDENCE = {
+  tr: 'Aynı 600 ms sürüşte S1–S2 350 ms iken AH 100 ms; S1–S2 340 ms iken AH 180 ms. S2 yalnız 10 ms erkene alınırken AH 80 ms artar: AH jump (sıçrama), çift AV nodal fizyoloji lehine. Uzun AH ile yavaş yoldan antegrad iletimden sonra hızlı yoldan retrograd dönüşle uyumlu tek atriyal echo görülür; His bölgesinde V–A 30 ms. Echo sonrası yeni H/V veya sürekli taşikardi yoktur. AH sıçraması tek başına klinik AVNRT kanıtı değildir; tek echo da AVNRT tanısını kesinleştirmez (R9, R10).',
+  en: 'With the same 600 ms drive, AH is 100 ms at S1–S2 350 ms and 180 ms at S1–S2 340 ms. Advancing S2 by only 10 ms increases AH by 80 ms: an AH jump, supporting dual AV nodal physiology. After long-AH antegrade conduction over the slow pathway, one atrial echo returns, consistent with retrograde conduction over the fast pathway; His-region V–A is 30 ms. No new H/V or sustained tachycardia follows the echo. An AH jump alone is not proof of clinical AVNRT; a single echo also does not establish AVNRT (R9, R10).'
+};
+const JUMP_ECHO_TEXT = Object.freeze(Object.fromEntries(['tr', 'en'].map((lang) => [lang, {
+  title: lang === 'tr' ? 'AH jump ve tek AV nodal echo' : 'AH jump and single AV nodal echo',
+  neutral: `${D[lang]} ${lang === 'tr' ? 'İki kısaltılmış 600 ms sürüş dizisi sonrası S2: 350 ve 340 ms. A2–H2 sürelerini ve son V sonrası uyarısız A’yı inceleyin.' : 'S2 follows two abbreviated 600 ms drive trains at 350 and 340 ms. Inspect both A2–H2 intervals and the unstimulated A after the final V.'}`,
+  evidence: JUMP_ECHO_EVIDENCE[lang],
+  text: `${D[lang]} ${JUMP_ECHO_EVIDENCE[lang]}`
+}])));
+
 export const EP_CLIP_TEXT = Object.freeze({
   'avnrt-typ-svt': {
     tr: {
@@ -437,10 +452,20 @@ export const EP_CLIP_TEXT = Object.freeze({
     tr: { title: 'İki hızda V pacing: decremental retrograd', text: `${D.tr} 500 ms pacing'de S-A 160 ms; 380 ms'de S-A 210 ms'ye uzuyor: retrograd iletim decremental. "Bütün AP'ler nondecremental" kuralına karşı örnek (R4). Her iki hızda da yakalama doğrulanmıştır.` },
     en: { title: 'V pacing at two rates: decremental retrograde', text: `${D.en} At 500 ms pacing the S-A is 160 ms; at 380 ms it lengthens to 210 ms: retrograde conduction is decremental. The counterexample to "all pathways are nondecremental" (R4). Capture is confirmed at both rates.` }
   },
-  'avnrt-dual-echo': {
-    tr: { title: 'Atriyal ekstrastimulus: AH sıçraması ve echo', text: `${D.tr} 600 ms sürüşte AH 80 ms; erken S2'de AH aniden 180 ms'ye uzuyor (sıçrama: yavaş yola geçiş) ve tek atriyal echo dönüyor. Çift AV nodal fizyoloji bulgusudur; taşikardi başlamadı. AH sıçraması tek başına klinik AVNRT kanıtı değildir.` },
-    en: { title: 'Atrial extrastimulus: AH jump and echo', text: `${D.en} On the 600 ms drive the AH is 80 ms; at the premature S2 it jumps to 180 ms (shift to the slow pathway) and a single atrial echo returns. This is dual AV nodal physiology; no tachycardia started. An AH jump alone is not proof of clinical AVNRT.` }
+  'avnrt-ah-jump': {
+    tr: {
+      title: 'AH jump: iki S2 karşılaştırması',
+      neutral: `${D.tr} İki kısaltılmış 600 ms sürüş dizisi sonrası S2: 350 ve 340 ms. Her S2’nin A2–H2 süresini ölçüp farkı hesaplayın.`,
+      evidence: 'S1–S2 350→340 ms kısalırken AH 100→180 ms uzar: 10 ms kısalmaya 80 ms artış. 10 ms erkenlik artışında AH’nin ≥50 ms uzaması AH jump (sıçrama) ölçütüdür; çift AV nodal fizyolojiyi destekler. Bu kayıtta echo ve sürekli taşikardi yoktur. Jump tek başına AVNRT tanısı koydurmaz; AVNRT’de jump her zaman gösterilemeyebilir (R9, R10).'
+    },
+    en: {
+      title: 'AH jump: two S2 trials',
+      neutral: `${D.en} S2 follows two abbreviated 600 ms drive trains at 350 and 340 ms. Measure each A2–H2 interval and calculate the difference.`,
+      evidence: 'As S1–S2 shortens from 350 to 340 ms, AH increases from 100 to 180 ms: an 80 ms increase for a 10 ms decrement. An AH increase of ≥50 ms with a 10 ms decrement defines an AH jump and supports dual AV nodal physiology. This recording has no echo or sustained tachycardia. A jump alone does not establish AVNRT; a jump may not be demonstrable in every AVNRT case (R9, R10).'
+    }
   },
+  'avnrt-jump-echo': JUMP_ECHO_TEXT,
+  'avnrt-dual-echo': JUMP_ECHO_TEXT,
   'ap-lm-avrt': {
     tr: {
       title: 'Aynı yol ile ortodromik AVRT',
@@ -791,4 +816,3 @@ export const EP_COMPARE = Object.freeze({
     ] }
   }
 });
-
