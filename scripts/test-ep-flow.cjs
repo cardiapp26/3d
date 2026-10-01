@@ -53,13 +53,13 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-ep-sim-control=maneuver]').selectOption('his-pvc');
     await setRange('timing', 15);
     await page.locator('[data-ep-sim-action=deliver]').click();
-    assert.equal(await page.locator('.ep-sim-result').getAttribute('data-result'), 'valid');
-    assert.match(await page.locator('.ep-sim-reason').textContent(), /A ilerledi/);
+    assert.equal(await page.locator('[data-ep-sim] .ep-sim-result').getAttribute('data-result'), 'valid');
+    assert.match(await page.locator('[data-ep-sim] .ep-sim-reason').textContent(), /A ilerledi/);
     const firstId = await page.evaluate(() => window.cardiaEp.getRecording().id);
     await setRange('timing', -30);
     await page.locator('[data-ep-sim-action=deliver]').click();
-    assert.equal(await page.locator('.ep-sim-result').getAttribute('data-result'), 'insufficientEvidence', 'stimulus before H: not diagnostic');
-    assert.match(await page.locator('.ep-sim-feedback').textContent(), /His refrakter: yok/);
+    assert.equal(await page.locator('[data-ep-sim] .ep-sim-result').getAttribute('data-result'), 'insufficientEvidence', 'stimulus before H: not diagnostic');
+    assert.match(await page.locator('[data-ep-sim] .ep-sim-feedback').textContent(), /His refrakter: yok/);
     assert.notEqual(await page.evaluate(() => window.cardiaEp.getRecording().id), firstId, 'the choice changed the recording');
     await setRange('timing', 15);
     await page.locator('[data-ep-sim-action=deliver]').click();
@@ -67,19 +67,19 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-ep-sim-control=maneuver]').selectOption('v-overdrive');
     await setRange('pcl', 380);
     await page.locator('[data-ep-sim-action=deliver]').click();
-    assert.equal(await page.locator('.ep-sim-result').getAttribute('data-result'), 'insufficientEvidence', 'not faster than TCL: no entrainment');
+    assert.equal(await page.locator('[data-ep-sim] .ep-sim-result').getAttribute('data-result'), 'insufficientEvidence', 'not faster than TCL: no entrainment');
     assert.doesNotMatch(await page.locator('.ep-measures').textContent(), /PPI/, 'no PPI without entrainment');
     await setRange('pcl', 330);
     await page.locator('[data-ep-sim-action=deliver]').click();
     assert.match(await page.locator('.ep-measures').textContent(), /PPI \d+ ms/);
-    assert.match(await page.locator('.ep-sim-result').textContent(), /PPI-TCL \d+ ms · SA-VA \d+ ms/);
+    assert.match(await page.locator('[data-ep-sim] .ep-sim-result').textContent(), /PPI-TCL \d+ ms · SA-VA \d+ ms/);
     await page.locator('[data-ep-sim-action=retry]').click();
-    assert.equal(await page.locator('.ep-sim-result').isHidden(), true, 'retry clears the result');
+    assert.equal(await page.locator('[data-ep-sim] .ep-sim-result').isHidden(), true, 'retry clears the result');
     assert.equal(await page.evaluate(() => window.cardiaEp.getView().sim), null);
     await page.locator('[data-ep-sim-control=maneuver]').selectOption('para-his');
     await page.locator('[data-ep-sim-control=output]').selectOption('direct-a');
     await page.locator('[data-ep-sim-action=deliver]').click();
-    assert.equal(await page.locator('.ep-sim-result').getAttribute('data-result'), 'invalidCapture', 'direct A capture: uninterpretable');
+    assert.equal(await page.locator('[data-ep-sim] .ep-sim-result').getAttribute('data-result'), 'invalidCapture', 'direct A capture: uninterpretable');
 
     // 3. Circuit arrows follow the revealed clip; neutral diagnosis shows none.
     const circuits = () => page.evaluate(() => ['orthodromic', 'antidromic'].filter(k => { const o = window.heart.scene.getObjectByName(`EP circuit: ${k}`); return o && o.visible && o.parent.visible; }));
@@ -188,33 +188,33 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(paced.test.answer, 'ap', 'distal CS pacing: full preexcitation');
     assert.deepEqual(await page.evaluate(() => window.heart.getEpZoneOptions().paths), [], '3D routes hidden before the answer');
     await page.locator('[data-ep-pace-answer=ap]').click();
-    assert.equal(await page.locator('.ep-pace-grade').getAttribute('data-grade'), 'correct');
+    assert.equal(await page.locator('[data-ep-pace] .ep-pace-grade').getAttribute('data-grade'), 'correct');
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('EP pacing path: ap').visible), true, 'pathway route drawn after the answer');
     await pace('site', 'hra');
     await pace('s2', 260);
     await page.locator('[data-ep-pace-action=deliver]').click();
     assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().reason), 'apRefractoryEcho', 'S2 below the pathway refractory period');
     await page.locator('[data-ep-pace-answer=fusion]').click();
-    assert.equal(await page.locator('.ep-pace-grade').getAttribute('data-grade'), 'incorrect');
-    assert.deepEqual(await page.evaluate(() => window.heart.getEpZoneOptions()), { halo: false, circuit: 'orthodromic', paths: ['avn'] }, 'nodal route and orthodromic echo circuit');
+    assert.equal(await page.locator('[data-ep-pace] .ep-pace-grade').getAttribute('data-grade'), 'incorrect');
+    assert.deepEqual(await page.evaluate(() => window.heart.getEpZoneOptions()), { halo: false, circuit: 'orthodromic', paths: ['avn'], origin: null }, 'nodal route and orthodromic echo circuit');
     await pace('s2', 190);
     await page.locator('[data-ep-pace-action=deliver]').click();
-    assert.equal(await page.locator('.ep-pace-result').getAttribute('data-result'), 'invalidCapture');
-    assert.equal(await page.locator('.ep-pace-answers').isHidden(), true, 'no route question without capture');
+    assert.equal(await page.locator('[data-ep-pace] .ep-pace-result').getAttribute('data-result'), 'invalidCapture');
+    assert.equal(await page.locator('[data-ep-pace] .ep-pace-answers').isHidden(), true, 'no route question without capture');
     await page.locator('[data-ep-case]').selectOption('avnrt-typical');
     await pace('s2', 310);
     await page.locator('[data-ep-pace-action=deliver]').click();
     await pace('s2', 300);
     await page.locator('[data-ep-pace-action=deliver]').click();
-    assert.equal(await page.locator('.ep-pace-compare').getAttribute('data-jump'), 'true', 'AH jump measured against the previous delivery');
+    assert.equal(await page.locator('[data-ep-pace] .ep-pace-compare').getAttribute('data-jump'), 'true', 'AH jump measured against the previous delivery');
     await page.locator('[data-ep-pace-answer=avn-slow]').click();
     // Another recording on the strip hides the laboratory's result and question (no stale answer).
     await page.locator('#egm-panel [data-egm-scenario]').first().click();
-    assert.equal(await page.locator('.ep-pace-quiz').isHidden(), true, 'quiz hidden while a clip is shown');
+    assert.equal(await page.locator('[data-ep-pace] .ep-pace-quiz').isHidden(), true, 'quiz hidden while a clip is shown');
     assert.deepEqual(await page.evaluate(() => window.heart.getEpZoneOptions().paths), [], 'no pacing routes for a clip');
     await page.locator('[data-ep-pace-control=mode]').selectOption('incremental');
     await page.locator('[data-ep-pace-action=deliver]').click();
-    assert.equal(await page.locator('.ep-pace-compare').isHidden(), true, 'no stale comparison after an incremental delivery');
+    assert.equal(await page.locator('[data-ep-pace] .ep-pace-compare').isHidden(), true, 'no stale comparison after an incremental delivery');
     // A pacing-only case entered from Diagnosis shows no stale strip before the first delivery.
     await page.locator('[data-ep-section=diagnosis]').click();
     await page.locator('[data-ep-case]').selectOption('ap-left-manifest');
@@ -224,11 +224,53 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-ep-pace-action=deliver]').click();
     assert.equal(await page.locator('#egm-panel .egm-canvas').isVisible(), true, 'strip after the delivery');
 
+    // Narrow QRS task (EasyECG report phase B): hidden case, neutral title and zone until the answer,
+    // each delivered maneuver classified in the ledger from its events.
+    await page.locator('[data-ep-section=diagnosis]').click();
+    await page.evaluate(() => window.cardiaEp.task.start('pjrt'));
+    assert.match(await page.locator('#egm-panel .egm-title').textContent(), /^Görev \d+: Taşikardi kaydı$/, 'neutral task title');
+    assert.equal(await page.evaluate(() => window.heart.getEpZone()), null, 'zone hidden during the task');
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().channels.includes('abl-d')), false, 'no ablation catheter on the task strip');
+    const taskSim = page.locator('[data-ep-task-sim]');
+    await taskSim.locator('[data-ep-task-sim-control=maneuver]').selectOption('his-pvc');
+    await page.evaluate(() => { const el = document.querySelector('[data-ep-task-sim-control=timing]'); el.value = '15'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await taskSim.locator('[data-ep-task-sim-action=deliver]').click();
+    assert.match(await page.locator('#egm-panel .egm-title').textContent(), /His-refrakter PVC$/);
+    const cells = await page.locator('[data-ep-task-ledger] tr:last-child td[data-state]').evaluateAll((tds) => tds.map((td) => td.dataset.state));
+    assert.deepEqual(cells, ['against', 'against', 'neutral', 'supports', 'neutral'], 'A delayed by a His-refractory PVC supports PJRT');
+    await page.locator('[data-ep-task-answer]').selectOption('pjrt');
+    await page.locator('[data-ep-task-action=answer]').click();
+    assert.equal(await page.locator('[data-ep-task] .ep-pace-grade').getAttribute('data-grade'), 'correct');
+    assert.equal(await page.evaluate(() => window.heart.getEpZone()), 'inferior-paraseptal', 'zone revealed after the answer');
+    assert.equal(await taskSim.isHidden(), true, 'no maneuvers after the answer');
+    assert.equal(await page.evaluate(() => window.cardiaEp.task.getEvidence().length), 2, 'evidence closed with the answer');
+
+    // Source region (phase C): the 12 leads are drawn, an overlapping pattern grades as compatible,
+    // the 3D marker appears after the answer; an atrial focus puts its catheter activation on the strip.
+    await page.evaluate(() => window.cardiaEp.origin.show('pvc-rvot-v3'));
+    assert.equal(await page.locator('[data-ep-origin] .ecg12-canvas').isVisible(), true, '12-lead canvas');
+    assert.ok(await page.locator('[data-ep-origin] .ecg12-canvas').evaluate((c) => c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 1 && v > 200)), '12-lead traces drawn');
+    assert.equal(await page.evaluate(() => window.heart.getEpZoneOptions().origin), null, 'no marker before the answer');
+    await page.locator('[data-ep-origin-answer="lvot-cusp"]').click();
+    assert.equal(await page.locator('[data-ep-origin] .ep-pace-grade').getAttribute('data-grade'), 'compatible');
+    assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('EP origin region: rvot').visible), true, 'source region marked in 3D');
+    await page.evaluate(() => window.cardiaEp.origin.show('pac-rspv'));
+    assert.notEqual(await page.evaluate(() => window.cardiaEp.getRecording()?.lab), 'origin', 'catheter strip held back until the answer');
+    assert.equal(await page.evaluate(() => window.heart.getEpZoneOptions().origin), null, 'marker cleared with the next example');
+    await page.locator('[data-ep-origin-answer="rspv"]').click();
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().lab), 'origin', 'catheter activation on the strip after the answer');
+    assert.match(await page.locator('[data-ep-origin]').textContent(), /örnekleme sınırı/, 'sampling limit explained');
+    await page.locator('[data-ep-case]').selectOption({ index: 1 });
+    assert.equal(await page.evaluate(() => window.heart.getEpZoneOptions().origin), null, 'marker cleared by a case change');
+    await page.evaluate(() => window.cardiaEp.setLanguage('en'));
+    assert.match(await page.locator('[data-ep-task] summary').textContent(), /narrow QRS/i, 'task panel follows the language');
+    await page.evaluate(() => window.cardiaEp.setLanguage('tr'));
+
     // Leaving the mode clears the zone and the circuit.
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.getEpZone()), null);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape, atrial pacing laboratory');
+    console.log('PASS ep-flow: channel/zoom/inspection state, interactive maneuver (choice-dependent, non-diagnostic preconditions, reproducible, retry), circuits, AT map, CTI and para-Hisian flows, Halo/CS identity, full screen portrait/landscape, atrial pacing laboratory, narrow QRS task, PAC/PVC source region');
   } finally {
     await browser.close();
   }

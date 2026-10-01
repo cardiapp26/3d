@@ -15,7 +15,7 @@ import { ref, cal, measure } from './ep-cases.js';
  * teaching values, not measured intervals or thresholds.
  */
 
-const A_PARAHIS_SVT = { 'his-p': 38, 'his-d': 40, 'cs-910': 58, hra: 55, 'cs-56': 72, 'cs-12': 90 };
+const A_PARAHIS_SVT = { 'his-p': 73, 'his-d': 75, 'cs-910': 93, hra: 90, 'cs-56': 107, 'cs-12': 125 };
 const A_CRISTAL = { hra: 190, 'his-d': 215, 'his-p': 213, 'cs-910': 225, 'cs-56': 240, 'cs-12': 260 };
 const NODAL_RETRO = { 'his-d': 140, 'his-p': 138, 'cs-910': 150, 'cs-56': 170, 'cs-12': 185, hra: 160 };
 
@@ -31,7 +31,7 @@ export const SIM_CASES = Object.freeze({
   'avnrt-atypical': { tcl: 380, a: A_ATYPICAL, pull: 0, ppiTcl: { 'rv-apex': 140, 'rv-base': 175 }, sa: 310, response: 'VAV', paraHis: 'nodal', channels: CH_SVT },
   'ap-left-lateral': { tcl: 360, a: A_LEFT_LAT, pull: 25, ppiTcl: { 'rv-apex': 110, 'rv-base': 105 }, sa: 190, response: 'VAV', paraHis: 'nodal', channels: CH_CS_FULL, ablV: -5 },
   'ap-inf-paraseptal': { tcl: 380, a: A_INF_PS, pull: 20, ppiTcl: { 'rv-apex': 90, 'rv-base': 70 }, sa: 130, response: 'VAV', paraHis: 'extranodal', channels: CH_CS_FULL, ablV: -3 },
-  'ap-parahisian': { tcl: 330, a: A_PARAHIS_SVT, pull: 15, ppiTcl: { 'rv-apex': 80, 'rv-base': 60 }, sa: 95, response: 'VAV', paraHis: 'extranodal', channels: CH_SVT },
+  'ap-parahisian': { tcl: 330, a: A_PARAHIS_SVT, pull: 15, ppiTcl: { 'rv-apex': 80, 'rv-base': 60 }, sa: 130, response: 'VAV', paraHis: 'extranodal', channels: CH_SVT },
   // A slowly conducting (decremental) retrograde pathway can be masked by nodal conduction in para-Hisian pacing (report section 7).
   pjrt: { tcl: 420, a: A_PJRT, pull: -15, ppiTcl: { 'rv-apex': 100, 'rv-base': 85 }, sa: 260, response: 'VAV', paraHis: 'nodal', channels: CH_SVT },
   'focal-at': { tcl: 400, a: A_CRISTAL, pull: 0, ppiTcl: { 'rv-apex': 0, 'rv-base': 0 }, sa: 175, response: 'AAV', paraHis: 'nodal', channels: CH_SVT }

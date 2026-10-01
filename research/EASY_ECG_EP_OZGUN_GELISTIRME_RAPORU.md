@@ -19,11 +19,16 @@ Faz A uygulandı ve test edildi; klinik olarak **doğrulanmadı** (EP uzman ince
 
 `svtsimulator`'dan kod, CSS, vaka metni veya eşik alınmadı; yalnız S1×N / S2 / pacing yeri kontrol fikri kullanıldı. Bölüm 2'deki kritik kod sınırlarının karşılığı yoktur: süreler olaylardan ölçülür, yakalamayan uyarı tanısal sonuç vermez, aynı giriş aynı kaydı üretir, rastgele sayı kullanılmaz.
 
-**Faz B-D aşama planı (uygulanmadı):**
+### Faz B, C ve D (30 Eylül 2026, ikinci tur)
 
-1. Faz B: mevcut AVNRT, AVRT, fokal AT ve PJRT modellerini (`ep-maneuver-sim.js`) tanısı gizli tek görevde birleştir; her manevra sonucu "destekler / dışlamaz / yorumlanamaz" olarak olay listesinden sınıflanır. Önce karar tablosu ve kaynak matrisi (proksimal CS erken A ve decremental VA'nın kesin tanıya çevrilmemesi).
-2. Faz C: az sayıda atriyal odak ve PVC çıkış bölgesi için sıfırdan üretilmiş 12 derivasyon örnekleri, belirsizlik gösterimi ve skar karşı örneği. 12 derivasyon çizici bugün yok; ayrı modül ve kaynak matrisi gerekir (2019 VA uzlaşısı).
-3. Faz D: para-Hisian fokal AT, fasiküler VT, BBR-VT için kaynak matrisi ve storyboard; A-C ve uzman incelemesi bitmeden uygulanmaz.
+Faz B ve C uygulandı ve test edildi; Faz D için rapor bölüm 4D'nin istediği kaynak matrisi ve olay storyboard'u yazıldı, kod yazılmadı (A-C ve EP uzman incelemesi önkoşulu). Hiçbiri klinik olarak doğrulanmadı. Kaynaklar, kurallar, storyboard ve karar kaydı: `research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md`.
+
+| Faz | Teslim | Yer |
+|---|---|---|
+| B | Tanı sekmesinde gizli olgulu dar QRS görevi: taşikardi kaydı (VA ve en erken A olaylardan), mevcut manevra modeliyle His-refrakter PVC, ventriküler overdrive ve para-Hisian pacing; her kanıt beş mekanizmaya karşı "destekler / aleyhine, dışlamaz / dışlamaz / yorumlanamaz"; yanıt ve açıklama; başlık ve 3B zon yanıta kadar nötr | `src/ep-task.js`, `src/ep-task-text.js`, `src/ep-task-panel.js`; test `scripts/test-ep-task.mjs` |
+| B (düzeltme) | Para-Hisian yol olgusunun septal VA'sı 40 ms'den 75 ms'ye (40 ms, septal VA < 70 ms'nin ortodromik AVRT'yi dışladığı ölçütüyle çelişiyordu) | `src/ep-cases.js`, `src/ep-maneuver-sim.js`, `src/ep-case-text.js` |
+| C | Tek dipolden sentetik 12 derivasyon; 6 PVC (skar karşı örneği dahil) ve 5 atriyal odak örneği; özellikler sinyalden okunur, olası bölgeler ve güven gerekçesi; atriyal odakta kateter aktivasyonu ile örnekleme sınırı; yanıttan sonra 3B bölge işaretçisi | `src/ecg12.js`, `src/ep-origin.js`, `src/ep-origin-text.js`, `src/ep-origin-panel.js`, `src/ep-zones.js`; test `scripts/test-ep-origin.mjs` |
+| D | Para-Hisian fokal AT, sol posterior fasiküler VT ve dal bloğu reentrisi VT için aday kaynak matrisi (D1-D8) ve olay storyboard'u | `research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md` bölüm 3 |
 
 ## 1. Soru, kapsam ve bitiş ölçütü
 

@@ -586,12 +586,13 @@ define({
 const A_PARAHIS = { 'his-d': 60, 'his-p': 58, 'cs-910': 75, hra: 80, 'cs-12': 110 };
 define({
   id: 'ph-svt', caseId: 'ap-parahisian', section: 'diagnosis', windowMs: 1400, channels: CH_SVT,
-  events: svtRun([150, 480, 810, 1140], { 'his-p': 38, 'his-d': 40, 'cs-910': 58, hra: 55, 'cs-56': 72, 'cs-12': 90 }),
+  // Septal VA 75 ms: below 70 ms an orthodromic AVRT is argued against (R9); the pathway still conducts next to the His.
+  events: svtRun([150, 480, 810, 1140], { 'his-p': 73, 'his-d': 75, 'cs-910': 93, hra: 90, 'cs-56': 107, 'cs-12': 125 }),
   calipers: [
     cal('TCL', ref('his-d', 'V', 1), ref('his-d', 'V', 2)),
     cal('VA', ref('his-d', 'V', 1), ref('his-d', 'A', 1))
   ],
-  teachingNumbers: { TCL: 330, VA: 40 }
+  teachingNumbers: { TCL: 330, VA: 75 }
 });
 define({
   id: 'ph-parahis-extranodal', caseId: 'ap-parahisian', section: 'maneuver', maneuver: 'para-his', result: 'valid',

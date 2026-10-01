@@ -12,9 +12,11 @@ import { EP_SIM_TEXT } from './ep-case-text.js';
 
 /**
  * @param {Document} doc
- * @param {{ getLang: () => string, onRecording: (recording: object|null) => void }} deps
+ * @param {{ getLang: () => string, onRecording: (recording: object|null) => void, scope?: string }} deps
+ *   scope: attribute prefix of the root, controls and actions ('ep-sim' in the
+ *   Maneuvers tab; another value keeps a second instance's selectors apart)
  */
-export function createSimPanel(doc, { getLang, onRecording }) {
+export function createSimPanel(doc, { getLang, onRecording, scope = 'ep-sim' }) {
   const el = (tag, cls, attrs = {}) => {
     const node = doc.createElement(tag);
     if (cls) node.className = cls;
@@ -26,12 +28,12 @@ export function createSimPanel(doc, { getLang, onRecording }) {
   let last = null;
   let active = true;   // false while another recording (clip, pacing laboratory) is on the strip
 
-  const root = el('section', 'ep-sim', { 'data-ep-sim': '' });
+  const root = el('section', 'ep-sim', { [`data-${scope}`]: '' });
   const heading = el('h4', 'ep-sim-title');
   const field = (key, tag = 'select') => {
     const label = el('label', 'ep-sim-field');
     const name = el('span');
-    const input = el(tag, '', { 'data-ep-sim-control': key });
+    const input = el(tag, '', { [`data-${scope}-control`]: key });
     label.append(name, input);
     return { label, name, input };
   };
@@ -42,8 +44,8 @@ export function createSimPanel(doc, { getLang, onRecording }) {
   const timingValue = el('output'), pclValue = el('output');
   timing.label.append(timingValue);
   pcl.label.append(pclValue);
-  const deliver = el('button', 'ep-sim-deliver', { type: 'button', 'data-ep-sim-action': 'deliver' });
-  const retry = el('button', 'ep-sim-retry', { type: 'button', 'data-ep-sim-action': 'retry' });
+  const deliver = el('button', 'ep-sim-deliver', { type: 'button', [`data-${scope}-action`]: 'deliver' });
+  const retry = el('button', 'ep-sim-retry', { type: 'button', [`data-${scope}-action`]: 'retry' });
   const actions = el('div', 'ep-sim-actions');
   actions.append(deliver, retry);
   const feedback = el('ul', 'ep-sim-feedback', { 'aria-live': 'polite' });

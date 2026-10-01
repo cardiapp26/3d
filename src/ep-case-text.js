@@ -495,14 +495,14 @@ export const EP_CLIP_TEXT = Object.freeze({
   },
   'ph-svt': {
     tr: {
-      title: 'Dar QRS taşikardi, çok kısa septal VA',
+      title: 'Dar QRS taşikardi, kısa septal VA',
       neutral: `${D.tr} TCL 330 ms. En erken A kanalını ve VA'yı ölçün; tipik AVNRT kaydıyla karşılaştırın.`,
-      evidence: 'En erken A His kanalındadır ve VA kısadır (40 ms): His komşuluğunda retrograd iletim. Tipik AVNRT ile çakışır; ayrım para-Hisian pacing ve His-refrakter PVC gibi manevralarla yapılır. His komşuluğu AV blok riski demektir.'
+      evidence: 'En erken A His kanalındadır, septal VA 75 ms: His komşuluğunda retrograd iletim. Septal VA 70 ms\'nin altında olsaydı ortodromik AVRT aleyhine olurdu (R9); 70 ms\'nin üstü yolu kanıtlamaz, yalnız olanaklı bırakır. Tipik AVNRT ile ayrım para-Hisian pacing ve His-refrakter PVC gibi manevralarla yapılır. His komşuluğu AV blok riski demektir.'
     },
     en: {
-      title: 'Narrow QRS tachycardia, very short septal VA',
+      title: 'Narrow QRS tachycardia, short septal VA',
       neutral: `${D.en} TCL 330 ms. Measure the earliest A channel and the VA; compare with the typical AVNRT recording.`,
-      evidence: 'The earliest A is on the His channel with a short VA (40 ms): retrograde conduction next to the His. It overlaps typical AVNRT; maneuvers such as para-Hisian pacing and a His-refractory PVC separate them. His proximity means AV block risk.'
+      evidence: 'The earliest A is on the His channel with a septal VA of 75 ms: retrograde conduction next to the His. A septal VA below 70 ms would argue against orthodromic AVRT (R9); above 70 ms does not prove a pathway, it only leaves one possible. Maneuvers such as para-Hisian pacing and a His-refractory PVC separate it from typical AVNRT. His proximity means AV block risk.'
     }
   },
   'ph-parahis-extranodal': {

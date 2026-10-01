@@ -878,6 +878,23 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .ep-sim-result,.ep-pace-result{font-size:11px!important;font-weight:700;margin:4px 0!important;color:#2f5a73!important}
 .ep-sim-result[data-result=invalidCapture],.ep-pace-result[data-result=invalidCapture],.ep-sim-result[data-result=insufficientEvidence],.ep-pace-result[data-result=insufficientEvidence]{color:#8a3b1c!important}
 .ep-sim-reason,.ep-pace-reason{font-size:10.5px!important;line-height:1.5!important;color:#4d5e52!important}
+/* Narrow QRS task: hidden case, evidence ledger (states per mechanism). */
+.ep-task{border:1px solid #d8e2d4;border-radius:6px;padding:6px 10px;margin:6px 0;background:#f8faf7}
+.ep-task[hidden],.ep-task-body[hidden]{display:none}
+.ep-task-title{font-size:12px;font-weight:700;color:#24463b;cursor:pointer;padding:2px 0}
+.ep-task-name{font-size:11px;font-weight:700;color:#2f5a73;align-self:center}
+.ep-task .ep-sim{background:#fff}
+.ep-task-ledger{width:100%;border-collapse:collapse;font-size:10px;margin:4px 0;table-layout:fixed}
+.ep-task-ledger th{font-size:9px;font-weight:700;color:#5f6f64;text-align:center;padding:2px;border-bottom:1px solid #dde6da}
+.ep-task-ledger th:first-child,.ep-task-ledger td:first-child{text-align:left;width:46%;word-break:break-word}
+.ep-task-ledger td{padding:3px 2px;border-bottom:1px solid #eef2ec;color:#3f5347;line-height:1.35}
+.ep-task-cell{text-align:center;font-weight:700;font-size:12px}
+.ep-task-cell[data-state=supports]{color:#256b45;background:#e7f3ea}
+.ep-task-cell[data-state=against]{color:#8a3b1c;background:#f9ece6}
+.ep-task-cell[data-state=uninterpretable]{color:#7a6a2c;background:#f7f2df}
+.ep-task-cell[data-state=neutral]{color:#9aa49d}
+.ecg12-canvas{display:block;width:100%;height:230px;border-radius:6px;background:#0e1815;margin:4px 0}
+.ep-origin-context{font-weight:600;color:#2f5a73!important}
 /* Atrial pacing laboratory: route question, graded answer, evidence and limits. */
 .ep-pace-note{font-size:10px!important;line-height:1.5!important;color:#66786c!important;margin:2px 0 6px!important}
 .ep-pace-compare[data-jump=true]{color:#2f5a73!important;font-weight:600}

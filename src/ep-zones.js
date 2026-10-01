@@ -25,6 +25,20 @@ const COLORS = {
   'cavotricuspid-isthmus': 0xff453a, 'crista-terminalis': 0xf472b6
 };
 
+/** Scene labels of the PAC / PVC source regions (phase C). */
+const ORIGIN_LABELS = Object.freeze({
+  rvot: { tr: 'RVOT (şematik bölge)', en: 'RVOT (schematic region)' },
+  'lvot-cusp': { tr: 'Aort kökü, sol kusp (şematik)', en: 'Aortic root, left cusp (schematic)' },
+  'mitral-superior': { tr: 'Mitral anulus süperior (şematik)', en: 'Superior mitral annulus (schematic)' },
+  'ta-free-wall': { tr: 'Triküspit anulus serbest duvar (şematik)', en: 'Tricuspid annulus free wall (schematic)' },
+  'lv-inferior': { tr: 'LV inferior bazal, skar çıkışı (şematik)', en: 'Basal inferior LV, scar exit (schematic)' },
+  'crista-high': { tr: 'Krista terminalis yüksek (şematik)', en: 'High crista terminalis (schematic)' },
+  'cs-ostium': { tr: 'CS ağzı (şematik)', en: 'CS ostium (schematic)' },
+  'ta-superior': { tr: 'Triküspit anulus süperior / RAA (şematik)', en: 'Superior tricuspid annulus / RAA (schematic)' },
+  rspv: { tr: 'Sağ üst pulmoner ven (şematik)', en: 'Right superior pulmonary vein (schematic)' },
+  laa: { tr: 'Sol atriyal apendiks (şematik)', en: 'Left atrial appendage (schematic)' }
+});
+
 export function createEpZones(helpers) {
   const { sourceCenter, meshVertices = () => [], getMeshes = () => [], isReady = () => true } = helpers;
   const group = new THREE.Group();
@@ -35,10 +49,11 @@ export function createEpZones(helpers) {
   const labels = [];            // { mesh, tone, text, zone } for scene-labels
   const circuits = new Map();   // 'orthodromic' | 'antidromic' -> THREE.Group (left free wall AVRT)
   const paths = new Map();      // 'avn' | 'ap' -> THREE.Group (atrial pacing laboratory, test beat routes)
+  const origins = new Map();    // PAC / PVC source region -> marker (shown after the learner answers)
   let rvMarker = null;
   let halo = null;
   let active = null;
-  let options = { halo: false, circuit: null, paths: [] };
+  let options = { halo: false, circuit: null, paths: [], origin: null };
   let initialized = false;
 
   function arcOf(rim, anchor, lift, span) {
@@ -257,6 +272,44 @@ export function createEpZones(helpers) {
     group.add(rvMarker);
     labels.push({ mesh: tip, tone: 'target', zone: '*', text: { tr: 'RV pacing referansı (şematik)', en: 'RV pacing reference (schematic)' } });
 
+    // PAC / PVC source regions (phase C): schematic markers at measured
+    // anchors; the region is a teaching area, not a mapped focus.
+    {
+      const lv = sourceCenter('lv') || mvCentre.clone();
+      const at = (id, fallback) => sourceCenter(id) || fallback;
+      const topOf = (rim) => rim.reduce((best, v) => (v.y > best.y ? v : best)).clone();
+      const lowOf = (rim) => rim.reduce((best, v) => (v.y < best.y ? v : best)).clone();
+      // Aortic cusp meshes are 'lcc' / 'ncc' ('aortic-valve' is a layer, not a mesh).
+      const leftCusp = at('lcc', at('ncc', aorta.clone().lerp(mvCentre, 0.5)));
+      const aorticValve = at('ncc', leftCusp).clone().lerp(leftCusp, 0.5);
+      const anchors = {
+        rvot: at('pulmonary-valve', at('pa', rv.clone())).clone().lerp(rv, 0.3),
+        'lvot-cusp': leftCusp.clone(),
+        'mitral-superior': mvRim.reduce((best, v) => (v.distanceTo(aorticValve) < best.distanceTo(aorticValve) ? v : best)).clone().lerp(lv, 0.08),
+        'ta-free-wall': rightLateralAnchor.clone().lerp(rv, 0.1),
+        'lv-inferior': lowOf(mvRim).lerp(lv, 0.35),
+        'crista-high': at('svc', topOf(tvRim)).clone().lerp(ra, 0.45),
+        'cs-ostium': csOs.clone(),
+        'ta-superior': topOf(tvRim).lerp(ra, 0.12),
+        rspv: at('rspv', la.clone()).clone().lerp(la, 0.35),
+        laa: at('laa', la.clone()).clone()
+      };
+      const atrial = new Set(['crista-high', 'cs-ostium', 'ta-superior', 'rspv', 'laa']);
+      for (const [id, point] of Object.entries(anchors)) {
+        const colour = atrial.has(id) ? 0x38bdf8 : 0xf97316;
+        const marker = new THREE.Mesh(new THREE.SphereGeometry(0.06, 18, 18), Object.assign(
+          new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: 0.85 }), { depthTest: false, depthWrite: false }));
+        marker.renderOrder = 22;
+        marker.position.copy(point);
+        marker.name = `EP origin region: ${id}`;
+        marker.userData = { region: id, provenance: 'schematic' };
+        marker.visible = false;
+        group.add(marker);
+        origins.set(id, marker);
+        labels.push({ mesh: marker, tone: 'target', zone: `#origin:${id}`, text: ORIGIN_LABELS[id] });
+      }
+    }
+
     initialized = true;
     if (active) applyZone();
   }
@@ -267,17 +320,19 @@ export function createEpZones(helpers) {
     if (halo) halo.visible = Boolean(active && options.halo);
     for (const [kind, circuit] of circuits) circuit.visible = Boolean(active && options.circuit === kind);
     for (const [kind, route] of paths) route.visible = options.paths.includes(kind);
+    for (const [id, marker] of origins) marker.visible = options.origin === id;
   }
 
   /**
    * Show one zone (and the RV pacing reference), or null for none.
    * extra.halo shows the Halo catheter; extra.circuit ('orthodromic' |
    * 'antidromic') draws the reentry direction over the left free wall pathway;
-   * extra.paths (['avn', 'ap']) draws the pacing laboratory's antegrade routes.
+   * extra.paths (['avn', 'ap']) draws the pacing laboratory's antegrade routes;
+   * extra.origin marks a PAC / PVC source region.
    */
   function setZone(zoneId, extra = {}) {
     active = zoneId || null;
-    options = { halo: Boolean(extra.halo), circuit: extra.circuit || null, paths: Array.isArray(extra.paths) ? [...extra.paths] : [] };
+    options = { halo: Boolean(extra.halo), circuit: extra.circuit || null, paths: Array.isArray(extra.paths) ? [...extra.paths] : [], origin: extra.origin || null };
     init();
     if (initialized) applyZone();
   }
@@ -291,6 +346,7 @@ export function createEpZones(helpers) {
     getOptions: () => ({ ...options, paths: [...options.paths] }),
     isActive: (zoneId) => group.visible && (zoneId === '*' ? Boolean(active && zones.has(active))
       : zoneId === '#halo' ? Boolean(active && options.halo)
+        : zoneId.startsWith('#origin:') ? options.origin === zoneId.slice(8)
         : zoneId === active && zones.has(zoneId)),
     hasZone: (zoneId) => zones.has(zoneId),
     setVisible(visible) {

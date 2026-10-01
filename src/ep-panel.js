@@ -4,6 +4,8 @@ import { drawEgm, selectableChannels, timeAtX, eventsNear } from './ep-egm.js';
 import { activationSequence, drawActivationMap } from './ep-activation-map.js';
 import { createSimPanel } from './ep-sim-panel.js';
 import { createPacingPanel } from './ep-pacing-panel.js';
+import { createTaskPanel } from './ep-task-panel.js';
+import { createOriginPanel } from './ep-origin-panel.js';
 import { createEpFullscreen } from './ep-fullscreen.js';
 
 /*
@@ -16,8 +18,10 @@ import { createEpFullscreen } from './ep-fullscreen.js';
  * (visible channels, time zoom and pan, inspection cursor) is shared by the
  * panel canvas and the full-screen view and survives clip changes. In the
  * Maneuvers tab the learner can also deliver a maneuver (ep-sim-panel.js) or
- * run the atrial pacing laboratory (ep-pacing-panel.js); the recording
- * replaces the clip until another clip is chosen.
+ * run the atrial pacing laboratory (ep-pacing-panel.js); the Diagnosis tab
+ * holds the hidden-case narrow QRS task (ep-task-panel.js) and the PAC / PVC
+ * source-region exercise (ep-origin-panel.js). A delivered
+ * recording replaces the clip until another clip is chosen.
  */
 
 // Short button labels for the clip row (titles live in ep-case-text.js).
@@ -79,7 +83,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
-  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, large: false, sim: null };
+  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, large: false, sim: null };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null };
 
@@ -149,6 +153,21 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     // Answering releases the 3D conduction routes of the test beat.
     onAnswer() { render(); }
   });
+  const taskPanel = createTaskPanel(doc, {
+    getLang: () => lang,
+    // A task clears the source-region marker and any evidence view left from a clip.
+    onRecording(recording) { Object.assign(state, { sim: recording, origin: false, evidence: false }); view.cursorMs = null; render(); },
+    // Answering reveals the case and its zone.
+    onAnswer() { render(); },
+    caseName: (id) => pick(EP_CASE_TEXT[id], lang).name
+  });
+  // state.origin: the source-region exercise owns the Diagnosis view (its 3D marker may show).
+  const originPanel = createOriginPanel(doc, {
+    getLang: () => lang,
+    onRecording(recording) { Object.assign(state, { sim: recording, origin: true, evidence: false }); view.cursorMs = null; render(); },
+    // Answering puts an atrial focus's catheter activation on the strip and releases the 3D marker.
+    onAnswer(recording) { Object.assign(state, { sim: recording, origin: true }); view.cursorMs = null; render(); }
+  });
   const compareBox = el('div', 'ep-compare-card');
   const mapBox = el('div', 'ep-map');
   const mapTitle = el('p', 'ep-map-title');
@@ -170,7 +189,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
   const compare = el('p', 'ep-compare');
   const endpoint = el('p', 'ep-endpoint');
   const sources = el('p', 'ep-sources');
-  root.append(eyebrow, tabs, caseRow, title, row, simPanel.element, pacingPanel.element, viewBar, canvas, inspect, measures, sizeBtn, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
+  root.append(eyebrow, tabs, caseRow, title, row, taskPanel.element, originPanel.element, simPanel.element, pacingPanel.element, viewBar, canvas, inspect, measures, sizeBtn, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -199,6 +218,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     state.clipId = clipsOf(state.caseId, section)[0] || null;
     state.evidence = false;
     state.sim = null;
+    state.origin = false;
     render();
   }
 
@@ -208,13 +228,14 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     state.clipId = clipsOf(caseId, state.section)[0] || null;
     state.evidence = false;
     state.sim = null;
+    state.origin = false;
     render();
   }
 
   function setClip(id) {
     const recording = epRecording(id);
     if (!recording) return;
-    Object.assign(state, { section: recording.section, caseId: recording.caseId, clipId: id, sim: null });
+    Object.assign(state, { section: recording.section, caseId: recording.caseId, clipId: id, sim: null, origin: false });
     view.cursorMs = null;
     render();
   }
@@ -312,10 +333,13 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     const diagnosis = state.section === 'diagnosis';
     const revealed = !diagnosis || state.evidence;
     const caseText = pick(EP_CASE_TEXT[state.caseId], lang);
-    const simName = state.sim ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
+    const task = state.sim?.lab === 'task';
+    const origin = state.sim?.lab === 'origin';
+    const simName = state.sim && !task && !origin ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
     const clipTitle = clipText?.title || '';
     // Do not repeat the case name when the clip title already starts with it.
-    title.textContent = state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t.neutralTitle;
+    // A task recording keeps the case hidden: task number and evidence kind only.
+    title.textContent = task ? taskPanel.title(lang) : origin ? originPanel.stripTitle(lang) : state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t.neutralTitle;
     simPanel.setCase(state.caseId);
     simPanel.element.hidden = state.section !== 'maneuver' || !simPanel.supports(state.caseId);
     pacingPanel.setCase(state.caseId);
@@ -323,9 +347,13 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     // Each panel shows its result only while its own recording is on the strip.
     simPanel.setActive(Boolean(state.sim) && state.sim === simPanel.getLast());
     pacingPanel.setActive(Boolean(state.sim) && state.sim === pacingPanel.getLast());
+    taskPanel.element.hidden = state.section !== 'diagnosis';
+    originPanel.element.hidden = state.section !== 'diagnosis';
+    if (!originPanel.element.hidden) originPanel.draw();
+    taskPanel.setActive(task && taskPanel.owns(state.sim));
     sizeBtn.textContent = state.large ? (lang === 'en' ? 'Shrink' : 'Küçült') : (lang === 'en' ? 'Enlarge' : 'Büyüt');
     canvas.classList?.toggle?.('is-large', state.large);
-    evidenceBtn.hidden = !diagnosis;
+    evidenceBtn.hidden = !diagnosis || task || origin;
     evidenceBtn.textContent = state.evidence ? t.evidenceHide : t.evidenceShow;
     text.textContent = state.sim ? '' : clipText ? (diagnosis ? (state.evidence ? clipText.evidence : clipText.neutral) : clipText.text) : '';
     text.textContent += !state.sim && diagnosis && !state.evidence ? ` ${t.neutralPrompt}` : '';
@@ -353,7 +381,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     result.hidden = !result.textContent;
     result.dataset.result = recording?.result || '';
     // The anatomical zone (and the 3D arc) stays hidden while the diagnosis is neutral.
-    const zoneId = revealed ? currentCase()?.pathwayZone : null;
+    const taskZone = () => (taskPanel.isAnswered() ? EP_CASES.find((c) => c.id === state.sim.caseId)?.pathwayZone || null : null);
+    const zoneId = task ? taskZone() : origin || state.origin ? null : revealed ? currentCase()?.pathwayZone : null;
     const zoneText = zoneId && EP_ZONE_TEXT[zoneId];
     zoneLine.textContent = zoneText ? `${lang === 'en' ? 'Zone' : 'Zon'}: ${pick(zoneText, lang).name}. ${pick(zoneText, lang).risk}` : '';
     zoneLine.hidden = !zoneLine.textContent;
@@ -361,7 +390,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     // A pacing laboratory recording shows its conduction routes only once the learner answered.
     const pacing = state.sim?.lab === 'pacing' ? pacingPanel.getScene() : null;
     const circuit = state.sim?.lab === 'pacing' ? pacing?.circuit || null : revealed ? recording?.circuit || null : null;
-    if (typeof onZone === 'function') onZone(zoneId && EP_ZONE_TEXT[zoneId] ? zoneId : null, { halo: Boolean(zoneId) && halo, circuit, paths: pacing?.paths || [] });
+    const originMark = diagnosis && state.origin ? originPanel.getScene()?.origin || null : null;
+    if (typeof onZone === 'function') onZone(zoneId && EP_ZONE_TEXT[zoneId] ? zoneId : null, { halo: Boolean(zoneId) && halo, circuit, paths: pacing?.paths || [], origin: originMark });
     // Annotated comparison card (focal AT against AVNRT/AVRT, antidromic AVRT against VT).
     const cmp = revealed && !state.sim && EP_COMPARE[state.clipId];
     compareBox.replaceChildren();
@@ -376,7 +406,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     }
     compareBox.hidden = !cmp;
     // Atrial activation sequence of a tachycardia beat, once the evidence is open.
-    const seq = diagnosis && state.evidence && recording ? activationSequence(recording, 1) : [];
+    const seq = diagnosis && state.evidence && !task && !origin && recording ? activationSequence(recording, 1) : [];
     mapBox.hidden = seq.length < 3;
     if (!mapBox.hidden) {
       mapTitle.textContent = lang === 'en' ? 'Atrial activation sequence (schematic channel map, not an electroanatomical map)' : 'Atriyal aktivasyon dizisi (şematik kanal haritası, elektroanatomik harita değil)';
@@ -404,6 +434,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, sim: state.sim ? state.sim.choices : null }),
     getRecording: () => current(),
     sim: simPanel,
+    task: taskPanel,
+    origin: originPanel,
     pacing: pacingPanel,
     fullscreen: () => fullscreen(),
     /** Zone of the active case; null while the diagnosis view is still neutral. */
@@ -411,6 +443,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone } = {}) {
     setLanguage(next) {
       lang = next === 'en' ? 'en' : 'tr';
       render();
+      taskPanel.render();
+      originPanel.render();
     },
     /** The recording has its own millisecond timeline: the heart clock draws no cursor. */
     draw() { redraw(); },
