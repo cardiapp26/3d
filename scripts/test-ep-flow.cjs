@@ -22,6 +22,25 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
     await page.goto(`${APP}/#/mode/ablation`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
+    assert.equal(await page.locator('#egm-panel').isVisible(), true, 'EP opens its signal panel on the first lesson');
+    assert.equal(await page.locator('#structure-info').isVisible(), false, 'generic IVC card does not precede EP');
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().id), 'flutter-svt', 'CTI opens with flutter recording');
+    for (const [step, clip] of [[1, 'avnrt-typ-svt'], [2, 'af-pvi-baseline'], [3, 'sinus'], [0, 'flutter-svt']]) {
+      await page.locator(`#steps [data-step="${step}"]`).click();
+      assert.equal(await page.locator('#egm-panel').isVisible(), true, `EP panel remains open at step ${step}`);
+      assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().id), clip, `step ${step} has its matching recording`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(250);
+    if (!(await page.locator('#egm-panel').isVisible())) await page.locator('[data-sheet=learn]').click();
+    assert.equal(await page.locator('#egm-panel').isVisible(), true, 'phone Learn opens EP directly');
+    assert.equal(await page.locator('#structure-info').isVisible(), false, 'phone hides unrelated IVC card');
+    await page.setViewportSize({ width: 1300, height: 900 });
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
+    assert.equal(await page.locator('#egm-panel').isVisible(), false, 'leaving EP closes its panel');
+    assert.equal(await page.locator('#structure-info').isVisible(), true, 'anatomy restores structure information');
+    await page.locator('[data-mode=ablation]:not([data-mode-step])').dispatchEvent('click');
+    assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().id), 'flutter-svt', 'returning to EP opens its first lesson');
     const steps = await page.locator('#steps button').count();
     await page.locator(`#steps [data-step="${steps - 1}"]`).click();
     await page.waitForSelector('#egm-panel:not([hidden]) .egm-canvas');

@@ -226,7 +226,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const catheterVessel=(mode==='transseptal'&&['aorta','pa','cs','svc','ivc'].includes(id))||(mode==='cath'&&['aorta','pa','svc','ivc'].includes(id));
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
       const faintPa=visibility['pa-faint']&&id==='pa';
-      const alpha=mode==='defects'?(layer==='chambers'?.16:layer==='valves'?.55:.22):mode==='atria'&&selected==='laa'?(id==='la'?Math.min(opacity,.32):1):tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
+      let alpha=mode==='defects'?(layer==='chambers'?.16:layer==='valves'?.55:.22):mode==='atria'&&selected==='laa'?(id==='la'?Math.min(opacity,.32):1):tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
+      // Great-vessel walls follow the slider while procedural caps stay effective.
+      if(layer==='vessels')alpha=Math.min(alpha,opacity);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
       m.material.clippingPlanes=mode==='defects'?[]:vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){

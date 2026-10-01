@@ -166,7 +166,9 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForTimeout(100);
     assert.equal(await page.evaluate(() => window.heart.getState().kochFocus), false, 'focus ends with the close-up');
     assert.equal(await page.locator('.scene-label:not([hidden])').count(), 0, 'no Koch labels in the PVI step');
-    assert.equal(await page.locator('#egm-panel').isHidden(), true);
+    // Every ablation step now opens its own synthetic recording; the PVI step shows the AF baseline.
+    assert.equal(await page.locator('#egm-panel').isHidden(), false, 'the PVI step opens its signal strip');
+    assert.equal(await page.evaluate(() => window.cardiaEp.getScenario()), 'af-pvi-baseline', 'PVI step: AF baseline recording');
 
     // Step 5: synthetic EGM strip under the Koch close-up.
     await page.locator('#steps [data-step="4"]').click();
@@ -208,7 +210,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.locator('[data-ep-section=maneuver]').click();
     await page.locator('[data-ep-case]').selectOption('avnrt-typical');
     await page.locator('[data-egm-scenario="avnrt-dual-echo"]').click();
-    assert.match(await page.locator('.ep-measures').textContent(), /AH \(S1\) 80 ms.*AH \(S2\) 180 ms/);
+    assert.match(await page.locator('.ep-measures').textContent(), /AH \(S2-1\) 100 ms.*AH \(S2-2\) 180 ms/, 'AH jump: two S2 couplings, 100 then 180 ms');
     await page.locator('[data-ep-section=diagnosis]').click();
     const csCases = await page.locator('[data-ep-case] option').count();
     assert.equal(csCases, 13, 'thirteen numbered diagnosis cases (phase D cases and the PVI baseline included)');

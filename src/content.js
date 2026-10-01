@@ -1032,35 +1032,39 @@ export const rawLessons = {
   ablation: {
     tr: {
       title: 'Elektrofizyolojik anatomi • Tanı, manevralar, tedavi',
-      intro: 'Aritmi substratlarının anatomik temeli ve sinyal paneli: CTI, Koch üçgeni, PVI; son adımdaki panelde Tanı / Manevralar / Tedavi bölümleri ve sentetik olgu kayıtları.',
+      intro: 'Aritmi substratlarının anatomik temeli: CTI, Koch üçgeni, PVI. Her adım ilgili sentetik başlangıç kaydını açar; kayıtları Tanı / Manevralar / Tedavi panelinde inceleyin.',
       steps: [
         {
           title: 'Kavotriküspit İstmus (CTI) • Atriyal Flatter',
           text: 'Kavotriküspit istmus (CTI), triküspit anulusunun inferior kenarı ile İVC ağzı arasındaki sağ atriyum tabanıdır; tipik saat yönü tersi atriyal flatter devresinin zorunlu geçididir. Standart lezyon hattı LAO projeksiyonunda saat 6 hizasında (santral istmus), CS ostiyumunun lateralinden anulustan İVC\'ye çekilir; hedef çift yönlü istmus blokudur. Mavi halka ölçülen İVC ağzını gösterir (atlasta İVC mesh\'i yoktur).',
           landmark: 'ivc',
-          view: 'lao'
+          view: 'lao',
+          egm: 'flutter-svt'
         },
         {
           title: 'Koch Üçgeni ve Yavaş Yol • AVNRT',
           text: 'Koch üçgeni, sağ atriyumun alt paraseptal bölgesinde inferior piramidal boşluğun sağ atriyal yüzüdür; atitüdinal konumda apeksi süperiora bakar. Taban: CS ostiyumu hizasındaki inferior istmus (yeşil). Posterosüperior kenar: Eustachian ve Thebesian valflerinin komissüründen doğan Todaro tendonu (beyaz). Anterior kenar: triküspit septal yaprakçık menteşesi (turkuaz). İki kenar membranöz septumda birleşir. Apeks: kompakt AV düğüm (kırmızı; ablasyon kalıcı AV blok riski taşır, yeri bireyler arasında değişkendir). Düğüm, inferior uzantıların (açık yeşil: uzun sağ uzantı triküspit vestibülünde, kısa sol uzantı mitral vestibülünde) atriyal septum buttress\'ından gelen septal girdilerle (turuncu, hızlı yol) birleşmesiyle oluşur. Mor şematik kateter İVK ağzından sağ atriyuma girer; beyaz ucu inferior yavaş yol hedefine uzanır. Doku teması ve güvenli mesafe modellenmez. Junctional ritim tek başına başarı değildir; AVNRT indüklenebilirliği ve AV iletim değerlendirilir. Yavaş yol hedefi septal istmustur: CS ağzı ile septal menteşe arası (yeşil küre). Sarı kama inferior piramidal boşluktur: sağ atriyal duvar ile müsküler septum arasındaki fibro-adipöz "AV kas sandviçi"; apeksi infero-septal girintiyle örtüşür ve His buradan septum krestine geçer. Floroskopide RAO projeksiyonu üçgeni en iyi gösterir: taban proksimal CS elektrotlarından çizilen yatay hat, apeks His kateteri, anterior kenar His\'ten tabana inen dikey hat (TV septal yaprakçığı). Yakın plan: fuşya His kateteri üst (apeks) referansı, mavi CS kateteri taban (ostiyum) referansıdır; Araçlar sekmesindeki Koch · RAO 30 ve Koch · LAO 45 düğmeleriyle karşılaştırın. RAO septumu önden, LAO septumu yandan gösterir: hedefin apeksten uzaklığı RAO\'da, septuma göre konumu LAO\'da okunur. Projeksiyon tek başına kateter konumunu doğrulamaz. Etiketler kaynağı söyler: CS ağzı kestirimdir, septal menteşe atlas halkasından ölçülür, AV düğüm ve yavaş yol hedefi şematiktir. Örnek RF lezyonları varsayılan olarak gizlidir; sayı ve dağılım tedavi protokolü değildir.',
           landmark: 'av',
-          view: 'koch_rao'
+          view: 'koch_rao',
+          egm: 'avnrt-typ-svt'
         },
         {
           title: 'Pulmoner Ven İzolasyonu (WACA / PVI) • AF',
           text: 'AF tetikleyicilerinin çoğu pulmoner ven miyokard kılıflarından kaynaklanır. WACA\'da aynı taraftaki ven çiftleri (LSPV+LIPV, RSPV+RIPV) ostiyumların birkaç mm dışında, antrumdan geniş çevresel halkayla izole edilir; hedef giriş ve çıkış blokudur. Posterior duvarda özofagus (termal hasar, atriyo-özofageal fistül), sağ venlerde sağ frenik sinir (kryobalonda frenik pacing ile izlenir) risklidir.',
           landmark: 'la',
-          view: 'posterior'
+          view: 'posterior',
+          egm: 'af-pvi-baseline'
         },
         {
           title: 'Kombine EP Haritası & Lineer Hatlar',
           text: 'Tüm hedefler bir arada. Çatı hattı iki süperior veni LA tavanında birleştirir (çatıya bağlı flatter). Mitral istmus hattı LIPV\'den lateral mitral anulusa uzanır (perimitral flatter); blok için çoğu zaman koroner sinüs içinden de uygulama gerekir, sirkumfleks arter yakındır. Sağda CTI hattı ve Koch üçgeni. Doğal iletim bariyerleri (crista terminalis, fossa ovalis, venöz ostiyumlar) makro-reentry devrelerini yönlendirir.',
           landmark: 'la',
-          view: 'posterior'
+          view: 'posterior',
+          egm: 'sinus'
         },
         {
           title: 'Sinyal paneli • Tanı, manevralar, tedavi',
-          text: 'Aşağıdaki şerit sentetiktir; klinik kayıt değildir ve karar kuralı vermez. Paneldeki Tanı / Manevralar / Tedavi sekmeleri sentetik olgu kayıtlarını açar: mekanizması gizli taşikardi kayıtları, His-refrakter PVC ve overdrive manevraları, ablasyon sonlanım klipleri. Sinüs ritminde His kateterinde A, keskin H ve V görülür (AH ve HV aralıkları). Yavaş yol hedefinde ablasyon kateteri küçük (bazen bölünmüş) A ve büyük V kaydeder, His potansiyeli yoktur; hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesidir, sabit bir oran değildir. RF sırasında junctional ritim görülebilir, fakat tek başına başarı göstergesi değildir: temel sonlanım AV iletim korunarak AVNRT\'nin yeniden indüklenememesidir. Junctional atımlarda VA blok veya hızlı junctional ritim enerjiyi durdurma uyarısıdır. Senaryoları şeridin üstündeki düğmelerle değiştirin; imleç kalp döngüsüyle ilerler.',
+          text: 'Aşağıdaki şerit sentetiktir; klinik kayıt değildir ve karar kuralı vermez. Paneldeki Tanı / Manevralar / Tedavi sekmeleri sentetik olgu kayıtlarını açar: mekanizması gizli taşikardi kayıtları, His-refrakter PVC ve overdrive manevraları, ablasyon sonlanım klipleri. Sinüs ritminde His kateterinde A, keskin H ve V görülür (AH ve HV aralıkları). Yavaş yol hedefinde ablasyon kateteri küçük (bazen bölünmüş) A ve büyük V kaydeder, His potansiyeli yoktur; hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesidir, sabit bir oran değildir. RF sırasında junctional ritim görülebilir, fakat tek başına başarı göstergesi değildir: temel sonlanım AV iletim korunarak AVNRT\'nin yeniden indüklenememesidir. Junctional atımlarda VA blok veya hızlı junctional ritim enerjiyi durdurma uyarısıdır. Senaryoları şeridin üstündeki düğmelerle değiştirin; şeritte seçtiğiniz noktadaki zaman ve olaylar imleçle okunur.',
           landmark: 'koch-slow',
           view: 'koch_rao',
           egm: 'sinus'
@@ -1069,35 +1073,39 @@ export const rawLessons = {
     },
     en: {
       title: 'Electrophysiological anatomy • Diagnosis, maneuvers, treatment',
-      intro: 'Anatomical basis of arrhythmia substrates plus the signal panel: CTI, triangle of Koch, PVI; the last step opens the Diagnosis / Maneuvers / Treatment sections with synthetic case recordings.',
+      intro: 'Anatomical basis of arrhythmia substrates: CTI, triangle of Koch, PVI. Each step opens its matching synthetic baseline recording; inspect it in the Diagnosis / Maneuvers / Treatment panel.',
       steps: [
         {
           title: 'Cavotricuspid Isthmus (CTI) • Atrial Flutter',
           text: 'The cavotricuspid isthmus (CTI) is the right atrial floor between the inferior tricuspid annulus and the IVC orifice, the obligatory corridor of typical counterclockwise flutter. The standard lesion line runs at 6 o\'clock in LAO (central isthmus), lateral to the CS ostium, from the annulus to the IVC; the goal is bidirectional isthmus block. The blue ring marks the measured IVC orifice (the atlas has no IVC mesh).',
           landmark: 'ivc',
-          view: 'lao'
+          view: 'lao',
+          egm: 'flutter-svt'
         },
         {
           title: 'Triangle of Koch & Slow Pathway • AVNRT',
           text: 'The triangle of Koch is the right atrial face of the inferior pyramidal space in the lower paraseptal right atrium; in attitudinal orientation its apex points superiorly. Base: the inferior isthmus at the CS ostium (green). Posterosuperior side: the tendon of Todaro, arising at the commissure of the Eustachian and Thebesian valves (white). Anterior side: the septal tricuspid hinge (cyan). The two sides converge at the membranous septum. Apex: the compact AV node (red; ablation risks permanent AV block, and its position varies between individuals). The node forms where the inferior extensions (light green: the long rightward one in the tricuspid vestibule, the short leftward one in the mitral vestibule) join septal inputs from the atrial buttress (orange, fast pathway). The purple schematic catheter enters the RA from the IVC mouth; its white tip reaches the inferior slow-pathway target. Tissue contact and safe clearance are not modeled. Junctional rhythm alone does not establish success; AVNRT inducibility and AV conduction are assessed. The slow-pathway target is the septal isthmus, between the CS mouth and the septal hinge (green sphere). The amber wedge is the inferior pyramidal space: the fibro-adipose "AV muscular sandwich" between the RA wall and the muscular septum; its apex overlaps the infero-septal recess, where the His bundle passes to the septal crest. On fluoroscopy the RAO view shows the triangle best: base = a horizontal line through the proximal CS electrodes, apex = the His catheter, anterior side = the vertical drop from His to the base (septal tricuspid leaflet). Close-up: the magenta His catheter is the superior (apex) reference and the blue CS catheter the base (ostial) reference; compare with the Koch · RAO 30 and Koch · LAO 45 buttons in the Tools tab. RAO shows the septum en face, LAO along its edge: the target\'s distance from the apex reads in RAO, its position relative to the septum in LAO. A projection alone does not confirm catheter position. Labels state their source: the CS mouth is estimated, the septal hinge is measured from the atlas rim, the AV node and slow-pathway target are schematic. The example RF lesions are hidden by default; their number and spread are not a treatment protocol.',
           landmark: 'av',
-          view: 'koch_rao'
+          view: 'koch_rao',
+          egm: 'avnrt-typ-svt'
         },
         {
           title: 'Wide Area Circumferential Ablation (WACA) • AF',
           text: 'Most AF triggers arise in the pulmonary vein myocardial sleeves. WACA isolates each ipsilateral pair (LSPV+LIPV, RSPV+RIPV) with a wide antral ring a few mm outside the ostia; the goal is entrance and exit block. Watch the esophagus behind the posterior wall (thermal injury, atrio-esophageal fistula) and the right phrenic nerve near the right veins (monitored with phrenic pacing during cryoballoon).',
           landmark: 'la',
-          view: 'posterior'
+          view: 'posterior',
+          egm: 'af-pvi-baseline'
         },
         {
           title: 'Comprehensive EP Substrate & Linear Sets',
           text: 'All targets together. The roof line joins the two superior veins across the LA roof (roof-dependent flutter). The mitral isthmus line runs from the LIPV to the lateral mitral annulus (perimitral flutter); block often needs lesions from inside the coronary sinus, and the circumflex artery lies close. On the right: the CTI line and Koch\'s triangle. Natural barriers (crista terminalis, oval fossa, venous orifices) channel macro-reentrant circuits.',
           landmark: 'la',
-          view: 'posterior'
+          view: 'posterior',
+          egm: 'sinus'
         },
         {
           title: 'Signal panel • Diagnosis, maneuvers, treatment',
-          text: 'The strip below is synthetic; it is not a clinical recording and gives no decision rule. The Diagnosis / Maneuvers / Treatment tabs of the panel open the synthetic case recordings: mechanism-hidden tachycardias, His-refractory PVC and overdrive maneuvers, and the ablation endpoint clips. In sinus rhythm the His catheter records A, a sharp H and V (AH and HV intervals). At the slow-pathway target the ablation catheter records a small (sometimes fragmented) A and a large V with no His potential; target choice weighs anatomy and electrograms together, not a fixed ratio. Junctional rhythm may appear during RF, but it alone does not indicate success: the key endpoint is noninducibility of AVNRT with preserved AV conduction. VA block in junctional beats, or a fast junctional rhythm, is a warning to stop energy delivery. Switch scenarios with the buttons above the strip; the cursor follows the cardiac cycle.',
+          text: 'The strip below is synthetic; it is not a clinical recording and gives no decision rule. The Diagnosis / Maneuvers / Treatment tabs of the panel open the synthetic case recordings: mechanism-hidden tachycardias, His-refractory PVC and overdrive maneuvers, and the ablation endpoint clips. In sinus rhythm the His catheter records A, a sharp H and V (AH and HV intervals). At the slow-pathway target the ablation catheter records a small (sometimes fragmented) A and a large V with no His potential; target choice weighs anatomy and electrograms together, not a fixed ratio. Junctional rhythm may appear during RF, but it alone does not indicate success: the key endpoint is noninducibility of AVNRT with preserved AV conduction. VA block in junctional beats, or a fast junctional rhythm, is a warning to stop energy delivery. Switch scenarios with the buttons above the strip; the cursor reads the time and events at the point you select on the strip.',
           landmark: 'koch-slow',
           view: 'koch_rao',
           egm: 'sinus'

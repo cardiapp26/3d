@@ -6,6 +6,7 @@ Heart chambers, aortic root/arch, coronary arteries, cardiac veins and leaflets 
 
 - Separate left main, LAD, LCx and RCA selection.
 - Left/right coronary filters, with displayed tissue opacity updated to match.
+- Tissue opacity also controls the atlas great-vessel walls. Procedural transparency caps remain effective; coronary arteries and valves retain their normal visibility. `npm run test:opacity` checks the slider, reset, and catheter-mode caps in Chrome.
 - Aortic root viewing section; source leaflets are distinct from sinus walls and ostia.
 - Independent RV anterior/free-wall-direction, LV lateral, LA posterior and RA lateral **geometric section windows**. These are viewing cuts, not labelled anatomical free-wall segments or histological layers. Only the chosen chamber is clipped. Valves, papillary muscles and vessels remain independent.
 - One button restores all wall windows. Chamber checkboxes hide whole chambers.
@@ -19,6 +20,8 @@ Unregistered legacy catheter curves are no longer superimposed on this anatomy. 
 - **Reference notes** (`REFERENCE NOTE / NO REGISTERED MESH`): Contextual learning landmarks without dedicated 3D geometry.
 
 ## Ablation: Koch close-up, reference catheters, synthetic EGM (Mode 09)
+
+EP opens its Diagnosis / Maneuvers / Treatment panel from the first lesson, above the lesson text. CTI starts with the flutter recording, Koch with typical AVNRT, and PVI with AF/PV potentials; the combined map and signal lesson start with sinus. The generic structure card stays hidden while this panel is open, and returns in anatomy mode. Desktop and phone opening/step/restoration checks are part of `npm run test:ep-flow`.
 
 The Koch step opens in a Koch · RAO 30 close-up (Koch · LAO 45 in the header Tools tab); the camera stays outside the heart and the coronaries and valve apparatus are hidden in front of the triangle. Scene labels state their source (CS mouth estimated, septal hinge from the atlas rim, AV node and slow-pathway target schematic). Magenta His and blue CS reference catheters and the optional example RF lesions (off by default) toggle in the same Tools tab. Step 5 shows an explicitly synthetic six-channel electrogram (sinus, slow-pathway target, junctional rhythm during RF, VA block warning). Record: `research/ABLASYON_IYILESTIRME_RAPORU.md`. Run `npm run test:ep-koch` against the development server.
 

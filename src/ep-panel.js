@@ -217,7 +217,10 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
   const compare = el('p', 'ep-compare');
   const endpoint = el('p', 'ep-endpoint');
   const sources = el('p', 'ep-sources');
-  root.append(eyebrow, tabs, caseRow, title, row, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, viewBar, canvas, inspect, measures, sizeBtn, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
+  // The signal strip sits right under the clip row, above the interactive
+  // panels (maneuver, pharmacology, pacing, task, source region, PVI), so a
+  // delivered maneuver's recording is in view next to its controls.
+  root.append(eyebrow, tabs, caseRow, title, row, viewBar, canvas, inspect, measures, sizeBtn, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
   mount.appendChild(root);
 
   let lastDrawn = null;
