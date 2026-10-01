@@ -34,7 +34,9 @@ const ECHO_MODALITY = { echo: 'tte', tee: 'tee' };
 const modes = MODE_GROUPS.flatMap(([, ids]) => ids).map((id, i) => [id, String(i + 1).padStart(2, '0')]);
 const MODE_KEYS = 9;
 // Modes whose lesson steps appear as menu entries under the mode itself.
-const MODE_SUBSTEPS = { ablation: true };
+// true lists every step; a function picks the steps to list (the hemodynamics
+// mode lists its right heart catheterisation and pressure-volume loop chapters).
+const MODE_SUBSTEPS = { ablation: true, cath: step => Boolean(step.menu || step.pvLoop) };
 
 // Right-panel tabs and phone sheets; created once the panels exist.
 let panelShell = null;
@@ -53,8 +55,12 @@ function renderModeNav() {
   // and the label heads the list in the Modes sheet.
   // Lesson steps listed directly in the menu, under their mode (the EP
   // group lists the electrophysiological anatomy chapters).
-  const subSteps = id => (MODE_SUBSTEPS[id] ? (lessons[id]?.steps || []).map((st, i) =>
-    `<button class="mode mode-substep" data-mode="${id}" data-mode-step="${i}"><span class="mode-substep-name">${st.title}</span></button>`).join('') : '');
+  const subSteps = id => {
+    const pick = MODE_SUBSTEPS[id];
+    if (!pick) return '';
+    return (lessons[id]?.steps || []).map((st, i) => (pick === true || pick(st)
+      ? `<button class="mode mode-substep" data-mode="${id}" data-mode-step="${i}"><span class="mode-substep-name">${st.title}</span></button>` : '')).join('');
+  };
   const group = ([key, ids]) => `<div class="mode-group" data-mode-group="${key}">
       <button type="button" class="mode-group-tab" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${key}"><span class="mode-group-name" data-i18n="${key}">${getTranslation(key)}</span><span class="mode-group-current"></span><span class="mode-group-caret" aria-hidden="true">▾</span></button>
       <div class="mode-group-label" data-i18n="${key}">${getTranslation(key)}</div>
@@ -383,13 +389,13 @@ app.innerHTML = `
     <section id="lesson" hidden>
       <div id="echo-panel" class="echo-panel-mount" hidden></div>
       <div id="egm-panel" class="egm-panel-mount" hidden></div>
+      <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div class="divider"></div>
       <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
       <h3 id="lesson-title"></h3>
       <p id="lesson-intro"></p>
       <div id="steps"></div>
       <div id="step-detail"></div>
-      <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div id="exam-panel" class="exam-panel-mount" hidden></div>
       <button class="primary" id="next-step">${getTranslation('nextLandmark')}</button>
       <label class="slider-label" for="progress" id="progress-label">${getTranslation('leadProgressLabel')} <span id="progress-value">100%</span></label>
@@ -1020,6 +1026,8 @@ function setMode(newMode, updateUrl = true) {
   if (structureIndexEl) structureIndexEl.hidden = isEcho;
 
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
+  // Like the EP panel: the hemodynamics panel heads the lesson column, the structure card steps aside.
+  if (mode === 'cath') document.documentElement.dataset.hemoOpen = 'true'; else delete document.documentElement.dataset.hemoOpen;
   if (mode === 'exam') examMode?.enter(); else examMode?.exit();
   if (isEcho) echoMode?.enter(ECHO_MODALITY[mode]); else echoMode?.exit();
   // Mode-scoped styling (echo: no C-arm panel, no anatomy practice switcher).

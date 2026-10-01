@@ -1,6 +1,6 @@
 # Cardiac Hemodynamics Reference (for the teaching module)
 
-Clinical reference note that drives the interactive hemodynamics module. All content is paraphrased from four sources. Machine-readable scenario values live in `hemodynamics-scenarios.json` next to this file.
+Clinical reference note that drives the interactive hemodynamics module. All content is paraphrased from five sources. Machine-readable scenario values live in `hemodynamics-scenarios.json` next to this file.
 
 ## Sources and citation convention
 
@@ -10,6 +10,7 @@ Clinical reference note that drives the interactive hemodynamics module. All con
 | 2 | Hahn RT. *Hemodynamics I: Basic Calculations* (State-of-the-Art Echo 2013 slides) | 48 |
 | 3 | Oh JK. *Hemodynamic Cases: Decision Making* (Hemodynamics III, 2013 slides) | 51 |
 | 4 | Wu P, Patel AH, Kern MJ. *Right and left heart hemodynamics – The PCR-EAPCI Textbook* (2023) | 28 |
+| 5 | Kern MJ. *Right and left heart catheterisation – The PCR-EAPCI Textbook*, Part I, chapter 1.03 (web edition and figure deck) | 12 |
 
 **Every page number below is the PDF page number, not the printed page number.** For Source 1 the PDF page equals the printed page + 12 (e.g., printed p. 41 = PDF p. 53). Slide decks (Sources 2 and 3) are cited by PDF page, which equals the slide number. Citation format: [Source N, p. X].
 
@@ -381,3 +382,13 @@ Mean LA pressure normally exceeds mean RA pressure [Source 1, p. 83; Source 4, p
 ## Topics not covered by the four sources (treat as textbook-independent assumptions)
 
 Catheter whip; hybrid PA/PCWP tracings; fluoroscopic wedge confirmation; the 1.34 O2 constant; DPG definition and cut-offs; mean PAP >20 mmHg and PVR >2 WU (2022 ESC/ERS) thresholds; isolated vs combined post-capillary PH; exercise-PH and fluid-challenge PH protocols; thermodilution error in intracardiac shunts; systolic area index in constriction; normal numeric a/v wave amplitudes and SVC/IVC saturations; typical pressure sets for ASD, VSD and PDA; explicit ECG timing of heart sounds.
+
+## Right heart catheterisation (Source 5)
+
+Used for the lesson step "Right heart catheterisation (RHC)". Paraphrased, not copied:
+
+- Indications: cardiac versus non-cardiac dyspnoea and pulmonary oedema; cardiogenic versus non-cardiogenic shock after failed volume expansion; therapy guidance in left heart failure with hypotension, oliguria or renal failure and in right heart failure with dyspnoea or hypoxaemia; tamponade when clinical and echo assessment are inconclusive; reversibility and vasoconstrictor tone in pulmonary hypertension before transplantation.
+- Not needed: routine pulmonary oedema management (even when ventilated) and the unstable patient whose tamponade is certain or probable clinically or by echo; RHC may delay treatment.
+- Fidelity: tight connections, short stiff tubing, de-bubbled and calibrated lines; underdamping produces ringing.
+- Wedge confirmation: clear a and v waves timed to the ECG or LV pressure, phase shift of the v wave to the LV downstroke, end-hole measurement, saturation > 95%; a high or doubtful wedge prompts transseptal LA measurement.
+- Saturation run: a PA step-up of more than 7% over the RA suggests an atrial-level left-to-right shunt; mixed venous = (3 SVC + IVC) / 4 in ASD; pulmonary vein saturation assumed 95% when not sampled; ASD with Qp/Qs > 1.5 principally requires closure.
