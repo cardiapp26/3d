@@ -4,7 +4,7 @@ import { createProbePath, tteFrame, surfaceHit } from './echo-probe.js';
 /*
  * The starting view sets of the echo module (report sections 4 and 5): 8 TTE
  * views (PLAX, 3 PSAX levels, 3 apical, subcostal four-chamber; ASE 2019)
- * and 8 TEE views (6 mid-oesophageal, bicaval, transgastric mid SAX; ASE/SCA
+ * and 10 TEE views (9 mid-oesophageal, transgastric mid SAX; ASE/SCA
  * 2013). The selection is the product's teaching subset, not the guideline's
  * full examination. Presets are computed from measured atlas landmarks;
  * `required` and `avoid` drive the feedback. None of this has been reviewed

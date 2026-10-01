@@ -1,0 +1,19 @@
+{
+  "assets": [
+    {
+      "path": "public/models/cardiovascular.glb",
+      "sha256": "05f373a294ab809b9a628bc1474a66028642997330fddc553a33d4ac6409b757",
+      "status": "owner-declared",
+      "origin": "original",
+      "author": "Project owner (user)",
+      "ownershipDeclaration": "Atlası ben tasarladım.",
+      "declaredOn": "2026-10-01",
+      "license": null,
+      "sourceUrl": null,
+      "permissionEvidence": null,
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "notes": "Project owner explicitly declared original authorship in this conversation on 2026-10-01. This supersedes the earlier unknown-creator assumption. No third-party source license applies to this recorded original-design provenance; no public reuse license has been selected or inferred."
+    }
+  ]
+}

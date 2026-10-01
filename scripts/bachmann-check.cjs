@@ -1,6 +1,8 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
+const shotDir = process.env.SHOT_DIR || 'research/screenshots';
 // Layers and tools open as a drawer from the header tabs (tablet and desktop).
 const openDrawer = async (page, id) => {
   const tab = page.locator(`[data-drawer=${id}]`);
@@ -8,8 +10,9 @@ const openDrawer = async (page, id) => {
 };
 (async () => {
   const { createServer } = await import('vite');
-  const server = await createServer({ server: { host: '127.0.0.1', port: 5186 }, logLevel: 'error' });
-  await server.listen();
+  const server = process.env.APP_URL ? null : await createServer({ server: { host: '127.0.0.1', port: 5186 }, logLevel: 'error' });
+  if (server) await server.listen();
+  const url = process.env.APP_URL || `http://127.0.0.1:${server.config.server.port}`;
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
@@ -20,7 +23,7 @@ const openDrawer = async (page, id) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && m.text().includes('THREE.')) errors.push(m.text()); });
-    await page.goto(`http://127.0.0.1:${server.config.server.port}/#/mode/bachmann?structure=bachmann`);
+    await page.goto(`${url}/#/mode/bachmann?structure=bachmann`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     const settle = async () => {
       await page.waitForSelector('#viewport[data-camera-settled=true]');
@@ -43,8 +46,8 @@ const openDrawer = async (page, id) => {
       const band = window.heart.scene.getObjectByName("Bachmann's bundle (schematic atrial roof band)");
       return Math.hypot(...band.userData.bandAnchor.map((v,i) => v-band.userData.pacingTarget[i])) > .05;
     }), 'endocardial teaching target is distinct from epicardial band anchor');
-    fs.mkdirSync('research/screenshots', {recursive:true});
-    await page.screenshot({path:'research/screenshots/bachmann-anatomy.png'});
+    fs.mkdirSync(shotDir, {recursive:true});
+    await page.screenshot({path:path.join(shotDir, 'bachmann-anatomy.png')});
     await openDrawer(page, 'layers');
     await page.locator('[data-layer=bachmann]').uncheck();
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'bachmann').visible), false);
@@ -71,7 +74,7 @@ const openDrawer = async (page, id) => {
     await settle();
     assert.equal(await page.evaluate(() => window.heart.getState().angio.laoRao), 40);
     if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click(); await settle();
-    await page.screenshot({path:'research/screenshots/bachmann-pacing-lao40.png'});
+    await page.screenshot({path:path.join(shotDir, 'bachmann-pacing-lao40.png')});
     await page.locator('#lang-btn').click();
     assert.match(await page.locator('#lesson-title').textContent(), /Bachmann bundle/);
     assert.equal(await page.locator('#steps .current').getAttribute('data-step'), '3');
@@ -98,5 +101,5 @@ const openDrawer = async (page, id) => {
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s=>s.id==='bachmann').visible), false);
     assert.deepEqual(errors, []);
     console.log('PASS: Bachmann cold deep link, schematic anatomy, independent/conduction toggles, RAA vs BB targets, AP/LAO40, lead progress, TR/EN, reset, pacemaker step mapping; no rendering errors.');
-  } finally { await browser.close(); await server.close(); }
+  } finally { await browser.close(); await server?.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

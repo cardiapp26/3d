@@ -53,7 +53,7 @@ const ROOT = path.join(__dirname, '..');
     });
     const report = {
       generated: new Date().toISOString().slice(0, 10),
-      atlas: { file: 'public/models/cardiovascular.glb', sha256, matchesSrcAtlas: sha256 === expected, licence: 'unverified (README.md): no publication or distribution of the echo module until resolved' },
+      atlas: { file: 'public/models/cardiovascular.glb', sha256, matchesSrcAtlas: sha256 === expected, licence: 'Original design by the project owner, declared 2026-10-01; no external-source license requirement' },
       coordinates: { x: 'patient left', y: 'superior', z: 'anterior', unit: 'atlas unit, about 34 mm (research/LAA_BACHMANN.md section 2); not a validated physical scale' },
       ...audit
     };

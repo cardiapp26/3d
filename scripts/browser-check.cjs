@@ -1,6 +1,8 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
+const shotDir = process.env.SHOT_DIR || 'research/screenshots';
 // Layers and tools open as a drawer from the header tabs (tablet and desktop).
 const openDrawer = async (page, id) => {
   const tab = page.locator(`[data-drawer=${id}]`);
@@ -31,8 +33,8 @@ const openDrawer = async (page, id) => {
     await page.goto(url);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-    fs.mkdirSync('research/screenshots', { recursive: true });
-    await page.screenshot({ path: 'research/screenshots/coronaries-anterior.png' });
+    fs.mkdirSync(shotDir, { recursive: true });
+    await page.screenshot({ path: path.join(shotDir, 'coronaries-anterior.png') });
 
     // 1. Structure selection
     await page.locator('#structure-select').selectOption('pulmonary-valve');
@@ -53,7 +55,7 @@ const openDrawer = async (page, id) => {
     await page.locator('[data-wall=rv]').fill('65');
     await page.locator('#structure-select').selectOption('rv');
     await page.waitForSelector('#viewport[data-camera-settled=true]');
-    await page.screenshot({ path: 'research/screenshots/rv-window.png' });
+    await page.screenshot({ path: path.join(shotDir, 'rv-window.png') });
     await page.locator('#restore-walls').click();
 
     // 3. Coronary filtering & root window
@@ -61,7 +63,7 @@ const openDrawer = async (page, id) => {
     await page.locator('[data-view=root]').click();
     assert.ok(await page.locator('#root-window').isChecked());
     await page.waitForSelector('#viewport[data-camera-settled=true]');
-    await page.screenshot({ path: 'research/screenshots/coronary-root.png' });
+    await page.screenshot({ path: path.join(shotDir, 'coronary-root.png') });
 
     // 4. Conduction system checkbox & SA halo visibility
     const conductionBox = page.locator('input[data-layer="conduction"]');
@@ -312,7 +314,7 @@ const openDrawer = async (page, id) => {
       'Positioned sheath does not loop up into the SVC and back down');
     await page.evaluate(() => window.heart.setView('anterior', false));
     await page.waitForSelector('#viewport[data-camera-settled=true]');
-    await page.screenshot({ path: 'research/screenshots/fossa-ovalis.png' });
+    await page.screenshot({ path: path.join(shotDir, 'fossa-ovalis.png') });
     await page.locator('[data-mode="anatomy"]').dispatchEvent('click');
 
     // 6. C-Arm panel collapsible ergonomics, quick actions & mobile sheet layout
@@ -346,7 +348,7 @@ const openDrawer = async (page, id) => {
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     assert.equal(await page.evaluate(() => window.heart.getState().fluoroscopy), true);
-    await page.screenshot({ path: 'research/screenshots/fluoroscopy-grayscale.png' });
+    await page.screenshot({ path: path.join(shotDir, 'fluoroscopy-grayscale.png') });
     const projectionImage = await page.evaluate(() => {
       window.heart.setFluoroscopy(true);
       return new Promise(resolve => requestAnimationFrame(() => resolve(document.querySelector('#viewport canvas').toDataURL())));
@@ -501,7 +503,7 @@ const openDrawer = async (page, id) => {
     // Capture screenshot of blood flow during ejection
     await page.locator('#cycle-scrubber').fill('65');
     await page.evaluate(() => new Promise(r => setTimeout(r, 400)));
-    await page.screenshot({ path: 'research/screenshots/blood-flow-ejection.png' });
+    await page.screenshot({ path: path.join(shotDir, 'blood-flow-ejection.png') });
 
     // 9e. Panel Resizer (Draggable Divider)
     const resizer = page.locator('#panel-resizer');
@@ -626,7 +628,7 @@ const openDrawer = async (page, id) => {
     assert.equal(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), true, 'C-Arm is hidden at the right edge when a mode opens (also angiography)');
     await page.locator('#steps button[data-step="1"]').click(); // Spider view step
     await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
-    await page.screenshot({ path: 'research/screenshots/mode-03-angiography-spider.png' });
+    await page.screenshot({ path: path.join(shotDir, 'mode-03-angiography-spider.png') });
     const angioText = await page.locator('#step-detail').textContent();
     assert.match(angioText, /Spider|bifurkasyon/i, 'Angiography step 2 shows Spider projection clinical guide');
 
@@ -634,7 +636,7 @@ const openDrawer = async (page, id) => {
     await page.locator('[data-mode="ablation"]:not([data-mode-step])').dispatchEvent('click');
     await page.locator('#steps button[data-step="1"]').click(); // Triangle of Koch
     await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
-    await page.screenshot({ path: 'research/screenshots/mode-04-ablation-koch.png' });
+    await page.screenshot({ path: path.join(shotDir, 'mode-04-ablation-koch.png') });
     const ablationTitle = await page.locator('#steps button[data-step="0"]').textContent();
     assert.match(ablationTitle, /CTI|Kavotriküspit/i, 'Ablation step 1 features CTI');
     const kochText = await page.locator('#step-detail').textContent();
@@ -647,7 +649,7 @@ const openDrawer = async (page, id) => {
     assert.equal(await page.locator('#progress-value').textContent(), '100%');
     await page.locator('#steps button[data-step="2"]').click(); // CSP / LBBAP step
     await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
-    await page.screenshot({ path: 'research/screenshots/mode-05-pacemaker-csp.png' });
+    await page.screenshot({ path: path.join(shotDir, 'mode-05-pacemaker-csp.png') });
     await page.locator('#progress').fill('45');
     await page.locator('#progress').dispatchEvent('input');
     assert.equal(await page.locator('#progress-value').textContent(), '45%', 'Progress slider updates lead advancement');

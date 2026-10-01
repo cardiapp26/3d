@@ -4,7 +4,7 @@
     "file": "public/models/cardiovascular.glb",
     "sha256": "05f373a294ab809b9a628bc1474a66028642997330fddc553a33d4ac6409b757",
     "matchesSrcAtlas": true,
-    "licence": "unverified (README.md): no publication or distribution of the echo module until resolved"
+    "licence": "Original design by the project owner, declared 2026-10-01; no external-source license requirement"
   },
   "coordinates": {
     "x": "patient left",

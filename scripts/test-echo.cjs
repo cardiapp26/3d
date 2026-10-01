@@ -155,7 +155,7 @@ const SHOTS = process.env.SHOT_DIR || null;
       window.heart.seekCycle(0);
       return failures;
     });
-    assert.deepEqual(phases, [], 'all 16 views meet their criteria at 4 phases of the beat');
+    assert.deepEqual(phases, [], 'all current views meet their criteria at 4 phases of the beat');
 
     // A seeded task is reproducible and solvable with the keyboard alone (slider arrow keys).
     await useModality(page, 'tte');

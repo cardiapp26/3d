@@ -1,11 +1,12 @@
 // Cardia PWA Updater (wiz3 style)
 // Handles:
-// - Service Worker registration (sw.js v9)
+// - Service Worker registration (sw.js)
 // - Network-first updates & controllerchange auto-reload
 // - Header update button with .has-update glow & red notification dot
 // - wiz3 style update prompt card with version info
 // - Hard cache-purging update trigger
 import { getTranslation } from './content.js';
+import release from '../public/version.json' with { type: 'json' };
 
 let registration = null;
 let reloadRequested = false;
@@ -50,8 +51,8 @@ export function showUpdatePrompt(info) {
   const prompt = document.querySelector('#update-prompt');
   if (!prompt) return;
 
-  const ver = (info && info.version) || getMeta('app-version', '1.9.0');
-  const bld = (info && info.build) || getMeta('app-build', 'v9');
+  const ver = (info && info.version) || getMeta('app-version', release.version);
+  const bld = (info && info.build) || getMeta('app-build', release.build);
   const valEl = document.querySelector('#up-version-val');
   if (valEl) {
     valEl.textContent = `v${ver} (Build ${bld})`;
@@ -96,7 +97,7 @@ export async function triggerAppUpdate() {
   try {
     if (typeof window !== 'undefined' && window.caches) {
       const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k).catch(() => false)));
+      await Promise.all(keys.filter(k => k.startsWith('cardia-')).map(k => caches.delete(k).catch(() => false)));
     }
   } catch (_) {}
 
@@ -117,8 +118,8 @@ export async function checkVersionJsonFallback() {
     const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) return false;
     const data = await res.json();
-    const metaBuild = getMeta('app-build', 'v9');
-    const metaVer = getMeta('app-version', '1.9.0');
+    const metaBuild = getMeta('app-build', release.build);
+    const metaVer = getMeta('app-version', release.version);
 
     const hasNewBuild = Boolean(data.build && metaBuild && data.build !== metaBuild);
     const hasNewVersion = Boolean(data.version && metaVer && data.version !== metaVer);
@@ -271,7 +272,7 @@ export function initUpdater() {
   });
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
       .then(reg => {
         watchRegistration(reg, hadController);
 

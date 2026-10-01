@@ -1,8 +1,12 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const shotDir = process.env.SHOT_DIR || 'research/screenshots';
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
+    fs.mkdirSync(shotDir, { recursive: true });
     const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -17,7 +21,7 @@ const assert = require('node:assert/strict');
       await page.locator(`[data-atria-focus=${id}]`).click();
       assert.equal(await page.locator('#structure-select').inputValue(), id);
       await page.waitForSelector('#viewport[data-camera-settled=true]');
-      await page.screenshot({ path: `research/screenshots/${id}-model.png` });
+      await page.screenshot({ path: path.join(shotDir, `${id}-model.png`) });
       if (id === 'la') {
         const fit = await page.evaluate(async () => {
           const THREE = await import('/node_modules/three/build/three.module.js');
@@ -53,7 +57,7 @@ const assert = require('node:assert/strict');
     assert.equal(await page.evaluate(() => window.heart.getState().wallCuts.la), .5);
     await page.evaluate(() => { window.heart.setLayer('vessels', true); window.heart.setFlowVisible(true); });
     assert.deepEqual(await visible(), ['coumadin-ridge','la','laa']); // with the left lateral ridge
-    await page.screenshot({ path: 'research/screenshots/atria.png' });
+    await page.screenshot({ path: path.join(shotDir, 'atria.png') });
 
     // Test RA mode
     await page.locator('[data-mode=ra]').dispatchEvent('click');

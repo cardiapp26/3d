@@ -1,14 +1,13 @@
-// Cardia Service Worker (v9)
+// Cardia Service Worker
 // Strategy:
-//   - HTML, JS, CSS, JSON (App Shell & Logic): Network-First, fallback to cache
-//   - 3D models (.glb), Draco wasm, textures, static media: Cache-First, fallback to network
-const VERSION = 'v9';
+//   - Fixed names: revalidate online, same-build cache fallback offline
+//   - Vite content-hashed assets: cache-first
+const VERSION = 'v10';
 const CACHE = `cardia-${VERSION}`;
 
 const CORE = [
   './',
-  './index.html',
-  './version.json'
+  './index.html'
 ];
 
 self.addEventListener('install', (e) => {
@@ -30,7 +29,7 @@ self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(
-      keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
+      keys.filter((k) => k.startsWith('cardia-') && k !== CACHE).map((k) => caches.delete(k))
     );
     await self.clients.claim();
   })());
@@ -52,42 +51,43 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // 1. Network-first for navigation (HTML) and scripts/styles/json
-  if (
-    req.mode === 'navigate' ||
-    /\.(html|js|mjs|css|json)(\?.*)?$/i.test(url.pathname)
-  ) {
+  const immutable = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(?:css|js|wasm|glb|gltf|png|jpg|jpeg|gif|ico|svg|woff2?)$/.test(url.pathname);
+  const versionCheck = url.pathname === '/version.json';
+  // Mutable models and Draco files must also bypass a fresh HTTP cache.
+  if (!immutable) {
     e.respondWith((async () => {
+      const cache = await caches.open(CACHE);
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(req, { cache: versionCheck ? 'no-store' : 'no-cache' });
         if (fresh && fresh.ok) {
-          const cache = await caches.open(CACHE);
-          cache.put(req, fresh.clone()).catch(() => {});
+          if (!versionCheck) await cache.put(req, fresh.clone()).catch(() => {});
           return fresh;
         }
-        const cached = await caches.match(req);
-        if (cached) return cached;
+        const cached = !versionCheck && await cache.match(req);
+        if (fresh?.status >= 500 && cached) return cached;
         return fresh;
       } catch {
-        const cached = await caches.match(req);
+        const cached = !versionCheck && await cache.match(req);
         if (cached) return cached;
-        const shell = await caches.match('./index.html');
-        if (shell) return shell;
+        if (req.mode === 'navigate') {
+          const shell = await cache.match('./index.html');
+          if (shell) return shell;
+        }
         return new Response('Offline', { status: 504, statusText: 'Offline' });
       }
     })());
     return;
   }
 
-  // 2. Cache-first for 3D models, wasm, textures, static assets
+  // Content hash changes whenever an immutable asset changes.
   e.respondWith((async () => {
-    const cached = await caches.match(req);
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(req);
     if (cached) return cached;
     try {
       const fresh = await fetch(req);
       if (fresh && fresh.ok) {
-        const cache = await caches.open(CACHE);
-        cache.put(req, fresh.clone()).catch(() => {});
+        await cache.put(req, fresh.clone()).catch(() => {});
       }
       return fresh;
     } catch {

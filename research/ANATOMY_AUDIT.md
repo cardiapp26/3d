@@ -1,5 +1,7 @@
 # Anatomical audit of the initial heart prototype
 
+> Historical report: findings below describe the ellipsoid prototype inspected on 12 September 2026. The active implementation now loads a local GLB atlas through `src/heart.js` and `src/atlas.js`, replacing that prototype. These findings are not an audit of the current atlas. The replacement alone does not establish anatomical accuracy or clinical training validity; the current asset, overlays and simulation require their own provenance and validation evidence.
+
 Audit date: 12 September 2026. Scope: read `src/heart.js` and visually inspect rendered source figures. This report does not certify anatomy or simulator validity. The initial implementation is an illustrative diagram; it does not meet the requested realistic gross/microstructure model or procedural simulator scope.
 
 ## Evidence inspected

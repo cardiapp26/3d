@@ -4,14 +4,14 @@ Date: 2026-09-30. Scope: `research/TTE_TEE_ENTEGRASYON_RAPORU.md`, stages 0–3.
 
 ## What exists
 
-Mode **12 · Ekokardiyografi (TTE/TEE)**, group "Görüntüleme / Imaging". Left: the probe, its imaging fan and the 3D heart. Right panel: the 2D sector section of the same plane, feedback, controls. Four lesson steps: TTE views, TEE views, "find the view" task, limits.
+Modes **12 · Ekokardiyografi (TTE)** and **13 · Transözofageal Eko (TEE)**, group "Görüntüleme / Imaging". Left: the probe, its imaging fan and the 3D heart. Right panel: the 2D sector section of the same plane, feedback, controls. Four lesson steps: TTE views, TEE views, "find the view" task, limits.
 
 | Module | Responsibility |
 |---|---|
 | `src/echo-section.js` | Plane cut of the current (beating) triangles; cut points welded by edge, joined into contours, each closed or open; 2D image coordinates (x lateral = screen right, y depth). |
 | `src/echo-probe.js` | TTE: window base frame on a schematic ellipsoid chest surface; rotation about the beam first, then tilt and rock on the turned plane, slide along the surface (contact kept). TEE: path with arc-length advance and a parallel-transported face; flexion (ante/retro, left/right) bends a 2 cm distal section into an arc, so the tip moves and stops at the lumen (0.3 units in the oesophagus, 1.2 in the stomach); the multiplane angle turns the image about the beam without moving the tip. |
 | `src/echo-anatomy.js` | Sectioned structures (LA split into body and appendage lobe), landmarks, schematic oesophagus-stomach path, heart-surface exit distance. |
-| `src/echo-views.js` | 8 TTE views (PLAX, PSAX AV/MV/PM, A4C, A2C, A3C, subcostal 4C) and 8 TEE views (ME 4C, mitral commissural, 2C, LAX, AV SAX, bicaval, LAA; TG mid SAX) with required and avoided structures, landmark presets and the atlas calibration. |
+| `src/echo-views.js` | 8 TTE views (PLAX, PSAX AV/MV/PM, A4C, A2C, A3C, subcostal 4C) and 10 TEE views (ME 4C, mitral commissural, 2C, LAX, AV SAX, bicaval, LAA, RV inflow-outflow, LAA and left upper PV neighbourhood; TG mid SAX) with required and avoided structures, landmark presets and the atlas calibration. |
 | `src/echo-training.js` | Feedback on the model's starting criteria: structures in the sector (at least 0.25 units of contour), structures that should not be there; apical views: the true apex in the plane (0.15 units), inside the image (depth and sector, separate messages) and the visible LV at least 90 % of the measured length; bicaval: the estimated IVC orifice in the cut and the atrial septum (LA next to RA); mitral views: angle of the annulus chord to the commissural axis (commissural 0–22°, two-chamber at least 25° without the outflow tract, long axis 55–90° with it). |
 | `src/echo-renderer.js` | 2D sector: anatomical colour or schematic grey; relative depth ticks, index marker, labels, watermark ("not an ultrasound image"). |
 | `src/echo-mode.js`, `src/echo-panel.js` | Mode lifecycle, 3D overlay (probe, fan, oesophagus, TEE shaft), panel, task. |
@@ -28,16 +28,16 @@ Mode **12 · Ekokardiyografi (TTE/TEE)**, group "Görüntüleme / Imaging". Left
 
 `node scripts/echo-audit.cjs` writes `topology-report.json`: the atlas SHA-256 (checked against `src/atlas.js`), each sectioned mesh's boundary loops (open or closed surface) and, per view preset, the closed and open contour counts per structure.
 
-- Licence: the atlas author and licence are unverified (`README.md`). The echo module must not be published or distributed as a product until this is resolved. This work did not resolve it.
+- Ownership update (2026-10-01): the project owner declared that they designed the atlas themselves. The earlier unknown-author assumption and its distribution block are superseded. `ASSET_PROVENANCE.json` records the declaration and exact checksum; the release/Docker check verifies that record and identity. No external creator's licence is required for this owner-authored atlas. This is not an open-source licence assignment or clinical validation of the echo module.
 - Topology: the chambers and vessels are open surfaces (valve rims, vessel ends), so many cuts give open contours. Open contours are drawn as lines and never filled; a closed contour of a chamber is filled only in the anatomical colour style, as blood pool, never as myocardium. No wall thickness is invented.
 - Scale: see the coordinate contract.
 - Result (2026-09-30): atlas SHA-256 `05f373a2…09b757` matches `src/atlas.js`; of 31 sectioned meshes, 19 are open surfaces. Every view preset gives both closed and open contours (for example A4C 11 closed / 15 open, ME 4C 19 / 9, TG SAX 7 / 2); open ones are shown as lines.
 
 ## Presets and calibration
 
-Presets come from measured landmarks (mitral and tricuspid annulus frames, LV apex, aortic cusp plane, papillary muscle, LA, LAA orifice). `node scripts/echo-calibrate.cjs` then searches a grid around each preset for the smallest probe adjustment whose section meets the view's criteria at rest and at four phases of the beat (the worst phase counts; the AV plane descends in systole). TEE multiplane angles stay within each view's guideline range. The resulting offsets are stored in `src/echo-views.js`. They fit this atlas only and are not an expert review; the report asks for expert calibration and that is still open.
+Presets come from measured landmarks (mitral and tricuspid annulus frames, LV apex, aortic cusp plane, papillary muscle, LA, LAA orifice). `node scripts/echo-calibrate.cjs` then searches a grid around each preset for the smallest probe adjustment whose section meets the view's criteria at rest and at four phases of the beat (the worst phase counts; the AV plane descends in systole). Guideline angle ranges and atlas preset angles are documented separately in `src/echo-views.js`; the RV inflow-outflow preset uses 75° and the LAA/PV neighbourhood preset uses a 135° sweep, outside their listed starting ranges. The resulting offsets are stored in `src/echo-views.js`. They fit this atlas only and are not an expert review; the report asks for expert calibration and that is still open.
 
-Result: all 16 presets meet their criteria at rest and through the beat on this atlas (`scripts/test-echo.cjs`, `scripts/echo-calibrate.cjs`).
+The current catalogue contains 18 presets (8 TTE and 10 TEE). The historical 16-preset result predates the RV inflow-outflow and LAA/PV neighbourhood additions; `scripts/test-echo.cjs` now checks the current catalogue at four phases of the beat, and `scripts/echo-calibrate.cjs` iterates it. A test pass establishes the model's programmed criteria, not clinical validity.
 
 Model decisions recorded here:
 - TG mid SAX: the pulmonary artery, LAA, LA, mitral valve and aorta must stay out of the sector; the oblique atlas LV axis otherwise brings the outflow tract into the far field.
@@ -52,7 +52,7 @@ Model decisions recorded here:
 |---|---|
 | Section engine on phantoms (closed/open, welding, mirror, matrix, live positions) | `node scripts/test-echo-section.mjs` |
 | Sector renderer (geometry, clipping, both styles, labels, robustness) | `node scripts/test-echo-renderer.mjs` |
-| Mode on the atlas: 16 presets, orientation, separate TEE motions, phase-locked section, freeze, task, speed | `npm run test:echo` (running server) |
+| Mode on the atlas: 18 presets, orientation, separate TEE motions, phase-locked section, freeze, task, speed | `npm run test:echo` (running server) |
 | Preset calibration | `node scripts/echo-calibrate.cjs` (running server) |
 | Stage 0 audit | `node scripts/echo-audit.cjs` (running server) |
 

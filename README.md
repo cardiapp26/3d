@@ -11,7 +11,7 @@ Heart chambers, aortic root/arch, coronary arteries, cardiac veins and leaflets 
 - One button restores all wall windows. Chamber checkboxes hide whole chambers.
 - Selection, orbit/zoom, view presets, keyboard shortcuts and conceptual lessons remain available.
 
-The source atlas contains no named endocardium, epicardium or RV free-wall segments. It does not establish clinical correctness, continuous coronary lumens or procedural safety. Its upstream author/license is not verified from available project records; do not describe it as HuBMAP or Z-Anatomy. The original HRA files remain in the workspace but are not combined with the active atlas.
+The source atlas contains no named endocardium, epicardium or RV free-wall segments. It does not establish clinical correctness, continuous coronary lumens or procedural safety. The project owner declared on 2026-10-01 that they designed this atlas themselves; it is original project-owner geometry, not a HuBMAP or Z-Anatomy asset. The original HRA files remain in the workspace but are not combined with the active atlas.
 
 Unregistered legacy catheter curves are no longer superimposed on this anatomy. The cardiac conduction system (SA node, AV node, Bundle of His) is a 3D procedural schematic model positioned at standard anatomical landmarks, distinct from the segmented atlas meshes. The UI explicitly separates provenance:
 - **Atlas structures** (`ATLAS MESH · SHARED COORDINATES`): Chambers, vessels, coronaries, cardiac veins, and valve leaflets originating from `cardiovascular.glb`.
@@ -88,6 +88,14 @@ Open the URL printed by Vite. Port 5173 is preferred; Vite chooses the next avai
 
 ## Verify
 
+`npm test` covers Node/model checks; it does not run browser geometry, echo or mobile checks. The application gate runs syntax checks, unit tests, production build and eight Chrome checks (resize-observer, atlas geometry, echo, mobile, mitral, atria, Bachmann and EP):
+
+```sh
+npm run verify:app
+```
+
+Chrome and Playwright must be installed. `verify:browser` starts a local Vite server unless `APP_URL` is supplied; generated screenshots go to a temporary directory. Passing this gate verifies implementation, not clinical accuracy or WCAG compliance.
+
 ```sh
 npm run check
 npm test
@@ -104,4 +112,19 @@ The script defaults to this workstation's bundled Playwright. It verifies source
 
 Geometry tests use the actual Draco mesh, its checksum, node transforms, boundary loops and relative distances. Passing tests detects implementation regressions; it is **not clinical anatomical validation**. See `research/CORONARY_FIX.md` and `research/coronary-geometry-report.json`.
 
-Vendor chunking splits Three.js into a separate cacheable chunk (`vendor-three`), keeping all bundles well under the 500 kB threshold. Google Fonts is optional; system fonts remain available offline.
+Vendor chunking splits Three.js into a separate cacheable chunk (`vendor-three`); the configured warning threshold is 1000 kB. Google Fonts is optional; system fonts remain available offline.
+
+## Distribution gate
+
+The project owner declared original authorship of the local atlas on 2026-10-01. `ASSET_PROVENANCE.json` binds that declaration to the exact shipped mesh checksum. `npm run verify:license` and the Docker builder check the recorded ownership declaration and asset identity; an external creator's licence or source URL is not required for this owner-authored atlas. This records the owner's statement rather than issuing a legal certification or assigning an open-source licence to the mesh. Clinical validation remains separate.
+
+Before public distribution:
+
+1. Keep the asset record and checksum aligned with the owner's declared atlas. For any future third-party replacement, record and review its source and redistribution permission before shipping it.
+2. Run `npm run release:stamp -- VERSION "release description"` once per release. It updates the Istanbul date, HTML version/build, version JSON and service-worker cache revision together. Inspect its diff.
+3. Run `npm run verify:release` (rights check plus application gate).
+4. Build and test the Docker image. Against a server using `nginx.conf`, run `APP_URL=http://127.0.0.1:8080 npm run test:deployment` to verify actual cache headers and release identity. This check cannot be replaced by a Vite response.
+
+Only content-hashed files under `/assets/` get one-year immutable caching. HTML, service worker and fixed-name models/Draco files revalidate; version JSON is not stored. The legacy `heart.glb` is preserved under `research/before-coronary-fix/`, excluded from public assets and Docker. Already-distributed browser/CDN cache entries require validation after rollout; these source fixes do not change a running server.
+
+Audit findings and remaining gates: [distribution review](research/DAGITIM_DENETIMI_2026-10-01.md).

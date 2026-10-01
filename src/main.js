@@ -450,7 +450,7 @@ app.innerHTML = `
   <div class="up-card-body">
     <p id="up-text" class="up-text" data-i18n="upDesc">${getTranslation('upDesc')}</p>
     <p class="up-version-tag">
-      <span data-i18n="upVersionLabel">${getTranslation('upVersionLabel')}</span>: <code id="up-version-val">v1.9.0 (Build v9)</code>
+      <span data-i18n="upVersionLabel">${getTranslation('upVersionLabel')}</span>: <code id="up-version-val"></code>
     </p>
     <div class="up-actions">
       <button id="up-later" class="up-btn up-btn-later" type="button" data-i18n="upLater">${getTranslation('upLater')}</button>
@@ -579,8 +579,17 @@ try {
 const cyclePanelEl = document.querySelector('#cycle-panel');
 const workspaceEl = document.querySelector('.workspace');
 if (cyclePanelEl && workspaceEl) {
-  const syncCycleHeight = () => workspaceEl.style.setProperty('--cycle-h', `${cyclePanelEl.offsetHeight}px`);
-  new ResizeObserver(syncCycleHeight).observe(cyclePanelEl);
+  const syncCycleHeight = () => {
+    const height = `${cyclePanelEl.offsetHeight}px`;
+    if (workspaceEl.style.getPropertyValue('--cycle-h') !== height) workspaceEl.style.setProperty('--cycle-h', height);
+  };
+  // Updating the parent changes the shallower viewport observed by Three.js.
+  // Defer that layout write until the next frame, outside observer delivery.
+  let cycleResizeFrame = 0;
+  new ResizeObserver(() => {
+    if (cycleResizeFrame) return;
+    cycleResizeFrame = requestAnimationFrame(() => { cycleResizeFrame = 0; syncCycleHeight(); });
+  }).observe(cyclePanelEl);
   syncCycleHeight();
 }
 

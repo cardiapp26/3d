@@ -8,6 +8,7 @@ RUN npm ci
 
 # Copy application source and build production bundle
 COPY . .
+RUN node scripts/verify-asset-license.mjs
 RUN npm run build
 
 # Stage 2: Serve with lightweight Nginx

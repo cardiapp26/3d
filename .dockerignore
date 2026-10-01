@@ -4,5 +4,6 @@ dist
 .gitignore
 .DS_Store
 research
-scripts
+scripts/*
+!scripts/verify-asset-license.mjs
 *.log

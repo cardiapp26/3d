@@ -44,7 +44,7 @@ Aşağıdaki bulgular yerel kaynak koduna dayanır. Satırlar inceleme tarihinde
 | `package.json` | Three.js `^0.186.0`, Vite `^8.3.0`, JavaScript modülleri | İlk aşamada framework değişikliği gerekmiyor. Sürümler paket aralıklarıdır. |
 | `src/atlas.js:3`, `src/heart.js:296` | Ortak GLB ve aynı koordinat sistemindeki kalp yapıları | `heart.js:309` çevresinde en büyük odacık boyutu 3.3 sahne birimine normalize ediliyor; doğrulanmış mm/cm ölçeği yok. |
 | `src/heart.js:313`, `:322` | Atriyal düzenleme ve şematik AV yaprakçıkları | Model ham hasta segmentasyonu değil. Kesitlerin anatomik uygunluğu ayrıca denetlenmeli. |
-| `README.md:14` | Modelin köken sınırlamaları açıkça kaydedilmiş | Atlasın upstream yazarı/lisansı doğrulanmamış. Dağıtım veya ürünleştirme öncesi giderilmeli. |
+| `README.md:14` | Modelin köken sınırlamaları açıkça kaydedilmiş | İlk incelemede üretici bilgisi yoktu. 2026-10-01 kullanıcı beyanıyla atlasın proje sahibinin özgün tasarımı olduğu kaydedildi; önceki lisans engeli geçersiz. |
 | `src/thorax.js:24`, `:103` | Şematik diyafram, frenik sinirler ve vertebralar | TTE için göğüs yüzeyi, kosta/interkostal pencereler ve akustik engeller eksik. |
 | `src/content.js:71` | Özofagusun modelde olmadığı açık | TEE için özofagus-mide güzergâhı ve anatomik ilişki gerekli. |
 | `src/heart.js:210`, `:566` | Duvar kesme kontrolleri, clipping planes | Yarı uzayı gizler; dolu 2B doku kesiti veya ultrason sektörü üretmez. |

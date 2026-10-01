@@ -1358,7 +1358,7 @@ export const rawLessons = {
         },
         {
           title: 'Sınırlar: bu görüntü neyi göstermez?',
-          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. Akustik pencere ve kaburga gölgesi yoktur; TTE pencereleri göğüs duvarı modellenmediği için hazır noktalardır. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlasın kaynağı ve lisansı doğrulanmamıştır; bu nedenle modül yayın veya klinik eğitim yeterliliği iddiası taşımaz.',
+          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. Akustik pencere ve kaburga gölgesi yoktur; TTE pencereleri göğüs duvarı modellenmediği için hazır noktalardır. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlas, proje sahibinin özgün tasarımıdır. Modülün klinik eğitim geçerliliği bağımsız uzman incelemesi gerektirir.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
         }
       ]
@@ -1379,7 +1379,7 @@ export const rawLessons = {
         },
         {
           title: 'Limits: what this image does not show',
-          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. There is no acoustic window or rib shadow; TTE windows are preset points because the chest wall is not modelled. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas source and licence are unverified; the module claims neither publication readiness nor clinical training competence.',
+          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. There is no acoustic window or rib shadow; TTE windows are preset points because the chest wall is not modelled. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas is an original design by the project owner. Clinical training validity requires independent expert review.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
         }
       ]
@@ -1402,7 +1402,7 @@ export const rawLessons = {
         },
         {
           title: 'Sınırlar: bu görüntü neyi göstermez?',
-          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. TEE yolu ölçülmüş bir özofagus değildir; derinlik santimetre olarak sunulmaz. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlasın kaynağı ve lisansı doğrulanmamıştır; bu nedenle modül yayın veya klinik eğitim yeterliliği iddiası taşımaz.',
+          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. TEE yolu ölçülmüş bir özofagus değildir; derinlik santimetre olarak sunulmaz. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlas, proje sahibinin özgün tasarımıdır. Modülün klinik eğitim geçerliliği bağımsız uzman incelemesi gerektirir.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
         }
       ]
@@ -1423,7 +1423,7 @@ export const rawLessons = {
         },
         {
           title: 'Limits: what this image does not show',
-          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. The TEE path is not a measured oesophagus; depth is not given in centimetres. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas source and licence are unverified; the module claims neither publication readiness nor clinical training competence.',
+          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. The TEE path is not a measured oesophagus; depth is not given in centimetres. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas is an original design by the project owner. Clinical training validity requires independent expert review.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
         }
       ]
@@ -1462,7 +1462,7 @@ export const uiTranslations = {
     madeBy: 'Yapım: Dr. Yusuf Hoşoğlu',
     contactLead: 'İletişim:',
     referencesIntro: 'Metinler seçilmiş kaynaklara dayanır. Sayfa numaraları, belirtildiyse PDF sayfasıdır. Denetim ve sınırlar: SOURCES.md.',
-    referencesLimits: 'Model sınırları: Kalp ve damar örgüleri aynı yerel cardiovascular.glb dosyasındadır. Modelin özgün üreticisi ve lisansı doğrulanmamıştır; HuBMAP atfı yoktur. Hücre çizimleri ve atım şematiktir. Kaynak incelemesi, simülatörün klinik geçerliliğini doğrulamaz.',
+    referencesLimits: 'Model sınırları: Kalp ve damar örgüleri aynı yerel cardiovascular.glb dosyasındadır. Model, proje sahibinin özgün tasarımıdır (2026-10-01 beyanı). Hücre çizimleri ve atım şematiktir. Kaynak incelemesi, simülatörün klinik geçerliliğini doğrulamaz.',
     closeDialog: 'Kapat ×',
     workspaceEyebrow: 'ÇALIŞMA ALANI',
     workspaceTitle: 'Kalbin anatomisi.',
@@ -1604,7 +1604,7 @@ export const uiTranslations = {
     madeBy: 'Made by: Dr. Yusuf Hoşoğlu',
     contactLead: 'Contact:',
     referencesIntro: 'Descriptions are grounded in selected sources. Page numbers refer to PDF pages where specified. Audit and limitations: SOURCES.md.',
-    referencesLimits: 'Model limitations: Heart and vascular meshes come from the same local cardiovascular.glb. The model’s original creator and license have not been verified; it is not attributed to HuBMAP. Cell diagrams and beating are schematic. Source review does not validate the simulator for clinical use.',
+    referencesLimits: 'Model limitations: Heart and vascular meshes come from the same local cardiovascular.glb. The model is an original design by the project owner (declaration on 2026-10-01). Cell diagrams and beating are schematic. Source review does not validate the simulator for clinical use.',
     closeDialog: 'Close ×',
     workspaceEyebrow: 'YOUR WORKSPACE',
     workspaceTitle: 'Inside the heart.',
