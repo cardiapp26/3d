@@ -1106,3 +1106,11 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .flow-speed-bar { width: 48px; height: 6px; }
   .flow-speed-text { font-size: 9px; padding: 2px 5px; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* Phones: the cycle bar's two groups wrap inside the panel instead of
+   running past the screen edge (phase tag, rhythm select). */
+@media (max-width:640px){
+  .cycle-play-group,.cycle-rate-group{flex-wrap:wrap;max-width:100%;min-width:0}
+  .cycle-rate-group select,.cycle-rhythm-select{min-width:0;max-width:100%;flex:1 1 140px}
+  .cycle-phase-tag{white-space:normal}
+}
