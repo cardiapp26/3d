@@ -17,7 +17,7 @@ import { ref, cal } from './ep-cases.js';
 
 export const ORIGIN_KINDS = Object.freeze(['ventricular', 'atrial']);
 export const REGIONS = Object.freeze({
-  ventricular: Object.freeze(['rvot', 'lvot-cusp', 'mitral-superior', 'ta-free-wall', 'lv-inferior']),
+  ventricular: Object.freeze(['rvot', 'lvot-cusp', 'lv-summit', 'mitral-superior', 'ta-free-wall', 'lv-inferior']),
   atrial: Object.freeze(['crista-high', 'cs-ostium', 'ta-superior', 'rspv', 'laa'])
 });
 
@@ -33,6 +33,9 @@ export const ORIGIN_EXAMPLES = Object.freeze([
   // RVOT with a V3 transition: the outflow tract pattern that cannot tell right from left (source C2).
   { id: 'pvc-rvot-v3', kind: 'ventricular', region: 'rvot', context: 'normal', lobes: [L([-0.21, 0.36, 0.33], 40, 16, 0.58), L([0.12, 0.7, 0.04], 95, 28, 1.4)] },
   { id: 'pvc-lvot-cusp', kind: 'ventricular', region: 'lvot-cusp', context: 'normal', lobes: [L([-0.22, 0.69, 0.81], 40, 16, 0.64), L([0.04, 0.71, 0.04], 95, 28, 1.4)] },
+  // LV summit (epicardial, under the LAD-LCx bifurcation): inferior axis, lead I negative, a deeper
+  // negative aVL than aVR, RBBB-like V1 (Yamada 2010, C10; anatomy Kuniewicz 2021, C11).
+  { id: 'pvc-lv-summit', kind: 'ventricular', region: 'lv-summit', context: 'normal', lobes: [L([-0.3, 0.5, 0.55], 40, 16, 0.6), L([-0.3, 0.85, 0.3], 95, 28, 1.4)] },
   { id: 'pvc-mitral-superior', kind: 'ventricular', region: 'mitral-superior', context: 'normal', lobes: [L([-0.3, 0.3, 0.5], 40, 16, 0.4), L([-0.3, 0.7, 0.65], 95, 28, 1.4)] },
   { id: 'pvc-ta-free-wall', kind: 'ventricular', region: 'ta-free-wall', context: 'normal', lobes: [L([0.3, 0, 0.3], 40, 16, 0.35), L([0.8, -0.35, -0.45], 95, 28, 1.4)] },
   // Structural heart disease: the QRS is wider and notched; it points to the exit at the scar border, not to the isthmus.
@@ -73,10 +76,13 @@ export function originFeatures(example) {
     leadI: p('I'),
     aVL: p('aVL'),
     aVR: p('aVR'),
+    // Depth of the negative deflection in aVL against aVR (the source's Q-wave ratio, read qualitatively).
+    avlAvr: depth(s.leads.aVL) / Math.max(1e-6, depth(s.leads.aVR)),
     transition: example.kind === 'ventricular' ? transitionLead(s, FLAT.ventricular) : null
   };
 }
 
+const depth = (signal) => Math.max(0, -Math.min(...signal));
 const AT_OR_AFTER = (lead, from) => lead != null && Number(lead.slice(1)) >= Number(from.slice(1));
 const AT_OR_BEFORE = (lead, to) => lead != null && Number(lead.slice(1)) <= Number(to.slice(1));
 
@@ -87,6 +93,7 @@ const AT_OR_BEFORE = (lead, to) => lead != null && Number(lead.slice(1)) <= Numb
 export const REGION_PATTERNS = Object.freeze({
   rvot: [['bundle', (f) => f.bundle === 'LBBB'], ['axis', (f) => f.axis === 'inferior'], ['transition', (f) => f.transition == null || AT_OR_AFTER(f.transition, 'V3')]],
   'lvot-cusp': [['axis', (f) => f.axis === 'inferior'], ['transition', (f) => AT_OR_BEFORE(f.transition, 'V3')], ['leadI', (f) => f.leadI === '-' || f.leadI === '±' || f.leadI === '0'], ['bundle', (f) => f.bundle !== 'RBBB']],
+  'lv-summit': [['bundle', (f) => f.bundle === 'RBBB'], ['axis', (f) => f.axis === 'inferior'], ['leadI', (f) => f.leadI === '-'], ['avlAvr', (f) => f.avlAvr > 1.1]],
   'mitral-superior': [['bundle', (f) => f.bundle === 'RBBB'], ['axis', (f) => f.axis === 'inferior']],
   'ta-free-wall': [['bundle', (f) => f.bundle === 'LBBB'], ['axis', (f) => f.axis !== 'inferior'], ['leadI', (f) => f.leadI === '+'], ['aVL', (f) => f.aVL === '+']],
   'lv-inferior': [['bundle', (f) => f.bundle === 'RBBB'], ['axis', (f) => f.axis === 'superior']],

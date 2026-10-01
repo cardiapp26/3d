@@ -39,7 +39,9 @@ const expected = {
   'pvc-rvot': { bundle: 'LBBB', axis: 'inferior', transition: 'V4', likely: ['rvot'], confidence: 'moderate' },
   'pvc-rvot-v3': { bundle: 'LBBB', axis: 'inferior', transition: 'V3', likely: ['rvot', 'lvot-cusp'], confidence: 'low' },
   'pvc-lvot-cusp': { axis: 'inferior', transition: 'V2', leadI: '-', likely: ['lvot-cusp'], confidence: 'moderate' },
-  'pvc-mitral-superior': { bundle: 'RBBB', axis: 'inferior', likely: ['mitral-superior'], confidence: 'moderate' },
+  // LV summit and the superior mitral annulus share the RBBB, inferior-axis, lead I negative pattern (C10, C11).
+  'pvc-lv-summit': { bundle: 'RBBB', axis: 'inferior', leadI: '-', likely: ['lv-summit', 'mitral-superior'], confidence: 'low' },
+  'pvc-mitral-superior': { bundle: 'RBBB', axis: 'inferior', likely: ['lv-summit', 'mitral-superior'], confidence: 'low' },
   'pvc-ta-free-wall': { bundle: 'LBBB', axis: 'superior', leadI: '+', aVL: '+', likely: ['ta-free-wall'], confidence: 'moderate' },
   'vt-lv-inferior-scar': { bundle: 'RBBB', axis: 'superior', likely: ['lv-inferior'], confidence: 'moderate', reasons: ['single', 'scarExit'] },
   'pac-crista-high': { v1: '±', axis: 'inferior', leadI: '+', aVR: '-', likely: ['crista-high'], confidence: 'moderate' },
@@ -62,6 +64,13 @@ for (const e of ORIGIN_EXAMPLES) {
     assert.equal(gradeOrigin(e, other), r.likely.includes(other) ? 'compatible' : 'mismatch', `${e.id} vs ${other}`);
   }
   assert.ok(REGIONS[e.kind].includes(e.region));
+}
+// LV summit: the aVL negative deflection is deeper than aVR's (the source's aVL/aVR Q ratio, read qualitatively);
+// the left cusp example is not a summit pattern (no RBBB, aVL not deeper).
+{
+  const summit = likelyRegions(ORIGIN_EXAMPLES.find((e) => e.id === 'pvc-lv-summit')).features;
+  assert.ok(summit.avlAvr > 1.1 && summit.aVR === '-', 'summit: aVL deeper than aVR, aVR negative');
+  assert.ok(!likelyRegions(ORIGIN_EXAMPLES.find((e) => e.id === 'pvc-lvot-cusp')).likely.includes('lv-summit'), 'left cusp example is not a summit pattern');
 }
 for (const kind of ORIGIN_KINDS) for (const region of REGIONS[kind]) {
   assert.ok(REGION_PATTERNS[region], `${region}: pattern`);

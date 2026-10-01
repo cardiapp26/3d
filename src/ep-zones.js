@@ -30,6 +30,7 @@ const COLORS = {
 const ORIGIN_LABELS = Object.freeze({
   rvot: { tr: 'RVOT (şematik bölge)', en: 'RVOT (schematic region)' },
   'lvot-cusp': { tr: 'Aort kökü, sol kusp (şematik)', en: 'Aortic root, left cusp (schematic)' },
+  'lv-summit': { tr: 'LV summit, LAD-Cx bifurkasyonu altı (şematik)', en: 'LV summit, below the LAD-LCx bifurcation (schematic)' },
   'mitral-superior': { tr: 'Mitral anulus süperior (şematik)', en: 'Superior mitral annulus (schematic)' },
   'ta-free-wall': { tr: 'Triküspit anulus serbest duvar (şematik)', en: 'Tricuspid annulus free wall (schematic)' },
   'lv-inferior': { tr: 'LV inferior bazal, skar çıkışı (şematik)', en: 'Basal inferior LV, scar exit (schematic)' },
@@ -299,7 +300,12 @@ export function createEpZones(helpers) {
       // Aortic cusp meshes are 'lcc' / 'ncc' ('aortic-valve' is a layer, not a mesh).
       const leftCusp = at('lcc', at('ncc', aorta.clone().lerp(mvCentre, 0.5)));
       const aorticValve = at('ncc', leftCusp).clone().lerp(leftCusp, 0.5);
+      // LV summit: epicardial triangle under the LAD-LCx bifurcation (the left main end
+      // farthest from its ostium at the left cusp), a little toward the LV (Kuniewicz 2021).
+      const lmVerts = meshVertices('lm');
+      const bifurcation = lmVerts.length ? lmVerts.reduce((best, v) => (v.distanceTo(leftCusp) > best.distanceTo(leftCusp) ? v : best)).clone() : leftCusp.clone().lerp(lv, 0.3);
       const anchors = {
+        'lv-summit': bifurcation.lerp(lv, 0.12),
         rvot: at('pulmonary-valve', at('pa', rv.clone())).clone().lerp(rv, 0.3),
         'lvot-cusp': leftCusp.clone(),
         'mitral-superior': mvRim.reduce((best, v) => (v.distanceTo(aorticValve) < best.distanceTo(aorticValve) ? v : best)).clone().lerp(lv, 0.08),

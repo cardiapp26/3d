@@ -1,6 +1,6 @@
 /*
  * TR/EN text of the PAC / PVC source-region exercise (ep-origin.js). Source
- * ids C1-C9 refer to research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.
+ * ids C1-C11 refer to research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.
  */
 export const ORIGIN_TEXT = Object.freeze({
   tr: {
@@ -10,7 +10,7 @@ export const ORIGIN_TEXT = Object.freeze({
     next: 'Yeni örnek',
     contexts: { normal: 'Yapısal kalp hastalığı yok.', inferiorScar: 'Eski inferior miyokard enfarktüsü (skar) var.' },
     regions: {
-      rvot: 'RVOT', 'lvot-cusp': 'Aort kökü (sol koroner kusp)', 'mitral-superior': 'Mitral anulus, süperior', 'ta-free-wall': 'Triküspit anulus, serbest duvar', 'lv-inferior': 'LV inferior bazal',
+      rvot: 'RVOT', 'lvot-cusp': 'Aort kökü (sol koroner kusp)', 'lv-summit': 'LV summit (epikardiyal)', 'mitral-superior': 'Mitral anulus, süperior', 'ta-free-wall': 'Triküspit anulus, serbest duvar', 'lv-inferior': 'LV inferior bazal',
       'crista-high': 'Krista terminalis, yüksek', 'cs-ostium': 'CS ağzı', 'ta-superior': 'Triküspit anulus süperior / RAA', rspv: 'Sağ üst pulmoner ven', laa: 'Sol atriyal apendiks'
     },
     question: 'Olası kaynak bölgesi hangisi?',
@@ -25,6 +25,7 @@ export const ORIGIN_TEXT = Object.freeze({
       ...(f.bundle ? [`V1: ${f.bundle === 'LBBB' ? 'sol dal bloğu benzeri (baskın negatif)' : f.bundle === 'RBBB' ? 'sağ dal bloğu benzeri (baskın R)' : 'belirsiz (bifazik)'}`] : [`V1: ${POL_TR[f.v1]}`]),
       `Eksen: ${f.axis === 'inferior' ? 'inferior (II, III, aVF pozitif)' : f.axis === 'superior' ? 'süperior (aVF negatif)' : 'ara'}`,
       `DI: ${POL_TR[f.leadI]} · aVL: ${POL_TR[f.aVL]} · aVR: ${POL_TR[f.aVR]}`,
+      ...(f.kind === 'ventricular' && f.aVL === '-' ? [`aVL negatif sapması aVR'ninkinden ${f.avlAvr > 1.1 ? 'derin' : 'derin değil'}`] : []),
       ...(f.kind === 'ventricular' ? [`Prekordiyal geçiş: ${f.transition || 'yok'}`] : [])
     ],
     likelyTitle: 'Olası bölgeler',
@@ -40,7 +41,7 @@ export const ORIGIN_TEXT = Object.freeze({
     after: 'En erken kayıtlı A bile P başlangıcından sonra: odak kayıt kateterlerinin olmadığı bir yerde (örnekleme sınırı). En erken kanal odak değildir.',
     stripTitle: 'Atriyal odak: kateter aktivasyonu',
     scene: '3B: kaynak bölge şematik olarak işaretlendi.',
-    limits: 'Sentetik öğretim örnekleri: kalp vektörleri sıfırdan tasarlandı, gerçek hasta EKG\'si değildir; amplitüd görecelidir. Desenler kaynaklardaki bulguların sadeleştirilmiş öğretim karşılığıdır; doğruluk yüzdesi verilmez. EP uzmanı incelemesi yapılmadı. Kaynaklar C1-C9: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
+    limits: 'Sentetik öğretim örnekleri: kalp vektörleri sıfırdan tasarlandı, gerçek hasta EKG\'si değildir; amplitüd görecelidir. Desenler kaynaklardaki bulguların sadeleştirilmiş öğretim karşılığıdır; doğruluk yüzdesi verilmez. EP uzmanı incelemesi yapılmadı. LV summit: Yamada 2010 (C10), Kuniewicz 2021 (C11); summit büyük kardiyak ven ile ulaşılabilir alt ve koroner arterlere yakınlık nedeniyle ulaşılamaz üst bölgeye ayrılır. Kaynaklar C1-C11: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
   },
   en: {
     heading: 'Source region: PAC / PVC',
@@ -49,7 +50,7 @@ export const ORIGIN_TEXT = Object.freeze({
     next: 'New example',
     contexts: { normal: 'No structural heart disease.', inferiorScar: 'Old inferior myocardial infarction (scar).' },
     regions: {
-      rvot: 'RVOT', 'lvot-cusp': 'Aortic root (left coronary cusp)', 'mitral-superior': 'Mitral annulus, superior', 'ta-free-wall': 'Tricuspid annulus, free wall', 'lv-inferior': 'Basal inferior LV',
+      rvot: 'RVOT', 'lvot-cusp': 'Aortic root (left coronary cusp)', 'lv-summit': 'LV summit (epicardial)', 'mitral-superior': 'Mitral annulus, superior', 'ta-free-wall': 'Tricuspid annulus, free wall', 'lv-inferior': 'Basal inferior LV',
       'crista-high': 'High crista terminalis', 'cs-ostium': 'CS ostium', 'ta-superior': 'Superior tricuspid annulus / RAA', rspv: 'Right superior pulmonary vein', laa: 'Left atrial appendage'
     },
     question: 'Which is the likely source region?',
@@ -64,6 +65,7 @@ export const ORIGIN_TEXT = Object.freeze({
       ...(f.bundle ? [`V1: ${f.bundle === 'LBBB' ? 'left bundle branch block-like (dominant negative)' : f.bundle === 'RBBB' ? 'right bundle branch block-like (dominant R)' : 'indeterminate (biphasic)'}`] : [`V1: ${POL_EN[f.v1]}`]),
       `Axis: ${f.axis === 'inferior' ? 'inferior (II, III, aVF positive)' : f.axis === 'superior' ? 'superior (aVF negative)' : 'intermediate'}`,
       `I: ${POL_EN[f.leadI]} · aVL: ${POL_EN[f.aVL]} · aVR: ${POL_EN[f.aVR]}`,
+      ...(f.kind === 'ventricular' && f.aVL === '-' ? [`aVL negative deflection ${f.avlAvr > 1.1 ? 'deeper' : 'not deeper'} than aVR`] : []),
       ...(f.kind === 'ventricular' ? [`Precordial transition: ${f.transition || 'none'}`] : [])
     ],
     likelyTitle: 'Likely regions',
@@ -79,7 +81,7 @@ export const ORIGIN_TEXT = Object.freeze({
     after: 'Even the earliest recorded A comes after the P onset: the focus lies where no recording catheter is (a sampling limit). The earliest channel is not the focus.',
     stripTitle: 'Atrial focus: catheter activation',
     scene: '3D: the source region is marked schematically.',
-    limits: 'Synthetic teaching examples: the heart vectors were designed from scratch and are not patient ECGs; amplitude is relative. The patterns are simplified teaching versions of published findings; no accuracy percentage is given. No electrophysiologist has reviewed them. Sources C1-C9: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
+    limits: 'Synthetic teaching examples: the heart vectors were designed from scratch and are not patient ECGs; amplitude is relative. The patterns are simplified teaching versions of published findings; no accuracy percentage is given. No electrophysiologist has reviewed them. Sources C1-C11: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md. LV summit: Yamada 2010 (C10), Kuniewicz 2021 (C11); the great cardiac vein splits the summit into an accessible inferior area and an inaccessible superior area close to the coronary arteries.'
   }
 });
 

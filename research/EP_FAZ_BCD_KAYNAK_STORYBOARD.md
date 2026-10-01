@@ -101,12 +101,15 @@ Kabul (test: `scripts/test-ep-task.mjs`): her kararın kullandığı ölçüm ol
 | C7 | RAA ve süperior triküspit anulus odaklarında V1 negatif, inferior derivasyonlar düşük pozitif; alçak krista odaklarında inferior negatif; P dalgasının uzaysal çözünürlüğü sınırlıdır; en erken endokardiyal aktivasyon P başlangıcına göre ölçülür. | Kistler ve ark., J Cardiovasc Electrophysiol 2007;18:367, [10.1111/j.1540-8167.2006.00754.x](https://doi.org/10.1111/j.1540-8167.2006.00754.x) | Tartışma ve yöntem (açık tam metin) | Destekler; örnekleme sınırı gösterimi. |
 | C8 | VT istmusları anatomik engeller arasındadır; devrenin kritik bileşenleri entrainment haritalamasıyla belirlenir. | Cronin ve ark. 2019 (C5) | Tam metin parçası | Skar örneğinin "çıkış, istmus değil" notu. EasyECG raporu bölüm 3 aynı ilkeyi bu uzlaşıya dayandırır. |
 | C9 | LAA odağı: DI negatif, inferior pozitif, aVL negatif, V1 çoğunlukla pozitif. | Kistler, J Cardiovasc Electrophysiol 2007;18:465 (editoryal), [10.1111/j.1540-8167.2007.00796.x](https://doi.org/10.1111/j.1540-8167.2007.00796.x) | Editoryal metni (özet sayfası) | Destekler. |
+| C10 | LV summit kaynaklı aritmilerde RBBB paterni, geçiş zonu, III/II R oranı, aVL/aVR Q oranı ve V6'da S dalgası kaynak yeri tahmininde değerli; ablasyon büyük kardiyak ven içinden veya onun altından epikardiyal yapılabilir, üst bölge çoğunlukla ulaşılamaz. Uygulamada yalnız nitel kullanıldı: RBBB, inferior eksen, DI negatif, aVL negatif sapması aVR'den derin. | Yamada ve ark., Circ Arrhythm Electrophysiol 2010;3:616-623, [10.1161/CIRCEP.110.939744](https://doi.org/10.1161/CIRCEP.110.939744) | Özet | Sayısal eşikler okunmadı; yalnız nitel kurallar kullanıldı. |
+| C11 | LV summit, LAD ve Cx'in sınırladığı en üst epikardiyal LV üçgenidir; büyük kardiyak ven / ön interventriküler ven geçişi onu ulaşılabilir (alt) ve ulaşılamaz (üst) alana böler; işlem öncesi koroner anjiyografi veya BT önerilir. | Kuniewicz ve ark., Diagnostics 2021;11:1423, [10.3390/diagnostics11081423](https://doi.org/10.3390/diagnostics11081423) | Açık tam metin parçaları | Summit ile süperior mitral anulus (aort-mitral devamlılık) ve sol kusp desenleri örtüşebilir. |
 
 ### 2.3 Storyboard ve kabul
 
 | Örnek | Okunan özellikler | Olası bölgeler, güven |
 |---|---|---|
 | RVOT | LBBB, inferior aks, DI +, geçiş V4 | RVOT, orta |
+| LV summit | RBBB, inferior aks, DI −, aVL negatif sapması aVR'den derin, geçiş V1 | LV summit ve süperior mitral anulus, düşük (örtüşme; C10, C11) |
 | RVOT (V3 geçiş) | LBBB, inferior aks, DI ±, geçiş V3 | RVOT ve aort kökü, düşük (C1) |
 | Aort kökü | V1 ±, inferior aks, DI -, geçiş V2 | Aort kökü, orta (C2) |
 | Mitral süperior | RBBB, inferior aks | Mitral süperior, orta (C3) |
