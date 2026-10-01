@@ -33,6 +33,8 @@ const MODE_GROUPS = [
 const ECHO_MODALITY = { echo: 'tte', tee: 'tee' };
 const modes = MODE_GROUPS.flatMap(([, ids]) => ids).map((id, i) => [id, String(i + 1).padStart(2, '0')]);
 const MODE_KEYS = 9;
+// Modes whose lesson steps appear as menu entries under the mode itself.
+const MODE_SUBSTEPS = { ablation: true };
 
 // Right-panel tabs and phone sheets; created once the panels exist.
 let panelShell = null;
@@ -49,10 +51,14 @@ function renderModeNav() {
   const rest = getUiModes().filter(([id]) => !grouped.has(id));
   // Each group is a header tab with a drop-down menu; on phones the tab hides
   // and the label heads the list in the Modes sheet.
+  // Lesson steps listed directly in the menu, under their mode (the EP
+  // group lists the electrophysiological anatomy chapters).
+  const subSteps = id => (MODE_SUBSTEPS[id] ? (lessons[id]?.steps || []).map((st, i) =>
+    `<button class="mode mode-substep" data-mode="${id}" data-mode-step="${i}"><span class="mode-substep-name">${st.title}</span></button>`).join('') : '');
   const group = ([key, ids]) => `<div class="mode-group" data-mode-group="${key}">
       <button type="button" class="mode-group-tab" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${key}"><span class="mode-group-name" data-i18n="${key}">${getTranslation(key)}</span><span class="mode-group-current"></span><span class="mode-group-caret" aria-hidden="true">▾</span></button>
       <div class="mode-group-label" data-i18n="${key}">${getTranslation(key)}</div>
-      <div class="mode-group-menu" id="menu-${key}">${ids.filter(id => byId.has(id)).map(id => button(byId.get(id))).join('')}</div>
+      <div class="mode-group-menu" id="menu-${key}">${ids.filter(id => byId.has(id)).map(id => button(byId.get(id)) + subSteps(id)).join('')}</div>
     </div>`;
   return MODE_GROUPS.map(group).join('') + rest.map(button).join('');
 }
@@ -992,7 +998,7 @@ function setMode(newMode, updateUrl = true) {
   mode = newMode;
   rememberMode(newMode);
   step = 0;
-  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode && b.dataset.modeStep === undefined));
   heart?.setMode(mode);
   const isDefects = mode === 'defects';
   const isEcho = Boolean(ECHO_MODALITY[mode]);
@@ -1108,6 +1114,11 @@ if (window.location.hash && window.location.hash !== '#/') {
 
 document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
   setMode(button.dataset.mode);
+  // A lesson-step entry (the EP chapters in the menu) opens the mode at that step.
+  if (button.dataset.modeStep !== undefined) {
+    step = Math.max(0, Math.min((lessons[button.dataset.mode]?.steps.length || 1) - 1, Number(button.dataset.modeStep) || 0));
+    showStep();
+  }
 }));
 
 const chambersBox = document.querySelector('[data-layer="chambers"]');
@@ -1640,6 +1651,12 @@ function applyChromeTranslations() {
     const labelEl = btn.querySelector('.mode-label');
     const label = labels.get(btn.dataset.mode);
     if (labelEl && label) labelEl.textContent = label;
+    // Menu lesson-step entries follow the lesson language.
+    if (btn.dataset.modeStep !== undefined) {
+      const title = lessons[btn.dataset.mode]?.steps[Number(btn.dataset.modeStep)]?.title;
+      const nameEl = btn.querySelector('.mode-substep-name');
+      if (nameEl && title) nameEl.textContent = title;
+    }
   });
   const opacityInput = document.querySelector('#myo-opacity');
   if (opacityInput) opacityInput.setAttribute('aria-label', getTranslation('opacityLabel'));
