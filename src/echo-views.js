@@ -1,5 +1,5 @@
 import { imageFrame, cross, normalize } from './echo-section.js';
-import { createProbePath, tteFrame, surfaceHit } from './echo-probe.js';
+import { createProbePath, tteFrame, surfaceHit, rotate } from './echo-probe.js';
 
 /*
  * The starting view sets of the echo module (report sections 4 and 5): 8 TTE
@@ -12,6 +12,7 @@ import { createProbePath, tteFrame, surfaceHit } from './echo-probe.js';
  */
 const ASE_TTE = 'Mitchell et al., JASE 2019;32:1-64 (ASE comprehensive TTE)';
 const ASE_TEE = 'Hahn et al., JASE 2013;26:921-964 (ASE/SCA comprehensive TEE)';
+const ICE_SRC = 'Bortnick, Halaby, Silvestry, Herrmann. Intracardiac echocardiography, PCR-EAPCI Textbook (2020)';
 
 export const TTE_VIEWS = Object.freeze([
   { id: 'plax', window: 'parasternal', title: { tr: 'Parasternal uzun eksen (PLAX)', en: 'Parasternal long axis (PLAX)' }, required: ['lv', 'la', 'aorta', 'rv', 'mitral'], avoid: ['ra', 'tricuspid'], source: ASE_TTE },
@@ -49,7 +50,7 @@ export const TEE_VIEWS = Object.freeze([
 // Default sector width (full angle); the student can change it (60-90 degrees).
 export const SECTOR_ANGLE = (75 * Math.PI) / 180;
 
-export const viewById = id => TTE_VIEWS.find(v => v.id === id) || TEE_VIEWS.find(v => v.id === id) || null;
+export const viewById = id => TTE_VIEWS.find(v => v.id === id) || TEE_VIEWS.find(v => v.id === id) || (typeof ICE_VIEWS !== 'undefined' && ICE_VIEWS.find(v => v.id === id)) || null;
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const addv = (a, b, s = 1) => [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s];
@@ -161,4 +162,59 @@ export function teePreset(id, A, path) {
     case 'tgsax': return pose(TG_ADVANCE, -15, 0, 10, 4.8);
     default: return null;
   }
+}
+
+// ICE (phased array, AcuNav-type) views from the right atrium, in the
+// textbook's clockwise sequence from the home view (PCR-EAPCI, ICE chapter
+// 2020, p.7-13): `ase` carries the source's rotation guide; presets are
+// calibrated on this atlas (scripts/echo-calibrate.cjs style search), not
+// expert-reviewed. Required/avoid lists come from the chapter's structure
+// lists, reduced to what the atlas can show; the RA is the near field of
+// every view (the catheter sits inside it), so it is not a criterion.
+export const ICE_VIEWS = Object.freeze([
+  { id: 'ice-home', title: { tr: 'ICE home görünümü', en: 'ICE home view' }, ase: { tr: 'orta RA, nötr, saat yönü 15–30°: RA → TV → RV', en: 'mid RA, neutral, clockwise 15–30°: RA → TV → RV' }, required: ['tricuspid', 'rv'], avoid: ['pv', 'svc'], source: ICE_SRC },
+  { id: 'ice-rvot', title: { tr: 'ICE RV çıkış yolu', en: 'ICE RVOT view' }, ase: { tr: 'saat yönü 30–40°: AV yakında, RVOT ve pulmoner kapak uzakta', en: 'clockwise 30–40°: AV near, RVOT and pulmonary valve far' }, required: ['rv', 'aortic-valve'], avoid: ['pv', 'laa'], source: ICE_SRC },
+  { id: 'ice-lvot', title: { tr: 'ICE LVOT / aort kapağı uzun eksen', en: 'ICE LVOT / aortic valve long axis' }, ase: { tr: 'saat yönü ~45°: AV uzun eksen, LVOT, LV (TAVI)', en: 'clockwise ~45°: AV long axis, LVOT, LV (TAVI)' }, required: ['aortic-valve', 'lv'], avoid: ['pv', 'svc'], source: ICE_SRC },
+  { id: 'ice-mitral-laa', title: { tr: 'ICE mitral / LAA görünümü', en: 'ICE mitral / LAA view' }, ase: { tr: 'biraz ilerlet, saat yönü 60–80°: septum → LA → MV → LV, LAA sağda', en: 'advance slightly, clockwise 60–80°: septum → LA → MV → LV, LAA on the right' }, required: ['la', 'mitral', 'lv'], avoid: ['tricuspid', 'svc'], source: ICE_SRC },
+  { id: 'ice-left-pv', title: { tr: 'ICE sol pulmoner venler', en: 'ICE left pulmonary veins' }, ase: { tr: 'yüksek RA, saat yönü 90–100°: LSPV ve LIPV ("pantolon paçaları")', en: 'high RA, clockwise 90–100°: LSPV and LIPV ("trouser legs")' }, required: ['la', 'pv'], avoid: ['tricuspid', 'rv'], source: ICE_SRC },
+  { id: 'ice-septal-sax', title: { tr: 'ICE septal kısa eksen (transseptal çalışma görünümü)', en: 'ICE septal short axis (transseptal working view)' }, ase: { tr: 'posterior + sağ büküm, saat yönü 100–150°: RA, septum, LA, AV kısa eksen', en: 'posterior + right deflection, clockwise 100–150°: RA, septum, LA, AV short axis' }, required: ['la', 'aortic-valve'], avoid: ['lv', 'tricuspid'], source: ICE_SRC },
+  { id: 'ice-right-pv', title: { tr: 'ICE sağ pulmoner venler', en: 'ICE right pulmonary veins' }, ase: { tr: 'posterior bükümle saat yönü 150–180°: RSPV, RIPV, sağ PA', en: 'posterior deflection kept, clockwise 150–180°: RSPV, RIPV, right PA' }, required: ['la', 'pv'], avoid: ['lv', 'rv', 'tricuspid'], source: ICE_SRC },
+  { id: 'ice-svc', title: { tr: 'ICE SVC (bikaval benzeri)', en: 'ICE SVC (bicaval-like) view' }, ase: { tr: 'nötr, saat yönü 210–240°, hafif ilerlet: RA → SVC, LA', en: 'neutral, clockwise 210–240°, advance slightly: RA → SVC, LA' }, required: ['svc'], avoid: ['lv', 'rv', 'tricuspid'], source: ICE_SRC }
+]);
+
+/**
+ * ICE catheter path in the RA: from the IVC orifice up toward the SVC; the
+ * home beam faces the tricuspid valve, and `clockwise` is the sign that turns
+ * it from the tricuspid toward the aortic root and the left atrium.
+ */
+export function icePath(A) {
+  const base = A.ivc;
+  const top = addv(A.ivc, sub(A.svc, A.ivc), 0.62);
+  const axis = normalize(sub(top, base));
+  const mid = addv(base, sub(top, base), 0.55);
+  const home = inPlane(sub(A.tv.center, mid), axis);
+  const towardAo = inPlane(sub(A.av.center, mid), axis);
+  const clockwise = dot(rotate(home, axis, 30), towardAo) >= dot(rotate(home, axis, -30), towardAo) ? 1 : -1;
+  return { base, top, home, clockwise };
+}
+
+// Atlas calibration of the ICE presets (search for the smallest move from the
+// textbook rotation that meets the view's criteria at rest and through the beat).
+const ICE_CALIBRATION = Object.freeze({
+  'ice-home': { advance: 0.55, rotation: 20, anteroposterior: 0, leftRight: 0 },
+  'ice-rvot': { advance: 0.55, rotation: 35, anteroposterior: 0, leftRight: 0 },
+  'ice-lvot': { advance: 0.55, rotation: 45, anteroposterior: 0, leftRight: 0 },
+  'ice-mitral-laa': { advance: 0.55, rotation: 75, anteroposterior: 0, leftRight: -20 },
+  'ice-left-pv': { advance: 0.55, rotation: 95, anteroposterior: 0, leftRight: 0 },
+  // Held through the whole beat only with a deeper sector and stronger deflections on this atlas.
+  'ice-septal-sax': { advance: 0.45, rotation: 95, anteroposterior: 35, leftRight: 35, depth: 4.2 },
+  'ice-right-pv': { advance: 0.55, rotation: 165, anteroposterior: 0, leftRight: 0 },
+  // The atlas catheter axis points at the SVC: the plane needs a strong tilt to bring it into the sector.
+  'ice-svc': { advance: 0.4, rotation: 225, anteroposterior: 45, leftRight: 0 }
+});
+
+/** Preset probe state of an ICE view (advance, rotation, deflections, depth). */
+export function icePreset(id) {
+  const c = ICE_CALIBRATION[id];
+  return c ? { depth: 3.6, ...c } : null;
 }

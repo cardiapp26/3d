@@ -9,18 +9,19 @@ import { CYCLE_SYNC as S, phaseToTime, timeToPhase } from './cardiac-cycle.js';
 import { ecgSample } from './ecg-trace.js';
 import { createCalculators, fmt, metricRows } from './hemo-panel-calculators.js';
 import { samplePvLoop, drawPvLoop } from './hemo-pv-loop.js';
+import { PV_PRESETS, PV_LIMITS, pvParams, pvModelLoop } from './hemo-pv-model.js';
 
 const TEXT = {
   tr: {
     scenario: 'Senaryo', presets: 'Hazır:', beats: 'Atım', resp: 'Solunum', pvc: 'Ekstrasistol (PVC)',
-    postPvc: 'PVC sonrası', insp: 'insp.', noChannel: 'Kanal seçin', metrics: 'Ölçümler', pvLoop: 'P-V döngüsü', pressureTab: 'Basınç eğrileri', viewTabs: 'Hemodinamik görünüm', pvCanvas: 'Sol ventrikül basınç-hacim döngüsü (şematik)',
+    postPvc: 'PVC sonrası', insp: 'insp.', noChannel: 'Kanal seçin', metrics: 'Ölçümler', pvLoop: 'P-V döngüsü', pvSource: 'Döngü kaynağı', pvFromScenario: 'Kateter senaryosu', pvModel: 'Etkileşimli model', pvCondition: 'Durum', pvEdv: 'Ön yük (EDV, ml)', pvEes: 'Kontraktilite (Ees, mmHg/ml)', pvEa: 'Ard yük (Ea, mmHg/ml)', pvStiff: 'Diyastolik sertlik (EDPVR)', pvGhost: 'Kesikli gri: normal döngü', pvReset: 'Duruma dön', pvNote: 'Öğretim modeli: zaman-değişken elastans (Suga-Sagawa); ESV = (Ees·V0 + Ea·EDV)/(Ees + Ea). Hazır durumlar ders kitabı döngü şekillerini veren parametrelerdir, hasta verisi değildir.', pvConditions: { normal: 'Normal', 'hfref-decompensated': 'Dekompanse KY (HFrEF)', hfpef: 'HFpEF (diyastolik)', 'aortic-stenosis': 'Aort darlığı', 'aortic-regurgitation': 'Aort yetersizliği (kronik)', 'mitral-regurgitation-acute': 'Mitral yetersizliği (akut)', hypovolemia: 'Hipovolemi', inotrope: 'İnotrop (dobutamin)' }, pvExplain: { normal: 'EF ~%55; Ea/Ees ~0,6-1 ile ventrikül-arter eşleşmesi verimli.', 'hfref-decompensated': 'ESPVR eğimi düşmüş (kontraktilite azalmış), döngü sağa kaymış ve daralmış: EDV ve EDP yüksek, SV ve EF düşük. Ea/Ees çok yüksek: eşleşme bozuk; ard yük azaltma SV\'yi artırır.', hfpef: 'EDPVR dikleşmiş: aynı EDV için EDP yüksek; EF korunmuş, döngü dar ve yukarıda.', 'aortic-stenosis': 'Ard yük ve LV-aort gradyanı LV sistolik basıncını yükseltir: uzun, yüksek döngü; hipertrofi ile EDPVR dikleşir.', 'aortic-regurgitation': 'Hacim yükü: döngü geniş ve sağda; diyastolde aorttan geri dolum gerçek izovolümik gevşemeyi ortadan kaldırır (sol kenar eğik).', 'mitral-regurgitation-acute': 'Düşük empedanslı LA\'ya erken boşalım: gerçek izovolümik kasılma yok (sağ kenar eğik), ESV küçük, toplam SV büyük ama ileri akım azalmış; EDP yüksek.', hypovolemia: 'Ön yük düşük: döngü EDPVR boyunca sola kayar, SV azalır; ESPVR değişmez.', inotrope: 'ESPVR dikleşir: ESV küçülür, SV ve EF artar.' }, pressureTab: 'Basınç eğrileri', viewTabs: 'Hemodinamik görünüm', pvCanvas: 'Sol ventrikül basınç-hacim döngüsü (şematik)',
     gradAo: 'LV−Ao ort. gradyan', gradMi: 'LV−PCWP ort. gradyan', canvas: 'Eşzamanlı basınç traseleri ve EKG',
     badge: sc => `KH ${sc.hr}/dk · KD ${fmt(sc.co)} L/dk`,
     presetTitles: ['Aort darlığı: LV-Ao gradyanı', 'Mitral darlık: diyastolik gradyan', 'Sağ kalp: RA ve RV', 'Pulmoner arter ve kama basıncı']
   },
   en: {
     scenario: 'Scenario', presets: 'Presets:', beats: 'Beats', resp: 'Respiration', pvc: 'PVC beat',
-    postPvc: 'post-PVC', insp: 'insp', noChannel: 'Select a channel', metrics: 'Measurements', pvLoop: 'P-V loop', pressureTab: 'Pressure tracings', viewTabs: 'Hemodynamics view', pvCanvas: 'Left ventricular pressure-volume loop (schematic)',
+    postPvc: 'post-PVC', insp: 'insp', noChannel: 'Select a channel', metrics: 'Measurements', pvLoop: 'P-V loop', pvSource: 'Loop source', pvFromScenario: 'Catheter scenario', pvModel: 'Interactive model', pvCondition: 'Condition', pvEdv: 'Preload (EDV, ml)', pvEes: 'Contractility (Ees, mmHg/ml)', pvEa: 'Afterload (Ea, mmHg/ml)', pvStiff: 'Diastolic stiffness (EDPVR)', pvGhost: 'Dashed grey: normal loop', pvReset: 'Back to condition', pvNote: 'Teaching model: time-varying elastance (Suga-Sagawa); ESV = (Ees·V0 + Ea·EDV)/(Ees + Ea). The condition presets are parameter sets that reproduce textbook loop shapes, not patient data.', pvConditions: { normal: 'Normal', 'hfref-decompensated': 'Decompensated HF (HFrEF)', hfpef: 'HFpEF (diastolic)', 'aortic-stenosis': 'Aortic stenosis', 'aortic-regurgitation': 'Aortic regurgitation (chronic)', 'mitral-regurgitation-acute': 'Mitral regurgitation (acute)', hypovolemia: 'Hypovolaemia', inotrope: 'Inotrope (dobutamine)' }, pvExplain: { normal: 'EF ~55%; Ea/Ees ~0.6-1 gives efficient ventricular-arterial coupling.', 'hfref-decompensated': 'The ESPVR slope is reduced (lower contractility); the loop shifts right and narrows: high EDV and EDP, low SV and EF. Ea/Ees is very high (uncoupled); afterload reduction raises the SV.', hfpef: 'The EDPVR is steeper: a high EDP for the same EDV; EF preserved, the loop narrow and high.', 'aortic-stenosis': 'Afterload and the LV-aortic gradient raise LV systolic pressure: a tall loop; hypertrophy steepens the EDPVR.', 'aortic-regurgitation': 'Volume load: a wide loop shifted right; diastolic refilling from the aorta removes true isovolumic relaxation (sloped left edge).', 'mitral-regurgitation-acute': 'Early emptying into the low-impedance LA: no true isovolumic contraction (sloped right edge), small ESV, large total SV but reduced forward flow; high EDP.', hypovolemia: 'Low preload: the loop slides left along the EDPVR and the SV falls; the ESPVR is unchanged.', inotrope: 'The ESPVR steepens: smaller ESV, higher SV and EF.' }, pressureTab: 'Pressure tracings', viewTabs: 'Hemodynamics view', pvCanvas: 'Left ventricular pressure-volume loop (schematic)',
     gradAo: 'LV−Ao mean gradient', gradMi: 'LV−PCWP mean gradient', canvas: 'Simultaneous pressure tracings and ECG',
     badge: sc => `HR ${sc.hr} bpm · CO ${fmt(sc.co)} L/min`,
     presetTitles: ['Aortic stenosis: LV-Ao gradient', 'Mitral stenosis: diastolic gradient', 'Right heart: RA and RV', 'Pulmonary artery and wedge']
@@ -142,8 +143,41 @@ function buildDom() {
   });
   refs.pressureView = el('div', 'hemo-view hemo-view-pressure');
   refs.pressureView.append(channelRow, presetRow, refs.canvasWrap, controls);
-  refs.pvWrap = el('div', 'hemo-canvas-wrap hemo-pv-wrap hemo-view', null, { hidden: true });
-  refs.pvWrap.append(refs.pvCanvas = el('canvas', 'hemo-pv-canvas', null, { role: 'img' }));
+  refs.pvWrap = el('div', 'hemo-pv-wrap hemo-view', null, { hidden: true });
+  // Loop source: the catheter scenario, or the interactive elastance model with its controls.
+  refs.pvSource = el('div', 'hemo-tabs hemo-pv-source', null, { role: 'group' });
+  refs.pvSourceButtons = ['scenario', 'model'].map(src => {
+    const b = Object.assign(textEl('button', 'hemo-tab', src === 'model' ? 'pvModel' : 'pvFromScenario'), { type: 'button' });
+    b.dataset.pvSource = src;
+    refs.pvSource.append(b);
+    return b;
+  });
+  const pvCanvasWrap = el('div', 'hemo-canvas-wrap');
+  pvCanvasWrap.append(refs.pvCanvas = el('canvas', 'hemo-pv-canvas', null, { role: 'img' }));
+  refs.pvControls = el('div', 'hemo-pv-controls');
+  const condLabel = el('label', 'hemo-control hemo-pv-condition');
+  refs.pvConditionSelect = el('select', 'hemo-beats');
+  refs.pvConditionSelect.dataset.pvCondition = '';
+  refs.pvConditionSelect.append(...Object.keys(PV_PRESETS).map(id => el('option', null, id, { value: id })));
+  condLabel.append(textEl('span', null, 'pvCondition'), refs.pvConditionSelect);
+  refs.pvSliders = {};
+  const sliderRow = (key, labelKey, [min, max], step) => {
+    const row = el('label', 'hemo-pv-slider');
+    const input = el('input', null, null, { type: 'range', min: String(min), max: String(max), step: String(step) });
+    input.dataset.pvParam = key;
+    const out = el('output', 'hemo-pv-out');
+    row.append(textEl('span', 'hemo-pv-label', labelKey), input, out);
+    refs.pvSliders[key] = { input, out };
+    return row;
+  };
+  refs.pvResetButton = Object.assign(textEl('button', 'hemo-pvc', 'pvReset'), { type: 'button' });
+  refs.pvExplain = el('p', 'hemo-hint hemo-pv-explain');
+  refs.pvNote = textEl('p', 'hemo-formula', 'pvNote');
+  refs.pvControls.append(condLabel,
+    sliderRow('edv', 'pvEdv', PV_LIMITS.edv, 5), sliderRow('ees', 'pvEes', PV_LIMITS.ees, 0.1),
+    sliderRow('ea', 'pvEa', PV_LIMITS.ea, 0.1), sliderRow('stiffness', 'pvStiff', PV_LIMITS.stiffness, 0.001),
+    refs.pvResetButton, textEl('p', 'hemo-formula', 'pvGhost'), refs.pvExplain, refs.pvNote);
+  refs.pvWrap.append(refs.pvSource, pvCanvasWrap, refs.pvControls);
   refs.hint = el('p', 'hemo-hint', null, { hidden: true });
   refs.grid = el('div', 'hemo-grid hemo-metrics');
   refs.element.append(header, refs.tabs, refs.pressureView, refs.pvWrap, refs.hint, textEl('h4', 'hemo-metrics-title', 'metrics'), refs.grid);
@@ -289,6 +323,9 @@ export function createHemoPanel(root, options = {}) {
   let lang = options.lang === 'en' ? 'en' : 'tr';
   const state = { channels: [...DEFAULT_CHANNELS], beats: 3, respiration: false, pvc: false, pvLoop: false, scenarioId: hemo.getScenario().id };
   let pvCache = { id: null, data: null };
+  // Interactive P-V model state: source, condition preset and the four parameters.
+  const pv = { source: 'scenario', condition: 'normal', params: pvParams({}, 'normal') };
+  const pvGhost = pvModelLoop(pvParams({}, 'normal'));
   const ac = new AbortController();
   const on = (target, type, fn) => target.addEventListener(type, fn, { signal: ac.signal });
   let destroyed = false;
@@ -300,7 +337,7 @@ export function createHemoPanel(root, options = {}) {
   };
 
   root.textContent = '';
-  const { element, select, badge, pills, presetButtons, canvasWrap, canvas, beatsSelect, respBox, pvcButton, tabs, tabButtons, pressureView, pvWrap, pvCanvas, hint, grid } = buildDom();
+  const { element, select, badge, pills, presetButtons, canvasWrap, canvas, beatsSelect, respBox, pvcButton, tabs, tabButtons, pressureView, pvWrap, pvCanvas, pvSourceButtons, pvControls, pvConditionSelect, pvSliders, pvResetButton, pvExplain, hint, grid } = buildDom();
   beatsSelect.value = String(state.beats);
   const calculators = createCalculators({ lang, signal: ac.signal });
   element.append(calculators.element);
@@ -404,9 +441,16 @@ export function createHemoPanel(root, options = {}) {
     const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
     if (state.pvLoop) {
       // P-V tab: only the loop is on screen.
-      if (pvCache.id !== state.scenarioId) pvCache = { id: state.scenarioId, data: samplePvLoop(hemo) };
       const loopPhase = Number.isFinite(cs.phase) ? ((cs.phase % 1) + 1) % 1 : 0;
-      if (pvCanvas.clientWidth >= 40) drawPvLoop(pvCanvas, pvCache.data, { phase: loopPhase, lang, dpr });
+      let data, ghost = null;
+      if (pv.source === 'model') {
+        data = pvModelLoop(pv.params);
+        ghost = pv.condition === 'normal' && pvAtPreset() ? null : pvGhost;
+      } else {
+        if (pvCache.id !== state.scenarioId) pvCache = { id: state.scenarioId, data: samplePvLoop(hemo) };
+        data = pvCache.data;
+      }
+      if (pvCanvas.clientWidth >= 40) drawPvLoop(pvCanvas, data, { phase: loopPhase, lang, dpr, ghost });
       return;
     }
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -426,6 +470,30 @@ export function createHemoPanel(root, options = {}) {
     const cx = cache.g.left + phaseToTime(phase, bpm) * cache.g.beatW;   // cursor on the first beat
     Object.assign(ctx, { strokeStyle: COLORS.cursor, lineWidth: 1.3 });
     ctx.beginPath(); ctx.moveTo(cx, cache.g.top - 3); ctx.lineTo(cx, h - 3); ctx.stroke();
+  }
+  function pvAtPreset() {
+    const base = pvParams({}, pv.condition);
+    return ['edv', 'ees', 'ea', 'stiffness'].every(k => Math.abs(base[k] - pv.params[k]) < 1e-9);
+  }
+  function renderPv() {
+    const T = TEXT[lang];
+    for (const b of pvSourceButtons) b.setAttribute('aria-selected', String(b.dataset.pvSource === pv.source));
+    pvControls.hidden = pv.source !== 'model';
+    for (const o of pvConditionSelect.options) o.textContent = T.pvConditions[o.value] || o.value;
+    pvConditionSelect.value = pv.condition;
+    const fmtParam = (k, v) => (k === 'edv' ? String(Math.round(v)) : k === 'stiffness' ? v.toFixed(3) : v.toFixed(1));
+    for (const [k, { input, out }] of Object.entries(pvSliders)) {
+      if (document.activeElement !== input) input.value = String(pv.params[k]);
+      out.textContent = fmtParam(k, pv.params[k]);
+    }
+    pvExplain.textContent = T.pvExplain[pv.condition] || '';
+  }
+  function setPvCondition(id) {
+    if (!PV_PRESETS[id]) return;
+    pv.condition = id;
+    pv.params = pvParams({}, id);
+    renderPv();
+    draw();
   }
   function applyPvLoop(enabled) {
     state.pvLoop = Boolean(enabled);
@@ -454,6 +522,12 @@ export function createHemoPanel(root, options = {}) {
   on(respBox, 'change', () => { state.respiration = respBox.checked; draw(); });
   on(pvcButton, 'click', () => panel.triggerPvc());
   for (const b of tabButtons) on(b, 'click', () => applyPvLoop(b.dataset.hemoView === 'pv'));
+  for (const b of pvSourceButtons) on(b, 'click', () => { pv.source = b.dataset.pvSource; renderPv(); draw(); });
+  on(pvConditionSelect, 'change', () => setPvCondition(pvConditionSelect.value));
+  for (const [k, { input }] of Object.entries(pvSliders)) {
+    on(input, 'input', () => { pv.params = { ...pv.params, ...pvParams({ ...pv.params, [k]: Number(input.value) }, pv.condition), scale: pv.params.scale, valve: pv.params.valve }; renderPv(); draw(); });
+  }
+  on(pvResetButton, 'click', () => setPvCondition(pv.condition));
   const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => draw()) : null;
   observer?.observe(canvasWrap);
 
@@ -464,6 +538,7 @@ export function createHemoPanel(root, options = {}) {
       lang = next === 'en' ? 'en' : 'tr';
       renderScenarioOptions();
       applyText();
+      renderPv();
       renderMetrics();
       calculators.setLanguage(lang);
       draw();
@@ -490,7 +565,16 @@ export function createHemoPanel(root, options = {}) {
     setHint(text) { hint.textContent = text || ''; hint.hidden = !text; },
     /** Show or hide the LV pressure-volume loop. */
     setPvLoop(enabled) { applyPvLoop(enabled); },
-    getPvLoop: () => (state.pvLoop ? pvCache.data : null),
+    getPvLoop: () => (state.pvLoop ? (pv.source === 'model' ? pvModelLoop(pv.params) : pvCache.data) : null),
+    /** Interactive P-V model: source ('scenario' | 'model'), condition preset and parameter overrides. */
+    setPvModel({ source = 'model', condition = null, params = null } = {}) {
+      pv.source = source === 'scenario' ? 'scenario' : 'model';
+      if (condition && PV_PRESETS[condition]) { pv.condition = condition; pv.params = pvParams({}, condition); }
+      if (params) pv.params = { ...pvParams({ ...pv.params, ...params }, pv.condition), scale: pv.params.scale, valve: pv.params.valve };
+      renderPv();
+      draw();
+    },
+    getPvModel: () => ({ source: pv.source, condition: pv.condition, params: { ...pv.params } }),
     setCalculatorsOpen(open) { calculators.element.open = Boolean(open); },
     destroy() {
       destroyed = true;
@@ -505,6 +589,7 @@ export function createHemoPanel(root, options = {}) {
   applyChannels(state.channels, false);
   calculators.prefill(hemo);
   pvcButton.setAttribute('aria-pressed', 'false');
+  renderPv();
   applyPvLoop(false);
   return panel;
 }

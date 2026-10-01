@@ -188,3 +188,34 @@ export function teeFrame(path, state = {}) {
   const lateral = add(imageLeft.map(v => v * Math.cos(w)), up, Math.sin(w));
   return { ...imageFrame(add(tip, face, 0.03), face, lateral), tip, shaft: t, bend: theta, limited };
 }
+
+/** Limits of the ICE motions (degrees; advance 0..1 from the IVC orifice to the upper RA). */
+export const ICE_LIMITS = Object.freeze({ rotation: [-60, 270], anteroposterior: 45, leftRight: 45 });
+
+/**
+ * ICE (phased-array, side-looking) image frame. The catheter enters the RA
+ * from the IVC; its long axis lies in the image plane (longitudinal imaging).
+ * @param {{ base: number[], top: number[], home: number[], clockwise: number }} path
+ *   base/top: catheter axis ends (IVC orifice, upper RA); home: home-view beam
+ *   direction (toward the tricuspid valve); clockwise: +1 or -1, so that a
+ *   positive rotation turns the beam the way clockwise handle rotation does
+ *   (from the tricuspid toward the aortic root, LA and septum).
+ * @param {{ advance?: number, rotation?: number, anteroposterior?: number, leftRight?: number }} state
+ *   anteroposterior: + anterior deflection (tilts the plane about its own
+ *   left-right axis); leftRight: + toward the patient's left (rocks the plane
+ *   about the beam).
+ */
+export function iceFrame(path, state = {}) {
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0));
+  const advance = clamp(state.advance ?? 0.5, 0, 1);
+  const axis = normalize([0, 1, 2].map(i => path.top[i] - path.base[i]));
+  const tip = [0, 1, 2].map(i => path.base[i] + (path.top[i] - path.base[i]) * advance);
+  let beam = rotate(path.home, axis, path.clockwise * clamp(state.rotation, ...ICE_LIMITS.rotation));
+  let lateral = axis;                                   // cephalad on screen right: the catheter axis
+  const across = cross(beam, lateral);
+  const ap = clamp(state.anteroposterior, -ICE_LIMITS.anteroposterior, ICE_LIMITS.anteroposterior);
+  beam = rotate(beam, across, ap); lateral = rotate(lateral, across, ap);
+  const lr = clamp(state.leftRight, -ICE_LIMITS.leftRight, ICE_LIMITS.leftRight);
+  lateral = rotate(lateral, beam, lr);
+  return { ...imageFrame(add(tip, beam, 0.04), beam, lateral), tip, shaft: axis };
+}

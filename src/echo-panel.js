@@ -1,4 +1,4 @@
-import { TTE_LIMITS, TEE_LIMITS } from './echo-probe.js';
+import { TTE_LIMITS, TEE_LIMITS, ICE_LIMITS } from './echo-probe.js';
 
 /*
  * Echo panel: TTE / TEE choice, the view set, the 2D sector, explainable
@@ -8,11 +8,11 @@ import { TTE_LIMITS, TEE_LIMITS } from './echo-probe.js';
  */
 const SHORT = {
   plax: 'PLAX', 'psax-av': 'PSAX AV', 'psax-mv': 'PSAX MV', 'psax-pm': 'PSAX PM', a4c: 'A4C', a2c: 'A2C', a3c: 'A3C', sc4c: 'SC 4C',
-  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'ME LAX 120°', en: 'ME LAX 120°' }, meavsax: { tr: 'AV SAX 45°', en: 'AV SAX 45°' }, mebicaval: { tr: 'ME bikaval 90°', en: 'ME bicaval 90°' }, melaa: 'ME LAA', mervio: { tr: 'RV G-Ç 75°', en: 'RV I-O 75°' }, melaapv: { tr: 'LAA·PV 135°', en: 'LAA·PV 135°' }, tgsax: 'TG SAX'
+  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'ME LAX 120°', en: 'ME LAX 120°' }, meavsax: { tr: 'AV SAX 45°', en: 'AV SAX 45°' }, mebicaval: { tr: 'ME bikaval 90°', en: 'ME bicaval 90°' }, 'ice-home': 'Home', 'ice-rvot': 'RVOT', 'ice-lvot': 'LVOT/AV', 'ice-mitral-laa': { tr: 'MV/LAA', en: 'MV/LAA' }, 'ice-left-pv': { tr: 'Sol PV', en: 'Left PV' }, 'ice-septal-sax': { tr: 'Septum SAX', en: 'Septal SAX' }, 'ice-right-pv': { tr: 'Sağ PV', en: 'Right PV' }, 'ice-svc': 'SVC', melaa: 'ME LAA', mervio: { tr: 'RV G-Ç 75°', en: 'RV I-O 75°' }, melaapv: { tr: 'LAA·PV 135°', en: 'LAA·PV 135°' }, tgsax: 'TG SAX'
 };
 const T = {
   tr: {
-    heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', views: 'Görünümler', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
+    heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm', iceLr: 'Sol (+) / sağ (−) büküm', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik İVK → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
     freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
     rotation: 'Rotasyon', tilt: 'Tilt (eğim)', rock: 'Rock (düzlem içi)', slideLateral: 'Kaydır (işaret yönü)', slideElevation: 'Kaydır (dik yön)',
     advance: 'İlerlet / geri çek (göreli)', shaft: 'Şaft rotasyonu (sağ +)', flexion: 'Antefleksiyon (+) / retrofleksiyon (−)', lateralFlexion: 'Sol (+) / sağ (−) fleksiyon', omega: 'Multiplan açı',
@@ -21,7 +21,7 @@ const T = {
     limits: 'Geri bildirim dinlenme (diyastol sonu) geometrisinde değerlendirilir; eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Anatomik kesit simülatörüdür: gerçek B-mod, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE probu kalbi saran şematik elipsoid bir göğüs yüzeyine oturur ve kaydırmada bu yüzeyde kalır; kaburga, interkostal aralık ve akustik pencere yoktur, kontroller interkostal yerleşimi temsil etmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; fleksiyon 2 cm uzunluğundaki distal segmenti büker ve uç lümen sınırında durur (temas kuvveti modellenmez); multiplan açısı ucu oynatmaz. Derinlik gerçek santimetre değildir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlas, proje sahibinin özgün tasarımıdır.'
   },
   en: {
-    heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', views: 'Views', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
+    heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection', iceLr: 'Left (+) / right (−) deflection', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
     freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', sector: 'Sector width', depth: 'Depth (relative)',
     rotation: 'Rotation', tilt: 'Tilt', rock: 'Rock (in plane)', slideLateral: 'Slide (marker side)', slideElevation: 'Slide (across)',
     advance: 'Advance / withdraw (relative)', shaft: 'Shaft rotation (right +)', flexion: 'Anteflexion (+) / retroflexion (−)', lateralFlexion: 'Left (+) / right (−) flexion', omega: 'Multiplane angle',
@@ -43,7 +43,7 @@ export function createEchoPanel(mount, handlers) {
   const root = el('section', 'echo-panel');
   const heading = el('p', 'eyebrow');
   const modality = el('div', 'echo-modality', { role: 'group' });
-  const modalityButtons = ['tte', 'tee'].map(id => { const b = el('button', '', { type: 'button', 'data-echo-modality': id }); b.addEventListener('click', () => handlers.onModality(id)); modality.append(b); return b; });
+  const modalityButtons = ['tte', 'tee', 'ice'].map(id => { const b = el('button', '', { type: 'button', 'data-echo-modality': id }); b.addEventListener('click', () => handlers.onModality(id)); modality.append(b); return b; });
   const viewRow = el('div', 'echo-views', { role: 'group' });
   const title = el('h3', 'echo-title');
   const sub = el('p', 'echo-sub');
@@ -83,7 +83,9 @@ export function createEchoPanel(mount, handlers) {
     tte: [['rotation', 'rotation', -TTE_LIMITS.rotation, TTE_LIMITS.rotation, 1, '°'], ['tilt', 'tilt', -TTE_LIMITS.tilt, TTE_LIMITS.tilt, 1, '°'], ['rock', 'rock', -TTE_LIMITS.rock, TTE_LIMITS.rock, 1, '°'],
       ['slideLateral', 'slideLateral', -TTE_LIMITS.slide, TTE_LIMITS.slide, 0.02, ''], ['slideElevation', 'slideElevation', -TTE_LIMITS.slide, TTE_LIMITS.slide, 0.02, '']],
     tee: [['advance', 'advance', 0, 1, 0.005, '%'], ['rotation', 'shaft', -TEE_LIMITS.rotation, TEE_LIMITS.rotation, 1, '°'], ['flexion', 'flexion', ...TEE_LIMITS.flexion, 1, '°'],
-      ['lateralFlexion', 'lateralFlexion', -TEE_LIMITS.lateralFlexion, TEE_LIMITS.lateralFlexion, 1, '°'], ['omega', 'omega', ...TEE_LIMITS.omega, 1, '°']]
+      ['lateralFlexion', 'lateralFlexion', -TEE_LIMITS.lateralFlexion, TEE_LIMITS.lateralFlexion, 1, '°'], ['omega', 'omega', ...TEE_LIMITS.omega, 1, '°']],
+    ice: [['advance', 'iceAdvance', 0, 1, 0.005, '%'], ['rotation', 'iceRotation', ...ICE_LIMITS.rotation, 1, '°'],
+      ['anteroposterior', 'iceAp', -ICE_LIMITS.anteroposterior, ICE_LIMITS.anteroposterior, 1, '°'], ['leftRight', 'iceLr', -ICE_LIMITS.leftRight, ICE_LIMITS.leftRight, 1, '°']]
   };
   let builtFor = null;
   const sliders = new Map();
@@ -165,7 +167,8 @@ export function createEchoPanel(mount, handlers) {
     if (state.task) setText(title, `${t.target}: ${view.title[lang]}`);
     // Atlas starting angle and the guideline's approximate range are different things.
     setText(sub, state.modality === 'tte' ? `${t.window[view.window]} · ${view.source}`
-      : `${t.atlasAngle}: ${Math.round(presetOmega ?? 0)}° · ${t.guideline}: ${view.ase[lang]} · ${t.teePath} · ${view.source}`);
+      : state.modality === 'ice' ? `${t.iceRotationLabel}: ${Math.round(presetOmega ?? 0)}° · ${t.iceGuide}: ${view.ase[lang]} · ${t.icePath} · ${view.source}`
+        : `${t.atlasAngle}: ${Math.round(presetOmega ?? 0)}° · ${t.guideline}: ${view.ase[lang]} · ${t.teePath} · ${view.source}`);
     canvas.setAttribute('aria-label', `${view.title[lang]}: ${lang === 'en' ? 'anatomical section, not an ultrasound image' : 'anatomik kesit, ultrason görüntüsü değil'}`);
     taskStatus.hidden = !state.task?.done;
     setText(taskStatus, state.task?.done ? `✓ ${t.done}` : '');

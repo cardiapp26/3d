@@ -15,7 +15,7 @@ for (const key of Object.keys(tr)) {
 }
 assert.deepEqual(tr.modes.map(([id, n]) => [id, n]), en.modes.map(([id, n]) => [id, n]), 'modes share ids and numbers');
 // Mode numbers follow the displayed order (anatomy, physiology, intervention, EP, imaging groups in main.js).
-assert.deepEqual(tr.modes.map(([id]) => id), ['anatomy', 'atria', 'ra', 'defects', 'cath', 'exam', 'angiography', 'transseptal', 'ablation', 'pacemaker', 'bachmann', 'echo', 'tee'], 'modes listed in display order');
+assert.deepEqual(tr.modes.map(([id]) => id), ['anatomy', 'atria', 'ra', 'defects', 'cath', 'exam', 'angiography', 'transseptal', 'ablation', 'pacemaker', 'bachmann', 'echo', 'tee', 'ice'], 'modes listed in display order');
 assert.deepEqual(tr.modes.map(([, n]) => n), tr.modes.map((_, i) => String(i + 1).padStart(2, '0')), 'mode numbers run 01, 02, ... in display order');
 
 // 2. Lessons: same modes, steps, landmarks and views in both languages.

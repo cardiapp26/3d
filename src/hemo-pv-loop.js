@@ -79,7 +79,7 @@ const phaseColor = { fill: COLORS.filling, ivc: COLORS.iso, eject: COLORS.loop, 
  * relaxation) with the reference lines and the cursor at the current phase.
  * @returns {{ left: number, right: number, top: number, bottom: number }|null}
  */
-export function drawPvLoop(canvas, data, { phase = 0, lang = 'tr', dpr = 1 } = {}) {
+export function drawPvLoop(canvas, data, { phase = 0, lang = 'tr', dpr = 1, ghost = null } = {}) {
   if (!canvas || !data) return null;
   const T = TEXT[lang === 'en' ? 'en' : 'tr'];
   const w = canvas.clientWidth || 300, h = canvas.clientHeight || 220;
@@ -90,8 +90,9 @@ export function drawPvLoop(canvas, data, { phase = 0, lang = 'tr', dpr = 1 } = {
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, 0, w, h);
   const left = 34, right = w - 10, top = 14, bottom = h - 24;
-  const pMax = Math.ceil((Math.max(data.esp, ...data.points.map(p => p.p)) * 1.15) / 20) * 20;
-  const vMax = Math.ceil((data.edv * 1.2) / 20) * 20;
+  const all = ghost ? [...data.points, ...ghost.points] : data.points;
+  const pMax = Math.ceil((Math.max(data.esp, ...all.map(p => p.p)) * 1.15) / 20) * 20;
+  const vMax = Math.ceil((Math.max(data.edv, ghost ? ghost.edv : 0) * 1.2) / 20) * 20;
   const x = v => left + (v / vMax) * (right - left);
   const y = p => bottom - (p / pMax) * (bottom - top);
 
@@ -129,6 +130,17 @@ export function drawPvLoop(canvas, data, { phase = 0, lang = 'tr', dpr = 1 } = {
   ctx.fillStyle = COLORS.ea;
   ctx.fillText(T.ea, x((data.edv + data.esv) / 2) + 4, y(data.esp / 2));
 
+  // Reference (normal) loop, faint, for comparison with the current condition.
+  if (ghost) {
+    ctx.strokeStyle = 'rgba(92, 114, 103, 0.45)';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath();
+    ghost.points.forEach((pt, i) => (i ? ctx.lineTo(x(pt.v), y(pt.p)) : ctx.moveTo(x(pt.v), y(pt.p))));
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
   // Loop, by phase.
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';

@@ -27,10 +27,10 @@ const MODE_GROUPS = [
   ['modeGroupPhysiology', ['cath', 'exam']],
   ['modeGroupIntervention', ['angiography']],
   ['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']],
-  ['modeGroupImaging', ['echo', 'tee']]
+  ['modeGroupImaging', ['echo', 'tee', 'ice']]
 ];
 // TTE and TEE are one echo module; the mode fixes the modality.
-const ECHO_MODALITY = { echo: 'tte', tee: 'tee' };
+const ECHO_MODALITY = { echo: 'tte', tee: 'tee', ice: 'ice' };
 const modes = MODE_GROUPS.flatMap(([, ids]) => ids).map((id, i) => [id, String(i + 1).padStart(2, '0')]);
 const MODE_KEYS = 9;
 // Modes whose lesson steps appear as menu entries under the mode itself.

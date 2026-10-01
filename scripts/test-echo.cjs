@@ -12,7 +12,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/
 const assert = require('node:assert/strict');
 // TTE and TEE are separate modes of the one echo module.
 const useModality = async (page, modality) => {
-  await page.locator(`[data-mode=${modality === 'tee' ? 'tee' : 'echo'}]`).dispatchEvent('click');
+  await page.locator(`[data-mode=${modality === 'tte' ? 'echo' : modality}]:not([data-mode-step])`).dispatchEvent('click');
   await page.waitForFunction(m => window.cardiaEcho?.getState().modality === m, modality);
 };
 
@@ -31,7 +31,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForFunction(() => window.cardiaEcho?.getResult());
 
     // Every starting view at its preset.
-    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'mervio', 'melaapv', 'tgsax'] };
+    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'mervio', 'melaapv', 'tgsax'], ice: ['ice-home', 'ice-rvot', 'ice-lvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc'] };
     for (const [modality, ids] of Object.entries(views)) {
       await useModality(page, modality);
       assert.equal(await page.locator('[data-echo-view]').count(), ids.length, `${modality}: ${ids.length} views`);
@@ -143,7 +143,7 @@ const SHOTS = process.env.SHOT_DIR || null;
       const gm = id => window.heart.getMeshes(id).filter(m => !m.userData.micro);
       const A = window.heart.withRestPose(() => measureEchoAnatomy({ getMeshes: gm }));
       const items = echoItems(gm), failures = [];
-      for (const view of [...V.TTE_VIEWS, ...V.TEE_VIEWS]) {
+      for (const view of [...V.TTE_VIEWS, ...V.TEE_VIEWS, ...V.ICE_VIEWS]) {
         window.cardiaEcho.selectView(view.id);
         const { frame } = window.cardiaEcho.getResult(), st = window.cardiaEcho.getState();
         for (const phase of [0.1, 0.4, 0.55, 0.75]) {
@@ -219,7 +219,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForFunction(() => window.cardiaEcho?.getResult());
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'phone: no horizontal overflow');
 
-    console.log(`PASS echo: 18 views at preset and at 4 phases, A4C/ME4C orientation, 0/180 mirror, separate TEE motions, phase-locked section, freeze, seeded keyboard task, enlarge while frozen, p95 ${latency.p95.toFixed(1)} ms, ${ms.toFixed(1)} ms per section, phone`);
+    console.log(`PASS echo: 26 views (TTE, TEE, ICE) at preset and at 4 phases, A4C/ME4C orientation, 0/180 mirror, separate TEE motions, phase-locked section, freeze, seeded keyboard task, enlarge while frozen, p95 ${latency.p95.toFixed(1)} ms, ${ms.toFixed(1)} ms per section, phone`);
   } finally {
     await browser.close();
   }

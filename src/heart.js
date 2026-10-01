@@ -914,7 +914,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       mode=name;
       septalDefects.group.visible=name==='defects';
       if(name==='defects'){cardiacCycle.setPlaying(false);beating=false;if(channels)channels.reset();}
-      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath','echo','tee'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
+      opacity=['angiography','ablation','pacemaker','transseptal','bachmann','cath','echo','tee','ice'].includes(name) ? LESSON_TISSUE_OPACITY : 1;
       epLandmarks.setVisible(name==='ablation');
       epZones.setVisible(name==='ablation');
       if(name!=='ablation')epZones.setZone(null);

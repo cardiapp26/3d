@@ -929,7 +929,7 @@ export const rawLessons = {
         { title: 'Sağ atriyum (RA)', text: 'Femoral ven → İVC → RA. Normal ortalama < 5 mmHg, O₂ %75. a dalgası P dalgasını izleyen atriyal kasılmadır, c dalgası triküspit kapanışında kapağın RA\'ya bombelenmesi, x inişi atriyal gevşeme ve anulusun aşağı çekilmesi, v dalgası sistolde venöz doluş, y inişi triküspit açılmasıyla boşalmadır. Solunumu açın: inspiryumda basınçlar birkaç mmHg düşer. Yüksek RA: sağ kalp yetersizliği, triküspit yetersizliği (büyük v), tamponad (silik y) veya konstriksiyon (belirgin y).', scenario: 'normal', channels: ['ra'], beats: 2, respiration: true, landmark: 'cath-ra', view: 'rao' },
         { title: 'Sağ ventrikül (RV)', text: 'Kateter triküspitten RV\'ye geçer. Normal sistolik < 25, diyastolik < 5 mmHg, O₂ %75. Diyastolik basınç erken diyastolde en düşüktür, yavaş yükselir ve atriyal kasılma ile RVEDP\'ye ulaşır (QRS başlangıcı). RV\'den RA\'ya geri çekmede diyastolik basınçların yakın olması normaldir. Kateter temasına bağlı ventriküler ektopi sık görülür.', scenario: 'normal', channels: ['rv', 'ra'], beats: 2, respiration: false, landmark: 'cath-rv', view: 'rao' },
         { title: 'Pulmoner arter ve kama (PCWP)', text: 'RV çıkış yolu ve pulmoner kapaktan PA\'ya. Normal sistolik < 25, diyastolik < 10, ortalama < 15 mmHg; dikrotik çentik pulmoner kapak kapanışıdır ve PA diyastolik basıncı normalde PCWP\'nin birkaç mmHg üstündedir. Balon distal dalda şişirilince sol atriyum basıncı gecikmeli (kaynaklara göre 50–150 ms) ve sönümlü yansır: ortalama < 12 mmHg, a ve v dalgaları. Gerçek kama için dalga şekli, PA\'dan düşük ortalama ve arteriyel düzeyde satürasyon (> %95) birlikte aranır.', scenario: 'normal', channels: ['pa', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'anterior' },
-        { title: 'Sol kalp (retrograd) • LV ve aort', text: 'Femoral arter → aort → aort kapağı → LV. Normal LV sistolik < 120, diyastolik (LVEDP) < 8-12 mmHg; aort 120/80 mmHg, O₂ %95-97. LV basıncı izovolümetrik kasılmada dik yükselir, aort kapağı açılınca iki eğri üst üste biner, S2\'de dikrotik çentikle ayrılır. Geri çekmede LV ile aort sistolik farkı tepe-tepe gradyandır; periferde sistolik yükselir, ortalama korunur (amplifikasyon).', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-lv', view: 'lao' },
+        { title: 'Sol kalp kateterizasyonu (LHC) • LV ve aort', menu: true, text: 'Femoral (veya radyal) arter → aort → aort kapağı → LV; pigtail kateter kapaktan retrograd geçirilir. Normal LV sistolik < 120, LVEDP < 8-12 mmHg; aort 120/80 mmHg, O₂ %95-97. LVEDP a dalgasının sonunda, EKG\'de R dalgasının LV eğrisini kestiği noktada okunur. QRS\'ten 15-30 ms sonra LV basıncı izovolümetrik kasılmada dik yükselir; aortu geçince aort kapağı açılır ve iki eğri üst üste biner, T dalgasından sonra gevşemeyle düşer ve S2\'de dikrotik çentikle ayrılır. Gradyan doğruluğu: femoral kılıf yan kolundan alınan basınç santral aorttan gecikmeli ve amplifiye (yüksek sistolik) olduğundan ortalama LV-Ao gradyanını yapay olarak büyütür; aortoiliyak hastalıkta hiç güvenilmez. En doğrusu çift lümenli kateter veya iki ayrı kateterle eşzamanlı LV ve santral aort kaydıdır; geri çekme sırasındaki LV-Ao sistolik farkı tepe-tepe gradyandır (Kern, PCR-EAPCI).', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-lv', view: 'lao' },
         { title: 'Oksimetri, debi, dirençler ve şant taraması', text: 'Sağ kalp satürasyonları %75 civarında, sol kalp %95-97. Karışık venöz = (3 SVC + IVC) / 4; RA\'da ≥ %7, RV veya PA\'da ≥ %5 basamak artışı soldan sağa şantı gösterir (ASD, VSD, PDA). Qp/Qs = (SaO₂ − SvO₂) / (SpvO₂ − SpaO₂). Fick: CO = VO₂ / (Hb × 1,36 × 10 × (SaO₂ − SvO₂)); VO₂ ölçülmezse 125 mL/dk/m² varsayılır. PVR = (mPAP − PCWP) / CO (Wood), SVR = (MAP − RA) / CO × 80 (dyn). Bu ASD senaryosunda Qp/Qs yaklaşık 2\'dir; hesaplayıcıları açın.', scenario: 'asd_left_to_right', channels: ['ra', 'pa'], beats: 2, respiration: false, calculators: true, landmark: 'cath-ra', view: 'anterior' },
         { title: 'Aort darlığı', text: 'Ejeksiyon boyunca LV aortun üzerindedir; boyalı alan ortalama gradyandır. Aort eğrisi geç ve yavaş tepe yapar (parvus et tardus). Gorlin: alan = akım / (44,3 × √ortalama gradyan), akım = CO / (KH × SEP). PVC düğmesine basın: sabit darlıkta ekstrasistol sonrası atımda gradyan da aort nabız basıncı da artar.', scenario: 'aortic_stenosis_severe', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-ao', view: 'lao' },
         { title: 'Hipertrofik obstrüktif kardiyomiyopati', text: 'Dinamik obstrüksiyonda aort eğrisi erken tepe (spike), sistol ortasında çöküş ve ikinci kubbe (dome) gösterir; gradyan ejeksiyonun ortasında ve sonunda oluşur. PVC düğmesine basın: ekstrasistol sonrası atımda gradyan artarken aort nabız basıncı düşer (Brockenbrough-Braunwald-Morrow işareti), sabit aort darlığının tersi.', scenario: 'hocm', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-lv', view: 'lao' },
@@ -941,7 +941,7 @@ export const rawLessons = {
         { title: 'Kardiyak tamponad', text: 'Perikard basıncı diyastolik basınçları eşitler; RA\'da y inişi silinir (ventriküler doluş sınırlıdır), x inişi korunur. Debi düşük, kalp hızı yüksektir. Solunumu açın: inspiryumda aort sistolik basıncı 10 mmHg\'den fazla düşer (pulsus paradoksus). Perikardiyosentez sonrası y inişi geri döner.', scenario: 'tamponade', channels: ['ra', 'ao'], beats: 4, respiration: true, landmark: 'cath-ra', view: 'anterior' },
         { title: 'Pulmoner hipertansiyon', text: 'mPAP > 20 mmHg pulmoner hipertansiyondur (2022 ESC/ERS; eski kaynaklar ≥ 25 mmHg ve PVR > 3 WU kullanır); PCWP ≤ 15 ve PVR > 2 WU ise prekapiller, PCWP > 15 ise postkapiller. TPG = mPAP − PCWP, DPG = PA diyastolik − PCWP; DPG ≥ 7 ve PVR > 2 WU kombine pre- ve postkapiller hastalığı gösterir. Senaryoyu izole postkapiller PH ile karşılaştırın.', scenario: 'precapillary_ph', channels: ['pa', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-pa', view: 'anterior' },
         { title: 'Sağ ventrikül infarktı ve akut sol kalp yetersizliği', text: 'RV infarktında RA basıncı yükselir, y inişi küner, RA/PCWP oranı 0,8\'i aşar ve Kussmaul görülebilir; PA ve PCWP görece düşüktür. Akut LV yetersizliği senaryosunda ise PCWP dev v dalgasıyla yüksek, debi düşük ve karışık venöz satürasyon azalmıştır.', scenario: 'rv_infarct', channels: ['ra', 'pcwp'], beats: 3, respiration: true, landmark: 'cath-ra', view: 'rao' },
-        { title: 'Basınç-hacim döngüsü', text: 'LV basıncı LV hacmine karşı çizildiğinde döngü saat yönünün tersine dolaşır: doluş (alt kenar, EDPVR boyunca), izovolümetrik kasılma (sağ dikey kenar, mitral ve aort kapalı), ejeksiyon (üst kenar, aort açık) ve izovolümetrik gevşeme (sol dikey kenar). Genişlik atım hacmi, alan atım işidir; EF = SV / EDV. ESPVR eğimi (Ees) kontraktiliteyi, Ea = ESP / SV arteriyel yükü gösterir; Ea/Ees ventrikül-arter eşleşmesidir. Senaryoyu değiştirin: aort darlığında döngü yukarı uzar, akut LV yetersizliğinde sağa kayar ve EF düşer. Referans çizgileri döngünün köşelerinden geçirilen öğretim doğrularıdır, ölçülmüş eğri değildir.', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, pvLoop: true, landmark: 'cath-lv', view: 'lao' }
+        { title: 'Basınç-hacim döngüsü', text: 'LV basıncı LV hacmine karşı çizildiğinde döngü saat yönünün tersine dolaşır: doluş (alt kenar, EDPVR boyunca), izovolümetrik kasılma (sağ dikey kenar, mitral ve aort kapalı), ejeksiyon (üst kenar, aort açık) ve izovolümetrik gevşeme (sol dikey kenar). Genişlik atım hacmi, alan atım işidir; EF = SV / EDV. ESPVR eğimi (Ees) kontraktiliteyi, Ea = ESP / SV arteriyel yükü gösterir; Ea/Ees ventrikül-arter eşleşmesidir. Senaryoyu değiştirin: aort darlığında döngü yukarı uzar, akut LV yetersizliğinde sağa kayar ve EF düşer. Referans çizgileri döngünün köşelerinden geçirilen öğretim doğrularıdır, ölçülmüş eğri değildir. P-V sekmesinde "Etkileşimli model"i seçin: ön yük, kontraktilite, ard yük ve diyastolik sertliği değiştirin ya da dekompanse KY, HFpEF, aort darlığı, aort yetersizliği, akut mitral yetersizliği, hipovolemi ve inotrop durumlarını normal döngüyle (kesikli gri) karşılaştırın.', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, pvLoop: true, landmark: 'cath-lv', view: 'lao' }
       ]
     },
     en: {
@@ -953,7 +953,7 @@ export const rawLessons = {
         { title: 'Right atrium (RA)', text: 'Femoral vein → IVC → RA. Normal mean < 5 mmHg, O₂ 75%. The a wave is atrial contraction following the P wave, the c wave the tricuspid bulging into the RA at closure, the x descent atrial relaxation with annular descent, the v wave venous filling during systole, the y descent emptying as the tricuspid opens. Switch respiration on: pressures fall a few mmHg with inspiration. Raised RA: right heart failure, tricuspid regurgitation (large v), tamponade (blunted y) or constriction (prominent y).', scenario: 'normal', channels: ['ra'], beats: 2, respiration: true, landmark: 'cath-ra', view: 'rao' },
         { title: 'Right ventricle (RV)', text: 'The catheter crosses the tricuspid valve. Normal systolic < 25, diastolic < 5 mmHg, O₂ 75%. Diastolic pressure is lowest in early diastole, rises slowly and reaches the RVEDP with atrial contraction (QRS onset). On pullback from RV to RA, close diastolic pressures are normal. Catheter-induced ventricular ectopy is common.', scenario: 'normal', channels: ['rv', 'ra'], beats: 2, respiration: false, landmark: 'cath-rv', view: 'rao' },
         { title: 'Pulmonary artery and wedge (PCWP)', text: 'Through the RV outflow tract and pulmonary valve into the PA. Normal systolic < 25, diastolic < 10, mean < 15 mmHg; the dicrotic notch marks pulmonary valve closure and PA diastolic pressure normally sits a few mmHg above the PCWP. With the balloon inflated in a distal branch, left atrial pressure is transmitted delayed (50–150 ms depending on the source) and damped: mean < 12 mmHg, a and v waves. A true wedge is confirmed by the waveform, a mean below PA pressure and an arterial-level saturation (> 95%).', scenario: 'normal', channels: ['pa', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-wedge', view: 'anterior' },
-        { title: 'Left heart (retrograde) • LV and aorta', text: 'Femoral artery → aorta → aortic valve → LV. Normal LV systolic < 120, diastolic (LVEDP) < 8-12 mmHg; aorta 120/80 mmHg, O₂ 95-97%. LV pressure rises steeply during isovolumetric contraction; once the aortic valve opens the two curves superimpose and separate at S2 with the dicrotic notch. On pullback the LV-to-aortic systolic difference is the peak-to-peak gradient; peripherally systolic pressure rises while the mean is preserved (amplification).', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-lv', view: 'lao' },
+        { title: 'Left heart catheterisation (LHC) • LV and aorta', menu: true, text: 'Femoral (or radial) artery → aorta → aortic valve → LV; a pigtail catheter crosses the valve retrogradely. Normal LV systolic < 120, LVEDP < 8-12 mmHg; aorta 120/80 mmHg, O₂ 95-97%. The LVEDP is read at the end of the a wave, where the ECG R wave intersects the LV curve. 15-30 ms after the QRS, LV pressure rises steeply in isovolumetric contraction; once it exceeds the aorta the aortic valve opens and the two curves superimpose, then fall with relaxation after the T wave and separate at S2 with the dicrotic notch. Gradient accuracy: femoral sheath side-arm pressure is delayed and amplified (higher systolic) relative to the central aorta, so it artificially increases the mean LV-Ao gradient, and it is unreliable with aortoiliac disease. The most accurate method is simultaneous LV and central aortic recording with a double-lumen catheter or two catheters; the LV-Ao systolic difference on pullback is the peak-to-peak gradient (Kern, PCR-EAPCI).', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, landmark: 'cath-lv', view: 'lao' },
         { title: 'Oximetry, output, resistances and shunt run', text: 'Right-heart saturations run near 75%, left-heart 95-97%. Mixed venous = (3 SVC + IVC) / 4; a step-up of ≥ 7% at the RA or ≥ 5% at the RV or PA indicates a left-to-right shunt (ASD, VSD, PDA). Qp/Qs = (SaO₂ − SvO₂) / (SpvO₂ − SpaO₂). Fick: CO = VO₂ / (Hb × 1.36 × 10 × (SaO₂ − SvO₂)); when VO₂ is not measured, 125 mL/min/m² is assumed. PVR = (mPAP − PCWP) / CO (Wood units), SVR = (MAP − RA) / CO × 80 (dyn). In this ASD scenario Qp/Qs is about 2; open the calculators.', scenario: 'asd_left_to_right', channels: ['ra', 'pa'], beats: 2, respiration: false, calculators: true, landmark: 'cath-ra', view: 'anterior' },
         { title: 'Aortic stenosis', text: 'LV stays above the aorta throughout ejection; the shaded area is the mean gradient. The aortic upstroke is slow and late-peaking (parvus et tardus). Gorlin: area = flow / (44.3 × √mean gradient), flow = CO / (HR × SEP). Press PVC: in fixed stenosis the post-extrasystolic beat raises both the gradient and the aortic pulse pressure.', scenario: 'aortic_stenosis_severe', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-ao', view: 'lao' },
         { title: 'Hypertrophic obstructive cardiomyopathy', text: 'In dynamic obstruction the aortic tracing shows an early spike, a mid-systolic dip and a second dome; the gradient develops in mid and late ejection. Press PVC: on the post-extrasystolic beat the gradient increases while the aortic pulse pressure falls (Brockenbrough-Braunwald-Morrow sign), the opposite of fixed aortic stenosis.', scenario: 'hocm', channels: ['lv', 'ao'], beats: 3, respiration: false, landmark: 'cath-lv', view: 'lao' },
@@ -965,7 +965,7 @@ export const rawLessons = {
         { title: 'Cardiac tamponade', text: 'Pericardial pressure equalizes the diastolic pressures; the RA y descent is lost (ventricular filling is restricted) while the x descent is preserved. Output is low and heart rate high. Switch respiration on: aortic systolic pressure falls by more than 10 mmHg with inspiration (pulsus paradoxus). After pericardiocentesis the y descent returns.', scenario: 'tamponade', channels: ['ra', 'ao'], beats: 4, respiration: true, landmark: 'cath-ra', view: 'anterior' },
         { title: 'Pulmonary hypertension', text: 'mPAP > 20 mmHg defines pulmonary hypertension (2022 ESC/ERS; older sources use ≥ 25 mmHg and PVR > 3 WU); with PCWP ≤ 15 and PVR > 2 WU it is pre-capillary, with PCWP > 15 post-capillary. TPG = mPAP − PCWP, DPG = PA diastolic − PCWP; DPG ≥ 7 with PVR > 2 WU indicates combined pre- and post-capillary disease. Compare with the isolated post-capillary PH scenario.', scenario: 'precapillary_ph', channels: ['pa', 'pcwp'], beats: 2, respiration: false, landmark: 'cath-pa', view: 'anterior' },
         { title: 'Right ventricular infarction and acute left heart failure', text: 'In RV infarction RA pressure rises, the y descent is blunted, the RA/PCWP ratio exceeds 0.8 and Kussmaul may appear; PA and PCWP are relatively low. In the acute LV failure scenario the PCWP is high with a giant v wave, output is low and mixed venous saturation falls.', scenario: 'rv_infarct', channels: ['ra', 'pcwp'], beats: 3, respiration: true, landmark: 'cath-ra', view: 'rao' },
-        { title: 'Pressure-volume loop', text: 'Plotting LV pressure against LV volume traces a counterclockwise loop: filling (lower edge, along the EDPVR), isovolumetric contraction (right vertical edge, mitral and aortic valves closed), ejection (upper edge, aortic valve open) and isovolumetric relaxation (left vertical edge). The width is the stroke volume and the area the stroke work; EF = SV / EDV. The ESPVR slope (Ees) reflects contractility and Ea = ESP / SV the arterial load; Ea/Ees is ventricular-arterial coupling. Change the scenario: in aortic stenosis the loop grows taller, in acute LV failure it shifts right and the EF falls. The reference lines are teaching lines drawn through the loop corners, not measured curves.', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, pvLoop: true, landmark: 'cath-lv', view: 'lao' }
+        { title: 'Pressure-volume loop', text: 'Plotting LV pressure against LV volume traces a counterclockwise loop: filling (lower edge, along the EDPVR), isovolumetric contraction (right vertical edge, mitral and aortic valves closed), ejection (upper edge, aortic valve open) and isovolumetric relaxation (left vertical edge). The width is the stroke volume and the area the stroke work; EF = SV / EDV. The ESPVR slope (Ees) reflects contractility and Ea = ESP / SV the arterial load; Ea/Ees is ventricular-arterial coupling. Change the scenario: in aortic stenosis the loop grows taller, in acute LV failure it shifts right and the EF falls. The reference lines are teaching lines drawn through the loop corners, not measured curves. In the P-V tab choose "Interactive model": change preload, contractility, afterload and diastolic stiffness, or compare decompensated HF, HFpEF, aortic stenosis, aortic regurgitation, acute mitral regurgitation, hypovolaemia and an inotrope against the normal loop (dashed grey).', scenario: 'normal', channels: ['lv', 'ao'], beats: 2, respiration: false, pvLoop: true, landmark: 'cath-lv', view: 'lao' }
       ]
     }
   },
@@ -976,19 +976,19 @@ export const rawLessons = {
       steps: [
         {
           title: 'Aort Kökü ve Sol Ana Koroner (LM)',
-          text: 'Sol koroner ostiyum, Valsalva sol sinüsünün üst 1/3 duvarından köken alır (yaprakçık üzerinde değildir). LAO Cranial projeksiyonda aort kökü ve LM gövdesi kranial açılanmayla netleşir.',
+          text: 'Sol koroner ostiyum, Valsalva sol sinüsünün üst 1/3 duvarından köken alır (yaprakçık üzerinde değildir). LAO Cranial projeksiyonda aort kökü ve LM gövdesi kranial açılanmayla netleşir. LAO kranial (dört odacık) görüntüde RCA AV eksenini, LAD interventriküler ekseni apekse doğru izler (Pighi, Piazza ve ark., PCR-EAPCI floroskopik anatomi).',
           landmark: 'lm',
           view: 'lao_cranial'
         },
         {
           title: 'LM Bifurkasyonu ("Spider" Görünümü)',
-          text: 'LAO 45° · CAU 30° ("Spider" veya örümcek projeksiyonu), sol ana koroner bifurkasyonunu, LAD (ön inen) ve LCx (sirkumfleks) ostiyumlarını üst üste binmeden (foreshortening olmadan) açığa çıkarır.',
+          text: 'LAO 45° · CAU 30° ("Spider" veya örümcek projeksiyonu), sol ana koroner bifurkasyonunu, LAD (ön inen) ve LCx (sirkumfleks) ostiyumlarını üst üste binmeden (foreshortening olmadan) açığa çıkarır. Bu LAO kaudal (tek odacık) görüntüde RCA ve Cx AV oluğu boyunca uzun görünür, LAD ve PDA kısalır (Pighi, Piazza ve ark., PCR-EAPCI floroskopik anatomi).',
           landmark: 'lad',
           view: 'spider'
         },
         {
           title: 'LAD ve Septal Perforatörler (RAO Cranial)',
-          text: 'RAO 30° · CRA 30° görünümü, LAD gövdesini ve interventriküler septuma dik inen septal perforatör dalları uzatarak anterior miyokardiyumun perfüzyon yatağını sergiler.',
+          text: 'RAO 30° · CRA 30° görünümü, LAD gövdesini ve interventriküler septuma dik inen septal perforatör dalları uzatarak anterior miyokardiyumun perfüzyon yatağını sergiler. RAO kranial (iki odacık) LAD\'yi ön duvar boyunca tam uzunlukta gösterir, Cx kısalır; RAO kaudal (üç odacık) ise LAD ile Cx\'i ayırır ve mitral ile aort kapağı aynı düzleme getirir (Pighi, Piazza ve ark., PCR-EAPCI floroskopik anatomi).',
           landmark: 'lad',
           view: 'rao_cranial'
         },
@@ -1006,19 +1006,19 @@ export const rawLessons = {
       steps: [
         {
           title: 'Aortic root & Left Main (LM)',
-          text: 'The left coronary ostium arises from the upper third of the left aortic sinus wall. The LAO Cranial view elongates the aortic root and the left main coronary trunk.',
+          text: 'The left coronary ostium arises from the upper third of the left aortic sinus wall. The LAO Cranial view elongates the aortic root and the left main coronary trunk. In LAO cranial (4-chamber) the RCA follows the AV axis and the LAD follows the interventricular axis toward the apex (Pighi, Piazza et al., PCR-EAPCI fluoroscopic anatomy).',
           landmark: 'lm',
           view: 'lao_cranial'
         },
         {
           title: 'LM bifurcation ("Spider" view)',
-          text: 'LAO 45° · CAU 30° (the "Spider" projection) displays the LM bifurcation into the LAD and LCx without foreshortening, critical for bifurcation stenting and ostial evaluation.',
+          text: 'LAO 45° · CAU 30° (the "Spider" projection) displays the LM bifurcation into the LAD and LCx without foreshortening, critical for bifurcation stenting and ostial evaluation. In this LAO caudal (1-chamber) view the RCA and LCx are elongated along the AV groove while the LAD and PDA are foreshortened (Pighi, Piazza et al., PCR-EAPCI fluoroscopic anatomy).',
           landmark: 'lad',
           view: 'spider'
         },
         {
           title: 'LAD & septal perforators (RAO Cranial)',
-          text: 'RAO 30° · CRA 30° projects the anterior interventricular groove along its long axis, clearly displaying diagonal branches and septal perforators supplying the bundle branches.',
+          text: 'RAO 30° · CRA 30° projects the anterior interventricular groove along its long axis, clearly displaying diagonal branches and septal perforators supplying the bundle branches. RAO cranial (2-chamber) lays out the whole LAD along the anterior wall with the LCx foreshortened; RAO caudal (3-chamber) separates the LAD from the LCx and brings the mitral and aortic valves into plane (Pighi, Piazza et al., PCR-EAPCI fluoroscopic anatomy).',
           landmark: 'lad',
           view: 'rao_cranial'
         },
@@ -1246,25 +1246,25 @@ export const rawLessons = {
       steps: [
         {
           title: 'Perkütan giriş • Femoral ven → İVC → RA',
-          text: 'Giriş yeri: sağ femoral ven (perkütan Seldinger tekniği). Kılavuz tel ve kılıf İVC üzerinden sağ atriyuma, oradan SVC seviyesine ilerletilir. Floroskopi: AP 0° projeksiyonda tel omurga sağında İVC-RA hattını izler. İlerleme çubuğu ile rotayı takip edin.',
+          text: 'Giriş yeri: sağ femoral ven (perkütan Seldinger tekniği). Kılavuz tel ve kılıf İVC üzerinden sağ atriyuma, oradan SVC seviyesine ilerletilir. Floroskopi: AP 0° projeksiyonda tel omurga sağında İVC-RA hattını izler. İlerleme çubuğu ile rotayı takip edin. Sistem: Mullins veya Swartz kılıf içinde Brockenbrough iğnesi (uçtaki 1,5 cm 18 G\'den 21 G\'ye incelir; göbekteki ok kıvrımın yönünü gösterir). İğne göbeği basınç hattına bağlanır, böylece RA\'dan LA\'ya geçiş eğride hemen görülür. Kesin kontrendikasyonlar yalnız septal trombüs ve septal miksoma/tümördür (Ducrocq ve ark., PCR-EAPCI).',
           landmark: 'ra',
           view: 'anterior'
         },
         {
           title: 'Fossa ovalis konumlandırma • Tenting (LAO 45°)',
-          text: 'SVC hazırlık konumundan geri çekilen transseptal sistemin son konumu gösterilir: kılıf İVC ve sağ atriyumdan fossaya uzanır; SVC\'deki önceki konum aynı anda çizilmez. İğne ucu iki "atlama" (aorta, limbus) sonrası fossa ovalise oturur ve membranı çadırlaştırır (tenting). Floroskopik işaret kateterleri: aort köküne retrograd yerleştirilen mavi pigtail kateter nonkoroner cuspa (NCC) oturur ve aort kökünü işaretler; iğne her zaman pigtailin posteroinferiorunda kalmalıdır. Koyu mavi dekapolar CS kateteri koroner sinüs boyunca uzanır ve AV oluğu (septumun alt sınırını) gösterir. Cusp halkaları: yeşil = LCC, turuncu = RCC, camgöbeği = NCC (pigtail yuvası). Açılar: LAO 45° septumu en face gösterir; RAO 30° tanjansiyel değerlendirir. Kırmızı işaretler tehlike bölgeleri: aort kökü ve posterior LA duvarı.',
+          text: 'SVC hazırlık konumundan geri çekilen transseptal sistemin son konumu gösterilir: kılıf İVC ve sağ atriyumdan fossaya uzanır; SVC\'deki önceki konum aynı anda çizilmez. Sistem SVC\'den saat 4 yönünde (büyük LA\'da saat 6\'ya kadar) yavaşça aşağı çekilirken iki "sıçrama" izlenir: SVC\'den RA\'ya, sonra limbusun üzerinden fossa ovalise (yapısal olarak normal kalplerin %90\'ından fazlasında hissedilir). Fossa ovalis yaklaşık 1,5–2,4 cm² ince fibröz bir zondur ve en güvenli giriş yeridir; büyük LA\'da aşağı kayar. İğne ucu fossaya oturur ve membranı çadırlaştırır (tenting). Floroskopik işaret kateterleri: aort köküne retrograd yerleştirilen mavi pigtail kateter nonkoroner cuspa (NCC) oturur ve aort kökünü işaretler; iğne her zaman pigtailin posteroinferiorunda kalmalıdır. Koyu mavi dekapolar CS kateteri koroner sinüs boyunca uzanır ve AV oluğu (septumun alt sınırını) gösterir. Cusp halkaları: yeşil = LCC, turuncu = RCC, camgöbeği = NCC (pigtail yuvası). Açılar: LAO 45° septumu en face gösterir; RAO 30° tanjansiyel değerlendirir. Kaynakta RAO 40–50°\'de fossa, aort kökündeki pigtail ucunun 1–3 cm altında; lateral görünümde aort kökü ile omurga arasındaki yatay çizginin 3–5 mm altındadır. EP laboratuvarında His kateteri NCC\'nin alt kenarını, CS kateteri septumun alt ucunu işaretler. Ekoyla hedef: TEE bikaval (90–120°) üst-alt, kısa eksen (30–50°) ön-arka, dört boşluk (0°) mitral düzleme yüksekliği belirler. MitraClip için üst-arka fossa (koaptasyonun 3,5–4 cm üzeri), LAA kapatma için alt-arka, balon mitral komissürotomi için merkez veya hafif alçak nokta seçilir. Kırmızı işaretler tehlike bölgeleri: aort kökü ve posterior LA duvarı (Ducrocq ve ark., PCR-EAPCI). Floroskopik anatomi kaynağına göre bikaval LAO-kaudal görüntü septumun yönünü gösterir, septum RAO-kaudalda karşıdan görülür; mitral işlemde aorta göre posterior ve SVC\'ye yakın ponksiyon mitral düzlemin daha yükseğinde kalır; LAA septumun önünde olduğundan posterior ponksiyon LAA ağzına daha eş eksenli yaklaşım verir (Pighi, Piazza ve ark., PCR-EAPCI floroskopik anatomi).',
           landmark: 'la',
           view: 'lao'
         },
         {
           title: 'Septal geçiş • İğne + tel LA\'ya (RAO 30°)',
-          text: 'Basınç eğrisi ve kontrast ile LA doğrulandıktan sonra iğne fossa ovalisi geçer; kılavuz tel sol üst pulmoner vene (LSPV) yönlendirilir. RAO 30° projeksiyonda iğnenin posterior duvara değil LA ortasına yöneldiği doğrulanır. Aksesuar: TEE/ICE eşliği güvenliği artırır.',
+          text: 'Basınç eğrisi ve kontrast ile LA doğrulandıktan sonra iğne fossa ovalisi geçer; kılavuz tel sol üst pulmoner vene (LSPV) yönlendirilir. RAO 30° projeksiyonda iğnenin posterior duvara değil LA ortasına yöneldiği doğrulanır. LA\'ya giriş üç bulgudan en az ikisiyle doğrulanmadan kılıf ilerletilmez: LA basınç eğrisi, parlak kırmızı oksijenli kan, LA\'da dönen kontrast. Kılıf geçince hemen saat 3\'e çevrilir (posterior duvardan uzak). Ekoda çadırın birden kaybolması geçişi gösterir. Heparin ponksiyondan sonra verilir (genellikle 3000–5000 U). Dirençli septumda biriken itme kuvveti tüm sistemi LA\'nın karşı duvarına fırlatabilir: önce yalnız iğne ilerletilir; RF iğne yalnız TEE/ICE çadırı net gösterdiğinde kullanılır. Atriyum dışı ponksiyonda 0,1–0,3 mL kontrastla iğne mi kılıf mı dışarıda ayırt edilir; kılıf perforasyonu çoğunlukla cerrahi gerektirir. Ponksiyon sonrası tansiyon düşüşü ve kalp kenarı hareketinin azalması tamponadı düşündürür (eski seride %1,2): ekoyla perikardiyosentez. Atriyumlar arası yarıktan kalp dışına geçilmişse kılıf geri çekilmez, hasta cerrahiye gider. Aksesuar: TEE/ICE eşliği güvenliği artırır (Ducrocq ve ark., PCR-EAPCI).',
           landmark: 'la',
           view: 'rao'
         },
         {
           title: 'Balon atriyal septostomi (statik balon)',
-          text: 'Yerleşik interatriyal defekti genişletmek için (ör. duktus bağımlı dolaşım, pulmoner hipertansiyonda dekompresyon) balon septum hizasında şişirilir; septumun oluşturduğu bel (waist) kaybolana dek dilatasyon yapılır. İlerleme çubuğu balon şişirmeyi simüle eder. Floroskopi: AP 0° veya hafif LAO ile balon beli izlenir.',
+          text: 'Yerleşik interatriyal defekti genişletmek için (ör. duktus bağımlı dolaşım, pulmoner hipertansiyonda dekompresyon) balon septum hizasında şişirilir; septumun oluşturduğu bel (waist) kaybolana dek dilatasyon yapılır. İlerleme çubuğu balon şişirmeyi simüle eder. Floroskopi: AP 0° veya hafif LAO ile balon beli izlenir. Not: Transseptal ponksiyondan sonra TEE/ICE hemen her olguda küçük bir soldan sağa şant gösterir; 6. ayda yalnız %15\'i kalıcıdır ve kalıcılık kılıf çapıyla ilişkilidir; kapatma büyük defekt, hipoksiyle sağdan sola şant veya hacim yükünde düşünülür (Ducrocq ve ark., PCR-EAPCI).',
           landmark: 'ra',
           view: 'anterior'
         }
@@ -1276,25 +1276,25 @@ export const rawLessons = {
       steps: [
         {
           title: 'Percutaneous access • Femoral vein → IVC → RA',
-          text: 'Access site: right femoral vein (percutaneous Seldinger technique). The guidewire and sheath are advanced via the IVC into the right atrium and up to the SVC. Fluoroscopy: in AP 0° the wire tracks the IVC-RA line to the right of the spine. Use the progress slider to trace the route.',
+          text: 'Access site: right femoral vein (percutaneous Seldinger technique). The guidewire and sheath are advanced via the IVC into the right atrium and up to the SVC. Fluoroscopy: in AP 0° the wire tracks the IVC-RA line to the right of the spine. Use the progress slider to trace the route. System: a Brockenbrough needle inside a Mullins or Swartz sheath (the distal 1.5 cm narrows from 18 G to 21 G; the hub arrow shows the curve direction). The needle hub is connected to a pressure line so the RA-to-LA change shows at once on the trace. The only absolute contraindications are septal thrombus and a septal myxoma or tumour (Ducrocq et al., PCR-EAPCI).',
           landmark: 'ra',
           view: 'anterior'
         },
         {
           title: 'Fossa ovalis positioning • Tenting (LAO 45°)',
-          text: 'The final position after withdrawal from the SVC is shown: the sheath runs from the IVC through the right atrium to the fossa; its earlier SVC position is not drawn at the same time. The needle tip drops over two "jumps" (aortic mound, limbus) onto the fossa ovalis and tents the membrane. Fluoroscopic landmark catheters: a blue retrograde pigtail seats in the non-coronary cusp (NCC), marking the aortic root; the needle must always stay posteroinferior to the pigtail. The dark-blue decapolar CS catheter lines the coronary sinus, outlining the AV groove (inferior septal border). Cusp rings: green = LCC, orange = RCC, cyan = NCC (pigtail seat). Angles: LAO 45° shows the septum en face; RAO 30° profiles it tangentially. Red markers flag danger zones: the aortic root and the posterior LA wall.',
+          text: 'The final position after withdrawal from the SVC is shown: the sheath runs from the IVC through the right atrium to the fossa; its earlier SVC position is not drawn at the same time. Pulling the system down slowly from the SVC with the curve at about 4 o\'clock (up to 6 o\'clock for a large LA), two jumps are seen: SVC into RA, then over the limbus into the fossa ovalis (felt in over 90% of structurally normal hearts). The fossa ovalis is a thin fibrous zone of about 1.5–2.4 cm² and the safest entry point; it moves down in a large LA. The needle tip settles onto the fossa and tents the membrane. Fluoroscopic landmark catheters: a blue retrograde pigtail seats in the non-coronary cusp (NCC), marking the aortic root; the needle must always stay posteroinferior to the pigtail. The dark-blue decapolar CS catheter lines the coronary sinus, outlining the AV groove (inferior septal border). Cusp rings: green = LCC, orange = RCC, cyan = NCC (pigtail seat). Angles: LAO 45° shows the septum en face; RAO 30° profiles it tangentially. In the source, at RAO 40–50° the fossa lies 1–3 cm below the tip of the aortic pigtail; in the lateral view it lies 3–5 mm below a horizontal line from the aortic root to the spine. In the EP lab the His catheter marks the lower edge of the NCC and the CS catheter the bottom of the septum. Echo targeting: on TEE the bicaval view (90–120°) sets superior-inferior, the short axis (30–50°) anterior-posterior and the four-chamber view (0°) the height above the mitral plane. MitraClip uses the superior-posterior fossa (3.5–4 cm above coaptation), LAA occlusion the inferior-posterior fossa, balloon mitral commissurotomy the centre or slightly low. Red markers flag danger zones: the aortic root and the posterior LA wall (Ducrocq et al., PCR-EAPCI). Per the fluoroscopic anatomy source, the bicaval LAO-caudal view shows the septal orientation and the septum is seen en face in RAO-caudal; for mitral work a puncture posterior to the aorta and toward the SVC sits higher above the mitral plane; the LAA lies in front of the septum, so a posterior puncture gives a more coaxial approach to its ostium (Pighi, Piazza et al., PCR-EAPCI fluoroscopic anatomy).',
           landmark: 'la',
           view: 'lao'
         },
         {
           title: 'Septal crossing • Needle + wire into the LA (RAO 30°)',
-          text: 'After LA confirmation by pressure waveform and contrast, the needle crosses the fossa ovalis and the guidewire is directed into the left superior pulmonary vein (LSPV). RAO 30° confirms the needle points into the LA body rather than the posterior wall. Adjunct TEE/ICE guidance improves safety.',
+          text: 'After LA confirmation by pressure waveform and contrast, the needle crosses the fossa ovalis and the guidewire is directed into the left superior pulmonary vein (LSPV). RAO 30° confirms the needle points into the LA body rather than the posterior wall. Do not advance the sheath until at least two of three signs confirm LA entry: LA pressure trace, bright red oxygenated blood, contrast swirling in the LA. Once across, turn the sheath to 3 o\'clock at once (away from the posterior wall). On echo, a sudden loss of tenting confirms the crossing. Heparin is given after the puncture (usually 3000–5000 U). Stored force on a resistant septum can lunge the whole system across the LA: advance the needle alone first; use an RF needle only when TEE/ICE clearly shows the tent. After a puncture outside the atria, 0.1–0.3 mL of contrast tells needle from sheath perforation; sheath perforation usually needs surgery. A falling blood pressure and reduced heart-border motion after the puncture suggest tamponade (1.2% in an early series): echo-guided pericardiocentesis. If the crossing went outside the heart through the interatrial cleft, do not pull the sheath back; send the patient to surgery. Adjunct TEE/ICE guidance improves safety (Ducrocq et al., PCR-EAPCI).',
           landmark: 'la',
           view: 'rao'
         },
         {
           title: 'Balloon atrial septostomy (static balloon)',
-          text: 'To enlarge an interatrial communication (e.g. duct-dependent circulations, decompression in pulmonary hypertension), the balloon is inflated across the septum and dilated until the septal waist resolves. The progress slider simulates balloon inflation. Fluoroscopy: watch the balloon waist in AP 0° or shallow LAO.',
+          text: 'To enlarge an interatrial communication (e.g. duct-dependent circulations, decompression in pulmonary hypertension), the balloon is inflated across the septum and dilated until the septal waist resolves. The progress slider simulates balloon inflation. Fluoroscopy: watch the balloon waist in AP 0° or shallow LAO. Note: after transseptal puncture TEE/ICE shows a small left-to-right shunt in almost every case; only 15% persist at 6 months, persistence tracks sheath size, and closure is considered for a large defect, right-to-left shunting with hypoxia, or volume overload (Ducrocq et al., PCR-EAPCI).',
           landmark: 'ra',
           view: 'anterior'
         }
@@ -1395,6 +1395,70 @@ export const rawLessons = {
       ]
     }
   },
+  ice: {
+    tr: {
+      title: 'İntrakardiyak eko (ICE) • sağ atriyumdan anatomik kesit',
+      intro: 'Phased-array ICE kateteri femoral venden İVK yoluyla sağ atriyumun ortasına yerleşir; yandan bakan sektör kateterin uzun eksenini içerir. Saat yönünde rotasyon home görünümünden başlayarak sırasıyla daha posterior yapıları getirir. Kesit, atımın o anki fazındaki geometriden hesaplanır; prob ayarları ve görünümler atlasta otomatik kalibre edilmiştir, uzman onayı yoktur. Gerçek B-mod veya Doppler değildir.',
+      steps: [
+        {
+          title: 'ICE kateteri ve home görünümü',
+          text: 'Kateter (ör. 8-10 Fr, 5-10 MHz, dört yönlü uç büküm) femoral venden İVK üzerinden orta RA\'ya nötr konumda ilerletilir; sol femoral ven kullanılırsa sağ taraf cihazlara kalır. Home görünümünde (nötr, saat yönü 15–30°) yakın alanda RA, sonra triküspit kapak ve RV görülür; aort kapağı görüntünün sağında kısa eksende belirir. Mekanik (rotasyonel) ICE ise kateteri çevreleyen 360° kesit verir ve Doppler içermez (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-home' }
+        },
+        {
+          title: 'Saat yönünde tarama: RVOT, LVOT/AV, mitral ve LAA, pulmoner venler',
+          text: 'Yaklaşık 15°\'lik adımlarla saat yönünde döndürün: 30–40° RVOT ve pulmoner kapak, ~45° aort kapağı uzun eksen ve LVOT (TAVI\'de kapak düzlemini gölgelemez), 60–80° septum, LA, mitral kapak ve sağda LAA (mitral renkli Doppler ve LA trombüsü için), 90–100° sol pulmoner venler ("pantolon paçaları", PVİ görünümü), 150–180° sağ pulmoner venler. Görünüm düğmeleriyle atlayın veya rotasyon kaydırıcısıyla kendiniz tarayın (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-mitral-laa' }
+        },
+        {
+          title: 'Septal kısa eksen: transseptal ponksiyonun çalışma görünümü',
+          text: 'Posterior ve sağa büküm ile ek saat yönü rotasyon septal kısa ekseni verir: yakında RA, septum, solda LA, ortada aort kapağı kısa eksen. Transseptal ponksiyon ve ASD/PFO kapatmanın çalışma görünümüdür. Aortu içeren ön düzlemden kaçının; ponksiyondan önce en belirgin çadırlanma noktasını net görün; LA\'daki kılıfı serum veya kontrastla ya da renkli akımla doğrulayın. ASD kapatmada 6 sektörün tamamında en az 5 mm kenar aranır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
+        },
+        {
+          title: 'Görev: ICE görünümünü bulun',
+          text: 'Kateter hedef görünümden uzaklaştırılmış olarak başlar: rotasyon ve bükümler kaydırılmıştır. İlerletme, saat yönü rotasyon ve iki büküm ile hedefi bulun; geri bildirim kesitte görünmesi gereken ve görünmemesi gereken yapılara bakar.',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', task: true }
+        },
+        {
+          title: 'ICE ve TEE: ne zaman hangisi?',
+          text: 'ICE sedasyon veya genel anestezi ve özofagus entübasyonu gerektirmez; girişimci tek başına kullanabilir, floroskopi süresini azaltır ve TAVI\'de kapak düzlemini gölgelemez; SVC\'den aortik ark dalları bile görülebilir. Sınırlamalar: ek venöz giriş, tek kullanımlık kateterin maliyeti, sağ atriyumdan LAA gibi uzak alanların zayıf çözünürlüğü ve tek düzlem; 3B TEE mitralin en-face görünümünde ve kateter ucunu bütünüyle göstermede üstündür (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-lvot' }
+        }
+      ]
+    },
+    en: {
+      title: 'Intracardiac echo (ICE) • anatomical section from the right atrium',
+      intro: 'The phased-array ICE catheter reaches the mid right atrium from the femoral vein through the IVC; its side-looking sector contains the catheter long axis. Clockwise rotation from the home view brings progressively more posterior structures into view. The section is computed from the geometry at the current phase of the beat; probe settings and views were calibrated automatically on this atlas without expert review. It is not real B-mode or Doppler.',
+      steps: [
+        {
+          title: 'The ICE catheter and the home view',
+          text: 'The catheter (for example 8-10 Fr, 5-10 MHz, four-way tip deflection) is advanced in neutral from the femoral vein through the IVC to the mid RA; using the left femoral vein leaves the right side free for devices. In the home view (neutral, clockwise 15–30°) the RA is in the near field, then the tricuspid valve and the RV; the aortic valve appears in short axis at the image right. Mechanical (rotational) ICE instead gives a 360° section around the catheter and has no Doppler (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-home' }
+        },
+        {
+          title: 'Clockwise sweep: RVOT, LVOT/AV, mitral and LAA, pulmonary veins',
+          text: 'Rotate clockwise in steps of about 15°: 30–40° the RVOT and pulmonary valve, ~45° the aortic valve long axis and LVOT (it does not shadow the valve plane during TAVI), 60–80° the septum, LA, mitral valve and the LAA on the right (mitral colour Doppler and LA thrombus), 90–100° the left pulmonary veins ("trouser legs", the PVI view), 150–180° the right pulmonary veins. Jump with the view buttons or sweep yourself with the rotation slider (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-mitral-laa' }
+        },
+        {
+          title: 'Septal short axis: the transseptal working view',
+          text: 'Posterior and rightward deflection with extra clockwise rotation gives the septal short axis: RA near, the septum, the LA on the left, the aortic valve short axis in the centre. It is the working view for transseptal puncture and ASD/PFO closure. Avoid the anterior plane that contains the aorta; see the point of maximal tenting clearly before the puncture; confirm the sheath in the LA with saline, contrast or colour flow. For ASD closure, rims of at least 5 mm are sought in all 6 sectors (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
+        },
+        {
+          title: 'Task: find the ICE view',
+          text: 'The catheter starts away from the target view: rotation and deflections are offset. Find the target with advance, clockwise rotation and the two deflections; the feedback checks the structures that should and should not be in the cut.',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', task: true }
+        },
+        {
+          title: 'ICE and TEE: when which?',
+          text: 'ICE needs no sedation or general anaesthesia and no oesophageal intubation; the interventionist can run it alone, it reduces fluoroscopy time and does not shadow the valve plane during TAVI; from the SVC even the aortic arch branches can be seen. Limitations: an extra venous access, the cost of a single-use catheter, poor far-field resolution of structures such as the LAA from the right atrium, and a single plane; 3D TEE is better for the en-face mitral view and for showing the whole catheter tip (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-lvot' }
+        }
+      ]
+    }
+  },
   tee: {
     tr: {
       title: 'Transözofageal eko (TEE) • anatomik kesit eğitimi',
@@ -1490,7 +1554,8 @@ export const uiTranslations = {
       ['pacemaker', '10', 'Kalp pili elektrotları'],
       ['bachmann', '11', 'Bachmann demeti & pacing'],
       ['echo', '12', 'Transtorasik eko (TTE)'],
-      ['tee', '13', 'Transözofageal eko (TEE)']
+      ['tee', '13', 'Transözofageal eko (TEE)'],
+      ['ice', '14', 'İntrakardiyak eko (ICE)']
     ],
     atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; turkuaz halka ostiyumu işaretler (Bachmann demeti değildir, bu modda gizlidir).',
     atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
@@ -1632,7 +1697,8 @@ export const uiTranslations = {
       ['pacemaker', '10', 'Pacemaker leads'],
       ['bachmann', '11', 'Bachmann bundle & pacing'],
       ['echo', '12', 'Transthoracic echo (TTE)'],
-      ['tee', '13', 'Transoesophageal echo (TEE)']
+      ['tee', '13', 'Transoesophageal echo (TEE)'],
+      ['ice', '14', 'Intracardiac echo (ICE)']
     ],
     atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the teal ring marks its orifice (it is not Bachmann\'s bundle, which is hidden in this mode).',
     atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',

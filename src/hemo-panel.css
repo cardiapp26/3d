@@ -37,6 +37,14 @@
 .hemo-tab:focus-visible{outline:2px solid #299f8a;outline-offset:-2px}
 .hemo-view{display:grid;gap:8px;min-width:0}
 .hemo-view[hidden]{display:none}
+.hemo-pv-controls{display:grid;gap:6px}
+.hemo-pv-controls[hidden]{display:none}
+.hemo-pv-slider{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) 40px;align-items:center;gap:6px;font-size:11px;color:#55704f}
+.hemo-pv-slider input{width:100%;accent-color:#315d4d;margin:0}
+.hemo-pv-out{font-variant-numeric:tabular-nums;font-weight:600;color:#263e3b;text-align:right}
+.hemo-pv-condition{display:flex;align-items:center;gap:6px}
+.hemo-pv-controls .hemo-pvc{justify-self:start;margin-left:0}
+.hemo-panel .hemo-pv-explain{margin:0}
 
 /* Controls under the canvas */
 .hemo-controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}

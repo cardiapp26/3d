@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTURES } from './echo-anatomy.js';
-import { TTE_VIEWS, TEE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset } from './echo-views.js';
-import { tteFrame, teeFrame } from './echo-probe.js';
+import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset, icePath, icePreset } from './echo-views.js';
+import { tteFrame, teeFrame, iceFrame } from './echo-probe.js';
 import { sectionMeshes } from './echo-section.js';
 import { evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE } from './echo-training.js';
 import { drawEchoSector } from './echo-renderer.js';
@@ -21,11 +21,13 @@ const MIN_SECTION_INTERVAL = 30;   // ms between sections while the heart beats
  * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en' }} deps
  */
 export function createEchoMode({ heart, mount, getLang }) {
-  let active = false, anatomy = null, items = null, path = null, hull = null, chest = null, panel = null, overlay = null;
+  let active = false, anatomy = null, items = null, path = null, icePathData = null, hull = null, chest = null, panel = null, overlay = null;
+  const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
+  const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
     modality: 'tte', view: 'plax', style: 'anatomy', labels: true, sectorAngle: SECTOR_ANGLE,
     locked: null,  // modality fixed by the app mode (TTE or TEE); the panel then hides its switch
-    tte: { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 }, tee: null, depth: 4,
+    tte: { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 }, tee: null, ice: null, depth: 4,
     task: null,  // { target: viewId, done: boolean, start: probe pose at the start }
     frozen: false  // stopped with the panel's freeze button (the badge says so)
   };
@@ -50,7 +52,8 @@ export function createEchoMode({ heart, mount, getLang }) {
     hull = HULL_IDS.flatMap(getMeshes);
     chest = heart.withRestPose(() => chestSurface(hull));
     path = teePath(anatomy);
-    overlay = createOverlay(path, chest);
+    icePathData = icePath(anatomy);
+    overlay = createOverlay(path, chest, icePathData);
     overlay.group.visible = active;
     heart.addOverlay(overlay.group);
     return true;
@@ -65,17 +68,22 @@ export function createEchoMode({ heart, mount, getLang }) {
 
   function currentFrame() {
     if (state.modality === 'tte') return tteFrame(baseOf(state.view), state.tte);
+    if (state.modality === 'ice') return iceFrame(icePathData, state.ice);
     return teeFrame(path, state.tee);
   }
 
   function selectView(id, { keepTask = false } = {}) {
     const view = viewById(id);
     if (!view || !ensureAnatomy()) return;
-    state.modality = TTE_VIEWS.includes(view) ? 'tte' : 'tee';
+    state.modality = modalityOf(view);
     state.view = id;
     if (state.modality === 'tte') {
       state.tte = { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 };
       state.depth = baseOf(id).depth;
+    } else if (state.modality === 'ice') {
+      const preset = icePreset(id);
+      state.ice = { advance: preset.advance, rotation: preset.rotation, anteroposterior: preset.anteroposterior, leftRight: preset.leftRight };
+      state.depth = preset.depth;
     } else {
       const preset = teePreset(id, anatomy, path);
       state.tee = { ...preset };
@@ -90,20 +98,21 @@ export function createEchoMode({ heart, mount, getLang }) {
   function startTask(modality = state.modality, { seed = null } = {}) {
     if (!ensureAnatomy()) return;
     const random = seed === null ? Math.random : seededRandom(seed);
-    const views = modality === 'tte' ? TTE_VIEWS : TEE_VIEWS;
+    const views = VIEWS[modality] || TTE_VIEWS;
     const pool = views.filter(v => v.id !== state.task?.target);
     const target = pool[Math.floor(random() * pool.length)];
     selectView(target.id, { keepTask: true });
     const jitter = (range) => Math.round((random() * 2 - 1) * range);
-    const preset = { tte: { ...state.tte }, tee: state.tee && { ...state.tee } };
+    const preset = { tte: { ...state.tte }, tee: state.tee && { ...state.tee }, ice: state.ice && { ...state.ice } };
     // A start that already shows the target is no task: draw again (a few tries).
     for (let attempt = 0; attempt < 8; attempt++) {
       if (modality === 'tte') state.tte = { ...preset.tte, rotation: jitter(45), tilt: jitter(20), rock: jitter(15) };
+      else if (modality === 'ice') state.ice = { ...preset.ice, rotation: preset.ice.rotation + jitter(50), anteroposterior: jitter(15), leftRight: jitter(15) };
       else state.tee = { ...preset.tee, advance: Math.min(1, Math.max(0, preset.tee.advance + jitter(6) / 100)), omega: Math.max(0, Math.min(180, preset.tee.omega + jitter(60))), rotation: jitter(30) };
       if (!solved(target)) break;
     }
     // "Back" during a task returns to this starting pose, not to the answer.
-    state.task = { target: target.id, done: false, start: { tte: { ...state.tte }, tee: state.tee && { ...state.tee } } };
+    state.task = { target: target.id, done: false, start: { tte: { ...state.tte }, tee: state.tee && { ...state.tee }, ice: state.ice && { ...state.ice } } };
     refresh(true);
   }
 
@@ -151,7 +160,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     heart.requestRender();
     const playing = heart.getCycleState().playing;
     if (playing) state.frozen = false;
-    panel?.render({ state, result, view, playing, frame, presetOmega: state.modality === 'tee' ? teePreset(view.id, anatomy, path)?.omega : null });
+    panel?.render({ state, result, view, playing, frame, presetOmega: state.modality === 'tee' ? teePreset(view.id, anatomy, path)?.omega : state.modality === 'ice' ? icePreset(view.id)?.rotation : null });
     drawEchoSector(panel?.canvas, section, {
       style: state.style, sectorAngle: state.sectorAngle, depth: state.depth, lang,
       info: state.task ? { tr: 'Görev: görünümü bulun', en: 'Task: find the view' } : view.title,
@@ -164,10 +173,10 @@ export function createEchoMode({ heart, mount, getLang }) {
     if (panel) return panel;
     panel = createEchoPanel(mount, {
       getLang,
-      views: { tte: TTE_VIEWS, tee: TEE_VIEWS },
+      views: VIEWS,
       // Picking a view (allowed once a task is solved) ends the task.
       onView: id => selectView(id),
-      onModality: modality => selectView((modality === 'tte' ? TTE_VIEWS : TEE_VIEWS)[0].id),
+      onModality: modality => selectView((VIEWS[modality] || TTE_VIEWS)[0].id),
       onControl: (group, key, value) => {
         if (group === 'probe') state[state.modality] = { ...state[state.modality], [key]: value };
         else state[key] = value;
@@ -177,6 +186,7 @@ export function createEchoMode({ heart, mount, getLang }) {
         if (!state.task) { selectView(state.view); return; }
         state.tte = { ...state.task.start.tte };
         state.tee = state.task.start.tee && { ...state.task.start.tee };
+        state.ice = state.task.start.ice && { ...state.task.start.ice };
         state.task.done = false;
         refresh(true);
       },
@@ -203,7 +213,7 @@ export function createEchoMode({ heart, mount, getLang }) {
       mount.hidden = false;
       if (!ensureAnatomy()) return;
       overlay.group.visible = true;
-      if (state.modality !== modality) selectView((modality === 'tee' ? TEE_VIEWS : TTE_VIEWS)[0].id);
+      if (state.modality !== modality) selectView((VIEWS[modality] || TTE_VIEWS)[0].id);
       else refresh(true);
     },
     exit() {
@@ -215,7 +225,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     /** Lesson step: { modality, view, task }. */
     applyStep(step = {}) {
       if (!active || !ensureAnatomy()) return;
-      const views = step.modality === 'tee' ? TEE_VIEWS : TTE_VIEWS;
+      const views = VIEWS[step.modality] || TTE_VIEWS;
       if (step.task) { state.modality = step.modality || 'tte'; startTask(state.modality); }
       else selectView(step.view || views[0].id);
     },
@@ -228,7 +238,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     },
     setLanguage(lang) { panel?.setLanguage(lang); refresh(true); },
     // Diagnostics for tests.
-    getState: () => ({ ...state, tte: { ...state.tte }, tee: state.tee && { ...state.tee } }),
+    getState: () => ({ ...state, tte: { ...state.tte }, tee: state.tee && { ...state.tee }, ice: state.ice && { ...state.ice } }),
     // lengths: the live (current phase) section; achieved/missing/wrong: the rest-pose judgement.
     getResult: () => lastResult && { achieved: lastResult.result.achieved, missing: lastResult.result.missing, wrong: lastResult.result.wrong, lengths: lastResult.live, stats: lastResult.section.stats, view: lastResult.view.id, frame: lastResult.frame },
     selectView, startTask, isActive: () => active
@@ -248,7 +258,7 @@ function seededRandom(seed) {
 }
 
 /** 3D probe, imaging fan, (TTE) schematic chest surface and (TEE) oesophagus. */
-function createOverlay(path, chest) {
+function createOverlay(path, chest, icePathData) {
   const group = new THREE.Group();
   group.name = 'Echo probe and imaging plane';
   group.visible = false;
@@ -275,7 +285,11 @@ function createOverlay(path, chest) {
   chestShell.name = 'Chest surface (schematic ellipsoid, no ribs)';
   chestShell.position.set(...chest.center);
   chestShell.scale.set(...chest.radii);
-  group.add(fan, edge, tteProbe, marker, oesophagus, shaft, chestShell);
+  // ICE catheter: from the IVC below into the RA up to its tip.
+  const iceCatheter = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ color: 0x2f3d39, roughness: 0.45 }));
+  iceCatheter.name = 'ICE catheter (schematic)';
+  group.add(fan, edge, tteProbe, marker, oesophagus, shaft, chestShell, iceCatheter);
+  let iceKey = '';
   let shaftKey = '';
 
   function update(frame, state) {
@@ -298,9 +312,19 @@ function createOverlay(path, chest) {
     edge.geometry.setFromPoints(pts);
     // Index marker on the screen-right side of the transducer.
     marker.position.copy(o).addScaledVector(l, 0.14);
-    const tte = state.modality === 'tte';
-    tteProbe.visible = tte; chestShell.visible = tte; oesophagus.visible = !tte; shaft.visible = !tte;
-    if (tte) {
+    const tte = state.modality === 'tte', ice = state.modality === 'ice';
+    tteProbe.visible = tte; chestShell.visible = tte; oesophagus.visible = !tte && !ice; shaft.visible = !tte && !ice; iceCatheter.visible = ice;
+    if (ice) {
+      const key = [...frame.tip].map(v => v.toFixed(3)).join('_');
+      if (key !== iceKey && icePathData) {
+        iceKey = key;
+        const base = new THREE.Vector3(...icePathData.base);
+        const below = base.clone().add(new THREE.Vector3(0, -1.2, 0));
+        const tip = new THREE.Vector3(...frame.tip);
+        iceCatheter.geometry.dispose();
+        iceCatheter.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([below, base, base.clone().lerp(tip, 0.5), tip]), 40, 0.045, 8, false);
+      }
+    } else if (tte) {
       tteProbe.position.copy(o).addScaledVector(b, -0.27);
       tteProbe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().negate());
     } else {

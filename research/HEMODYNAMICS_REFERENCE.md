@@ -392,3 +392,11 @@ Used for the lesson step "Right heart catheterisation (RHC)". Paraphrased, not c
 - Fidelity: tight connections, short stiff tubing, de-bubbled and calibrated lines; underdamping produces ringing.
 - Wedge confirmation: clear a and v waves timed to the ECG or LV pressure, phase shift of the v wave to the LV downstroke, end-hole measurement, saturation > 95%; a high or doubtful wedge prompts transseptal LA measurement.
 - Saturation run: a PA step-up of more than 7% over the RA suggests an atrial-level left-to-right shunt; mixed venous = (3 SVC + IVC) / 4 in ASD; pulmonary vein saturation assumed 95% when not sampled; ASD with Qp/Qs > 1.5 principally requires closure.
+
+## Left heart catheterisation (Source 5)
+
+Used for the lesson step "Left heart catheterisation (LHC)". Paraphrased:
+
+- LVEDP is read at the end of the a wave, at the R-wave intersection with the LV curve; isovolumetric contraction begins 15-30 ms after the QRS.
+- Femoral artery sheath pressure is delayed and amplified relative to central aortic pressure and artificially increases the mean LV-Ao gradient; it cannot give accurate gradients with aortoiliac disease.
+- Greater accuracy: a double-lumen catheter or two arterial catheters for simultaneous LV and central aortic pressure.
