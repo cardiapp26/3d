@@ -56,12 +56,35 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     await page.evaluate(() => { window.cardiaEp.live.advance(6000); });
     assert.equal((await page.evaluate(() => window.cardiaEp.live.intervals())).rr, 800, 'sinus after cardioversion');
 
+    // Hidden case: the name is withheld until the diagnosis is answered; hints follow.
+    await page.evaluate(() => window.cardiaEp.live.setCase('flutter-cti', { hidden: true }));
+    assert.equal(await page.locator('[data-ep-live-case]').inputValue(), 'hidden', 'name hidden');
+    await page.locator('[data-ep-live-diagnose]').click();
+    await page.locator('[data-ep-live-answer=avnrt-typical]').click();
+    assert.match(await page.locator('[data-ep-live-quiz] .ep-pace-result').textContent(), /Yanlış\. Doğru yanıt: Tipik \(CTI bağımlı\) atriyal flutter/);
+    assert.equal(await page.locator('[data-ep-live-case]').inputValue(), 'flutter-cti', 'name revealed after the answer');
+    assert.equal(await page.locator('[data-ep-live-hint-list] li').count() >= 3, true, 'hints shown');
+
+    // RF: induce flutter, ablate the CTI; the lesion ends it.
+    await page.locator('[data-ep-live-stim=s1]').fill('250');
+    await page.locator('[data-ep-live-action=burst]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.cardiaEp.live.advance(5000); });
+    assert.equal(await page.evaluate(() => window.cardiaEp.live.status().flutterActive), true, 'flutter induced');
+    await page.locator('[data-ep-live-target]').selectOption('cti');
+    await page.locator('[data-ep-live-rf]').click();   // resumes the sweep
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.cardiaEp.live.advance(5000); });
+    assert.equal(await page.evaluate(() => window.cardiaEp.live.status().flutterActive), false, 'CTI lesion ends flutter');
+    assert.match(await page.locator('[data-ep-live-lesion]').textContent(), /CTI bloğu/);
+    assert.equal(await page.evaluate(() => window.cardiaEp.live.getState().rfOn), false, 'RF stops when the lesion completes');
+
     // Back to a lesson section.
     await page.locator('[data-ep-section=diagnosis]').click();
     assert.equal(await page.locator('.ep-lesson').isVisible(), true);
     assert.equal(await page.locator('[data-ep-live]').isHidden(), true);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: live tab, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, back to lessons');
+    console.log('PASS ep-live-browser: live tab, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, back to lessons');
   } finally {
     await browser.close();
   }

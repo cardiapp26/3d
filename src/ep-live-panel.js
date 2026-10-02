@@ -3,10 +3,13 @@
  * driven by the conduction model (ep-live-model.js), with a programmable
  * stimulator (site, S1 × N, S2-S4, burst, pace and pause), DC cardioversion,
  * freeze and review of the last 30 s, sweep speed, interval readout and
- * vertical calipers. The strip is drawn by drawEgm on the visible window.
+ * vertical calipers, RF ablation at a chosen catheter-tip target, and a
+ * hidden-case diagnosis quiz with expert hints. The strip is drawn by
+ * drawEgm on the visible window.
  */
 import { drawEgm, timeAtX, channelAtY } from './ep-egm.js';
-import { LIVE_CASES, LIVE_CHANNELS, LIVE_SITES, createLiveHeart, planTrain, liveIntervals } from './ep-live-model.js';
+import { LIVE_CASES, LIVE_CHANNELS, LIVE_SITES, ABLATION_TARGETS, createLiveHeart, planTrain, liveIntervals } from './ep-live-model.js';
+import { LIVE_TEXT, LIVE_CASE_TEXT } from './ep-live-text.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, caliperText } from './ep-user-caliper.js';
 
 const PX_PER_MM = 3.78;            // CSS pixels per millimetre (96 dpi)
@@ -17,29 +20,6 @@ const KEEP_MS = 45000;             // event memory kept by the model
 const nextFrame = (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : 0);
 const cancelFrame = (id) => { if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id); };
 
-const TEXT = {
-  tr: {
-    caseLabel: 'Substrat', run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper',
-    stim: 'Stimülatör', site: 'Uyarı yeri', s1: 'S1 (ms)', n: 'S1 sayısı', pace: 'Uyar (S1 + ekstra)', burst: 'Burst (yalnız S1)',
-    pacePause: 'Uyar ve dondur', stop: 'Uyarıyı durdur', shock: 'Kardiyoversiyon',
-    sites: { hra: 'HRA', 'cs-prox': 'CS proksimal', 'cs-dist': 'CS distal', rv: 'RV apeks' },
-    cases: { normal: 'Normal iletim', 'avnrt-typical': 'Çift AV nodal yol (AVNRT substratı)', 'ort-left': 'Gizli sol lateral aksesuar yol', 'wpw-left': 'Manifest sol lateral aksesuar yol (WPW)' },
-    intervals: 'Son atım', none: 'yok', frozen: 'Donduruldu: geri sarmak için kaydırın; ölçüm için Kaliper.',
-    hint: 'Uyarı dizisi şimdiden 300 ms sonra başlar. Ekstrastimulus 0 ise kullanılmaz.',
-    delivered: (txt) => `Verildi: ${txt}`, shocked: 'Senkronize DC şok verildi; sinüs ritmi bekleniyor.', stopped: 'Uyarı durduruldu.'
-  },
-  en: {
-    caseLabel: 'Substrate', run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers',
-    stim: 'Stimulator', site: 'Pacing site', s1: 'S1 (ms)', n: 'S1 count', pace: 'Pace (S1 + extras)', burst: 'Burst (S1 only)',
-    pacePause: 'Pace and freeze', stop: 'Stop pacing', shock: 'Cardiovert',
-    sites: { hra: 'HRA', 'cs-prox': 'CS proximal', 'cs-dist': 'CS distal', rv: 'RV apex' },
-    cases: { normal: 'Normal conduction', 'avnrt-typical': 'Dual AV nodal pathways (AVNRT substrate)', 'ort-left': 'Concealed left lateral accessory pathway', 'wpw-left': 'Manifest left lateral accessory pathway (WPW)' },
-    intervals: 'Last beat', none: 'n/a', frozen: 'Frozen: scroll back with the slider; measure with Calipers.',
-    hint: 'A train starts 300 ms from now. An extrastimulus of 0 is off.',
-    delivered: (txt) => `Delivered: ${txt}`, shocked: 'Synchronized DC shock delivered; sinus rhythm expected.', stopped: 'Pacing stopped.'
-  }
-};
-
 export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const el = (tag, cls, attrs = {}) => {
     const n = doc.createElement(tag);
@@ -47,14 +27,29 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
     return n;
   };
-  const T = () => TEXT[getLang() === 'en' ? 'en' : 'tr'];
-  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '' };
+  const L = () => (getLang() === 'en' ? 'en' : 'tr');
+  const T = () => LIVE_TEXT[L()];
+  const caseText = (id) => LIVE_CASE_TEXT[id][L()];
+  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '',
+    hidden: false, quizOpen: false, answer: null, showHints: false, rfOn: false, rfTarget: 'slow-pathway', lesion: '' };
   let heart = createLiveHeart(state.caseId);
   let simNow = 0, lastWall = null, raf = 0, lastTrim = 0, drawn = null;
 
   const root = el('section', 'ep-live', { 'data-ep-live': '' });
   const caseRow = el('label', 'ep-case'); const caseName = el('span'); const caseSelect = el('select', '', { 'data-ep-live-case': '' });
   caseRow.append(caseName, caseSelect);
+  // Hidden case, diagnosis quiz and hints.
+  const caseBar = el('div', 'ep-pace-actions ep-live-casebar');
+  const surpriseBtn = el('button', 'ep-pace-retry', { type: 'button', 'data-ep-live-surprise': '' });
+  const diagnoseBtn = el('button', 'ep-pace-retry', { type: 'button', 'data-ep-live-diagnose': '' });
+  const hintsBtn = el('button', 'ep-pace-retry', { type: 'button', 'data-ep-live-hints': '' });
+  caseBar.append(surpriseBtn, diagnoseBtn, hintsBtn);
+  const quiz = el('section', 'ep-pace ep-live-quiz', { 'data-ep-live-quiz': '' });
+  const quizQ = el('p', 'ep-pace-title');
+  const quizChoices = el('div', 'ep-pace-answers', { role: 'group' });
+  const quizResult = el('p', 'ep-pace-result', { 'aria-live': 'polite' });
+  quiz.append(quizQ, quizChoices, quizResult);
+  const hintsBox = el('ul', 'ep-live-hints', { 'data-ep-live-hint-list': '' });
   const canvas = el('canvas', 'ep-live-canvas', { role: 'img' });
   const bar = el('div', 'ep-view');
   const runBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-run': '' });
@@ -80,7 +75,15 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const paceBtn = button('pace', 'ep-pace-deliver'), burstBtn = button('burst', 'ep-pace-retry'), pausePaceBtn = button('pace-pause', 'ep-pace-retry'), stopBtn = button('stop', 'ep-pace-retry'), shockBtn = button('shock', 'ep-pace-retry ep-live-shock');
   const hint = el('p', 'ep-pace-note');
   stimBox.append(stimTitle, grid, actions, hint);
-  root.append(caseRow, bar, canvas, readout, info, stimBox);
+  // RF ablation console.
+  const ablBox = el('section', 'ep-pace ep-live-ablation');
+  const ablTitle = el('h4', 'ep-pace-title');
+  const targetSel = el('select', '', { 'data-ep-live-target': '' });
+  const targetField = field('target', targetSel);
+  const rfBtn = el('button', 'ep-pace-deliver ep-live-rf', { type: 'button', 'data-ep-live-rf': '' });
+  const ablStatus = el('p', 'ep-pace-result', { 'aria-live': 'polite', 'data-ep-live-lesion': '' });
+  ablBox.append(ablTitle, targetField, rfBtn, ablStatus);
+  root.append(caseRow, caseBar, quiz, hintsBox, bar, canvas, readout, info, stimBox, ablBox);
 
   const spanMs = () => {
     const plot = Math.max(200, (canvas.clientWidth || 800) - 64);
@@ -88,10 +91,11 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   };
   const viewEnd = () => (state.running ? simNow : state.frozenAt - state.back);
 
-  function setCase(id) {
+  function setCase(id, { hidden = false } = {}) {
     state.caseId = LIVE_CASES[id] ? id : 'normal';
     heart = createLiveHeart(state.caseId);
     simNow = 0; lastTrim = 0; state.back = 0; state.caliper = noCaliper(); state.status = '';
+    Object.assign(state, { hidden, quizOpen: false, answer: null, showHints: false, rfOn: false, lesion: '' });
     advance(2500);   // open on a few sinus beats
     if (!state.running) state.frozenAt = simNow;
     render();
@@ -103,6 +107,14 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     heart.advanceTo(simNow);
     if (state.pauseAt != null && simNow >= state.pauseAt) { state.pauseAt = null; freeze(true); }
     if (simNow - lastTrim > 5000) { heart.trim(simNow - KEEP_MS); lastTrim = simNow; }
+    // A completed lesion ends the RF application and reports its effect.
+    const rf = heart.rf();
+    if (state.rfOn && rf && rf.effect !== undefined) {
+      heart.rfStop();
+      state.rfOn = false;
+      state.lesion = T().effects[rf.effect || 'none'];
+      renderAblation();
+    }
   }
 
   function freeze(flag) {
@@ -137,7 +149,35 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   speedSel.addEventListener('change', () => { state.speed = Number(speedSel.value) || 25; render(); });
   review.addEventListener('input', () => { state.back = Number(review.value); state.caliper = noCaliper(); draw(); });
   calBtn.addEventListener('click', () => { state.caliperOn = !state.caliperOn; state.caliper = noCaliper(); render(); });
-  caseSelect.addEventListener('change', () => setCase(caseSelect.value));
+  caseSelect.addEventListener('change', () => { if (LIVE_CASES[caseSelect.value]) setCase(caseSelect.value); });
+  surpriseBtn.addEventListener('click', () => {
+    const ids = Object.keys(LIVE_CASES).filter((id) => id !== state.caseId);
+    setCase(ids[Math.floor(Math.random() * ids.length)], { hidden: true });
+  });
+  diagnoseBtn.addEventListener('click', () => { state.quizOpen = !state.quizOpen; renderQuiz(); });
+  hintsBtn.addEventListener('click', () => { state.showHints = !state.showHints; renderQuiz(); });
+  quizChoices.addEventListener('click', (event) => {
+    const id = event.target.closest?.('[data-ep-live-answer]')?.getAttribute('data-ep-live-answer');
+    if (!id || state.answer) return;
+    state.answer = { choice: id, correct: id === state.caseId };
+    state.hidden = false;
+    state.showHints = true;
+    render();
+  });
+  targetSel.addEventListener('change', () => { state.rfTarget = targetSel.value; });
+  rfBtn.addEventListener('click', () => {
+    if (state.rfOn) {
+      heart.rfStop();
+      state.rfOn = false;
+      state.lesion = L() === 'en' ? 'RF stopped before a lesion formed.' : 'RF lezyon oluşmadan durduruldu.';
+    } else {
+      if (!state.running) freeze(false);
+      heart.rfStart(state.rfTarget, simNow);
+      state.rfOn = true;
+      state.lesion = T().rfRunning(T().targets[state.rfTarget]);
+    }
+    renderAblation();
+  });
   canvas.addEventListener('click', (event) => {
     if (!state.caliperOn || !drawn) return;
     const rect = canvas.getBoundingClientRect();
@@ -162,11 +202,46 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     readout.textContent = `${t.intervals}: PP ${f(iv.pp)} · RR ${f(iv.rr)} · AH ${f(iv.ah)} · HV ${f(iv.hv)} · VA ${f(iv.va)}`;
   }
 
+  const option = (value, text) => { const o = doc.createElement('option'); o.value = value; o.textContent = text; return o; };
+
+  function renderQuiz() {
+    const t = T();
+    surpriseBtn.textContent = t.surprise;
+    diagnoseBtn.textContent = t.diagnose;
+    diagnoseBtn.setAttribute('aria-pressed', String(state.quizOpen));
+    hintsBtn.textContent = t.hints;
+    hintsBtn.setAttribute('aria-pressed', String(state.showHints));
+    quiz.hidden = !state.quizOpen;
+    quizQ.textContent = t.question;
+    quizChoices.replaceChildren(...Object.keys(LIVE_CASES).map((id) => {
+      const b = el('button', '', { type: 'button', 'data-ep-live-answer': id });
+      b.textContent = caseText(id).name;
+      if (state.answer) b.setAttribute('aria-pressed', String(id === state.answer.choice));
+      if (state.answer && id === state.caseId) b.className = 'is-correct';
+      return b;
+    }));
+    quizResult.textContent = !state.answer ? '' : state.answer.correct ? t.correct : t.wrong(caseText(state.caseId).name);
+    hintsBox.hidden = !state.showHints;
+    hintsBox.replaceChildren(...caseText(state.caseId).hints.map((h) => { const li = el('li'); li.textContent = h; return li; }));
+  }
+
+  function renderAblation() {
+    const t = T();
+    ablTitle.textContent = t.ablation;
+    targetSel.replaceChildren(...ABLATION_TARGETS.map((id) => option(id, t.targets[id])));
+    targetSel.value = state.rfTarget;
+    rfBtn.textContent = state.rfOn ? t.rfOff : t.rfOn;
+    rfBtn.setAttribute('aria-pressed', String(state.rfOn));
+    ablStatus.textContent = state.lesion;
+  }
+
   function render() {
-    const t = T(), lang = getLang() === 'en' ? 'en' : 'tr';
+    const t = T(), lang = L();
     caseName.textContent = t.caseLabel;
-    caseSelect.replaceChildren(...Object.keys(LIVE_CASES).map((id) => { const o = doc.createElement('option'); o.value = id; o.textContent = t.cases[id]; return o; }));
-    caseSelect.value = state.caseId;
+    caseSelect.replaceChildren(...(state.hidden ? [option('hidden', t.hidden)] : []), ...Object.keys(LIVE_CASES).map((id) => option(id, caseText(id).name)));
+    caseSelect.value = state.hidden ? 'hidden' : state.caseId;
+    renderQuiz();
+    renderAblation();
     siteSel.replaceChildren(...LIVE_SITES.map((id) => { const o = doc.createElement('option'); o.value = id; o.textContent = t.sites[id]; return o; }));
     siteSel.value = siteSel.dataset.value || 'hra';
     speedSel.replaceChildren(...SPEEDS.map((v) => { const o = doc.createElement('option'); o.value = String(v); o.textContent = `${v} mm/s`; return o; }));
@@ -213,7 +288,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     },
     /** Test hooks: deterministic stepping without the animation loop. */
     advance(ms) { advance(ms); if (!state.running) { state.frozenAt = simNow; state.back = 0; } draw(); },
-    getState: () => ({ caseId: state.caseId, running: state.running, speed: state.speed, now: simNow, caliper: state.caliperOn ? { ...state.caliper } : null }),
+    getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper } : null }),
+    status: () => heart.status(),
     intervals: () => liveIntervals(heart.events(viewEnd() - 2500, viewEnd())),
     setCase
   };

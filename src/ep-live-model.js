@@ -5,47 +5,21 @@
  * activation time and an effective refractory period; the AV node pathways
  * conduct decrementally (shorter recovery, longer AH). A wavefront that
  * meets refractory tissue blocks; one that reaches recovered tissue
- * conducts, so echoes and reentry (AVNRT, orthodromic AVRT) arise from the
- * timing of the stimuli instead of being scripted. Atrial and ventricular
- * wavefronts also conceal into the pathways they reach. Designed teaching
- * timings (ms), not patient physiology.
+ * conducts, so echoes and reentry (typical and atypical AVNRT, orthodromic
+ * AVRT, PJRT) arise from the timing of the stimuli instead of being
+ * scripted. Atrial and ventricular wavefronts also conceal into the
+ * pathways they reach. Focal AT, CTI flutter, AF and scar VT start after
+ * rapid capture (substrates.js triggers) and run until cardioversion (focal
+ * AT is automatic and resumes after a shock) or an RF lesion removes their
+ * substrate. Designed teaching timings (ms), not patient physiology.
  */
 import { ev, far, mono } from './ep-beats.js';
+import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS } from './ep-live-substrates.js';
 
+export { LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS };
 export const LIVE_CHANNELS = Object.freeze(['ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'rv']);
 export const LIVE_SITES = Object.freeze(['hra', 'cs-prox', 'cs-dist', 'rv']);
 const ATRIAL_CHANNELS = ['hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12'];
-
-// Atrial activation sequences per origin: channel A times after the origin's
-// activation; avj: arrival at the AV junction; ap: arrival at the left
-// lateral pathway insertion; p: surface P onset (sign: retrograde P negative).
-const ORIGINS = Object.freeze({
-  sinus: { hra: 0, 'his-p': 32, 'his-d': 35, 'cs-910': 45, 'cs-78': 55, 'cs-56': 63, 'cs-34': 72, 'cs-12': 80, avj: 35, ap: 75, p: 0, pAmp: 0.22 },
-  hra: { hra: 2, 'his-p': 34, 'his-d': 37, 'cs-910': 47, 'cs-78': 57, 'cs-56': 65, 'cs-34': 74, 'cs-12': 82, avj: 37, ap: 77, p: 4, pAmp: 0.22 },
-  'cs-prox': { 'cs-910': 2, 'cs-78': 12, 'his-d': 18, 'his-p': 20, 'cs-56': 22, 'cs-34': 32, 'cs-12': 42, hra: 55, avj: 15, ap: 40, p: 6, pAmp: -0.14 },
-  'cs-dist': { 'cs-12': 2, 'cs-34': 12, 'cs-56': 22, 'cs-78': 32, 'cs-910': 42, 'his-d': 55, 'his-p': 57, hra: 80, avj: 55, ap: 5, p: 10, pAmp: 0.12 },
-  // Retrograde through the AV node: septal (His) first, concentric.
-  'avn-fast': { 'his-d': 0, 'his-p': -2, 'cs-910': 10, 'cs-78': 18, 'cs-56': 26, 'cs-34': 36, 'cs-12': 46, hra: 25, avj: 0, ap: 45, p: 5, pAmp: -0.15 },
-  // Retrograde through a left lateral pathway: CS distal first, eccentric.
-  'ap-left': { 'cs-12': 0, 'cs-34': 14, 'cs-56': 28, 'cs-78': 42, 'cs-910': 56, 'his-d': 62, 'his-p': 64, hra: 85, avj: 62, ap: 0, p: 10, pAmp: -0.15 }
-});
-
-const BASE = Object.freeze({
-  sinusCl: 800, aErp: 220, vErp: 240, hpsErp: 260, hv: 45,
-  fp: { ah: 75, dec: 110, tau: 110, erp: 300, retro: 75, retroErp: 300 },
-  sp: null, ap: null
-});
-
-/** Cases of the live laboratory (phase 1: nodal and accessory pathway substrates). */
-export const LIVE_CASES = Object.freeze({
-  normal: { ...BASE },
-  // Dual AV nodal physiology: the fast pathway's ERP is longer than the slow pathway's.
-  'avnrt-typical': { ...BASE, fp: { ...BASE.fp, erp: 380 }, sp: { ah: 260, dec: 90, tau: 50, erp: 250 } },
-  // Concealed left lateral pathway: retrograde only.
-  'ort-left': { ...BASE, fp: { ...BASE.fp, erp: 250, dec: 120, tau: 130 }, ap: { ante: false, retro: 70, erp: 180, anteDelay: 25 } },
-  // Manifest left lateral pathway: pre-excitation in sinus rhythm.
-  'wpw-left': { ...BASE, ap: { ante: true, retro: 70, erp: 280, anteDelay: 25 } }
-});
 
 /** Stimulus train: S1 × n then the extrastimuli (each coupled to the previous stimulus; 0 or empty = off). */
 export function planTrain({ site, start, s1, n, extras = [] }) {
@@ -61,22 +35,42 @@ export function planTrain({ site, start, s1, n, extras = [] }) {
   return out;
 }
 
-/** Decremental conduction: the AH grows as the pathway's recovery time approaches its ERP. */
-const decremental = (path, recovery) => path.ah + path.dec * Math.exp(-(recovery - path.erp) / path.tau);
+/** Decremental conduction: the delay grows as the tissue's recovery time approaches its ERP. */
+const decremental = (base, dec, tau, erp, recovery) => base + dec * Math.exp(-(recovery - erp) / tau);
+
+// Small deterministic PRNG (mulberry32) for the fibrillatory activations.
+function prng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let x = Math.imul(a ^ (a >>> 15), 1 | a);
+    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 /**
- * One running heart for a case.
- * @returns {{ caseId: string, now: () => number, advanceTo(t: number): void, stimulate(list: {t: number, site: string}[]): void,
- *   cardiovert(t: number): void, events(from: number, to: number): Object<string, object[]>, beats(): object[] }}
+ * One running heart for a case (its own mutable copy of the case parameters).
+ * @returns {object} advanceTo, stimulate, stopPacing, cardiovert, rfStart, rfStop, events, trim, beats, status, lesions
  */
 export function createLiveHeart(caseId = 'normal') {
-  const p = LIVE_CASES[caseId] || LIVE_CASES.normal;
+  const id = LIVE_CASES[caseId] ? caseId : 'normal';
+  const p = JSON.parse(JSON.stringify(LIVE_CASES[id]));
+  p.avBlock = false;
+  const rand = prng(id.length * 7919 + 17);
   const queue = [];
   const log = Object.fromEntries(LIVE_CHANNELS.map((ch) => [ch, []]));
-  const last = { atrium: -1e9, fp: -1e9, sp: -1e9, his: -1e9, v: -1e9, ap: -1e9 };
-  const beats = [];   // per ventricular activation: { v, h, a, origin }
+  // The slow pathway keeps both ends: spTop (atrial end), spBottom (lower common
+  // pathway end) and spAnte (last antegrade entry, whose wave occupies the
+  // pathway for about its conduction time and collides with a retrograde one).
+  const last = { atrium: -1e9, fp: -1e9, spTop: -1e9, spBottom: -1e9, spAnte: -1e9, his: -1e9, v: -1e9, ap: -1e9 };
+  const active = { at: false, flutter: false, af: false, vt: false };
+  const runs = { a: { lastT: -1e9, count: 0 }, v: { lastT: -1e9, count: 0 } };
+  const beats = [];
+  const lesions = [];
+  let rf = null;   // { target, token }
   let now = 0;
-  let lastAtrium = null;   // { t, origin } of the latest atrial activation (for the beat log)
+  let lastAtrium = null;
 
   const schedule = (t, kind, data = {}) => {
     const item = { t, kind, data };
@@ -84,46 +78,52 @@ export function createLiveHeart(caseId = 'normal') {
     while (i > 0 && queue[i - 1].t > t) i--;
     queue.splice(i, 0, item);
   };
+  const unschedule = (kind) => { for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === kind) queue.splice(i, 1); };
   const record = (ch, e) => log[ch]?.push(e);
   const ready = (node, t, erp) => t - last[node] >= erp;
 
-  function activateAtrium(t, origin) {
-    if (!ready('atrium', t, p.aErp)) return;
+  function activateAtrium(t, origin, { force = false, offsets = null } = {}) {
+    if (!force && !ready('atrium', t, p.aErp)) return false;
     last.atrium = t;
     lastAtrium = { t, origin };
-    const o = ORIGINS[origin];
+    const o = offsets || ORIGINS[origin];
+    const amp = origin === 'af' ? 0.3 : null;
     for (const ch of ATRIAL_CHANNELS) {
       if (o[ch] == null) continue;
-      record(ch, ev('A', t + o[ch], ch === 'his-d' ? 0.35 : ch === 'his-p' ? 0.6 : 0.75));
+      record(ch, ev('A', t + o[ch], amp ?? (ch === 'his-d' ? 0.35 : ch === 'his-p' ? 0.6 : 0.75), origin === 'af' ? 3 : 5));
     }
-    record('ecg-ii', mono('P', t + o.p, o.pAmp, 10));
-    // Another wavefront reaching the sinus node resets it.
-    if (origin !== 'sinus') {
-      for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === 'sinus') queue.splice(i, 1);
-      schedule(t + (o.hra ?? 0) + p.sinusCl + 40, 'sinus');
-    }
+    if (origin === 'flutter') record('ecg-ii', mono('F', t + 60, -0.16, 45));
+    else if (origin === 'af') record('ecg-ii', mono('f', t + 20, (rand() - 0.5) * 0.08, 12));
+    else if (o.p != null) record('ecg-ii', mono('P', t + o.p, o.pAmp, 10));
+    // Another wavefront reaching the sinus node (or an automatic focus) resets it.
+    if (origin !== 'sinus') { unschedule('sinus'); schedule(t + (o.hra ?? 0) + p.sinusCl + 40, 'sinus'); }
+    if (active.at && origin !== p.at.origin) { unschedule('at-fire'); schedule(t + 40 + p.at.cl, 'at-fire'); }
     schedule(t + o.avj, 'avn-ante');
-    if (p.ap && origin !== 'ap-left') schedule(t + o.ap, 'ap-atrial');
+    if (p.ap && origin !== p.ap.origin) schedule(t + o[p.ap.insertion], 'ap-atrial');
+    return true;
   }
 
   function avnAnte(t) {
+    if (p.avBlock) return;
     const fpReady = ready('fp', t, p.fp.erp);
-    const spReady = p.sp && ready('sp', t, p.sp.erp);
+    const spReady = p.sp && ready('spTop', t, p.sp.erp);
     let ah, path;
     if (fpReady) {
-      ah = decremental(p.fp, t - last.fp); path = 'fast';
+      ah = decremental(p.fp.ah, p.fp.dec, p.fp.tau, p.fp.erp, t - last.fp); path = 'fast';
       last.fp = t;
-      if (spReady) last.sp = t;   // concealed into the slow pathway
+      if (spReady) { last.spTop = t; last.spAnte = t; }   // concealed into the slow pathway
     } else if (spReady) {
-      ah = decremental(p.sp, t - last.sp); path = 'slow';
-      last.sp = t;
+      ah = decremental(p.sp.ah, p.sp.dec, p.sp.tau, p.sp.erp, t - last.spTop); path = 'slow';
+      last.spTop = t; last.spAnte = t; last.spBottom = t + ah;
     } else return;   // AV nodal block
     const h = t + ah;
-    schedule(h, 'his', { aJunction: t, path });
-    // Echo: slow-pathway arrival at the lower common pathway with a recovered fast pathway turns back up it.
+    schedule(h, 'his', { aJunction: t });
+    // Echo at the lower common pathway: slow down, fast up (typical) or fast down, slow up (atypical).
     if (path === 'slow' && ready('fp', h, p.fp.retroErp)) {
       last.fp = h;
       schedule(h + p.fp.retro, 'atrium', { origin: 'avn-fast' });
+    } else if (path === 'fast' && spRetroReady(h)) {
+      spRetro(h);
     }
   }
 
@@ -132,53 +132,115 @@ export function createLiveHeart(caseId = 'normal') {
     record('his-p', ev('H', t, 0.3, 4));
     if (!ready('his', t, p.hpsErp)) return;   // infra-His block
     last.his = t;
-    schedule(t + p.hv, 'ventricle', { origin: 'his', h: t, aJunction: data.aJunction });
+    schedule(t + p.hv, 'ventricle', { origin: 'his', h: t, aJunction: data.aJunction ?? null });
   }
 
-  function ventricle(t, { origin, h = null, aJunction = null }) {
-    if (!ready('v', t, p.vErp)) return;
+  // Retrograde slow-pathway conduction: its lower end recovered and no antegrade wave still in it.
+  const spRetroReady = (x) => Boolean(p.sp?.retro) && ready('spBottom', x, p.sp.retroErp) && x - last.spAnte >= p.sp.ah + 50;
+  function spRetro(x) {
+    last.spBottom = x; last.spTop = x + p.sp.retro;
+    schedule(x + p.sp.retro, 'atrium', { origin: 'avn-slow' });
+  }
+
+  // Retrograde over the AV node from below (paced, escape, VT or junctional beats).
+  function avnRetro(hr) {
+    if (p.avBlock) return;
+    if (ready('fp', hr, p.fp.retroErp)) {
+      last.fp = hr;
+      if (p.sp && ready('spBottom', hr, p.sp.erp)) last.spBottom = hr;   // concealed from below
+      schedule(hr + p.fp.retro, 'atrium', { origin: 'avn-fast' });
+    } else if (spRetroReady(hr)) spRetro(hr);
+  }
+
+  const QRS = {
+    his: { lag: 0, sigma: 8, v1: -0.5 }, rv: { lag: 20, sigma: 16, v1: -0.5 }, escape: { lag: 20, sigma: 18, v1: -0.5 },
+    ap: { lag: 30, sigma: 16, v1: 0.6 }, vt: { lag: 15, sigma: 18, v1: 0.8 }
+  };
+  function ventricle(t, { origin, h = null, aJunction = null }, force = false) {
+    if (!force && !ready('v', t, p.vErp)) return false;
     last.v = t;
-    const wide = origin !== 'his';
-    const sigma = wide ? 16 : 8;
+    const q = QRS[origin] || QRS.rv;
     if (origin === 'ap') record('ecg-ii', mono('delta', t, 0.3, 7));
-    const qrs = origin === 'ap' ? t + 30 : origin === 'rv' ? t + 20 : t;
-    record('ecg-ii', ev('V', qrs, 0.9, sigma));
-    record('ecg-v1', ev('V', qrs, origin === 'ap' ? 0.6 : -0.5, sigma));
-    record('rv', ev('V', origin === 'rv' ? t : t + 5, 0.9));
-    record('his-d', far('V', t + (origin === 'his' ? 0 : 25), origin === 'his' ? 0.9 : 0.6, origin === 'his' ? 6 : 10));
-    record('his-p', far('V', t + (origin === 'his' ? 0 : 25), 0.5, origin === 'his' ? 6 : 10));
+    record('ecg-ii', ev('V', t + q.lag, origin === 'vt' ? -0.8 : 0.9, q.sigma));
+    record('ecg-v1', ev('V', t + q.lag, q.v1, q.sigma));
+    record('rv', ev('V', origin === 'rv' ? t : t + (origin === 'vt' ? 40 : 5), 0.9));
+    const nearHis = origin === 'his';
+    record('his-d', far('V', t + (nearHis ? 0 : 25), nearHis ? 0.9 : 0.6, nearHis ? 6 : 10));
+    record('his-p', far('V', t + (nearHis ? 0 : 25), 0.5, nearHis ? 6 : 10));
     for (const [ch, dt] of [['cs-910', 15], ['cs-78', 17], ['cs-56', 19], ['cs-34', 21], ['cs-12', 23]]) record(ch, far('V', t + dt, 0.4, 8));
     beats.push({ v: t, h, aJunction, origin, a: lastAtrium });
-    // Retrograde into the His bundle and the AV node (paced or pre-excited beats).
+    schedule(t + p.escapeCl, 'escape', { token: t });
     if (origin !== 'his') {
-      const hr = t + (origin === 'rv' ? 45 : 30);
+      const hr = t + (origin === 'rv' ? 45 : origin === 'vt' ? 40 : 30);
       if (ready('his', hr, p.hpsErp)) {
         last.his = hr;
-        if (ready('fp', hr, p.fp.retroErp)) {
-          last.fp = hr;
-          if (p.sp && ready('sp', hr, p.sp.erp)) last.sp = hr;
-          schedule(hr + p.fp.retro, 'atrium', { origin: 'avn-fast' });
-        }
+        if (origin === 'vt') { record('his-d', ev('H', hr, 0.45, 4)); record('his-p', ev('H', hr, 0.2, 4)); }
+        avnRetro(hr);
       }
     }
-    // Retrograde up the accessory pathway.
     if (p.ap && origin !== 'ap' && ready('ap', t, p.ap.erp)) {
+      const retro = p.ap.retroDec ? decremental(p.ap.retro, p.ap.retroDec, p.ap.retroTau, p.ap.erp, t - last.ap) : p.ap.retro;
       last.ap = t;
-      schedule(t + p.ap.retro, 'atrium', { origin: 'ap-left' });
+      schedule(t + retro, 'atrium', { origin: p.ap.origin });
     }
+    return true;
   }
 
   function apAtrial(t) {
-    if (!ready('ap', t, p.ap.erp)) return;
+    if (!p.ap || !ready('ap', t, p.ap.erp)) return;
     last.ap = t;   // antegrade conduction, or concealment of a retrograde-only pathway
     if (p.ap.ante) schedule(t + p.ap.anteDelay, 'ventricle', { origin: 'ap' });
+  }
+
+  // Rapid capture starts the triggered substrates of the case. Couplings are
+  // stimulus to stimulus (the programmed intervals), counted on captured stimuli.
+  function onStim(kind, t, captured) {
+    const run = runs[kind];
+    const coupling = t - run.lastT;
+    run.lastT = t;
+    if (!captured) return;
+    if (kind === 'a') {
+      for (const key of ['at', 'flutter', 'af']) {
+        const s = p[key];
+        if (!s || active[key]) continue;
+        s.count = coupling <= s.triggerCl ? (s.count || 1) + 1 : 1;
+        if (s.count >= s.triggerCount) {
+          active[key] = true;
+          if (key === 'at') schedule(t + s.cl, 'at-fire');
+          if (key === 'flutter') schedule(t + s.tcl, 'flutter-fire');
+          if (key === 'af') schedule(t + s.min, 'af-fire');
+        }
+      }
+    } else if (p.vt && !active.vt) {
+      run.count = coupling <= p.vt.triggerCl ? run.count + 1 : 0;
+      if (run.count >= 2) { active.vt = true; schedule(t + p.vt.cl - 40, 'vt-fire'); }
+    }
   }
 
   function stim(t, site) {
     const ch = site === 'cs-prox' ? 'cs-910' : site === 'cs-dist' ? 'cs-12' : site;
     record(ch, ev('S', t, 0.5, 2));
-    if (site === 'rv') ventricle(t + 10, { origin: 'rv' });
-    else activateAtrium(t + 2, site);
+    if (site === 'rv') onStim('v', t, ventricle(t + 10, { origin: 'rv' }));
+    else onStim('a', t, activateAtrium(t + 2, site));
+  }
+
+  function afOffsets() {
+    const o = { avj: 20 + rand() * 40, ap: 10 + rand() * 50, aps: 10 + rand() * 50, p: null };
+    for (const ch of ATRIAL_CHANNELS) o[ch] = rand() * 70;
+    return o;
+  }
+
+  function lesion(target) {
+    let effect = null;
+    if (target === 'slow-pathway' && p.sp) { p.sp = null; effect = 'sp'; }
+    else if (target === 'compact-node') { p.avBlock = true; effect = 'av-block'; }
+    else if (target === 'left-lateral' && p.ap?.insertion === 'ap') { p.ap = null; effect = 'ap'; }
+    else if (target === 'posteroseptal' && p.ap?.insertion === 'aps') { p.ap = null; effect = 'ap'; }
+    else if (target === 'cti' && p.flutter) { p.flutter = null; active.flutter = false; effect = 'cti'; }
+    else if (target === 'la-focus' && p.at) { p.at = null; active.at = false; effect = 'focus'; }
+    else if (target === 'vt-isthmus' && p.vt) { p.vt = null; active.vt = false; effect = 'isthmus'; }
+    lesions.push({ target, effect, t: now });
+    return effect;
   }
 
   const handlers = {
@@ -188,43 +250,72 @@ export function createLiveHeart(caseId = 'normal') {
     'avn-ante': (t) => avnAnte(t),
     'ap-atrial': (t) => apAtrial(t),
     his: (t, d) => his(t, d),
-    ventricle: (t, d) => ventricle(t, d)
+    ventricle: (t, d) => ventricle(t, d),
+    escape: (t, d) => { if (last.v === d.token) ventricle(t, { origin: 'escape' }); },
+    'at-fire': (t) => { if (!active.at || !p.at) return; activateAtrium(t, p.at.origin); schedule(t + p.at.cl, 'at-fire'); },
+    'flutter-fire': (t) => { if (!active.flutter || !p.flutter) return; activateAtrium(t, 'flutter', { force: true }); schedule(t + p.flutter.tcl, 'flutter-fire'); },
+    'af-fire': (t) => { if (!active.af || !p.af) return; activateAtrium(t, 'af', { force: true, offsets: afOffsets() }); schedule(t + p.af.min + rand() * (p.af.max - p.af.min), 'af-fire'); },
+    // The circuit keeps its cycle; a beat finding the ventricle refractory (a capture beat) does not exit.
+    'vt-fire': (t) => { if (!active.vt || !p.vt) return; ventricle(t, { origin: 'vt' }); schedule(t + p.vt.cl, 'vt-fire'); },
+    // Accelerated junctional beats while RF heats the slow pathway region.
+    junctional: (t, d) => {
+      if (!rf || rf.token !== d.token || p.avBlock) return;
+      if (ready('his', t, p.hpsErp)) { last.his = t; record('his-d', ev('H', t, 0.7, 4)); record('his-p', ev('H', t, 0.3, 4)); schedule(t + p.hv, 'ventricle', { origin: 'his', h: t }); avnRetro(t); }
+      schedule(t + 620, 'junctional', d);
+    },
+    'rf-lesion': (t, d) => { if (rf && rf.token === d.token) rf.effect = lesion(rf.target); }
   };
 
   schedule(200, 'sinus');
 
   return {
-    caseId: LIVE_CASES[caseId] ? caseId : 'normal',
+    caseId: id,
     now: () => now,
-    /** Process every event up to time t. */
     advanceTo(t) {
       while (queue.length && queue[0].t <= t) {
         const item = queue.shift();
+        now = item.t;
         handlers[item.kind](item.t, item.data);
       }
       now = Math.max(now, t);
     },
-    /** Queue stimuli (absolute times, not earlier than now). */
     stimulate(list) { for (const s of list) if (s.t >= now && LIVE_SITES.includes(s.site)) schedule(s.t, 'stim', { site: s.site }); },
-    /** Cancel stimuli still to come. */
-    stopPacing() { for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === 'stim') queue.splice(i, 1); },
-    /** DC shock: every tissue depolarized at t, pending wavefronts and stimuli cleared, sinus resumes. */
+    stopPacing() { unschedule('stim'); },
+    /** DC shock: every tissue depolarized; reentry and triggered rhythms end, an automatic focus resumes. */
     cardiovert(t) {
       queue.length = 0;
       for (const k of Object.keys(last)) last[k] = t;
+      active.flutter = active.af = active.vt = false;
+      rf = null;
       record('ecg-ii', ev('DC', t, 1.6, 3)); record('ecg-v1', ev('DC', t, -1.4, 3));
       schedule(t + 900, 'sinus');
+      if (active.at) schedule(t + p.at.cl + 300, 'at-fire');
     },
-    /** Event lists of every channel within [from, to]. */
+    /** Start RF at a target; the lesion completes after RF_LESION_MS of continuous RF. */
+    rfStart(target, t) {
+      if (!ABLATION_TARGETS.includes(target)) return null;
+      rf = { target, token: t, effect: undefined };
+      schedule(t + RF_LESION_MS, 'rf-lesion', { token: t });
+      if (target === 'slow-pathway' && p.sp) schedule(t + 900, 'junctional', { token: t });
+      return rf.token;
+    },
+    rfStop() { const done = rf; rf = null; return done; },
+    rf: () => (rf ? { ...rf } : null),
     events(from, to) {
       return Object.fromEntries(Object.entries(log).map(([ch, list]) => [ch, list.filter((e) => e.t >= from && e.t <= to)]));
     },
-    /** Drop events older than t (memory bound of a long session). */
     trim(t) {
       for (const list of Object.values(log)) { let i = 0; while (i < list.length && list[i].t < t) i++; if (i) list.splice(0, i); }
       while (beats.length && beats[0].v < t) beats.shift();
     },
-    beats: () => beats.slice()
+    beats: () => beats.slice(),
+    lesions: () => lesions.slice(),
+    /** Running rhythms and remaining substrate elements. */
+    status: () => ({
+      avBlock: p.avBlock,
+      sp: Boolean(p.sp), ap: Boolean(p.ap), at: Boolean(p.at), flutter: Boolean(p.flutter), vt: Boolean(p.vt),
+      atActive: active.at, flutterActive: active.flutter, afActive: active.af, vtActive: active.vt
+    })
   };
 }
 
