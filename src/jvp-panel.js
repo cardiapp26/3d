@@ -3,7 +3,7 @@ import { ecgSample } from './ecg-trace.js';
 import { JVP_SCENARIOS, jvpCurve, heightAboveSternalAngle } from './jvp-physiology.js';
 import { JVP_TEXT, JVP_SOURCES } from './jvp-content.js';
 import { buildStrip, evaluateAjr, STRIP_MODES } from './jvp-timeline.js';
-import { DATA_LABEL, PARAMETER_VERSION, parametersFor, toCsv } from './jvp-parameters.js';
+import { PARAMETER_VERSION, parametersFor, toCsv } from './jvp-parameters.js';
 import { drawStrip, stripRows } from './jvp-strip.js';
 
 /*
@@ -236,7 +236,7 @@ export function createJvpPanel(mount, deps) {
     slowBox.box.checked = state.slow; slowBox.name.textContent = t.slow;
     restartBtn.textContent = t.restart;
     exportBtn.textContent = t.exportCsv;
-    synthetic.textContent = `${t.synthetic} ${DATA_LABEL[lang]}`;
+    synthetic.textContent = t.synthetic;
     moreSummary.textContent = t.questions;
     questions.replaceChildren(...t.questions_list.map(q => el('li', '', q)));
     paramTitle.textContent = `${t.paramTitle} (${PARAMETER_VERSION})`;
@@ -268,7 +268,7 @@ export function createJvpPanel(mount, deps) {
     respNote.hidden = !respNote.textContent;
     bedsideNote.hidden = false;
     bedsideNote.textContent = t.bedsideNote;
-    canvas.setAttribute('aria-label', `${t.axis}: ${t.scenarios[state.scenario].title}. ${DATA_LABEL[lang]}`);
+    canvas.setAttribute('aria-label', `${t.axis}: ${t.scenarios[state.scenario].title}`);
   }
 
   function renderStrip(t) {
@@ -279,7 +279,7 @@ export function createJvpPanel(mount, deps) {
     scenarioText.textContent = t.strip.heartNote;
     respNote.hidden = true; respNote.textContent = '';     // spontaneous breathing notes do not carry over
     bedsideNote.hidden = true;
-    canvas.setAttribute('aria-label', `${t.axis}: ${t.views[state.view]}. ${DATA_LABEL[lang]}`);
+    canvas.setAttribute('aria-label', `${t.axis}: ${t.views[state.view]}`);
     live();
     ensureLoop();
   }
@@ -327,12 +327,6 @@ export function createJvpPanel(mount, deps) {
     return { ctx, width, height };
   }
 
-  // The data-quality label is part of the graph itself.
-  function stamp(ctx, width) {
-    ctx.font = '9px system-ui, sans-serif'; ctx.fillStyle = COLOR.axis; ctx.textAlign = 'right';
-    ctx.fillText(DATA_LABEL[lang].split(':')[0], width - 8, 10);
-    ctx.textAlign = 'left';
-  }
 
   function drawStripView() {
     ensureLoop();
@@ -343,7 +337,6 @@ export function createJvpPanel(mount, deps) {
       t: state.t, labels: state.labels, baseline: s.id === 'ajr' ? judge(s).baselineMmHg : null,
       text: { tvOpen: t.tvOpen, ecg: t.ecg, seconds: t.seconds, band: mode.band, extra: mode.extra, threshold: mode.threshold, cannon: t.strip.avd.cannon }
     });
-    stamp(box.ctx, box.width);
   }
 
   function draw(cycleState) {
@@ -389,7 +382,6 @@ export function createJvpPanel(mount, deps) {
     ctx.font = '9px system-ui, sans-serif'; ctx.fillStyle = COLOR.axis;
     ctx.fillText(t.ecg, g.left + 2, g.ecgTop - 4);
     for (const [u, name] of [[S.ivcStart, 'S1'], [S.ivrStart, 'S2']]) { ctx.fillStyle = '#5f6f64'; ctx.fillText(name, g.x(u) - 6, g.bottom + 10); }
-    stamp(ctx, width);
     // Shared cursor.
     const phase = cycleState?.phase;
     if (Number.isFinite(phase)) { const x = g.x(phase); ctx.strokeStyle = COLOR.cursor; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, g.top); ctx.lineTo(x, g.bottom); ctx.stroke(); }

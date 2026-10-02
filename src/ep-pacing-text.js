@@ -53,7 +53,7 @@ export const PACE_TEXT = Object.freeze({
       echo: 'Tek echo sürekli taşikardi değildir; bu model taşikardiyi sürdürmez ve dizi içindeki echo\'ları çizmez.'
     },
     scene: 'Sahnede: yeşil ok AV düğüm yolu, pembe ok aksesuar yol; ortodromik echo\'da mavi devre.',
-    limits: 'Sentetik öğretim modeli: sayılar tasarlanmıştır; atriyal refrakter periyot sabit, dizi ortasında echo ve sürekli taşikardi yok, decremental antegrad yol yok. Yüzey derivasyonları şematiktir. EP uzmanı incelemesi yapılmadı. Kaynaklar P1-P14: research/EP_ATRIYAL_PACING_KAYNAK_STORYBOARD.md.'
+    limits: 'Model sınırları: atriyal refrakter periyot sabit, dizi ortasında echo ve sürekli taşikardi yok, decremental antegrad yol yok. Yüzey derivasyonları şematiktir. Kaynaklar P1-P14: research/EP_ATRIYAL_PACING_KAYNAK_STORYBOARD.md.'
   },
   en: {
     heading: 'Atrial pacing laboratory',
@@ -104,6 +104,6 @@ export const PACE_TEXT = Object.freeze({
       echo: 'A single echo is not a sustained tachycardia; this model does not sustain tachycardia and does not draw echoes within the train.'
     },
     scene: 'In the scene: green arrow the AV nodal route, pink arrow the accessory pathway; blue circuit for an orthodromic echo.',
-    limits: 'Synthetic teaching model: the numbers are designed; the atrial refractory period is fixed, there are no echoes within the train, no sustained tachycardia and no decremental antegrade pathway. Surface leads are schematic. No electrophysiologist has reviewed it. Sources P1-P14: research/EP_ATRIYAL_PACING_KAYNAK_STORYBOARD.md.'
+    limits: 'Model limits: the atrial refractory period is fixed, there are no echoes within the train, no sustained tachycardia and no decremental antegrade pathway. Surface leads are schematic. Sources P1-P14: research/EP_ATRIYAL_PACING_KAYNAK_STORYBOARD.md.'
   }
 });

@@ -8,7 +8,7 @@ export const PHARMA_SOURCES = [
 export const PHARMA_TEXT = {
   tr: {
     heading: 'Farmakolojik provokasyon',
-    intro: 'Atropin ve Isuprel sonrası hız, AV nodal iletim ve indüklenebilirliği önce/sonra karşılaştır. Her seçim ayrı bir sentetik eğitim örneğidir; klinik yanıt tahmini değildir.',
+    intro: 'Atropin ve Isuprel sonrası hız, AV nodal iletim ve indüklenebilirliği önce/sonra karşılaştır. Her seçim ayrı bir örnektir.',
     drug: 'Manevra', example: 'Alternatif eğitim örneği', before: 'Önce', after: 'Sonra',
     show: 'Önce / sonra göster', reset: 'Örneği sıfırla', compareHead: ['Ölçüm', 'Önce', 'Sonra'],
     drugs: { atropine: 'Atropin', isuprel: 'Isuprel (izoproterenol)' },
@@ -31,13 +31,13 @@ export const PHARMA_TEXT = {
     labels: { rate: 'Sinüs hızı', pp: 'P-P', drive: 'S1-S1', ah: 'AH (aynı S1)', hv: 'HV', s2: 'S1-S2', testAh: 'AH (S2)', va: 'VA (echo)', echo: 'Tek echo', induced: 'Taşikardi', tcl: 'TCL' },
     yes: 'Var', no: 'Yok', notMeasured: 'Ölçülmedi',
     stale: 'Seçim değişti. Yeni önce/sonra örneğini göster.',
-    limits: 'Değerler ve EGM sentetik eğitim verisidir. Echo, indüksiyon ve indüklenememe birbirinden ayrı alternatif örneklerdir. İlaç yanıtı tek başına tanı koydurmaz veya aritmiyi dışlamaz. Doz ve uygulama protokolü modellenmez.',
+    limits: 'Echo, indüksiyon ve indüklenememe birbirinden ayrı alternatif örneklerdir. İlaç yanıtı tek başına tanı koydurmaz veya aritmiyi dışlamaz. Doz ve uygulama protokolü modellenmez.',
     rateOnly: 'Bu vakada yalnız hız ve AV nodal iletim örneği vardır; indüksiyon örnekleri bu vaka için modellenmedi.',
     sources: 'Kaynaklar', strip: (drug, phase) => `${drug} · ${phase}`,
   },
   en: {
     heading: 'Pharmacological provocation',
-    intro: 'Compare rate, AV nodal conduction and inducibility before/after atropine or Isuprel. Each selection is a separate synthetic teaching example, not a clinical response prediction.',
+    intro: 'Compare rate, AV nodal conduction and inducibility before/after atropine or Isuprel. Each selection is a separate example.',
     drug: 'Maneuver', example: 'Alternative teaching example', before: 'Before', after: 'After',
     show: 'Show before / after', reset: 'Reset example', compareHead: ['Measurement', 'Before', 'After'],
     drugs: { atropine: 'Atropine', isuprel: 'Isuprel (isoproterenol)' },
@@ -55,7 +55,7 @@ export const PHARMA_TEXT = {
     labels: { rate: 'Sinus rate', pp: 'P-P', drive: 'S1-S1', ah: 'AH (same S1)', hv: 'HV', s2: 'S1-S2', testAh: 'AH (S2)', va: 'VA (echo)', echo: 'Single echo', induced: 'Tachycardia', tcl: 'TCL' },
     yes: 'Present', no: 'Absent', notMeasured: 'Not measured',
     stale: 'Selection changed. Show the new before/after example.',
-    limits: 'Values and EGM are synthetic teaching data. Echo, induction and noninduction are separate alternative examples. Drug response alone neither diagnoses a mechanism nor excludes arrhythmia. Dose and administration protocol are not modeled.',
+    limits: 'Echo, induction and noninduction are separate alternative examples. Drug response alone neither diagnoses a mechanism nor excludes arrhythmia. Dose and administration protocol are not modeled.',
     rateOnly: 'This case offers the rate and AV nodal conduction example only; induction examples are not modeled for it.',
     sources: 'Sources', strip: (drug, phase) => `${drug} · ${phase}`,
   },

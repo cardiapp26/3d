@@ -80,7 +80,7 @@ for (const lang of ['tr', 'en']) {
     assert.ok(t.scenarios[id]?.title && t.scenarios[id]?.text, `${lang} ${id}`);
     for (const l of jvpCurve(id).labels) assert.ok(t.waves[l.id]?.name && t.waves[l.id]?.text, `${lang} wave ${l.id}`);
   }
-  assert.match(t.synthetic, lang === 'tr' ? /Sentetik/ : /Synthetic/);
+  assert.match(t.synthetic, lang === 'tr' ? /öğretim değer/ : /teaching values/);
   assert.ok(!/cm/.test(t.axis), 'the pressure axis is mmHg, not cm');
 }
 for (const file of ['../src/jvp-physiology.js', '../src/jvp-content.js', '../src/jvp-panel.js']) {

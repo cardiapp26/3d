@@ -139,7 +139,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.ok(await endExp() > peep5, 'PEEP 10: higher end-expiratory level');
 
     // Data label on the page and in the export.
-    assert.match(await page.locator('.jvp-data-label').textContent(), /Sentetik öğretim verisi/);
+    assert.match(await page.locator('.jvp-data-label').textContent(), /öğretim değer/);
     const [download] = await Promise.all([page.waitForEvent('download'), page.locator('[data-jvp-action=export]').click()]);
     const csv = require('node:fs').readFileSync(await download.path(), 'utf8');
     assert.match(csv, /Synthetic teaching data: not patient data, not clinically validated/);

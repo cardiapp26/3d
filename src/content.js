@@ -1034,7 +1034,7 @@ export const rawLessons = {
   ablation: {
     tr: {
       title: 'Elektrofizyolojik anatomi • Tanı, manevralar, tedavi',
-      intro: 'Aritmi substratlarının anatomik temeli: CTI, Koch üçgeni, PVI. Her adım ilgili sentetik başlangıç kaydını açar; kayıtları Tanı / Manevralar / Tedavi panelinde inceleyin.',
+      intro: 'Aritmi substratlarının anatomik temeli: CTI, Koch üçgeni, PVI. Her adım ilgili başlangıç kaydını açar; kayıtları Tanı / Manevralar / Tedavi panelinde inceleyin.',
       steps: [
         {
           title: 'Kavotriküspit İstmus (CTI) • Atriyal Flatter',
@@ -1075,7 +1075,7 @@ export const rawLessons = {
     },
     en: {
       title: 'Electrophysiological anatomy • Diagnosis, maneuvers, treatment',
-      intro: 'Anatomical basis of arrhythmia substrates: CTI, triangle of Koch, PVI. Each step opens its matching synthetic baseline recording; inspect it in the Diagnosis / Maneuvers / Treatment panel.',
+      intro: 'Anatomical basis of arrhythmia substrates: CTI, triangle of Koch, PVI. Each step opens its matching baseline recording; inspect it in the Diagnosis / Maneuvers / Treatment panel.',
       steps: [
         {
           title: 'Cavotricuspid Isthmus (CTI) • Atrial Flutter',
@@ -1642,7 +1642,7 @@ export const uiTranslations = {
     keyboardHelpTitle: 'Klavye kısayolları',
     carmDragHint: 'Paneli serbestçe taşımak için sürükleyin',
     leadProgressLabel: 'Elektrot ilerletme',
-    leadProgressNote: '3D transvenöz lead modelleri ve fizyolojik ileti sistemi (CSP/LBBAP) hedefleri eğitim amaçlı modellenmiştir.',
+    leadProgressNote: '3D transvenöz lead modelleri ve fizyolojik ileti sistemi (CSP/LBBAP) hedefleri modellenmiştir.',
     flowToggleBtn: '🩸 Akış',
     flowToggleTitle: 'Kan akışı partiküllerini aç/kapat (F)',
     flowLegendTitle: 'Oksijenlenme: Kırmızı (Sol kalp / Aort / Koroner arter) · Mavi (Sağ kalp / Pulmoner arter / Venöz sistem)',

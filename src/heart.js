@@ -1023,6 +1023,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setTransseptalStep(step){transseptal.setStep(Number(step));requestRender();},
     setCathStep(step){cathLab.setStep(Number(step));requestRender();},
     highlightAuscultation(areaId){auscultation.highlight(areaId||null);requestRender();},
+    /** Auscultation markers: highlighted area and world positions (tests, lesson checks). */
+    getAuscultation(){return {highlighted:auscultation.getHighlighted(),positions:Object.fromEntries(Object.entries(auscultation.positions()).map(([id,p])=>[id,p.toArray()]))};},
     setCatheterVisible(key,value){transseptal.setCatheterVisible(key,Boolean(value));requestRender();},
     getCatheterVisibility(){return transseptal.getCatheterVisibility();},
     resetCatheterToggles(){transseptal.resetCatheterToggles();requestRender();},

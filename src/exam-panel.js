@@ -383,6 +383,8 @@ export function createExamPanel(root, options = {}) {
     if (!FINDINGS[select.value]) { select.value = state.findingId; return; }
     applyFinding(select.value);
     onFindingChange?.(state.findingId);
+    // The finding's own area becomes the focus, in the panel and on the 3D chest.
+    onAreaFocus?.(state.areaId);
   });
   const startFromEvent = event => {
     const id = event.target.closest('[data-maneuver]')?.dataset.maneuver;
@@ -417,6 +419,7 @@ export function createExamPanel(root, options = {}) {
       return true;
     },
     getFinding: () => state.findingId,
+    getArea: () => state.areaId,
     setManeuver(id, { autoplay = true } = {}) {
       if (!MANEUVERS[id]) return false;
       applyManeuver(id, autoplay);

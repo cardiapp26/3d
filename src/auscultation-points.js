@@ -1,40 +1,75 @@
 import * as THREE from 'three';
 import { AUSCULTATION_AREAS } from './exam-findings.js';
+import { CHEST, areaPoints, icsY, lineX } from './chest-surface.js';
 
-// Schematic auscultation areas projected onto a chest-wall plane in front of
-// the heart. Levels come from measured anatomy (pulmonary valve height for
-// the 2nd intercostal space, the tricuspid annulus for the lower sternal
-// border, the LV apex for the mitral area); lateral offsets use the sternal
-// midline of the thoracic scenery. The atlas has ~3.7 cm per unit, so an
-// intercostal space is about 0.7 units and the sternal edge ~0.5 units from
-// the midline. These are teaching markers, not surface anatomy landmarks.
+// Auscultation areas on the shared chest-wall frame (chest-surface.js):
+// every area is a side / line / intercostal-space address on one plane in
+// front of the heart, so they agree with each other and with the drawn
+// sternum, intercostal and midclavicular guides. Only the plane's depth is
+// measured from the heart (its most anterior point). Teaching markers, not
+// segmented surface anatomy.
 
-const MIDLINE_X = -0.25;        // sternal midline (vertebral column axis in thorax.js)
-const STERNAL_EDGE = 0.5;       // units from midline to the parasternal line
-const CHEST_OFFSET = 0.3;       // chest wall in front of the most anterior heart point
-const ICS = 0.7;                // one intercostal space
-
-/** World positions of the five classic auscultation areas. */
-export function auscultationPositions({ sourceCenter, meshVertices }) {
-  const pulmonaryValve = sourceCenter('pulmonary-valve');
-  const tricuspid = sourceCenter('tricuspid-annulus') || sourceCenter('tricuspid');
-  const lvVerts = meshVertices('lv');
-  if (!pulmonaryValve || !tricuspid || !lvVerts.length) return null;
-  const heartFront = Math.max(...['rv', 'lv', 'ra', 'aorta', 'pa'].flatMap(id => {
+/** z of the chest plane: in front of the most anterior heart point. */
+function chestPlaneZ(meshVertices) {
+  const fronts = ['rv', 'lv', 'ra', 'aorta', 'pa'].flatMap(id => {
     const verts = meshVertices(id);
     return verts.length ? [Math.max(...verts.map(v => v.z))] : [];
-  }));
-  const z = heartFront + CHEST_OFFSET;
-  // Apex: the LV point farthest down and to the left.
-  const apex = lvVerts.reduce((best, v) => (v.x - v.y > best.x - best.y ? v : best));
-  const secondIcs = pulmonaryValve.y + 0.35;
-  return {
-    aortic: new THREE.Vector3(MIDLINE_X - STERNAL_EDGE, secondIcs, z),
-    pulmonic: new THREE.Vector3(MIDLINE_X + STERNAL_EDGE, secondIcs, z),
-    erb: new THREE.Vector3(MIDLINE_X + STERNAL_EDGE, secondIcs - ICS, z),
-    tricuspid: new THREE.Vector3(MIDLINE_X + STERNAL_EDGE * 0.8, tricuspid.y - 0.45, z),
-    mitral: new THREE.Vector3(apex.x, apex.y, z - 0.05)
+  });
+  return fronts.length ? Math.max(...fronts) + CHEST.chestOffset : null;
+}
+
+/** World positions of the five classic auscultation areas. */
+export function auscultationPositions({ meshVertices }) {
+  const z = chestPlaneZ(meshVertices);
+  if (z == null) return null;
+  return Object.fromEntries(Object.entries(areaPoints(z)).map(([id, p]) => [id, new THREE.Vector3(p.x, p.y, p.z)]));
+}
+
+// Faint chest-wall guides: sternal borders, intercostal ticks (numbered on
+// the left sternal border) and the left midclavicular line.
+function chestGuides(z) {
+  const group = new THREE.Group();
+  group.name = 'Chest wall reference (schematic)';
+  const line = (points, dashed = false) => {
+    const geometry = new THREE.BufferGeometry().setFromPoints(points.map(([x, y]) => new THREE.Vector3(x, y, z - 0.01)));
+    const material = dashed
+      ? new THREE.LineDashedMaterial({ color: 0x14352b, transparent: true, opacity: 0.85, dashSize: 0.08, gapSize: 0.06, depthWrite: false, depthTest: false })
+      : new THREE.LineBasicMaterial({ color: 0x14352b, transparent: true, opacity: 0.8, depthWrite: false, depthTest: false });
+    const out = new THREE.Line(geometry, material);
+    if (dashed) out.computeLineDistances();
+    return out;
   };
+  const top = icsY(1.5), bottom = icsY(5.6);
+  for (const side of ['left', 'right']) group.add(line([[lineX(side, 'sternal'), top], [lineX(side, 'sternal'), bottom]]));
+  const mcl = lineX('left', 'mcl');
+  group.add(line([[mcl, icsY(1.5)], [mcl, icsY(6)]], true));
+  for (const n of [2, 3, 4, 5]) {
+    const y = icsY(n);
+    group.add(line([[lineX('right', 'sternal') - 0.25, y], [lineX('right', 'sternal'), y]]));
+    group.add(line([[lineX('left', 'sternal'), y], [lineX('left', 'sternal') + 0.25, y]]));
+    const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tickTexture(`${n}`), depthTest: false, transparent: true, opacity: 0.8 }));
+    tag.scale.set(0.11, 0.11, 1);
+    tag.position.set(lineX('right', 'sternal') - 0.36, y, z);
+    group.add(tag);
+  }
+  group.add(line([[mcl - 0.2, icsY(5)], [mcl + 0.2, icsY(5)]]));
+  group.traverse(o => { o.renderOrder = 5; });
+  return group;
+}
+
+function tickTexture(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#14352b';
+  ctx.font = '700 22px "DM Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 16, 17);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function labelTexture(text) {
@@ -65,11 +100,13 @@ export function createAuscultationMarkers(helpers) {
   group.name = 'Auscultation areas (schematic)';
   group.visible = false;
   const markers = new Map();
+  let highlighted = null;
 
   function build() {
     if (markers.size) return;
     const positions = auscultationPositions(helpers);
     if (!positions) return;
+    group.add(chestGuides(positions.aortic.z));
     for (const [areaId, position] of Object.entries(positions)) {
       const area = AUSCULTATION_AREAS[areaId];
       const disc = new THREE.Mesh(
@@ -94,7 +131,7 @@ export function createAuscultationMarkers(helpers) {
     group,
     build,
     setVisible(visible) {
-      if (visible) build();
+      if (visible) { build(); this.highlight(highlighted); }
       group.visible = Boolean(visible);
     },
     highlight(areaId) {
@@ -102,7 +139,9 @@ export function createAuscultationMarkers(helpers) {
         disc.material.opacity = id === areaId ? 0.8 : 0.35;
         disc.scale.setScalar(id === areaId ? 1.3 : 1);
       }
+      highlighted = areaId && AUSCULTATION_AREAS[areaId] ? areaId : null;
     },
+    getHighlighted: () => highlighted,
     positions: () => Object.fromEntries([...markers].map(([id, disc]) => [id, disc.position.clone()]))
   };
 }

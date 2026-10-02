@@ -5,7 +5,7 @@
 export const ORIGIN_TEXT = Object.freeze({
   tr: {
     heading: 'Kaynak bölgesi: PAC / PVC',
-    intro: 'Sentetik 12 derivasyonlu EKG\'yi oku ve olası kaynak bölgesini seç. Yanıt, EKG\'den okunan özelliklerle, olası bölgelerle ve güven düzeyinin gerekçesiyle değerlendirilir.',
+    intro: '12 derivasyonlu EKG\'yi oku ve olası kaynak bölgesini seç. Yanıt, EKG\'den okunan özelliklerle, olası bölgelerle ve güven düzeyinin gerekçesiyle değerlendirilir.',
     kind: 'Alıştırma', kinds: { ventricular: 'PVC (QRS)', atrial: 'Atriyal odak (P dalgası)' },
     next: 'Yeni örnek',
     contexts: { normal: 'Yapısal kalp hastalığı yok.', inferiorScar: 'Eski inferior miyokard enfarktüsü (skar) var.' },
@@ -41,11 +41,11 @@ export const ORIGIN_TEXT = Object.freeze({
     after: 'En erken kayıtlı A bile P başlangıcından sonra: odak kayıt kateterlerinin olmadığı bir yerde (örnekleme sınırı). En erken kanal odak değildir.',
     stripTitle: 'Atriyal odak: kateter aktivasyonu',
     scene: '3B: kaynak bölge şematik olarak işaretlendi.',
-    limits: 'Sentetik öğretim örnekleri: kalp vektörleri sıfırdan tasarlandı, gerçek hasta EKG\'si değildir; amplitüd görecelidir. Desenler kaynaklardaki bulguların sadeleştirilmiş öğretim karşılığıdır; doğruluk yüzdesi verilmez. EP uzmanı incelemesi yapılmadı. LV summit: Yamada 2010 (C10), Kuniewicz 2021 (C11); summit büyük kardiyak ven ile ulaşılabilir alt ve koroner arterlere yakınlık nedeniyle ulaşılamaz üst bölgeye ayrılır. Kaynaklar C1-C11: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
+    limits: 'Kalp vektörleri öğretim için tasarlandı; amplitüd görecelidir. Desenler kaynaklardaki bulguların sadeleştirilmiş karşılığıdır. LV summit: Yamada 2010 (C10), Kuniewicz 2021 (C11); summit büyük kardiyak ven ile ulaşılabilir alt ve koroner arterlere yakınlık nedeniyle ulaşılamaz üst bölgeye ayrılır. Kaynaklar C1-C11: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
   },
   en: {
     heading: 'Source region: PAC / PVC',
-    intro: 'Read the synthetic 12-lead ECG and choose the likely source region. The answer is judged against the features read from the ECG, the likely regions and the reason for the confidence level.',
+    intro: 'Read the 12-lead ECG and choose the likely source region. The answer is judged against the features read from the ECG, the likely regions and the reason for the confidence level.',
     kind: 'Exercise', kinds: { ventricular: 'PVC (QRS)', atrial: 'Atrial focus (P wave)' },
     next: 'New example',
     contexts: { normal: 'No structural heart disease.', inferiorScar: 'Old inferior myocardial infarction (scar).' },
@@ -81,7 +81,7 @@ export const ORIGIN_TEXT = Object.freeze({
     after: 'Even the earliest recorded A comes after the P onset: the focus lies where no recording catheter is (a sampling limit). The earliest channel is not the focus.',
     stripTitle: 'Atrial focus: catheter activation',
     scene: '3D: the source region is marked schematically.',
-    limits: 'Synthetic teaching examples: the heart vectors were designed from scratch and are not patient ECGs; amplitude is relative. The patterns are simplified teaching versions of published findings; no accuracy percentage is given. No electrophysiologist has reviewed them. Sources C1-C11: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md. LV summit: Yamada 2010 (C10), Kuniewicz 2021 (C11); the great cardiac vein splits the summit into an accessible inferior area and an inaccessible superior area close to the coronary arteries.'
+    limits: 'The heart vectors were designed for teaching; amplitude is relative. The patterns are simplified versions of published findings. Sources C1-C11: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md. LV summit: Yamada 2010 (C10), Kuniewicz 2021 (C11); the great cardiac vein splits the summit into an accessible inferior area and an inaccessible superior area close to the coronary arteries.'
   }
 });
 

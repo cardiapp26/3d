@@ -90,10 +90,9 @@ export function createExamMode({ heart, mount, getLang, onArea }) {
       showView('auscultation');
       if (step.finding) p.setFinding(step.finding);
       if (step.maneuver) p.setManeuver(step.maneuver, { autoplay: false });
-      if (step.area) {
-        p.setArea(step.area);
-        heart.highlightAuscultation(step.area);
-      }
+      if (step.area) p.setArea(step.area);
+      // The 3D focus follows the panel: the step's area, else the finding's own area.
+      heart.highlightAuscultation(p.getArea());
       p.setHint(step.title || '');
       p.draw(heart.getCycleState());
     },

@@ -36,7 +36,7 @@ export const TASK_TEXT = Object.freeze({
     support: (n, m, total) => `Toplanan ${total} kanıttan ${n} tanesi doğru mekanizmayı destekledi, ${m} tanesi aleyhineydi.`,
     noSupport: 'Toplanan kanıt doğru mekanizmayı desteklemedi; ayırmak için başka manevra gerekirdi.',
     title: (n, kind) => `Görev ${n}: ${kind}`,
-    limits: 'Sentetik öğretim olguları. Sınıflama kaynaklardaki ölçütlerin öğretim uyarlamasıdır, tanı algoritması değildir; tek bir gözlem tanıya çevrilmez. EP uzman incelemesi yapılmadı. Kaynaklar: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
+    limits: 'Sınıflama kaynaklardaki ölçütlerin öğretim uyarlamasıdır, tanı algoritması değildir; tek bir gözlem tanıya çevrilmez. Kaynaklar: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
   },
   en: {
     heading: 'Task: narrow QRS tachycardia',
@@ -70,6 +70,6 @@ export const TASK_TEXT = Object.freeze({
     support: (n, m, total) => `Of ${total} pieces of evidence, ${n} supported the correct mechanism and ${m} argued against it.`,
     noSupport: 'The evidence gathered did not support the correct mechanism; another maneuver was needed to separate it.',
     title: (n, kind) => `Task ${n}: ${kind}`,
-    limits: 'Synthetic teaching cases. The classification is a teaching adaptation of published criteria, not a diagnostic algorithm; no single observation becomes a diagnosis. No electrophysiologist has reviewed it. Sources: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
+    limits: 'The classification is a teaching adaptation of published criteria, not a diagnostic algorithm; no single observation becomes a diagnosis. Sources: research/EP_FAZ_BCD_KAYNAK_STORYBOARD.md.'
   }
 });
