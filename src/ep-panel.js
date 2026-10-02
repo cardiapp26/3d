@@ -9,6 +9,7 @@ import { createOriginPanel } from './ep-origin-panel.js';
 import { createPviPanel } from './ep-pvi-panel.js';
 import { createPharmaPanel } from './ep-pharma-panel.js';
 import { createEpFullscreen } from './ep-fullscreen.js';
+import { createLivePanel } from './ep-live-panel.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, caliperText } from './ep-user-caliper.js';
 
 /*
@@ -101,7 +102,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
-  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, large: false, sim: null };
+  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, large: false, sim: null, live: false };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
   const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null };
@@ -120,10 +121,24 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     button.type = 'button';
     button.setAttribute('role', 'tab');
     button.setAttribute('data-ep-section', id);
-    button.addEventListener('click', () => setSection(id));
+    button.addEventListener('click', () => {
+      // Leaving the live laboratory for a lesson section.
+      const wasLive = state.live;
+      state.live = false;
+      setSection(id);
+      if (wasLive) render();
+    });
     tabs.appendChild(button);
     return button;
   });
+  // Live recording system: its own tab after the lesson sections.
+  const liveTab = el('button');
+  liveTab.type = 'button';
+  liveTab.setAttribute('role', 'tab');
+  liveTab.setAttribute('data-ep-section', 'live');
+  liveTab.addEventListener('click', () => { state.live = true; render(); });
+  tabs.appendChild(liveTab);
+  const livePanel = createLivePanel(doc, { getLang: () => lang });
   const caseRow = el('label', 'ep-case');
   const caseName = el('span');
   const caseSelect = el('select');
@@ -264,7 +279,10 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
   // The signal strip sits right under the clip row, above the interactive
   // panels (maneuver, pharmacology, pacing, task, source region, PVI), so a
   // delivered maneuver's recording is in view next to its controls.
-  root.append(eyebrow, tabs, caseRow, title, row, viewBar, canvas, inspect, measures, sizeBtn, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
+  // The lesson content sits in one box so the live laboratory can replace it as a whole.
+  const lessonBox = el('div', 'ep-lesson');
+  lessonBox.append(caseRow, title, row, viewBar, canvas, inspect, measures, sizeBtn, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, evidenceBtn, result, text, card, compareBox, mapBox, zoneLine, compare, endpoint, sources);
+  root.append(eyebrow, tabs, lessonBox, livePanel.element);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -382,8 +400,12 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     eyebrow.textContent = t.eyebrow;
     sectionButtons.forEach((button, i) => {
       button.textContent = t.sections[EP_SECTIONS[i]];
-      button.setAttribute('aria-selected', String(EP_SECTIONS[i] === state.section));
+      button.setAttribute('aria-selected', String(!state.live && EP_SECTIONS[i] === state.section));
     });
+    liveTab.textContent = lang === 'en' ? 'Live recording' : 'Canlı kayıt';
+    liveTab.setAttribute('aria-selected', String(state.live));
+    lessonBox.hidden = state.live;
+    livePanel.setActive(state.live);
     // In diagnosis the case names stay hidden (numbered cases) until the evidence view.
     const cases = EP_CASES.filter((c) => inSection(c.id, state.section));
     caseName.textContent = t.caseLabel;
@@ -529,7 +551,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     setScenario: setClip,
     openLesson: setClip,
     getScenario: () => state.clipId,
-    getState: () => ({ section: state.section, caseId: state.caseId, clipId: state.clipId, evidence: state.evidence, large: state.large }),
+    getState: () => ({ section: state.section, caseId: state.caseId, clipId: state.clipId, evidence: state.evidence, large: state.large, live: state.live }),
+    live: livePanel,
     /** View state (channels shown, zoom, pan, inspection cursor) and the delivered maneuver, if any. */
     getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? { ...view.caliper } : null, sim: state.sim ? state.sim.choices : null }),
     getRecording: () => current(),

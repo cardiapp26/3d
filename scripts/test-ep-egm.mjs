@@ -100,18 +100,21 @@ mount.appendChild = (child) => { mount.children.push(child); return child; };
 const picked = [];
 const panel = createEpPanel(mount, { getLang: () => 'tr', onScenario: (id) => picked.push(id) });
 assert.ok(panel && panel.element.className === 'egm-panel', 'panel root class');
-const byClass = (name) => panel.element.children.find((c) => (c.className || '').split(' ').includes(name));
+// The lesson content sits in the .ep-lesson box (the live laboratory replaces it as a whole).
+const hasClass = (c, name) => (c.className || '').split(' ').includes(name);
+const lessonBox = panel.element.children.find((c) => hasClass(c, 'ep-lesson'));
+const byClass = (name) => [...panel.element.children, ...lessonBox.children].find((c) => hasClass(c, name));
 const eyebrow = byClass('eyebrow');
 const tabs = byClass('ep-sections');
 const row = byClass('egm-scenarios');
 const text = byClass('egm-text');
 const title = byClass('egm-title');
 assert.equal(eyebrow.textContent, 'ELEKTROFİZYOLOJİK ANATOMİ');
-assert.equal(tabs.children.length, 3, 'three sections');
+assert.equal(tabs.children.length, 4, 'three lesson sections and the live recording tab');
 
 // Lesson entry: the legacy scenario ids open the treatment clips.
 panel.openLesson('sinus');
-assert.deepEqual(panel.getState(), { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, large: false });
+assert.deepEqual(panel.getState(), { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, large: false, live: false });
 assert.deepEqual(row.children.map((b) => b.attributes['data-egm-scenario']), ['sinus', 'slow-target', 'junctional-rf', 'junctional-va-block'], 'legacy treatment clips in order');
 assert.equal(row.children[0].attributes['aria-pressed'], 'true');
 row.children[2].listeners.click();

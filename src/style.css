@@ -1146,3 +1146,20 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   :root[data-app-mode=ablation] .view-controls button{flex:0 0 auto}
   :root[data-app-mode=ablation] .view-controls button kbd{display:none}
 }
+
+/* Live EP recording system (ep-live-panel.js). */
+.ep-live{display:grid;gap:8px}
+.ep-live[hidden],.ep-lesson[hidden]{display:none}
+.ep-live-canvas{display:block;width:100%;height:360px;border-radius:6px;background:#0e1815}
+.ep-live-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px 10px}
+.ep-live-grid .ep-pace-field{display:grid;gap:2px}
+.ep-live-grid input,.ep-live-grid select{width:100%}
+.ep-live .ep-view{flex-wrap:wrap}
+.ep-live .ep-view input[type=range]{flex:1;min-width:100px}
+.ep-live .ep-pace-actions{flex-wrap:wrap}
+.ep-live .ep-view input[type=range]:disabled{opacity:.35}
+/* Interval readout and status line of the live monitor. */
+.ep-live-readout{margin:0;font-size:12.5px;font-weight:600;color:#1e4336}
+.ep-live-info{margin:0;font:11.5px ui-monospace,monospace;color:#5c7267;min-height:1.2em}
+.ep-live-shock{border-color:#c0392b;color:#a3271a}
+@media (max-width:640px){.ep-live-canvas{height:300px}}
