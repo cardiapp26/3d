@@ -1,5 +1,6 @@
 /**
- * Panel shell: right-panel tabs (Learn / Sources) on every screen size and,
+ * Panel shell: right-panel tabs (Learn plus extra tabs such as Findings; the
+ * tab bar shows only when more than one tab is available) and,
  * on phones, a bottom tab bar that opens one sheet at a time (Modes, Layers,
  * Learn, Tools). The sheets reuse the existing left and right panels; no
  * control is duplicated, so selection, lesson step and camera are shared.
@@ -12,7 +13,7 @@ const WORDS = {
     selected: 'Seçili yapı', source: 'Kaynak', noSource: 'Bu yapı için ayrı kaynak kaydı yok.',
     empty: 'Açıklamasını görmek için bir yapı seçin.',
     provenance: { atlas: 'Anatomik atlas yapısı', schematic: 'Şematik eğitim modeli', reference: 'Bilgi notu; anatomik modele hizalanmış 3D yapı yok' },
-    modelType: 'Model niteliği', limits: 'Model sınırları', allSources: 'Tüm kaynaklar ve sınırlar',
+    modelType: 'Model niteliği',
   },
   en: {
     learn: 'Learn', sources: 'Sources', modes: 'Modes', layers: 'Layers', tools: 'Tools',
@@ -21,7 +22,7 @@ const WORDS = {
     selected: 'Selected structure', source: 'Source', noSource: 'No separate source record for this structure.',
     empty: 'Select a structure to view its description.',
     provenance: { atlas: 'Anatomical atlas structure', schematic: 'Schematic teaching model', reference: 'Reference note; no 3D structure registered to the model' },
-    modelType: 'Model type', limits: 'Model limits', allSources: 'All sources and limits',
+    modelType: 'Model type',
   },
 };
 const SIZES = ['peek', 'half', 'full'];
@@ -37,10 +38,10 @@ function el(tag, attrs = {}, text) {
   return out;
 }
 
-export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', openReferences = () => {} } = {}) {
+export function createPanelShell({ getLang = () => 'tr' } = {}) {
   const aside = document.querySelector('.workspace > aside');
   const article = document.querySelector('.workspace > article');
-  if (!aside || !article) return { refresh() {}, setStructure() {}, closeSheet() {}, isMobile: () => false };
+  if (!aside || !article) return { refresh() {}, setStructure() {}, closeSheet() {}, renderSources() {}, setTabVisible() {}, isMobile: () => false };
   const words = () => WORDS[getLang() === 'en' ? 'en' : 'tr'];
   const mobile = window.matchMedia(MOBILE_QUERY);
   let structure = { title: '', source: '', provenance: '' };
@@ -52,10 +53,8 @@ export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', o
   const carm = article.querySelector('#carm-panel');
   const tabs = el('div', { class: 'panel-tabs', role: 'tablist' });
   const learnTab = el('button', { type: 'button', role: 'tab', id: 'panel-tab-learn', 'aria-controls': 'panel-learn', 'aria-selected': 'true' });
-  const sourcesTab = el('button', { type: 'button', role: 'tab', id: 'panel-tab-sources', 'aria-controls': 'panel-sources', 'aria-selected': 'false', tabindex: '-1' });
-  tabs.append(learnTab, sourcesTab);
+  tabs.append(learnTab);
   const learnPanel = el('div', { role: 'tabpanel', id: 'panel-learn', 'aria-labelledby': 'panel-tab-learn', class: 'panel-body' });
-  const sourcesPanel = el('div', { role: 'tabpanel', id: 'panel-sources', 'aria-labelledby': 'panel-tab-sources', class: 'panel-body', hidden: '' });
   // Everything after the C-Arm tool becomes the Learn panel content.
   const learnNodes = [...article.children].filter(node => node !== carm);
   learnPanel.append(...learnNodes);
@@ -64,14 +63,13 @@ export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', o
   const sizeButton = el('button', { type: 'button', class: 'sheet-btn', 'data-sheet-size': '' });
   const learnClose = el('button', { type: 'button', class: 'sheet-btn sheet-close' });
   learnHead.append(learnTitle, sizeButton, learnClose);
-  article.append(learnHead, tabs, learnPanel, sourcesPanel);
+  article.append(learnHead, tabs, learnPanel);
   article.id = article.id || 'learn-sheet';
 
-  // Tabs in display order; extra tabs (e.g. Findings) slot in before Sources.
-  const tabDefs = [
-    { id: 'learn', tab: learnTab, panel: learnPanel },
-    { id: 'sources', tab: sourcesTab, panel: sourcesPanel, onShow: () => renderSources() },
-  ];
+  // Tabs in display order; extra tabs (e.g. Findings) follow Learn.
+  const tabDefs = [{ id: 'learn', tab: learnTab, panel: learnPanel }];
+  // A single tab needs no tab bar.
+  const syncTabBar = () => { tabs.hidden = tabDefs.filter(def => !def.tab.hidden).length < 2; };
   let currentTab = 'learn';
   function selectTab(which) {
     const target = tabDefs.find(def => def.id === which && !def.tab.hidden) || tabDefs[0];
@@ -85,7 +83,6 @@ export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', o
     target.onShow?.();
   }
   learnTab.addEventListener('click', () => selectTab('learn'));
-  sourcesTab.addEventListener('click', () => selectTab('sources'));
   tabs.addEventListener('keydown', event => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
@@ -95,22 +92,33 @@ export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', o
     selectTab(next.id);
     next.tab.focus();
   });
-  /** Add a tab before Sources; `label` is { tr, en }. Returns its panel. */
+  /** Add a tab after the existing ones; `label` is { tr, en }. Returns its panel. */
   function addTab({ id, label, onShow }) {
     const tab = el('button', { type: 'button', role: 'tab', id: `panel-tab-${id}`, 'aria-controls': `panel-${id}`, 'aria-selected': 'false', tabindex: '-1' });
     const panel = el('div', { role: 'tabpanel', id: `panel-${id}`, 'aria-labelledby': `panel-tab-${id}`, class: 'panel-body', hidden: '' });
-    tabs.insertBefore(tab, sourcesTab);
-    article.insertBefore(panel, sourcesPanel);
+    tabs.append(tab);
+    article.append(panel);
     const def = { id, tab, panel, label, onShow };
-    tabDefs.splice(tabDefs.length - 1, 0, def);
+    tabDefs.push(def);
     tab.addEventListener('click', () => selectTab(id));
     relabel();
+    syncTabBar();
     return panel;
   }
+  /** Show or hide an extra tab; a hidden selected tab falls back to Learn. */
+  function setTabVisible(id, visible) {
+    const def = tabDefs.find(item => item.id === id);
+    if (!def || def.id === 'learn') return;
+    def.tab.hidden = !visible;
+    if (!visible && currentTab === id) selectTab('learn');
+    syncTabBar();
+  }
 
-  function renderSources() {
+  /** Selected structure's source and model type, for the references dialog. */
+  function renderSources(target) {
+    if (!target) return;
     const w = words();
-    sourcesPanel.replaceChildren();
+    target.replaceChildren();
     const card = el('section', { class: 'source-card' });
     card.append(el('div', { class: 'eyebrow' }, w.selected), el('h3', {}, structure.title || w.empty));
     if (structure.provenance) {
@@ -119,12 +127,7 @@ export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', o
     if (structure.title) {
       card.append(el('div', { class: 'eyebrow' }, w.source), el('p', { class: 'source-text' }, structure.source || w.noSource));
     }
-    const limits = getLimits();
-    if (limits) card.append(el('div', { class: 'eyebrow' }, w.limits), el('p', {}, limits));
-    const all = el('button', { type: 'button', class: 'source-all' }, w.allSources);
-    all.addEventListener('click', openReferences);
-    card.append(all);
-    sourcesPanel.append(card);
+    target.append(card);
   }
 
   // ---- Mobile sheets ----------------------------------------------------
@@ -197,7 +200,6 @@ export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', o
   function relabel() {
     const w = words();
     learnTab.textContent = w.learn;
-    sourcesTab.textContent = w.sources;
     for (const def of tabDefs) if (def.label) def.tab.textContent = def.label[getLang() === 'en' ? 'en' : 'tr'];
     tabs.setAttribute('aria-label', w.tabsLabel);
     bar.setAttribute('aria-label', w.mobileLabel);
@@ -217,17 +219,16 @@ export function createPanelShell({ getLang = () => 'tr', getLimits = () => '', o
     sheetButtons.layers.hidden = !layers;
     if ((openSheet === 'tools' && !tools) || (openSheet === 'layers' && !layers)) closeSheet();
     relabel();
-    if (currentTab === 'sources') renderSources();
   }
 
   function setStructure(next) {
     const changed = next.title !== structure.title;
     structure = { ...structure, ...next };
-    if (currentTab === 'sources') renderSources();
     if (changed && mobile.matches && openSheet !== 'learn' && structure.title) sheetButtons.learn.setAttribute('data-badge', '');
   }
 
   relabel();
+  syncTabBar();
   refresh();
-  return { refresh, setStructure, closeSheet, open, selectTab, addTab, isMobile: () => mobile.matches, getState: () => ({ sheet: openSheet, size: learnSize, tab: currentTab }) };
+  return { refresh, setStructure, closeSheet, open, selectTab, addTab, setTabVisible, renderSources, isMobile: () => mobile.matches, getState: () => ({ sheet: openSheet, size: learnSize, tab: currentTab }) };
 }

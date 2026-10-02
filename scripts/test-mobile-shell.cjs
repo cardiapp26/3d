@@ -122,19 +122,19 @@ const visibleArticle = page => page.evaluate(() => getComputedStyle(document.que
     assert.equal(small.overflow, 0, '320 px: no horizontal overflow');
     assert.ok(small.main > 250, `320 px: scene visible (${small.main})`);
 
-    // Desktop: tabs in the right panel, Sources shows the selected structure's source.
+    // Desktop: no Sources tab; the header Sources dialog shows the selected structure's source.
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.waitForTimeout(200);
     assert.equal(await page.locator('.mobile-tabs').isVisible(), false, 'no phone tab bar on desktop');
     assert.equal(await visibleAside(page), true);
     await page.locator('#structure-select').selectOption('la');
-    await page.locator('#panel-tab-sources').click();
-    assert.equal(await page.locator('#panel-learn').isVisible(), false);
-    assert.match(await page.locator('#panel-sources').innerText(), /Ho et al\., 2012/);
-    // Tab order: Learn | Findings | Sources; arrow keys move through it.
-    await page.locator('#panel-tab-sources').press('ArrowLeft');
-    assert.equal(await page.locator('#panel-findings').isVisible(), true, 'ArrowLeft from Sources opens Findings');
-    await page.keyboard.press('ArrowLeft');
+    assert.equal(await page.locator('#panel-tab-sources').count(), 0, 'no Sources tab in the right panel');
+    await page.locator('#sources').click();
+    assert.match(await page.locator('#reference-selected').innerText(), /Ho et al\., 2012/);
+    await page.locator('#close-dialog').click();
+    // Tab order: Learn | Findings; arrow keys move through it.
+    await page.locator('#panel-tab-findings').click();
+    await page.locator('#panel-tab-findings').press('ArrowLeft');
     assert.equal(await page.locator('#panel-learn').isVisible(), true, 'arrow keys switch tabs');
 
     assert.deepEqual(errors, []);

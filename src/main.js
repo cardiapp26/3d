@@ -413,6 +413,7 @@ app.innerHTML = `
 <dialog id="references">
   <button id="close-dialog" data-i18n="closeDialog">${getTranslation('closeDialog')}</button>
   <h2 data-i18n="referencesTitle">${getTranslation('referencesTitle')}</h2>
+  <div id="reference-selected"></div>
   <div class="about-block">
     <p data-i18n="madeBy">${getTranslation('madeBy')}</p>
     <p><span data-i18n="contactLead">${getTranslation('contactLead')}</span> <a href="mailto:adycovs@gmail.com">adycovs@gmail.com</a></p>
@@ -703,12 +704,7 @@ const defectPanel = createSeptalDefectsPanel({
   getLang: getContentLanguage,
   onSelect: id => inspect(id), onFocus: id => inspect(id)
 });
-panelShell = createPanelShell({
-  getLang: getContentLanguage,
-  // The panel shows its own heading; drop the text's leading label.
-  getLimits: () => getTranslation('referencesLimits').replace(/^[^:]{1,40}:\s*/, ''),
-  openReferences: () => document.querySelector('#sources')?.click()
-});
+panelShell = createPanelShell({ getLang: getContentLanguage });
 headerTabs = createHeaderTabs({ getLang: getContentLanguage });
 
 const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'Bulgu', en: 'Findings' }, onShow: () => practice?.refresh() });
@@ -1036,11 +1032,7 @@ function setMode(newMode, updateUrl = true) {
   // the lesson modes (angiography, EP, pacemaker, ...) have their own steps, so those controls stay hidden.
   const usesPractice = ['anatomy', 'atria', 'ra'].includes(mode);
   document.documentElement.dataset.practice = usesPractice ? 'on' : 'off';
-  const findingsTab = document.querySelector('#panel-tab-findings');
-  if (findingsTab) {
-    findingsTab.hidden = !usesPractice;
-    if (!usesPractice && findingsTab.getAttribute('aria-selected') === 'true') document.querySelector('#panel-tab-learn')?.click();
-  }
+  panelShell?.setTabVisible('findings', usesPractice);
   // The C-Arm is a drawer hidden at the right edge in every mode; the edge tab, the dock button or C opens it.
   setCarmPanelOpen(false);
 
@@ -1862,7 +1854,11 @@ for (const source of new Set(Object.values(structures).map(s => s.source))) {
   p.textContent = source;
   document.querySelector('#reference-list').append(p);
 }
-document.querySelector('#sources').addEventListener('click', () => dialog.showModal());
+document.querySelector('#sources').addEventListener('click', () => {
+  // The selected structure's own source opens the dialog, above the full list.
+  panelShell?.renderSources(document.querySelector('#reference-selected'));
+  dialog.showModal();
+});
 document.querySelector('#close-dialog').addEventListener('click', () => dialog.close());
 
 const shortcutsModal = document.querySelector('#shortcuts-modal');

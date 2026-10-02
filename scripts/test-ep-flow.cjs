@@ -121,6 +121,13 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-ep-case]').selectOption('avnrt-typical');
     const pharma = page.locator('[data-ep-pharma]');
     assert.equal(await pharma.isVisible(), true);
+    // The maneuver row chip leads to the panel; every case, flutter included, offers it.
+    await page.locator('[data-ep-pharma-jump]').click();
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-ep-pharma-control')), 'drug');
+    await page.locator('[data-ep-case]').selectOption('flutter-cti');
+    assert.equal(await pharma.isVisible(), true, 'drug challenge in the flutter case');
+    assert.deepEqual(await page.locator('[data-ep-pharma-control=example] option').evaluateAll((o) => o.map((x) => x.value)), ['sinus-av']);
+    await page.locator('[data-ep-case]').selectOption('avnrt-typical');
     const pharmaMeasure = (key) => page.locator(`[data-ep-pharma-measure="${key}"]`).textContent();
     await page.locator('[data-ep-pharma-action=show]').click();
     assert.equal(await page.evaluate(() => window.cardiaEp.getRecording().lab), 'pharma');

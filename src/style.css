@@ -694,8 +694,10 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .layer-advanced>summary{min-height:44px;display:flex;align-items:center}
 }
 
-/* Right panel tabs: Learn / Sources (all sizes). */
+/* Right panel tabs: Learn plus extra tabs such as Findings; hidden when only one. */
 .panel-tabs{display:flex;gap:2px;border-bottom:1px solid #dee4de;margin:0 0 8px}
+.panel-tabs[hidden]{display:none}
+#reference-selected .source-card{border:1px solid #dee4de;border-radius:6px;padding:10px 12px;margin:0 0 12px}
 .panel-tabs [role=tab]{flex:1;border:0;background:none;padding:5px 6px;min-height:30px;font-size:11px;font-weight:600;color:#6b7d74;border-bottom:2px solid transparent;margin-bottom:-1px}
 .panel-tabs [role=tab]:hover{color:#1e4336}
 .panel-tabs [role=tab][aria-selected=true]{color:#1e4336;border-bottom-color:#244f43}
@@ -704,7 +706,6 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .source-card .eyebrow{margin-top:8px}
 .source-card p{margin:0}
 .source-text{color:#394f41}
-.source-all{margin-top:12px;justify-self:start;border:1px solid #cbd5cf;background:#fff;color:#29483e;border-radius:5px;padding:8px 12px;font-size:11.5px}
 .sheet-head,.mobile-tabs{display:none}
 
 /* Phones: the scene is the screen; panels open as one bottom sheet at a time. */
@@ -1114,3 +1115,19 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .cycle-rate-group select,.cycle-rhythm-select{min-width:0;max-width:100%;flex:1 1 140px}
   .cycle-phase-tag{white-space:normal}
 }
+
+/* Desktop: the lesson column fills the whole workspace row and scrolls
+   inside it. Its own (long) content must not size the row, so it is size-
+   contained; without this its window-based max-height left an empty band
+   under it whenever the workspace was taller than the window allowance. */
+@media (min-width:1101px){
+  .workspace>article{max-height:none;align-self:stretch;contain:size;min-height:0}
+}
+/* Tablet (stacked under the scene): the lesson flows with the page, so no
+   inner scroller with a window-based cap clips it above an empty band. */
+@media (min-width:641px) and (max-width:1100px){
+  .workspace>article{max-height:none;overflow:visible}
+}
+
+/* Maneuver row shortcut to the drug challenge panel below the strip. */
+.egm-scenarios .egm-jump{border-style:dashed;color:#1e4336}

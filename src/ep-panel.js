@@ -237,8 +237,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
   const visibleChannels = (recording) => selectableChannels(recording)
     .filter((ch) => (view.overrides.has(ch) ? view.overrides.get(ch) : recording.channels.includes(ch)));
   const currentCase = () => EP_CASES.find((c) => c.id === state.caseId);
-  // A case belongs to a section when it has clips there; the Maneuvers tab also lists the pacing laboratory's cases.
-  const inSection = (caseId, section) => clipsOf(caseId, section).length > 0 || (section === 'maneuver' && pacingPanel.supports(caseId)) || (section === 'treatment' && pviPanel.supports(caseId));
+  // A case belongs to a section when it has clips there; the Maneuvers tab also lists the pacing laboratory's and the drug challenge's cases (every case).
+  const inSection = (caseId, section) => clipsOf(caseId, section).length > 0 || (section === 'maneuver' && (pacingPanel.supports(caseId) || pharmaPanel.supports(caseId))) || (section === 'treatment' && pviPanel.supports(caseId));
 
   function setSection(section) {
     if (!EP_SECTIONS.includes(section) || section === state.section) return;
@@ -360,6 +360,18 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
       });
       return button;
     }));
+    // The drug challenge panel sits below the strip; a chip in the maneuver row leads to it.
+    if (state.section === 'maneuver' && pharmaPanel.supports(state.caseId)) {
+      const jump = el('button', 'egm-jump');
+      jump.type = 'button';
+      jump.setAttribute('data-ep-pharma-jump', '');
+      jump.textContent = lang === 'en' ? 'Atropine / Isuprel ↓' : 'Atropin / Isuprel ↓';
+      jump.addEventListener('click', () => {
+        pharmaPanel.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        pharmaPanel.element.querySelector('[data-ep-pharma-control="drug"]')?.focus({ preventScroll: true });
+      });
+      row.append(jump);
+    }
     const clipText = state.clipId && EP_CLIP_TEXT[state.clipId] ? pick(EP_CLIP_TEXT[state.clipId], lang) : null;
     const diagnosis = state.section === 'diagnosis';
     const revealed = !diagnosis || state.evidence;

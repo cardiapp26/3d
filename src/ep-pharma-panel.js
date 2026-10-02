@@ -1,4 +1,4 @@
-import { PHARMA_CASES, PHARMA_DRUGS, pharmaExamples, defaultPharma, pharmaComparison, pharmaMeasures } from './ep-pharma.js';
+import { PHARMA_CASES, PHARMA_DRUGS, pharmaInducible, pharmaExamples, defaultPharma, pharmaComparison, pharmaMeasures } from './ep-pharma.js';
 import { PHARMA_TEXT, PHARMA_SOURCES } from './ep-pharma-text.js';
 
 /** Drug challenge controls share the main EGM strip and retain a paired comparison. */
@@ -78,7 +78,7 @@ export function createPharmaPanel(doc, { getLang, onRecording }) {
     mechanism.textContent = t.mechanism[choices.drug];
     show.textContent = t.show;
     reset.textContent = t.reset;
-    limits.textContent = t.limits;
+    limits.textContent = pharmaInducible(choices.caseId) ? t.limits : `${t.rateOnly} ${t.limits}`;
     phaseRow.setAttribute('aria-label', t.show);
     phaseButtons.forEach((b, i) => {
       const id = i === 0 ? 'before' : 'after';

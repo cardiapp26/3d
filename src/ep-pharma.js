@@ -4,15 +4,23 @@
 import { AH, HV, CH_SVT, ev, far, merge, sinusBeat, atrialPacedBeat, svtBeat, surfaceBeat } from './ep-beats.js';
 import { ref, cal, measure, resolveRef } from './ep-caliper.js';
 import { SIM_CASES } from './ep-maneuver-sim.js';
+import { EP_CASES } from './ep-cases.js';
 
 export const PHARMA_DRUGS = Object.freeze(['atropine', 'isuprel']);
-export const PHARMA_CASES = Object.freeze(Object.keys(SIM_CASES));
+// Every EP case offers the drug challenge. Induction examples need a
+// maneuver-simulator model (SIM_CASES); the other cases keep the sinus rate
+// and AV nodal conduction example only.
+export const PHARMA_CASES = Object.freeze(EP_CASES.map((c) => c.id));
+
+/** True when the case has induction examples (a simulator model). */
+export const pharmaInducible = (caseId) => Object.hasOwn(SIM_CASES, caseId);
 const PARAMETERS = Object.freeze({
   atropine: { pp: 650, ah: 65, tclChange: 0 },
   isuprel: { pp: 550, ah: 55, tclChange: -30 }
 });
 
 export function pharmaExamples(caseId) {
+  if (!pharmaInducible(caseId)) return ['sinus-av'];
   return ['sinus-av', ...(caseId.startsWith('avnrt-') ? ['echo-only'] : []), 'induced', 'noninduced'];
 }
 

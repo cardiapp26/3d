@@ -41,4 +41,7 @@ for (const caseId of PHARMA_CASES) for (const drug of PHARMA_DRUGS) for (const e
   count++;
 }
 assert.ok(!pharmaExamples('ap-left-lateral').includes('echo-only'), 'AV nodal echo example limited to nodal cases');
+// Cases without a simulator model (flutter, advanced cases) keep the rate example only.
+assert.ok(PHARMA_CASES.includes('flutter-cti'), 'flutter offers the drug challenge');
+assert.deepEqual(pharmaExamples('flutter-cti'), ['sinus-av']);
 console.log(`PASS ep-pharma: ${count} paired drug examples, matched protocols, event-derived rate/AH/HV, single echo versus sustained induction and negative controls`);
