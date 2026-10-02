@@ -94,17 +94,20 @@ function polyline(ctx, points, color, lineWidth = 1, dash = []) {
   ctx.setLineDash([]);
 }
 
-function bracket(ctx, x0, x1, y, label, color) {
+function bracket(ctx, x0, x1, y, label, color, beside = false) {
   const [a, b] = x0 <= x1 ? [x0, x1] : [x1, x0];
   polyline(ctx, [[a, y - 4], [a, y], [b, y], [b, y - 4]], color);
   const w = ctx.measureText(label)?.width || label.length * 6;
-  tag(ctx, label, Math.max(LABEL_W, (a + b - w) / 2), y + 11, color);
+  // A stacked caliper's label goes beside its bracket, off the lower one's ends.
+  if (beside) tag(ctx, label, b + 5, y + 3, color);
+  else tag(ctx, label, Math.max(LABEL_W, (a + b - w) / 2), y + 11, color);
 }
 
 function drawCalipers(ctx, recording, geo, rows) {
   const inside = (t) => t >= geo.from - 1 && t <= geo.to + 1;
   ctx.font = '9px ui-monospace, monospace';
   const used = new Map();   // stagger calipers sharing a row so labels never overlap
+  const ends = [];
   for (const caliper of recording.calipers) {
     const a = resolveRef(recording, caliper.a);
     const b = resolveRef(recording, caliper.b);
@@ -113,8 +116,34 @@ function drawCalipers(ctx, recording, geo, rows) {
     const level = used.get(rowIndex) || 0;
     used.set(rowIndex, level + 1);
     const y = geo.rowTop(rowIndex) + geo.rowH - 6 - level * 15;
-    bracket(ctx, geo.x(a.t), geo.x(b.t), y, `${caliper.label} ${measure(recording, caliper)}`, '#ffeca8');
+    bracket(ctx, geo.x(a.t), geo.x(b.t), y, `${caliper.label} ${measure(recording, caliper)}`, '#ffeca8', level > 0);
+    ends.push(...[a.t, b.t].map((t) => ({ x: geo.x(t), rowIndex, y })));
   }
+  // Both measured events marked on the trace (deflection center) with a guide
+  // down to the bracket, drawn last so no label hides an end.
+  for (const { x, rowIndex, y } of ends) {
+    const top = geo.rowTop(rowIndex);
+    polyline(ctx, [[x, top + 2], [x, y]], 'rgba(255, 236, 168, 0.45)', 1, [2, 2]);
+    ctx.fillStyle = '#ffeca8';
+    ctx.beginPath(); ctx.arc(x, top + geo.rowH / 2, 2, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// User calipers: full-height vertical lines; the interval sits between them at the top.
+function drawUserCaliper(ctx, geo, { a, b }, height) {
+  const color = '#7fe3ff';
+  const inside = (t) => t != null && t >= geo.from && t <= geo.to;
+  for (const t of [a, b]) {
+    if (inside(t)) polyline(ctx, [[geo.x(t), HEADER_H], [geo.x(t), height - FOOTER_H]], color, 1.2);
+  }
+  if (a == null || b == null) return;
+  const x0 = geo.x(Math.max(geo.from, Math.min(a, b))), x1 = geo.x(Math.min(geo.to, Math.max(a, b)));
+  const y = HEADER_H + 6;
+  polyline(ctx, [[x0, y], [x1, y]], color, 1);
+  ctx.font = '600 10px ui-monospace, monospace';
+  const label = `${Math.abs(b - a)} ms`;
+  const w = ctx.measureText(label)?.width || label.length * 6;
+  tag(ctx, label, Math.max(LABEL_W, (x0 + x1 - w) / 2), y + 12, color);
 }
 
 function drawMarkers(ctx, recording, geo, lang, height) {
@@ -176,12 +205,14 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
  * @param {HTMLCanvasElement} canvas
  * @param {object} recording from ep-cases.js (epRecording(id)) or ep-maneuver-sim.js
  * @param {{ lang?: string, cursor?: number|null, cursorMs?: number|null, title?: string,
- *   channels?: string[], zoom?: number, pan?: number }} [options]
+ *   channels?: string[], zoom?: number, pan?: number, caliper?: { a: number|null, b: number|null }|null }} [options]
  *   cursor: 0..1 fraction of the window; cursorMs: inspection time in ms;
+ *   caliper: user caliper lines (ms) drawn across every channel;
  *   channels: the rows to draw (default: the recording's list); zoom/pan: time window
- * @returns {{ from: number, to: number, plotLeft: number, plotW: number }|undefined} the drawn time window
+ * @returns {{ from: number, to: number, plotLeft: number, plotW: number, rowTop: number, rowH: number, rows: string[] }|undefined}
+ *   the drawn time window and channel rows
  */
-export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0 } = {}) {
+export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null } = {}) {
   const width = canvas?.clientWidth;
   const height = canvas?.clientHeight;
   if (!recording || !(width >= 2) || !(height >= 2)) return;
@@ -226,13 +257,21 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
     const x = geo.x(cursorAt);
     polyline(ctx, [[x, HEADER_H], [x, height - FOOTER_H]], 'rgba(255, 236, 168, 0.85)', 1.2);
   }
-  return { from, to, plotLeft: LABEL_W, plotW };
+  if (caliper) drawUserCaliper(ctx, geo, caliper, height);
+  return { from, to, plotLeft: LABEL_W, plotW, rowTop: HEADER_H, rowH, rows: channels.map((ch) => ch.id) };
 }
 
 /** Time (ms) under a canvas x coordinate for the drawn window, or null outside the plot. */
 export function timeAtX(x, drawn) {
   if (!drawn || x < drawn.plotLeft || x > drawn.plotLeft + drawn.plotW) return null;
   return drawn.from + ((x - drawn.plotLeft) / drawn.plotW) * (drawn.to - drawn.from);
+}
+
+/** Channel id of the row under a canvas y coordinate, or null. */
+export function channelAtY(y, drawn) {
+  if (!drawn?.rows) return null;
+  const i = Math.floor((y - drawn.rowTop) / drawn.rowH);
+  return i >= 0 && i < drawn.rows.length ? drawn.rows[i] : null;
 }
 
 /** Events within `radius` ms of t on each channel (the inspection readout). */

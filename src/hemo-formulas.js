@@ -45,6 +45,21 @@ export function strokeVolume(co, hr) {
   return finite(co) * 1000 / finite(hr);
 }
 
+/** Cardiac output, L/min, from stroke volume (mL) and heart rate (bpm). */
+export function cardiacOutput(sv, hr) {
+  return finite(sv) * finite(hr) / 1000;
+}
+
+/** LVOT cross-sectional area, cm2, from its diameter in cm (circular). */
+export function lvotArea(diameterCm) {
+  return Math.PI * (finite(diameterCm) / 2) ** 2;
+}
+
+/** Doppler stroke volume, mL: LVOT area (cm2) × LVOT VTI (cm). */
+export function dopplerStrokeVolume(diameterCm, vtiCm) {
+  return lvotArea(diameterCm) * finite(vtiCm);
+}
+
 /** Systemic vascular resistance, dyn·s·cm-5 (MAP and RA in mmHg, CO L/min). */
 export function svrDyn(map, ra, co) {
   return (finite(map) - finite(ra)) / finite(co) * WOOD_TO_DYN;

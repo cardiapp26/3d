@@ -16,13 +16,15 @@ import {
 
 export const STATIONS = Object.freeze(['ra', 'rv', 'pa', 'pcwp', 'lv', 'ao']);
 
+// Distinct hues per station so overlaid curves stay apart: RA teal, RV blue,
+// PA violet, PCWP amber, LV red, Ao near black.
 export const STATION_INFO = Object.freeze({
-  ra: { side: 'right', label: { en: 'Right atrium', tr: 'Sağ atriyum' }, short: 'RA', color: '#3f86b6', pickId: 'cath-ra' },
+  ra: { side: 'right', label: { en: 'Right atrium', tr: 'Sağ atriyum' }, short: 'RA', color: '#13998a', pickId: 'cath-ra' },
   rv: { side: 'right', label: { en: 'Right ventricle', tr: 'Sağ ventrikül' }, short: 'RV', color: '#2f6fb3', pickId: 'cath-rv' },
-  pa: { side: 'right', label: { en: 'Pulmonary artery', tr: 'Pulmoner arter' }, short: 'PA', color: '#1f5f8f', pickId: 'cath-pa' },
+  pa: { side: 'right', label: { en: 'Pulmonary artery', tr: 'Pulmoner arter' }, short: 'PA', color: '#7a4fc0', pickId: 'cath-pa' },
   pcwp: { side: 'right', label: { en: 'Pulmonary capillary wedge', tr: 'Pulmoner kapiller kama (PCWP)' }, short: 'PCWP', color: '#c0843a', pickId: 'cath-wedge' },
   lv: { side: 'left', label: { en: 'Left ventricle', tr: 'Sol ventrikül' }, short: 'LV', color: '#d23a4f', pickId: 'cath-lv' },
-  ao: { side: 'left', label: { en: 'Aorta', tr: 'Aort' }, short: 'Ao', color: '#8e2f47', pickId: 'cath-ao' }
+  ao: { side: 'left', label: { en: 'Aorta', tr: 'Aort' }, short: 'Ao', color: '#2f3a36', pickId: 'cath-ao' }
 });
 
 export const PCWP_DELAY = 0.1;    // wedge lags the left atrium by ~80 ms (sources: 40-200 ms)

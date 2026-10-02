@@ -1,11 +1,12 @@
-// Editable teaching calculators for the hemodynamics panel (Fick, Gorlin,
-// shunt oximetry, resistances). Pure arithmetic lives in hemo-formulas.js;
+// Editable teaching calculators for the hemodynamics panel (Fick and Doppler
+// cardiac output, Gorlin, shunt oximetry, resistances). Pure arithmetic lives in hemo-formulas.js;
 // this module only builds the form, prefills it from the scenario and shows
 // the live results. Teaching arithmetic, not a diagnostic device.
 
 import { STATION_INFO } from './hemodynamics.js';
 import {
-  GORLIN_AORTIC, GORLIN_MITRAL, assumedVo2, bodySurfaceArea, cardiacIndex, diastolicPulmonaryGradient,
+  GORLIN_AORTIC, GORLIN_MITRAL, assumedVo2, bodySurfaceArea, cardiacIndex, cardiacOutput, diastolicPulmonaryGradient,
+  dopplerStrokeVolume, lvotArea,
   fickOutput, gorlinArea, hakkiArea, mixedVenousSaturation, oximetryStepUp, pvrDyn, pvrWood, qpQs, svrDyn,
   transpulmonaryGradient
 } from './hemo-formulas.js';
@@ -15,6 +16,8 @@ const CALC_TEXT = {
     calcTitle: 'Hesaplayıcılar', na: 'yok',
     fick: 'Fick kalp debisi', height: 'Boy (cm)', weight: 'Kilo (kg)', hb: 'Hb (g/dL)', sao2: 'SaO2 (%)', svo2: 'SvO2 (%)',
     bsa: 'VYA, Mosteller (m²)', vo2: 'VO2 varsayılan (mL/dk)', coOut: 'Kalp debisi (L/dk)', ciOut: 'Kardiyak indeks (L/dk/m²)',
+    output: 'Kalp debisi: Doppler (LVOT) ve SV × nabız', lvotD: 'LVOT çapı (cm)', vti: 'LVOT VTI (cm)', bsaIn: 'VYA (m²)',
+    lvotArea: 'LVOT alanı (cm²)', svOut: 'Atım hacmi, SV (mL)',
     gorlin: 'Gorlin kapak alanı', co: 'Kalp debisi (L/dk)', hr: 'Nabız (atım/dk)', grad: 'Ortalama gradyan (mmHg)',
     period: 'SEP / DFP (s)', constant: 'Gorlin sabiti', aortic: 'Aort (44.3)', mitral: 'Mitral (37.7)',
     area: 'Kapak alanı, Gorlin (cm²)', hakki: 'Kapak alanı, Hakki (cm²)',
@@ -30,6 +33,8 @@ const CALC_TEXT = {
     calcTitle: 'Calculators', na: 'n/a',
     fick: 'Fick cardiac output', height: 'Height (cm)', weight: 'Weight (kg)', hb: 'Hb (g/dL)', sao2: 'SaO2 (%)', svo2: 'SvO2 (%)',
     bsa: 'BSA, Mosteller (m²)', vo2: 'Assumed VO2 (mL/min)', coOut: 'Cardiac output (L/min)', ciOut: 'Cardiac index (L/min/m²)',
+    output: 'Cardiac output: Doppler (LVOT) and SV × HR', lvotD: 'LVOT diameter (cm)', vti: 'LVOT VTI (cm)', bsaIn: 'BSA (m²)',
+    lvotArea: 'LVOT area (cm²)', svOut: 'Stroke volume, SV (mL)',
     gorlin: 'Gorlin valve area', co: 'Cardiac output (L/min)', hr: 'Heart rate (bpm)', grad: 'Mean gradient (mmHg)',
     period: 'SEP / DFP (s)', constant: 'Gorlin constant', aortic: 'Aortic (44.3)', mitral: 'Mitral (37.7)',
     area: 'Valve area, Gorlin (cm²)', hakki: 'Valve area, Hakki (cm²)',
@@ -117,6 +122,16 @@ const BLOCKS = [
       const vo2 = assumedVo2(bsa);
       const co = fickOutput({ vo2, hb: v.hb, satArterial: v.sao2, satVenous: v.svo2 });
       return [['bsa', f(bsa, 2)], ['vo2', f(vo2, 0)], ['coOut', f(co)], ['ciOut', f(cardiacIndex(co, bsa))]];
+    }
+  },
+  {
+    id: 'output',
+    inputs: [['lvotD', 2.0], ['vti', 20], ['hr', 72], ['bsaIn', 1.9]],
+    formula: 'LVOT area = π × (D / 2)²; SV = area × VTI; CO = SV × HR / 1000; CI = CO / BSA',
+    compute(v, f) {
+      const sv = dopplerStrokeVolume(v.lvotD, v.vti);
+      const co = cardiacOutput(sv, v.hr);
+      return [['lvotArea', f(lvotArea(v.lvotD), 2)], ['svOut', f(sv, 0)], ['coOut', f(co, 2)], ['ciOut', f(cardiacIndex(co, v.bsaIn), 2)]];
     }
   },
   {
@@ -252,8 +267,11 @@ export function createCalculators({ lang: initialLang = 'tr', signal } = {}) {
     const sats = hemo.saturations();
     const sc = hemo.getScenario();
     lastMetrics = m;
-    const [fick, gorlin, shunt, res] = blocks;
+    const [fick, output, gorlin, shunt, res] = ['fick', 'output', 'gorlin', 'shunt', 'res'].map(id => blocks.find(b => b.def.id === id));
     setValues(fick, { sao2: sats.ao, svo2: sats.pa });
+    // Doppler block: the VTI that gives the scenario's stroke volume through the shown LVOT.
+    const lvotD = parseFloat(output.inputs.lvotD.value);
+    setValues(output, { hr: sc.hr, vti: (sc.co * 1000 / sc.hr) / lvotArea(lvotD) });
     const constant = m.areas.mitral != null && m.areas.aortic == null ? GORLIN_MITRAL : GORLIN_AORTIC;
     gorlin.inputs.constant.value = String(constant);
     setValues(gorlin, { co: sc.co, hr: sc.hr, ...gorlinFor(constant) });

@@ -3,12 +3,17 @@ import { CYCLE_SYNC as S } from '../src/cardiac-cycle.js';
 import { createHemodynamics, realTimeMean, STATIONS } from '../src/hemodynamics.js';
 import { SCENARIOS, SCENARIO_IDS, WAVEFORM_FLAGS } from '../src/hemo-scenarios.js';
 import {
-  fickOutput, gorlinArea, hakkiArea, mixedVenousSaturation, oximetryStepUp, pvrWood, qpQs, svrDyn
+  cardiacOutput, dopplerStrokeVolume, lvotArea, fickOutput, gorlinArea, hakkiArea, mixedVenousSaturation, oximetryStepUp, pvrWood, qpQs, svrDyn
 } from '../src/hemo-formulas.js';
 
 // Formulas on textbook examples
 const co = fickOutput({ vo2: 250, hb: 14, satArterial: 97, satVenous: 72 });
 assert.ok(Math.abs(co - 5.25) < 0.1, `Fick output 5.2 L/min, got ${co.toFixed(2)}`);
+// Doppler: LVOT 2.0 cm -> 3.14 cm2; VTI 20 cm -> SV 63 mL; at 72/min CO 4.5 L/min.
+assert.ok(Math.abs(lvotArea(2) - Math.PI) < 1e-9, 'LVOT area = pi (D/2)^2');
+assert.ok(Math.abs(dopplerStrokeVolume(2, 20) - 62.83) < 0.01, 'SV = LVOT area x VTI');
+assert.ok(Math.abs(cardiacOutput(dopplerStrokeVolume(2, 20), 72) - 4.52) < 0.01, 'CO = SV x HR / 1000');
+assert.ok(Math.abs(cardiacOutput(70, 72) - 5.04) < 1e-9, 'CO from SV 70 mL at 72/min');
 assert.ok(Number.isNaN(fickOutput({ vo2: 250, hb: 14, satArterial: 70, satVenous: 75 })), 'negative AV difference is not an output');
 assert.ok(Math.abs(mixedVenousSaturation(70, 78) - 72) < 1e-9, '(3 SVC + IVC) / 4');
 assert.ok(Math.abs(qpQs({ arterial: 97, mixedVenous: 71.25, pulmonaryVein: 98, pulmonaryArtery: 85 }) - 1.98) < 0.02, 'Qp/Qs ~2 for an ASD run');

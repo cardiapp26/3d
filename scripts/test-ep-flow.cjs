@@ -64,6 +64,24 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.match(await page.locator('.egm-text').textContent(), /tanısını kesinleştirmez/);
     await page.locator('[data-ep-evidence]').click();
     await page.locator('[data-egm-scenario=avnrt-typ-svt]').click();
+    // Vertical calipers: two clicks place snapped lines, the readout gives interval and rate, toggling off clears them.
+    {
+      const box = await page.locator('.egm-canvas').first().boundingBox();
+      await page.locator('[data-ep-caliper]').click();
+      const drawn = await page.evaluate(() => { const r = window.cardiaEp.getRecording(); return { vs: r.events.rv.filter((e) => e.type === 'V').map((e) => e.t), w: r.windowMs }; });
+      const plotX = (t) => box.x + 58 + (t / drawn.w) * (box.width - 58 - 6);   // LABEL_W 58, 1x zoom
+      // Click on the RV row (last of the shown rows), a little off each V.
+      const rows = await page.evaluate(() => window.cardiaEp.getView().channels);
+      const rowH = (box.height - 18 - 16) / rows.length;
+      const rvY = box.y + 18 + (rows.indexOf('rv') + 0.5) * rowH;
+      await page.mouse.click(plotX(drawn.vs[1]) + 1, rvY);
+      await page.mouse.click(plotX(drawn.vs[2]) - 1, rvY);
+      const cal = await page.evaluate(() => window.cardiaEp.getView().caliper);
+      assert.equal(Math.abs(cal.b - cal.a), Math.round(drawn.vs[2] - drawn.vs[1]), 'caliper lines snap to V');
+      assert.match(await page.locator('.ep-inspect').first().textContent(), /Kaliper: 360 ms · 167 \/dk/);
+      await page.locator('[data-ep-caliper]').click();
+      assert.equal(await page.evaluate(() => window.cardiaEp.getView().caliper), null);
+    }
     await page.locator('.ep-channels summary').click();
     await page.locator('[data-ep-channel="cs-56"]').uncheck();
     await page.locator('[data-ep-channel="cs-78"]').check();

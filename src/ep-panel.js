@@ -1,6 +1,6 @@
 import { EP_SECTIONS, EP_CASES, EP_CHANNELS, CS_OSTIUM_COMPARISON, epRecording, epClips, measure } from './ep-cases.js';
 import { EP_TEXT, EP_CASE_TEXT, EP_CLIP_TEXT, EP_MANEUVERS, EP_ZONE_TEXT, EP_CITATION_NOTE, EP_COMPARE } from './ep-case-text.js';
-import { drawEgm, selectableChannels, timeAtX, eventsNear } from './ep-egm.js';
+import { drawEgm, selectableChannels, timeAtX, channelAtY, eventsNear } from './ep-egm.js';
 import { activationSequence, drawActivationMap } from './ep-activation-map.js';
 import { createSimPanel } from './ep-sim-panel.js';
 import { createPacingPanel } from './ep-pacing-panel.js';
@@ -9,6 +9,7 @@ import { createOriginPanel } from './ep-origin-panel.js';
 import { createPviPanel } from './ep-pvi-panel.js';
 import { createPharmaPanel } from './ep-pharma-panel.js';
 import { createEpFullscreen } from './ep-fullscreen.js';
+import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, caliperText } from './ep-user-caliper.js';
 
 /*
  * Electrophysiological anatomy panel: Diagnosis / Maneuvers / Treatment tabs
@@ -102,7 +103,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
   const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, large: false, sim: null };
   // View state shared with the full-screen view; channel overrides survive clip changes.
-  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null };
+  // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
+  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null };
 
   const el = (tagName, className) => {
     const node = doc.createElement(tagName);
@@ -150,13 +152,55 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
   fullBtn.type = 'button';
   fullBtn.setAttribute('data-ep-fullscreen-open', '');
   fullBtn.addEventListener('click', () => fullscreen().open(fullBtn));
-  viewBar.append(channelBox, zoomSelect, panInput, fullBtn);
+  const caliperBtn = el('button', 'ep-size');
+  caliperBtn.type = 'button';
+  caliperBtn.setAttribute('data-ep-caliper', '');
+  caliperBtn.addEventListener('click', () => {
+    view.caliperOn = !view.caliperOn;
+    view.caliper = noCaliper();
+    renderView();
+  });
+  viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, fullBtn);
   const inspect = el('p', 'ep-inspect');
-  canvas.addEventListener('click', (event) => {
+  const stripTime = (event) => {
     const rect = canvas.getBoundingClientRect?.();
-    if (!rect || !lastDrawn) return;
+    if (!rect || !lastDrawn) return null;
+    return timeAtX(event.clientX - rect.left, lastDrawn);
+  };
+  // A line snaps to the events of the row under the pointer (all rows outside them).
+  const snapped = (t, event) => {
+    const rect = canvas.getBoundingClientRect();
+    const ch = channelAtY(event.clientY - rect.top, lastDrawn);
+    // Radius: at least 8 ms, or 6 px on a narrow strip.
+    const radius = Math.max(CALIPER_SNAP_MS, (6 * (lastDrawn.to - lastDrawn.from)) / lastDrawn.plotW);
+    return snapTime(current(), t, ch ? [ch] : visibleChannels(current()), radius);
+  };
+  // Calipers: a click places the next line; pressing near a line drags it.
+  let dragEnd = null, dragged = false;
+  canvas.addEventListener('pointerdown', (event) => {
+    if (!view.caliperOn || !lastDrawn) return;
+    const rect = canvas.getBoundingClientRect();
+    const msPerPx = (lastDrawn.to - lastDrawn.from) / lastDrawn.plotW;
     const t = timeAtX(event.clientX - rect.left, lastDrawn);
-    view.cursorMs = t == null ? null : Math.round(t);
+    dragEnd = t == null ? null : ['a', 'b'].find((end) => view.caliper[end] != null && Math.abs(view.caliper[end] - t) <= 6 * msPerPx) || null;
+    dragged = false;
+    if (dragEnd) canvas.setPointerCapture?.(event.pointerId);
+  });
+  canvas.addEventListener('pointermove', (event) => {
+    if (!dragEnd) return;
+    const t = stripTime(event);
+    if (t == null) return;
+    dragged = true;
+    view.caliper = moveCaliper(view.caliper, dragEnd, snapped(t, event));
+    renderView();
+  });
+  canvas.addEventListener('pointerup', () => { dragEnd = null; });
+  canvas.addEventListener('click', (event) => {
+    if (dragged) { dragged = false; return; }
+    const t = stripTime(event);
+    if (view.caliperOn) {
+      if (t != null) view.caliper = placeCaliper(view.caliper, snapped(t, event));
+    } else view.cursorMs = t == null ? null : Math.round(t);
     renderView();
   });
   const measures = el('p', 'ep-measures');
@@ -278,7 +322,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     const heading = state.sim?.lab === 'pharma' ? pharmaPanel.stripTitle(lang) : state.sim ? pick(EP_MANEUVERS[state.sim.maneuver] || { tr: '', en: '' }, lang).name || ''
       : state.section === 'diagnosis' && !state.evidence ? EP_TEXT[lang][recording.maneuver === 'a-extra' ? 'extrastimulusTitle' : 'neutralTitle']
         : (clipText && pick(clipText, lang).title) || '';
-    return drawEgm(target, recording, { lang, title: heading, channels: visibleChannels(recording), zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs });
+    return drawEgm(target, recording, { lang, title: heading, channels: visibleChannels(recording), zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? view.caliper : null });
   }
 
   function redraw() {
@@ -292,6 +336,8 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     // A pacing-only case in the Maneuvers tab has no clip until the first delivery: show no stale strip.
     for (const node of [viewBar, canvas, inspect, sizeBtn]) node.hidden = !recording;
     if (!recording) { lastDrawn = null; return; }
+    // Calipers belong to the recording they were placed on.
+    if (view.caliperFor !== recording) { view.caliper = noCaliper(); view.caliperFor = recording; }
     const shown = new Set(visibleChannels(recording));
     channelSummary.textContent = `${lang === 'en' ? 'Channels' : 'Kanallar'} (${shown.size})`;
     channelList.replaceChildren(...selectableChannels(recording).map((ch) => {
@@ -318,7 +364,10 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     panInput.value = String(Math.round(view.pan * 1000));
     panInput.setAttribute('aria-label', lang === 'en' ? 'Move in time' : 'Zamanda kaydır');
     fullBtn.textContent = lang === 'en' ? 'Full screen' : 'Tam ekran';
-    if (view.cursorMs == null) inspect.textContent = lang === 'en' ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
+    caliperBtn.textContent = lang === 'en' ? 'Calipers' : 'Kaliper';
+    caliperBtn.setAttribute('aria-pressed', String(view.caliperOn));
+    if (view.caliperOn) inspect.textContent = caliperText(view.caliper, lang);
+    else if (view.cursorMs == null) inspect.textContent = lang === 'en' ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
     else {
       const near = eventsNear(recording, view.cursorMs, [...shown]);
       const label = (ch) => EP_CHANNELS.find((c) => c.id === ch)?.label || ch;
@@ -482,7 +531,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     getScenario: () => state.clipId,
     getState: () => ({ section: state.section, caseId: state.caseId, clipId: state.clipId, evidence: state.evidence, large: state.large }),
     /** View state (channels shown, zoom, pan, inspection cursor) and the delivered maneuver, if any. */
-    getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, sim: state.sim ? state.sim.choices : null }),
+    getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? { ...view.caliper } : null, sim: state.sim ? state.sim.choices : null }),
     getRecording: () => current(),
     sim: simPanel,
     task: taskPanel,
