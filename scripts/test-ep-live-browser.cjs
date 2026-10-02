@@ -79,12 +79,47 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.match(await page.locator('[data-ep-live-lesion]').textContent(), /CTI bloğu/);
     assert.equal(await page.evaluate(() => window.cardiaEp.live.getState().rfOn), false, 'RF stops when the lesion completes');
 
+    // Maneuvers: His-refractory PVC advances the atrium in ORT; V overdrive reads AVNRT.
+    const runCase = async (id, site, s2) => {
+      await page.evaluate((c) => window.cardiaEp.live.setCase(c), id);
+      await page.locator('[data-ep-live-stim=site]').selectOption(site);
+      await page.locator('[data-ep-live-stim=s1]').fill('600');
+      await page.locator('[data-ep-live-stim=n]').fill('8');
+      await page.locator('[data-ep-live-stim=s2]').fill(String(s2));
+      await page.locator('[data-ep-live-action=pace]').click();
+      await page.locator('[data-ep-live-run]').click();
+      await page.evaluate(() => { window.cardiaEp.live.advance(8000); });
+    };
+    await runCase('ort-left', 'rv', 250);
+    await page.locator('[data-ep-live-maneuver=his-pvc]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.cardiaEp.live.advance(3000); });
+    assert.match(await page.locator('[data-ep-live-maneuver-result]').textContent(), /erken geldi.*aksesuar yol var/);
+    await runCase('avnrt-typical', 'hra', 370);
+    await page.locator('[data-ep-live-maneuver=v-od]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.cardiaEp.live.advance(12000); });
+    const vod = await page.locator('[data-ep-live-maneuver-result]').textContent();
+    assert.match(vod, /yanıt V-A-V.*AVNRT ile uyumlu/, vod);
+
+    // Protocol: incremental atrial pacing finds the AV block cycle length.
+    await page.evaluate(() => window.cardiaEp.live.setCase('normal'));
+    await page.locator('[data-ep-live-stim=site]').selectOption('hra');
+    await page.locator('[data-ep-live-protocol]').selectOption('avbcl');
+    await page.locator('[data-ep-live-protocol-run]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.cardiaEp.live.advance(100000); });
+    const proto = await page.evaluate(() => window.cardiaEp.live.protocol());
+    assert.equal(proto.running, false);
+    assert.match(proto.summary, /AV blok siklusu \(Wenckebach\): 280 ms/);
+    assert.ok(await page.locator('[data-ep-live-protocol-rows] li').count() >= 10, 'protocol rows listed');
+
     // Back to a lesson section.
     await page.locator('[data-ep-section=diagnosis]').click();
     assert.equal(await page.locator('.ep-lesson').isVisible(), true);
     assert.equal(await page.locator('[data-ep-live]').isHidden(), true);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: live tab, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, back to lessons');
+    console.log('PASS ep-live-browser: live tab, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, back to lessons');
   } finally {
     await browser.close();
   }

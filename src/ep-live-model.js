@@ -71,6 +71,8 @@ export function createLiveHeart(caseId = 'normal') {
   let rf = null;   // { target, token }
   let now = 0;
   let lastAtrium = null;
+  let pacedRun = 0;
+  let lastFlutterCapture = null;   // consecutive paced atrial captures since the last sinus beat
 
   const schedule = (t, kind, data = {}) => {
     const item = { t, kind, data };
@@ -84,19 +86,24 @@ export function createLiveHeart(caseId = 'normal') {
 
   function activateAtrium(t, origin, { force = false, offsets = null } = {}) {
     if (!force && !ready('atrium', t, p.aErp)) return false;
+    if (!LIVE_SITES.includes(origin)) pacedRun = 0;   // a non-paced activation ends the paced run
     last.atrium = t;
     lastAtrium = { t, origin };
     const o = offsets || ORIGINS[origin];
     const amp = origin === 'af' ? 0.3 : null;
     for (const ch of ATRIAL_CHANNELS) {
       if (o[ch] == null) continue;
-      record(ch, ev('A', t + o[ch], amp ?? (ch === 'his-d' ? 0.35 : ch === 'his-p' ? 0.6 : 0.75), origin === 'af' ? 3 : 5));
+      record(ch, ev('A', t + o[ch], amp ?? (ch === 'his-d' ? 0.35 : ch === 'his-p' ? 0.6 : 0.75), origin === 'af' ? 3 : 5, { origin }));
     }
     if (origin === 'flutter') record('ecg-ii', mono('F', t + 60, -0.16, 45));
     else if (origin === 'af') record('ecg-ii', mono('f', t + 20, (rand() - 0.5) * 0.08, 12));
     else if (o.p != null) record('ecg-ii', mono('P', t + o.p, o.pAmp, 10));
-    // Another wavefront reaching the sinus node (or an automatic focus) resets it.
-    if (origin !== 'sinus') { unschedule('sinus'); schedule(t + (o.hra ?? 0) + p.sinusCl + 40, 'sinus'); }
+    // Another wavefront reaching the sinus node (or an automatic focus) resets it;
+    // after a paced run the node recovers late (overdrive suppression: SNRT).
+    if (origin !== 'sinus') {
+      unschedule('sinus');
+      schedule(t + (o.hra ?? 0) + p.sinusCl + 40 + (pacedRun >= 8 ? p.snSuppression : 0), 'sinus');
+    }
     if (active.at && origin !== p.at.origin) { unschedule('at-fire'); schedule(t + 40 + p.at.cl, 'at-fire'); }
     schedule(t + o.avj, 'avn-ante');
     if (p.ap && origin !== p.ap.origin) schedule(t + o[p.ap.insertion], 'ap-atrial');
@@ -116,21 +123,21 @@ export function createLiveHeart(caseId = 'normal') {
       ah = decremental(p.sp.ah, p.sp.dec, p.sp.tau, p.sp.erp, t - last.spTop); path = 'slow';
       last.spTop = t; last.spAnte = t; last.spBottom = t + ah;
     } else return;   // AV nodal block
-    const h = t + ah;
-    schedule(h, 'his', { aJunction: t });
-    // Echo at the lower common pathway: slow down, fast up (typical) or fast down, slow up (atypical).
-    if (path === 'slow' && ready('fp', h, p.fp.retroErp)) {
-      last.fp = h;
-      schedule(h + p.fp.retro, 'atrium', { origin: 'avn-fast' });
-    } else if (path === 'fast' && spRetroReady(h)) {
-      spRetro(h);
-    }
+    schedule(t + ah, 'his', { aJunction: t, path });
   }
 
+  // Arrival at the lower common pathway and the His, decided at arrival time so
+  // that a retrograde wave that got there first (pacing, PVC) blocks both.
   function his(t, data) {
+    if (p.avBlock && data.path) return;
+    if (!ready('his', t, p.hpsErp)) return;   // His already activated (collision) or refractory
+    // Echo: slow down, fast up (typical) or fast down, slow up (atypical).
+    if (data.path === 'slow' && ready('fp', t, p.fp.retroErp)) {
+      last.fp = t;
+      schedule(t + p.fp.retro, 'atrium', { origin: 'avn-fast' });
+    } else if (data.path === 'fast' && spRetroReady(t)) spRetro(t);
     record('his-d', ev('H', t, 0.7, 4));
     record('his-p', ev('H', t, 0.3, 4));
-    if (!ready('his', t, p.hpsErp)) return;   // infra-His block
     last.his = t;
     schedule(t + p.hv, 'ventricle', { origin: 'his', h: t, aJunction: data.aJunction ?? null });
   }
@@ -163,21 +170,15 @@ export function createLiveHeart(caseId = 'normal') {
     if (origin === 'ap') record('ecg-ii', mono('delta', t, 0.3, 7));
     record('ecg-ii', ev('V', t + q.lag, origin === 'vt' ? -0.8 : 0.9, q.sigma));
     record('ecg-v1', ev('V', t + q.lag, q.v1, q.sigma));
-    record('rv', ev('V', origin === 'rv' ? t : t + (origin === 'vt' ? 40 : 5), 0.9));
+    record('rv', ev('V', origin === 'rv' ? t : t + (origin === 'vt' ? 40 : 5), 0.9, 5, { origin }));
     const nearHis = origin === 'his';
     record('his-d', far('V', t + (nearHis ? 0 : 25), nearHis ? 0.9 : 0.6, nearHis ? 6 : 10));
     record('his-p', far('V', t + (nearHis ? 0 : 25), 0.5, nearHis ? 6 : 10));
     for (const [ch, dt] of [['cs-910', 15], ['cs-78', 17], ['cs-56', 19], ['cs-34', 21], ['cs-12', 23]]) record(ch, far('V', t + dt, 0.4, 8));
     beats.push({ v: t, h, aJunction, origin, a: lastAtrium });
     schedule(t + p.escapeCl, 'escape', { token: t });
-    if (origin !== 'his') {
-      const hr = t + (origin === 'rv' ? 45 : origin === 'vt' ? 40 : 30);
-      if (ready('his', hr, p.hpsErp)) {
-        last.his = hr;
-        if (origin === 'vt') { record('his-d', ev('H', hr, 0.45, 4)); record('his-p', ev('H', hr, 0.2, 4)); }
-        avnRetro(hr);
-      }
-    }
+    // Retrograde into the His and AV node (paced, pre-excited and VT beats; escape beats do not conduct back).
+    if (origin !== 'his' && origin !== 'escape') schedule(t + (origin === 'rv' ? 70 : origin === 'vt' ? 40 : 30), 'his-retro', { origin });
     if (p.ap && origin !== 'ap' && ready('ap', t, p.ap.erp)) {
       const retro = p.ap.retroDec ? decremental(p.ap.retro, p.ap.retroDec, p.ap.retroTau, p.ap.erp, t - last.ap) : p.ap.retro;
       last.ap = t;
@@ -194,11 +195,28 @@ export function createLiveHeart(caseId = 'normal') {
 
   // Rapid capture starts the triggered substrates of the case. Couplings are
   // stimulus to stimulus (the programmed intervals), counted on captured stimuli.
-  function onStim(kind, t, captured) {
+  function onStim(kind, t, captured, site) {
     const run = runs[kind];
     const coupling = t - run.lastT;
     run.lastT = t;
     if (!captured) return;
+    // Entrainment: a captured stimulus resets a running macroreentry; the return
+    // cycle at the pacing site is the TCL plus the distance to the circuit.
+    if (kind === 'a' && active.flutter) {
+      unschedule('flutter-fire');
+      lastFlutterCapture = { t, site };
+      // While the train goes on, the next stimulus captures before the wavefront returns.
+      const next = queue.find((q) => q.kind === 'stim' && q.data.site !== 'rv');
+      if (!next || next.t >= t + p.flutter.tcl + p.flutter.ppiExtra[site]) scheduleFlutterReturn(lastFlutterCapture);
+    }
+    if (kind === 'v' && active.vt) {
+      unschedule('vt-fire');
+      // Antitachycardia pacing: a run of fast captures ends the VT.
+      p.vt.atpCount = coupling <= p.vt.atpCl ? (p.vt.atpCount || 0) + 1 : 0;
+      if (p.vt.atpCount >= p.vt.atpCaptures) { active.vt = false; p.vt.atpCount = 0; run.block = t + 1500; return; }
+      schedule(t + 10 + p.vt.cl + p.vt.ppiExtra - 40, 'vt-fire');
+    }
+    if (kind === 'a') pacedRun++;
     if (kind === 'a') {
       for (const key of ['at', 'flutter', 'af']) {
         const s = p[key];
@@ -212,16 +230,29 @@ export function createLiveHeart(caseId = 'normal') {
         }
       }
     } else if (p.vt && !active.vt) {
+      // The rest of a train that just ended the VT does not re-induce it.
+      if (t < (run.block ?? -1)) { run.block = t + 1500; run.count = 0; return; }
       run.count = coupling <= p.vt.triggerCl ? run.count + 1 : 0;
       if (run.count >= 2) { active.vt = true; schedule(t + p.vt.cl - 40, 'vt-fire'); }
     }
   }
 
+  // Return of the entrained flutter wavefront: TCL + distance to the circuit at the pacing site.
+  function scheduleFlutterReturn({ t, site }) {
+    const ch = { hra: 'hra', 'cs-prox': 'cs-910', 'cs-dist': 'cs-12' }[site];
+    schedule(t + p.flutter.tcl + p.flutter.ppiExtra[site] - ORIGINS.flutter[ch], 'flutter-fire');
+  }
+
   function stim(t, site) {
     const ch = site === 'cs-prox' ? 'cs-910' : site === 'cs-dist' ? 'cs-12' : site;
     record(ch, ev('S', t, 0.5, 2));
-    if (site === 'rv') onStim('v', t, ventricle(t + 10, { origin: 'rv' }));
-    else onStim('a', t, activateAtrium(t + 2, site));
+    if (site === 'rv') onStim('v', t, ventricle(t + 10, { origin: 'rv' }), site);
+    else {
+      const captured = activateAtrium(t + 2, site);
+      onStim('a', t, captured, site);
+      // A stimulus that did not capture leaves the circuit to return from the last capture.
+      if (!captured && active.flutter && lastFlutterCapture && !queue.some((q) => q.kind === 'flutter-fire')) scheduleFlutterReturn(lastFlutterCapture);
+    }
   }
 
   function afOffsets() {
@@ -244,13 +275,19 @@ export function createLiveHeart(caseId = 'normal') {
   }
 
   const handlers = {
-    sinus: (t) => { activateAtrium(t, 'sinus'); if (!queue.some((q) => q.kind === 'sinus')) schedule(t + p.sinusCl, 'sinus'); },
+    sinus: (t) => { pacedRun = 0; activateAtrium(t, 'sinus'); if (!queue.some((q) => q.kind === 'sinus')) schedule(t + p.sinusCl, 'sinus'); },
     stim: (t, d) => stim(t, d.site),
     atrium: (t, d) => activateAtrium(t, d.origin),
     'avn-ante': (t) => avnAnte(t),
     'ap-atrial': (t) => apAtrial(t),
     his: (t, d) => his(t, d),
     ventricle: (t, d) => ventricle(t, d),
+    'his-retro': (t, d) => {
+      if (!ready('his', t, p.hpsErp)) return;
+      last.his = t;
+      if (d.origin === 'vt') { record('his-d', ev('H', t, 0.45, 4)); record('his-p', ev('H', t, 0.2, 4)); }
+      avnRetro(t);
+    },
     escape: (t, d) => { if (last.v === d.token) ventricle(t, { origin: 'escape' }); },
     'at-fire': (t) => { if (!active.at || !p.at) return; activateAtrium(t, p.at.origin); schedule(t + p.at.cl, 'at-fire'); },
     'flutter-fire': (t) => { if (!active.flutter || !p.flutter) return; activateAtrium(t, 'flutter', { force: true }); schedule(t + p.flutter.tcl, 'flutter-fire'); },
@@ -280,7 +317,11 @@ export function createLiveHeart(caseId = 'normal') {
       now = Math.max(now, t);
     },
     stimulate(list) { for (const s of list) if (s.t >= now && LIVE_SITES.includes(s.site)) schedule(s.t, 'stim', { site: s.site }); },
-    stopPacing() { unschedule('stim'); },
+    /** Cancel stimuli still to come (or only those after time `after`). */
+    stopPacing(after = -Infinity) {
+      for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === 'stim' && queue[i].t > after) queue.splice(i, 1);
+      if (active.flutter && lastFlutterCapture && !queue.some((q) => q.kind === 'flutter-fire' || (q.kind === 'stim' && q.data.site !== 'rv'))) scheduleFlutterReturn(lastFlutterCapture);
+    },
     /** DC shock: every tissue depolarized; reentry and triggered rhythms end, an automatic focus resumes. */
     cardiovert(t) {
       queue.length = 0;

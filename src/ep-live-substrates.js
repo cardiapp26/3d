@@ -27,7 +27,7 @@ export const ORIGINS = Object.freeze({
 });
 
 const BASE = {
-  sinusCl: 800, aErp: 220, vErp: 240, hpsErp: 260, hv: 45, escapeCl: 1700,
+  sinusCl: 800, aErp: 220, vErp: 240, hpsErp: 260, hv: 45, escapeCl: 1700, snSuppression: 250,
   fp: { ah: 75, dec: 110, tau: 110, erp: 300, retro: 75, retroErp: 300 },
   sp: null, ap: null, at: null, flutter: null, vt: null, af: null
 };
@@ -39,17 +39,23 @@ const fp = (over) => ({ ...BASE.fp, ...over });
  * decremental retrograde pathway (PJRT); at / flutter / af: triggered by
  * rapid atrial capture (count captures at a cycle of at most triggerCl);
  * vt: triggered by two ventricular captures coupled at most triggerCl.
+ * ppiExtra: the return cycle beyond the TCL after entrainment from a site
+ * (flutter per atrial site, VT from the RV apex); vt.atpCl/atpCaptures: a run
+ * of captures at most atpCl long ends the VT (antitachycardia pacing).
+ * snSuppression: extra sinus recovery after a paced atrial run (SNRT).
  */
 export const LIVE_CASES = Object.freeze({
   normal: { ...BASE },
-  'avnrt-typical': { ...BASE, fp: fp({ erp: 380 }), sp: { ah: 260, dec: 90, tau: 50, erp: 250 } },
+  'avnrt-typical': { ...BASE, fp: fp({ erp: 380, retroErp: 250 }), sp: { ah: 260, dec: 90, tau: 50, erp: 250 } },
   'avnrt-atypical': { ...BASE, fp: fp({ retroErp: 700 }), sp: { ah: 260, dec: 90, tau: 50, erp: 250, retro: 300, retroErp: 250 } },
   'ort-left': { ...BASE, fp: fp({ erp: 250, dec: 120, tau: 130 }), ap: { insertion: 'ap', origin: 'ap-left', ante: false, retro: 70, erp: 180, anteDelay: 25 } },
   pjrt: { ...BASE, fp: fp({ erp: 250, dec: 120, tau: 130, retroErp: 700 }), ap: { insertion: 'aps', origin: 'ap-ps', ante: false, retro: 190, retroDec: 60, retroTau: 90, erp: 200, anteDelay: 25 } },
   'wpw-left': { ...BASE, ap: { insertion: 'ap', origin: 'ap-left', ante: true, retro: 70, erp: 240, anteDelay: 25 }, af: { triggerCl: 250, triggerCount: 6, min: 130, max: 210 } },
-  'at-focal': { ...BASE, at: { cl: 380, origin: 'la-focus', triggerCl: 330, triggerCount: 4 } },
-  'flutter-cti': { ...BASE, flutter: { tcl: 240, triggerCl: 260, triggerCount: 6 } },
-  'vt-scar': { ...BASE, fp: fp({ retroErp: 1000 }), vt: { cl: 380, triggerCl: 300 } }
+  'at-focal': { ...BASE, fp: fp({ retroErp: 220 }), at: { cl: 380, origin: 'la-focus', triggerCl: 330, triggerCount: 4 } },
+  'flutter-cti': { ...BASE, flutter: { tcl: 240, triggerCl: 260, triggerCount: 6, ppiExtra: { hra: 20, 'cs-prox': 10, 'cs-dist': 120 } } },
+  'vt-scar': { ...BASE, fp: fp({ retroErp: 1000 }), vt: { cl: 380, triggerCl: 300, ppiExtra: 80, atpCl: 320, atpCaptures: 6 } },
+  // Sinus node dysfunction: slower sinus rate and a long recovery after overdrive pacing.
+  'sinus-node-disease': { ...BASE, sinusCl: 1000, snSuppression: 1600 }
 });
 
 /** RF targets and the substrate element each one eliminates. */
