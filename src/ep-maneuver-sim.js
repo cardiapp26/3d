@@ -130,7 +130,7 @@ function overdrive(model, pcl, site) {
       cal('PPI', ref('rv', 'S', n - 1), ref('rv', 'V', n), 'rv'),
       cal('TCL', ref('his-d', 'V', n), ref('his-d', 'V', n + 1)),
       cal('SA', ref('rv', 'S', n - 1), ref('his-d', 'A', n - 1), 'his-d'),
-      cal('VA', ref('his-d', 'V', n), ref('his-d', 'A', n), 'his-p')
+      cal('VA', ref('his-d', 'V', n), ref('his-d', 'A', n), 'his-d')
     ],
     windowMs: vReturn + tcl + 300, feedback: { capture: true, entrained: true }, result: 'valid', reason: 'VAV'
   };

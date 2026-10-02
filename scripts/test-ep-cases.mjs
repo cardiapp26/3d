@@ -10,9 +10,22 @@ import {
   MANEUVER_RESULTS, CHANNEL_ELECTRODES, epRecording, epClips, measure, resolveRef
 } from '../src/ep-cases.js';
 import { activationSequence, earliestChannels } from '../src/ep-activation-map.js';
-import { EP_TEXT, EP_CASE_TEXT, EP_CLIP_TEXT, EP_MANEUVERS, EP_ZONE_TEXT, EP_DISCLAIMER, EP_COMPARE } from '../src/ep-case-text.js';
+import { EP_TEXT, EP_CASE_TEXT, EP_CLIP_TEXT, EP_MANEUVERS, EP_ZONE_TEXT, EP_COMPARE } from '../src/ep-case-text.js';
 
 const channelIds = new Set(EP_CHANNELS.map((c) => c.id));
+
+// No channel carries two events of the same type within 3 ms: egmSample sums
+// spikes, so a duplicate doubles the deflection (or splits a P into two humps).
+for (const id of EP_RECORDING_IDS) {
+  const r = epRecording(id);
+  for (const [ch, list] of Object.entries(r.events)) {
+    const sorted = [...list].sort((a, b) => a.t - b.t);
+    for (let i = 1; i < sorted.length; i++) {
+      const close = sorted.slice(0, i).find((e) => e.type === sorted[i].type && sorted[i].t - e.t <= 3);
+      assert.ok(!close, `${id} ${ch}: duplicate ${sorted[i].type} at ${Math.round(sorted[i].t)} ms`);
+    }
+  }
+}
 const first = (r, ch, type, occ = 0) => resolveRef(r, { ch, type, occ });
 
 // The AVNRT diagnostic workup includes a controlled S2 comparison and a
@@ -61,8 +74,8 @@ for (const id of EP_RECORDING_IDS) {
     assert.ok(t.title.length > 3, `${id} ${lang} title`);
     const bodies = t.text ? [t.text] : [t.neutral, t.evidence];
     assert.ok(bodies.every(Boolean), `${id} ${lang} body`);
-    const disclaimed = bodies.some((b) => b.includes(EP_DISCLAIMER[lang]));
-    assert.ok(disclaimed, `${id} ${lang} carries the synthetic disclaimer`);
+    // The teaching-data notice sits once at the foot of the site, not in every clip.
+    assert.ok(bodies.every((b) => !/^\s|Sentetik kayıt|Synthetic strip/.test(b)), `${id} ${lang}: no per-clip disclaimer`);
   }
 }
 assert.equal(EP_RECORDING_IDS.length, 58, '58 recordings including the two AVNRT diagnostic extrastimulus clips');

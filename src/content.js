@@ -1066,7 +1066,7 @@ export const rawLessons = {
         },
         {
           title: 'Sinyal paneli • Tanı, manevralar, tedavi',
-          text: 'Aşağıdaki şerit sentetiktir; klinik kayıt değildir ve karar kuralı vermez. Paneldeki Tanı / Manevralar / Tedavi sekmeleri sentetik olgu kayıtlarını açar: mekanizması gizli taşikardi kayıtları, His-refrakter PVC ve overdrive manevraları, ablasyon sonlanım klipleri. Sinüs ritminde His kateterinde A, keskin H ve V görülür (AH ve HV aralıkları). Yavaş yol hedefinde ablasyon kateteri küçük (bazen bölünmüş) A ve büyük V kaydeder, His potansiyeli yoktur; hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesidir, sabit bir oran değildir. RF sırasında junctional ritim görülebilir, fakat tek başına başarı göstergesi değildir: temel sonlanım AV iletim korunarak AVNRT\'nin yeniden indüklenememesidir. Junctional atımlarda VA blok veya hızlı junctional ritim enerjiyi durdurma uyarısıdır. Senaryoları şeridin üstündeki düğmelerle değiştirin; şeritte seçtiğiniz noktadaki zaman ve olaylar imleçle okunur.',
+          text: 'Paneldeki Tanı / Manevralar / Tedavi sekmeleri olgu kayıtlarını açar: mekanizması gizli taşikardi kayıtları, His-refrakter PVC ve overdrive manevraları, ablasyon sonlanım klipleri. Sinüs ritminde His kateterinde A, keskin H ve V görülür (AH ve HV aralıkları). Yavaş yol hedefinde ablasyon kateteri küçük (bazen bölünmüş) A ve büyük V kaydeder, His potansiyeli yoktur; hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesidir, sabit bir oran değildir. RF sırasında junctional ritim görülebilir, fakat tek başına başarı göstergesi değildir: temel sonlanım AV iletim korunarak AVNRT\'nin yeniden indüklenememesidir. Junctional atımlarda VA blok veya hızlı junctional ritim enerjiyi durdurma uyarısıdır. Senaryoları şeridin üstündeki düğmelerle değiştirin; şeritte seçtiğiniz noktadaki zaman ve olaylar imleçle okunur.',
           landmark: 'koch-slow',
           view: 'koch_rao',
           egm: 'sinus'
@@ -1107,7 +1107,7 @@ export const rawLessons = {
         },
         {
           title: 'Signal panel • Diagnosis, maneuvers, treatment',
-          text: 'The strip below is synthetic; it is not a clinical recording and gives no decision rule. The Diagnosis / Maneuvers / Treatment tabs of the panel open the synthetic case recordings: mechanism-hidden tachycardias, His-refractory PVC and overdrive maneuvers, and the ablation endpoint clips. In sinus rhythm the His catheter records A, a sharp H and V (AH and HV intervals). At the slow-pathway target the ablation catheter records a small (sometimes fragmented) A and a large V with no His potential; target choice weighs anatomy and electrograms together, not a fixed ratio. Junctional rhythm may appear during RF, but it alone does not indicate success: the key endpoint is noninducibility of AVNRT with preserved AV conduction. VA block in junctional beats, or a fast junctional rhythm, is a warning to stop energy delivery. Switch scenarios with the buttons above the strip; the cursor reads the time and events at the point you select on the strip.',
+          text: 'The Diagnosis / Maneuvers / Treatment tabs of the panel open the case recordings: mechanism-hidden tachycardias, His-refractory PVC and overdrive maneuvers, and the ablation endpoint clips. In sinus rhythm the His catheter records A, a sharp H and V (AH and HV intervals). At the slow-pathway target the ablation catheter records a small (sometimes fragmented) A and a large V with no His potential; target choice weighs anatomy and electrograms together, not a fixed ratio. Junctional rhythm may appear during RF, but it alone does not indicate success: the key endpoint is noninducibility of AVNRT with preserved AV conduction. VA block in junctional beats, or a fast junctional rhythm, is a warning to stop energy delivery. Switch scenarios with the buttons above the strip; the cursor reads the time and events at the point you select on the strip.',
           landmark: 'koch-slow',
           view: 'koch_rao',
           egm: 'sinus'
@@ -1534,6 +1534,7 @@ export const uiTranslations = {
     referencesBtn: 'Hakkında ve kaynaklar',
     referencesTitle: 'Hakkında ve kaynaklar',
     madeBy: 'Yapım: Dr. Yusuf Hoşoğlu',
+    siteDisclaimer: 'Bilgilendirme ve eğitim amaçlıdır. Kayıtlar, eğriler ve sayısal değerler öğretim için tasarlanmış sentetik verilerdir; tanı veya tedavi kararında kullanılmaz. Klinik bilgi için uzman hekime ve doğrulanmış kaynaklara başvurun.',
     contactLead: 'İletişim:',
     referencesIntro: 'Metinler seçilmiş kaynaklara dayanır. Sayfa numaraları, belirtildiyse PDF sayfasıdır. Denetim ve sınırlar: SOURCES.md.',
     referencesLimits: 'Model sınırları: Kalp ve damar örgüleri aynı yerel cardiovascular.glb dosyasındadır. Model, proje sahibinin özgün tasarımıdır (2026-10-01 beyanı). Hücre çizimleri ve atım şematiktir. Kaynak incelemesi, simülatörün klinik geçerliliğini doğrulamaz.',
@@ -1646,7 +1647,7 @@ export const uiTranslations = {
     flowToggleTitle: 'Kan akışı partiküllerini aç/kapat (F)',
     flowLegendTitle: 'Oksijenlenme: Kırmızı (Sol kalp / Aort / Koroner arter) · Mavi (Sağ kalp / Pulmoner arter / Venöz sistem)',
     cycleDisclaimer: 'Wiggers döngüsü · Şematik akış · Eğitim modeli (CFD / Tanısal simülasyon değildir)',
-    ecgCaption: 'Şematik DII EKG · tanı kaydı değildir',
+    ecgCaption: 'Şematik DII EKG',
     ecgScrubHint: 'Döngüde gezinmek için sarı imleci sürükleyin (ok tuşları da çalışır)',
     tsCathHeading: 'TRANSSEPTAL KATETERLERİ',
     tsCathPigtail: 'Pigtail (Aort Kökü)',
@@ -1677,6 +1678,7 @@ export const uiTranslations = {
     referencesBtn: 'About and sources',
     referencesTitle: 'About and sources',
     madeBy: 'Made by: Dr. Yusuf Hoşoğlu',
+    siteDisclaimer: 'For information and teaching only. Recordings, curves and values are synthetic teaching data designed for learning; do not use them for diagnosis or treatment decisions. For clinical information, consult a specialist and verified sources.',
     contactLead: 'Contact:',
     referencesIntro: 'Descriptions are grounded in selected sources. Page numbers refer to PDF pages where specified. Audit and limitations: SOURCES.md.',
     referencesLimits: 'Model limitations: Heart and vascular meshes come from the same local cardiovascular.glb. The model is an original design by the project owner (declaration on 2026-10-01). Cell diagrams and beating are schematic. Source review does not validate the simulator for clinical use.',
@@ -1789,7 +1791,7 @@ export const uiTranslations = {
     flowToggleTitle: 'Toggle blood flow particles (F)',
     flowLegendTitle: 'Oxygenation: Red (Left heart / Aorta / Coronaries) · Blue (Right heart / Pulmonary artery / Veins)',
     cycleDisclaimer: 'Wiggers cycle · Schematic flow · Educational model (Not CFD / diagnostic simulation)',
-    ecgCaption: 'Schematic lead II ECG · not a diagnostic tracing',
+    ecgCaption: 'Schematic lead II ECG',
     ecgScrubHint: 'Drag the yellow cursor to move through the cycle (arrow keys work too)',
     tsCathHeading: 'TRANSSEPTAL CATHETERS',
     tsCathPigtail: 'Pigtail (Aortic Root)',

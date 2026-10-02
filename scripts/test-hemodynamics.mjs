@@ -3,7 +3,7 @@ import { CYCLE_SYNC as S } from '../src/cardiac-cycle.js';
 import { createHemodynamics, realTimeMean, STATIONS } from '../src/hemodynamics.js';
 import { SCENARIOS, SCENARIO_IDS, WAVEFORM_FLAGS } from '../src/hemo-scenarios.js';
 import {
-  cardiacOutput, dopplerStrokeVolume, lvotArea, fickOutput, gorlinArea, hakkiArea, mixedVenousSaturation, oximetryStepUp, pvrWood, qpQs, svrDyn
+  cardiacOutput, dopplerStrokeVolume, lvotArea, thermodilutionArea, thermodilutionOutput, fickOutput, gorlinArea, hakkiArea, mixedVenousSaturation, oximetryStepUp, pvrWood, qpQs, svrDyn
 } from '../src/hemo-formulas.js';
 
 // Formulas on textbook examples
@@ -14,6 +14,12 @@ assert.ok(Math.abs(lvotArea(2) - Math.PI) < 1e-9, 'LVOT area = pi (D/2)^2');
 assert.ok(Math.abs(dopplerStrokeVolume(2, 20) - 62.83) < 0.01, 'SV = LVOT area x VTI');
 assert.ok(Math.abs(cardiacOutput(dopplerStrokeVolume(2, 20), 72) - 4.52) < 0.01, 'CO = SV x HR / 1000');
 assert.ok(Math.abs(cardiacOutput(70, 72) - 5.04) < 1e-9, 'CO from SV 70 mL at 72/min');
+// Thermodilution (Stewart-Hamilton): 10 mL iced dextrose, 37 °C blood, K1 1.08, K2 0.825, area 4 °C·s -> 4.95 L/min.
+const td = thermodilutionOutput({ volume: 10, tBlood: 37, tInjectate: 0, area: 4 });
+assert.ok(Math.abs(td - 4.946) < 0.01, `thermodilution 4.95 L/min, got ${td.toFixed(3)}`);
+assert.ok(thermodilutionOutput({ volume: 10, tBlood: 37, tInjectate: 0, area: 8 }) < td, 'larger curve area, lower output');
+assert.ok(Math.abs(thermodilutionArea({ volume: 10, tBlood: 37, tInjectate: 0, co: td }) - 4) < 1e-9, 'area is the inverse');
+assert.ok(Number.isNaN(thermodilutionOutput({ volume: 10, tBlood: 37, tInjectate: 38, area: 4 })), 'injectate warmer than blood is not an output');
 assert.ok(Number.isNaN(fickOutput({ vo2: 250, hb: 14, satArterial: 70, satVenous: 75 })), 'negative AV difference is not an output');
 assert.ok(Math.abs(mixedVenousSaturation(70, 78) - 72) < 1e-9, '(3 SVC + IVC) / 4');
 assert.ok(Math.abs(qpQs({ arterial: 97, mixedVenous: 71.25, pulmonaryVein: 98, pulmonaryArtery: 85 }) - 1.98) < 0.02, 'Qp/Qs ~2 for an ASD run');

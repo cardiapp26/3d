@@ -182,11 +182,7 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
     ctx.fillStyle = '#9fc7b6';
     ctx.fillText(title, LABEL_W, 13);
   }
-  ctx.font = 'bold 13px ui-monospace, monospace';
-  ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(255, 214, 120, 0.6)';
-  ctx.fillText(lang === 'en' ? 'SYNTHETIC · not a clinical recording' : 'SENTETİK · klinik kayıt değil', width - 6, 14);
-  ctx.textAlign = 'left';
+  // The teaching-data notice lives once, at the foot of the site.
   // Scale bar: 100 ms, bottom left.
   const y = height - 5;
   polyline(ctx, [[geo.x(geo.from), y], [geo.x(geo.from + 100), y]], '#d7f5e4', 1.5);

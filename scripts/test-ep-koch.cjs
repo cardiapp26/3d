@@ -178,7 +178,7 @@ const SHOTS = process.env.SHOT_DIR || null;
       return { w: c.width, h: c.height, cssH: c.clientHeight, text: document.querySelector('.egm-text').textContent, pressed: document.querySelector('[data-egm-scenario][aria-pressed=true]')?.dataset.egmScenario, kochShown: window.heart.scene.getObjectByName('Triangle of Koch').visible };
     });
     assert.ok(egm.w > 200 && egm.h > 100 && egm.cssH === 240, `EGM canvas sized (${egm.w}x${egm.h}, css ${egm.cssH})`);
-    assert.match(egm.text, /[Ss]entetik/);
+    assert.ok(egm.text.length > 20 && !/Sentetik kayıt/.test(egm.text), 'clip text without a per-clip disclaimer');
     assert.equal(egm.pressed, 'sinus'); assert.equal(egm.kochShown, true);
     await page.locator('[data-egm-scenario="junctional-rf"]').click();
     assert.match(await page.locator('.egm-text').textContent(), /tek başına/);

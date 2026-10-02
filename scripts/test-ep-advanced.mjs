@@ -56,7 +56,7 @@ for (const c of ADVANCED_CASES) {
   assert.ok(p1b.t < p1a.t && p1a.t < qrs.t, 'P1 base to apex, diastolic');
   assert.ok(p2a.t < p2b.t && p2b.t < qrs.t + 20, 'P2 apex to base, presystolic');
   // Retrograde His: the H comes after the QRS onset (negative HV).
-  assert.ok(val(vt, 'H-V (VT)') < 0, 'retrograde His');
+  assert.equal(val(vt, 'QRS → H (VT)'), 22, 'retrograde His after the QRS onset');
   // AV dissociation: the sinus A rate is independent of the V rate.
   assert.equal(val(vt, 'A-A (sinüs)'), 880);
   assert.notEqual(val(vt, 'A-A (sinüs)') % val(vt, 'TCL'), 0);

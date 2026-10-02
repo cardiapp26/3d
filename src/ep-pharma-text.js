@@ -33,7 +33,7 @@ export const PHARMA_TEXT = {
     stale: 'Seçim değişti. Yeni önce/sonra örneğini göster.',
     limits: 'Değerler ve EGM sentetik eğitim verisidir. Echo, indüksiyon ve indüklenememe birbirinden ayrı alternatif örneklerdir. İlaç yanıtı tek başına tanı koydurmaz veya aritmiyi dışlamaz. Doz ve uygulama protokolü modellenmez.',
     rateOnly: 'Bu vakada yalnız hız ve AV nodal iletim örneği vardır; indüksiyon örnekleri bu vaka için modellenmedi.',
-    sources: 'Kaynaklar', strip: (drug, phase) => `${drug} · ${phase} · sentetik EGM`,
+    sources: 'Kaynaklar', strip: (drug, phase) => `${drug} · ${phase}`,
   },
   en: {
     heading: 'Pharmacological provocation',
@@ -57,6 +57,6 @@ export const PHARMA_TEXT = {
     stale: 'Selection changed. Show the new before/after example.',
     limits: 'Values and EGM are synthetic teaching data. Echo, induction and noninduction are separate alternative examples. Drug response alone neither diagnoses a mechanism nor excludes arrhythmia. Dose and administration protocol are not modeled.',
     rateOnly: 'This case offers the rate and AV nodal conduction example only; induction examples are not modeled for it.',
-    sources: 'Sources', strip: (drug, phase) => `${drug} · ${phase} · synthetic EGM`,
+    sources: 'Sources', strip: (drug, phase) => `${drug} · ${phase}`,
   },
 };

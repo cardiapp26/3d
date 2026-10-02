@@ -497,7 +497,8 @@ define({
   define({
     id: 'flutter-entrain-cti', caseId: 'flutter-cti', section: 'maneuver', maneuver: 'entrain-cti', result: 'valid',
     windowMs: 2400, channels: CH_FLUTTER,
-    events: merge(flutterRun(0, TCL_FL, 1), paced, flutterRun(resumeBase, TCL_FL, 3), { 'abl-d': [ev('A', last + ppi, 0.35)] }),
+    // The resumed run's first ABL A lands at last + PPI (shift equals the ABL offset).
+    events: merge(flutterRun(0, TCL_FL, 1), paced, flutterRun(resumeBase, TCL_FL, 3)),
     markers: stims.map((t, i) => ({ t, label: { tr: i ? 'S' : 'S (CTI, 225 ms)', en: i ? 'S' : 'S (CTI, 225 ms)' } })),
     calipers: [
       cal('PPI', ref('abl-d', 'S', n - 1), ref('abl-d', 'A', 1)),

@@ -1131,3 +1131,18 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 
 /* Maneuver row shortcut to the drug challenge panel below the strip. */
 .egm-scenarios .egm-jump{border-style:dashed;color:#1e4336}
+
+/* Site-wide teaching-data notice: once, at the foot of the page (and in the About dialog). */
+.site-disclaimer{margin:0;padding:8px 31px 12px;font-size:11px;line-height:1.45;color:#6b7d74;background:#f6f7f4;border-top:1px solid #dee4de}
+.dialog-disclaimer{padding:8px 10px;border-left:3px solid #c0843a;background:#fbf6ee;color:#5c4a2e;font-size:12.5px}
+@media (max-width:640px){.site-disclaimer{display:none}}
+
+/* EP signal module: the strip is the subject, so the scene takes one third
+   and the panel two thirds (the resizer keeps a separate width for it). */
+@media (min-width:1101px){
+  :root[data-app-mode=ablation] .workspace{grid-template-columns:minmax(260px,1fr) 8px var(--article-w-ep,calc((100% - 8px) * 2 / 3))}
+  /* Narrow scene column: the camera bar scrolls sideways instead of spilling out. */
+  :root[data-app-mode=ablation] .view-controls{left:8px;right:8px;transform:none;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start}
+  :root[data-app-mode=ablation] .view-controls button{flex:0 0 auto}
+  :root[data-app-mode=ablation] .view-controls button kbd{display:none}
+}

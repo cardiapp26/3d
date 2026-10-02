@@ -53,8 +53,8 @@ for (const id of EP_RECORDING_IDS) {
     assert.equal(canvas.height, 480, 'DPR-aware height');
   }
 }
-assert.ok(calls.fillText.includes('SENTETİK · klinik kayıt değil'), 'tr watermark drawn');
-assert.ok(calls.fillText.includes('SYNTHETIC · not a clinical recording'), 'en watermark drawn');
+// The teaching-data notice is shown once at the foot of the site, not stamped on every strip.
+assert.ok(!calls.fillText.some((t) => /SENTETİK|SYNTHETIC/.test(t)), 'no per-strip watermark');
 assert.ok(calls.fillText.includes('100 ms'), 'scale bar label drawn');
 assert.ok(calls.fillText.includes('AH 80') && calls.fillText.includes('HV 45'), 'AH/HV calipers measured from the events');
 assert.ok(calls.fillText.includes('PPI 510'), 'PPI caliper drawn');
@@ -106,7 +106,7 @@ const tabs = byClass('ep-sections');
 const row = byClass('egm-scenarios');
 const text = byClass('egm-text');
 const title = byClass('egm-title');
-assert.equal(eyebrow.textContent, 'ELEKTROFİZYOLOJİK ANATOMİ · SENTETİK KAYIT');
+assert.equal(eyebrow.textContent, 'ELEKTROFİZYOLOJİK ANATOMİ');
 assert.equal(tabs.children.length, 3, 'three sections');
 
 // Lesson entry: the legacy scenario ids open the treatment clips.
@@ -146,7 +146,7 @@ assert.ok(byClass('ep-measures').textContent.includes('TCL 360 ms'), 'measuremen
 
 // Language switch and unknown ids.
 panel.setLanguage('en');
-assert.equal(eyebrow.textContent, 'ELECTROPHYSIOLOGICAL ANATOMY · SYNTHETIC RECORDING');
+assert.equal(eyebrow.textContent, 'ELECTROPHYSIOLOGICAL ANATOMY');
 assert.ok(byClass('ep-result').textContent.includes('no capture'));
 panel.setScenario('bogus');
 assert.equal(panel.getScenario(), 'avnrt-typ-vop-noncapture', 'unknown scenario ignored');

@@ -106,11 +106,6 @@ export function drawEcg12(canvas, sampled, { lang = 'tr', title = '', gain = 1 }
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#9fc7b6';
   if (title) ctx.fillText(title, 6, 3);
-  // The synthetic label sits bottom right, clear of the title at any width.
-  ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(255, 214, 120, 0.7)';
-  ctx.fillText(lang === 'en' ? 'SYNTHETIC · schematic' : 'SENTETİK · şematik', width - 6, height - foot + 2);
-  ctx.textAlign = 'left';
   LAYOUT.forEach((row, r) => row.forEach((lead, c) => {
     const x0 = c * cellW + 4, y0 = head + r * cellH, mid = y0 + cellH / 2;
     ctx.strokeStyle = 'rgba(120, 170, 150, 0.18)';

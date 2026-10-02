@@ -518,7 +518,7 @@ export function createEpPanel(mount, { getLang, onScenario, onZone, getPvi } = {
     endpoint.textContent = state.section === 'treatment' ? `${t.endpointLabel}: ${caseText.endpoint}` : '';
     endpoint.hidden = !endpoint.textContent;
     sources.textContent = `${t.sources}: ${(currentCase()?.citations || []).join(', ')}. ${pick(EP_CITATION_NOTE, lang)}`;
-    canvas.setAttribute('aria-label', `${lang === 'en' ? 'Synthetic electrogram strip, not a clinical recording' : 'Sentetik elektrogram şeridi, klinik kayıt değil'}: ${title.textContent}`);
+    canvas.setAttribute('aria-label', `${lang === 'en' ? 'Electrogram strip' : 'Elektrogram şeridi'}: ${title.textContent}`);
     renderView();
   }
 

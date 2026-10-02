@@ -1,12 +1,12 @@
-// Editable teaching calculators for the hemodynamics panel (Fick and Doppler
-// cardiac output, Gorlin, shunt oximetry, resistances). Pure arithmetic lives in hemo-formulas.js;
+// Editable teaching calculators for the hemodynamics panel (Fick, Doppler and
+// thermodilution cardiac output, Gorlin, shunt oximetry, resistances). Pure arithmetic lives in hemo-formulas.js;
 // this module only builds the form, prefills it from the scenario and shows
 // the live results. Teaching arithmetic, not a diagnostic device.
 
 import { STATION_INFO } from './hemodynamics.js';
 import {
   GORLIN_AORTIC, GORLIN_MITRAL, assumedVo2, bodySurfaceArea, cardiacIndex, cardiacOutput, diastolicPulmonaryGradient,
-  dopplerStrokeVolume, lvotArea,
+  dopplerStrokeVolume, lvotArea, thermodilutionArea, thermodilutionOutput, THERMO_K1_DEXTROSE, THERMO_K2,
   fickOutput, gorlinArea, hakkiArea, mixedVenousSaturation, oximetryStepUp, pvrDyn, pvrWood, qpQs, svrDyn,
   transpulmonaryGradient
 } from './hemo-formulas.js';
@@ -18,6 +18,9 @@ const CALC_TEXT = {
     bsa: 'VYA, Mosteller (m²)', vo2: 'VO2 varsayılan (mL/dk)', coOut: 'Kalp debisi (L/dk)', ciOut: 'Kardiyak indeks (L/dk/m²)',
     output: 'Kalp debisi: Doppler (LVOT) ve SV × nabız', lvotD: 'LVOT çapı (cm)', vti: 'LVOT VTI (cm)', bsaIn: 'VYA (m²)',
     lvotArea: 'LVOT alanı (cm²)', svOut: 'Atım hacmi, SV (mL)',
+    thermo: 'Termodilüsyon kalp debisi (Stewart-Hamilton)', injV: 'Enjektat hacmi (mL)', tb: 'Kan ısısı, Tb (°C)', ti: 'Enjektat ısısı, Ti (°C)',
+    k1: 'K1 (%5 dekstroz 1.08)', k2: 'K2 (kateter sabiti)', auc: 'Eğri altı alan (°C·s)',
+    thermoNote: 'Eğri altı alan küçüldükçe debi artar. Ciddi triküspit yetersizliği ve intrakardiyak şantta güvenilmez; çok düşük debide olduğundan yüksek ölçer. 3 enjeksiyonun ortalaması alınır (%10 içinde). K2 kateter ve enjektat ısısına göre üreticinin tablosundan alınır.',
     gorlin: 'Gorlin kapak alanı', co: 'Kalp debisi (L/dk)', hr: 'Nabız (atım/dk)', grad: 'Ortalama gradyan (mmHg)',
     period: 'SEP / DFP (s)', constant: 'Gorlin sabiti', aortic: 'Aort (44.3)', mitral: 'Mitral (37.7)',
     area: 'Kapak alanı, Gorlin (cm²)', hakki: 'Kapak alanı, Hakki (cm²)',
@@ -35,6 +38,9 @@ const CALC_TEXT = {
     bsa: 'BSA, Mosteller (m²)', vo2: 'Assumed VO2 (mL/min)', coOut: 'Cardiac output (L/min)', ciOut: 'Cardiac index (L/min/m²)',
     output: 'Cardiac output: Doppler (LVOT) and SV × HR', lvotD: 'LVOT diameter (cm)', vti: 'LVOT VTI (cm)', bsaIn: 'BSA (m²)',
     lvotArea: 'LVOT area (cm²)', svOut: 'Stroke volume, SV (mL)',
+    thermo: 'Thermodilution cardiac output (Stewart-Hamilton)', injV: 'Injectate volume (mL)', tb: 'Blood temperature, Tb (°C)', ti: 'Injectate temperature, Ti (°C)',
+    k1: 'K1 (5% dextrose 1.08)', k2: 'K2 (catheter constant)', auc: 'Area under the curve (°C·s)',
+    thermoNote: 'A smaller area means a higher output. Unreliable with severe tricuspid regurgitation and intracardiac shunts; overestimates very low outputs. Average 3 injections (within 10%). K2 comes from the manufacturer\'s table for the catheter and injectate temperature.',
     gorlin: 'Gorlin valve area', co: 'Cardiac output (L/min)', hr: 'Heart rate (bpm)', grad: 'Mean gradient (mmHg)',
     period: 'SEP / DFP (s)', constant: 'Gorlin constant', aortic: 'Aortic (44.3)', mitral: 'Mitral (37.7)',
     area: 'Valve area, Gorlin (cm²)', hakki: 'Valve area, Hakki (cm²)',
@@ -135,6 +141,16 @@ const BLOCKS = [
     }
   },
   {
+    id: 'thermo',
+    inputs: [['injV', 10], ['tb', 37], ['ti', 0], ['k1', THERMO_K1_DEXTROSE], ['k2', THERMO_K2], ['auc', 4]],
+    formula: 'CO = V × (Tb − Ti) × K1 × K2 × 60 / (∫ΔTb dt × 1000)',
+    note: 'thermoNote',
+    compute(v, f) {
+      const co = thermodilutionOutput({ volume: v.injV, tBlood: v.tb, tInjectate: v.ti, area: v.auc, k1: v.k1, k2: v.k2 });
+      return [['coOut', f(co, 2)]];
+    }
+  },
+  {
     id: 'gorlin',
     inputs: [['co', 5], ['hr', 72], ['grad', 0], ['period', 0.3], ['constant', GORLIN_AORTIC]],
     formula: 'Area = (CO × 1000 / (HR × SEP|DFP)) / (K × √ΔP), K = 44.3 | 37.7; Hakki ≈ CO / √ΔP',
@@ -225,6 +241,7 @@ export function createCalculators({ lang: initialLang = 'tr', signal } = {}) {
     }
     const out = node('div', 'hemo-calc-out');
     section.append(title, grid, out, node('p', 'hemo-formula', def.formula));
+    if (def.note) { const note = node('p', 'hemo-formula'); note.dataset.ck = def.note; section.append(note); }
     element.append(section);
     return { def, section, inputs, out };
   });
@@ -267,11 +284,14 @@ export function createCalculators({ lang: initialLang = 'tr', signal } = {}) {
     const sats = hemo.saturations();
     const sc = hemo.getScenario();
     lastMetrics = m;
-    const [fick, output, gorlin, shunt, res] = ['fick', 'output', 'gorlin', 'shunt', 'res'].map(id => blocks.find(b => b.def.id === id));
+    const [fick, output, thermo, gorlin, shunt, res] = ['fick', 'output', 'thermo', 'gorlin', 'shunt', 'res'].map(id => blocks.find(b => b.def.id === id));
     setValues(fick, { sao2: sats.ao, svo2: sats.pa });
     // Doppler block: the VTI that gives the scenario's stroke volume through the shown LVOT.
     const lvotD = parseFloat(output.inputs.lvotD.value);
     setValues(output, { hr: sc.hr, vti: (sc.co * 1000 / sc.hr) / lvotArea(lvotD) });
+    // Thermodilution block: the curve area the scenario's output would give with the shown injection.
+    const tv = Object.fromEntries(Object.entries(thermo.inputs).map(([k, input]) => [k, parseFloat(input.value)]));
+    setValues(thermo, { auc: thermodilutionArea({ volume: tv.injV, tBlood: tv.tb, tInjectate: tv.ti, co: sc.co, k1: tv.k1, k2: tv.k2 }) });
     const constant = m.areas.mitral != null && m.areas.aortic == null ? GORLIN_MITRAL : GORLIN_AORTIC;
     gorlin.inputs.constant.value = String(constant);
     setValues(gorlin, { co: sc.co, hr: sc.hr, ...gorlinFor(constant) });

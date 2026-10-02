@@ -35,16 +35,19 @@ const CH_PAT_MAP = ['ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-1
 const pWaves = (events, ch = 'his-p', dt = -6) => ({ 'ecg-ii': (events[ch] || []).filter((e) => e.type === 'A').map((a) => mono('P', a.t + dt, 0.18, 7)) });
 
 // One AT beat from the focus: atrial sequence from the His region; conducted when `conduct`.
+// With the ABL in the NCC (`ncc`) the surface P sits 15 ms after the ABL A
+// (R18, R19); otherwise it sits just before the His-p A.
 function atBeat(a, { conduct = true, ncc = false } = {}) {
   const atrial = {
     'his-p': [ev('A', a - 2, 0.6)], 'his-d': [ev('A', a, 0.35)], 'cs-910': [ev('A', a + 15, 0.8)],
     hra: [ev('A', a + 22, 0.9)], 'cs-56': [ev('A', a + 35, 0.7)], 'cs-12': [ev('A', a + 55, 0.7)],
-    'ecg-ii': [mono('P', a - 6, 0.18, 7)],
+    'ecg-ii': [mono('P', ncc ? a + 11 : a - 6, 0.18, 7)],
     ...(ncc ? { 'abl-d': [ev('A', a - 4, 0.4)] } : {})
   };
   if (!conduct) return atrial;
   const v = a + AH_PAT + HV;
-  return merge(atrial, svtBeat(v, {}, { ablV: ncc ? 30 : null }), { 'his-d': [ev('H', a + AH_PAT, 0.7, 4)], 'his-p': [ev('H', a + AH_PAT, 0.3, 4)] });
+  // svtBeat already places the His at v - HV (= a + AH_PAT).
+  return merge(atrial, svtBeat(v, {}, { ablV: ncc ? 30 : null }));
 }
 
 {
@@ -108,10 +111,10 @@ function atBeat(a, { conduct = true, ncc = false } = {}) {
   const as = [110, 530, 950, 1370];
   define({
     id: 'pat-ncc-map', caseId: 'at-parahisian', section: 'treatment', windowMs: 1750, channels: CH_PAT_MAP,
-    events: merge(...as.map((a) => atBeat(a, { ncc: true })), { 'ecg-ii': as.map((a) => mono('P', a + 11, 0.18, 7)) }),
+    events: merge(...as.map((a) => atBeat(a, { ncc: true }))),
     markers: [{ t: as[0] - 4, label: { tr: 'ABL: nonkoroner kusp', en: 'ABL: noncoronary cusp' } }],
     calipers: [
-      cal('ABL A → P', ref('abl-d', 'A', 0), ref('ecg-ii', 'P', 1), 'ecg-ii'),
+      cal('ABL A → P', ref('abl-d', 'A', 0), ref('ecg-ii', 'P', 0), 'ecg-ii'),
       cal('ABL A → His p A', ref('abl-d', 'A', 0), ref('his-p', 'A', 0), 'his-p')
     ],
     teachingNumbers: { 'ABL A → P': 15, 'ABL A → His p A': 2 }
@@ -136,6 +139,7 @@ define({
 // the VT resumes at its own cycle length (reentry with an excitable gap).
 // ---------------------------------------------------------------------------
 const TCL_FVT = 340;
+const QRS_H_FVT = 22;   // retrograde His after the VT QRS onset (His-d H at v + 22)
 const CH_FVT = ['ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-12', 'rv', 'lv-sep-b', 'lv-sep-a'];
 
 // Dissociated sinus atrial activity (no AV conduction during the VT).
@@ -155,7 +159,7 @@ function fvtBeat(v) {
   return merge(purkinje(v), {
     'ecg-ii': [ev('V', v, -0.8, 12)], 'ecg-v1': [ev('V', v, 0.75, 12)],
     'lv-sep-a': [ev('V', v + 5, 0.9, 7)], 'lv-sep-b': [ev('V', v + 15, 0.8, 7)],
-    'his-p': [far('V', v + 12, 0.5, 10), ev('H', v + 22, 0.3, 4)], 'his-d': [far('V', v + 12, 0.6, 10), ev('H', v + 22, 0.6, 4)],
+    'his-p': [far('V', v + 12, 0.5, 10), ev('H', v + QRS_H_FVT, 0.3, 4)], 'his-d': [far('V', v + 12, 0.6, 10), ev('H', v + QRS_H_FVT, 0.6, 4)],
     rv: [ev('V', v + 18, 0.9)], 'cs-910': [far('V', v + 20, 0.4, 8)], 'cs-12': [far('V', v + 28, 0.4, 8)]
   });
 }
@@ -166,10 +170,11 @@ define({
   calipers: [
     cal('TCL', ref('lv-sep-a', 'V', 1), ref('lv-sep-a', 'V', 2)),
     cal('P1 → QRS', ref('lv-sep-b', 'P1', 1), ref('ecg-ii', 'V', 1), 'lv-sep-b'),
-    cal('H-V (VT)', ref('his-d', 'H', 1), ref('his-d', 'V', 1)),
+    // His after the QRS onset during VT (retrograde His): V on the surface to His-d H.
+    cal('QRS → H (VT)', ref('ecg-ii', 'V', 1), ref('his-d', 'H', 1), 'his-d'),
     cal('A-A (sinüs)', ref('hra', 'A', 0), ref('hra', 'A', 1), 'hra')
   ],
-  teachingNumbers: { TCL: TCL_FVT, 'P1 → QRS': 95, 'H-V (VT)': -10, 'A-A (sinüs)': 880 }
+  teachingNumbers: { TCL: TCL_FVT, 'P1 → QRS': 95, 'QRS → H (VT)': QRS_H_FVT, 'A-A (sinüs)': 880 }
 });
 {
   // Entrainment from the RV apex at 310 ms. Each stimulus resets the circuit:

@@ -60,6 +60,27 @@ export function dopplerStrokeVolume(diameterCm, vtiCm) {
   return lvotArea(diameterCm) * finite(vtiCm);
 }
 
+export const THERMO_K1_DEXTROSE = 1.08;   // (density × specific heat) injectate / blood, 5% dextrose
+export const THERMO_K2 = 0.825;            // catheter computation constant (heat gain, dead space); vendor- and setup-specific
+
+/**
+ * Thermodilution cardiac output (Stewart-Hamilton), L/min.
+ * @param {{ volume: number, tBlood: number, tInjectate: number, area: number, k1?: number, k2?: number }} p
+ *   volume mL; temperatures °C; area: integral of the blood temperature drop, °C·s.
+ */
+export function thermodilutionOutput({ volume, tBlood, tInjectate, area, k1 = THERMO_K1_DEXTROSE, k2 = THERMO_K2 }) {
+  const dt = finite(tBlood) - finite(tInjectate);
+  if (!(dt > 0) || !(finite(area) > 0)) return NaN;
+  return (finite(volume) * dt * finite(k1) * finite(k2) * 60) / (finite(area) * 1000);
+}
+
+/** Area (°C·s) a given output would produce: the inverse of thermodilutionOutput. */
+export function thermodilutionArea({ volume, tBlood, tInjectate, co, k1 = THERMO_K1_DEXTROSE, k2 = THERMO_K2 }) {
+  const dt = finite(tBlood) - finite(tInjectate);
+  if (!(dt > 0) || !(finite(co) > 0)) return NaN;
+  return (finite(volume) * dt * finite(k1) * finite(k2) * 60) / (finite(co) * 1000);
+}
+
 /** Systemic vascular resistance, dyn·s·cm-5 (MAP and RA in mmHg, CO L/min). */
 export function svrDyn(map, ra, co) {
   return (finite(map) - finite(ra)) / finite(co) * WOOD_TO_DYN;

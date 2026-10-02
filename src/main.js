@@ -409,6 +409,7 @@ app.innerHTML = `
   <span>Gross structure <i>→</i> Tissue <i>→</i> Intervention</span>
   <span>LOCAL STUDY EDITION / 01</span>
 </footer>
+<p class="site-disclaimer" role="note" data-i18n="siteDisclaimer">${getTranslation('siteDisclaimer')}</p>
 
 <dialog id="references">
   <button id="close-dialog" data-i18n="closeDialog">${getTranslation('closeDialog')}</button>
@@ -418,6 +419,7 @@ app.innerHTML = `
     <p data-i18n="madeBy">${getTranslation('madeBy')}</p>
     <p><span data-i18n="contactLead">${getTranslation('contactLead')}</span> <a href="mailto:adycovs@gmail.com">adycovs@gmail.com</a></p>
   </div>
+  <p class="dialog-disclaimer" data-i18n="siteDisclaimer">${getTranslation('siteDisclaimer')}</p>
   <p data-i18n="referencesIntro">${getTranslation('referencesIntro')}</p>
   <div id="reference-list"></div>
   <p data-i18n="referencesLimits">${getTranslation('referencesLimits')}</p>
@@ -1936,16 +1938,22 @@ function initPanelResizer() {
   const STORAGE_KEY = 'cardia_article_w';
   const MIN_WIDTH = 260;
   const DEFAULT_WIDTH = window.innerWidth >= 1500 ? 350 : 320;
+  // The EP signal module is about the strip: its panel defaults to two thirds
+  // of the workspace (style.css) and keeps its own width while dragged.
+  const signalMode = () => document.documentElement.dataset.appMode === 'ablation';
+  const widthVar = () => (signalMode() ? '--article-w-ep' : '--article-w');
+  const storageKey = () => (signalMode() ? `${STORAGE_KEY}_ep` : STORAGE_KEY);
+  const maxWidth = () => {
+    const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 320 - 8);
+    return signalMode() ? maxAllowed : Math.min(800, maxAllowed);
+  };
 
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = parseInt(saved, 10);
-      if (!Number.isNaN(parsed) && parsed >= MIN_WIDTH) {
-        workspace.style.setProperty('--article-w', `${parsed}px`);
-      }
-    }
-  } catch (_) {}
+  for (const [key, name] of [[STORAGE_KEY, '--article-w'], [`${STORAGE_KEY}_ep`, '--article-w-ep']]) {
+    try {
+      const parsed = parseInt(localStorage.getItem(key) || '', 10);
+      if (!Number.isNaN(parsed) && parsed >= MIN_WIDTH) workspace.style.setProperty(name, `${parsed}px`);
+    } catch (_) {}
+  }
 
   let isDragging = false;
   let startX = 0;
@@ -1953,7 +1961,7 @@ function initPanelResizer() {
   let rafId = null;
 
   function updateWidth(targetWidth) {
-    workspace.style.setProperty('--article-w', `${targetWidth}px`);
+    workspace.style.setProperty(widthVar(), `${targetWidth}px`);
   }
 
   function onPointerDown(e) {
@@ -1970,9 +1978,7 @@ function initPanelResizer() {
   function onPointerMove(e) {
     if (!isDragging) return;
     const dx = e.clientX - startX;
-    const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 320 - 8);
-    const maxCap = Math.min(800, maxAllowed);
-    const targetWidth = Math.round(Math.min(maxCap, Math.max(MIN_WIDTH, startWidth - dx)));
+    const targetWidth = Math.round(Math.min(maxWidth(), Math.max(MIN_WIDTH, startWidth - dx)));
 
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => {
@@ -1997,15 +2003,17 @@ function initPanelResizer() {
     const currentWidth = Math.round(article.getBoundingClientRect().width);
     if (currentWidth >= MIN_WIDTH) {
       try {
-        localStorage.setItem(STORAGE_KEY, String(currentWidth));
+        localStorage.setItem(storageKey(), String(currentWidth));
       } catch (_) {}
     }
   }
 
   function onDoubleClick() {
-    workspace.style.setProperty('--article-w', `${DEFAULT_WIDTH}px`);
+    // Back to the default: 320/350 px, or two thirds in the EP signal module.
+    if (signalMode()) workspace.style.removeProperty('--article-w-ep');
+    else workspace.style.setProperty('--article-w', `${DEFAULT_WIDTH}px`);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKey());
     } catch (_) {}
   }
 
@@ -2015,12 +2023,10 @@ function initPanelResizer() {
       const currentWidth = article.getBoundingClientRect().width;
       const step = e.shiftKey ? 40 : 15;
       const delta = e.key === 'ArrowLeft' ? step : -step;
-      const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 320 - 8);
-      const maxCap = Math.min(800, maxAllowed);
-      const targetWidth = Math.round(Math.min(maxCap, Math.max(MIN_WIDTH, currentWidth + delta)));
+      const targetWidth = Math.round(Math.min(maxWidth(), Math.max(MIN_WIDTH, currentWidth + delta)));
       updateWidth(targetWidth);
       try {
-        localStorage.setItem(STORAGE_KEY, String(targetWidth));
+        localStorage.setItem(storageKey(), String(targetWidth));
       } catch (_) {}
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
