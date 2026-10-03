@@ -1,5 +1,5 @@
 import { TTE_LIMITS, TEE_LIMITS, ICE_LIMITS } from './echo-probe.js';
-import { ICE_PRESET_NOTES } from './echo-views.js';
+import { ICE_PRESET_NOTES, TTE_PRESET_NOTES } from './echo-views.js';
 import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
 
 /*
@@ -192,7 +192,8 @@ export function createEchoPanel(mount, handlers) {
         : `${t.atlasAngle}: ${Math.round(presetOmega ?? 0)}° · ${t.guideline}: ${view.ase[lang]} · ${t.teePath} · ${view.source}`);
     // In a task the manoeuvre would give the answer away.
     const iceText = state.modality === 'ice' && !state.task && view.motion
-      ? `${t.iceMove}: ${view.motion[lang]}${ICE_PRESET_NOTES[view.id] ? ` ${t.iceAtlas}: ${ICE_PRESET_NOTES[view.id][lang]}` : ''}` : '';
+      ? `${t.iceMove}: ${view.motion[lang]}${ICE_PRESET_NOTES[view.id] ? ` ${t.iceAtlas}: ${ICE_PRESET_NOTES[view.id][lang]}` : ''}`
+      : state.modality === 'tte' && !state.task && TTE_PRESET_NOTES[view.id] ? TTE_PRESET_NOTES[view.id][lang] : '';
     iceInfo.hidden = !iceText;
     setText(iceInfo, iceText);
     const iceFree = state.modality === 'ice' && !state.task;

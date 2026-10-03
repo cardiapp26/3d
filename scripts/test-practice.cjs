@@ -57,7 +57,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.evaluate(() => window.heart.selectStructure('tricuspid', true));
     await page.waitForTimeout(300);
     await page.waitForSelector('#viewport[data-camera-settled=true]');
-    const box = await page.locator('#viewport canvas').boundingBox();
+    const box = await page.locator('#viewport canvas[data-engine]').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     await page.waitForTimeout(200);
     assert.equal((await state()).summary.records[0].status, 'independent', 'scene click on the valve solves task 1');

@@ -64,6 +64,32 @@ export const rawStructures = {
     },
     source: 'Ho and Sánchez-Quintana, Anatomical basis for the cardiac interventional electrophysiologist (PMC4668306); schematic ridge on the measured atlas RA'
   },
+  'eustachian-valve': {
+    tr: {
+      title: 'Östaki kapağı (Eustachian valve) · şematik',
+      description: 'İnferior vena kava ağzının ön kenarındaki hilal biçimli kıvrım. Krista terminalisin alt ucundan başlayıp kava ağzının önünden koroner sinüs ağzına doğru uzanır; orada Thebesius kapağıyla birleşir ve bu birleşimden Todaro tendonu devam eder. Fetal dönemde İVK kanını fossa ovalise yönlendirir; erişkinde boyutu çok değişkendir, ince bir sırttan geniş, perfore bir zara kadar uzanabilir.',
+      clinical: 'Belirgin Östaki kapağı ve sırtı kavotriküspit istmus ablasyonunu zorlaştırabilir (subeustachian cep, kateter teması). Ekoda trombüs, vejetasyon veya kitle ile karışabilir; İVK yolundan ilerleyen kateter ve kılıfları takabilir. Atlasta ayrı düğüm yoktur: ölçülmüş İVK ve CS ağızları ile krista ucundan çizilmiş öğretim geometrisidir.'
+    },
+    en: {
+      title: 'Eustachian valve · schematic',
+      description: 'The crescentic fold on the anterior rim of the inferior caval orifice. It starts at the lower end of the crista terminalis and runs in front of the caval mouth toward the coronary sinus orifice, where it meets the Thebesian valve; the tendon of Todaro continues from this commissure. In the fetus it directs IVC blood toward the oval fossa; in adults its size varies widely, from a thin ridge to a broad, fenestrated membrane.',
+      clinical: 'A prominent Eustachian valve and ridge can make cavotricuspid isthmus ablation difficult (sub-Eustachian pouch, catheter contact). On echo it can be mistaken for thrombus, vegetation or a mass; it can catch catheters and sheaths advanced from the IVC. The atlas has no separate node: teaching geometry drawn from the measured IVC and CS ostia and the end of the crista.'
+    },
+    source: 'Ho and Sánchez-Quintana, Anatomical basis for the cardiac interventional electrophysiologist (PMC4668306)'
+  },
+  'chiari-network': {
+    tr: {
+      title: 'Chiari ağı · şematik varyant',
+      description: 'Östaki ve Thebesius kapakları bölgesinden krista terminalise ve sağ atriyum duvarına uzanan, ince liflerden oluşan pencereli ağ. Sağ sinüs venozus kapağının embriyonik kalıntısıdır; otopsilerde yaklaşık %2–3 oranında bildirilmiştir. Burada birkaç lif ile şematik çizilmiştir.',
+      clinical: 'Çoğunlukla zararsızdır. Ekoda RA içinde hareketli, ipliksi yapı olarak görülür; trombüs, vejetasyon veya kopmuş kateter parçası ile karışabilir. PFO ve atriyal septal anevrizma ile birlikteliği, paradoks emboli tartışmasında anılır. Femoral yoldan ilerletilen kateter, tel ve kılıflar ağa takılabilir.'
+    },
+    en: {
+      title: 'Chiari network · schematic variant',
+      description: 'A fenestrated net of fine strands from the region of the Eustachian and Thebesian valves to the crista terminalis and the right atrial wall. It is an embryonic remnant of the right valve of the sinus venosus, reported in about 2–3% of autopsies. Drawn here as a few schematic strands.',
+      clinical: 'Usually harmless. On echo it appears as a mobile, thread-like structure in the RA and can be mistaken for thrombus, vegetation or a retained catheter fragment. Its association with PFO and atrial septal aneurysm is cited in discussions of paradoxical embolism. Catheters, wires and sheaths advanced from the femoral route can become entangled.'
+    },
+    source: 'Ho and Sánchez-Quintana, Anatomical basis for the cardiac interventional electrophysiologist (PMC4668306)'
+  },
   la: {
     tr: {
       title: 'Sol atriyum • LA',
@@ -79,12 +105,12 @@ export const rawStructures = {
   },
   'coumadin-ridge': {
     tr: {
-      title: 'Sol lateral sırt (Coumadin sırtı)',
-      description: 'Sol atriyum iç yüzünde, apendiks ağzı (önde) ile sol süperior ve inferior pulmoner ven ağızları (arkada) arasındaki kıvrım. Dış yüzde sol atriyal duvarın katlanmasına ve içinden geçen Marshall ligamanı/veni kalıntısına karşılık gelir. Sırt, atlas LA ağının iç yüzüne, apendiks boynu ile sol ven ağız kenarlarının ortasından geçecek biçimde oturtulmuş şematik bir çizimdir; atlasta ayrı sırt düğümü yoktur.',
-      clinical: 'Adını ekokardiyografide trombüs sanılıp antikoagülan başlatılmasına yol açabilmesinden alır (Coumadin, varfarin). Pulmoner ven izolasyonunda sol WACA halkasının ön kenarı bu dar sırt üzerinden geçer; kateter stabilitesi zordur ve yeniden bağlantı (reconnection) sık görülür. LAA kapama cihazı seçiminde apendiks ağzının arka sınırını oluşturur.'
+      title: 'Coumadin ridge (sol lateral ridge)',
+      description: 'Sol atriyum iç yüzünde, apendiks ağzı (önde) ile sol süperior ve inferior pulmoner ven ağızları (arkada) arasındaki kıvrım. Dış yüzde sol atriyal duvarın katlanmasına ve içinden geçen Marshall ligamanı/veni kalıntısına karşılık gelir. Ridge, atlas LA ağının iç yüzüne, apendiks boynu ile sol ven ağız kenarlarının ortasından geçecek biçimde oturtulmuş şematik bir çizimdir; atlasta ayrı ridge düğümü yoktur.',
+      clinical: 'Adını ekokardiyografide trombüs sanılıp antikoagülan başlatılmasına yol açabilmesinden alır (Coumadin, varfarin). Pulmoner ven izolasyonunda sol WACA halkasının ön kenarı bu dar ridge üzerinden geçer; kateter stabilitesi zordur ve yeniden bağlantı (reconnection) sık görülür. LAA kapama cihazı seçiminde apendiks ağzının arka sınırını oluşturur.'
     },
     en: {
-      title: 'Left lateral ridge (Coumadin ridge)',
+      title: 'Coumadin ridge (left lateral ridge)',
       description: 'The fold on the left atrial endocardium between the appendage orifice (anterior) and the left superior and inferior pulmonary vein ostia (posterior). Externally it corresponds to an infolding of the left atrial wall that carries the remnant of the ligament/vein of Marshall. The ridge is a schematic drawing fitted to the inner face of the atlas LA mesh, midway between the appendage neck and the left vein rims; the atlas has no separate ridge node.',
       clinical: 'Named because on echocardiography it can be mistaken for thrombus and prompt anticoagulation (Coumadin, warfarin). In pulmonary vein isolation the anterior edge of the left WACA ring runs over this narrow ridge; catheter stability is difficult and reconnection is common. It forms the posterior border of the appendage orifice when sizing an occluder.'
     },
@@ -93,8 +119,8 @@ export const rawStructures = {
   laa: {
     tr: {
       title: 'Sol atriyal apendiks ağzı • LAA',
-      description: 'Sol atriyumun anterolateral duvarından öne ve sola uzanan, çok loblu, pektinat kaslı trabeküle çıkıntı. Boynu sol süperior pulmoner ven ağzının önünde yer alır; ikisini sol lateral sırt (Coumadin sırtı) ayırır. Gövdesi pulmoner trunkusun solunda, sol AV olukta seyreden sirkumfleks arter ve büyük kardiyak venin üzerinde durur. Halka, atlas LA ağının ön lobunun ölçülen boynuna oturtulmuş şematik ağız işaretidir; atlasta ayrı apendiks düğümü yoktur.',
-      clinical: 'Atriyal fibrilasyonda trombüsün en sık yeridir; perkütan LAA kapama cihazı ağız çapına (tipik 1,5–3 cm) ve derinliğe göre seçilir. Sol frenik sinir apendiks üzerinden geçer. Sol WACA halkasının ön kenarı sırt üzerinde, LSPV ile apendiks arasındaki dar alanda çizilir; burada kateter stabilitesi zordur.'
+      description: 'Sol atriyumun anterolateral duvarından öne ve sola uzanan, çok loblu, pektinat kaslı trabeküle çıkıntı. Boynu sol süperior pulmoner ven ağzının önünde yer alır; ikisini Coumadin ridge (sol lateral ridge) ayırır. Gövdesi pulmoner trunkusun solunda, sol AV olukta seyreden sirkumfleks arter ve büyük kardiyak venin üzerinde durur. Halka, atlas LA ağının ön lobunun ölçülen boynuna oturtulmuş şematik ağız işaretidir; atlasta ayrı apendiks düğümü yoktur.',
+      clinical: 'Atriyal fibrilasyonda trombüsün en sık yeridir; perkütan LAA kapama cihazı ağız çapına (tipik 1,5–3 cm) ve derinliğe göre seçilir. Sol frenik sinir apendiks üzerinden geçer. Sol WACA halkasının ön kenarı Coumadin ridge üzerinde, LSPV ile apendiks arasındaki dar alanda çizilir; burada kateter stabilitesi zordur.'
     },
     en: {
       title: 'Left atrial appendage orifice • LAA',
@@ -291,13 +317,13 @@ export const rawStructures = {
     source: `${koch2022}; schematic`
   },
   'koch-avnode': {
-    tr: { title: 'Kompakt AV düğüm (Koch apeksi)', description: 'Apekste, inferior uzantıların (yavaş yol) atriyal septum buttress\'ından gelen septal girdilerle (hızlı yol) birleşmesiyle oluşur; çoğu kez inferior piramidal boşluğun çatısını yapan fibröz plak üzerinde durur. Mitral-triküspit fibröz devamlılığını delerek dallanmayan His demetine dönüşür. Floroskopide His kateteri apeksi gösterir.', clinical: 'Düğümün Koch apeksine göre yeri bireyler arasında belirgin değişkendir; anatomik nirengi kesin konum vermez. Bu bölgede ablasyon kalıcı tam AV blok riski taşır.' },
-    en: { title: 'Compact AV node (Koch apex)', description: 'Formed at the apex by union of the inferior extensions (slow pathway) with septal inputs from the buttress of the atrial septum (fast pathway); often carried on a fibrous plate roofing the inferior pyramidal space. It penetrates the mitral-tricuspid fibrous continuity to become the non-branching His bundle. On fluoroscopy the His catheter marks the apex.', clinical: 'The node\'s position relative to the Koch apex varies markedly between individuals, so landmarks do not give its exact site. Ablation here risks permanent complete AV block.' },
+    tr: { title: 'Kompakt AV düğüm (Koch apeksi)', description: 'Apekste, inferior uzantıların (yavaş yol) atriyal septum buttress\'ından gelen septal girdilerle (hızlı yol) birleşmesiyle oluşur; çoğu kez inferior piramidal boşluğun çatısını yapan fibröz plak üzerinde durur. Mitral-triküspit fibröz devamlılığını delerek dallanmayan His demetine dönüşür. Floroskopide His kateteri apeksi gösterir.', clinical: 'Normal ritimde uyarı düğüme çoğunlukla süperior (septal) girdiden girer; sağ ve sol inferior girdilerden gelen dalga düğüm içinde çarpışıp söner. Dual AV düğüm fizyolojisi (iletim hızı ve refrakterliği farklı birden fazla girdi) AVNRT\'nin altyapısıdır ama tek başına tanı koydurmaz: AVNRT\'si olmayan kişilerde de görülür (klasik veride yaklaşık %10, sedasyon altındaki EPS\'lerde daha sık) ve AVNRT\'li bazı hastalarda gösterilemez. Düğümün Koch apeksine göre yeri bireyler arasında belirgin değişkendir; anatomik nirengi kesin konum vermez. Bu bölgede ablasyon kalıcı tam AV blok riski taşır.' },
+    en: { title: 'Compact AV node (Koch apex)', description: 'Formed at the apex by union of the inferior extensions (slow pathway) with septal inputs from the buttress of the atrial septum (fast pathway); often carried on a fibrous plate roofing the inferior pyramidal space. It penetrates the mitral-tricuspid fibrous continuity to become the non-branching His bundle. On fluoroscopy the His catheter marks the apex.', clinical: 'In normal rhythm the impulse mostly enters the node through the superior (septal) input; the wavefronts arriving over the right and left inferior inputs collide and die out within the node. Dual AV nodal physiology (more than one input with different conduction and refractoriness) is the substrate of AVNRT but is not a diagnosis by itself: it is found in people without AVNRT (about 10% in classic data, more often in EP studies under sedation) and cannot be shown in some patients with AVNRT. The node\'s position relative to the Koch apex varies markedly between individuals, so landmarks do not give its exact site. Ablation here risks permanent complete AV block.' },
     source: `${koch2022}; ${av}; schematic`
   },
   'koch-fast': {
-    tr: { title: 'Hızlı yol (septal girdi, kaçınılacak bölge)', description: 'Atriyal septumun buttress\'ından (fossa ovalisin antero-inferior kenarı, gerçek ikincil septum) gelen septal girdiler; düğüme son atriyal bağlantı fibromiyokardiyal AV septum içinde, apekste gerçekleşir. Tipik AVNRT\'de retrograd kol.', clinical: 'Hızlı yol modifikasyonu yüksek AV blok riski nedeniyle günümüzde tercih edilmez.' },
-    en: { title: 'Fast pathway (septal input, zone to avoid)', description: 'Septal inputs from the buttress of the atrial septum (the antero-inferior rim of the oval fossa, the true second septum); the last atrial connection to the node is made within the fibromyocardial AV septum at the apex. The retrograde limb in typical AVNRT.', clinical: 'Fast-pathway modification is avoided today because of the high AV block risk.' },
+    tr: { title: 'Hızlı yol (septal girdi, kaçınılacak bölge)', description: 'Atriyal septumun buttress\'ından (fossa ovalisin antero-inferior kenarı, gerçek ikincil septum) gelen septal girdiler; düğüme son atriyal bağlantı fibromiyokardiyal AV septum içinde, apekste gerçekleşir. Hızlı iletir, refrakter periyodu uzundur. Tipik (slow-fast) AVNRT\'de retrograd, atipik fast-slow AVNRT\'de antegrad kol.', clinical: 'Hızlı yol modifikasyonu yüksek AV blok riski nedeniyle günümüzde tercih edilmez.' },
+    en: { title: 'Fast pathway (septal input, zone to avoid)', description: 'Septal inputs from the buttress of the atrial septum (the antero-inferior rim of the oval fossa, the true second septum); the last atrial connection to the node is made within the fibromyocardial AV septum at the apex. It conducts fast and has a long refractory period. The retrograde limb in typical (slow-fast) AVNRT, the antegrade limb in atypical fast-slow AVNRT.', clinical: 'Fast-pathway modification is avoided today because of the high AV block risk.' },
     source: `${koch2022}; schematic`
   },
   'koch-catheter': {
@@ -306,8 +332,8 @@ export const rawStructures = {
     source: 'https://doi.org/10.1056/NEJM199207303270504; schematic'
   },
   'koch-slow': {
-    tr: { title: 'Yavaş yol / septal istmus (ablasyon hedefi)', description: 'AV düğümün sağa uzanan inferior uzantısının septal istmustan (CS ağzı ile triküspit septal menteşesi arası) geçtiği bölge. Tipik AVNRT\'de antegrad kol.', clinical: 'Olağan hedef inferior paraseptal bölgedir. Apekse otomatik ilerleme öğretilmemelidir. Junctional ritim tek başına başarı kanıtı değildir; temel sonlanım AVNRT’nin yeniden indüklenememesi ve AV iletimin korunmasıdır. Küçük bir hasta grubunda mitral vestibüldeki sol uzantıyı hedefleyen sol taraflı yaklaşım gerekir. Örnek RF lezyonları varsayılan olarak gizlidir; sayıları ve dağılımları bir tedavi protokolü değildir.' },
-    en: { title: 'Slow pathway / septal isthmus (ablation target)', description: 'Where the rightward inferior extension of the AV node crosses the septal isthmus (between the CS mouth and the septal tricuspid hinge). The antegrade limb in typical AVNRT.', clinical: 'The usual target is the inferior paraseptal region. Automatic progression toward the apex must not be taught. Junctional rhythm alone does not establish success; the key endpoint is noninducibility of AVNRT with preserved AV conduction. A small minority needs a left-sided approach to the leftward extension in the mitral vestibule. The example RF lesions are hidden by default; their number and spread are not a treatment protocol.' },
+    tr: { title: 'Yavaş yol / septal istmus (ablasyon hedefi)', description: 'AV düğümün sağa uzanan inferior uzantısının septal istmustan (CS ağzı ile triküspit septal menteşesi arası) geçtiği bölge. Yavaş iletir, refrakter periyodu kısadır: erken bir atriyal vuru refrakter hızlı yolda bloke olur, yavaş yoldan iner ve bu sürede toparlanan hızlı yoldan geri dönerek tipik (slow-fast, en sık, yaklaşık %90) AVNRT\'yi başlatır. Atipik formlarda retrograd kol (fast-slow) ya da iki yavaş yol arasında dönen halkanın bir kolu (slow-slow) olur.', clinical: 'Olağan hedef inferior paraseptal bölgedir. Apekse otomatik ilerleme öğretilmemelidir. Junctional ritim tek başına başarı kanıtı değildir; temel sonlanım AVNRT’nin yeniden indüklenememesi ve AV iletimin korunmasıdır. Küçük bir hasta grubunda mitral vestibüldeki sol uzantıyı hedefleyen sol taraflı yaklaşım gerekir. Örnek RF lezyonları varsayılan olarak gizlidir; sayıları ve dağılımları bir tedavi protokolü değildir.' },
+    en: { title: 'Slow pathway / septal isthmus (ablation target)', description: 'Where the rightward inferior extension of the AV node crosses the septal isthmus (between the CS mouth and the septal tricuspid hinge). It conducts slowly and has a short refractory period: a premature atrial beat blocks in the refractory fast pathway, goes down the slow pathway and returns over the fast pathway, which has recovered meanwhile, starting typical (slow-fast, the commonest, about 90%) AVNRT. In atypical forms it is the retrograde limb (fast-slow) or one limb of a circuit between two slow pathways (slow-slow).', clinical: 'The usual target is the inferior paraseptal region. Automatic progression toward the apex must not be taught. Junctional rhythm alone does not establish success; the key endpoint is noninducibility of AVNRT with preserved AV conduction. A small minority needs a left-sided approach to the leftward extension in the mitral vestibule. The example RF lesions are hidden by default; their number and spread are not a treatment protocol.' },
     source: `${koch2022}; schematic`
   },
   'ep-his-cath': {
@@ -326,8 +352,8 @@ export const rawStructures = {
     source: `${koch2022}; schematic`
   },
   'koch-ext-left': {
-    tr: { title: 'Sol inferior uzantı (mitral vestibülü)', description: 'Mitral vestibülünde uzanan, sağ uzantıdan kısa özelleşmiş miyokard; apekste kompakt düğüme katılır.', clinical: 'Sağ taraflı ablasyona dirençli az sayıda AVNRT\'de sol taraflı (mitral vestibül) yavaş yol ablasyonu gerekir. Şematik çizim; septumun sol tarafındadır.' },
-    en: { title: 'Leftward inferior extension (mitral vestibule)', description: 'Specialized myocardium in the mitral vestibule, shorter than the rightward extension; it joins the compact node at the apex.', clinical: 'A small minority of AVNRT needs left-sided (mitral vestibular) slow-pathway ablation. Schematic; lies on the left side of the septum.' },
+    tr: { title: 'Sol inferior uzantı (mitral vestibülü)', description: 'Mitral vestibülünde uzanan, sağ uzantıdan kısa özelleşmiş miyokard; apekste kompakt düğüme katılır.', clinical: 'Sol taraflı AVNRT\'de antegrad kol olabilir: uyarı sol inferior uzantıdan iner, hızlı yoldan döner. Sağ taraflı ablasyona dirençli az sayıda AVNRT\'de sol taraflı (mitral vestibül) yavaş yol ablasyonu gerekir. Şematik çizim; septumun sol tarafındadır.' },
+    en: { title: 'Leftward inferior extension (mitral vestibule)', description: 'Specialized myocardium in the mitral vestibule, shorter than the rightward extension; it joins the compact node at the apex.', clinical: 'It can be the antegrade limb of left-sided AVNRT: the impulse goes down the leftward inferior extension and returns over the fast pathway. A small minority of AVNRT needs left-sided (mitral vestibular) slow-pathway ablation. Schematic; lies on the left side of the septum.' },
     source: `${koch2022}; schematic`
   },
   'koch-pyramid': {
@@ -607,12 +633,12 @@ export const rawStructures = {
     tr: {
       title: 'Triküspit kapak • Sağ AV kapak',
       description: 'Sağ atriyum ile sağ ventrikül arasındaki üç yaprakçıklı (anterior, posterior, septal) kapak aygıtıdır.',
-      clinical: 'Atlas septal ve inferior yaprakçıkları içerir. Anterior yaprakçık, ölçülmüş anulusun boş yayına oturan şematik bir yelkendir. Septal menteşe Koch üçgeninin sınırıdır.'
+      clinical: 'Atlas septal ve posterior yaprakçıkları içerir. Anterior yaprakçık, ölçülmüş anulusun boş yayına oturan şematik bir yelkendir. Septal menteşe Koch üçgeninin sınırıdır.'
     },
     en: {
       title: 'Tricuspid valve • Right AV valve',
-      description: 'The right atrioventricular valve has septal, anterior and inferior leaflets with chordal attachments to the ventricular apparatus.',
-      clinical: 'The atlas contains the septal and inferior leaflets. The anterior leaflet is a schematic sail on the uncovered arc of the measured annulus. The septal hinge is a landmark for Koch’s triangle.'
+      description: 'The right atrioventricular valve has septal, anterior and posterior leaflets with chordal attachments to the ventricular apparatus.',
+      clinical: 'The atlas contains the septal and posterior leaflets. The anterior leaflet is a schematic sail on the uncovered arc of the measured annulus. The septal hinge is a landmark for Koch’s triangle.'
     },
     source: `${rv}; ${av}`
   },
@@ -631,14 +657,14 @@ export const rawStructures = {
   },
   'tricuspid-inferior': {
     tr: {
-      title: 'İnferior triküspit yaprakçık',
-      description: 'Triküspit kapağın diyafragmatik yaprakçığıdır. Cerrahi metinlerde posterior yaprakçık olarak da geçer.',
-      clinical: 'Atlas düğümünün adı inferior yaprakçıktır. Bu, posterior yaprakçıkla aynı parçadır; dördüncü bir yaprakçık yoktur. Korda yoktur.'
+      title: 'Posterior triküspit yaprakçık',
+      description: 'Triküspit kapağın diyafragmatik (inferior) yüzdeki yaprakçığıdır. Klinik ve cerrahi kullanımda posterior yaprakçık adıyla anılır.',
+      clinical: 'Atlas düğümünün adı inferior yaprakçıktır; posterior yaprakçıkla aynı parçadır, dördüncü bir yaprakçık yoktur. Korda yoktur.'
     },
     en: {
-      title: 'Inferior tricuspid leaflet',
-      description: 'The diaphragmatic leaflet of the tricuspid valve. Surgical texts also call it the posterior leaflet.',
-      clinical: 'The atlas node is named the inferior leaflet. It is the same leaflet as the posterior leaflet, not a fourth cusp. Chordae are not included.'
+      title: 'Posterior tricuspid leaflet',
+      description: 'The tricuspid leaflet on the diaphragmatic (inferior) aspect. Clinical and surgical usage calls it the posterior leaflet.',
+      clinical: 'The atlas node is named the inferior leaflet; it is the same leaflet as the posterior leaflet, not a fourth cusp. Chordae are not included.'
     },
     source: `${rv}; ${av}`
   },
@@ -646,12 +672,12 @@ export const rawStructures = {
     tr: {
       title: 'Anterior triküspit yaprakçık · şematik',
       description: 'Triküspit kapağın en geniş yaprakçığıdır. Anterosüperior anulus boyunca sağ ventrikül serbest duvarına uzanır.',
-      clinical: 'Atlas yalnız septal ve inferior yaprakçıkları içerir. Bu parça, ölçülmüş anulusun boş yayına oturan şematik bir yelkendir. Korda yoktur.'
+      clinical: 'Atlas yalnız septal ve posterior yaprakçıkları içerir. Bu parça, ölçülmüş anulusun boş yayına oturan şematik bir yelkendir. Korda yoktur.'
     },
     en: {
       title: 'Anterior tricuspid leaflet · schematic',
       description: 'The largest tricuspid leaflet. It runs along the anterosuperior annulus toward the right ventricular free wall.',
-      clinical: 'The atlas contains only the septal and inferior leaflets. This part is a schematic sail on the uncovered arc of the measured annulus. Chordae are not included.'
+      clinical: 'The atlas contains only the septal and posterior leaflets. This part is a schematic sail on the uncovered arc of the measured annulus. Chordae are not included.'
     },
     source: `${rv}; ${av}`
   },
@@ -762,7 +788,7 @@ export const rawStructures = {
   lspv: {
     tr: {
       title: 'Sol süperior pulmoner ven • LSPV',
-      description: 'Sol akciğerin üst lobundan oksijenlenmiş kanı sol atriyumun posterosüperior duvarına iletir. Ağzının hemen önünde sol lateral sırt (Coumadin sırtı) ve sol atriyal apendiks ağzı bulunur.',
+      description: 'Sol akciğerin üst lobundan oksijenlenmiş kanı sol atriyumun posterosüperior duvarına iletir. Ağzının hemen önünde Coumadin ridge (sol lateral ridge) ve sol atriyal apendiks ağzı bulunur.',
       clinical: 'Atriyal fibrilasyon (AF) kateter ablasyonunda aritmojenik tetikleyici odakların en sık izlendiği ostiyumdur; geniş antral dairesel ablasyon (WACA) ile izole edilir.'
     },
     en: {
@@ -1596,22 +1622,34 @@ export const uiTranslations = {
       ['anatomy', '01', 'Genel anatomi'],
       ['atria', '02', 'Sol atriyum & LAA'],
       ['ra', '03', 'Sağ atriyum'],
-      ['defects', '04', 'ASD & VSD'],
-      ['cath', '05', 'Kateterizasyon ve hemodinami'],
-      ['exam', '06', 'Fizik muayene'],
-      ['angiography', '07', 'Koroner anjiyografi'],
-      ['transseptal', '08', 'Transseptal & septostomi'],
-      ['ablation', '09', 'Elektrofizyolojik anatomi'],
-      ['pacemaker', '10', 'Kalp pili elektrotları'],
-      ['bachmann', '11', 'Bachmann demeti & pacing'],
-      ['echo', '12', 'Transtorasik eko (TTE)'],
-      ['tee', '13', 'Transözofageal eko (TEE)'],
-      ['ice', '14', 'İntrakardiyak eko (ICE)']
+      ['rv', '04', 'Sağ ventrikül'],
+      ['lv', '05', 'Sol ventrikül'],
+      ['defects', '06', 'ASD & VSD'],
+      ['cath', '07', 'Kateterizasyon ve hemodinami'],
+      ['exam', '08', 'Fizik muayene'],
+      ['angiography', '09', 'Koroner anjiyografi'],
+      ['transseptal', '10', 'Transseptal & septostomi'],
+      ['ablation', '11', 'Elektrofizyolojik anatomi'],
+      ['pacemaker', '12', 'Kalp pili elektrotları'],
+      ['bachmann', '13', 'Bachmann demeti & pacing'],
+      ['echo', '14', 'Transtorasik eko (TTE)'],
+      ['tee', '15', 'Transözofageal eko (TEE)'],
+      ['ice', '16', 'İntrakardiyak eko (ICE)']
     ],
     atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; turkuaz halka ostiyumu işaretler (Bachmann demeti değildir, bu modda gizlidir).',
     atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
-    raNote: 'Sağ atriyumun düz duvarlı venöz bölümünü, pektinat kaslarını ve triküspit kapakla ilişkisini inceleyin.',
+    raNote: 'Sağ atriyumun düz duvarlı venöz bölümünü, pektinat kaslarını ve triküspit kapakla ilişkisini inceleyin. Östaki kapağı ve Chiari ağı şematiktir; Chiari ağı bir varyanttır.',
     raFocusRa: 'Sağ atriyum',
+    raFocusEustachian: 'Östaki kapağı',
+    raFocusChiari: 'Chiari ağı',
+    rvNote: 'Yalnız sağ ventrikül: giriş (triküspit kapak ve papiller kaslar), trabeküllü apeks ve çıkış yolu (RVOT, pulmoner kapak). Kapakları görmek için duvar kesitini açın.',
+    rvFocusRv: 'Sağ ventrikül',
+    rvFocusTv: 'Triküspit kapak',
+    rvFocusPv: 'Pulmoner kapak',
+    lvNote: 'Yalnız sol ventrikül: mitral kapak, papiller kaslar ve çıkış yolunda aort kapakçıkları. Kapakları görmek için duvar kesitini açın.',
+    lvFocusLv: 'Sol ventrikül',
+    lvFocusMv: 'Mitral kapak',
+    lvFocusPm: 'Papiller kaslar',
     epToolsHeading: 'KOCH YAKIN PLANI',
     epHisCath: 'His kateteri (referans)',
     epCsCath: 'CS kateteri (referans)',
@@ -1653,6 +1691,8 @@ export const uiTranslations = {
     carmQuickTogglesTitle: 'HIZLI KATMAN KONTROLLERİ',
     fluoroBtn: 'Floroskopi modu',
     fluoroDockBtn: 'Floroskopi',
+    fluoroContours: 'Konturlar',
+    fluoroContoursTitle: 'Floroskopide kalp yapılarının konturları (şematik çizim; LA ve aort kesik çizgi)',
     fluoroDockTitle: 'Şematik floroskopi görünümü',
     fluoroShortcut: 'Floroskopi modunu aç veya kapat',
     resetBtn: 'Sıfırla',
@@ -1679,7 +1719,7 @@ export const uiTranslations = {
     layerBachmann: 'Bachmann demeti', layerPaFaint: 'Pulmoner arteri silikleştir', layerDiaphragm: 'Diyafram', layerPhrenic: 'Frenik sinirler',
     layerVertebrae: 'Vertebra kolonu (silik)', layerFlow: 'Kan akışı (yollar ve partiküller)', flowLegend: 'Akış hızı (göreli): yavaştan hızlıya',
     layerAorticValve: 'Aort kapağı (LCC, RCC, NCC)', layerMitral: 'Mitral kapak', layerMitralPost: 'PML · atlas yaprakçığı', layerMitralAnt: 'AML · şematik',
-    layerTricuspid: 'Triküspit kapak', layerTvSeptal: 'TV septal yaprakçık', layerTvInferior: 'TV inferior yaprakçık', layerTvAnterior: 'TV anterior · şematik',
+    layerTricuspid: 'Triküspit kapak', layerTvSeptal: 'TV septal yaprakçık', layerTvInferior: 'TV posterior yaprakçık', layerTvAnterior: 'TV anterior · şematik',
     layerMitralAnnulus: 'Mitral anülüs', layerTricuspidAnnulus: 'Triküspit anülüs', layerPulmonaryValve: 'Pulmoner kapak', layerPapillary: 'Papiller kaslar (RV / LV)',
     coronaryToolsHeading: 'KORONER İNCELEME',
     coronarySystemLabel: 'Koroner filtre',
@@ -1740,22 +1780,34 @@ export const uiTranslations = {
       ['anatomy', '01', 'Gross anatomy'],
       ['atria', '02', 'Left atrium & LAA'],
       ['ra', '03', 'Right atrium'],
-      ['defects', '04', 'ASD & VSD'],
-      ['cath', '05', 'Catheterization and hemodynamics'],
-      ['exam', '06', 'Physical examination'],
-      ['angiography', '07', 'Coronary angiography'],
-      ['transseptal', '08', 'Transseptal & septostomy'],
-      ['ablation', '09', 'Electrophysiological anatomy'],
-      ['pacemaker', '10', 'Pacemaker leads'],
-      ['bachmann', '11', 'Bachmann bundle & pacing'],
-      ['echo', '12', 'Transthoracic echo (TTE)'],
-      ['tee', '13', 'Transoesophageal echo (TEE)'],
-      ['ice', '14', 'Intracardiac echo (ICE)']
+      ['rv', '04', 'Right ventricle'],
+      ['lv', '05', 'Left ventricle'],
+      ['defects', '06', 'ASD & VSD'],
+      ['cath', '07', 'Catheterization and hemodynamics'],
+      ['exam', '08', 'Physical examination'],
+      ['angiography', '09', 'Coronary angiography'],
+      ['transseptal', '10', 'Transseptal & septostomy'],
+      ['ablation', '11', 'Electrophysiological anatomy'],
+      ['pacemaker', '12', 'Pacemaker leads'],
+      ['bachmann', '13', 'Bachmann bundle & pacing'],
+      ['echo', '14', 'Transthoracic echo (TTE)'],
+      ['tee', '15', 'Transoesophageal echo (TEE)'],
+      ['ice', '16', 'Intracardiac echo (ICE)']
     ],
     atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the teal ring marks its orifice (it is not Bachmann\'s bundle, which is hidden in this mode).',
     atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',
-    raNote: 'Explore the right atrium’s smooth-walled venous component, pectinate muscles, and relationship to the tricuspid valve.',
+    raNote: 'Explore the right atrium’s smooth-walled venous component, pectinate muscles, and relationship to the tricuspid valve. The Eustachian valve and the Chiari network are schematic; the Chiari network is a variant.',
     raFocusRa: 'Right atrium',
+    raFocusEustachian: 'Eustachian valve',
+    raFocusChiari: 'Chiari network',
+    rvNote: 'The right ventricle alone: inlet (tricuspid valve and papillary muscles), trabeculated apex and outflow tract (RVOT, pulmonary valve). Open the wall section to see the valves.',
+    rvFocusRv: 'Right ventricle',
+    rvFocusTv: 'Tricuspid valve',
+    rvFocusPv: 'Pulmonary valve',
+    lvNote: 'The left ventricle alone: mitral valve, papillary muscles and the aortic cusps in the outflow tract. Open the wall section to see the valves.',
+    lvFocusLv: 'Left ventricle',
+    lvFocusMv: 'Mitral valve',
+    lvFocusPm: 'Papillary muscles',
     epToolsHeading: 'KOCH CLOSE-UP',
     epHisCath: 'His catheter (reference)',
     epCsCath: 'CS catheter (reference)',
@@ -1797,6 +1849,8 @@ export const uiTranslations = {
     carmQuickTogglesTitle: 'QUICK LAYER TOGGLES',
     fluoroBtn: 'Fluoroscopy mode',
     fluoroDockBtn: 'Fluoroscopy',
+    fluoroContours: 'Contours',
+    fluoroContoursTitle: 'Outlines of the cardiac structures on fluoroscopy (schematic drawing; LA and aorta dashed)',
     fluoroDockTitle: 'Schematic fluoroscopic view',
     fluoroShortcut: 'Toggle fluoroscopy mode',
     resetBtn: 'Reset view',
@@ -1823,7 +1877,7 @@ export const uiTranslations = {
     layerBachmann: 'Bachmann bundle', layerPaFaint: 'Fade pulmonary artery', layerDiaphragm: 'Diaphragm', layerPhrenic: 'Phrenic nerves',
     layerVertebrae: 'Vertebral column (faint)', layerFlow: 'Blood flow (routes and particles)', flowLegend: 'Flow speed (relative): slow to fast',
     layerAorticValve: 'Aortic valve (LCC, RCC, NCC)', layerMitral: 'Mitral valve', layerMitralPost: 'PML · atlas leaflet', layerMitralAnt: 'AML · schematic',
-    layerTricuspid: 'Tricuspid valve', layerTvSeptal: 'TV septal leaflet', layerTvInferior: 'TV inferior leaflet', layerTvAnterior: 'TV anterior · schematic',
+    layerTricuspid: 'Tricuspid valve', layerTvSeptal: 'TV septal leaflet', layerTvInferior: 'TV posterior leaflet', layerTvAnterior: 'TV anterior · schematic',
     layerMitralAnnulus: 'Mitral annulus', layerTricuspidAnnulus: 'Tricuspid annulus', layerPulmonaryValve: 'Pulmonary valve', layerPapillary: 'Papillary muscles (RV / LV)',
     coronaryToolsHeading: 'CORONARY REVIEW',
     coronarySystemLabel: 'Coronary system',

@@ -9,11 +9,10 @@ const WORDS = {
   en: { layers: 'Layers', tools: 'Tools', close: 'Close', label: 'Modes and layers' },
 };
 const MOBILE_QUERY = '(max-width: 640px)';
-const TOOL_SECTIONS = ['#atria-tools', '#ra-tools', '#defect-tools', '#ep-tools'];
+const TOOL_SECTIONS = ['.chamber-tools', '#defect-tools', '#ep-tools'];
 
 function visible(selector) {
-  const node = document.querySelector(selector);
-  return !!node && !node.hidden;
+  return [...document.querySelectorAll(selector)].some(node => !node.hidden);
 }
 
 export function createHeaderTabs({ getLang = () => 'tr' } = {}) {

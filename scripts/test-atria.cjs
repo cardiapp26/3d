@@ -18,7 +18,7 @@ const shotDir = process.env.SHOT_DIR || 'research/screenshots';
     assert.equal(await page.locator('#structure-select').inputValue(), 'laa');
     assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 3); // LA, LAA, Coumadin ridge
     for (const id of ['la','laa']) {
-      await page.locator(`[data-atria-focus=${id}]`).click();
+      await page.locator(`[data-chamber-focus=${id}]`).click();
       assert.equal(await page.locator('#structure-select').inputValue(), id);
       await page.waitForSelector('#viewport[data-camera-settled=true]');
       await page.screenshot({ path: path.join(shotDir, `${id}-model.png`) });
@@ -50,10 +50,10 @@ const shotDir = process.env.SHOT_DIR || 'research/screenshots';
       return opacity;
     });
     assert.ok(await laOpacity() <= .32, 'LAA focus reveals neck through surrounding tissue');
-    await page.locator('[data-atria-focus=la]').click();
+    await page.locator('[data-chamber-focus=la]').click();
     assert.equal(await laOpacity(), 1, 'LA focus restores tissue opacity');
-    await page.locator('[data-atria-focus=laa]').click();
-    await page.locator('[data-atria-wall=la]').fill('50');
+    await page.locator('[data-chamber-focus=laa]').click();
+    await page.locator('[data-chamber-wall=la]').fill('50');
     assert.equal(await page.evaluate(() => window.heart.getState().wallCuts.la), .5);
     await page.evaluate(() => { window.heart.setLayer('vessels', true); window.heart.setFlowVisible(true); });
     assert.deepEqual(await visible(), ['coumadin-ridge','la','laa']); // with the left lateral ridge
@@ -61,13 +61,13 @@ const shotDir = process.env.SHOT_DIR || 'research/screenshots';
 
     // Test RA mode
     await page.locator('[data-mode=ra]').dispatchEvent('click');
-    // The RA and its inner landmark, the crista terminalis (report section 13).
-    assert.deepEqual(await visible(), ['crista-terminalis', 'ra']);
-    assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 2);
+    // The RA and its inner landmarks: the crista terminalis (report section 13), the Eustachian valve and the Chiari network.
+    assert.deepEqual(await visible(), ['chiari-network', 'crista-terminalis', 'eustachian-valve', 'ra']);
+    assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 4);
     assert.equal(await page.locator('#structure-select').inputValue(), 'ra');
     assert.equal(await page.locator('#ra-tools').isVisible(), true);
     assert.equal(await page.locator('#atria-tools').isVisible(), false);
-    await page.locator('[data-ra-wall=ra]').fill('40');
+    await page.locator('[data-chamber-wall=ra]').fill('40');
     assert.equal(await page.evaluate(() => window.heart.getState().wallCuts.ra), .4);
 
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');

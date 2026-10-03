@@ -110,7 +110,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.evaluate(() => window.heart.setBeating(false));
 
     // Mode identity: the badge names mode and selection; the target and labels are lesson-only.
-    assert.match(await page.locator('#scene-context').textContent(), /^11 · Bachmann demeti & pacing · Seçili: Bachmann/);
+    assert.match(await page.locator('#scene-context').textContent(), /^13 · Bachmann demeti & pacing · Seçili: Bachmann/);
     const frames = () => page.evaluate(() => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res))));
     if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click();
     await frames();
@@ -119,7 +119,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-mode=atria]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Bachmann pacing target').visible), false);
     await page.waitForTimeout(300);
-    assert.deepEqual((await page.locator('.scene-label:not([hidden])').allTextContents()).sort(), ['Coumadin sırtı', 'LAA ostiyum işareti'], 'atria mode: LAA ring and Coumadin ridge labels');
+    assert.deepEqual((await page.locator('.scene-label:not([hidden])').allTextContents()).sort(), ['Coumadin ridge', 'LAA ostiyum işareti'], 'atria mode: LAA ring and Coumadin ridge labels');
     // LAA scaled toward its neck (owner's request) and the ridge between it and the left veins.
     const la = await page.evaluate(async () => {
       const THREE = await import('/node_modules/three/build/three.module.js');
@@ -178,7 +178,9 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('#structure-select').selectOption('crista-terminalis');
     await page.waitForTimeout(300);
     assert.match(await page.locator('#structure-title').textContent(), /Krista terminalis/);
-    assert.deepEqual(await page.locator('.scene-label:not([hidden])').allTextContents(), ['Krista terminalis']);
+    // The crista label shows; the Eustachian valve and Chiari network labels may show too (RA landmarks near the pointer).
+    const raLabels = await page.locator('.scene-label:not([hidden])').allTextContents();
+    assert.ok(raLabels.includes('Krista terminalis') && raLabels.every(t => ['Krista terminalis', 'Östaki kapağı', 'Chiari ağı (varyant)'].includes(t)), `RA labels: ${raLabels}`);
     assert.deepEqual(errors, []);
     console.log('PASS: crista terminalis on the RA endocardium (SVC to IVC orifice along the lateral wall) and in the RA mode; Bachmann band from measured landmarks (SVC junction, groove behind the aorta, LAA neck), on the epicardial surface and clear of the aorta through the beat; separate RA endocardial pacing target; identity labels and mode badge');
   } finally { await browser.close(); }

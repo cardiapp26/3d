@@ -17,18 +17,22 @@ import { createExamMode } from './exam-mode.js';
 import { createEpPanel } from './ep-panel.js';
 import { createEchoMode } from './echo-mode.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
+import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
 
 document.documentElement.lang = getContentLanguage();
 
 // Mode list grouped by learning domain. Mode numbers follow this displayed
 // order (content.js carries the same numbers); keys 1-9 open modes 01-09.
 const MODE_GROUPS = [
-  ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'defects']],
+  ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'rv', 'lv', 'defects']],
   ['modeGroupPhysiology', ['cath', 'exam']],
   ['modeGroupIntervention', ['angiography']],
   ['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']],
   ['modeGroupImaging', ['echo', 'tee', 'ice']]
 ];
+// Title with the named side branch under the pointer (coronary branches).
+const withBranch = (title, branch) => (branch ? `${title} · ${branch[getContentLanguage()] || branch.en}` : title);
+
 // TTE and TEE are one echo module; the mode fixes the modality.
 const ECHO_MODALITY = { echo: 'tte', tee: 'tee', ice: 'ice' };
 const modes = MODE_GROUPS.flatMap(([, ids]) => ids).map((id, i) => [id, String(i + 1).padStart(2, '0')]);
@@ -44,6 +48,23 @@ let panelShell = null;
 let headerTabs = null;
 // Explore / Learn / Test yourself loop; created with the panel shell.
 let practice = null;
+
+// Left-panel tools of a single-chamber mode: focus buttons and the wall section slider.
+function chamberToolsMarkup(id, { chamber, focus }) {
+  const wallKey = `wall${chamber[0].toUpperCase()}${chamber.slice(1)}`;
+  return `<section id="${id}-tools" class="chamber-tools" data-chamber-mode="${id}" hidden>
+      ${focus.map(([target, key]) => `<button data-chamber-focus="${target}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
+      <label class="slider-label"><span data-i18n="${wallKey}">${getTranslation(wallKey)}</span><output id="${id}-cut-${chamber}">0%</output></label><input data-chamber-wall="${chamber}" aria-label="${chamber.toUpperCase()} wall section" type="range" min="0" max="80" value="0">
+    </section>`;
+}
+
+function resetChamberWalls() {
+  document.querySelectorAll('[data-chamber-wall]').forEach(input => {
+    input.value = 0;
+    const out = input.closest('.chamber-tools')?.querySelector('output');
+    if (out) out.textContent = '0%';
+  });
+}
 
 function renderModeNav() {
   const byId = new Map(getUiModes().map(entry => [entry[0], entry]));
@@ -111,14 +132,7 @@ app.innerHTML = `
   <aside id="mobile-aside-sheet">
     <div id="aside-search" class="aside-search"></div>
     <section id="defect-tools" hidden></section>
-    <section id="atria-tools" hidden>
-      ${[['la','atriaFocusLa'],['laa','atriaFocusLaa']].map(([id,key])=>`<button data-atria-focus="${id}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
-      <label class="slider-label"><span data-i18n="wallLa">${getTranslation('wallLa')}</span><output id="atria-cut-la">0%</output></label><input data-atria-wall="la" aria-label="LA wall section" type="range" min="0" max="80" value="0">
-    </section>
-    <section id="ra-tools" hidden>
-      <button data-ra-focus="ra" data-i18n="raFocusRa">${getTranslation('raFocusRa')}</button>
-      <label class="slider-label"><span data-i18n="wallRa">${getTranslation('wallRa')}</span><output id="ra-cut-ra">0%</output></label><input data-ra-wall="ra" aria-label="RA wall section" type="range" min="0" max="80" value="0">
-    </section>
+    ${Object.entries(CHAMBER_MODES).map(([id, c]) => chamberToolsMarkup(id, c)).join('')}
     <section id="ep-tools" class="ep-tools" hidden>
       <div class="section-heading"><span data-i18n="epToolsHeading">${getTranslation('epToolsHeading')}</span></div>
       <div class="ep-view-row">${[['koch_rao','RAO 30'],['koch_lao','LAO 45']].map(([id,t])=>`<button type="button" data-ep-view="${id}" aria-pressed="false">Koch · ${t}</button>`).join('')}</div>
@@ -183,6 +197,7 @@ app.innerHTML = `
       <div class="view-tools">
       <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
       <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
+      <button id="fluoro-contours-toggle" class="fluoro-contours-btn" title="${getTranslation('fluoroContoursTitle')}" aria-pressed="true" hidden><span data-i18n="fluoroContours">${getTranslation('fluoroContours')}</span></button>
       <button id="reset" title="Reset camera (0)">↺</button>
       </div>
     </div>
@@ -505,7 +520,7 @@ function resolveStructureId(id) {
   })[id] || id;
 }
 
-function inspect(id, flyTo = true, updateUrl = true) {
+function inspect(id, flyTo = true, updateUrl = true, branch = null) {
   if (typeof id === 'string' && id.startsWith('ausc-')) examMode?.focusArea(id.slice(5));
   // A 3D catheter station adds its channel to the hemodynamics tracing.
   if (typeof id === 'string' && id.startsWith('cath-')) hemoMode?.focusStation(id);
@@ -514,8 +529,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
   if(mode==='defects'&&!defect)return;
   if(defect&&mode!=='defects'){setMode('defects',false);}
   if(defect)defectPanel.select(cleanId);
-  if (mode === 'atria' && !['la', 'laa', 'coumadin-ridge'].includes(cleanId)) return;
-  if (mode === 'ra' && !['ra', 'crista-terminalis'].includes(cleanId)) return;
+  if (!inChamberMode(mode, cleanId)) return;
   const s = structures[cleanId];
   if (!s) return;
   currentSelectedId = cleanId;
@@ -523,7 +537,7 @@ function inspect(id, flyTo = true, updateUrl = true) {
 
   for (const [target, key] of [['structure-title', 'title'], ['description', 'description'], ['clinical', 'clinical']]) {
     const el = document.getElementById(target);
-    if (el) el.textContent = s[key] || '';
+    if (el) el.textContent = key === 'title' ? withBranch(s.title, branch) : s[key] || '';
   }
 
   heart?.selectStructure(cleanId, flyTo);
@@ -545,14 +559,14 @@ function inspect(id, flyTo = true, updateUrl = true) {
       indexEl.dataset.provenance = 'reference';
     }
   }
-  panelShell?.setStructure({ title: s.title, source: s.source, provenance: indexEl?.dataset.provenance || '' });
+  panelShell?.setStructure({ title: withBranch(s.title, branch), source: s.source, provenance: indexEl?.dataset.provenance || '' });
 
   if (updateUrl && !isUpdatingRoute) {
     syncUrl();
   }
 }
 
-function onHoverStructure(id) {
+function onHoverStructure(id, branch = null) {
   // Test yourself: no name on hover, it would give the answer away.
   if (!id || practice?.hidesLabels()) {
     hoverBadge.hidden = true;
@@ -561,7 +575,7 @@ function onHoverStructure(id) {
   const cleanId = resolveStructureId(id);
   const s = structures[cleanId];
   if (s) {
-    hoverBadge.textContent = s.title;
+    hoverBadge.textContent = withBranch(s.title, branch);
     hoverBadge.hidden = false;
   } else {
     hoverBadge.hidden = true;
@@ -572,7 +586,7 @@ let heart;
 try {
   heart = createHeart(
     document.querySelector('#viewport'),
-    (id) => { inspect(id, true, true); practice?.onScenePick(resolveStructureId(id)); },
+    (id, branch) => { inspect(id, true, true, branch); practice?.onScenePick(resolveStructureId(id)); },
     onHoverStructure,
     (angles) => updateJoystickFromCamera(angles)
   );
@@ -784,7 +798,7 @@ heart?.ready.then(() => {
     heart.setMode(mode);
     if (lessons[mode]) showStep();
   }
-  inspect(currentSelectedId, mode === 'atria' || mode === 'ra' || mode === 'defects', false);
+  inspect(currentSelectedId, Boolean(chamberMode(mode)) || mode === 'defects', false);
 }).catch(error => console.error('Atlas loading failed:', error));
 select.addEventListener('change', () => inspect(select.value));
 function formatWallReadout(value) {
@@ -805,16 +819,7 @@ document.querySelector('#restore-walls').addEventListener('click', () => {
     const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
     if (out) out.textContent = formatWallReadout(0);
   });
-  document.querySelectorAll('[data-atria-wall]').forEach(input => {
-    input.value = 0;
-    const out = document.querySelector(`#atria-cut-${input.dataset.atriaWall}`);
-    if (out) out.textContent = '0%';
-  });
-  document.querySelectorAll('[data-ra-wall]').forEach(input => {
-    input.value = 0;
-    const out = document.querySelector(`#ra-cut-${input.dataset.raWall}`);
-    if (out) out.textContent = '0%';
-  });
+  resetChamberWalls();
   updateContextNote();
 });
 document.querySelector('#coronary-system').addEventListener('change', e => {heart?.setCoronarySystem(e.target.value);setTissueOpacity(e.target.value==='all'?100:20);});
@@ -908,10 +913,8 @@ function filterAtrialOptions() {
   for (const option of select.options) {
     if (mode === 'defects') {
       option.hidden = option.disabled = !DEFECT_TYPES.some(d => d.id === option.value);
-    } else if (mode === 'atria') {
-      option.hidden = option.disabled = !['la', 'laa', 'coumadin-ridge'].includes(option.value);
-    } else if (mode === 'ra') {
-      option.hidden = option.disabled = !['ra', 'crista-terminalis'].includes(option.value);
+    } else if (chamberMode(mode)) {
+      option.hidden = option.disabled = !inChamberMode(mode, option.value);
     } else {
       option.hidden = option.disabled = false;
     }
@@ -933,23 +936,11 @@ document.querySelectorAll('[data-ep-view]').forEach(button => button.addEventLis
   syncEpTools(button.dataset.epView);
 }));
 document.querySelectorAll('[data-ep-optional]').forEach(box => box.addEventListener('change', () => heart?.setEpOptional(box.dataset.epOptional, box.checked)));
-document.querySelectorAll('[data-atria-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.atriaFocus)));
-document.querySelectorAll('[data-atria-wall]').forEach(input => input.addEventListener('input', () => {
-  const id = input.dataset.atriaWall;
+document.querySelectorAll('[data-chamber-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.chamberFocus)));
+document.querySelectorAll('[data-chamber-wall]').forEach(input => input.addEventListener('input', () => {
+  const id = input.dataset.chamberWall;
   heart?.setWallCut(id, Number(input.value) / 100);
-  const out = document.querySelector(`#atria-cut-${id}`);
-  if (out) out.textContent = `${input.value}%`;
-  const wallInput = document.querySelector(`[data-wall=${id}]`);
-  if (wallInput) wallInput.value = input.value;
-  const wallVal = document.querySelector(`#wall-value-${id}`);
-  if (wallVal) wallVal.textContent = formatWallReadout(input.value);
-  updateContextNote();
-}));
-document.querySelectorAll('[data-ra-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.raFocus)));
-document.querySelectorAll('[data-ra-wall]').forEach(input => input.addEventListener('input', () => {
-  const id = input.dataset.raWall;
-  heart?.setWallCut(id, Number(input.value) / 100);
-  const out = document.querySelector(`#ra-cut-${id}`);
+  const out = input.closest('.chamber-tools')?.querySelector('output');
   if (out) out.textContent = `${input.value}%`;
   const wallInput = document.querySelector(`[data-wall=${id}]`);
   if (wallInput) wallInput.value = input.value;
@@ -991,9 +982,8 @@ function updateContextNote() {
   const body = document.querySelector('#context-note-body');
   if (!box || !body) return;
   const notes = [];
-  if (mode === 'atria') notes.push('atriaNote');
-  if (mode === 'ra') notes.push('raNote');
-  const cut = [...document.querySelectorAll('[data-wall], [data-atria-wall], [data-ra-wall]')].some(input => Number(input.value) > 0);
+  if (chamberMode(mode)) notes.push(chamberMode(mode).note);
+  const cut = [...document.querySelectorAll('[data-wall], [data-chamber-wall]')].some(input => Number(input.value) > 0);
   if (cut) notes.push('wallToolsNote');
   if (document.querySelector('#root-window')?.checked) notes.push('rootWindowNote');
   body.replaceChildren(...notes.map(key => {
@@ -1032,7 +1022,7 @@ function setMode(newMode, updateUrl = true) {
   document.documentElement.dataset.appMode = mode;
   // Practice (Free / Guided / Test) and its Findings tab belong to the structure-picking anatomy modes;
   // the lesson modes (angiography, EP, pacemaker, ...) have their own steps, so those controls stay hidden.
-  const usesPractice = ['anatomy', 'atria', 'ra'].includes(mode);
+  const usesPractice = mode === 'anatomy' || Boolean(chamberMode(mode));
   document.documentElement.dataset.practice = usesPractice ? 'on' : 'off';
   panelShell?.setTabVisible('findings', usesPractice);
   // The C-Arm is a drawer hidden at the right edge in every mode; the edge tab, the dock button or C opens it.
@@ -1041,9 +1031,8 @@ function setMode(newMode, updateUrl = true) {
   const opacity = lessons[mode] ? Math.round(LESSON_TISSUE_OPACITY * 100) : 100;
   setTissueOpacity(opacity);
 
-  document.querySelector('#layers').hidden = mode === 'micro' || mode === 'atria' || mode === 'ra' || mode === 'defects';
-  document.querySelector('#atria-tools').hidden = mode !== 'atria';
-  document.querySelector('#ra-tools').hidden = mode !== 'ra';
+  document.querySelector('#layers').hidden = mode === 'micro' || Boolean(chamberMode(mode)) || mode === 'defects';
+  document.querySelectorAll('.chamber-tools').forEach(section => { section.hidden = section.dataset.chamberMode !== mode; });
   document.querySelector('#ep-tools').hidden = mode !== 'ablation';
   if (mode !== 'ablation') { egmMount.hidden = true; delete document.documentElement.dataset.epOpen; }
   if (mode === 'ablation') syncEpTools();
@@ -1051,21 +1040,12 @@ function setMode(newMode, updateUrl = true) {
   panelShell?.refresh();
   headerTabs?.refresh();
   filterAtrialOptions();
-  if (mode === 'atria') {
-    document.querySelectorAll('[data-atria-wall]').forEach(input => {
-      const value = Math.round((heart?.getState().wallCuts[input.dataset.atriaWall] || 0) * 100);
-      input.value = value;
-      const out = document.querySelector(`#atria-cut-${input.dataset.atriaWall}`);
-      if (out) out.textContent = `${value}%`;
-    });
-  } else if (mode === 'ra') {
-    document.querySelectorAll('[data-ra-wall]').forEach(input => {
-      const value = Math.round((heart?.getState().wallCuts[input.dataset.raWall] || 0) * 100);
-      input.value = value;
-      const out = document.querySelector(`#ra-cut-${input.dataset.raWall}`);
-      if (out) out.textContent = `${value}%`;
-    });
-  }
+  document.querySelectorAll(`.chamber-tools[data-chamber-mode="${mode}"] [data-chamber-wall]`).forEach(input => {
+    const value = Math.round((heart?.getState().wallCuts[input.dataset.chamberWall] || 0) * 100);
+    input.value = value;
+    const out = input.closest('.chamber-tools').querySelector('output');
+    if (out) out.textContent = `${value}%`;
+  });
   document.querySelector('#lesson').hidden = !lessons[mode];
 
   if (lessons[mode]) {
@@ -1073,7 +1053,7 @@ function setMode(newMode, updateUrl = true) {
     document.querySelector('#lesson-intro').textContent = lessons[mode].intro;
     showStep();
   } else {
-    inspect(mode === 'micro' ? 'micro' : mode === 'atria' ? 'la' : mode === 'ra' ? 'ra' : mode === 'defects' ? defectPanel.getSelected() : 'lv', true, false);
+    inspect(mode === 'micro' ? 'micro' : chamberMode(mode) ? chamberMode(mode).chamber : mode === 'defects' ? defectPanel.getSelected() : 'lv', true, false);
   }
 
   if (updateUrl && !isUpdatingRoute) {
@@ -1345,6 +1325,13 @@ document.querySelectorAll('[data-angio]').forEach(btn => {
 let fluoroActive = false;
 const fluoroBtn = document.querySelector('#fluoroscopy-toggle');
 const fluoroDockBtn = document.querySelector('#fluoro-toggle-dock');
+// Anatomy contours over the fluoroscopy image (fluoro-contours.js), on by default.
+const fluoroContoursBtn = document.querySelector('#fluoro-contours-toggle');
+fluoroContoursBtn?.addEventListener('click', () => {
+  const on = fluoroContoursBtn.getAttribute('aria-pressed') !== 'true';
+  fluoroContoursBtn.setAttribute('aria-pressed', String(on));
+  heart?.setFluoroContours(on);
+});
 
 function setFluoroscopyActive(active) {
   fluoroActive = Boolean(active);
@@ -1358,6 +1345,7 @@ function setFluoroscopyActive(active) {
     fluoroDockBtn.classList.toggle('active', fluoroActive);
   }
   document.querySelector('main')?.classList.toggle('fluoroscopy-active', fluoroActive);
+  if (fluoroContoursBtn) fluoroContoursBtn.hidden = !fluoroActive;
 }
 
 function toggleFluoroscopy() {
@@ -1590,16 +1578,7 @@ function resetAll() {
     const out = document.querySelector(`#wall-value-${input.dataset.wall}`);
     if (out) out.textContent = formatWallReadout(0);
   });
-  document.querySelectorAll('[data-atria-wall]').forEach(input => {
-    input.value = 0;
-    const out = document.querySelector(`#atria-cut-${input.dataset.atriaWall}`);
-    if (out) out.textContent = '0%';
-  });
-  document.querySelectorAll('[data-ra-wall]').forEach(input => {
-    input.value = 0;
-    const out = document.querySelector(`#ra-cut-${input.dataset.raWall}`);
-    if (out) out.textContent = '0%';
-  });
+  resetChamberWalls();
 
   setVeinsState(true);
   setConductionState(true);

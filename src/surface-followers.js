@@ -14,13 +14,13 @@ export const FOLLOW_CONTACT = 0.15;
 export const FOLLOW_FADE = 0.45;
 const FOLLOW_CELL = 0.15;
 export const OWNER_IDS = ['lv', 'rv', 'la', 'ra'];
-const FOLLOWER_IDS = new Set(['mitral-annulus', 'tricuspid-annulus', 'lv-papillary', 'rv-papillary', 'crista-terminalis', 'coumadin-ridge']);
+const FOLLOWER_IDS = new Set(['mitral-annulus', 'tricuspid-annulus', 'lv-papillary', 'rv-papillary', 'crista-terminalis', 'coumadin-ridge', 'eustachian-valve', 'chiari-network']);
 // Anatomical owners: a papillary muscle belongs to its ventricle, an annulus
 // to its atrium and ventricle. Others may bind to any chamber.
 export const FOLLOWER_OWNERS = {
   'lv-papillary': ['lv'], 'rv-papillary': ['rv'],
   'mitral-annulus': ['la', 'lv'], 'tricuspid-annulus': ['ra', 'rv'],
-  'crista-terminalis': ['ra'], 'coumadin-ridge': ['la'],
+  'crista-terminalis': ['ra'], 'coumadin-ridge': ['la'], 'eustachian-valve': ['ra'], 'chiari-network': ['ra'],
 };
 
 /** Which meshes follow the chamber walls. Leaflets keep their own opening motion. */

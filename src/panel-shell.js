@@ -187,10 +187,7 @@ export function createPanelShell({ getLang = () => 'tr' } = {}) {
   mobile.addEventListener('change', () => { closeSheet(); refresh(); });
 
   function toolsAvailable() {
-    return ['#atria-tools', '#ra-tools', '#defect-tools'].some(sel => {
-      const node = document.querySelector(sel);
-      return node && !node.hidden;
-    });
+    return [...document.querySelectorAll('.chamber-tools, #defect-tools')].some(node => !node.hidden);
   }
   function layersAvailable() {
     const node = document.querySelector('#layers');

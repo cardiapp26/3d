@@ -630,6 +630,11 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .mitral-scallops[hidden],.mitral-scallop-label[hidden]{display:none}
 /* Identity labels for LAA ring, Bachmann band and pacing target (report section 13). */
 .scene-labels{position:absolute;inset:0;pointer-events:none;z-index:3}
+/* Fluoroscopic anatomy contours over the image (fluoro-contours.js). */
+.fluoro-contours{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.fluoro-contours[hidden]{display:none}
+.view-controls .fluoro-contours-btn[hidden]{display:none}
+.view-controls .fluoro-contours-btn[aria-pressed=true]{background:#1d4237;color:#ffd966;font-weight:600}
 .scene-label{position:absolute;transform:translate(-50%,calc(-100% - 10px));white-space:nowrap;border-radius:12px;padding:3px 8px;font-size:11.5px;font-weight:700;color:#fff;box-shadow:0 2px 6px #0003}
 .scene-label::after{content:'';position:absolute;left:50%;top:100%;width:2px;height:calc(10px + var(--lift, 0px));background:inherit;transform:translateX(-50%)}
 .scene-label[hidden]{display:none}
@@ -642,10 +647,10 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .mitral-scallop-label{position:absolute;transform:translate(-50%,-50%);border:3px solid;border-radius:18px;background:#173b35;color:white;padding:4px 9px;font-size:13px;font-weight:800;box-shadow:0 2px 8px #0003}
 .mitral-scallop-note{position:absolute;top:52px;left:50%;transform:translateX(-50%);max-width:90%;width:max-content;background:#fffffff0;color:#25473e;border:1px solid #cbd5cf;border-radius:8px;padding:7px 12px;font-size:11px;text-align:center}
 
-#atria-tools, #ra-tools{padding:16px;font-size:12px;line-height:1.6}
-#atria-tools[hidden], #ra-tools[hidden]{display:none}
-#atria-tools button, #ra-tools button{display:block;width:100%;text-align:left;margin:8px 0;padding:10px;border:1px solid #cbd5cf;border-radius:6px;background:#fff;color:#25473e}
-#atria-tools input[type=range], #ra-tools input[type=range]{width:100%}
+.chamber-tools{padding:16px;font-size:12px;line-height:1.6}
+.chamber-tools[hidden]{display:none}
+.chamber-tools button{display:block;width:100%;text-align:left;margin:8px 0;padding:10px;border:1px solid #cbd5cf;border-radius:6px;background:#fff;color:#25473e}
+.chamber-tools input[type=range]{width:100%}
 
 /* Grouped modes and collapsible layer groups (controls only). */
 .mode-group-label{font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;font-weight:700;color:#8a9a90;padding:10px 8px 3px}
@@ -721,10 +726,10 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   body[data-sheet=modes] .workspace>aside,body[data-sheet=layers] .workspace>aside,body[data-sheet=tools] .workspace>aside,body[data-sheet=learn] .workspace>article{visibility:visible;pointer-events:auto}
   body[data-sheet-size=half] .workspace>article{height:62dvh}
   body[data-sheet-size=full] .workspace>article{height:calc(100dvh - 60px - var(--tabbar-h))}
-  .workspace>aside>nav,.workspace>aside>#layers,.workspace>aside>#atria-tools,.workspace>aside>#ra-tools,.workspace>aside>#defect-tools,.workspace>aside>.aside-bottom{display:none}
+  .workspace>aside>nav,.workspace>aside>#layers,.workspace>aside>.chamber-tools,.workspace>aside>#defect-tools,.workspace>aside>.aside-bottom{display:none}
   body[data-sheet=modes] .workspace>aside>nav{display:grid}
   body[data-sheet=layers] .workspace>aside>#layers{display:grid}
-  body[data-sheet=tools] .workspace>aside>#atria-tools,body[data-sheet=tools] .workspace>aside>#ra-tools,body[data-sheet=tools] .workspace>aside>#defect-tools{display:block}
+  body[data-sheet=tools] .workspace>aside>.chamber-tools,body[data-sheet=tools] .workspace>aside>#defect-tools{display:block}
   .workspace>article p,.workspace>article #step-detail{font-size:15px;line-height:1.55}
   .sheet-head{display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:2;background:#fbfcf9;padding:8px 0;margin:0 0 8px;border-bottom:1px solid #e3e8df}
   .sheet-title{flex:1;font-size:15px;color:#1e4336}
@@ -1053,7 +1058,7 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   body[data-open-drawer] .workspace>aside{display:flex}
   /* Scroll the drawer, never squeeze its sections into each other. */
   .workspace>aside>*{flex-shrink:0}
-  body[data-open-drawer=layers] .workspace>aside>:is(#atria-tools,#ra-tools,#defect-tools,#ep-tools),
+  body[data-open-drawer=layers] .workspace>aside>:is(.chamber-tools,#defect-tools,#ep-tools),
   body[data-open-drawer=tools] .workspace>aside>:is(#layers,.aside-bottom){display:none}
   .drawer-close{display:block;position:sticky;top:-10px;z-index:2;align-self:flex-end;margin:-2px -6px 6px 0;border:1px solid #cbd5cf;border-radius:5px;background:#fbfcf9;padding:4px 9px;font-size:11px;color:#29483e}
   .drawer-close:hover{background:#e8efe9}

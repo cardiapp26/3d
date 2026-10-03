@@ -117,7 +117,7 @@ const openDrawer = async (page, id) => {
       ['mitral-posterior', 'atlas', /Posterior mitral|PML/],
       ['mitral-anterior', 'schematic', /Anterior mitral|AML/],
       ['tricuspid-septal', 'atlas', /Septal triküspit|Septal tricuspid/],
-      ['tricuspid-inferior', 'atlas', /İnferior triküspit|Inferior tricuspid/],
+      ['tricuspid-inferior', 'atlas', /Posterior triküspit|Posterior tricuspid/],
       ['tricuspid-anterior', 'schematic', /Anterior triküspit|Anterior tricuspid/]
     ];
     for (const [id, provenance, title] of leafletCards) {
@@ -351,7 +351,7 @@ const openDrawer = async (page, id) => {
     await page.screenshot({ path: path.join(shotDir, 'fluoroscopy-grayscale.png') });
     const projectionImage = await page.evaluate(() => {
       window.heart.setFluoroscopy(true);
-      return new Promise(resolve => requestAnimationFrame(() => resolve(document.querySelector('#viewport canvas').toDataURL())));
+      return new Promise(resolve => requestAnimationFrame(() => resolve(document.querySelector('#viewport canvas[data-engine]').toDataURL())));
     });
     const projectionPixels = await page.evaluate(async data => {
       const canvas = new Image();

@@ -15,13 +15,13 @@ const ASE_TEE = 'Hahn et al., JASE 2013;26:921-964 (ASE/SCA comprehensive TEE)';
 const ICE_SRC = 'Bortnick, Halaby, Silvestry, Herrmann. Intracardiac echocardiography, PCR-EAPCI Textbook (2020)';
 
 export const TTE_VIEWS = Object.freeze([
-  { id: 'plax', window: 'parasternal', title: { tr: 'Parasternal uzun eksen (PLAX)', en: 'Parasternal long axis (PLAX)' }, required: ['lv', 'la', 'aorta', 'rv', 'mitral'], avoid: ['ra', 'tricuspid'], source: ASE_TTE },
+  { id: 'plax', window: 'parasternal', title: { tr: 'Parasternal uzun eksen (PLAX)', en: 'Parasternal long axis (PLAX)' }, required: ['lv', 'la', 'aorta', 'rv', 'mitral'], avoid: ['ra', 'tricuspid', 'pa', 'svc'], source: ASE_TTE },
   { id: 'psax-av', window: 'parasternal', title: { tr: 'PSAX aort kapağı düzeyi', en: 'PSAX aortic valve level' }, required: ['aortic-valve', 'la', 'ra', 'rv'], avoid: [{ id: 'lv', max: 1 }, 'mitral'], source: ASE_TTE },
   { id: 'psax-mv', window: 'parasternal', title: { tr: 'PSAX mitral kapak düzeyi', en: 'PSAX mitral valve level' }, required: ['lv', 'rv', 'mitral'], avoid: ['la', 'aorta'], source: ASE_TTE },
   { id: 'psax-pm', window: 'parasternal', title: { tr: 'PSAX papiller kas düzeyi', en: 'PSAX papillary muscle level' }, required: ['lv', 'rv', 'lv-papillary'], avoid: ['mitral', 'la'], source: ASE_TTE },
   { id: 'a4c', window: 'apical', title: { tr: 'Apikal dört boşluk (A4C)', en: 'Apical four-chamber (A4C)' }, required: ['lv', 'rv', 'la', 'ra', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, source: ASE_TTE },
-  { id: 'a2c', window: 'apical', title: { tr: 'Apikal iki boşluk (A2C)', en: 'Apical two-chamber (A2C)' }, required: ['lv', 'la', 'mitral'], avoid: ['rv', 'ra', 'tricuspid'], apical: true, source: ASE_TTE },
-  { id: 'a3c', window: 'apical', title: { tr: 'Apikal üç boşluk (A3C / APLAX)', en: 'Apical three-chamber (A3C / APLAX)' }, required: ['lv', 'la', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], apical: true, source: ASE_TTE },
+  { id: 'a2c', window: 'apical', title: { tr: 'Apikal iki boşluk (A2C)', en: 'Apical two-chamber (A2C)' }, required: ['lv', 'la', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'pa', 'pulmonary-valve'], apical: true, source: ASE_TTE },
+  { id: 'a3c', window: 'apical', title: { tr: 'Apikal üç boşluk (A3C / APLAX)', en: 'Apical three-chamber (A3C / APLAX)' }, required: ['lv', 'la', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid', 'pulmonary-valve'], apical: true, source: ASE_TTE },
   { id: 'sc4c', window: 'subcostal', title: { tr: 'Subkostal dört boşluk', en: 'Subcostal four-chamber' }, required: ['lv', 'rv', 'la', 'ra'], avoid: [], source: ASE_TTE }
 ]);
 
@@ -62,7 +62,14 @@ const inPlane = (v, n) => normalize(addv(v, n, -dot(v, n)));
 // Atlas calibration (scripts/echo-calibrate.cjs): the smallest probe
 // adjustment from each landmark preset that meets the view's structure
 // criteria on this atlas at rest and through the beat. Not an expert review.
-const TTE_CALIBRATION = Object.freeze({ plax: { tilt: -5 }, 'psax-mv': { rotation: 10, tilt: -15 }, a2c: { tilt: -10 }, a3c: { tilt: -5 } });
+// depthOffset shortens the sector (A2C: the far field would reach the PA).
+const TTE_CALIBRATION = Object.freeze({ plax: { rotation: -10, rock: -30 }, 'psax-mv': { rotation: 10, tilt: -15 }, a2c: { tilt: -10, depthOffset: -0.6 }, a3c: { rock: -20 } });
+
+/** Where a TTE preset differs from the textbook image on this atlas (shown next to the view). */
+export const TTE_PRESET_NOTES = Object.freeze({
+  plax: { tr: 'Atlas notu: standart PLAX\'ta pulmoner kapak görülmez (önde RVOT görülür; pulmoner kapak PSAX aort düzeyinde ve RVOT görünümünde izlenir). Bu atlasta pulmoner kapak LV uzun eksen düzlemine çok yakın olduğundan kesitin ön kenarında PuV görünebilir.', en: 'Atlas note: a standard PLAX does not show the pulmonary valve (the RVOT lies in front; the pulmonary valve is seen at the PSAX aortic level and in the RVOT view). On this atlas the pulmonary valve lies very close to the LV long-axis plane, so PuV can appear at the front edge of the cut.' },
+  a2c: { tr: 'A2C\'de pulmoner kapak görülmez. LA arka duvarına açılan sol pulmoner ven (burada LIPV) ve LAA kesite girebilir.', en: 'The A2C does not show the pulmonary valve. A left pulmonary vein opening into the posterior LA (here the LIPV) and the LAA can enter the cut.' }
+});
 
 // The transducer sits this far outside the measured heart surface (TTE).
 const TTE_STANDOFF = 0.3;
@@ -122,7 +129,8 @@ export function tteBase(id, A, exit, surface = null) {
   const beam = u.map(v => -v);
   const landmarkFrame = imageFrame(origin, beam, lateralOf(normal, beam, right));
   const frame = tteFrame(landmarkFrame, TTE_CALIBRATION[id] || {});
-  return { origin: frame.origin, beam: frame.beam, lateral: frame.lateral, depth: Math.min(6, Math.max(3, distance + 1.9)), surface };
+  const depthOffset = TTE_CALIBRATION[id]?.depthOffset || 0;
+  return { origin: frame.origin, beam: frame.beam, lateral: frame.lateral, depth: Math.min(6, Math.max(3, distance + 1.9)) + depthOffset, surface };
 }
 
 /** The TEE probe path (oesophagus and stomach) from the landmarks. */
