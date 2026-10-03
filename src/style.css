@@ -726,14 +726,18 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   body[data-sheet=modes] .workspace>aside,body[data-sheet=layers] .workspace>aside,body[data-sheet=tools] .workspace>aside,body[data-sheet=learn] .workspace>article{visibility:visible;pointer-events:auto}
   body[data-sheet-size=half] .workspace>article{height:62dvh}
   body[data-sheet-size=full] .workspace>article{height:calc(100dvh - 60px - var(--tabbar-h))}
-  /* Echo modes: the scene shrinks to the strip above the Learn sheet (so the heart and the probe stay in view), the cycle dock steps aside, and the echo sector is a little shorter. */
-  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn]{--echo-sheet-h:38dvh}
-  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn][data-sheet-size=half]{--echo-sheet-h:52dvh}
-  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn][data-sheet-size=half] .workspace>article{height:52dvh}
-  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn] .workspace>main{height:calc(100% - var(--echo-sheet-h))}
-  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn][data-sheet-size=full] .workspace>main{height:0}
-  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn] #cycle-panel{display:none}
+  /* Echo, angiography and hemodynamics modes: the scene shrinks to the strip above the Learn sheet (so the heart and the probe stay in view), the cycle dock steps aside, and the echo sector is a little shorter. */
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn]{--echo-sheet-h:38dvh}
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn][data-sheet-size=half]{--echo-sheet-h:52dvh}
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn][data-sheet-size=half] .workspace>article{height:52dvh}
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn] .workspace>main{height:calc(100% - var(--echo-sheet-h))}
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn][data-sheet-size=full] .workspace>main{height:0}
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn] #cycle-panel{display:none}
   :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) .echo-canvas:not(.is-large){height:210px}
+  /* ...and the scene strip carries only the scene: the overlays would cover most of it. */
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn] :is(.myo-control,.viewer-top,.xr-buttons){display:none}
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn] .view-controls,html[data-app-mode=cath] body[data-sheet=learn] .view-controls{display:none}
+  :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn] #viewport{top:0;bottom:0;height:auto}
   .workspace>aside>nav,.workspace>aside>#layers,.workspace>aside>.chamber-tools,.workspace>aside>#defect-tools,.workspace>aside>.aside-bottom{display:none}
   body[data-sheet=modes] .workspace>aside>nav{display:grid}
   body[data-sheet=layers] .workspace>aside>#layers{display:grid}

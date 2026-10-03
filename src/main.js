@@ -1050,8 +1050,9 @@ function setMode(newMode, updateUrl = true) {
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
-  // On a phone the echo image and its controls live in the Learn sheet: open it with the mode so the image is on screen.
-  if (isEcho && panelShell?.isMobile()) panelShell.open('learn', undefined, 'half');
+  // On a phone the echo image, the angiography steps and the hemodynamics panel live in the Learn sheet:
+  // open it with the mode, the 3D scene stays in the strip above it.
+  if ((isEcho || mode === 'angiography' || mode === 'cath') && panelShell?.isMobile()) panelShell.open('learn', undefined, 'half');
   headerTabs?.refresh();
   filterAtrialOptions();
   document.querySelectorAll(`.chamber-tools[data-chamber-mode="${mode}"] [data-chamber-wall]`).forEach(input => {
