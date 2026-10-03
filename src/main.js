@@ -169,6 +169,7 @@ app.innerHTML = `
         <label class="layer"><i style="background:#f4a261"></i><span data-i18n="tsCathWire">${getTranslation('tsCathWire')}</span><input type="checkbox" data-ts-cath="wire" checked></label>
         <label class="layer"><i style="background:#e76f51"></i><span data-i18n="tsCathBalloon">${getTranslation('tsCathBalloon')}</span><input type="checkbox" data-ts-cath="balloon" checked></label>
         <label class="layer"><i style="background:#4ade80"></i><span data-i18n="tsCathIas">${getTranslation('tsCathIas')}</span><input type="checkbox" data-ts-cath="ias" checked></label>
+        <label class="layer"><i style="background:#facc15"></i><span data-i18n="tsCathSites">${getTranslation('tsCathSites')}</span><input type="checkbox" data-ts-cath="sites"></label>
       </div>
     </section>
     <div class="aside-bottom">
@@ -1774,7 +1775,7 @@ applyCountryLanguage();
 
 function syncCatheterUI() {
   const vis = heart?.getCatheterVisibility?.() || {
-    pigtail: true, cs: true, sheath: true, wire: false, balloon: false, ias: true
+    pigtail: true, cs: true, sheath: true, wire: false, balloon: false, ias: true, sites: false
   };
   document.querySelectorAll('[data-cath]').forEach(btn => {
     const key = btn.dataset.cath;
