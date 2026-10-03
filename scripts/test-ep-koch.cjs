@@ -113,7 +113,8 @@ const SHOTS = process.env.SHOT_DIR || null;
 
     // Labels of the Koch step state their source (all shown for the check).
     const labels = (await page.locator('.scene-label:not([hidden])').allTextContents()).sort();
-    for (const text of ['CS ağzı (kestirim)', 'Kompakt AV düğüm (apeks, şematik)', 'Yavaş yol hedefi (şematik)', 'Septal menteşe (atlas halkası)', 'His kateteri (referans)', 'CS kateteri (referans)'])
+    // The four borders and both pathways of the triangle are named (base, hinge, Todaro; fast input, slow target).
+    for (const text of ['CS ağzı (kestirim)', 'Kompakt AV düğüm (apeks, şematik)', 'Yavaş yol hedefi (şematik)', 'Septal menteşe (atlas halkası)', 'Todaro tendonu (şematik seyir)', 'Hızlı yol girişi (şematik, kaçınılacak)', 'His kateteri (referans)', 'CS kateteri (referans)'])
       assert.ok(labels.includes(text), `label shown: ${text} (${labels.join(', ')})`);
 
     // Close-up views: RAO 30 and LAO 45 about the triangle, near.

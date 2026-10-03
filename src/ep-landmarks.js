@@ -214,7 +214,10 @@ export function createEPLandmarks(helpers) {
     const matTodaro = new THREE.MeshStandardMaterial({ color: 0xf1ede2, emissive: 0x6b6450, emissiveIntensity: 0.35, roughness: 0.5 });
     const matHinge = new THREE.MeshStandardMaterial({ color: 0x61d6e8, emissive: 0x1b8fa3, emissiveIntensity: 0.5, roughness: 0.4 });
     const matBase = new THREE.MeshStandardMaterial({ color: 0x4bd18a, emissive: 0x1d8a52, emissiveIntensity: 0.5, roughness: 0.4 });
-    kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(todaroCurve, 32, 0.017, 8, false), matTodaro), 'koch-todaro', 'Tendon of Todaro'));
+    const todaroMesh = tag(new THREE.Mesh(new THREE.TubeGeometry(todaroCurve, 32, 0.017, 8, false), matTodaro), 'koch-todaro', 'Tendon of Todaro');
+    kochGroup.add(todaroMesh);
+    // The tendon has no atlas mesh: its course from the base corner to the apex is drawn schematically.
+    labels.push({ mesh: todaroMesh, tone: 'todaro', text: { tr: 'Todaro tendonu (şematik seyir)', en: 'Tendon of Todaro (schematic course)' } });
     const hingeCurveMesh = tag(new THREE.Mesh(new THREE.TubeGeometry(hingeCurve, 40, 0.015, 8, false), matHinge), 'tricuspid-septal', 'Septal tricuspid hinge (Koch side)');
     kochGroup.add(hingeCurveMesh);
     kochGroup.add(tag(new THREE.Mesh(new THREE.TubeGeometry(baseCurve, 20, 0.014, 8, false), matBase), 'koch-base', 'CS ostium / inferior isthmus (Koch base)'));
@@ -270,6 +273,7 @@ export function createEPLandmarks(helpers) {
     const fastZone = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), matFast);
     fastZone.position.copy(fastCenter);
     kochGroup.add(tag(fastZone, 'koch-fast', 'Fast pathway (danger zone)'));
+    labels.push({ mesh: fastZone, tone: 'fast', text: { tr: 'Hızlı yol girişi (şematik, kaçınılacak)', en: 'Fast pathway input (schematic, avoid)' } });
 
     // Slow pathway: septal isthmus between the CS ostium and the septal
     // tricuspid hinge, just above the base (ablation target).

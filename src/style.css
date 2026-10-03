@@ -849,6 +849,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .scene-label[data-tone=danger]{background:#c0262d}
 .scene-label[data-tone=his]{background:#a21caf}
 .scene-label[data-tone=cs]{background:#2458c7}
+.scene-label[data-tone=todaro]{background:#6b6450}
+.scene-label[data-tone=fast]{background:#c2410c}
 [data-hemo-open] #structure-info,[data-hemo-open] .structure-index{display:none!important}
 .hemo-panel-mount{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e3e8df}
 /* Narrow QRS task: hidden case, evidence ledger (states per mechanism). */
