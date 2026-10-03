@@ -4,8 +4,9 @@
 // with ep-panel.js (phase 2).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { egmSample, drawEgm, selectableChannels, timeWindow, timeAtX, eventsNear, sampleTimes } from '../../src/eps/ep-egm.js';
+import { egmSample, drawEgm, selectableChannels, timeWindow, timeAtX, eventsNear, sampleTimes, waveLabel } from '../../src/eps/ep-egm.js';
 import { EP_RECORDING_IDS, epRecording } from '../../src/eps/ep-cases.js';
+import { readWaveLabels, writeWaveLabels } from '../../src/eps/wave-pref.js';
 
 const source = readFileSync(new URL('../../src/eps/ep-egm.js', import.meta.url), 'utf8');
 assert.ok(!source.includes(String.fromCharCode(0x2014)), 'no em dash in the renderer source');
@@ -100,4 +101,30 @@ assert.ok(eventsNear(typ, hA.t + 3, ['his-d']).some((e) => e.type === 'A'), 'ins
   assert.ok(grid.every((t) => Math.abs(((t + 1003.7) / 10) - Math.round((t + 1003.7) / 10)) < 1e-6), 'grid on absolute multiples of the sample step');
 }
 
-console.log('PASS ep-egm: samples for all recordings, view helpers (channels, zoom, inspection), DPR drawing with watermark/calipers/markers, flicker-free sweep sampling');
+// Wave names: surface P / QRS, intracardiac A H V and the stimulus; far field in lower case; no names for f waves.
+assert.equal(waveLabel({ type: 'V' }, true), 'QRS');
+assert.equal(waveLabel({ type: 'P', mono: true }, true), 'P');
+assert.equal(waveLabel({ type: 'H' }, false), 'H');
+assert.equal(waveLabel({ type: 'V', far: true }, false), 'v', 'far-field V in lower case');
+assert.equal(waveLabel({ type: 'S' }, false), 'S');
+assert.equal(waveLabel({ type: 'f', mono: true }, false), null);
+// Drawn only when asked; on a row the names follow the events.
+calls.fillText.length = 0;
+drawEgm(fakeCanvas(), epRecording('sinus'), { channels: ['ecg-ii', 'his-d'] });
+assert.ok(!calls.fillText.includes('H'), 'no wave names by default');
+calls.fillText.length = 0;
+drawEgm(fakeCanvas(), epRecording('sinus'), { channels: ['ecg-ii', 'his-d'], waves: true });
+for (const name of ['P', 'QRS', 'A', 'H']) assert.ok(calls.fillText.includes(name), `wave name ${name} drawn`);
+const named = calls.fillText.filter((t) => t === 'H').length;
+assert.equal(named, epRecording('sinus').events['his-d'].filter((e) => e.type === 'H').length, 'one H name per His deflection');
+// The on/off choice is remembered; private storage falls back to off without throwing.
+const mem = new Map();
+const store = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+assert.equal(readWaveLabels(store), false);
+writeWaveLabels(true, store);
+assert.equal(readWaveLabels(store), true);
+const broken = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } };
+assert.equal(readWaveLabels(broken), false);
+assert.doesNotThrow(() => writeWaveLabels(true, broken));
+
+console.log('PASS ep-egm: samples for all recordings, view helpers (channels, zoom, inspection), DPR drawing with watermark/calipers/markers, flicker-free sweep sampling, wave names on demand');

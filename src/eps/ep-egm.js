@@ -198,6 +198,45 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
 }
 
 /**
+ * Wave name of an event for the optional labels: surface P / QRS / delta /
+ * flutter F; intracardiac A, H, V, stimulus S and named potentials. Far-field
+ * signals are lower case (a, v); fibrillatory f waves are not named.
+ */
+export function waveLabel(e, surface) {
+  if (surface) return { P: 'P', V: 'QRS', delta: 'δ', F: 'F' }[e.type] || null;
+  if (e.type === 'f') return null;
+  const name = { A: 'A', H: 'H', V: 'V', S: 'S', PV: 'PV', RB: 'RB', P1: 'P1', P2: 'P2', Pk: 'Pk', U: 'U' }[e.type] || null;
+  return name && e.far ? name.toLowerCase() : name;
+}
+
+// Wave names above each deflection. Near-field names are placed first and
+// far-field ones only where they do not overlap a placed name; on a dense
+// strip a name that would overlap is left out.
+function drawWaveLabels(ctx, recording, geo, channels, gain) {
+  ctx.font = '9px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  channels.forEach((ch, i) => {
+    const mid = geo.rowTop(i) + geo.rowH / 2;
+    const placed = [];   // [left, right] of the names written on this row
+    const named = (recording.events[ch.id] || [])
+      .filter((e) => e.t >= geo.from && e.t <= geo.to)
+      .map((e) => ({ e, name: waveLabel(e, ch.surface) }))
+      .filter((x) => x.name)
+      .sort((a, b) => Number(Boolean(a.e.far)) - Number(Boolean(b.e.far)) || a.e.t - b.e.t);
+    for (const { e, name } of named) {
+      const x = geo.x(e.t);
+      const half = (ctx.measureText(name)?.width || name.length * 5.5) / 2;
+      if (placed.some(([l, r]) => x - half < r + 1 && x + half > l - 1)) continue;
+      placed.push([x - half, x + half]);
+      const y = Math.max(geo.rowTop(i) + 8, mid - Math.abs(e.amp) * gain - 3);
+      ctx.fillStyle = e.far ? 'rgba(201, 214, 207, 0.55)' : 'rgba(236, 246, 241, 0.92)';
+      ctx.fillText(name, x, y);
+    }
+  });
+  ctx.textAlign = 'left';
+}
+
+/**
  * Times at which a channel is sampled for drawing: about one per pixel, on a
  * grid fixed to absolute time (recording.t0), plus each event's peaks (centre
  * and, for a biphasic spike, centre +/- sigma). Spikes narrower than a pixel
@@ -223,14 +262,14 @@ export function sampleTimes(recording, channelId, from, to, plotW) {
  * @param {HTMLCanvasElement} canvas
  * @param {object} recording from ep-cases.js (epRecording(id)) or ep-maneuver-sim.js
  * @param {{ lang?: string, cursor?: number|null, cursorMs?: number|null, title?: string,
- *   channels?: string[], zoom?: number, pan?: number, caliper?: { a: number|null, b: number|null }|null }} [options]
+ *   channels?: string[], zoom?: number, pan?: number, caliper?: { a: number|null, b: number|null }|null, waves?: boolean }} [options]
  *   cursor: 0..1 fraction of the window; cursorMs: inspection time in ms;
- *   caliper: user caliper lines (ms) drawn across every channel;
+ *   caliper: user caliper lines (ms) drawn across every channel; waves: wave names (A, H, V, P, QRS ...);
  *   channels: the rows to draw (default: the recording's list); zoom/pan: time window
  * @returns {{ from: number, to: number, plotLeft: number, plotW: number, rowTop: number, rowH: number, rows: string[] }|undefined}
  *   the drawn time window and channel rows
  */
-export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null } = {}) {
+export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null, waves = false } = {}) {
   const width = canvas?.clientWidth;
   const height = canvas?.clientHeight;
   if (!recording || !(width >= 2) || !(height >= 2)) return;
@@ -265,6 +304,7 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
     });
     ctx.stroke();
   });
+  if (waves) drawWaveLabels(ctx, recording, geo, channels, gain);
   drawCalipers(ctx, recording, geo, rows);
 
   const cursorAt = Number.isFinite(cursorMs) ? cursorMs

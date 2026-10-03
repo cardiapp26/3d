@@ -40,6 +40,22 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), false, 'Space freezes');
     await page.keyboard.press('Space');
     assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), true, 'Space resumes');
+    // Wave names: on in the running sweep, kept when frozen, shared with the lesson strips, off again.
+    await page.locator('[data-ep-live-waves]').click();
+    assert.equal(await page.locator('[data-ep-live-waves]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().waves), true, 'wave names in the live sweep');
+    await page.locator('[data-ep-live-run]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().waves), true, 'kept on the frozen strip');
+    await page.locator('[data-ep-live-run]').click();
+    await page.locator('[data-ep-section=diagnosis]').click();
+    assert.equal(await page.locator('[data-ep-waves]').getAttribute('aria-pressed'), 'true', 'same choice on the lesson strip');
+    await page.locator('[data-ep-section=live]').click();
+    await page.reload();
+    await page.waitForSelector('[data-ep-live]');
+    assert.equal(await page.locator('[data-ep-live-waves]').getAttribute('aria-pressed'), 'true', 'choice remembered');
+    await page.locator('[data-ep-live-waves]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().waves), false, 'turned off');
+
     await page.locator('[data-app-lang-option=en]').click();
     assert.equal(await page.locator('[data-ep-live-action=shock]').textContent(), 'Cardiovert');
     assert.match(await page.locator('[data-app-disclaimer]').textContent(), /teaching only/);
@@ -146,7 +162,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.ok(await page.locator('[data-ep-live-protocol-rows] li').count() >= 10, 'protocol rows listed');
 
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP');
   } finally {
     await browser.close();
   }

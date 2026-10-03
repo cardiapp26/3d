@@ -15,6 +15,7 @@ import {
   interpretOverdrive, interpretSite, planProtocol, analyzeStep, summarizeProtocol
 } from './ep-live-maneuvers.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, caliperText } from './ep-user-caliper.js';
+import { readWaveLabels, writeWaveLabels } from './wave-pref.js';
 
 const PX_PER_MM = 3.78;            // CSS pixels per millimetre (96 dpi)
 const SPEEDS = [25, 50, 100];      // sweep, mm/s
@@ -35,7 +36,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => LIVE_TEXT[L()];
   const caseText = (id) => LIVE_CASE_TEXT[id][L()];
-  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '',
+  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '', waves: readWaveLabels(),
     hidden: false, quizOpen: false, answer: null, showHints: false, rfOn: false, rfTarget: 'slow-pathway', lesion: '',
     maneuver: null, maneuverText: '', protocol: null, protocolKind: 'avbcl', protocolRows: [], protocolSummary: '' };
   let heart = createLiveHeart(state.caseId);
@@ -63,7 +64,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const review = el('input', '', { type: 'range', min: '0', max: String(REVIEW_MS), step: '50', 'data-ep-live-review': '' });
   const calBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-caliper': '' });
   const rateSel = el('select', '', { 'data-ep-live-rate': '' });
-  bar.append(runBtn, speedSel, rateSel, review, calBtn);
+  const wavesBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-waves': '' });
+  bar.append(runBtn, speedSel, rateSel, review, calBtn, wavesBtn);
   const readout = el('p', 'ep-live-readout', { 'data-ep-live-intervals': '' });
   const info = el('p', 'ep-live-info', { 'aria-live': 'polite' });
 
@@ -274,6 +276,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   speedSel.addEventListener('change', () => { state.speed = Number(speedSel.value) || 25; render(); });
   review.addEventListener('input', () => { state.back = Number(review.value); state.caliper = noCaliper(); draw(); });
   calBtn.addEventListener('click', () => { state.caliperOn = !state.caliperOn; state.caliper = noCaliper(); render(); });
+  wavesBtn.addEventListener('click', () => { state.waves = !state.waves; writeWaveLabels(state.waves); render(); });
   caseSelect.addEventListener('change', () => { if (LIVE_CASES[caseSelect.value]) setCase(caseSelect.value); });
   surpriseBtn.addEventListener('click', () => {
     const ids = Object.keys(LIVE_CASES).filter((id) => id !== state.caseId);
@@ -325,7 +328,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     const raw = heart.events(from - 80, end + 80);
     const events = Object.fromEntries(Object.entries(raw).map(([ch, list]) => [ch, list.map((e) => ({ ...e, t: e.t - from }))]));
     const local = state.caliperOn ? { a: state.caliper.a == null ? null : state.caliper.a - from, b: state.caliper.b == null ? null : state.caliper.b - from } : null;
-    drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, t0: from, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local }) || drawn;
+    drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, t0: from, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local, waves: state.waves }) || drawn;
     const iv = liveIntervals(heart.events(end - 2500, end));
     const t = T(), f = (v) => (v == null ? t.none : `${v} ms`);
     readout.textContent = `${t.intervals}: PP ${f(iv.pp)} · RR ${f(iv.rr)} · AH ${f(iv.ah)} · HV ${f(iv.hv)} · VA ${f(iv.va)}`;
@@ -411,6 +414,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     review.setAttribute('aria-label', t.review);
     calBtn.textContent = t.calipers;
     calBtn.setAttribute('aria-pressed', String(state.caliperOn));
+    wavesBtn.textContent = t.waves;
+    wavesBtn.setAttribute('aria-pressed', String(state.waves));
     stimTitle.textContent = t.stim;
     for (const [span, key] of fieldLabels) span.textContent = t[key] || key;
     paceBtn.textContent = t.pace; burstBtn.textContent = t.burst; pausePaceBtn.textContent = t.pacePause; stopBtn.textContent = t.stop; shockBtn.textContent = t.shock;
@@ -439,6 +444,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     render,
     setActive(flag) {
       state.active = Boolean(flag);
+      if (state.active) state.waves = readWaveLabels();   // the lesson strips may have changed the shared choice
       root.hidden = !state.active;
       lastWall = null;
       if (state.active) { render(); if (state.running) loop(); } else cancelFrame(raf);
@@ -452,7 +458,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     },
     maneuverText: () => state.maneuverText,
     protocol: () => ({ running: Boolean(state.protocol), rows: state.protocolRows.slice(), summary: state.protocolSummary }),
-    getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper } : null }),
+    getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper } : null, waves: state.waves }),
     status: () => heart.status(),
     intervals: () => liveIntervals(heart.events(viewEnd() - 2500, viewEnd())),
     setCase
