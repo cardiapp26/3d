@@ -13,6 +13,11 @@ export const PV_V0 = 10;   // unstressed volume (ml)
 export const PV_LIMITS = Object.freeze({
   edv: [60, 280], ees: [0.4, 5], ea: [0.5, 5], stiffness: [0.01, 0.06]
 });
+// Filling pressure the stiffness slider can reach at a condition's reference volume (mmHg).
+const REFERENCE_EDP = [2, 35];
+// Share of the total stroke volume that leaks back: into the left atrium during
+// isovolumic contraction (acute MR) or from the aorta during relaxation (AR).
+const LEAK = { mr: 0.25, ar: 0.18 };
 
 /**
  * Condition presets. edp: end-diastolic pressure the EDPVR passes through at
@@ -22,15 +27,31 @@ export const PV_LIMITS = Object.freeze({
  * ventricle), 'as' (an LV-aortic systolic gradient raises the LV pressure).
  */
 export const PV_PRESETS = Object.freeze({
-  normal: { edv: 120, ees: 2.5, ea: 1.6, stiffness: 0.025, edp: 10 },
+  // Normal matches the catheter scenario's normal (EDV 130, SV 81, EF 63%, ESP 90, Ees 2.3, Ea 1.1).
+  normal: { edv: 130, ees: 2.34, ea: 1.11, stiffness: 0.025, edp: 10 },
   'hfref-decompensated': { edv: 220, ees: 0.6, ea: 1.9, stiffness: 0.02, edp: 28 },
   hfpef: { edv: 110, ees: 3.5, ea: 2.2, stiffness: 0.045, edp: 25 },
   'aortic-stenosis': { edv: 125, ees: 3.5, ea: 2.6, stiffness: 0.03, edp: 20, valve: 'as' },
   'aortic-regurgitation': { edv: 230, ees: 1.8, ea: 1.0, stiffness: 0.018, edp: 14, valve: 'ar' },
   'mitral-regurgitation-acute': { edv: 160, ees: 2.5, ea: 0.9, stiffness: 0.03, edp: 25, valve: 'mr' },
-  hypovolemia: { edv: 80, ees: 2.5, ea: 1.6, stiffness: 0.025, edp: 4 },
-  inotrope: { edv: 110, ees: 4.0, ea: 1.4, stiffness: 0.025, edp: 8 }
+  hypovolemia: { edv: 80, ees: 2.34, ea: 1.4, stiffness: 0.025, edp: 4 },
+  inotrope: { edv: 110, ees: 4.5, ea: 1.3, stiffness: 0.025, edp: 8 }
 });
+
+// Peak systolic pressure over the end-systolic (aortic closure) pressure: the ESP sits below the peak.
+const PEAK_OVER_ESP = 1.25;
+
+/** Amplitude of the sinusoidal arch over the open-to-ESP line so the highest ejection pressure equals `peak`. */
+function archAmplitude(open, esp, peak) {
+  const top = amp => {
+    let max = 0;
+    for (let i = 0; i <= 48; i++) { const f = i / 48; max = Math.max(max, open + (esp - open) * f + amp * Math.sin(Math.PI * f)); }
+    return max;
+  };
+  let lo = 0, hi = Math.max(peak, 1);
+  for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (top(mid) > peak) hi = mid; else lo = mid; }
+  return (lo + hi) / 2;
+}
 
 const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number(v)));
 
@@ -40,8 +61,11 @@ export function pvParams(input = {}, presetId = 'normal') {
   const p = { ...base, ...input };
   const edv = clamp(p.edv, PV_LIMITS.edv);
   const stiffness = clamp(p.stiffness, PV_LIMITS.stiffness);
-  // EDPVR scale from the preset's (EDV, EDP) pair, so moving the preload slider walks along the curve.
-  const scale = base.edp / (Math.exp(base.stiffness * (base.edv - PV_V0)) - 1);
+  // EDPVR scale: the curve passes through the condition's reference volume at a pressure that follows
+  // the stiffness slider in proportion (bounded to a filling-pressure range), so the slider lifts the
+  // curve without the exponential blow-up of a fixed scale and moving the preload slider walks along it.
+  const refEdp = clamp(base.edp * stiffness / base.stiffness, REFERENCE_EDP);
+  const scale = refEdp / (Math.exp(stiffness * (base.edv - PV_V0)) - 1);
   return {
     edv, stiffness, scale,
     ees: clamp(p.ees, PV_LIMITS.ees),
@@ -52,7 +76,8 @@ export function pvParams(input = {}, presetId = 'normal') {
 
 /**
  * Build one loop.
- * @returns {object} drawPvLoop data: points ({u, v, p}), edv, esv, sv, ef, esp, edp, ees, ea, v0, espvr, edpvr, strokeWork, counterclockwise, forwardOnly, phases
+ * @returns {object} drawPvLoop data: points ({u, v, p}), edv, esv, sv (total stroke volume), ef, esp, peak, edp, ees, ea (ESP / SV of the drawn loop),
+ * regurgVolume and forwardSv (leaking lesions), v0, espvr, edpvr, strokeWork, counterclockwise, forwardOnly, phases
  */
 export function pvModelLoop(params, n = 240) {
   const { edv, ees, ea, stiffness, scale, valve } = params;
@@ -65,8 +90,13 @@ export function pvModelLoop(params, n = 240) {
   // Aortic valve opening pressure: diastolic arterial pressure, a fraction of the end-systolic pressure.
   const open = Math.max(edp + 5, esp * 0.78);
   const gradient = valve === 'as' ? esp * 0.2 : 0;
-  const peak = Math.max(esp, open) * 1.12 + gradient;
-  const fillEnd = edpvr(esv) + 1;
+  const peak = Math.max(esp, open) * PEAK_OVER_ESP + gradient;
+  const arch = archAmplitude(open, esp, peak);
+  // Aortic regurgitation refills the ventricle during relaxation, so filling starts from that volume and the loop closes.
+  const leak = (LEAK[valve] || 0) * sv;
+  const refill = valve === 'ar' ? leak : 0;
+  const vStart = esv + refill;
+  const fillEnd = edpvr(vStart) + 1;
 
   const seg = { ivc: [S.ivcStart, S.ejectionStart], ej: [S.ejectionStart, S.ivrStart], ivr: [S.ivrStart, 1] };
   const points = [];
@@ -76,23 +106,23 @@ export function pvModelLoop(params, n = 240) {
     if (u < seg.ivc[0]) {
       // Filling along the EDPVR from the end-systolic volume to the EDV.
       const f = u / seg.ivc[0];
-      v = esv + (edv - esv) * (1 - Math.pow(1 - f, 1.6));
+      v = vStart + (edv - vStart) * (1 - Math.pow(1 - f, 1.6));
       p = Math.max(edpvr(v), fillEnd * (1 - f) + edpvr(v) * f * 0.98);
     } else if (u < seg.ivc[1]) {
       // Isovolumic contraction; with mitral regurgitation the volume already falls (no isovolumic phase).
       const f = (u - seg.ivc[0]) / (seg.ivc[1] - seg.ivc[0]);
-      v = valve === 'mr' ? edv - sv * 0.25 * f : edv;
+      v = valve === 'mr' ? edv - leak * f : edv;
       p = edp + (open - edp) * Math.pow(f, 1.4);
     } else if (u < seg.ej[1]) {
       // Ejection: volume falls from the opening volume to the ESV, pressure arches over the peak.
       const f = (u - seg.ej[0]) / (seg.ej[1] - seg.ej[0]);
-      const v0 = valve === 'mr' ? edv - sv * 0.25 : edv;
+      const v0 = valve === 'mr' ? edv - leak : edv;
       v = v0 - (v0 - esv) * (1 - Math.pow(1 - f, 1.8));
-      p = open + (esp - open) * f + (peak - Math.max(open, esp)) * Math.sin(Math.PI * f);
+      p = open + (esp - open) * f + arch * Math.sin(Math.PI * f);
     } else {
       // Isovolumic relaxation; with aortic regurgitation the ventricle refills during relaxation.
       const f = (u - seg.ivr[0]) / (seg.ivr[1] - seg.ivr[0]);
-      v = valve === 'ar' ? esv + sv * 0.18 * f : valve === 'mr' ? esv : esv;
+      v = esv + refill * f;
       p = fillEnd + (esp - fillEnd) * Math.pow(1 - f, 2.2);
     }
     points.push({ u, v, p });
@@ -103,7 +133,9 @@ export function pvModelLoop(params, n = 240) {
     area += (a.v * b.p - b.v * a.p) / 2;
   }
   return {
-    points, edv, esv, sv, ef: sv / edv, esp, edp, ees, ea, v0: PV_V0,
+    points, edv, esv, sv, ef: sv / edv, esp, peak: Math.max(...points.map(q => q.p)), edp, ees,
+    // The ESV floor can bind at extreme settings; the labelled Ea is then the drawn loop's ESP / SV.
+    ea: esp / sv, v0: PV_V0, regurgVolume: leak, forwardSv: sv - leak,
     espvr, edpvr, strokeWork: Math.abs(area), counterclockwise: area > 0,
     forwardOnly: false, valve,
     phases: { ivc: seg.ivc, ejection: seg.ej, ivr: seg.ivr }

@@ -5,8 +5,10 @@
 // end-diastolic pressure-volume relations (ESPVR, EDPVR) and the arterial
 // elastance line (Ea) are teaching reference lines drawn through the loop's
 // own corner points (Suga and Sagawa's framework), not fitted data. Loops of
-// regurgitant lesions are drawn with the forward stroke volume only, which
-// the panel states.
+// regurgitant lesions are drawn with the forward stroke volume only, and the
+// canvas labels them as forward values. A ventricular shunt adds its flow to
+// the left ventricular stroke volume (systemic stroke volume x Qp/Qs). The
+// volume curve follows the cycle rhythm; the heart rate stays the scenario's.
 
 import { CYCLE_SYNC as S } from './cardiac-cycle.js';
 import { ventricularVolume } from './wiggers.js';
@@ -16,28 +18,34 @@ export const SCENARIO_EDV = Object.freeze({
   normal: 130, aortic_stenosis_severe: 130, mitral_stenosis_severe: 95, mitral_regurgitation_severe: 160,
   aortic_regurgitation_severe: 220, hocm: 100, constrictive_pericarditis: 95, restrictive_cardiomyopathy: 90,
   tamponade: 80, precapillary_ph: 100, postcapillary_ph: 140, rv_infarct: 95, asd_left_to_right: 110,
-  vsd_left_to_right: 150, acute_lv_failure: 190
+  vsd_left_to_right: 200, acute_lv_failure: 190
 });
 /** Scenarios whose loop omits the regurgitant volume (forward flow only). */
 export const REGURGITANT = Object.freeze(['mitral_regurgitation_severe', 'aortic_regurgitation_severe']);
+/** Scenarios whose left ventricle also ejects the shunt flow (Qp/Qs x systemic stroke volume). */
+export const VENTRICULAR_SHUNT = Object.freeze(['vsd_left_to_right']);
 
 const V0 = 10;          // unstressed volume of the reference lines (ml)
 const EDPVR_K = 0.025;  // stiffness constant of the exponential EDPVR (1/ml)
-const BASE_ESV = 50, BASE_EDV = 120;   // extremes of the schematic volume curve (sinus)
+const BASE_ESV = 50;   // end-systolic extreme of the schematic volume curve
 
 const wrap = u => ((u % 1) + 1) % 1;
 
 /**
  * Sample the loop and its reference relations for a scenario.
- * @param {{ pressure: (station: string, u: number) => number, getScenario: () => object }} hemo
+ * @param {{ pressure: (station: string, u: number) => number, getScenario: () => object, metrics?: () => object }} hemo
  * @param {number} [n] samples per cycle
+ * @param {{ rhythm?: string }} [options] cycle rhythm of the volume curve (no atrial kick in atrial fibrillation)
  */
-export function samplePvLoop(hemo, n = 240) {
+export function samplePvLoop(hemo, n = 240, { rhythm = 'sinus' } = {}) {
   const sc = hemo.getScenario();
-  const sv = (sc.co * 1000) / sc.hr;
+  const systemicSv = (sc.co * 1000) / sc.hr;
+  const shuntRatio = VENTRICULAR_SHUNT.includes(sc.id) && hemo.metrics ? Math.max(1, hemo.metrics().qpQs || 1) : 1;
+  const sv = systemicSv * shuntRatio;
   const edv = Math.max(sv + 15, SCENARIO_EDV[sc.id] || Math.round(sv / 0.62));
   const esv = edv - sv;
-  const volumeAt = u => esv + ((ventricularVolume(wrap(u), 'sinus') - BASE_ESV) / (BASE_EDV - BASE_ESV)) * (edv - esv);
+  const baseEdv = ventricularVolume(S.ivcStart, rhythm);
+  const volumeAt = u => esv + ((ventricularVolume(wrap(u), rhythm) - BASE_ESV) / (baseEdv - BASE_ESV)) * (edv - esv);
   const points = Array.from({ length: n }, (_, i) => {
     const u = i / n;
     return { u, v: volumeAt(u), p: hemo.pressure('lv', u) };
@@ -60,18 +68,37 @@ export function samplePvLoop(hemo, n = 240) {
     strokeWork: Math.abs(area),
     counterclockwise: area > 0,
     forwardOnly: REGURGITANT.includes(sc.id),
+    shunt: shuntRatio > 1 ? { systemicSv, ratio: shuntRatio } : null,
     phases: { ivc: [S.ivcStart, S.ejectionStart], ejection: [S.ejectionStart, S.ivrStart], ivr: [S.ivrStart, 1] }
   };
 }
 
 const TEXT = {
-  tr: { volume: 'LV hacim (ml)', pressure: 'mmHg', espvr: 'ESPVR (Ees)', edpvr: 'EDPVR', ea: 'Ea', forward: 'Yalnız ileri akım hacmi: regürjitan hacim modellenmedi', fill: 'doluş', ivc: 'İVK', eject: 'ejeksiyon', ivr: 'İVG' },
-  en: { volume: 'LV volume (ml)', pressure: 'mmHg', espvr: 'ESPVR (Ees)', edpvr: 'EDPVR', ea: 'Ea', forward: 'Forward stroke volume only: the regurgitant volume is not modeled', fill: 'filling', ivc: 'IVC', eject: 'ejection', ivr: 'IVR' }
+  tr: { volume: 'LV hacim (ml)', pressure: 'mmHg', espvr: 'ESPVR (Ees)', edpvr: 'EDPVR', ea: 'Ea', forward: 'Yalnız ileri akım hacmi: regürjitan hacim modellenmedi', forwardSv: 'ileri SV', forwardEf: 'ileri EF', regurg: 'regürjitan', systemic: 'sistemik SV', shunt: 'LV toplam SV', fill: 'doluş', ivc: 'İVK', eject: 'ejeksiyon', ivr: 'İVG' },
+  en: { volume: 'LV volume (ml)', pressure: 'mmHg', espvr: 'ESPVR (Ees)', edpvr: 'EDPVR', ea: 'Ea', forward: 'Forward stroke volume only: the regurgitant volume is not modeled', forwardSv: 'forward SV', forwardEf: 'forward EF', regurg: 'regurgitant', systemic: 'systemic SV', shunt: 'LV total SV', fill: 'filling', ivc: 'IVC', eject: 'ejection', ivr: 'IVR' }
 };
 const COLORS = { bg: '#fcfdfb', grid: 'rgba(93, 138, 120, 0.16)', axis: '#5c7267', loop: '#d23a4f', filling: '#3a8fb8', iso: '#6b7f74', ref: '#9a6425', ea: '#3f6f8f', cursor: '#e0524d', text: '#5c7267' };
 
 const phaseOf = u => (u < S.ivcStart ? 'fill' : u < S.ejectionStart ? 'ivc' : u < S.ivrStart ? 'eject' : 'ivr');
 const phaseColor = { fill: COLORS.filling, ivc: COLORS.iso, eject: COLORS.loop, ivr: COLORS.iso };
+
+/**
+ * Header lines of the canvas. A regurgitant scenario loop holds the forward
+ * stroke volume only, so its volume and EF are labelled forward and Ees / Ea
+ * (computed from that rectangle) are left out; a leaking model loop adds its
+ * forward and regurgitant volumes; a ventricular shunt adds the systemic volume.
+ * @returns {string[]}
+ */
+export function summaryLines(data, lang = 'tr') {
+  const T = TEXT[lang === 'en' ? 'en' : 'tr'];
+  const ml = v => `${Math.round(v)} ml`;
+  const pct = `${Math.round(data.ef * 100)}%`;
+  if (data.forwardOnly) return [`${T.forwardSv} ${ml(data.sv)} · ${T.forwardEf} ${pct}`, T.forward];
+  const lines = [`SV ${ml(data.sv)} · EF ${pct} · Ees ${data.ees.toFixed(1)} · Ea ${data.ea.toFixed(1)} mmHg/ml`];
+  if (data.regurgVolume > 0) lines.push(`${T.forwardSv} ${ml(data.forwardSv)} · ${T.regurg} ${ml(data.regurgVolume)}`);
+  if (data.shunt) lines.push(`${T.shunt}: ${T.systemic} ${ml(data.shunt.systemicSv)} × Qp/Qs ${data.shunt.ratio.toFixed(1)}`);
+  return lines;
+}
 
 /**
  * Draw the loop. Pressure on y, volume on x; the loop is traced in phase
@@ -89,7 +116,8 @@ export function drawPvLoop(canvas, data, { phase = 0, lang = 'tr', dpr = 1, ghos
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = COLORS.bg;
   ctx.fillRect(0, 0, w, h);
-  const left = 34, right = w - 10, top = 14, bottom = h - 24;
+  const lines = summaryLines(data, lang);
+  const left = 34, right = w - 10, top = 11 * lines.length + 6, bottom = h - 24;
   const all = ghost ? [...data.points, ...ghost.points] : data.points;
   const pMax = Math.ceil((Math.max(data.esp, ...all.map(p => p.p)) * 1.15) / 20) * 20;
   const vMax = Math.ceil((Math.max(data.edv, ghost ? ghost.edv : 0) * 1.2) / 20) * 20;
@@ -150,21 +178,24 @@ export function drawPvLoop(canvas, data, { phase = 0, lang = 'tr', dpr = 1, ghos
     ctx.strokeStyle = phaseColor[phaseOf(a.u)];
     ctx.beginPath(); ctx.moveTo(x(a.v), y(a.p)); ctx.lineTo(x(b.v), y(b.p)); ctx.stroke();
   }
-  // Corner labels and the cursor.
+  // Corner labels (with a halo so they stay legible over the loop) and the header lines.
+  const halo = (text, tx, ty) => { ctx.strokeStyle = COLORS.bg; ctx.lineWidth = 3; ctx.strokeText(text, tx, ty); ctx.fillText(text, tx, ty); };
   ctx.font = '600 8.5px "DM Sans", sans-serif';
   ctx.fillStyle = COLORS.text;
   ctx.textAlign = 'center';
-  ctx.fillText(`EDV ${Math.round(data.edv)}`, x(data.edv), y(data.edp) + 12);
-  ctx.fillText(`ESV ${Math.round(data.esv)}`, x(data.esv), y(data.esp) - 6);
+  halo(`EDV ${Math.round(data.edv)}`, x(data.edv), Math.min(y(data.edp) + 11, bottom - 3));
+  halo(`ESV ${Math.round(data.esv)}`, x(data.esv), Math.max(top + 8, y(data.esp) - 6));
   ctx.textAlign = 'left';
-  ctx.fillText(`SV ${Math.round(data.sv)} ml · EF ${Math.round(data.ef * 100)}% · Ees ${data.ees.toFixed(1)} · Ea ${data.ea.toFixed(1)} mmHg/ml`, left + 4, top + 9);
-  if (data.forwardOnly) { ctx.font = '8px "DM Sans", sans-serif'; ctx.fillText(T.forward, left + 4, top + 20); }
-  // Phase legend.
+  lines.forEach((line, i) => {
+    ctx.font = i === 0 ? '600 8.5px "DM Sans", sans-serif' : '8px "DM Sans", sans-serif';
+    ctx.fillText(line, left + 4, 9 + i * 11);
+  });
+  // Phase legend on its own row under the plot (the filling limb runs along the plot floor).
   ctx.font = '8px "DM Sans", sans-serif';
-  let lx = left + 4;
+  let lx = left;
   for (const key of ['fill', 'ivc', 'eject', 'ivr']) {
-    ctx.fillStyle = phaseColor[key]; ctx.fillRect(lx, bottom - 9, 8, 3);
-    ctx.fillStyle = COLORS.text; ctx.fillText(T[key], lx + 10, bottom - 5);
+    ctx.fillStyle = phaseColor[key]; ctx.fillRect(lx, bottom + 17, 8, 3);
+    ctx.fillStyle = COLORS.text; ctx.fillText(T[key], lx + 10, bottom + 21);
     lx += 16 + ctx.measureText(T[key]).width;
   }
   const uu = wrap(phase);
