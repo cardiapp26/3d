@@ -20,7 +20,6 @@ import { createCardiacCycle } from './cardiac-cycle.js';
 import { createAnimationChannels } from './animation-channels.js';
 import { createBloodFlow } from './blood-flow.js';
 import { createXrSupport } from './xr.js';
-import { createPviLab } from './pvi-lab.js';
 import { createOverlayFollow } from './overlay-follow.js';
 import { createSceneLabels } from './scene-labels.js';
 import { chamberMode } from './chamber-modes.js';
@@ -153,8 +152,6 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const epZones = createEpZones({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], isReady });
   heart.add(epZones.group);
   // PVI exercise lesion rings; clicks are routed from pointerUp while active.
-  const pviLab = createPviLab({ sourceCenter, meshVertices, isReady, camera, dom: renderer.domElement, requestRender });
-  heart.add(pviLab.group);
   let bachmannTarget = null;
   const atlasAdjustments = {};
   const pacemakerLeads = createPacemakerLeads({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getBachmannTarget: () => bachmannTarget, isReady });
@@ -901,7 +898,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   }
   function pointerMove(e){hovered=pick(e);sceneLabels.setFocus(hovered,selected);paintSelection();requestRender();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered,pickedBranch);}
   function pointerDown(e){transition=false;down=[e.clientX,e.clientY];}
-  function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){if(pviLab.handleClick(e))return;const id=pick(e);if(id)onSelect(id,pickedBranch);}}
+  function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){const id=pick(e);if(id)onSelect(id,pickedBranch);}}
   function pointerLeave(){hovered=null;down=null;sceneLabels.setFocus(selected);paintSelection();requestRender();onHover(null);}
   renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointerleave',pointerLeave);
   const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();if(modelReady&&mode==='atria'&&['la','laa'].includes(selected))focusLeftAtrium(selected);requestRender();};
@@ -1135,12 +1132,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setAblationStep(step){ablationStep=Number(step);epLandmarks.setStep(ablationStep);requestRender();},
     // Koch step layers: 'his' and 'cs' reference catheters, 'lesions' (example RF, off by default).
     setEpOptional(key,value){epLandmarks.setOptional(key,value);catheterPickables=null;requestRender();},
-    // Accessory pathway zone of the signal panel's active case (ep-zones.js); null hides it.
-    // extra: { halo, circuit } (Halo catheter, reentry direction arrows).
-    setEpZone(zoneId,extra){epZones.setZone(zoneId||null,extra||{});requestRender();},
-    pvi: pviLab,
+    // Accessory pathway zone of the ablation lesson step (ep-zones.js); null hides it.
+    setEpZone(zoneId){epZones.setZone(zoneId||null);requestRender();},
     getEpZone(){return epZones.getZone();},
-    getEpZoneOptions(){return epZones.getOptions();},
     getEpOptional(){return epLandmarks.getOptional();},
     // Scene identity labels: 'hover' (on demand, default) or 'all'.
     setSceneLabelMode(value){sceneLabels.setMode(value);requestRender();},

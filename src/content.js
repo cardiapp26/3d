@@ -1073,7 +1073,7 @@ export const rawLessons = {
   ablation: {
     tr: {
       title: 'Elektrofizyolojik anatomi • Tanı, manevralar, tedavi',
-      intro: 'Aritmi substratlarının anatomik temeli: CTI, Koch üçgeni, PVI. Her adım ilgili başlangıç kaydını açar; kayıtları Tanı / Manevralar / Tedavi panelinde inceleyin.',
+      intro: 'Aritmi substratlarının anatomik temeli: CTI, Koch üçgeni, PVI. Her adımın başlangıç kaydı EPS laboratuvarında açılır; orada Tanı / Manevralar / Tedavi sekmelerinde ve canlı kayıtta inceleyin.',
       steps: [
         {
           title: 'Kavotriküspit İstmus (CTI) • Atriyal Flatter',
@@ -1104,8 +1104,8 @@ export const rawLessons = {
           egm: 'sinus'
         },
         {
-          title: 'Sinyal paneli • Tanı, manevralar, tedavi',
-          text: 'Paneldeki Tanı / Manevralar / Tedavi sekmeleri olgu kayıtlarını açar: mekanizması gizli taşikardi kayıtları, His-refrakter PVC ve overdrive manevraları, ablasyon sonlanım klipleri. Sinüs ritminde His kateterinde A, keskin H ve V görülür (AH ve HV aralıkları). Yavaş yol hedefinde ablasyon kateteri küçük (bazen bölünmüş) A ve büyük V kaydeder, His potansiyeli yoktur; hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesidir, sabit bir oran değildir. RF sırasında junctional ritim görülebilir, fakat tek başına başarı göstergesi değildir: temel sonlanım AV iletim korunarak AVNRT\'nin yeniden indüklenememesidir. Junctional atımlarda VA blok veya hızlı junctional ritim enerjiyi durdurma uyarısıdır. Senaryoları şeridin üstündeki düğmelerle değiştirin; şeritte seçtiğiniz noktadaki zaman ve olaylar imleçle okunur.',
+          title: 'EPS laboratuvarı • Tanı, manevralar, tedavi',
+          text: 'EPS laboratuvarının Tanı / Manevralar / Tedavi sekmeleri olgu kayıtlarını açar: mekanizması gizli taşikardi kayıtları, His-refrakter PVC ve overdrive manevraları, ablasyon sonlanım klipleri; Canlı kayıt sekmesinde stimülatörle taşikardi başlatılıp sonlandırılır. Sinüs ritminde His kateterinde A, keskin H ve V görülür (AH ve HV aralıkları). Yavaş yol hedefinde ablasyon kateteri küçük (bazen bölünmüş) A ve büyük V kaydeder, His potansiyeli yoktur; hedef seçimi anatomi ile elektrogramın birlikte değerlendirilmesidir, sabit bir oran değildir. RF sırasında junctional ritim görülebilir, fakat tek başına başarı göstergesi değildir: temel sonlanım AV iletim korunarak AVNRT\'nin yeniden indüklenememesidir. Junctional atımlarda VA blok veya hızlı junctional ritim enerjiyi durdurma uyarısıdır. Bu adımın kaydını karttaki bağlantıyla EPS laboratuvarında açın; orada senaryolar şeridin üstündeki düğmelerle değişir, şeritte seçtiğiniz noktadaki zaman ve olaylar imleçle okunur.',
           landmark: 'koch-slow',
           view: 'koch_rao',
           egm: 'sinus'
@@ -1114,7 +1114,7 @@ export const rawLessons = {
     },
     en: {
       title: 'Electrophysiological anatomy • Diagnosis, maneuvers, treatment',
-      intro: 'Anatomical basis of arrhythmia substrates: CTI, triangle of Koch, PVI. Each step opens its matching baseline recording; inspect it in the Diagnosis / Maneuvers / Treatment panel.',
+      intro: 'Anatomical basis of arrhythmia substrates: CTI, triangle of Koch, PVI. The baseline recording of each step opens in the EPS laboratory; inspect it there in the Diagnosis / Maneuvers / Treatment tabs and the live recording.',
       steps: [
         {
           title: 'Cavotricuspid Isthmus (CTI) • Atrial Flutter',
@@ -1145,8 +1145,8 @@ export const rawLessons = {
           egm: 'sinus'
         },
         {
-          title: 'Signal panel • Diagnosis, maneuvers, treatment',
-          text: 'The Diagnosis / Maneuvers / Treatment tabs of the panel open the case recordings: mechanism-hidden tachycardias, His-refractory PVC and overdrive maneuvers, and the ablation endpoint clips. In sinus rhythm the His catheter records A, a sharp H and V (AH and HV intervals). At the slow-pathway target the ablation catheter records a small (sometimes fragmented) A and a large V with no His potential; target choice weighs anatomy and electrograms together, not a fixed ratio. Junctional rhythm may appear during RF, but it alone does not indicate success: the key endpoint is noninducibility of AVNRT with preserved AV conduction. VA block in junctional beats, or a fast junctional rhythm, is a warning to stop energy delivery. Switch scenarios with the buttons above the strip; the cursor reads the time and events at the point you select on the strip.',
+          title: 'EPS laboratory • Diagnosis, maneuvers, treatment',
+          text: 'The Diagnosis / Maneuvers / Treatment tabs of the EPS laboratory open the case recordings: mechanism-hidden tachycardias, His-refractory PVC and overdrive maneuvers, and the ablation endpoint clips; the Live recording tab starts and ends tachycardias with the stimulator. In sinus rhythm the His catheter records A, a sharp H and V (AH and HV intervals). At the slow-pathway target the ablation catheter records a small (sometimes fragmented) A and a large V with no His potential; target choice weighs anatomy and electrograms together, not a fixed ratio. Junctional rhythm may appear during RF, but it alone does not indicate success: the key endpoint is noninducibility of AVNRT with preserved AV conduction. VA block in junctional beats, or a fast junctional rhythm, is a warning to stop energy delivery. Open the recording of this step in the EPS laboratory with the link on the card; there the buttons above the strip switch scenarios and the cursor reads the time and events at the point you select.',
           landmark: 'koch-slow',
           view: 'koch_rao',
           egm: 'sinus'

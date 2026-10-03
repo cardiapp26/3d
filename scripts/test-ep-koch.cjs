@@ -166,77 +166,43 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForTimeout(100);
     assert.equal(await page.evaluate(() => window.heart.getState().kochFocus), false, 'focus ends with the close-up');
     assert.equal(await page.locator('.scene-label:not([hidden])').count(), 0, 'no Koch labels in the PVI step');
-    // Every ablation step now opens its own synthetic recording; the PVI step shows the AF baseline.
-    assert.equal(await page.locator('#egm-panel').isHidden(), false, 'the PVI step opens its signal strip');
-    assert.equal(await page.evaluate(() => window.cardiaEp.getScenario()), 'af-pvi-baseline', 'PVI step: AF baseline recording');
-
-    // Step 5: synthetic EGM strip under the Koch close-up.
-    await page.locator('#steps [data-step="4"]').click();
-    await page.waitForSelector('#egm-panel:not([hidden]) .egm-canvas');
-    const egm = await page.evaluate(() => {
-      const c = document.querySelector('.egm-canvas');
-      return { w: c.width, h: c.height, cssH: c.clientHeight, text: document.querySelector('.egm-text').textContent, pressed: document.querySelector('[data-egm-scenario][aria-pressed=true]')?.dataset.egmScenario, kochShown: window.heart.scene.getObjectByName('Triangle of Koch').visible };
-    });
-    assert.ok(egm.w > 200 && egm.h > 100 && egm.cssH === 240, `EGM canvas sized (${egm.w}x${egm.h}, css ${egm.cssH})`);
-    assert.ok(egm.text.length > 20 && !/Sentetik kayıt/.test(egm.text), 'clip text without a per-clip disclaimer');
-    assert.equal(egm.pressed, 'sinus'); assert.equal(egm.kochShown, true);
-    await page.locator('[data-egm-scenario="junctional-rf"]').click();
-    assert.match(await page.locator('.egm-text').textContent(), /tek başına/);
-    await page.locator('#beat').click();
-    await page.waitForTimeout(400);
-    const grown = await page.evaluate(() => document.querySelector('.egm-canvas').clientHeight);
-    assert.equal(grown, 240, 'EGM canvas keeps its size while redrawn every frame');
-    await page.locator('#beat').click();
-    if (SHOTS) await page.locator('article').screenshot({ path: `${SHOTS}/egm-panel.png` });
-
-    // Pathway zones (report section 5): the active case draws its annulus arc
-    // and the RV pacing reference; a neutral diagnosis view hides them.
+    // Pathway zones (report section 5): a step whose recording reading is open
+    // draws its annulus arc and the RV pacing reference; neutral steps draw none.
     const zones = () => page.evaluate(() => {
       const list = [];
       window.heart.scene.traverse(o => { if (o.name.startsWith('EP zone:') && o.visible && o.parent.visible) list.push(o.name.slice(9)); });
       return { zone: window.heart.getEpZone(), visible: list, rv: window.heart.scene.getObjectByName('RV pacing reference (schematic)').visible };
     });
-    assert.deepEqual(await zones(), { zone: 'koch-slow-pathway', visible: ['koch-slow-pathway'], rv: true }, 'treatment: Koch slow pathway zone');
-    await page.locator('[data-ep-section=maneuver]').click();
-    await page.locator('[data-ep-case]').selectOption('ap-left-lateral');
-    assert.deepEqual((await zones()).visible, ['left-free-wall'], 'left free wall arc on the mitral annulus');
-    assert.match(await page.locator('.ep-zone').textContent(), /mitral anulus/);
-    await page.locator('[data-ep-section=diagnosis]').click();
-    assert.deepEqual(await zones(), { zone: null, visible: [], rv: false }, 'neutral diagnosis hides the zone');
-    await page.locator('[data-ep-evidence]').click();
-    assert.deepEqual((await zones()).visible, ['left-free-wall'], 'evidence reveals the zone');
+    // Every ablation step links its recording to the EPS laboratory; the PVI step opens the AF baseline, neutral.
+    const card = () => page.evaluate(() => {
+      const box = document.querySelector('#eps-handoff');
+      return { hidden: box.hidden, title: box.querySelector('.eps-handoff-title')?.textContent, href: box.querySelector('[data-eps-handoff-link]')?.getAttribute('href') };
+    });
+    assert.deepEqual(await card(), { hidden: false, title: 'Taşikardi kaydı (mekanizma gizli)', href: './eps/#/clip/af-pvi-baseline' }, 'PVI step: AF baseline in the EPS laboratory');
+    assert.deepEqual(await zones(), { zone: null, visible: [], rv: false }, 'neutral recording: no zone');
 
-    // New catalog clips: AH jump, orthodromic AVRT, preexcited AF.
-    await page.locator('[data-ep-section=maneuver]').click();
-    await page.locator('[data-ep-case]').selectOption('avnrt-typical');
-    await page.locator('[data-egm-scenario="avnrt-dual-echo"]').click();
-    assert.match(await page.locator('.ep-measures').textContent(), /AH \(S2-1\) 100 ms.*AH \(S2-2\) 180 ms/, 'AH jump: two S2 couplings, 100 then 180 ms');
-    await page.locator('[data-ep-section=diagnosis]').click();
-    const csCases = await page.locator('[data-ep-case] option').count();
-    assert.equal(csCases, 13, 'thirteen numbered diagnosis cases (phase D cases and the PVI baseline included)');
-    await page.locator('[data-ep-case]').selectOption('ap-left-manifest');
-    await page.locator('[data-egm-scenario="af-preexcited"]').click();
-    assert.match(await page.locator('.ep-measures').textContent(), /SPERRI 220 ms/);
-    assert.match(await page.locator('.egm-text').textContent(), /dar QRS taşikardi algoritması bu kayda uygulanmaz/);
-    assert.equal((await zones()).zone, null, 'neutral: no zone even in the emergency case');
-    // Para-Hisian pair and the enlarge toggle (state preserved).
-    await page.locator('[data-ep-section=maneuver]').click();
-    await page.locator('[data-ep-case]').selectOption('ap-inf-paraseptal');
-    await page.locator('[data-egm-scenario="ap-ips-parahis"]').click();
-    assert.match(await page.locator('.ep-measures').textContent(), /S-A \(His\+RV\) 95 ms.*S-A \(RV\) 95 ms/);
-    await page.locator('[data-ep-size]').click();
-    assert.equal(await page.evaluate(() => document.querySelector('.egm-canvas').clientHeight), 420, 'enlarged canvas');
-    assert.equal(await page.evaluate(() => document.querySelector('[data-egm-scenario="ap-ips-parahis"]').getAttribute('aria-pressed')), 'true', 'enlarge keeps the clip');
-    await page.locator('[data-ep-size]').click();
-    assert.equal(await page.evaluate(() => document.querySelector('.egm-canvas').clientHeight), 240);
+    // Step 5: Koch close-up with the sinus recording; the treatment reading names the slow pathway zone.
+    await page.locator('#steps [data-step="4"]').click();
+    assert.deepEqual(await card(), { hidden: false, title: 'Sinüs ritmi: AH ve HV', href: './eps/#/clip/sinus' });
+    assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Triangle of Koch').visible), true);
+    assert.deepEqual(await zones(), { zone: 'koch-slow-pathway', visible: ['koch-slow-pathway'], rv: true }, 'treatment: Koch slow pathway zone');
+    if (SHOTS) await page.locator('article').screenshot({ path: `${SHOTS}/eps-handoff.png` });
+
+    // The link opens that recording in the EPS page; back returns to the lesson.
+    await Promise.all([page.waitForURL(/\/eps\/#\/clip\/sinus$/), page.locator('[data-eps-handoff-link]').click()]);
+    await page.waitForSelector('.ep-lesson');
+    assert.deepEqual(await page.evaluate(() => { const s = window.epsLab.panel.getState(); return [s.section, s.clipId]; }), ['treatment', 'sinus'], 'EPS opens the lesson recording');
+    await page.goBack();
+    await page.waitForSelector('#viewport[data-model-ready=true]');
+    await page.evaluate(() => window.heart.setSceneLabelMode('all'));   // the reload resets the label mode
     await page.locator('#steps [data-step="1"]').click();
-    assert.deepEqual((await zones()).visible, [], 'leaving the panel step clears the zone');
+    assert.deepEqual((await zones()).visible, [], 'a neutral step clears the zone');
 
     // English labels.
     await page.locator('#steps [data-step="1"]').click();
     await page.locator('#lang-btn').click();
-    await page.waitForTimeout(150);
-    assert.ok((await page.locator('.scene-label:not([hidden])').allTextContents()).includes('CS ostium (estimated)'));
+    // The Koch close-up animates in again after the return from the EPS page: wait for its labels.
+    await page.waitForFunction(() => [...document.querySelectorAll('.scene-label:not([hidden])')].some((n) => n.textContent === 'CS ostium (estimated)'), null, { timeout: 8000 });
     assert.equal(await page.locator('[data-i18n="epToolsHeading"]').textContent(), 'KOCH CLOSE-UP');
 
     assert.deepEqual(errors, []);

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { sharedRim, nearestLoop, coronarySinusOstium, vesselCenterline, centroid, inferiorCavalOstium } from './mesh-utils.js';
-import { EP_ZONE_TEXT } from './ep-case-text.js';
+import { EP_ZONE_TEXT } from './eps/ep-zone-text.js';
 
 /*
  * Accessory pathway zones on the atlas annuli
@@ -9,8 +9,9 @@ import { EP_ZONE_TEXT } from './ep-case-text.js';
  * LA/LV and RA/RV shared orifice rims), plus the CS/MCV course for venous
  * connections. Zones are teaching regions on the atlas: schematic, never a
  * localization rule, never a clinical map. One zone shows at a time (the
- * active case of the signal panel) together with an RV pacing reference
- * marker. Zone names and risk text live in ep-case-text.js (EP_ZONE_TEXT).
+ * ablation lesson step) together with an RV pacing reference
+ * marker. Zone names and risk text live in eps/ep-zone-text.js (shared with
+ * the EPS laboratory page, which draws the same zones on a 2D schematic).
  */
 
 // Arc span as a fraction of the annulus circumference, per side.
@@ -26,21 +27,6 @@ const COLORS = {
   'lv-posterior-septum': 0xfbbf24, 'right-bundle': 0xfca5a5
 };
 
-/** Scene labels of the PAC / PVC source regions (phase C). */
-const ORIGIN_LABELS = Object.freeze({
-  rvot: { tr: 'RVOT (şematik bölge)', en: 'RVOT (schematic region)' },
-  'lvot-cusp': { tr: 'Aort kökü, sol kusp (şematik)', en: 'Aortic root, left cusp (schematic)' },
-  'lv-summit': { tr: 'LV summit, LAD-Cx bifurkasyonu altı (şematik)', en: 'LV summit, below the LAD-LCx bifurcation (schematic)' },
-  'mitral-superior': { tr: 'Mitral anulus süperior (şematik)', en: 'Superior mitral annulus (schematic)' },
-  'ta-free-wall': { tr: 'Triküspit anulus serbest duvar (şematik)', en: 'Tricuspid annulus free wall (schematic)' },
-  'lv-inferior': { tr: 'LV inferior bazal, skar çıkışı (şematik)', en: 'Basal inferior LV, scar exit (schematic)' },
-  'crista-high': { tr: 'Krista terminalis yüksek (şematik)', en: 'High crista terminalis (schematic)' },
-  'cs-ostium': { tr: 'CS ağzı (şematik)', en: 'CS ostium (schematic)' },
-  'ta-superior': { tr: 'Triküspit anulus süperior / RAA (şematik)', en: 'Superior tricuspid annulus / RAA (schematic)' },
-  rspv: { tr: 'Sağ üst pulmoner ven (şematik)', en: 'Right superior pulmonary vein (schematic)' },
-  laa: { tr: 'Sol atriyal apendiks (şematik)', en: 'Left atrial appendage (schematic)' }
-});
-
 export function createEpZones(helpers) {
   const { sourceCenter, meshVertices = () => [], getMeshes = () => [], isReady = () => true } = helpers;
   const group = new THREE.Group();
@@ -49,13 +35,8 @@ export function createEpZones(helpers) {
 
   const zones = new Map();      // zoneId -> THREE.Group
   const labels = [];            // { mesh, tone, text, zone } for scene-labels
-  const circuits = new Map();   // 'orthodromic' | 'antidromic' -> THREE.Group (left free wall AVRT)
-  const paths = new Map();      // 'avn' | 'ap' -> THREE.Group (atrial pacing laboratory, test beat routes)
-  const origins = new Map();    // PAC / PVC source region -> marker (shown after the learner answers)
   let rvMarker = null;
-  let halo = null;
   let active = null;
-  let options = { halo: false, circuit: null, paths: [], origin: null };
   let initialized = false;
 
   function arcOf(rim, anchor, lift, span) {
@@ -66,28 +47,6 @@ export function createEpZones(helpers) {
     const pts = [];
     for (let d = -k; d <= k; d++) pts.push(rim[((i0 + d) % n + n) % n].clone().lerp(lift, 0.06));
     return pts;
-  }
-
-  /** Tube with arrow cones along the points, drawn over the walls (no depth test) so it stays readable. */
-  function arrowTube(name, points, colour, arrowName) {
-    const curve = new THREE.CatmullRomCurve3(points);
-    const out = new THREE.Group();
-    out.name = name;
-    const overlay = (mat) => Object.assign(mat, { depthTest: false, depthWrite: false, transparent: true });
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.016, 8, false), overlay(new THREE.MeshBasicMaterial({ color: colour, opacity: 0.9 })));
-    tube.renderOrder = 20;
-    out.add(tube);
-    for (const t of [0.15, 0.35, 0.55, 0.75, 0.92]) {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 12), overlay(new THREE.MeshBasicMaterial({ color: colour, opacity: 1 })));
-      cone.renderOrder = 21;
-      cone.position.copy(curve.getPointAt(t));
-      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), curve.getTangentAt(t).normalize());
-      cone.name = arrowName;
-      out.add(cone);
-    }
-    out.visible = false;
-    group.add(out);
-    return out;
   }
 
   function zoneMesh(id, points, closed = false) {
@@ -207,68 +166,6 @@ export function createEpZones(helpers) {
       zoneMesh('crista-terminalis', upper.map((p) => new THREE.Vector3(...p).lerp(ra, 0.06)));
     }
 
-    // Right annular Halo (schematic decapolar): along the lateral tricuspid
-    // annulus from the high anterolateral rim (electrodes 9-10, proximal) down
-    // to the low lateral rim next to the CTI (electrodes 1-2, distal).
-    {
-      const n = tvRim.length;
-      const iLow = tvRim.reduce((bi, v, i) => (v.distanceTo(tvInferior) < tvRim[bi].distanceTo(tvInferior) ? i : bi), 0);
-      const iLat = tvRim.reduce((bi, v, i) => (v.distanceTo(rightLateralAnchor) < tvRim[bi].distanceTo(rightLateralAnchor) ? i : bi), 0);
-      // Walk from the low rim through the lateral point and beyond (the shorter way round).
-      const fwd = (iLat - iLow + n) % n, back = (iLow - iLat + n) % n;
-      const step = fwd <= back ? 1 : -1, reach = Math.round(Math.min(fwd, back) * 1.6);
-      const arc = [];
-      for (let k = 0; k <= reach; k++) arc.push(tvRim[((iLow + step * k) % n + n) % n].clone().lerp(ra, 0.12));
-      const curve = new THREE.CatmullRomCurve3(arc);
-      halo = new THREE.Group();
-      halo.name = 'Halo catheter (schematic)';
-      halo.add(Object.assign(new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.012, 8, false), new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.4 })), { name: 'Halo catheter body' }));
-      const electrodeMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.25 });
-      for (let e = 1; e <= 10; e++) {
-        // Bipoles: pairs 1-2 (distal, low) ... 9-10 (proximal, high).
-        const u = 0.06 + Math.floor((e - 1) / 2) * 0.21 + ((e - 1) % 2) * 0.05;
-        const electrode = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 12), electrodeMat);
-        electrode.position.copy(curve.getPointAt(Math.min(0.99, u)));
-        electrode.name = `Halo ${e} electrode`;
-        halo.add(electrode);
-      }
-      halo.visible = false;
-      group.add(halo);
-      labels.push({ mesh: halo.children[2], tone: 'cs', zone: '#halo', text: { tr: 'Halo 1-2 (distal, CTI yanı)', en: 'Halo 1-2 (distal, by the CTI)' } });
-      labels.push({ mesh: halo.children[10], tone: 'cs', zone: '#halo', text: { tr: 'Halo 9-10 (proksimal)', en: 'Halo 9-10 (proximal)' } });
-    }
-
-    // Reentry circuits over the left free wall pathway (schematic arrows):
-    // orthodromic = atrium, AV node, His, ventricle, pathway back to the atrium;
-    // antidromic = the reverse direction.
-    {
-      const apArc = arcOf(mvRim, leftLateralAnchor, la, NARROW);
-      const apMid = apArc[Math.floor(apArc.length / 2)];
-      const lv = sourceCenter('lv') || mvCentre.clone().add(new THREE.Vector3(0.2, -0.5, 0.3));
-      const ventricular = apMid.clone().lerp(lv, 0.45);
-      const septalV = hisSite.clone().lerp(lv, 0.35);
-      const atrial = apMid.clone().lerp(la, 0.4);
-      const loop = [atrial, av.clone(), hisSite.clone(), septalV, ventricular, apMid.clone(), atrial.clone().lerp(apMid, 0.2)];
-      for (const kind of ['orthodromic', 'antidromic']) {
-        const pts = kind === 'orthodromic' ? loop : [...loop].reverse();
-        const circuit = arrowTube(`EP circuit: ${kind}`, pts, kind === 'orthodromic' ? 0x38bdf8 : 0xf97316, `EP circuit arrow (${kind})`);
-        circuit.userData = { direction: kind, from: pts[0].toArray(), to: pts[pts.length - 1].toArray(), pathway: apMid.toArray(), avNode: av.toArray() };
-        circuits.set(kind, circuit);
-      }
-      // Antegrade routes of the atrial pacing laboratory's test beat: over the
-      // AV node (septal atrium, node, His, septal ventricle) and over the left
-      // free wall pathway (atrium, pathway, free wall ventricle).
-      const routes = {
-        avn: [av.clone().lerp(ra, 0.35), av.clone(), hisSite.clone(), septalV.clone()],
-        ap: [atrial.clone(), apMid.clone(), ventricular.clone()]
-      };
-      for (const [kind, pts] of Object.entries(routes)) {
-        const route = arrowTube(`EP pacing path: ${kind}`, pts, kind === 'avn' ? 0x22c55e : 0xf472b6, `EP pacing arrow (${kind})`);
-        route.userData = { route: kind, from: pts[0].toArray(), to: pts[pts.length - 1].toArray() };
-        paths.set(kind, route);
-      }
-    }
-
     // RV pacing reference: a schematic catheter tip at the RV apex (the RV
     // vertex farthest from the tricuspid annulus), shown with any zone.
     const rvVerts = meshVertices('rv');
@@ -290,49 +187,6 @@ export function createEpZones(helpers) {
     group.add(rvMarker);
     labels.push({ mesh: tip, tone: 'target', zone: '*', text: { tr: 'RV pacing referansı (şematik)', en: 'RV pacing reference (schematic)' } });
 
-    // PAC / PVC source regions (phase C): schematic markers at measured
-    // anchors; the region is a teaching area, not a mapped focus.
-    {
-      const lv = sourceCenter('lv') || mvCentre.clone();
-      const at = (id, fallback) => sourceCenter(id) || fallback;
-      const topOf = (rim) => rim.reduce((best, v) => (v.y > best.y ? v : best)).clone();
-      const lowOf = (rim) => rim.reduce((best, v) => (v.y < best.y ? v : best)).clone();
-      // Aortic cusp meshes are 'lcc' / 'ncc' ('aortic-valve' is a layer, not a mesh).
-      const leftCusp = at('lcc', at('ncc', aorta.clone().lerp(mvCentre, 0.5)));
-      const aorticValve = at('ncc', leftCusp).clone().lerp(leftCusp, 0.5);
-      // LV summit: epicardial triangle under the LAD-LCx bifurcation (the left main end
-      // farthest from its ostium at the left cusp), a little toward the LV (Kuniewicz 2021).
-      const lmVerts = meshVertices('lm');
-      const bifurcation = lmVerts.length ? lmVerts.reduce((best, v) => (v.distanceTo(leftCusp) > best.distanceTo(leftCusp) ? v : best)).clone() : leftCusp.clone().lerp(lv, 0.3);
-      const anchors = {
-        'lv-summit': bifurcation.lerp(lv, 0.12),
-        rvot: at('pulmonary-valve', at('pa', rv.clone())).clone().lerp(rv, 0.3),
-        'lvot-cusp': leftCusp.clone(),
-        'mitral-superior': mvRim.reduce((best, v) => (v.distanceTo(aorticValve) < best.distanceTo(aorticValve) ? v : best)).clone().lerp(lv, 0.08),
-        'ta-free-wall': rightLateralAnchor.clone().lerp(rv, 0.1),
-        'lv-inferior': lowOf(mvRim).lerp(lv, 0.35),
-        'crista-high': at('svc', topOf(tvRim)).clone().lerp(ra, 0.45),
-        'cs-ostium': csOs.clone(),
-        'ta-superior': topOf(tvRim).lerp(ra, 0.12),
-        rspv: at('rspv', la.clone()).clone().lerp(la, 0.35),
-        laa: at('laa', la.clone()).clone()
-      };
-      const atrial = new Set(['crista-high', 'cs-ostium', 'ta-superior', 'rspv', 'laa']);
-      for (const [id, point] of Object.entries(anchors)) {
-        const colour = atrial.has(id) ? 0x38bdf8 : 0xf97316;
-        const marker = new THREE.Mesh(new THREE.SphereGeometry(0.06, 18, 18), Object.assign(
-          new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: 0.85 }), { depthTest: false, depthWrite: false }));
-        marker.renderOrder = 22;
-        marker.position.copy(point);
-        marker.name = `EP origin region: ${id}`;
-        marker.userData = { region: id, provenance: 'schematic' };
-        marker.visible = false;
-        group.add(marker);
-        origins.set(id, marker);
-        labels.push({ mesh: marker, tone: 'target', zone: `#origin:${id}`, text: ORIGIN_LABELS[id] });
-      }
-    }
-
     initialized = true;
     if (active) applyZone();
   }
@@ -340,22 +194,11 @@ export function createEpZones(helpers) {
   function applyZone() {
     for (const [id, zone] of zones) zone.visible = id === active;
     if (rvMarker) rvMarker.visible = Boolean(active && zones.has(active));
-    if (halo) halo.visible = Boolean(active && options.halo);
-    for (const [kind, circuit] of circuits) circuit.visible = Boolean(active && options.circuit === kind);
-    for (const [kind, route] of paths) route.visible = options.paths.includes(kind);
-    for (const [id, marker] of origins) marker.visible = options.origin === id;
   }
 
-  /**
-   * Show one zone (and the RV pacing reference), or null for none.
-   * extra.halo shows the Halo catheter; extra.circuit ('orthodromic' |
-   * 'antidromic') draws the reentry direction over the left free wall pathway;
-   * extra.paths (['avn', 'ap']) draws the pacing laboratory's antegrade routes;
-   * extra.origin marks a PAC / PVC source region.
-   */
-  function setZone(zoneId, extra = {}) {
+  /** Show one zone (and the RV pacing reference), or null for none. */
+  function setZone(zoneId) {
     active = zoneId || null;
-    options = { halo: Boolean(extra.halo), circuit: extra.circuit || null, paths: Array.isArray(extra.paths) ? [...extra.paths] : [], origin: extra.origin || null };
     init();
     if (initialized) applyZone();
   }
@@ -366,11 +209,7 @@ export function createEpZones(helpers) {
     labels,
     setZone,
     getZone: () => active,
-    getOptions: () => ({ ...options, paths: [...options.paths] }),
-    isActive: (zoneId) => group.visible && (zoneId === '*' ? Boolean(active && zones.has(active))
-      : zoneId === '#halo' ? Boolean(active && options.halo)
-        : zoneId.startsWith('#origin:') ? options.origin === zoneId.slice(8)
-        : zoneId === active && zones.has(zoneId)),
+    isActive: (zoneId) => group.visible && (zoneId === '*' ? Boolean(active && zones.has(active)) : zoneId === active && zones.has(zoneId)),
     hasZone: (zoneId) => zones.has(zoneId),
     setVisible(visible) {
       if (visible) init();

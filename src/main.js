@@ -9,12 +9,12 @@ import './style.css';
 import {createHeart} from './heart.js';
 import {structures,rawStructures,uiTranslations,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
 import { fetchCountryCode, languageForCountry } from './entry-language.js';
+import { epsLinkMarkup, syncEpsLink, createEpsHandoff, LESSON_CLIPS } from './eps-link.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync, ecgPhaseAt} from './ecg-trace.js';
 import {drawWiggers, formatCycleTiming, wiggersPhaseAt} from './wiggers.js';
 import { createHemoMode } from './hemo-mode.js';
 import { createExamMode } from './exam-mode.js';
-import { createEpPanel } from './ep-panel.js';
 import { createEchoMode } from './echo-mode.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
@@ -112,6 +112,7 @@ app.innerHTML = `
   <div id="header-search" class="header-search"></div>
   <div class="header-right">
     <span class="dot"></span> <span data-i18n="headerTitle">${getTranslation('headerTitle')}</span>
+    ${epsLinkMarkup(getContentLanguage())}
     <button id="lang-btn" class="lang-btn" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
     <button id="header-update-btn" class="header-update-btn" title="Güncellemeleri denetle / Check for updates">
       <span class="update-btn-icon">↺</span>
@@ -404,7 +405,7 @@ app.innerHTML = `
     <section id="defect-details" class="defect-details-mount" hidden></section>
     <section id="lesson" hidden>
       <div id="echo-panel" class="echo-panel-mount" hidden></div>
-      <div id="egm-panel" class="egm-panel-mount" hidden></div>
+      <div id="eps-handoff" class="eps-handoff" hidden></div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div class="divider"></div>
       <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
@@ -667,7 +668,6 @@ function updateCycleUI(state) {
   lastCycleState = state;
   hemoMode?.tick(state);
   examMode?.tick(state);
-  if (egmPanel && !egmMount.hidden) egmPanel.draw(state);
   echoMode?.tick(state);
   const wigStrip = document.querySelector('#wiggers-strip');
   if (wigStrip && !wigStrip.hidden) {
@@ -677,25 +677,14 @@ function updateCycleUI(state) {
   }
 }
 
-// Synthetic EGM strip of the ablation lesson (steps with an `egm` scenario); built on first use.
-const egmMount = document.querySelector('#egm-panel');
-let egmPanel = null;
-function syncEgm(lessonStep) {
-  const scenario = mode === 'ablation' ? lessonStep?.egm : null;
-  egmMount.hidden = !scenario;
-  // Like echo: the signal panel comes first, so the structure card above the lesson steps its aside.
-  if (scenario) document.documentElement.dataset.epOpen = 'true'; else delete document.documentElement.dataset.epOpen;
-  if (!scenario) { heart?.setEpZone?.(null); heart?.pvi?.setActive?.(false); return; }
-  egmPanel ??= createEpPanel(egmMount, {
-    getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
-    // 3D arc of the active case's pathway zone (hidden while the diagnosis view is neutral).
-    onZone: (zoneId, extra) => heart?.setEpZone?.(zoneId, extra),
-    // PVI exercise lesion rings (pvi-lab.js) of the Treatment tab.
-    getPvi: () => heart?.pvi || null
-  });
-  window.cardiaEp = egmPanel;   // test and console hook, like window.cardiaExam
-  egmPanel?.openLesson(scenario);
-  egmMount.scrollIntoView?.({ block: 'start' });   // the panel is the first thing in the aside
+// Ablation steps with a recording (`egm` in content.js): a card links to that
+// recording in the EPS laboratory page, and the 3D arc shows the zone its
+// reading names (none while a diagnosis clip is still neutral).
+const epsHandoff = createEpsHandoff(document.querySelector('#eps-handoff'), { getLang: getContentLanguage });
+function syncEpsHandoff(lessonStep) {
+  const clip = mode === 'ablation' ? lessonStep?.egm : null;
+  epsHandoff.show(clip);
+  heart?.setEpZone?.(clip ? LESSON_CLIPS[clip]?.zone || null : null);
 }
 // Built before the cycle subscription: subscribeCycle calls updateCycleUI at once.
 const hemoMode = heart ? createHemoMode({
@@ -874,7 +863,7 @@ function showStep({ relabel = false } = {}) {
     syncCatheterUI();
   }
 
-  if (!relabel) syncEgm(s);
+  if (!relabel) syncEpsHandoff(s);
   if (isCath) hemoMode?.applyStep(s);
   if (mode === 'exam') examMode?.applyStep(s);
   if (ECHO_MODALITY[mode] && !relabel) echoMode?.applyStep(s.echo);
@@ -1039,7 +1028,7 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#layers').hidden = mode === 'micro' || Boolean(chamberMode(mode)) || mode === 'defects';
   document.querySelectorAll('.chamber-tools').forEach(section => { section.hidden = section.dataset.chamberMode !== mode; });
   document.querySelector('#ep-tools').hidden = mode !== 'ablation';
-  if (mode !== 'ablation') { egmMount.hidden = true; delete document.documentElement.dataset.epOpen; }
+  if (mode !== 'ablation') epsHandoff.show(null);
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
@@ -1677,6 +1666,7 @@ function applyChromeTranslations() {
 }
 
 function updateLanguageUI() {
+  syncEpsLink(getContentLanguage());
   defectPanel.refresh();
   panelShell?.refresh();
   quickSearches.forEach(search => search.refresh());
@@ -1751,7 +1741,7 @@ function updateLanguageUI() {
   updateUpdaterLanguage();
   hemoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   examMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
-  egmPanel?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
+  epsHandoff.render();
   echoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   updateCycleUI(heart?.getCycleState());
 }
