@@ -155,8 +155,9 @@ export function createPanelShell({ getLang = () => 'tr' } = {}) {
   }
   sizeButton.addEventListener('click', () => setSize(learnSize === 'full' ? 'peek' : SIZES[SIZES.indexOf(learnSize) + 1]));
 
-  function open(id, opener) {
+  function open(id, opener, size) {
     if (!mobile.matches) return;
+    if (id === 'learn' && size) learnSize = SIZES.includes(size) ? size : learnSize;
     openSheet = id;
     returnFocus = opener || sheetButtons[id];
     document.body.dataset.sheet = id;

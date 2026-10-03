@@ -1087,6 +1087,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 }
 
 /* Header link to the EPS laboratory page (eps-link.js). */
+.brand-block{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.brand-block .eps-link{margin-left:2px}
 .eps-link{margin-left:14px;display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:11px;letter-spacing:.6px;padding:6px 11px;border-radius:5px;border:1px solid #1e4336;background:#244f43;color:#fff;text-decoration:none;transition:background .15s}
 .eps-link:hover{background:#163a30}
 .eps-link-icon{color:#fcd34d;font-size:12px}
@@ -1099,4 +1101,4 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .eps-handoff-link::after{content:'\00a0\2192'}
 .eps-handoff-link:hover{background:#5cd0a8}
 /* Phones: the link takes the room of the wide button margins so the header row still fits. */
-@media(max-width:640px){.eps-link{margin-left:0;min-width:44px;min-height:44px;justify-content:center;padding:0 8px}.eps-link-icon{display:none}.header-right .lang-btn,.header-right .header-update-btn{margin-left:2px}}
+@media(max-width:640px){.brand-block{flex-direction:row;align-items:center;gap:6px}.eps-link{margin-left:0;min-width:44px;min-height:44px;justify-content:center;padding:0 8px}.eps-link-icon{display:none}.header-right .lang-btn,.header-right .header-update-btn{margin-left:2px}}

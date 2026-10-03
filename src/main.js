@@ -25,8 +25,9 @@ document.documentElement.lang = getContentLanguage();
 // order (content.js carries the same numbers); keys 1-9 open modes 01-09.
 const MODE_GROUPS = [
   ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'rv', 'lv', 'defects']],
-  ['modeGroupPhysiology', ['cath', 'exam']],
+  ['modeGroupExam', ['exam']],
   ['modeGroupIntervention', ['angiography']],
+  ['modeGroupHemodynamics', ['cath']],
   ['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']],
   ['modeGroupImaging', ['echo', 'tee', 'ice']]
 ];
@@ -109,11 +110,13 @@ const VIEW_SHORT = { anterior: 'Ant', posterior: 'Post' };
 const app = document.querySelector('#app');
 app.innerHTML = `
 <header>
-  <a class="brand" href="#/">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
+  <div class="brand-block">
+    <a class="brand" href="#/">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
+    ${epsLinkMarkup(getContentLanguage())}
+  </div>
   <div id="header-search" class="header-search"></div>
   <div class="header-right">
     <span class="dot"></span> <span data-i18n="headerTitle">${getTranslation('headerTitle')}</span>
-    ${epsLinkMarkup(getContentLanguage())}
     <button id="lang-btn" class="lang-btn" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
     <button id="header-update-btn" class="header-update-btn" title="Güncellemeleri denetle / Check for updates">
       <span class="update-btn-icon">↺</span>
@@ -1046,6 +1049,8 @@ function setMode(newMode, updateUrl = true) {
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
+  // On a phone the echo image and its controls live in the Learn sheet: open it with the mode so the image is on screen.
+  if (isEcho && panelShell?.isMobile()) panelShell.open('learn', undefined, 'half');
   headerTabs?.refresh();
   filterAtrialOptions();
   document.querySelectorAll(`.chamber-tools[data-chamber-mode="${mode}"] [data-chamber-wall]`).forEach(input => {
