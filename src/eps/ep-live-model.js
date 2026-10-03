@@ -136,10 +136,11 @@ export function createLiveHeart(caseId = 'normal') {
       last.fp = t;
       schedule(t + p.fp.retro, 'atrium', { origin: 'avn-fast' });
     } else if (data.path === 'fast' && spRetroReady(t)) spRetro(t);
-    // aj: time of the junctional A this His came from (reads PR > PP in continuous pacing).
-    const aj = data.aJunction ?? null;
-    record('his-d', ev('H', t, 0.7, 4, { aj }));
-    record('his-p', ev('H', t, 0.3, 4, { aj }));
+    // aj: time of the junctional A this His came from (reads PR > PP in continuous pacing);
+    // path: the nodal pathway it came down ('fast' | 'slow'), drawn by the ladder diagram.
+    const aj = data.aJunction ?? null, path = data.path ?? null;
+    record('his-d', ev('H', t, 0.7, 4, { aj, path }));
+    record('his-p', ev('H', t, 0.3, 4, { aj, path }));
     last.his = t;
     schedule(t + p.hv, 'ventricle', { origin: 'his', h: t, aJunction: aj });
   }

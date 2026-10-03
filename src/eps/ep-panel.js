@@ -12,7 +12,7 @@ import { createEpFullscreen } from './ep-fullscreen.js';
 import { createLivePanel } from './ep-live-panel.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, caliperText } from './ep-user-caliper.js';
 import { createSchematic } from './ep-schematic.js';
-import { readWaveLabels, writeWaveLabels } from './wave-pref.js';
+import { readFlag, writeFlag } from './view-prefs.js';
 
 /*
  * Electrophysiological anatomy panel: Diagnosis / Maneuvers / Treatment tabs
@@ -114,7 +114,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
-  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readWaveLabels() };
+  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves') };
 
   const el = (tagName, className) => {
     const node = doc.createElement(tagName);
@@ -180,7 +180,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const wavesBtn = el('button', 'ep-size');
   wavesBtn.type = 'button';
   wavesBtn.setAttribute('data-ep-waves', '');
-  wavesBtn.addEventListener('click', () => { view.waves = !view.waves; writeWaveLabels(view.waves); renderView(); });
+  wavesBtn.addEventListener('click', () => { view.waves = !view.waves; writeFlag('waves', view.waves); renderView(); });
   viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, wavesBtn, fullBtn);
   const inspect = el('p', 'ep-inspect');
   const stripTime = (event) => {
@@ -553,7 +553,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   /** Show a lesson section or the live laboratory ('live'). */
   function showView(id) {
     if (!EP_VIEWS.includes(id)) return;
-    view.waves = readWaveLabels();   // the live monitor may have changed the shared choice
+    view.waves = readFlag('waves');   // the live monitor may have changed the shared choice
     const wasLive = state.live;
     state.live = id === 'live';
     if (!state.live) setSection(id);

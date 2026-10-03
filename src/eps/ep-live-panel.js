@@ -15,7 +15,8 @@ import {
   interpretOverdrive, interpretSite, planProtocol, analyzeStep, summarizeProtocol
 } from './ep-live-maneuvers.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, caliperText } from './ep-user-caliper.js';
-import { readWaveLabels, writeWaveLabels } from './wave-pref.js';
+import { readFlag, writeFlag } from './view-prefs.js';
+import { buildLadder, drawLadder } from './ep-ladder.js';
 
 const PX_PER_MM = 3.78;            // CSS pixels per millimetre (96 dpi)
 const SPEEDS = [25, 50, 100];      // sweep, mm/s
@@ -36,7 +37,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => LIVE_TEXT[L()];
   const caseText = (id) => LIVE_CASE_TEXT[id][L()];
-  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '', waves: readWaveLabels(),
+  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '', waves: readFlag('waves'), ladder: readFlag('ladder'),
     hidden: false, quizOpen: false, answer: null, showHints: false, rfOn: false, rfTarget: 'slow-pathway', lesion: '',
     maneuver: null, maneuverText: '', protocol: null, protocolKind: 'avbcl', protocolRows: [], protocolSummary: '' };
   let heart = createLiveHeart(state.caseId);
@@ -65,7 +66,10 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const calBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-caliper': '' });
   const rateSel = el('select', '', { 'data-ep-live-rate': '' });
   const wavesBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-waves': '' });
-  bar.append(runBtn, speedSel, rateSel, review, calBtn, wavesBtn);
+  const ladderBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-ladder': '' });
+  bar.append(runBtn, speedSel, rateSel, review, calBtn, wavesBtn, ladderBtn);
+  // Ladder diagram under the strip, on the same time axis.
+  const ladderCanvas = el('canvas', 'ep-live-ladder', { role: 'img', 'data-ep-live-ladder-canvas': '' });
   const readout = el('p', 'ep-live-readout', { 'data-ep-live-intervals': '' });
   const info = el('p', 'ep-live-info', { 'aria-live': 'polite' });
 
@@ -112,7 +116,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   // Workstation layout: the monitor fills the screen; case, stimulator,
   // maneuvers, protocols and RF sit in the console beside it.
   const monitor = el('div', 'ep-live-monitor');
-  monitor.append(bar, canvas, readout, info);
+  monitor.append(bar, canvas, ladderCanvas, readout, info);
   const deck = el('aside', 'ep-live-console');
   deck.append(caseRow, caseBar, quiz, hintsBox, stimBox, manBox, protoBox, ablBox);
   root.append(monitor, deck);
@@ -276,7 +280,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   speedSel.addEventListener('change', () => { state.speed = Number(speedSel.value) || 25; render(); });
   review.addEventListener('input', () => { state.back = Number(review.value); state.caliper = noCaliper(); draw(); });
   calBtn.addEventListener('click', () => { state.caliperOn = !state.caliperOn; state.caliper = noCaliper(); render(); });
-  wavesBtn.addEventListener('click', () => { state.waves = !state.waves; writeWaveLabels(state.waves); render(); });
+  wavesBtn.addEventListener('click', () => { state.waves = !state.waves; writeFlag('waves', state.waves); render(); });
+  ladderBtn.addEventListener('click', () => { state.ladder = !state.ladder; writeFlag('ladder', state.ladder); render(); });
   caseSelect.addEventListener('change', () => { if (LIVE_CASES[caseSelect.value]) setCase(caseSelect.value); });
   surpriseBtn.addEventListener('click', () => {
     const ids = Object.keys(LIVE_CASES).filter((id) => id !== state.caseId);
@@ -325,10 +330,13 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
 
   function draw() {
     const span = spanMs(), end = viewEnd(), from = end - span;
-    const raw = heart.events(from - 80, end + 80);
+    const raw = heart.events(from - 500, end + 80);   // earlier events: ladder lines entering from the left edge
     const events = Object.fromEntries(Object.entries(raw).map(([ch, list]) => [ch, list.map((e) => ({ ...e, t: e.t - from }))]));
     const local = state.caliperOn ? { a: state.caliper.a == null ? null : state.caliper.a - from, b: state.caliper.b == null ? null : state.caliper.b - from } : null;
     drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, t0: from, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local, waves: state.waves }) || drawn;
+    ladderCanvas.hidden = !state.ladder;
+    // Built on the absolute event times (a His names its junctional A by absolute time).
+    if (state.ladder && drawn) drawLadder(ladderCanvas, buildLadder(raw, { until: end }), { ...drawn, from: drawn.from + from, to: drawn.to + from }, { lang: L() });
     const iv = liveIntervals(heart.events(end - 2500, end));
     const t = T(), f = (v) => (v == null ? t.none : `${v} ms`);
     readout.textContent = `${t.intervals}: PP ${f(iv.pp)} · RR ${f(iv.rr)} · AH ${f(iv.ah)} · HV ${f(iv.hv)} · VA ${f(iv.va)}`;
@@ -416,6 +424,9 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     calBtn.setAttribute('aria-pressed', String(state.caliperOn));
     wavesBtn.textContent = t.waves;
     wavesBtn.setAttribute('aria-pressed', String(state.waves));
+    ladderBtn.textContent = t.ladder;
+    ladderBtn.setAttribute('aria-pressed', String(state.ladder));
+    ladderCanvas.setAttribute('aria-label', t.ladderLabel);
     stimTitle.textContent = t.stim;
     for (const [span, key] of fieldLabels) span.textContent = t[key] || key;
     paceBtn.textContent = t.pace; burstBtn.textContent = t.burst; pausePaceBtn.textContent = t.pacePause; stopBtn.textContent = t.stop; shockBtn.textContent = t.shock;
@@ -444,7 +455,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     render,
     setActive(flag) {
       state.active = Boolean(flag);
-      if (state.active) state.waves = readWaveLabels();   // the lesson strips may have changed the shared choice
+      if (state.active) state.waves = readFlag('waves');   // the lesson strips may have changed the shared choice
       root.hidden = !state.active;
       lastWall = null;
       if (state.active) { render(); if (state.running) loop(); } else cancelFrame(raf);
@@ -458,7 +469,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     },
     maneuverText: () => state.maneuverText,
     protocol: () => ({ running: Boolean(state.protocol), rows: state.protocolRows.slice(), summary: state.protocolSummary }),
-    getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper } : null, waves: state.waves }),
+    getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper } : null, waves: state.waves, ladder: state.ladder }),
     status: () => heart.status(),
     intervals: () => liveIntervals(heart.events(viewEnd() - 2500, viewEnd())),
     setCase

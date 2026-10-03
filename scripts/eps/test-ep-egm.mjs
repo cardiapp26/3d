@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { egmSample, drawEgm, selectableChannels, timeWindow, timeAtX, eventsNear, sampleTimes, waveLabel } from '../../src/eps/ep-egm.js';
 import { EP_RECORDING_IDS, epRecording } from '../../src/eps/ep-cases.js';
-import { readWaveLabels, writeWaveLabels } from '../../src/eps/wave-pref.js';
+import { readFlag, writeFlag } from '../../src/eps/view-prefs.js';
 
 const source = readFileSync(new URL('../../src/eps/ep-egm.js', import.meta.url), 'utf8');
 assert.ok(!source.includes(String.fromCharCode(0x2014)), 'no em dash in the renderer source');
@@ -120,11 +120,11 @@ assert.equal(named, epRecording('sinus').events['his-d'].filter((e) => e.type ==
 // The on/off choice is remembered; private storage falls back to off without throwing.
 const mem = new Map();
 const store = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
-assert.equal(readWaveLabels(store), false);
-writeWaveLabels(true, store);
-assert.equal(readWaveLabels(store), true);
+assert.equal(readFlag('waves', store), false);
+writeFlag('waves', true, store);
+assert.equal(readFlag('waves', store), true);
 const broken = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } };
-assert.equal(readWaveLabels(broken), false);
-assert.doesNotThrow(() => writeWaveLabels(true, broken));
+assert.equal(readFlag('waves', broken), false);
+assert.doesNotThrow(() => writeFlag('waves', true, broken));
 
 console.log('PASS ep-egm: samples for all recordings, view helpers (channels, zoom, inspection), DPR drawing with watermark/calipers/markers, flicker-free sweep sampling, wave names on demand');

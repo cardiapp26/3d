@@ -12,7 +12,7 @@ export const LIVE_TEXT = {
   tr: {
     caseLabel: 'Substrat', hidden: '? Gizli olgu', surprise: 'Gizli olgu', diagnose: 'Tanı koy', hints: 'İpuçları',
     question: 'Bu kayıtta substrat / mekanizma nedir?', correct: 'Doğru.', wrong: (name) => `Yanlış. Doğru yanıt: ${name}.`,
-    run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper', waves: 'Dalga adları',
+    run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper', waves: 'Dalga adları', ladder: 'Ladder diyagram', ladderLabel: 'Ladder diyagram: atriyum, AV düğüm ve ventrikül aktivasyonu ile iletim yolları',
     stim: 'Stimülatör', site: 'Uyarı yeri', s1: 'S1 (ms)', n: 'S1 sayısı', pace: 'Uyar (S1 + ekstra)', burst: 'Burst (yalnız S1)',
     pacePause: 'Uyar ve dondur', stop: 'Uyarıyı durdur', shock: 'Kardiyoversiyon',
     sites: { hra: 'HRA', 'cs-prox': 'CS proksimal', 'cs-dist': 'CS distal', rv: 'RV apeks' },
@@ -65,7 +65,7 @@ export const LIVE_TEXT = {
   en: {
     caseLabel: 'Substrate', hidden: '? Hidden case', surprise: 'Hidden case', diagnose: 'Diagnose', hints: 'Hints',
     question: 'What is the substrate / mechanism of this recording?', correct: 'Correct.', wrong: (name) => `Incorrect. The answer: ${name}.`,
-    run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers', waves: 'Wave names',
+    run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers', waves: 'Wave names', ladder: 'Ladder diagram', ladderLabel: 'Ladder diagram: atrial, AV nodal and ventricular activation and the conduction routes',
     stim: 'Stimulator', site: 'Pacing site', s1: 'S1 (ms)', n: 'S1 count', pace: 'Pace (S1 + extras)', burst: 'Burst (S1 only)',
     pacePause: 'Pace and freeze', stop: 'Stop pacing', shock: 'Cardiovert',
     sites: { hra: 'HRA', 'cs-prox': 'CS proximal', 'cs-dist': 'CS distal', rv: 'RV apex' },
