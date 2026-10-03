@@ -50,10 +50,11 @@ let headerTabs = null;
 let practice = null;
 
 // Left-panel tools of a single-chamber mode: focus buttons and the wall section slider.
-function chamberToolsMarkup(id, { chamber, focus }) {
+function chamberToolsMarkup(id, { chamber, focus, regions }) {
   const wallKey = `wall${chamber[0].toUpperCase()}${chamber.slice(1)}`;
   return `<section id="${id}-tools" class="chamber-tools" data-chamber-mode="${id}" hidden>
       ${focus.map(([target, key]) => `<button data-chamber-focus="${target}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
+      ${regions ? `<label class="layer"><i style="background:linear-gradient(90deg,#e06666,#f1c232,#6fa8dc)"></i><span data-i18n="ventricleRegions">${getTranslation('ventricleRegions')}</span><input type="checkbox" data-ventricle-regions checked></label>` : ''}
       <label class="slider-label"><span data-i18n="${wallKey}">${getTranslation(wallKey)}</span><output id="${id}-cut-${chamber}">0%</output></label><input data-chamber-wall="${chamber}" aria-label="${chamber.toUpperCase()} wall section" type="range" min="0" max="80" value="0">
     </section>`;
 }
@@ -937,6 +938,10 @@ document.querySelectorAll('[data-ep-view]').forEach(button => button.addEventLis
 }));
 document.querySelectorAll('[data-ep-optional]').forEach(box => box.addEventListener('change', () => heart?.setEpOptional(box.dataset.epOptional, box.checked)));
 document.querySelectorAll('[data-chamber-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.chamberFocus)));
+document.querySelectorAll('[data-ventricle-regions]').forEach(box => box.addEventListener('change', () => {
+  heart?.setVentricleRegions(box.checked);
+  document.querySelectorAll('[data-ventricle-regions]').forEach(other => { other.checked = box.checked; });
+}));
 document.querySelectorAll('[data-chamber-wall]').forEach(input => input.addEventListener('input', () => {
   const id = input.dataset.chamberWall;
   heart?.setWallCut(id, Number(input.value) / 100);

@@ -6,7 +6,8 @@
  * and sometimes double-sheeted, so an open contour is shown as a line, never
  * filled with invented tissue. Coordinates of the result are those of the
  * 2D image: x along the lateral axis (screen right), y along the beam
- * (depth from the transducer).
+ * (depth from the transducer). Meshes with a per-vertex part table
+ * (`userData.parts`: LV segments, leaflets) give each contour point its part.
  */
 
 const WELD_QUANTUM = 1e4;          // vertices closer than 1e-4 units are one vertex
@@ -77,6 +78,8 @@ function cutMesh(item, frame) {
   }
   const points = new Map();          // edge key -> [x, y] in the image
   const segments = [];
+  const parts = item.mesh?.userData?.parts || null;
+  const partOf = parts ? new Map() : null;   // edge key -> part name (nearer vertex), or null
   const [lx, ly, lz] = frame.lateral, [bx, by, bz] = frame.beam;
   const cutPoint = (a, b) => {
     const ra = root[a], rb = root[b];
@@ -87,6 +90,7 @@ function cutMesh(item, frame) {
       const y = world[3 * a + 1] + (world[3 * b + 1] - world[3 * a + 1]) * t - oy;
       const z = world[3 * a + 2] + (world[3 * b + 2] - world[3 * a + 2]) * t - oz;
       points.set(key, [x * lx + y * ly + z * lz, x * bx + y * by + z * bz]);
+      if (partOf) { const k = parts.byVertex[t < 0.5 ? a : b]; partOf.set(key, k >= 0 ? parts.names[k] : null); }
     }
     return key;
   };
@@ -102,7 +106,7 @@ function cutMesh(item, frame) {
     if (sc !== sa) cuts.push(cutPoint(c, a));
     if (cuts.length === 2 && cuts[0] !== cuts[1]) segments.push(cuts);
   }
-  return { points, segments, triangles };
+  return { points, segments, triangles, partOf };
 }
 
 function isIdentity(m) {
@@ -111,7 +115,7 @@ function isIdentity(m) {
 }
 
 /** Join segments into chains; a chain whose ends meet is closed. Branch points end chains. */
-function joinSegments(points, segments) {
+function joinSegments(points, segments, partOf = null) {
   const links = new Map();
   segments.forEach(([a, b], i) => {
     if (!links.has(a)) links.set(a, []);
@@ -145,7 +149,7 @@ function joinSegments(points, segments) {
     const pts = chain.map(k => points.get(k));
     let length = 0;
     for (let i = 1; i < pts.length; i++) length += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-    return { points: pts, closed, length };
+    return partOf ? { points: pts, closed, length, parts: chain.map(k => partOf.get(k) ?? null) } : { points: pts, closed, length };
   });
 }
 
@@ -159,10 +163,10 @@ export function sectionMeshes(items, frame, { minLength = 0.01 } = {}) {
   const contours = [];
   const stats = { triangles: 0, segments: 0, closed: 0, open: 0 };
   for (const item of items) {
-    const { points, segments, triangles } = cutMesh(item, frame);
+    const { points, segments, triangles, partOf } = cutMesh(item, frame);
     stats.triangles += triangles;
     stats.segments += segments.length;
-    for (const contour of joinSegments(points, segments)) {
+    for (const contour of joinSegments(points, segments, partOf)) {
       if (contour.length < minLength) continue;
       contours.push({ id: item.id, ...contour });
       stats[contour.closed ? 'closed' : 'open']++;

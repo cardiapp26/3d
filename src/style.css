@@ -968,6 +968,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .echo-title{font-size:12px;margin:4px 0}
 .echo-sub{font-size:9.5px!important;color:#5f6f64!important;margin:3px 0 4px!important}
 .echo-ice-info{font-size:11.5px;line-height:1.45;color:#29483e;background:#eef5f1;border-left:3px solid #39a37f;padding:5px 8px;margin:4px 0}
+.echo-parts{margin:6px 0 0;font-size:11.5px;line-height:1.45;color:#29483e;font-variant-numeric:tabular-nums}
+.echo-parts[hidden]{display:none}
 .echo-ice-info[hidden]{display:none}
 /* ICE: animated sweep between views and the schematic transseptal stages. */
 .echo-row{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0}

@@ -3,6 +3,7 @@
 // B-mode imaging, and never a physical scale (depth is shown as a fraction).
 
 import { drawPaths } from './echo-renderer-paths.js';
+import { drawParts } from './echo-renderer-parts.js';
 
 /** Drawing styles, in toggle order. */
 export const ECHO_STYLES = Object.freeze(['anatomy', 'gray']);
@@ -305,7 +306,6 @@ function pointAlong(run, at) {
 }
 
 const MIN_LABEL_RUN = 0.15;   // contour shorter than this in the image: no label
-
 export function drawEchoSector(canvas, section, opts = {}) {
   const width = canvas?.clientWidth;
   const height = canvas?.clientHeight;
@@ -346,6 +346,7 @@ export function drawEchoSector(canvas, section, opts = {}) {
   sectorPath(ctx, geo, h);
   ctx.clip();
   drawContours(ctx, geo, items, style);
+  const parts = o.showParts ? drawParts(ctx, geo, Array.isArray(section?.contours) ? section.contours : [], (pts) => clipToSector(pts, h * 2, depth), style) : [];
   ctx.restore();
 
   if (!o.hideLabels && items.length) {
@@ -366,7 +367,11 @@ export function drawEchoSector(canvas, section, opts = {}) {
         target: highlight.has(id)
       }))
       .sort((a, b) => (b.target - a.target) || a.centroid[1] - b.centroid[1]);
-    drawLabels(ctx, geo, labels, style);
+    // Part labels (segment numbers, leaflet names) after the structures: dropped when crowded.
+    const partLabels = parts.map(({ part, run }) => ({
+      text: String(part.short?.[lang] || part.abbr), centroid: pointAlong(run, runLength(run) / 2), color: part.color || '#ffffff', target: false
+    }));
+    drawLabels(ctx, geo, [...labels, ...partLabels], style);
   }
   // Schematic overlay paths (transseptal needle, tenting), clipped to the fan.
   drawPaths(ctx, geo, o.paths, () => sectorPath(ctx, geo, h));
@@ -380,4 +385,6 @@ export function drawEchoSector(canvas, section, opts = {}) {
     ctx.fillText(String(m.label?.[lang] || m.label?.tr || ''), mx + 9, my + 3);
   }
   drawOverlayText(ctx, width, height, geo, o, lang, style, items.length === 0);
+  // Visible parts per structure (the panel lists them).
+  return { parts: parts.map(({ id, part, total }) => ({ id, part, length: total })) };
 }

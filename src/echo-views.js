@@ -14,14 +14,15 @@ const ASE_TTE = 'Mitchell et al., JASE 2019;32:1-64 (ASE comprehensive TTE)';
 const ASE_TEE = 'Hahn et al., JASE 2013;26:921-964 (ASE/SCA comprehensive TEE)';
 const ICE_SRC = 'Bortnick, Halaby, Silvestry, Herrmann. Intracardiac echocardiography, PCR-EAPCI Textbook (2020)';
 
+// parts: the ASE/AHA LV segments the view's plane cuts (Lang et al., JASE 2015;28:1-39, figure 3).
 export const TTE_VIEWS = Object.freeze([
-  { id: 'plax', window: 'parasternal', title: { tr: 'Parasternal uzun eksen (PLAX)', en: 'Parasternal long axis (PLAX)' }, required: ['lv', 'la', 'aorta', 'rv', 'mitral'], avoid: ['ra', 'tricuspid', 'pa', 'svc'], source: ASE_TTE },
+  { id: 'plax', window: 'parasternal', title: { tr: 'Parasternal uzun eksen (PLAX)', en: 'Parasternal long axis (PLAX)' }, required: ['lv', 'la', 'aorta', 'rv', 'mitral'], avoid: ['ra', 'tricuspid', 'pa', 'svc'], parts: { lv: ['2', '8', '5', '11'] }, source: ASE_TTE },
   { id: 'psax-av', window: 'parasternal', title: { tr: 'PSAX aort kapağı düzeyi', en: 'PSAX aortic valve level' }, required: ['aortic-valve', 'la', 'ra', 'rv'], avoid: [{ id: 'lv', max: 1 }, 'mitral'], source: ASE_TTE },
-  { id: 'psax-mv', window: 'parasternal', title: { tr: 'PSAX mitral kapak düzeyi', en: 'PSAX mitral valve level' }, required: ['lv', 'rv', 'mitral'], avoid: ['la', 'aorta'], source: ASE_TTE },
-  { id: 'psax-pm', window: 'parasternal', title: { tr: 'PSAX papiller kas düzeyi', en: 'PSAX papillary muscle level' }, required: ['lv', 'rv', 'lv-papillary'], avoid: ['mitral', 'la'], source: ASE_TTE },
-  { id: 'a4c', window: 'apical', title: { tr: 'Apikal dört boşluk (A4C)', en: 'Apical four-chamber (A4C)' }, required: ['lv', 'rv', 'la', 'ra', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, source: ASE_TTE },
-  { id: 'a2c', window: 'apical', title: { tr: 'Apikal iki boşluk (A2C)', en: 'Apical two-chamber (A2C)' }, required: ['lv', 'la', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'pa', 'pulmonary-valve'], apical: true, source: ASE_TTE },
-  { id: 'a3c', window: 'apical', title: { tr: 'Apikal üç boşluk (A3C / APLAX)', en: 'Apical three-chamber (A3C / APLAX)' }, required: ['lv', 'la', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid', 'pulmonary-valve'], apical: true, source: ASE_TTE },
+  { id: 'psax-mv', window: 'parasternal', title: { tr: 'PSAX mitral kapak düzeyi', en: 'PSAX mitral valve level' }, required: ['lv', 'rv', 'mitral'], avoid: ['la', 'aorta'], parts: { lv: ['1', '2', '3', '4', '5', '6'] }, source: ASE_TTE },
+  { id: 'psax-pm', window: 'parasternal', title: { tr: 'PSAX papiller kas düzeyi', en: 'PSAX papillary muscle level' }, required: ['lv', 'rv', 'lv-papillary'], avoid: ['mitral', 'la'], parts: { lv: ['7', '8', '9', '10', '11', '12'] }, source: ASE_TTE },
+  { id: 'a4c', window: 'apical', title: { tr: 'Apikal dört boşluk (A4C)', en: 'Apical four-chamber (A4C)' }, required: ['lv', 'rv', 'la', 'ra', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, parts: { lv: ['3', '9', '14', '6', '12', '16'] }, source: ASE_TTE },
+  { id: 'a2c', window: 'apical', title: { tr: 'Apikal iki boşluk (A2C)', en: 'Apical two-chamber (A2C)' }, required: ['lv', 'la', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'pa', 'pulmonary-valve'], apical: true, parts: { lv: ['4', '10', '15', '1', '7', '13'] }, source: ASE_TTE },
+  { id: 'a3c', window: 'apical', title: { tr: 'Apikal üç boşluk (A3C / APLAX)', en: 'Apical three-chamber (A3C / APLAX)' }, required: ['lv', 'la', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid', 'pulmonary-valve'], apical: true, parts: { lv: ['2', '8', '5', '11'] }, source: ASE_TTE },
   { id: 'sc4c', window: 'subcostal', title: { tr: 'Subkostal dört boşluk', en: 'Subcostal four-chamber' }, required: ['lv', 'rv', 'la', 'ra'], avoid: [], source: ASE_TTE }
 ]);
 
@@ -35,16 +36,16 @@ export const TTE_VIEWS = Object.freeze([
 // patient's anatomy and are never a view's identity key; multi-angle sweeps
 // may be needed.
 export const TEE_VIEWS = Object.freeze([
-  { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, ase: { tr: '0–10° (triküspit anulusu için 10–20° ayar gerekebilir)', en: '0–10° (10–20° may be needed for the tricuspid annulus)' }, required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, source: ASE_TEE },
+  { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, ase: { tr: '0–10° (triküspit anulusu için 10–20° ayar gerekebilir)', en: '0–10° (10–20° may be needed for the tricuspid annulus)' }, required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, parts: { lv: ['3', '9', '6', '12'], mitral: [['A2', 'A3'], ['P2', 'P1']] }, source: ASE_TEE },
   { id: 'memc', title: { tr: 'ME mitral komissüral', en: 'ME mitral commissural' }, ase: { tr: '50–70°', en: '50–70°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'aorta'], mitralChord: [0, 22], source: ASE_TEE },
   { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, ase: { tr: '80–100°', en: '80–100°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'aorta'], apical: true, mitralChord: [25, 90], source: ASE_TEE },
-  { id: 'melax', title: { tr: 'ME uzun eksen', en: 'ME long axis' }, ase: { tr: '120–140°', en: '120–140°' }, required: ['la', 'lv', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], mitralChord: [55, 90], source: ASE_TEE },
+  { id: 'melax', title: { tr: 'ME uzun eksen', en: 'ME long axis' }, ase: { tr: '120–140°', en: '120–140°' }, required: ['la', 'lv', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], mitralChord: [55, 90], parts: { lv: ['2', '8', '5', '11'], mitral: ['A2', 'P2'] }, source: ASE_TEE },
   { id: 'meavsax', title: { tr: 'ME aort kapağı kısa eksen', en: 'ME aortic valve SAX' }, ase: { tr: '25–45°', en: '25–45°' }, required: ['aortic-valve', 'la', 'ra'], avoid: ['lv', 'mitral'], source: ASE_TEE },
   { id: 'mebicaval', title: { tr: 'ME bikaval', en: 'ME bicaval' }, ase: { tr: '90–110°, şaft sağa', en: '90–110°, shaft turned right' }, required: ['la', 'ra', 'svc'], avoid: ['lv', 'mitral'], bicaval: true, source: ASE_TEE },
   { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, ase: { tr: 'başlangıç 90–110°; çok açılı tarama', en: 'start 90–110°; multi-angle sweep' }, required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
   { id: 'mervio', title: { tr: 'ME RV giriş-çıkış', en: 'ME RV inflow-outflow' }, ase: { tr: '50–70° (bu preset 75°)', en: '50–70° (this preset 75°)' }, required: ['ra', 'rv', 'tricuspid', 'pa'], avoid: ['mitral'], source: ASE_TEE },
   { id: 'melaapv', title: { tr: 'ME LAA ve sol üst PV komşuluğu', en: 'ME LAA and left upper PV neighbourhood' }, ase: { tr: 'ME LAA görünümü 90–110° (LAA ve sol üst PV); bu preset 135° tarama açısıdır', en: 'ME LAA view 90–110° (LAA and left upper PV); this preset is a 135° sweep angle' }, required: ['la', 'laa', 'pv'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
-  { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, ase: { tr: '0–20°', en: '0–20°' }, required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], source: ASE_TEE }
+  { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, ase: { tr: '0–20°', en: '0–20°' }, required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], parts: { lv: ['7', '8', '9', '10', '11', '12'] }, source: ASE_TEE }
 ]);
 
 // Default sector width (full angle); the student can change it (60-90 degrees).
@@ -63,7 +64,7 @@ const inPlane = (v, n) => normalize(addv(v, n, -dot(v, n)));
 // adjustment from each landmark preset that meets the view's structure
 // criteria on this atlas at rest and through the beat. Not an expert review.
 // depthOffset shortens the sector (A2C: the far field would reach the PA).
-const TTE_CALIBRATION = Object.freeze({ plax: { rotation: -10, rock: -30 }, 'psax-mv': { rotation: 10, tilt: -15 }, a2c: { tilt: -10, depthOffset: -0.6 }, a3c: { rock: -20 } });
+const TTE_CALIBRATION = Object.freeze({ plax: { rotation: -10, rock: -30 }, 'psax-mv': { rotation: 20, tilt: -5, rock: 30 }, a2c: { tilt: -5, rock: 10, depthOffset: -0.6 }, a3c: { rock: -20 } });
 
 /** Where a TTE preset differs from the textbook image on this atlas (shown next to the view). */
 export const TTE_PRESET_NOTES = Object.freeze({
@@ -158,16 +159,16 @@ export function teePreset(id, A, path) {
   // Level from the landmarks, pose from the atlas calibration (scripts/echo-calibrate.cjs).
   const pose = (advance, rotation, flexion, omega, depth, lateralFlexion = 0) => ({ advance, rotation, flexion, lateralFlexion, omega, depth });
   switch (id) {
-    case 'me4c': return pose(me - 0.02, 0, -20, 0, 4.8);
+    case 'me4c': return pose(me - 0.06, 0, -20, 0, 4.8);
     case 'memc': return pose(me - 0.04, -37.5, 10, 50, 3);
     case 'me2c': return pose(me + 0.04, -30, -30, 105, 4.8, 10);
-    case 'melax': return pose(me - 0.04, 0, 20, 120, 4.8);
+    case 'melax': return pose(me, -15, 0, 120, 4.8);
     case 'meavsax': return pose(level(A.av.center[1]), 0, 10, 45, 4.8);
     case 'mebicaval': return pose(level(A.la[1] + 0.1) + 0.04, 30, 0, 90, 4.8);
     case 'melaa': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 60, 3);
     case 'mervio': return pose(me - 0.02, 10, 0, 75, 4.8);
     case 'melaapv': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 135, 3.6);
-    case 'tgsax': return pose(TG_ADVANCE, -15, 0, 10, 4.8);
+    case 'tgsax': return pose(TG_ADVANCE, -15, 0, 0, 4.8);
     default: return null;
   }
 }

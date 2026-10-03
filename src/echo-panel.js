@@ -15,7 +15,7 @@ const SHORT = {
 const T = {
   tr: {
     heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm: ucu transdüser yüzüne doğru / ters', iceLr: 'Sol (+) / sağ (−) büküm: düzlem dışına', iceMove: 'Manevra', iceAtlas: 'Atlas notu', icePrev: '◀ Önceki görünüme geç (hareketli)', iceNext: 'Sonraki görünüme geç (hareketli) ▶', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik İVK → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
-    freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
+    freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', parts: 'LV segmentleri ve yaprakçıklar', partsSeen: 'Kesitte', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
     rotation: 'Rotasyon', tilt: 'Tilt (eğim)', rock: 'Rock (düzlem içi)', slideLateral: 'Kaydır (işaret yönü)', slideElevation: 'Kaydır (dik yön)',
     advance: 'İlerlet / geri çek (göreli)', shaft: 'Şaft rotasyonu (sağ +)', flexion: 'Antefleksiyon (+) / retrofleksiyon (−)', lateralFlexion: 'Sol (+) / sağ (−) fleksiyon', omega: 'Multiplan açı',
     probe: 'Prob hareketleri', display: 'Görüntü ayarları', feedback: 'Geri bildirim', target: 'Hedef', done: 'Görev tamamlandı: hedef görünümün model ölçütleri bir kez karşılandı.', atlasAngle: 'Atlas başlangıç açısı', guideline: 'ASE/SCA yaklaşık aralığı', teePath: 'Şematik özofagus-mide yolu', current: 'Şu anki kesit', enlarge: 'Büyüt', shrink: 'Küçült',
@@ -24,7 +24,7 @@ const T = {
   },
   en: {
     heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection: tip toward / away from the transducer face', iceLr: 'Left (+) / right (−) deflection: out of the plane', iceMove: 'Manoeuvre', iceAtlas: 'Atlas note', icePrev: '◀ Move to the previous view (animated)', iceNext: 'Move to the next view (animated) ▶', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
-    freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', sector: 'Sector width', depth: 'Depth (relative)',
+    freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', parts: 'LV segments and leaflets', partsSeen: 'In the cut', sector: 'Sector width', depth: 'Depth (relative)',
     rotation: 'Rotation', tilt: 'Tilt', rock: 'Rock (in plane)', slideLateral: 'Slide (marker side)', slideElevation: 'Slide (across)',
     advance: 'Advance / withdraw (relative)', shaft: 'Shaft rotation (right +)', flexion: 'Anteflexion (+) / retroflexion (−)', lateralFlexion: 'Left (+) / right (−) flexion', omega: 'Multiplane angle',
     probe: 'Probe motions', display: 'Display', feedback: 'Feedback', target: 'Target', done: 'Task done: the target view’s model criteria were met once.', atlasAngle: 'Atlas starting angle', guideline: 'ASE/SCA approximate range', teePath: 'Schematic oesophagus-stomach path', current: 'Current cut', enlarge: 'Enlarge', shrink: 'Reduce',
@@ -69,6 +69,8 @@ export function createEchoPanel(mount, handlers) {
   const tsLimits = el('p', 'echo-transseptal-limits');
   tsBox.append(tsTitle, tsRow, tsText, tsLimits);
   const canvas = el('canvas', 'echo-canvas', { role: 'img' });
+  // Visible LV segments and leaflets of the current cut.
+  const partsLine = el('p', 'echo-parts', { 'aria-live': 'polite' });
   const feedback = el('div', 'echo-feedback', { 'aria-live': 'polite' });
   const taskRow = el('div', 'echo-task-row');
   const resetBtn = el('button', '', { type: 'button', 'data-echo-action': 'reset' });
@@ -96,7 +98,7 @@ export function createEchoPanel(mount, handlers) {
   const limits = el('p', 'echo-limits');
   // Compact order: the sector and the probe controls come right after the view choice.
   heading.hidden = true;
-  root.append(heading, modality, viewRow, title, canvas, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
+  root.append(heading, modality, viewRow, title, canvas, partsLine, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -140,7 +142,12 @@ export function createEchoPanel(mount, handlers) {
   const labelsBox = el('input', '', { type: 'checkbox', 'data-echo-control': 'labels' });
   labelsBox.addEventListener('change', () => handlers.onControl('display', 'labels', labelsBox.checked));
   labelsRow.append(labelsName, labelsBox);
-  displayBody.append(styleRow, labelsRow);
+  const partsRow = el('label', 'layer echo-check');
+  const partsName = el('span');
+  const partsBox = el('input', '', { type: 'checkbox', 'data-echo-control': 'parts' });
+  partsBox.addEventListener('change', () => handlers.onControl('display', 'parts', partsBox.checked));
+  partsRow.append(partsName, partsBox);
+  displayBody.append(styleRow, labelsRow, partsRow);
   slider(displayBody, 'sectorAngle', 'sector', 60, 90, 1, '°', v => handlers.onControl('display', 'sectorAngle', (v * Math.PI) / 180));
   slider(displayBody, 'depth', 'depth', 2.5, MAX_DEPTH, 0.1, 'depth', v => handlers.onControl('display', 'depth', v));
   sliders.get('depth').unit = 'depth';
@@ -232,11 +239,17 @@ export function createEchoPanel(mount, handlers) {
     setText(styleName, t.style); styleOptions.forEach(o => setText(o, t[o.value]));
     styleSelect.value = state.style;
     setText(labelsName, t.labels); labelsBox.checked = state.labels;
+    setText(partsName, t.parts); partsBox.checked = state.parts;
     setText(limits, t.limits);
   }
 
   return {
     element: root, canvas, render,
+    /** groups: [{ label, parts: string[] }] seen in the cut (empty hides the line). */
+    setParts(groups) {
+      partsLine.hidden = !groups?.length;
+      setText(partsLine, groups?.length ? `${T[lang].partsSeen}: ${groups.map(g => `${g.label} ${g.parts.join(' · ')}`).join(' | ')}` : '');
+    },
     setLanguage(next) { lang = next === 'en' ? 'en' : 'tr'; lastViews = null; labelSliders(); }
   };
 }

@@ -56,7 +56,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
         const chord = e.mitralChord, range = e.view?.mitralChord;
         const chordMiss = chord && range ? Math.max(0, range[0] - chord.angle, chord.angle - range[1]) / 10 + (chord.centred ? 0 : 1) : 0;
         const caval = e.bicaval;
-        return e.missing.length * 3 + e.wrong.length * 2 + (fs && !fs.ok ? 2 + Math.max(0, 0.9 - fs.ratio) * 5 + fs.apexOffPlane + (fs.inImage ? 0 : 1) : 0)
+        return e.missing.length * 3 + e.wrong.length * 2 + (e.missingSegments?.length || 0) * 1.5 + (fs && !fs.ok ? 2 + Math.max(0, 0.9 - fs.ratio) * 5 + fs.apexOffPlane + (fs.inImage ? 0 : 1) : 0)
           + (chord && !e.achieved ? chordMiss : 0) + (caval ? (caval.ivcOk ? 0 : 2 + caval.ivcOff) + (caval.septumOk ? 0 : 2) : 0) + offset * 0.002;
       };
       const out = {};
@@ -70,7 +70,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
           const frame = tteFrame(base, adj);
           worst(frame, view, depths, Math.abs(rotation) + Math.abs(tilt) + Math.abs(rock)).forEach(({ s: raw, e }, k) => {
             const s = raw + (k ? 0.01 : 0);
-            if (!best || s < best.s) best = { s, adj: { ...adj, depthOffset: +(depths[k] - base.depth).toFixed(2) }, ok: e.achieved && raw < 1, missing: e.missing, wrong: e.wrong, fs: e.foreshortening && { r: +e.foreshortening.ratio.toFixed(2), plane: e.foreshortening.inPlane, image: e.foreshortening.inImage } };
+            if (!best || s < best.s) best = { s, adj: { ...adj, depthOffset: +(depths[k] - base.depth).toFixed(2) }, ok: e.achieved && raw < 1, missing: e.missing, wrong: e.wrong, segments: e.missingSegments, fs: e.foreshortening && { r: +e.foreshortening.ratio.toFixed(2), plane: e.foreshortening.inPlane, image: e.foreshortening.inImage } };
           });
         }
         out[view.id] = best;

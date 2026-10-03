@@ -107,6 +107,33 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     const lcxNames = await page.evaluate(() => window.heart.getMeshes('lcx')[0].userData.branches.names.map((n) => n.abbr));
     assert.ok(lcxNames.includes('OM1'), `LCX names: ${lcxNames}`);
 
+    // 4b. Ventricle wall regions: coloured in the LV/RV modes, named on hover; the aortic valve opens in ejection.
+    await open('#/mode/lv');
+    const lvState = await page.evaluate(() => {
+      const m = window.heart.getMeshes('lv')[0];
+      return { colours: m.material.vertexColors, names: m.userData.branches.names.map((n) => n.abbr) };
+    });
+    assert.equal(lvState.colours, true, 'LV mode colours the AHA segments');
+    for (let n = 1; n <= 16; n++) assert.ok(lvState.names.includes(String(n)), `segment ${n}`);
+    assert.ok(lvState.names.includes('LVOT'));
+    await page.locator('#lv-tools [data-ventricle-regions]').uncheck();
+    assert.equal(await page.evaluate(() => window.heart.getMeshes('lv')[0].material.vertexColors), false, 'the toggle removes the colours');
+    await page.locator('#lv-tools [data-ventricle-regions]').check();
+    await open('#/mode/rv');
+    const rvNames = await page.evaluate(() => window.heart.getMeshes('rv')[0].userData.branches.names.map((n) => n.key));
+    assert.deepEqual(rvNames.sort(), ['rv-anterior', 'rv-apical', 'rv-inferior', 'rv-inlet', 'rv-rvot', 'rv-septal']);
+    await open('#/mode/anatomy');
+    const aortic = await page.evaluate(() => {
+      const h = window.heart;
+      const read = () => h.getMeshes('ncc').map((m) => Array.from(m.geometry.attributes.position.array));
+      h.seekCycle(0); const shut = read();
+      h.seekCycle(0.6); const open = read();
+      let max = 0;
+      shut.forEach((arr, k) => { for (let i = 0; i < arr.length; i += 3) max = Math.max(max, Math.hypot(arr[i] - open[k][i], arr[i + 1] - open[k][i + 1], arr[i + 2] - open[k][i + 2])); });
+      return max;
+    });
+    assert.ok(aortic > 0.15, `the NCC free edge moves toward the sinus wall in ejection (${aortic.toFixed(2)})`);
+
     // 5. TTE: no pulmonary trunk or SVC in PLAX, no PA in A2C, no pulmonary valve in A3C.
     await open('#/mode/echo');
     const lengths = await page.evaluate(() => Object.fromEntries(['plax', 'a2c', 'a3c'].map((v) => { window.cardiaEcho.selectView(v); return [v, window.cardiaEcho.getResult()]; })));
@@ -116,9 +143,20 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     }
     await page.evaluate(() => window.cardiaEcho.selectView('plax'));
     assert.match(await page.locator('.echo-ice-info').first().textContent(), /pulmoner kapak görülmez/);
+    // LV segments and leaflets in the cut (ASE 16-segment model).
+    for (const [view, segments] of [['a4c', ['3', '9', '6', '12']], ['a2c', ['4', '10', '1', '7']], ['a3c', ['2', '8', '5', '11']], ['psax-mv', ['1', '2', '3', '4', '5', '6']], ['psax-pm', ['7', '8', '9', '10', '11', '12']]]) {
+      await page.evaluate((v) => window.cardiaEcho.selectView(v), view);
+      const line = await page.locator('.echo-parts').textContent();
+      const lv = (line.match(/LV ([^|]*)/) || [])[1]?.split('·').map((x) => x.trim()) || [];
+      for (const n of segments) assert.ok(lv.includes(n), `${view} shows LV segment ${n}: ${line}`);
+    }
+    await page.evaluate(() => window.cardiaEcho.selectView('a3c'));
+    // The box sits in the collapsed display settings.
+    await page.locator('[data-echo-control=parts]').evaluate((box) => { box.checked = false; box.dispatchEvent(new Event('change')); });
+    assert.equal(await page.locator('.echo-parts').isVisible(), false, 'the parts toggle hides the list');
 
     assert.deepEqual(errors, [], 'no page errors');
-    console.log('PASS: RV/LV modes, Eustachian valve and Chiari network, ridge and posterior leaflet names, named coronary branches (D1 before S1), TTE presets without PV/PA/SVC');
+    console.log('PASS: RV/LV modes, Eustachian valve and Chiari network, ridge and posterior leaflet names, named coronary branches (D1 before S1), ventricle wall regions, aortic valve opening, TTE presets without PV/PA/SVC and with the textbook LV segments');
   } finally {
     await browser.close();
   }

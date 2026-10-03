@@ -1,4 +1,5 @@
 import { clipToSector } from './echo-renderer.js';
+import { partPieces } from './echo-renderer-parts.js';
 
 /*
  * Explainable feedback for "find the view" (report section 4, and
@@ -34,6 +35,38 @@ export function visibleRuns(section, sectorAngle, depth) {
 }
 
 /** Contour length of each structure inside the sector (groups summed from their members). */
+// A part counts as shown with this much contour in the sector: an LV segment, a leaflet segment.
+const PART_LENGTH = { lv: 0.15, mitral: 0.06 };
+
+/** Visible contour length per part, keyed `${structure}:${abbr}` (LV segment numbers, A1-P3, ...). */
+export function partLengths(section, sectorAngle, depth) {
+  const out = {};
+  for (const c of section?.contours || []) {
+    for (const piece of partPieces(c)) {
+      const key = `${c.id}:${piece.part.abbr}`;
+      for (const run of clipToSector(piece.points, sectorAngle, depth)) {
+        for (let i = 1; i < run.length; i++) out[key] = (out[key] || 0) + Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Parts a view's plane should cut: { lv: ['3', '9'], mitral: [['A2', 'A3'], 'P2'] }
+ * (a string is required, an array is any one of). Returns the unmet items as text.
+ */
+export function missingParts(view, lengths) {
+  const out = [];
+  for (const [id, items] of Object.entries(view.parts || {})) {
+    for (const item of items) {
+      const options = Array.isArray(item) ? item : [item];
+      if (!options.some(abbr => (lengths[`${id}:${abbr}`] || 0) >= (PART_LENGTH[id] ?? PART_LENGTH.lv))) out.push({ id, text: options.join('/') });
+    }
+  }
+  return out;
+}
+
 export function visibleLengths(section, sectorAngle, depth) {
   const out = {};
   for (const [id, runs] of Object.entries(visibleRuns(section, sectorAngle, depth))) {
@@ -169,13 +202,20 @@ export function evaluateView(section, view, ctx) {
   const caval = view.bicaval ? bicaval(section, ctx.frame, ctx.anatomy, ctx.sectorAngle, ctx.depth) : null;
   const chord = view.mitralChord ? mitralChord(ctx.frame, ctx.anatomy) : null;
   const chordOk = !chord || (chord.centred && chord.angle >= view.mitralChord[0] && chord.angle <= view.mitralChord[1]);
-  const achieved = !missing.length && !wrong.length && (!fs || fs.ok) && (!caval || caval.ok) && chordOk
+  // Views name the LV segments (ASE 16-segment model) and mitral segments their plane should cut.
+  const partLength = view.parts ? partLengths(section, ctx.sectorAngle, ctx.depth) : {};
+  const missingSegments = missingParts(view, partLength);
+  const achieved = !missing.length && !wrong.length && !missingSegments.length && (!fs || fs.ok) && (!caval || caval.ok) && chordOk
     && relations.every(r => r.ok) && order.every(o => o.ok) && sides.every(x => x.ok) && landmarks.every(l => l.ok);
   const tr = ctx.lang !== 'en';
   const names = ids => ids.map(ctx.label).join(', ');
   const messages = [];
   if (achieved) messages.push(tr ? 'Modelin başlangıç ölçütleri karşılandı (diyastol sonu geometrisi).' : 'The model’s starting criteria are met (end-diastolic geometry).');
   if (missing.length) messages.push(tr ? `Model ölçütüne göre eksik: ${names(missing)}.` : `Missing by the model’s criteria: ${names(missing)}.`);
+  if (missingSegments.length) {
+    const list = missingSegments.map(m => `${ctx.label(m.id)} ${m.text}`).join(', ');
+    messages.push(tr ? `Bu görünümde beklenen segmentler kesitte değil: ${list}.` : `Segments expected in this view are not in the cut: ${list}.`);
+  }
   if (wrong.length) messages.push(tr
     ? `Model ölçütüne göre kesitte beklenmeyen: ${names(wrong)}.${wrong.includes('aorta') && view.apical ? ' Aort çıkış yolu görünüyorsa kesit öne kaymış olabilir (beş boşluk); tilt ile arkaya alın.' : ''}`
     : `Not expected in the cut by the model’s criteria: ${names(wrong)}.${wrong.includes('aorta') && view.apical ? ' If the outflow tract shows, the plane may be too anterior (five-chamber); tilt it back.' : ''}`);
@@ -209,5 +249,5 @@ export function evaluateView(section, view, ctx) {
     : (tr ? `${names([l.id])} kesitte veya görüntüde değil (düzlemden ${l.off.toFixed(2)} birim).` : `${names([l.id])} is not in the cut or the image (${l.off.toFixed(2)} units off the plane).`));
   const extra = optional.filter(o => o.shown).map(o => o.id);
   if (extra.length) messages.push(tr ? `Yardımcı (zorunlu değil) yapılar da görünüyor: ${names(extra)}.` : `Supporting (not required) structures also shown: ${names(extra)}.`);
-  return { achieved, missing, wrong, foreshortening: fs, bicaval: caval, mitralChord: chord, relations, order, sides, landmarks, optional, lengths, messages };
+  return { achieved, missing, wrong, missingSegments, partLengths: partLength, foreshortening: fs, bicaval: caval, mitralChord: chord, relations, order, sides, landmarks, optional, lengths, messages };
 }

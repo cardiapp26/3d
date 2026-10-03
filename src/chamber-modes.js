@@ -1,5 +1,6 @@
 // Single-chamber anatomy modes (Anatomy menu): the scene shows one chamber
-// with its own parts, the left panel focus buttons and a wall section slider.
+// with its own parts, the left panel focus buttons and a wall section slider;
+// the ventricles also colour their wall regions (`regions`).
 // `ids` lists both mesh ids (heart.js visibility) and the structure ids of the
 // panel (leaflets, landmarks), so one list serves the scene and the picker.
 export const CHAMBER_MODES = Object.freeze({
@@ -14,12 +15,12 @@ export const CHAMBER_MODES = Object.freeze({
     focus: [['ra', 'raFocusRa'], ['eustachian-valve', 'raFocusEustachian'], ['chiari-network', 'raFocusChiari']]
   },
   rv: {
-    chamber: 'rv', note: 'rvNote', flyDistance: 4.6,
+    chamber: 'rv', note: 'rvNote', flyDistance: 4.6, regions: true,
     ids: ['rv', 'tricuspid', 'tricuspid-septal', 'tricuspid-inferior', 'tricuspid-anterior', 'tricuspid-annulus', 'pulmonary-valve', 'rv-papillary'],
     focus: [['rv', 'rvFocusRv'], ['tricuspid', 'rvFocusTv'], ['pulmonary-valve', 'rvFocusPv']]
   },
   lv: {
-    chamber: 'lv', note: 'lvNote', flyDistance: 4.6,
+    chamber: 'lv', note: 'lvNote', flyDistance: 4.6, regions: true,
     ids: ['lv', 'mitral', 'mitral-posterior', 'mitral-anterior', 'mitral-annulus', 'lcc', 'rcc', 'ncc', 'lv-papillary'],
     focus: [['lv', 'lvFocusLv'], ['mitral', 'lvFocusMv'], ['lv-papillary', 'lvFocusPm']]
   }

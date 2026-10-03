@@ -26,6 +26,8 @@ import { createSceneLabels } from './scene-labels.js';
 import { chamberMode } from './chamber-modes.js';
 import { createEustachianValve, createChiariNetwork } from './ra-valves.js';
 import { buildCoronaryBranches, branchAt } from './coronary-branches.js';
+import { lvRegions, rvRegions } from './ventricle-regions.js';
+import { mitralParts, wholeMesh, TRICUSPID_LEAFLETS, AORTIC_CUSPS, pulmonaryCusp } from './valve-parts.js';
 import { computeContours, drawContours } from './fluoro-contours.js';
 import { separateAtriaFromAorta } from './transverse-sinus.js';
 import { createCristaTerminalis } from './crista-terminalis.js';
@@ -259,6 +261,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       // Great-vessel walls follow the slider while procedural caps stay effective.
       if(layer==='vessels')alpha=Math.min(alpha,opacity);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
+      // Ventricle modes: wall regions in colour (the hover names work everywhere).
+      if((id==='lv'||id==='rv')&&m.geometry.attributes.color){
+        const regions=ventricleRegions&&chamber?.chamber===id&&!fluoroscopy;
+        if(m.material.vertexColors!==regions){m.material.vertexColors=regions;m.material.color.set(regions?0xffffff:m.userData.color);m.material.needsUpdate=true;}
+      }
       m.material.clippingPlanes=mode==='defects'?[]:vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
         m.material.roughness=0.65;
@@ -385,6 +392,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     sceneLabels.add({ mesh: laaRing, index: 0, tone: 'laa', text: { tr: 'LAA ostiyum işareti', en: 'LAA orifice marker' }, when: () => ['atria', 'bachmann'].includes(mode) && !fluoroscopy });
     buildCoumadinRidge();
     mitralScallops.build();
+    buildPartTables();
     thorax.build();
     computeVesselTrims();
     modelReady=true;
@@ -437,6 +445,42 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     register(mesh, 'crista-terminalis');
     cristaSulcus = crista.sulcus;
     sceneLabels.add({ mesh, tone: 'crista', text: { tr: 'Krista terminalis', en: 'Crista terminalis' }, when: () => mode === 'ra' && !fluoroscopy });
+  }
+
+  // Wall regions of the ventricles (LV: AHA 16 segments and LVOT; RV: inlet,
+  // outflow, apex, walls) and leaflet identities of the valves, per vertex:
+  // hover names, the ventricle-mode colours and the echo section labels.
+  let ventricleRegions=true;
+  function buildPartTables(){
+    const first=id=>meshMap.get(id)?.[0];
+    const centroidOf=list=>{const c=new THREE.Vector3();let n=0;for(const m of list){const p=m.geometry.attributes.position;for(let i=0;i<p.count;i++){c.x+=p.getX(i);c.y+=p.getY(i);c.z+=p.getZ(i);n++;}}return n?c.divideScalar(n):null;};
+    const lv=first('lv'),rv=first('rv'),mvFrame=first('mitral-annulus')?.userData.frame,tvFrame=first('tricuspid-annulus')?.userData.frame;
+    const cusps=['lcc','rcc','ncc'].flatMap(id=>meshMap.get(id)||[]);
+    if(lv&&mvFrame&&tvFrame&&cusps.length)lv.userData.parts=lvRegions({lvGeometry:lv.geometry,mitralCenter:mvFrame.center,aorticCenter:centroidOf(cusps),tricuspidCenter:tvFrame.center});
+    const pulmonary=meshMap.get('pulmonary-valve')||[];
+    if(rv&&lv&&tvFrame&&pulmonary.length)rv.userData.parts=rvRegions({rvGeometry:rv.geometry,lvGeometry:lv.geometry,tricuspidCenter:tvFrame.center,pulmonaryCenter:centroidOf(pulmonary)});
+    for(const [id,m] of [['lv',lv],['rv',rv]]){
+      const parts=m?.userData.parts;
+      if(!parts)continue;
+      m.userData.branches=parts;
+      const colors=new Float32Array(parts.byVertex.length*3),c=new THREE.Color();
+      parts.byVertex.forEach((k,i)=>c.set(parts.names[k].color).toArray(colors,i*3));
+      m.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+      // One label per region, at its vertex nearest the region centroid.
+      const pos=m.geometry.attributes.position;
+      parts.names.forEach((name,k)=>{
+        const members=[];for(let i=0;i<pos.count;i++)if(parts.byVertex[i]===k)members.push(i);
+        if(!members.length)return;
+        const mid=new THREE.Vector3();members.forEach(i=>{mid.x+=pos.getX(i);mid.y+=pos.getY(i);mid.z+=pos.getZ(i);});mid.divideScalar(members.length);
+        const index=members.reduce((b,i)=>{const d=(pos.getX(i)-mid.x)**2+(pos.getY(i)-mid.y)**2+(pos.getZ(i)-mid.z)**2;return d<b.d?{i,d}:b;},{i:members[0],d:Infinity}).i;
+        sceneLabels.add({mesh:m,index,tone:'region',text:name.short,when:()=>chamberMode(mode)?.chamber===id&&ventricleRegions&&!fluoroscopy});
+      });
+    }
+    const ring=first('mitral-annulus')?.userData,posterior=first('mitral-posterior');
+    for(const m of meshMap.get('mitral')||[]){const parts=mitralParts(m,ring,posterior);if(parts){m.userData.parts=parts;m.userData.branches=parts;}}
+    for(const m of meshMap.get('tricuspid')||[]){const name=TRICUSPID_LEAFLETS[m.userData.leaflet];if(name)m.userData.parts=wholeMesh(m,name);}
+    for(const id of ['lcc','rcc','ncc'])for(const m of meshMap.get(id)||[])m.userData.parts=wholeMesh(m,AORTIC_CUSPS[id]);
+    for(const m of pulmonary){const name=pulmonaryCusp(m.userData.sourceName||m.name);if(name)m.userData.parts=wholeMesh(m,name);}
   }
 
   // Eustachian valve and Chiari network (schematic, from the IVC and CS ostia and the crista).
@@ -1048,6 +1092,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       transition=true;container.dataset.cameraSettled='false';emitAngleChange();requestRender();
     },
     requestRender,
+    setVentricleRegions(on){ventricleRegions=Boolean(on);applyState();requestRender();},
+    getVentricleRegions(){return ventricleRegions;},
     // Test hook: client coordinates of a scene point (pick tests).
     screenPoint(point){const v=new THREE.Vector3(...point).project(camera),r=renderer.domElement.getBoundingClientRect();return {x:r.left+(v.x+1)/2*r.width,y:r.top+(1-v.y)/2*r.height,inFront:v.z<1};},
     // Diagnostics for the beat tests: overlays currently bound to the beating heart.

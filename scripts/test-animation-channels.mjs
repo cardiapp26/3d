@@ -17,7 +17,8 @@ import {
   FOLLOW_FADE,
   followWeight,
   isSurfaceFollower,
-  leafletOffset,
+  semilunarOffset,
+  smallestAxis,
   writeFollower
 } from '../src/animation-channels.js';
 import { annulusFrame } from '../src/mesh-utils.js';
@@ -143,15 +144,23 @@ console.log('Running Animation Channels Unit Tests...\n');
   assert.equal(laMesh.scale.x, 1.0, 'LA reset');
   assert.equal(mitralMesh.position.y, 0, 'Mitral reset');
 
-  const center = { x: 0, y: 0, z: 0 };
-  const closed = leafletOffset(0.2, 0, 0, 0, center, 2, 'semilunar');
-  const opened = leafletOffset(0.2, 0, 0, 1, center, 2, 'semilunar');
-  const hinge = leafletOffset(2, 0, 0, 1, center, 2, 'semilunar');
+  // Semilunar cusps open in the valve frame: free edge toward the wall and downstream, attachment fixed.
+  const pose = { center: [0, 0, 0], axis: [0, 0, 1], radius: 2 };
+  const cusp = [1, 0, 0];
+  const closed = semilunarOffset([0.2, 0, 0], 0, pose, cusp);
+  const opened = semilunarOffset([0.2, 0, 0], 1, pose, cusp);
+  const hinge = semilunarOffset([2, 0, 0], 1, pose, cusp);
+  const centre = semilunarOffset([0, 0, 0], 1, pose, cusp);
   assert.deepEqual(closed, [0.2, 0, 0]);
-  assert.ok(opened[0] > 0.2, 'Semilunar free edge moves off the coaptation line when open');
-  assert.equal(hinge[0], 2, 'Annular hinge stays fixed');
-  const ivrPose = leafletOffset(0.2, 0, 0, computeChannelWeights(0.90).semilunarValveOpening, center, 2, 'semilunar');
+  assert.ok(opened[0] > 1.2, `Free edge moves most of the way to the sinus wall when open (${opened[0]})`);
+  assert.ok(opened[2] > 0, 'and downstream along the valve axis');
+  assert.ok(Math.abs(hinge[0] - 2) < 1e-9 && Math.abs(hinge[2]) < 1e-9, 'Attachment at the wall stays fixed');
+  assert.ok(centre[0] > 1, 'The coaptation centre opens along the cusp direction');
+  const ivrPose = semilunarOffset([0.2, 0, 0], computeChannelWeights(0.90).semilunarValveOpening, pose, cusp);
   assert.deepEqual(ivrPose, [0.2, 0, 0], 'Semilunar leaflet is shut during isovolumetric relaxation');
+  // A flat disc: its normal is the smallest-variance axis.
+  const axis = smallestAxis([[4, 0, 0], [0, 3, 0], [0, 0, 0.1]]);
+  assert.ok(Math.abs(Math.abs(axis[2]) - 1) < 1e-6, 'valve axis = cusp disc normal');
 
   console.log('PASS: Mock mesh deformation and reset verified');
 }

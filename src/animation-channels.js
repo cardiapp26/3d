@@ -13,7 +13,7 @@ import { createValveMotion } from './valve-motion.js';
 export * from './cycle-channels.js';
 export * from './chamber-field.js';
 export * from './surface-followers.js';
-export { leafletOffset, avLeafletWeight, avLeafletOffset } from './valve-motion.js';
+export { semilunarOffset, smallestAxis, avLeafletWeight, avLeafletOffset } from './valve-motion.js';
 
 export function createAnimationChannels({ meshMap, sourceCenter = null }) {
   const valves = createValveMotion(meshMap);

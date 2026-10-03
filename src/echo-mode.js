@@ -26,12 +26,26 @@ const MIN_SECTION_INTERVAL = 30;   // ms between sections while the heart beats
 /**
  * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en' }} deps
  */
+// Visible parts by structure for the panel line: LV segments in number order, leaflets by name.
+const PART_ORDER = ['lv', 'rv', 'mitral', 'tricuspid', 'aortic-valve', 'pulmonary-valve'];
+function partGroups(parts, lang) {
+  const by = new Map();
+  for (const { id, part } of parts || []) {
+    if (!by.has(id)) by.set(id, new Map());
+    by.get(id).set(part.key, part);
+  }
+  return PART_ORDER.filter(id => by.has(id)).map(id => ({
+    label: STRUCTURE_INFO[id]?.label?.[lang] || id,
+    parts: [...by.get(id).values()].sort((a, b) => (a.segment ?? 99) - (b.segment ?? 99) || String(a.abbr).localeCompare(String(b.abbr))).map(p => p.short?.[lang] || p.abbr)
+  }));
+}
+
 export function createEchoMode({ heart, mount, getLang }) {
   let active = false, anatomy = null, items = null, path = null, icePathData = null, hull = null, chest = null, panel = null, overlay = null;
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
-    modality: 'tte', view: 'plax', style: 'anatomy', labels: true, sectorAngle: SECTOR_ANGLE,
+    modality: 'tte', view: 'plax', style: 'anatomy', labels: true, parts: true, sectorAngle: SECTOR_ANGLE,
     locked: null,  // modality fixed by the app mode (TTE or TEE); the panel then hides its switch
     tte: { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 }, tee: null, ice: null, depth: 4,
     task: null,  // { target: viewId, done: boolean, start: probe pose at the start }
@@ -247,15 +261,17 @@ export function createEchoMode({ heart, mount, getLang }) {
     const playing = heart.getCycleState().playing;
     if (playing) state.frozen = false;
     panel?.render({ state, result, view, playing, frame, hasFossa: Boolean(anatomy.fossa), presetOmega: state.modality === 'tee' ? teePreset(view.id, anatomy, path)?.omega : state.modality === 'ice' ? icePreset(view.id)?.rotation : null });
-    drawEchoSector(panel?.canvas, section, {
+    const drawn = drawEchoSector(panel?.canvas, section, {
       style: state.style, sectorAngle: state.sectorAngle, depth: state.depth, lang,
       info: state.task ? { tr: 'Görev: görünümü bulun', en: 'Task: find the view' } : view.title,
       structureInfo: STRUCTURE_INFO, frozen: state.frozen, hideLabels: !state.labels,
       // ICE: the view's targets are drawn emphasised (not during a task: that would give the answer).
       highlight: state.modality === 'ice' && !state.task ? view.required.flatMap(id => STRUCTURE_GROUPS[id] || [id]) : [],
       markers: [...(view.bicaval ? cavalMarker(frame) : []), ...(view.landmarks?.includes('fossa') ? fossaMarker(frame) : [])],
-      paths: transseptalPaths(frame)
+      paths: transseptalPaths(frame),
+      showParts: state.parts
     });
+    panel?.setParts(state.parts ? partGroups(drawn?.parts, lang) : []);
   }
 
   function ensurePanel() {
