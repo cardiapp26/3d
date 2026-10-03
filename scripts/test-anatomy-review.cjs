@@ -167,6 +167,25 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     await page.locator('[data-echo-control=parts]').evaluate((box) => { box.checked = false; box.dispatchEvent(new Event('change')); });
     assert.equal(await page.locator('.echo-parts').isVisible(), false, 'the parts toggle hides the list');
 
+    // Echo review fixes: no angle on the view buttons, no target hint in a task, a start pose independent of the target.
+    await open('#/mode/tee');
+    const buttons = await page.locator('[data-echo-view]').allTextContents();
+    assert.ok(buttons.length === 10 && buttons.every((t) => !t.includes('°')), `TEE buttons without angles: ${buttons}`);
+    for (const seed of [3, 11]) {
+      const task = await page.evaluate((sd) => {
+        window.cardiaEcho.startTask('tee', { seed: sd });
+        const st = window.cardiaEcho.getState();
+        return { sub: document.querySelector('.echo-sub')?.textContent || '', flexion: st.tee.flexion, lateral: st.tee.lateralFlexion, target: st.task.target };
+      }, seed);
+      assert.ok(!task.sub.includes('°'), `task subtitle hides the atlas angle (${task.sub})`);
+      assert.equal(task.flexion, 0, `TEE task starts with neutral flexion (target ${task.target})`);
+      assert.equal(task.lateral, 0);
+    }
+    await open('#/mode/ice');
+    const ice = await page.evaluate(() => { window.cardiaEcho.startTask('ice', { seed: 5 }); return window.cardiaEcho.getState().ice; });
+    assert.ok(ice.advance >= 0.52 && ice.advance <= 0.68, `ICE task starts near home (${ice.advance})`);
+    assert.ok(Math.abs(ice.anteroposterior) <= 15 && Math.abs(ice.leftRight) <= 15, 'ICE knobs offset from the home pose');
+
     assert.deepEqual(errors, [], 'no page errors');
     console.log('PASS: RV/LV modes, Eustachian valve and Chiari network, ridge and posterior leaflet names, named coronary branches (D1 before S1), ventricle wall regions, aortic valve opening, TTE presets without PV/PA/SVC and with the textbook LV segments');
   } finally {

@@ -41,6 +41,7 @@ function partGroups(parts, lang) {
 }
 
 export function createEchoMode({ heart, mount, getLang }) {
+  let ivcAnchor = null;
   let active = false, anatomy = null, items = null, path = null, icePathData = null, hull = null, chest = null, panel = null, overlay = null;
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
@@ -83,6 +84,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     chest = heart.withRestPose(() => chestSurface(hull));
     path = teePath(anatomy);
     icePathData = icePath(anatomy);
+    ivcAnchor = anchorOnRa(anatomy.ivc);
     overlay = createOverlay(path, chest, icePathData);
     // Schematic transseptal needle (3D): the same world points as the 2D path.
     needle = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd966, depthTest: false }));
@@ -147,12 +149,19 @@ export function createEchoMode({ heart, mount, getLang }) {
     const target = pool[Math.floor(random() * pool.length)];
     selectView(target.id, { keepTask: true });
     const jitter = (range) => Math.round((random() * 2 - 1) * range);
-    const preset = { tte: { ...state.tte }, tee: state.tee && { ...state.tee }, ice: state.ice && { ...state.ice } };
+    // Start from a pose that does not depend on the target: the TTE window's
+    // preset (the window is part of the view), the TEE mid-oesophageal
+    // four-chamber level with neutral flexion, the ICE home pose.
+    const preset = {
+      tte: { ...state.tte },
+      tee: modality === 'tee' ? { ...teePreset('me4c', anatomy, path), flexion: 0, lateralFlexion: 0 } : null,
+      ice: modality === 'ice' ? { ...icePreset('ice-home') } : null
+    };
     // A start that already shows the target is no task: draw again (a few tries).
     for (let attempt = 0; attempt < 8; attempt++) {
       if (modality === 'tte') state.tte = { ...preset.tte, rotation: jitter(45), tilt: jitter(20), rock: jitter(15) };
-      else if (modality === 'ice') state.ice = { ...preset.ice, rotation: preset.ice.rotation + jitter(50), anteroposterior: jitter(15), leftRight: jitter(15) };
-      else state.tee = { ...preset.tee, advance: Math.min(1, Math.max(0, preset.tee.advance + jitter(6) / 100)), omega: Math.max(0, Math.min(180, preset.tee.omega + jitter(60))), rotation: jitter(30) };
+      else if (modality === 'ice') state.ice = { ...preset.ice, advance: Math.min(1, Math.max(0, preset.ice.advance + jitter(8) / 100)), rotation: Math.max(0, preset.ice.rotation + Math.abs(jitter(120))), anteroposterior: preset.ice.anteroposterior + jitter(15), leftRight: preset.ice.leftRight + jitter(15) };
+      else state.tee = { ...preset.tee, advance: Math.min(1, Math.max(0, preset.tee.advance + jitter(6) / 100)), omega: Math.round(random() * 180), rotation: jitter(30) };
       if (!solved(target)) break;
     }
     // "Back" during a task returns to this starting pose, not to the answer.
@@ -177,8 +186,24 @@ export function createEchoMode({ heart, mount, getLang }) {
   const solved = view => judge(view, currentFrame()).achieved;
 
   // The atlas has no IVC mesh: the estimated orifice is shown as a point when the cut passes near it.
+  // The estimated IVC orifice rides the beating RA: nearest RA vertex at rest plus its offset.
+  function anchorOnRa(point) {
+    const ra = getMeshes('ra')[0];
+    if (!ra || !point) return null;
+    return heart.withRestPose(() => {
+      const pos = ra.geometry.attributes.position, p = new THREE.Vector3(...point);
+      let index = 0, best = Infinity;
+      for (let i = 0; i < pos.count; i++) { const d = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(ra.matrixWorld).distanceToSquared(p); if (d < best) { best = d; index = i; } }
+      return { mesh: ra, index, offset: p.sub(new THREE.Vector3().fromBufferAttribute(pos, index).applyMatrix4(ra.matrixWorld)) };
+    });
+  }
+  function liveIvc() {
+    if (!ivcAnchor) return anatomy.ivc;
+    const { mesh, index, offset } = ivcAnchor;
+    return new THREE.Vector3().fromBufferAttribute(mesh.geometry.attributes.position, index).applyMatrix4(mesh.matrixWorld).add(offset).toArray();
+  }
   function cavalMarker(frame) {
-    const p = imagePoint(anatomy.ivc, frame, state.sectorAngle, state.depth);
+    const p = imagePoint(liveIvc(), frame, state.sectorAngle, state.depth);
     return p.off <= CAVAL_OFF_PLANE ? [{ point: [p.x, p.y], label: { tr: 'İVK ağzı (kestirim)', en: 'IVC orifice (estimated)' } }] : [];
   }
 
@@ -399,7 +424,7 @@ function createOverlay(path, chest, icePathData) {
   chestShell.name = 'Chest surface (schematic ellipsoid, no ribs)';
   chestShell.position.set(...chest.center);
   chestShell.scale.set(...chest.radii);
-  // ICE catheter from the pose model (iceFrame): straight shaft from the IVC to the
+  // ICE catheter from the pose model (iceFrame): straight shaft up the IVC-SVC axis to the
   // knuckle, the deflectable distal segment in a lighter colour, and the
   // transducer face (a bright strip on the side facing the beam) at its end.
   const iceCatheter = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ color: 0x2f3d39, roughness: 0.45 }));
@@ -442,7 +467,8 @@ function createOverlay(path, chest, icePathData) {
       if (key !== iceKey && icePathData && frame.catheter) {
         iceKey = key;
         const base = new THREE.Vector3(...icePathData.base);
-        const below = base.clone().add(new THREE.Vector3(0, -1.2, 0));
+        // The shaft comes up the IVC: extend it below the orifice along the measured IVC-SVC axis.
+        const below = base.clone().addScaledVector(new THREE.Vector3(...icePathData.top).sub(base).normalize(), -1.2);
         const bend = frame.catheter.map(p => new THREE.Vector3(...p));
         iceCatheter.geometry.dispose();
         // Withdrawn far, the knuckle sits below the IVC orifice: then the shaft runs straight to it.

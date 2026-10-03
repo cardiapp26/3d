@@ -10,7 +10,7 @@ import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
  */
 const SHORT = {
   plax: 'PLAX', 'psax-av': 'PSAX AV', 'psax-mv': 'PSAX MV', 'psax-pm': 'PSAX PM', a4c: 'A4C', a2c: 'A2C', a3c: 'A3C', sc4c: 'SC 4C',
-  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'LAX 120°', en: 'LAX 120°' }, meavsax: { tr: 'AV SAX 45°', en: 'AV SAX 45°' }, mebicaval: { tr: 'Bikaval 90°', en: 'Bicaval 90°' }, 'ice-home': 'Home', 'ice-rvot': 'RVOT', 'ice-lvot': 'LVOT/AV', 'ice-mitral-laa': { tr: 'MV/LAA', en: 'MV/LAA' }, 'ice-left-pv': { tr: 'Sol PV', en: 'Left PV' }, 'ice-septal-sax': { tr: 'Septum', en: 'Septum' }, 'ice-right-pv': { tr: 'Sağ PV', en: 'Right PV' }, 'ice-svc': 'SVC', melaa: 'ME LAA', mervio: { tr: 'RV G-Ç 75°', en: 'RV I-O 75°' }, melaapv: { tr: 'LAA·PV 135°', en: 'LAA·PV 135°' }, tgsax: 'TG SAX'
+  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'ME LAX', en: 'ME LAX' }, meavsax: { tr: 'AV SAX', en: 'AV SAX' }, mebicaval: { tr: 'Bikaval', en: 'Bicaval' }, 'ice-home': 'Home', 'ice-rvot': 'RVOT', 'ice-lvot': 'LVOT/AV', 'ice-mitral-laa': { tr: 'MV/LAA', en: 'MV/LAA' }, 'ice-left-pv': { tr: 'Sol PV', en: 'Left PV' }, 'ice-septal-sax': { tr: 'Septum', en: 'Septum' }, 'ice-right-pv': { tr: 'Sağ PV', en: 'Right PV' }, 'ice-svc': 'SVC', melaa: 'ME LAA', mervio: { tr: 'RV G-Ç', en: 'RV I-O' }, melaapv: { tr: 'LAA·PV', en: 'LAA·PV' }, tgsax: 'TG SAX'
 };
 const T = {
   tr: {
@@ -194,7 +194,8 @@ export function createEchoPanel(mount, handlers) {
     title.hidden = !state.task;
     if (state.task) setText(title, `${t.target}: ${view.title[lang]}`);
     // Atlas starting angle and the guideline's approximate range are different things.
-    setText(sub, state.modality === 'tte' ? `${t.window[view.window]} · ${view.source}`
+    // In a task the window, atlas angle and guideline range would give the answer away.
+    setText(sub, state.task ? view.source : state.modality === 'tte' ? `${t.window[view.window]} · ${view.source}`
       : state.modality === 'ice' ? `${t.iceRotationLabel}: ${Math.round(presetOmega ?? 0)}° · ${t.iceGuide}: ${view.ase[lang]} · ${t.icePath} · ${view.source}`
         : `${t.atlasAngle}: ${Math.round(presetOmega ?? 0)}° · ${t.guideline}: ${view.ase[lang]} · ${t.teePath} · ${view.source}`);
     // In a task the manoeuvre would give the answer away.

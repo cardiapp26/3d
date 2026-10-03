@@ -38,11 +38,11 @@ export const TTE_VIEWS = Object.freeze([
 export const TEE_VIEWS = Object.freeze([
   { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, ase: { tr: '0–10° (triküspit anulusu için 10–20° ayar gerekebilir)', en: '0–10° (10–20° may be needed for the tricuspid annulus)' }, required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, parts: { lv: ['3', '9', '6', '12'], mitral: [['A2', 'A3'], ['P2', 'P1']] }, source: ASE_TEE },
   { id: 'memc', title: { tr: 'ME mitral komissüral', en: 'ME mitral commissural' }, ase: { tr: '50–70°', en: '50–70°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'aorta'], mitralChord: [0, 22], source: ASE_TEE },
-  { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, ase: { tr: '80–100°', en: '80–100°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'aorta'], apical: true, mitralChord: [25, 90], source: ASE_TEE },
+  { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, ase: { tr: '80–100° (bu preset 105°)', en: '80–100° (this preset 105°)' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'aorta'], apical: true, mitralChord: [25, 90], source: ASE_TEE },
   { id: 'melax', title: { tr: 'ME uzun eksen', en: 'ME long axis' }, ase: { tr: '120–140°', en: '120–140°' }, required: ['la', 'lv', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], mitralChord: [55, 90], parts: { lv: ['2', '8', '5', '11'], mitral: ['A2', 'P2'] }, source: ASE_TEE },
   { id: 'meavsax', title: { tr: 'ME aort kapağı kısa eksen', en: 'ME aortic valve SAX' }, ase: { tr: '25–45°', en: '25–45°' }, required: ['aortic-valve', 'la', 'ra'], avoid: ['lv', 'mitral'], source: ASE_TEE },
-  { id: 'mebicaval', title: { tr: 'ME bikaval', en: 'ME bicaval' }, ase: { tr: '90–110°, şaft sağa', en: '90–110°, shaft turned right' }, required: ['la', 'ra', 'svc'], avoid: ['lv', 'mitral'], bicaval: true, source: ASE_TEE },
-  { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, ase: { tr: 'başlangıç 90–110°; çok açılı tarama', en: 'start 90–110°; multi-angle sweep' }, required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
+  { id: 'mebicaval', title: { tr: 'ME bikaval', en: 'ME bicaval' }, ase: { tr: '90–110°, şaft sağa (bu preset 85°)', en: '90–110°, shaft turned right (this preset 85°)' }, required: ['la', 'ra', 'svc'], avoid: ['lv', 'mitral'], relations: [{ a: 'ra', b: 'svc', max: 0.15, note: { tr: 'SVC-RA bileşkesi', en: 'SVC-RA junction' } }], bicaval: true, source: ASE_TEE },
+  { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, ase: { tr: 'başlangıç 90–110°; çok açılı tarama (bu preset 60°)', en: 'start 90–110°; multi-angle sweep (this preset 60°)' }, required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
   { id: 'mervio', title: { tr: 'ME RV giriş-çıkış', en: 'ME RV inflow-outflow' }, ase: { tr: '50–70° (bu preset 75°)', en: '50–70° (this preset 75°)' }, required: ['ra', 'rv', 'tricuspid', 'pa'], avoid: ['mitral'], source: ASE_TEE },
   { id: 'melaapv', title: { tr: 'ME LAA ve sol üst PV komşuluğu', en: 'ME LAA and left upper PV neighbourhood' }, ase: { tr: 'ME LAA görünümü 90–110° (LAA ve sol üst PV); bu preset 135° tarama açısıdır', en: 'ME LAA view 90–110° (LAA and left upper PV); this preset is a 135° sweep angle' }, required: ['la', 'laa', 'pv'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
   { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, ase: { tr: '0–20°', en: '0–20°' }, required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], parts: { lv: ['7', '8', '9', '10', '11', '12'] }, source: ASE_TEE }
@@ -150,7 +150,10 @@ export const TG_ADVANCE = 0.97;
 
 /**
  * Preset probe state of a TEE view: the level (advance) from the landmarks,
- * the pose within the guideline multiplane range from the atlas calibration.
+ * the pose from the atlas calibration. The multiplane angle is in the
+ * guideline range except where the view text names the preset angle
+ * (ME two-chamber 105°, ME bicaval 85°, ME LAA 60°, RV inflow-outflow 75°,
+ * LAA-PV 135°).
  * @returns {{ advance: number, rotation: number, flexion: number, lateralFlexion: number, omega: number, depth: number }}
  */
 export function teePreset(id, A, path) {
@@ -164,7 +167,7 @@ export function teePreset(id, A, path) {
     case 'me2c': return pose(me + 0.04, -30, -30, 105, 4.8, 10);
     case 'melax': return pose(me, -15, 0, 120, 4.8);
     case 'meavsax': return pose(level(A.av.center[1]), 0, 10, 45, 4.8);
-    case 'mebicaval': return pose(level(A.la[1] + 0.1) + 0.04, 30, 0, 90, 4.8);
+    case 'mebicaval': return pose(level(A.la[1] + 0.1) + 0.04, 30, 0, 85, 4.8);
     case 'melaa': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 60, 3);
     case 'mervio': return pose(me - 0.02, 10, 0, 75, 4.8);
     case 'melaapv': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 135, 3.6);
@@ -193,7 +196,7 @@ const ostium = (vein) => ({ a: 'la', b: vein, note: { tr: 'ven ağzı LA\'ya aç
 export const ICE_VIEWS = Object.freeze([
   { id: 'ice-home', title: { tr: 'ICE home görünümü', en: 'ICE home view' }, ase: { tr: 'orta RA, nötr, saat yönü 15–30°: RA → TV → RV', en: 'mid RA, neutral, clockwise 15–30°: RA → TV → RV' },
     motion: { tr: 'Başlangıç: kateter orta RA\'da, büküm nötr; transdüser triküspit kapağa bakar.', en: 'Start: catheter in the mid RA, knobs neutral; the transducer faces the tricuspid valve.' },
-    required: ['tricuspid', 'rv'], optional: ['aortic-valve'], avoid: ['pv', 'svc'], source: ICE_SRC },
+    required: ['ra', 'tricuspid', 'rv'], order: [['ra', 'rv']], optional: ['aortic-valve'], avoid: ['pv', 'svc'], source: ICE_SRC },
   { id: 'ice-rvot', title: { tr: 'ICE RV çıkış yolu', en: 'ICE RVOT view' }, ase: { tr: 'saat yönü 30–40°: AV yakında, RVOT ve pulmoner kapak uzakta', en: 'clockwise 30–40°: AV near, RVOT and pulmonary valve far' },
     motion: { tr: 'Home\'dan saat yönünde ~15° çevirin: aort kapağı yakın alana, RVOT ve pulmoner kapak uzak alana girer.', en: 'From home, rotate ~15° clockwise: the aortic valve enters the near field, the RVOT and pulmonary valve the far field.' },
     required: ['rv', 'aortic-valve', 'pulmonary-valve'], order: [['aortic-valve', 'pulmonary-valve']], avoid: ['pv', 'laa'], source: ICE_SRC },
@@ -241,7 +244,7 @@ export function icePath(A) {
 // criteria at rest and through the beat). Knob signs as in iceFrame:
 // anteroposterior - posterior, leftRight - right.
 const ICE_CALIBRATION = Object.freeze({
-  'ice-home': { advance: 0.55, rotation: 15, anteroposterior: 0, leftRight: 0 },
+  'ice-home': { advance: 0.6, rotation: 15, anteroposterior: 0, leftRight: 0 },
   'ice-rvot': { advance: 0.55, rotation: 35, anteroposterior: 0, leftRight: 0 },
   'ice-lvot': { advance: 0.55, rotation: 40, anteroposterior: 0, leftRight: 0 },
   'ice-mitral-laa': { advance: 0.55, rotation: 75, anteroposterior: 0, leftRight: 15 },
@@ -253,10 +256,10 @@ const ICE_CALIBRATION = Object.freeze({
 
 /** Where an atlas preset departs from the source manoeuvre (shown next to the view). */
 export const ICE_PRESET_NOTES = Object.freeze({
-  'ice-mitral-laa': { tr: 'Atlas farkı: LAA lobunun tanınabilir görünmesi için hafif sol büküm (15°) gerekti; kaynakta büküm nötr.', en: 'Atlas difference: a slight left deflection (15°) was needed for a recognisable LAA lobe; the source keeps the knobs neutral.' },
+  'ice-mitral-laa': { tr: 'Atlas farkı: LAA lobunun tanınabilir görünmesi için hafif sol büküm (15°) gerekti; kaynakta büküm nötr. Kaynaktaki "biraz ilerlet" bu atlasta uygulanmadı: ilerletme %55, home\'un (%60) biraz gerisinde.', en: 'Atlas difference: a slight left deflection (15°) was needed for a recognisable LAA lobe; the source keeps the knobs neutral. The source\'s "advance slightly" is not applied on this atlas: the advance is 55%, a little behind home (60%).' },
   'ice-left-pv': { tr: 'Atlas farkı: kateter daha yukarıda (ilerletme %70, kaynaktaki "yüksek RA") ve hafif sağ bükümle (15°).', en: 'Atlas difference: the catheter sits higher (advance 70%, the source\'s "high RA") with a slight right deflection (15°).' },
   'ice-septal-sax': { tr: 'Atlas notu: yön kaynakla aynı (posterior ve sağ büküm, saat yönü 125°); sağ büküm bu atlasta düğmenin sınırında (45°).', en: 'Atlas note: the direction matches the source (posterior and right deflection, clockwise 125°); the right deflection sits at the knob limit (45°) on this atlas.' },
-  'ice-svc': { tr: 'Atlas farkı: atlastaki kateter ekseni doğrudan SVC\'ye baktığından düğme sınırında posterior büküm (45°) gerekti; kaynakta büküm nötr.', en: 'Atlas difference: the atlas catheter axis points straight at the SVC, so a posterior deflection at the knob limit (45°) was needed; the source keeps the knobs neutral.' }
+  'ice-svc': { tr: 'Atlas farkı: atlastaki kateter ekseni doğrudan SVC\'ye baktığından düğme sınırında posterior büküm (45°) gerekti; kaynakta büküm nötr. Kaynaktaki "hafif ilerlet" bu atlasta uygulanmadı: ilerletme %55, home\'un (%60) biraz gerisinde.', en: 'Atlas difference: the atlas catheter axis points straight at the SVC, so a posterior deflection at the knob limit (45°) was needed; the source keeps the knobs neutral. The source\'s "advance slightly" is not applied on this atlas: the advance is 55%, a little behind home (60%).' }
 });
 
 /** Preset probe state of an ICE view (advance, rotation, deflections, depth). */

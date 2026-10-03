@@ -1402,12 +1402,12 @@ export const rawLessons = {
         },
         {
           title: 'Görev: görünümü bulun',
-          text: 'Prob hedef görünümden uzaklaştırılmış olarak başlar. Kontrollerle hedefi bulun. Geri bildirim yalnız açıya bakmaz: gerekli yapıların kesitte olması, olmaması gereken yapıların (ör. apikal dört boşlukta aort çıkış yolu) ve apeksin kısalmaması birlikte değerlendirilir. Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Etiketleri kapatarak kendinizi sınayın.',
+          text: 'Prob, hedef görünümün penceresinde rastgele rotasyon, tilt ve rock ile başlar. Kontrollerle hedefi bulun. Geri bildirim yalnız açıya bakmaz: gerekli yapıların kesitte olması, olmaması gereken yapıların (ör. apikal dört boşlukta aort çıkış yolu) ve apeksin kısalmaması birlikte değerlendirilir. Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Etiketleri kapatarak kendinizi sınayın.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', task: true }
         },
         {
           title: 'Sınırlar: bu görüntü neyi göstermez?',
-          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. Akustik pencere ve kaburga gölgesi yoktur; TTE pencereleri göğüs duvarı modellenmediği için hazır noktalardır. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlas, proje sahibinin özgün tasarımıdır. Modülün klinik eğitim geçerliliği bağımsız uzman incelemesi gerektirir.',
+          text: 'Kesit, atlas yüzeylerinin düzlemle kesişimidir; miyokard kalınlığı, doku dokusu (speckle) ve artefaktlar yoktur. Şematik gri görünüm gerçek B-mod değildir; renkli akış Doppler, spektral Doppler, M-mode ve ölçümler yoktur. Akustik pencere ve kaburga gölgesi yoktur. TTE probu kalbi saran şematik bir göğüs yüzeyine (elipsoit) oturur; pencereler bu yüzeydeki başlangıç noktalarıdır ve kaydırma yüzeyde kalır. Kaburgalar ve gerçek göğüs duvarı modellenmez. Hazır pozlar bu atlasta otomatik aranmıştır ve ekokardiyografi uzmanı onayından geçmemiştir. Atlas, proje sahibinin özgün tasarımıdır. Modülün klinik eğitim geçerliliği bağımsız uzman incelemesi gerektirir.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
         }
       ]
@@ -1423,12 +1423,12 @@ export const rawLessons = {
         },
         {
           title: 'Task: find the view',
-          text: 'The probe starts moved away from the target view. Find the target with the controls. The feedback does not rely on the angle alone: it checks that the required structures are in the section, that structures that should not be there are absent (for example the outflow tract in the apical four-chamber view), and that the apex is not foreshortened. Thresholds are teaching values without expert calibration. Turn the labels off to test yourself.',
+          text: 'The probe starts in the target view\'s window with a random rotation, tilt and rock. Find the target with the controls. The feedback does not rely on the angle alone: it checks that the required structures are in the section, that structures that should not be there are absent (for example the outflow tract in the apical four-chamber view), and that the apex is not foreshortened. Thresholds are teaching values without expert calibration. Turn the labels off to test yourself.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', task: true }
         },
         {
           title: 'Limits: what this image does not show',
-          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. There is no acoustic window or rib shadow; TTE windows are preset points because the chest wall is not modelled. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas is an original design by the project owner. Clinical training validity requires independent expert review.',
+          text: 'The section is where the plane cuts the atlas surfaces; there is no myocardial thickness, tissue texture (speckle) or artefact. The schematic grey look is not real B-mode; there is no colour or spectral Doppler, M-mode or measurement. There is no acoustic window or rib shadow. The TTE probe sits on a schematic chest surface (an ellipsoid) around the heart; the windows are starting points on it and sliding stays on it. Ribs and the real chest wall are not modelled. Presets were searched automatically on this atlas and have not been reviewed by an echocardiographer. The atlas is an original design by the project owner. Clinical training validity requires independent expert review.',
           landmark: 'lv', view: 'anterior', echo: { modality: 'tte', view: 'a4c' }
         }
       ]
@@ -1481,7 +1481,7 @@ export const rawLessons = {
         },
         {
           title: 'Görev: ICE görünümünü bulun',
-          text: 'Kateter hedef görünümden uzaklaştırılmış olarak başlar: rotasyon ve bükümler kaydırılmıştır. İlerletme, saat yönü rotasyon ve iki büküm ile hedefi bulun; geri bildirim kesitte görünmesi gereken ve görünmemesi gereken yapılara bakar.',
+          text: 'Kateter hedeften bağımsız olarak home pozunun yakınında başlar: ilerletme, rotasyon ve bükümler rastgele kaydırılmıştır. İlerletme, saat yönü rotasyon ve iki büküm ile hedefi bulun; geri bildirim kesitte görünmesi gereken ve görünmemesi gereken yapılara bakar.',
           landmark: 'ra', view: 'anterior', echo: { modality: 'ice', task: true }
         },
         {
@@ -1537,7 +1537,7 @@ export const rawLessons = {
         },
         {
           title: 'Task: find the ICE view',
-          text: 'The catheter starts away from the target view: rotation and deflections are offset. Find the target with advance, clockwise rotation and the two deflections; the feedback checks the structures that should and should not be in the cut.',
+          text: 'The catheter starts near the home pose, independent of the target: advance, rotation and deflections are offset at random. Find the target with advance, clockwise rotation and the two deflections; the feedback checks the structures that should and should not be in the cut.',
           landmark: 'ra', view: 'anterior', echo: { modality: 'ice', task: true }
         },
         {
@@ -1554,13 +1554,13 @@ export const rawLessons = {
       intro: 'Prob, ultrason düzlemi ve 3B anatomi solda; aynı düzlemden hesaplanan 2B sektör kesiti sağda. Kesit, atımın o anki fazındaki geometriden hesaplanır; dondurmak iki görüntüyü birlikte durdurur. Bu bir prob-kesit-anatomi eğitimidir: gerçek ultrason, Doppler veya ölçüm değildir.',
       steps: [
         {
-          title: 'TEE: özofagus-mide yolu ve 8 temel görünüm',
-          text: 'Prob, sol atriyumun arkasındaki şematik özofagustan mideye uzanan yolda hareket eder. İlerletme/geri çekme, şaft rotasyonu, ante/retrofleksiyon, sağ/sol fleksiyon ve elektronik multiplan açısı ayrı hareketlerdir. Orta özofagus (ME): dört boşluk, mitral komissüral, iki boşluk, uzun eksen, aort kapağı kısa eksen, bikaval ve LAA. Transgastrik (TG): orta papiller kısa eksen. 0°\'de hastanın solu ekranın sağında, 90°\'de kranial taraf ekranın sağındadır. Bir açı tek başına görünümü garanti etmez: seviye ve şaft hareketi birlikte gerekir.',
+          title: 'TEE: özofagus-mide yolu ve 10 görünüm',
+          text: 'Prob, sol atriyumun arkasındaki şematik özofagustan mideye uzanan yolda hareket eder. İlerletme/geri çekme, şaft rotasyonu, ante/retrofleksiyon, sağ/sol fleksiyon ve elektronik multiplan açısı ayrı hareketlerdir. Orta özofagus (ME): dört boşluk, mitral komissüral, iki boşluk, uzun eksen, aort kapağı kısa eksen, RV giriş-çıkış, bikaval, LAA ve LAA ile sol üst pulmoner ven komşuluğu. Transgastrik (TG): orta papiller kısa eksen. 0°\'de hastanın solu ekranın sağında, 90°\'de kranial taraf ekranın sağındadır. Bir açı tek başına görünümü garanti etmez: seviye ve şaft hareketi birlikte gerekir.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
         },
         {
           title: 'Görev: görünümü bulun',
-          text: 'Prob hedef görünümden uzaklaştırılmış olarak başlar: ilerletme, multiplan açısı ve şaft rotasyonu kaydırılmıştır. Kontrollerle hedefi bulun. Geri bildirim yalnız açıya bakmaz: gerekli yapıların kesitte olması ve olmaması gereken yapıların bulunmaması birlikte değerlendirilir. Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Etiketleri kapatarak kendinizi sınayın.',
+          text: 'Prob hedeften bağımsız olarak orta özofagus dört boşluk seviyesinde, nötr bükümle başlar: ilerletme, multiplan açısı ve şaft rotasyonu rastgele kaydırılmıştır. Kontrollerle hedefi bulun. Geri bildirim yalnız açıya bakmaz: gerekli yapıların kesitte olması ve olmaması gereken yapıların bulunmaması birlikte değerlendirilir. Eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Etiketleri kapatarak kendinizi sınayın.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', task: true }
         },
         {
@@ -1575,13 +1575,13 @@ export const rawLessons = {
       intro: 'Probe, ultrasound plane and 3D anatomy on the left; the 2D sector section of the same plane on the right. The section is computed from the geometry at the current phase of the beat; freezing stops both images together. This is probe-section-anatomy training: not real ultrasound, Doppler or measurement.',
       steps: [
         {
-          title: 'TEE: oesophagus-stomach path and 8 basic views',
-          text: 'The probe moves along a schematic path from the oesophagus behind the left atrium into the stomach. Advance/withdraw, shaft rotation, ante/retroflexion, right/left flexion and the electronic multiplane angle are separate motions. Mid-oesophageal (ME): four-chamber, mitral commissural, two-chamber, long axis, aortic valve short axis, bicaval and LAA. Transgastric (TG): mid-papillary short axis. At 0 degrees the patient\'s left is on the right of the screen, at 90 degrees the cephalad side is. An angle alone does not guarantee a view: level and shaft motion are needed too.',
+          title: 'TEE: oesophagus-stomach path and 10 views',
+          text: 'The probe moves along a schematic path from the oesophagus behind the left atrium into the stomach. Advance/withdraw, shaft rotation, ante/retroflexion, right/left flexion and the electronic multiplane angle are separate motions. Mid-oesophageal (ME): four-chamber, mitral commissural, two-chamber, long axis, aortic valve short axis, RV inflow-outflow, bicaval, LAA and the LAA with the left upper pulmonary vein. Transgastric (TG): mid-papillary short axis. At 0 degrees the patient\'s left is on the right of the screen, at 90 degrees the cephalad side is. An angle alone does not guarantee a view: level and shaft motion are needed too.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
         },
         {
           title: 'Task: find the view',
-          text: 'The probe starts moved away from the target view: advance, multiplane angle and shaft rotation are offset. Find the target with the controls. The feedback does not rely on the angle alone: it checks that the required structures are in the section and that structures that should not be there are absent. Thresholds are teaching values without expert calibration. Turn the labels off to test yourself.',
+          text: 'The probe starts at the mid-oesophageal four-chamber level with neutral flexion, independent of the target: advance, multiplane angle and shaft rotation are offset at random. Find the target with the controls. The feedback does not rely on the angle alone: it checks that the required structures are in the section and that structures that should not be there are absent. Thresholds are teaching values without expert calibration. Turn the labels off to test yourself.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', task: true }
         },
         {

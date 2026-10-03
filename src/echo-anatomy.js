@@ -30,7 +30,7 @@ export const ECHO_STRUCTURES = Object.freeze([
   { id: 'mitral', ids: ['mitral'], color: '#fff2cc', label: { tr: 'MV', en: 'MV' } },
   { id: 'tricuspid', ids: ['tricuspid'], color: '#d9ead3', label: { tr: 'TV', en: 'TV' } },
   { id: 'aortic-valve', ids: ['lcc', 'rcc', 'ncc'], color: '#fce5cd', label: { tr: 'AV', en: 'AV' } },
-  { id: 'pulmonary-valve', ids: ['pulmonary-valve'], color: '#d9d2e9', label: { tr: 'PuV', en: 'PV (pulm.)' } },
+  { id: 'pulmonary-valve', ids: ['pulmonary-valve'], color: '#d9d2e9', label: { tr: 'PuV', en: 'PuV' } },
   { id: 'lv-papillary', ids: ['lv-papillary'], color: '#f4cccc', label: { tr: 'PM', en: 'PM' } },
   { id: 'rv-papillary', ids: ['rv-papillary'], color: '#ead1dc', label: { tr: 'RV PM', en: 'RV PM' } },
   { id: 'moderator-band', ids: ['moderator-band'], color: '#e69138', label: { tr: 'MB', en: 'MB' } }

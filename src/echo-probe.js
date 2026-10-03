@@ -7,8 +7,10 @@ import { imageFrame, cross, normalize } from './echo-section.js';
  * TTE: a window gives a base frame (transducer point, beam, screen-right
  * axis); the student moves the probe from it within limits: rotation about
  * the beam, tilt (fan through the elevation), rock (angle within the plane)
- * and a short slide on the chest. There is no chest surface model yet, so
- * the windows are preset points, not free surface scanning.
+ * and a short slide on the chest. The probe sits on a schematic ellipsoid
+ * chest surface around the heart (echo-anatomy.js chestSurface) and slides
+ * stay on it (ontoSurface); ribs and acoustic windows are not modelled, so
+ * the windows are starting points on that surface, not free scanning.
  *
  * TEE: the transducer rides a schematic oesophagus-stomach path. Advance or
  * withdraw, shaft rotation, ante/retroflexion, left/right flexion and the
