@@ -120,6 +120,30 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     await page.locator('[data-pmap-truth]').click();
     assert.ok(await page.locator('[data-pmap-ecg]').evaluate((c) => c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 1 && v > 180)), 'twelve leads drawn');
 
+    // EGM basics tab: diagram cards follow their controls.
+    await page.locator('[data-ep-section=basics]').click();
+    assert.equal(await page.evaluate(() => location.hash), '#/basics');
+    assert.equal(await page.locator('[data-basics]').isVisible(), true, 'basics page shown');
+    assert.equal(await page.locator('[data-basics-card]').count(), 6, 'six cards');
+    await page.locator('[data-basics-source=origin]').click();
+    assert.match(await page.locator('[data-basics-card=poles] .amap-readout').textContent(), /QS/, 'focus: unipolar QS');
+    await page.locator('[data-basics-hp="30"]').click();
+    assert.match(await page.locator('[data-basics-card=filters] .amap-readout').textContent(), /hayır/, '30 Hz breaks the QS');
+    await page.locator('[data-basics-catheter=cs]').click();
+    assert.match(await page.locator('[data-basics-catheter-name]').textContent(), /CS/);
+    await page.locator('[data-basics-hv]').fill('105');
+    assert.equal(await page.locator('[data-basics-iv=hv]').getAttribute('data-state'), 'high', 'HV 105: high risk');
+    await page.locator('[data-basics-block=mobitz2-infra]').click();
+    assert.equal(await page.locator('[data-basics-level]').getAttribute('data-level'), 'infraHis');
+    assert.match(await page.locator('[data-basics-node=h]').getAttribute('class'), /is-seen/);
+    assert.match(await page.locator('[data-basics-node=v]').getAttribute('class'), /is-missing/);
+    await page.locator('[data-basics-dual]').click();
+    await page.locator('[data-basics-a1a2]').fill('300');
+    assert.match(await page.locator('[data-basics-card=decremental] .amap-readout').textContent(), /yavaş/, 'slow pathway at 300 ms');
+    for (const sel of ['[data-basics-poles-canvas]', '[data-basics-filter-canvas]', '[data-basics-catheter-canvas]', '[data-basics-block-canvas]', '[data-basics-curve-canvas]']) {
+      assert.ok(await page.locator(sel).evaluate((c) => c.width > 0), `${sel} drawn`);
+    }
+
     // English labels follow the switch; back to the live tab.
     await page.locator('[data-app-lang-option=en]').click();
     assert.equal(await page.locator('[data-ep-section=treatment]').textContent(), 'Treatment');
@@ -127,7 +151,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('.ep-lesson').isHidden(), true);
     assert.equal(await page.locator('[data-ep-live]').isVisible(), true);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, ladder on the channels, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), pace map tab (source, click, scar sinus vs VT, warnings, match map), TR/EN, live tab');
+    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, ladder on the channels, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), pace map tab (source, click, scar sinus vs VT, warnings, match map), EGM basics tab (QS, filter, catheter, HV limit, block level, AH jump), TR/EN, live tab');
   } finally {
     await browser.close();
   }

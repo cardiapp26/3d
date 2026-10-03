@@ -1,9 +1,9 @@
 // EPS laboratory entry: header with the link back to the 3D simulator and
 // the language switch (shared with the 3D page), the EP panel
 // (Diagnosis / Maneuvers / Treatment lessons, the live recording
-// workstation, activation mapping and pace mapping, ep-panel.js) and the
+// workstation, activation mapping, pace mapping and the electrogram basics, ep-panel.js) and the
 // site notice. The open tab lives in the address (#/live, #/diagnosis,
-// #/maneuver, #/treatment, #/mapping, #/pacemap); #/clip/<id> opens
+// #/maneuver, #/treatment, #/mapping, #/pacemap, #/basics); #/clip/<id> opens
 // one recording (the 3D ablation lesson links to its clips this way).
 import './style.css';
 import './lesson.css';

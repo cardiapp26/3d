@@ -174,6 +174,48 @@
 .amap-readout dd { margin: 0; font: 12px var(--mono); color: #c8f0dc; text-align: right; }
 .amap-lesson { font-size: 13px; line-height: 1.55; }
 .amap-truth { font-size: 12.5px; line-height: 1.5; background: var(--panel); border-left: 3px solid #e8f3ee; border-radius: 4px; padding: 6px 9px; }
+/* EGM basics tab (egm-basics-panel.js): a scrolling page of diagram cards. */
+.basics { display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%; overflow-y: auto; padding-right: 2px; }
+.basics > * { margin: 0; }
+.basics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 10px; align-items: start; }
+.basics-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.basics-card h4 { margin: 0; font-size: 13.5px; }
+.basics-card > * { margin: 0; }
+.basics-canvas { display: block; width: 100%; border-radius: 6px; background: #0e1815; border: 1px solid var(--line); }
+.basics-poles { height: 300px; }
+.basics-filter { height: 190px; }
+.basics-strip { height: 190px; }
+.basics-curve { height: 220px; }
+.basics-svg { display: block; width: 100%; height: auto; max-height: 260px; }
+.basics-chamber { fill: #1c2b26; stroke: #3a5248; stroke-width: 1.5; }
+.basics-chamber-label { fill: #7ea593; font: 600 11px var(--mono); text-anchor: middle; }
+.basics-cs { fill: none; stroke: #5b8cff; stroke-width: 3; stroke-linecap: round; opacity: .55; }
+.basics-catheter { cursor: pointer; }
+.basics-catheter circle { fill: #2c3d36; stroke: #9fb8ac; stroke-width: 1.8; }
+.basics-catheter text { fill: #c8f0dc; font: 700 11px var(--mono); }
+.basics-catheter:hover circle, .basics-catheter:focus-visible circle { stroke: var(--accent); stroke-width: 3; outline: none; }
+.basics-catheter.is-on circle { fill: var(--accent); stroke: #ffffff; }
+.basics-lines { margin: 0; padding-left: 18px; display: grid; gap: 2px; font-size: 12.5px; line-height: 1.45; }
+.basics-iv { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; font-size: 12px; color: var(--muted); }
+.basics-iv input { grid-column: 1 / -1; accent-color: var(--accent); }
+.basics-iv-out { font: 12px var(--mono); color: #c8f0dc; }
+.basics-iv-out[data-state=long], .basics-iv-out[data-state=high], .basics-iv-out[data-state=short] { color: #fca5a5; }
+.basics-iv-out[data-state=borderline] { color: #fcd34d; }
+.basics-track { position: relative; grid-column: 1 / -1; height: 8px; border-radius: 4px; background: #25322d; }
+.basics-band { position: absolute; top: 0; bottom: 0; background: rgba(74, 222, 128, .5); border-radius: 4px; }
+.basics-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fca5a5; }
+.basics-flow { max-height: 70px; }
+.basics-node rect { stroke-width: 1.5; }
+.basics-node text { font: 700 12px var(--mono); text-anchor: middle; fill: #0e1815; }
+.basics-node.is-seen rect { fill: #4ade80; stroke: #166534; }
+.basics-node.is-missing rect { fill: #f87171; stroke: #7f1d1d; }
+.basics-node.is-off { display: none; }
+.basics-arrow { stroke: #7ea593; stroke-width: 2; fill: none; }
+.basics-level { font-size: 12.5px; line-height: 1.5; padding: 6px 9px; border-radius: 4px; background: var(--panel-2); border-left: 3px solid var(--accent); }
+.basics-level[data-level=nodal], .basics-level[data-level=delay] { border-left-color: #4ade80; }
+.basics-level[data-level=intraHis] { border-left-color: #fcd34d; }
+.basics-level[data-level=infraHis] { border-left-color: #f87171; }
+
 /* Pace mapping tab (pmap-panel.js): reuses the mapping layout; the twelve leads below the map. */
 .pmap .amap-canvas { flex: none; min-height: 0; height: clamp(200px, 34vh, 340px); cursor: crosshair; }
 .pmap .amap-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
