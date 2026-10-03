@@ -62,7 +62,11 @@ const shotDir = process.env.SHOT_DIR || 'research/screenshots';
     // Test RA mode
     await page.locator('[data-mode=ra]').dispatchEvent('click');
     // The RA and its inner landmarks: the crista terminalis (report section 13), the Eustachian valve and the Chiari network.
+    // The Chiari network is a variant: off until the optional switch is turned on.
+    assert.deepEqual(await visible(), ['crista-terminalis', 'eustachian-valve', 'ra']);
+    await page.locator('[data-chiari-network]').evaluate((box) => { box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); });
     assert.deepEqual(await visible(), ['chiari-network', 'crista-terminalis', 'eustachian-valve', 'ra']);
+    await page.locator('[data-chiari-network]').evaluate((box) => { box.checked = false; box.dispatchEvent(new Event('change', { bubbles: true })); });
     assert.equal(await page.locator('#structure-select option:not([disabled])').count(), 4);
     assert.equal(await page.locator('#structure-select').inputValue(), 'ra');
     assert.equal(await page.locator('#ra-tools').isVisible(), true);
