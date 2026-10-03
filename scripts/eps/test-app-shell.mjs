@@ -55,6 +55,19 @@ for (const cls of ['ep-live-stim', 'ep-live-maneuvers', 'ep-live-protocols', 'ep
 panel.advance(3000);
 assert.equal(panel.intervals().rr, 800, 'sinus rhythm in the default case after stepping');
 
+// Incremental pacing runs as one train and is cut at the first block: sinus returns.
+const nodesOf = (n, out = []) => { out.push(n); for (const c of n.children || []) nodesOf(c, out); return out; };
+const byAttr = (name) => nodesOf(panel.element).find((n) => n.attributes[name] === '');
+panel.setCase('avnrt-typical');
+byAttr('data-ep-live-protocol').value = 'avbcl';
+byAttr('data-ep-live-protocol').listeners.change();
+byAttr('data-ep-live-protocol-run').listeners.click();
+panel.advance(120000);
+assert.equal(panel.protocol().running, false, 'protocol ended at the block');
+assert.match(panel.protocol().summary, /AH sıçraması 370 ms'de.*PR, PP'yi 350 ms'de aştı/);
+panel.advance(6000);
+assert.equal(panel.intervals().rr, 800, 'pacing train cut at the block');
+
 // Offline: the shared worker at the site root, scope the whole site; no support or a failure resolves to null.
 const calls = [];
 assert.equal(await registerOffline({ serviceWorker: { register: async (url, options) => { calls.push([url, options]); return 'reg'; } } }), 'reg');
@@ -67,4 +80,4 @@ console.warn = () => {};
 assert.equal(await registerOffline({ serviceWorker: { register: async () => { throw new Error('denied'); } } }), null, 'registration failure');
 console.warn = warn;
 
-console.log('PASS app-shell: language order, offline worker registration, TR/EN shell texts, teaching notice, monitor + console layout');
+console.log('PASS app-shell: language order, offline worker registration, TR/EN shell texts, teaching notice, monitor + console layout, incremental pacing train cut at the block');

@@ -162,15 +162,27 @@ export function atrialCycle(events, site, t) {
   return a.length >= 3 ? Math.round(median(cycles(a))) : null;
 }
 
-/** Protocol plans: every step's stimuli and the time its readout window ends. */
+// Incremental atrial pacing without pauses: the cycle starts at 560 ms and
+// shortens by 10 ms about every 3 s down to the floor; the panel stops the
+// train at the first AV nodal block (Wenckebach).
+export const AVBCL_PLAN = Object.freeze({ start: 560, step: 10, floor: 250, stepMs: 3000 });
+
+/**
+ * Protocol plans: every step's stimuli and the time its readout window ends.
+ * A continuous plan (incremental pacing) is delivered as one train; the
+ * other plans deliver one step at a time.
+ */
 export function planProtocol(kind, { start, site = 'hra' }) {
   const steps = [];
   let t = start;
   if (kind === 'avbcl') {
-    for (let cl = 600; cl >= 280; cl -= 20) {
-      const stims = Array.from({ length: 8 }, (_, i) => ({ t: t + i * cl, site }));
-      steps.push({ cl, stims, end: stims[7].t + 1400 });
-      t = stims[7].t + 1500;
+    const { start: first, step, floor, stepMs } = AVBCL_PLAN;
+    for (let cl = first; cl >= floor; cl -= step) {
+      const n = Math.max(4, Math.round(stepMs / cl));
+      const stims = Array.from({ length: n }, (_, i) => ({ t: t + i * cl, site }));
+      // Read after the last beat of the step has reached the ventricle.
+      steps.push({ cl, stims, end: stims[n - 1].t + 600, continuous: true });
+      t = stims[n - 1].t + cl - step;   // the next step follows at its own, shorter cycle
     }
   } else if (kind === 'erp') {
     for (let s2 = 400; s2 >= 200; s2 -= 10) {
@@ -186,27 +198,48 @@ export function planProtocol(kind, { start, site = 'hra' }) {
   return steps;
 }
 
+/** Retrograde A sequence on the CS after t: 'concentric' (proximal first) or 'eccentric', or null. */
+function csSequence(events, t) {
+  const first = (ch) => of(events, ch, 'A').find((a) => RETRO.has(a.origin) && a.t > t && a.t < t + 300)?.t;
+  const prox = first('cs-910'), dist = first('cs-12');
+  return prox == null || dist == null ? null : prox <= dist ? 'concentric' : 'eccentric';
+}
+
 /** One protocol step's readout. */
 export function analyzeStep(kind, events, step) {
   const ch = PACE_CHANNEL[step.stims[0].site];
-  const aOn = of(events, ch, 'A'), hisA = of(events, 'his-d', 'A'), hisH = tOf(events, 'his-d', 'H');
+  const aOn = of(events, ch, 'A'), hisA = of(events, 'his-d', 'A'), hisH = of(events, 'his-d', 'H');
+  const surfaceV = tOf(events, 'ecg-ii', 'V');
   const capture = (s) => aOn.find((a) => a.t >= s.t && a.t <= s.t + 40);
   const junctionA = (s) => hisA.find((a) => a.t >= s.t && a.t <= s.t + 120 && !RETRO.has(a.origin));
-  const conducted = (s) => { const a = junctionA(s); if (!a) return null; const h = after(hisH, a.t); return h != null && h - a.t < 450 ? Math.round(h - a.t) : null; };
+  // The His this stimulus produced: H events name their junctional A (aj), so a
+  // long AH that ends after the next stimulus is still read on its own beat.
+  const hisOf = (s) => { const a = junctionA(s); return a ? hisH.find((h) => h.aj != null && Math.abs(h.aj - a.t) < 2) || null : null; };
+  const conducted = (s) => { const a = junctionA(s), h = hisOf(s); return a && h ? Math.round(h.t - a.t) : null; };
   if (kind === 'avbcl') {
-    const paced = step.stims.filter((s) => capture(s));
-    const ahs = paced.map(conducted);
-    return { cl: step.cl, captured: paced.length, block: ahs.some((x) => x == null), maxAh: Math.max(0, ...ahs.filter((x) => x != null)) };
+    const beats = step.stims.filter((s) => capture(s)).map((s) => {
+      const h = hisOf(s);
+      if (!h) return null;
+      const v = surfaceV.find((x) => x >= h.t);
+      return { ah: conducted(s), pr: v != null ? Math.round(v - s.t) : null };
+    });
+    const ok = beats.filter(Boolean), last = ok[ok.length - 1];
+    return {
+      cl: step.cl, captured: beats.length, block: beats.some((b) => !b),
+      ah: last?.ah ?? null, pr: last?.pr ?? null, maxAh: Math.max(0, ...ok.map((b) => b.ah)),
+      // Stimulus to QRS longer than the pacing cycle with 1:1 conduction.
+      prOverPp: ok.some((b) => b.pr != null && b.pr > step.cl)
+    };
   }
   if (kind === 'erp') {
     const s2 = step.stims[step.stims.length - 1], s1 = step.stims[step.stims.length - 2];
     const cap = Boolean(capture(s2));
     const ah = cap ? conducted(s2) : null;
-    const h = ah != null ? after(hisH, s2.t) : null;
+    const h = ah != null ? hisOf(s2).t : null;
     const echo = h != null && hisA.some((a) => RETRO.has(a.origin) && a.t > h && a.t < h + 300);
     const vs = tOf(events, 'rv', 'V').filter((v) => v > s2.t && v < step.end);
     const sustained = vs.length >= 4 && cycles(vs).slice(-3).every((c) => c < 500);
-    return { s2: step.s2, capture: cap, ah, ahS1: conducted(s1), echo, sustained };
+    return { s2: step.s2, capture: cap, ah, ahS1: conducted(s1), echo, echoSequence: echo ? csSequence(events, h) : null, sustained };
   }
   if (kind === 'snrt') {
     const last = step.stims[step.stims.length - 1].t;
@@ -218,7 +251,18 @@ export function analyzeStep(kind, events, step) {
 
 /** Protocol summary from the step readouts. */
 export function summarizeProtocol(kind, rows, { sinusCl = 800 } = {}) {
-  if (kind === 'avbcl') return { avbcl: rows.find((r) => r.block)?.cl ?? null };
+  if (kind === 'avbcl') {
+    // Rows after the first block are not read (the panel stops the train there).
+    const stop = rows.findIndex((r) => r.block);
+    const read = stop >= 0 ? rows.slice(0, stop) : rows;
+    const pr = read.find((r) => r.prOverPp);
+    // AH jump between consecutive steps: >= 50 ms for the 10 ms shorter cycle.
+    const jumpAt = read.findIndex((r, i) => i > 0 && r.ah != null && read[i - 1].ah != null && r.ah - read[i - 1].ah >= 50);
+    return {
+      avbcl: stop >= 0 ? rows[stop].cl : null, jump: jumpAt > 0 ? read[jumpAt].cl : null,
+      prOverPp: pr?.cl ?? null, prAh: pr?.ah ?? null, maxAh: Math.max(0, ...read.map((r) => r.maxAh))
+    };
+  }
   if (kind === 'erp') {
     // Steps after an induced tachycardia are not baseline measurements.
     const stop = rows.findIndex((r) => r.sustained);
@@ -227,7 +271,8 @@ export function summarizeProtocol(kind, rows, { sinusCl = 800 } = {}) {
     const avnErp = rows.find((r) => r.capture && r.ah == null)?.s2 ?? null;
     let jump = null;
     for (let i = 1; i < rows.length; i++) if (rows[i].ah != null && rows[i - 1].ah != null && rows[i].ah - rows[i - 1].ah >= 50) { jump = rows[i].s2; break; }
-    return { aerp, avnErp, jump, echo: rows.find((r) => r.echo)?.s2 ?? null, induced: rows.find((r) => r.sustained)?.s2 ?? null };
+    const echoRow = rows.find((r) => r.echo);
+    return { aerp, avnErp, jump, echo: echoRow?.s2 ?? null, echoSequence: echoRow?.echoSequence ?? null, induced: rows.find((r) => r.sustained)?.s2 ?? null };
   }
   if (kind === 'snrt') {
     const snrt = rows[0]?.snrt ?? null;

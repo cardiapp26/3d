@@ -129,11 +129,24 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     await page.evaluate(() => { window.epsLab.live.advance(100000); });
     const proto = await page.evaluate(() => window.epsLab.live.protocol());
     assert.equal(proto.running, false);
-    assert.match(proto.summary, /AV blok siklusu \(Wenckebach\): 280 ms/);
+    assert.match(proto.summary, /AV blok siklusu \(Wenckebach\): 290 ms/);
+    assert.match(proto.summary, /PR hiçbir adımda PP'yi aşmadı/, 'normal node: no PR > PP');
+
+    // Dual AV nodal physiology with incremental pacing: AH jump, then PR > PP; the train stops at the first block.
+    await page.evaluate(() => window.epsLab.live.setCase('avnrt-typical'));
+    await page.locator('[data-ep-live-protocol]').selectOption('avbcl');
+    await page.locator('[data-ep-live-protocol-run]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(120000); });
+    const dual = await page.evaluate(() => window.epsLab.live.protocol());
+    assert.equal(dual.running, false, 'protocol ends at the first block');
+    assert.match(dual.summary, /AH sıçraması 370 ms'de/);
+    assert.match(dual.summary, /PR, PP'yi 350 ms'de aştı \(AH \d+ ms\): uyarı yavaş yoldan iniyor; dual AV düğüm fizyolojisini destekler/);
+    assert.ok((await page.locator('[data-ep-live-protocol-rows] li').allTextContents()).some((t) => /^S1 350: 1:1, AH \d+, PR \d+ > PP$/.test(t)), 'row marks PR > PP');
     assert.ok(await page.locator('[data-ep-live-protocol-rows] li').count() >= 10, 'protocol rows listed');
 
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP');
   } finally {
     await browser.close();
   }

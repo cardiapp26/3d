@@ -69,7 +69,8 @@ export function egmSample(recording, channelId, tMs) {
   if (index < 0 || !Number.isFinite(t)) return 0;
   // RF artifact rides only on the ablation channel.
   const rf = Boolean(recording.rf) && channelId === 'abl-d';
-  let value = baseline(t, index, rf);
+  // t0: absolute time of the window start (live monitor), so the baseline noise stays put while the strip sweeps.
+  let value = baseline(t + (recording.t0 || 0), index, rf);
   for (const e of list || []) value += spike(t, e);
   return value;
 }
@@ -197,6 +198,27 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
 }
 
 /**
+ * Times at which a channel is sampled for drawing: about one per pixel, on a
+ * grid fixed to absolute time (recording.t0), plus each event's peaks (centre
+ * and, for a biphasic spike, centre +/- sigma). Spikes narrower than a pixel
+ * then keep their true height whatever the window position, so a sweeping
+ * strip does not flicker.
+ */
+export function sampleTimes(recording, channelId, from, to, plotW) {
+  const steps = Math.max(120, Math.floor(plotW));
+  const step = (to - from) / steps;
+  const t0 = recording?.t0 || 0;
+  const first = from + ((((-(from + t0)) % step) + step) % step);
+  const times = [from];
+  for (let t = first; t < to; t += step) times.push(t);
+  times.push(to);
+  for (const e of recording?.events?.[channelId] || []) {
+    for (const t of e.mono ? [e.t] : [e.t - e.sigma, e.t, e.t + e.sigma]) if (t > from && t < to) times.push(t);
+  }
+  return times.sort((a, b) => a - b);
+}
+
+/**
  * Draw a synthetic recording on a canvas (DPR aware, dark recorder look).
  * @param {HTMLCanvasElement} canvas
  * @param {object} recording from ep-cases.js (epRecording(id)) or ep-maneuver-sim.js
@@ -230,19 +252,17 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
   drawMarkers(ctx, recording, geo, lang, height);
 
   const gain = rowH * 0.42;
-  const steps = Math.max(120, Math.floor(plotW));
   ctx.lineWidth = 1.3;
   ctx.lineJoin = 'round';
   channels.forEach((ch, i) => {
     const mid = geo.rowTop(i) + rowH / 2;
     ctx.strokeStyle = COLORS[ch.id] || '#c9d6cf';
     ctx.beginPath();
-    for (let s = 0; s <= steps; s++) {
-      const t = from + (s / steps) * (to - from);
+    sampleTimes(recording, ch.id, from, to, plotW).forEach((t, s) => {
       const y = mid - egmSample(recording, ch.id, t) * gain;
       if (s === 0) ctx.moveTo(geo.x(t), y);
       else ctx.lineTo(geo.x(t), y);
-    }
+    });
     ctx.stroke();
   });
   drawCalipers(ctx, recording, geo, rows);

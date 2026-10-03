@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { createLiveHeart, planTrain } from '../../src/eps/ep-live-model.js';
 import {
   tclBefore, hisPvcTime, analyzeHisPvc, overdriveStart, planOverdrive, atriumEntrained, analyzeOverdrive, interpretOverdrive,
-  interpretSite, planProtocol, analyzeStep, summarizeProtocol, atrialCycle
+  interpretSite, planProtocol, analyzeStep, summarizeProtocol, atrialCycle, AVBCL_PLAN
 } from '../../src/eps/ep-live-maneuvers.js';
 
 const tr = (site, extras, s1 = 600, n = 8) => planTrain({ site, start: 1000, s1, n, extras });
@@ -81,10 +81,25 @@ const protocol = (kind, c) => {
   const ev = h.events(0, 1e9);
   return summarizeProtocol(kind, steps.map((s) => analyzeStep(kind, ev, s)), { sinusCl: c === 'sinus-node-disease' ? 1000 : 800 });
 };
-assert.equal(protocol('avbcl', 'normal').avbcl, 280, 'Wenckebach cycle length');
-assert.deepEqual(protocol('erp', 'normal'), { aerp: 210, avnErp: 290, jump: null, echo: null, induced: null });
+// Incremental pacing: one train from 560 ms, 10 ms shorter about every 3 s, no pause between steps.
+const inc = planProtocol('avbcl', { start: 2000 });
+assert.deepEqual([inc[0].cl, inc[1].cl, AVBCL_PLAN.step], [560, 550, 10]);
+assert.ok(inc.every((s) => s.continuous && Math.abs(s.stims.length * s.cl - AVBCL_PLAN.stepMs) <= s.cl), 'about 3 s per step');
+assert.equal(inc[1].stims[0].t - inc[0].stims.at(-1).t, 550, 'the next step follows at its own cycle, without a pause');
+// Normal node: AH lengthens smoothly, PR never exceeds PP, Wenckebach.
+assert.deepEqual(protocol('avbcl', 'normal'), { avbcl: 290, jump: null, prOverPp: null, prAh: null, maxAh: 185 });
+// Dual AV nodal physiology (typical AVNRT substrate): AH jump, then PR > PP with 1:1 conduction.
+const incAvnrt = protocol('avbcl', 'avnrt-typical');
+assert.equal(incAvnrt.jump, 370, 'AH jump during incremental pacing');
+assert.equal(incAvnrt.prOverPp, 350, 'PR exceeds the pacing cycle');
+assert.ok(incAvnrt.prAh > 180 && incAvnrt.avbcl < incAvnrt.prOverPp, `slow pathway AH > 180 ms, block later ${JSON.stringify(incAvnrt)}`);
+// PR > PP without a jump (decremental fast pathway only) is reported without the dual pathway reading.
+const incOrt = protocol('avbcl', 'ort-left');
+assert.equal(incOrt.jump, null); assert.ok(incOrt.prOverPp != null, 'PR > PP can occur without a jump');
+assert.deepEqual(protocol('erp', 'normal'), { aerp: 210, avnErp: 290, jump: null, echo: null, echoSequence: null, induced: null });
 const erpAvnrt = protocol('erp', 'avnrt-typical');
 assert.equal(erpAvnrt.jump, 370); assert.equal(erpAvnrt.induced, 370, 'AH jump, echo and AVNRT at S2 370; protocol stops there');
+assert.equal(erpAvnrt.echoSequence, 'concentric', 'echo A: CS proximal before distal');
 const snrt = protocol('snrt', 'normal'), snd = protocol('snrt', 'sinus-node-disease');
 assert.ok(!snrt.abnormal && snrt.csnrt < 550, `normal SNRT ${JSON.stringify(snrt)}`);
 assert.ok(snd.abnormal && snd.csnrt > 550, `sinus node disease ${JSON.stringify(snd)}`);

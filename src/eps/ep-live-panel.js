@@ -214,7 +214,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     state.protocol = { kind: state.protocolKind, steps, index: 0 };
     state.protocolRows = [];
     state.protocolSummary = T().protocolRunning;
-    heart.stimulate(steps[0].stims);
+    // A continuous plan (incremental pacing) goes out as one train; the others step by step.
+    heart.stimulate(steps[0].continuous ? steps.flatMap((s) => s.stims) : steps[0].stims);
     renderProtocol();
   }
   function finishProtocol() {
@@ -233,9 +234,12 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     const row = analyzeStep(pr.kind, heart.events(step.stims[0].t - 3000, simNow), step);
     state.protocolRows.push(row);
     pr.index++;
-    // An induced tachycardia ends the extrastimulus protocol.
-    if ((pr.kind === 'erp' && row.sustained) || pr.index >= pr.steps.length) finishProtocol();
-    else { heart.stimulate(pr.steps[pr.index].stims); renderProtocol(); }
+    // An induced tachycardia ends the extrastimulus protocol; the first AV nodal
+    // block (Wenckebach) ends incremental pacing, whose train is cut there.
+    const blocked = pr.kind === 'avbcl' && row.block;
+    if (blocked) heart.stopPacing();
+    if (blocked || (pr.kind === 'erp' && row.sustained) || pr.index >= pr.steps.length) finishProtocol();
+    else { if (!step.continuous) heart.stimulate(pr.steps[pr.index].stims); renderProtocol(); }
   }
 
   function freeze(flag) {
@@ -321,7 +325,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     const raw = heart.events(from - 80, end + 80);
     const events = Object.fromEntries(Object.entries(raw).map(([ch, list]) => [ch, list.map((e) => ({ ...e, t: e.t - from }))]));
     const local = state.caliperOn ? { a: state.caliper.a == null ? null : state.caliper.a - from, b: state.caliper.b == null ? null : state.caliper.b - from } : null;
-    drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local }) || drawn;
+    drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, t0: from, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local }) || drawn;
     const iv = liveIntervals(heart.events(end - 2500, end));
     const t = T(), f = (v) => (v == null ? t.none : `${v} ms`);
     readout.textContent = `${t.intervals}: PP ${f(iv.pp)} · RR ${f(iv.rr)} · AH ${f(iv.ah)} · HV ${f(iv.hv)} · VA ${f(iv.va)}`;

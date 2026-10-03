@@ -136,10 +136,12 @@ export function createLiveHeart(caseId = 'normal') {
       last.fp = t;
       schedule(t + p.fp.retro, 'atrium', { origin: 'avn-fast' });
     } else if (data.path === 'fast' && spRetroReady(t)) spRetro(t);
-    record('his-d', ev('H', t, 0.7, 4));
-    record('his-p', ev('H', t, 0.3, 4));
+    // aj: time of the junctional A this His came from (reads PR > PP in continuous pacing).
+    const aj = data.aJunction ?? null;
+    record('his-d', ev('H', t, 0.7, 4, { aj }));
+    record('his-p', ev('H', t, 0.3, 4, { aj }));
     last.his = t;
-    schedule(t + p.hv, 'ventricle', { origin: 'his', h: t, aJunction: data.aJunction ?? null });
+    schedule(t + p.hv, 'ventricle', { origin: 'his', h: t, aJunction: aj });
   }
 
   // Retrograde slow-pathway conduction: its lower end recovered and no antegrade wave still in it.

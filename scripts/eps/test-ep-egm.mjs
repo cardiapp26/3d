@@ -4,7 +4,7 @@
 // with ep-panel.js (phase 2).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { egmSample, drawEgm, selectableChannels, timeWindow, timeAtX, eventsNear } from '../../src/eps/ep-egm.js';
+import { egmSample, drawEgm, selectableChannels, timeWindow, timeAtX, eventsNear, sampleTimes } from '../../src/eps/ep-egm.js';
 import { EP_RECORDING_IDS, epRecording } from '../../src/eps/ep-cases.js';
 
 const source = readFileSync(new URL('../../src/eps/ep-egm.js', import.meta.url), 'utf8');
@@ -79,4 +79,25 @@ const hA = typ.events['his-d'].find((e) => e.type === 'A');
 assert.ok(eventsNear(typ, hA.t + 3, ['his-d']).some((e) => e.type === 'A'), 'inspection finds the nearby event');
 
 
-console.log('PASS ep-egm: samples for all recordings, view helpers (channels, zoom, inspection), DPR drawing with watermark/calipers/markers');
+// Sweeping monitor: a spike narrower than a pixel keeps its drawn height and
+// the baseline stays put whatever the window position (no flicker).
+{
+  const spikeAt = 5000.37, span = 6000, plotW = 600;   // 10 ms per pixel, sigma 4 ms
+  const peaks = [], base = [];
+  for (let k = 0; k < 25; k++) {
+    const from = 1000 + k * 3.7;                      // the window moves by a fraction of a pixel per frame
+    const rec = { t0: from, events: { 'his-d': [{ type: 'H', t: spikeAt - from, amp: 0.7, sigma: 4 }] } };
+    const times = sampleTimes(rec, 'his-d', 0, span, plotW);
+    peaks.push(Math.max(...times.map((t) => egmSample(rec, 'his-d', t))));
+    const quiet = { t0: from, events: { 'his-d': [] } };
+    const at = 3000 - from;                           // the same absolute moment
+    base.push(egmSample(quiet, 'his-d', at));
+  }
+  assert.ok(Math.max(...peaks) - Math.min(...peaks) < 1e-9, `spike height stable ${Math.min(...peaks)}..${Math.max(...peaks)}`);
+  assert.ok(Math.abs(peaks[0] - 0.7) < 0.05, 'true peak drawn');
+  assert.ok(Math.max(...base) - Math.min(...base) < 1e-9, 'baseline fixed to absolute time');
+  const grid = sampleTimes({ t0: 1003.7, events: {} }, 'his-d', 0, span, plotW).slice(1, -1);
+  assert.ok(grid.every((t) => Math.abs(((t + 1003.7) / 10) - Math.round((t + 1003.7) / 10)) < 1e-6), 'grid on absolute multiples of the sample step');
+}
+
+console.log('PASS ep-egm: samples for all recordings, view helpers (channels, zoom, inspection), DPR drawing with watermark/calipers/markers, flicker-free sweep sampling');
