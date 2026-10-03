@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { fetchCountryCode, initialLanguage, languageForCountry, readStoredLanguage } from '../src/entry-language.js';
+import { fetchCountryCode, initialLanguage, languageForCountry, readStoredLanguage, rememberLanguage } from '../src/entry-language.js';
 
 assert.equal(languageForCountry('TR'), 'tr');
 assert.equal(languageForCountry('tr'), 'tr');
@@ -18,6 +18,14 @@ assert.equal(readStoredLanguage(storage), null, 'a saved language without an exp
 storage.setItem('cardia_lang_explicit', '1');
 assert.equal(readStoredLanguage(storage), 'en');
 assert.equal(initialLanguage(storage), 'en');
+
+// The EPS page stores its TR/EN click the same way, so the 3D page follows it.
+const shared = new Map();
+const sharedStorage = { getItem: key => (shared.has(key) ? shared.get(key) : null), setItem: (key, value) => shared.set(key, value) };
+rememberLanguage('tr', sharedStorage);
+assert.equal(readStoredLanguage(sharedStorage), 'tr', 'explicit choice shared between pages');
+rememberLanguage('xx', sharedStorage);
+assert.equal(readStoredLanguage(sharedStorage), 'tr', 'unknown values store Turkish');
 
 const fetched = await fetchCountryCode(async () => ({
   ok: true,

@@ -3,18 +3,23 @@
 // the live panel builds its workstation layout (monitor + console) against a
 // minimal fake DOM.
 import assert from 'node:assert/strict';
-import { APP_TEXT, LANGS, resolveLang, viewFromHash } from '../../src/eps/app-text.js';
+import { APP_TEXT, LANGS, resolveLang, viewFromHash, clipFromHash } from '../../src/eps/app-text.js';
 import { createLivePanel } from '../../src/eps/ep-live-panel.js';
+import { registerOffline, WORKER_URL, WORKER_SCOPE } from '../../src/eps/offline.js';
 
 assert.equal(resolveLang('', null), 'tr', 'default Turkish');
-assert.equal(resolveLang('', 'en'), 'en', 'stored choice');
-assert.equal(resolveLang('?lang=en', 'tr'), 'en', 'query wins over storage');
+assert.equal(resolveLang('', 'en'), 'en', 'shared choice');
+assert.equal(resolveLang('?lang=en', 'tr'), 'en', 'query wins over the shared choice');
 assert.equal(resolveLang('?lang=de', 'xx'), 'tr', 'unknown values ignored');
 const views = ['diagnosis', 'maneuver', 'treatment', 'live'];
 assert.equal(viewFromHash('', views), 'live', 'live by default');
 assert.equal(viewFromHash('#/maneuver', views), 'maneuver');
 assert.equal(viewFromHash('#treatment', views), 'treatment');
 assert.equal(viewFromHash('#/nope', views), 'live', 'unknown view falls back');
+assert.equal(clipFromHash('#/clip/af-pvi-baseline'), 'af-pvi-baseline', 'recording link');
+assert.equal(clipFromHash('#/clip/'), null);
+assert.equal(clipFromHash('#/clip/a b'), null, 'ids only');
+assert.equal(clipFromHash('#/live'), null);
 
 const keys = Object.keys(APP_TEXT.tr).sort();
 for (const lang of LANGS) {
@@ -50,4 +55,16 @@ for (const cls of ['ep-live-stim', 'ep-live-maneuvers', 'ep-live-protocols', 'ep
 panel.advance(3000);
 assert.equal(panel.intervals().rr, 800, 'sinus rhythm in the default case after stepping');
 
-console.log('PASS app-shell: language order, TR/EN shell texts, teaching notice, monitor + console layout');
+// Offline: the shared worker at the site root, scope the whole site; no support or a failure resolves to null.
+const calls = [];
+assert.equal(await registerOffline({ serviceWorker: { register: async (url, options) => { calls.push([url, options]); return 'reg'; } } }), 'reg');
+assert.deepEqual(calls, [['../sw.js', { scope: '../', updateViaCache: 'none' }]]);
+assert.equal(new URL(WORKER_URL, 'https://3d.drtr.uk/eps/').pathname, '/sw.js', 'worker at the site root');
+assert.equal(new URL(WORKER_SCOPE, 'https://3d.drtr.uk/eps/').pathname, '/', 'scope covers both pages');
+assert.equal(await registerOffline({}), null, 'no service worker support');
+const warn = console.warn;
+console.warn = () => {};
+assert.equal(await registerOffline({ serviceWorker: { register: async () => { throw new Error('denied'); } } }), null, 'registration failure');
+console.warn = warn;
+
+console.log('PASS app-shell: language order, offline worker registration, TR/EN shell texts, teaching notice, monitor + console layout');

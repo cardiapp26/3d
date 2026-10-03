@@ -1,32 +1,43 @@
-// EPS laboratory entry: header with the language switch, the EP panel
+// EPS laboratory entry: header with the link back to the 3D simulator and
+// the language switch (shared with the 3D page), the EP panel
 // (Diagnosis / Maneuvers / Treatment lessons and the live recording
 // workstation, ep-panel.js) and the site notice. The open tab lives in the
-// address (#/live, #/diagnosis, #/maneuver, #/treatment).
+// address (#/live, #/diagnosis, #/maneuver, #/treatment); #/clip/<id> opens
+// one recording (the 3D ablation lesson links to its clips this way).
 import './style.css';
 import './lesson.css';
-import { APP_TEXT, LANGS, LANG_KEY, resolveLang, viewFromHash } from './app-text.js';
+import { APP_TEXT, LANGS, CARDIA_URL, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
 import { createEpPanel, EP_VIEWS } from './ep-panel.js';
+import { initialLanguage, rememberLanguage } from '../entry-language.js';
+import { registerOffline } from './offline.js';
 
-const readStored = () => { try { return localStorage.getItem(LANG_KEY); } catch { return null; } };
-const writeStored = (lang) => { try { localStorage.setItem(LANG_KEY, lang); } catch { /* private mode */ } };
-
-let lang = resolveLang(location.search, readStored());
+let lang = resolveLang(location.search, initialLanguage());
 const getLang = () => lang;
 
 const title = document.querySelector('[data-app-title]');
 const subtitle = document.querySelector('[data-app-subtitle]');
 const langGroup = document.querySelector('[data-app-lang]');
 const shortcuts = document.querySelector('[data-app-shortcuts]');
+const back = document.querySelector('[data-app-back]');
 const disclaimer = document.querySelector('[data-app-disclaimer]');
 const workspace = document.querySelector('[data-app-workspace]');
 
 const panel = createEpPanel(workspace, {
   getLang,
-  initial: viewFromHash(location.hash, EP_VIEWS),
+  initial: clipFromHash(location.hash) ? 'treatment' : viewFromHash(location.hash, EP_VIEWS),
   onSection: (id) => { history.replaceState(null, '', `#/${id}`); }
 });
 const live = panel.live;
-window.addEventListener('hashchange', () => panel.showView(viewFromHash(location.hash, EP_VIEWS)));
+
+/** Open the tab or the recording the address names (an unknown clip leaves the lessons open). */
+function followHash() {
+  const clip = clipFromHash(location.hash);
+  if (!clip) { panel.showView(viewFromHash(location.hash, EP_VIEWS)); return; }
+  panel.showView(panel.getActiveView() === 'live' ? 'treatment' : panel.getActiveView());
+  panel.setScenario(clip);
+}
+followHash();
+window.addEventListener('hashchange', followHash);
 
 const langButtons = LANGS.map((id) => {
   const button = document.createElement('button');
@@ -47,13 +58,16 @@ function renderShell() {
   langGroup.setAttribute('aria-label', t.langLabel);
   for (const button of langButtons) button.setAttribute('aria-pressed', String(button.dataset.appLangOption === lang));
   shortcuts.textContent = t.shortcuts;
+  back.textContent = t.back;
+  back.title = t.backTitle;
+  back.href = CARDIA_URL;
   disclaimer.textContent = t.disclaimer;
 }
 
 function setLang(next) {
   if (!LANGS.includes(next) || next === lang) return;
   lang = next;
-  writeStored(lang);
+  rememberLanguage(lang);
   renderShell();
   panel.setLanguage(lang);
 }
@@ -70,6 +84,7 @@ document.addEventListener('keydown', (event) => {
 window.addEventListener('resize', () => { if (panel.getActiveView() === 'live') live.render(); else panel.draw(); });
 
 renderShell();
+window.addEventListener('load', () => { registerOffline(); });
 
 /** Test hooks (browser tests). */
 window.epsLab = { panel, live, setLang, getLang };

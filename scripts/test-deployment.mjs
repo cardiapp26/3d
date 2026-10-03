@@ -5,7 +5,7 @@ const base = process.env.APP_URL;
 if (!base) throw new Error('APP_URL must point to a server using nginx.conf (not Vite)');
 const assets = fs.readdirSync('dist/assets').filter(name => /-[A-Za-z0-9_-]{8,}\.(js|css|wasm)$/.test(name));
 assert.ok(assets.length, 'build dist before deployment verification');
-for (const path of ['/index.html', '/sw.js', '/models/cardiovascular.glb', '/draco/draco_decoder.wasm']) {
+for (const path of ['/index.html', '/eps/', '/eps/index.html', '/sw.js', '/models/cardiovascular.glb', '/draco/draco_decoder.wasm']) {
   const res = await fetch(new URL(path, base), { method: 'HEAD', cache: 'no-store' });
   assert.equal(res.status, 200, path);
   assert.match(res.headers.get('cache-control') || '', /no-cache/, path);
@@ -19,6 +19,7 @@ assert.deepEqual(await release.json(), expected, 'served release is current');
 const index = await (await fetch(new URL('/index.html', base), { cache: 'no-store' })).text();
 assert.equal(index.match(/name="app-build" content="([^"]+)"/)?.[1], expected.build, 'served HTML build agrees');
 assert.equal(index.match(/name="app-version" content="([^"]+)"/)?.[1], expected.version, 'served HTML version agrees');
+assert.match(await (await fetch(new URL('/eps/', base), { cache: 'no-store' })).text(), /src="[^"]*\/assets\/eps-[^"]+\.js"/, 'EPS page served with its own bundle');
 const worker = await (await fetch(new URL('/sw.js', base), { cache: 'no-store' })).text();
 assert.equal(worker.match(/const VERSION = '([^']+)'/)?.[1], expected.build, 'served worker cache agrees');
 for (const name of assets) {

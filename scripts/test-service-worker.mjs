@@ -67,4 +67,10 @@ rejectWrites = false;
 offline = true;
 assert.equal((await request('/assets/missing-12345678.js')).status, 504, 'missing JS never receives HTML shell');
 assert.ok((await request('/lesson', 'navigate')).ok, 'offline navigation may use HTML shell');
-console.log('PASS service-worker: fixed names revalidate, hashed assets cache, offline fallback, isolated cache ownership');
+// Two pages: each offline navigation gets the shell of its own page.
+assert.equal(await (await request('/lesson', 'navigate')).text(), `fresh:${origin}/index.html`, 'simulator shell for simulator paths');
+assert.equal(await (await request('/eps/?lang=en', 'navigate')).text(), `fresh:${origin}/eps/index.html`, 'EPS shell for EPS paths');
+assert.equal(await (await request('/eps', 'navigate')).text(), `fresh:${origin}/eps/index.html`);
+assert.equal(await (await request('/epsilon', 'navigate')).text(), `fresh:${origin}/index.html`, 'prefix match stops at the path segment');
+assert.ok((await request('/eps/', 'navigate')).ok, 'EPS page precached at install');
+console.log('PASS service-worker: fixed names revalidate, hashed assets cache, offline fallback per page (simulator, EPS), isolated cache ownership');

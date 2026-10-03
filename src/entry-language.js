@@ -26,6 +26,17 @@ export function readStoredLanguage(storage) {
   return null;
 }
 
+/** Store an explicit TR/EN choice (shared by the 3D page and the EPS page). */
+export function rememberLanguage(lang, storage) {
+  const store = storage || (typeof localStorage !== 'undefined' ? localStorage : null);
+  try {
+    store?.setItem(LANG_KEY, lang === 'en' ? 'en' : 'tr');
+    store?.setItem(EXPLICIT_KEY, '1');
+  } catch {
+    /* private storage */
+  }
+}
+
 export function initialLanguage(storage) {
   const store = storage || (typeof localStorage !== 'undefined' ? localStorage : null);
   if (store) {

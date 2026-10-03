@@ -2,13 +2,20 @@
 // Strategy:
 //   - Fixed names: revalidate online, same-build cache fallback offline
 //   - Vite content-hashed assets: cache-first
+//   - Two pages: the 3D simulator (./) and the EPS laboratory (./eps/); an
+//     offline navigation falls back to the shell of its own page
 const VERSION = 'v10';
 const CACHE = `cardia-${VERSION}`;
 
 const CORE = [
   './',
-  './index.html'
+  './index.html',
+  './eps/',
+  './eps/index.html'
 ];
+
+/** Offline shell of a navigation: the EPS page for /eps/..., else the simulator. */
+const shellFor = (pathname) => (/^\/eps(\/|$)/.test(pathname) ? './eps/index.html' : './index.html');
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
@@ -70,7 +77,7 @@ self.addEventListener('fetch', (e) => {
         const cached = !versionCheck && await cache.match(req);
         if (cached) return cached;
         if (req.mode === 'navigate') {
-          const shell = await cache.match('./index.html');
+          const shell = await cache.match(shellFor(url.pathname));
           if (shell) return shell;
         }
         return new Response('Offline', { status: 504, statusText: 'Offline' });

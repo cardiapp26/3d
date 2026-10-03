@@ -31,6 +31,9 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 .app-brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
 .app-tools { display: flex; align-items: center; gap: 12px; }
 .app-shortcuts { font: 11px var(--mono); color: var(--muted); }
+.app-back { color: var(--text); text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; font-size: 12px; }
+.app-back::before { content: '\2190\00a0'; color: var(--accent); }
+.app-back:hover { border-color: var(--accent); }
 .app-lang { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .app-lang button { border: 0; background: transparent; padding: 4px 10px; font-size: 11.5px; color: var(--muted); }
 .app-lang button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
