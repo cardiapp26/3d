@@ -1,7 +1,7 @@
 {
-  "version": "1.10.0",
-  "build": "v10",
-  "date": "2026-10-01",
+  "version": "1.11.0",
+  "build": "v11",
+  "date": "2026-10-03",
   "name": "Cardia 3D",
-  "description": "EP AH jump/echo, PVI placement, atropine/Isuprel examples, PV loop, TEE presets and update-cache correction"
+  "description": "EPS laboratory page (/eps/) with live recording, dual AV nodal protocols and offline support; ICE review, ventricle regions, fluoroscopy contours, moderator band, Koch labels"
 }

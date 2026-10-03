@@ -4,7 +4,7 @@
 //   - Vite content-hashed assets: cache-first
 //   - Two pages: the 3D simulator (./) and the EPS laboratory (./eps/); an
 //     offline navigation falls back to the shell of its own page
-const VERSION = 'v10';
+const VERSION = 'v11';
 const CACHE = `cardia-${VERSION}`;
 
 const CORE = [
