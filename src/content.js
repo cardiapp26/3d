@@ -863,6 +863,19 @@ export const rawStructures = {
     },
     source: 'ACC/AHA coronary definitions, 2014'
   },
+  'moderator-band': {
+    tr: {
+      title: 'Moderatör bant (septomarjinal bant) · şematik',
+      description: 'Septumdaki septomarjinal trabekülasyondan ayrılıp RV boşluğunu geçerek serbest duvardaki anterior papiller kasın tabanına uzanan kas demeti. İçinde sağ dal (RBB) taşır; RV\'nin giriş bölümünü trabeküllü apikal bölümden ayıran işarettir. Sol ventrikülde karşılığı yoktur: ekoda sağ ventrikülü tanımada kullanılır.',
+      clinical: 'A4C\'de RV apeksine yakın kalın bir bant olarak görülür; trombüs, tümör veya hipertrofi ile karışabilir. Sağ dal bu bantla anterior papiller kasa ulaştığı için bant çevresindeki hasar sağ dal bloğuna yol açabilir. RV apeks ve septum elektrot yerleşiminde ve RV kaynaklı (moderatör bant) ventriküler aritmilerde nirengi noktasıdır. Atlasta ayrı düğüm yoktur: ölçülmüş RBB yolu boyunca, septal girişten anterior papiller kas tabanına çizilmiş öğretim geometrisidir.'
+    },
+    en: {
+      title: 'Moderator band (septomarginal band) · schematic',
+      description: 'The muscle bundle that leaves the septomarginal trabeculation on the septum and crosses the RV cavity to the base of the anterior papillary muscle on the free wall. It carries the right bundle branch and marks the border between the RV inlet and the trabeculated apical part. The LV has no counterpart: on echo it helps identify the morphological right ventricle.',
+      clinical: 'In the A4C it shows as a thick band near the RV apex and can be mistaken for thrombus, tumour or hypertrophy. Because the right bundle reaches the anterior papillary muscle through it, damage around the band can cause right bundle branch block. A landmark for RV apical and septal lead placement and for ventricular arrhythmias arising from the moderator band. The atlas has no separate node: teaching geometry drawn along the measured RBB path from the septal insertion to the anterior papillary base.'
+    },
+    source: 'Ho and Nihoyannopoulos, Anatomy, echocardiography, and normal right ventricular dimensions, Heart 2006;92(Suppl 1):i2-i13'
+  },
   'rv-papillary': {
     tr: {
       title: 'RV papiller kasları',
@@ -1647,6 +1660,7 @@ export const uiTranslations = {
     rvFocusRv: 'Sağ ventrikül',
     rvFocusTv: 'Triküspit kapak',
     rvFocusPv: 'Pulmoner kapak',
+    rvFocusMb: 'Moderatör bant',
     lvNote: 'Yalnız sol ventrikül: mitral kapak, papiller kaslar ve çıkış yolunda aort kapakçıkları. Renkler ASE/AHA 16 segmentini (bazal 1–6, orta 7–12, apikal 13–16) ve LVOT\'yi gösterir; Segment çemberi standart eko düzlemlerine göre yerleştirilmiş öğretim bölgeleridir: aort kapağı yönü anteroseptal, triküspit anulus yönü inferoseptal segmentlerin ortasıdır. Kapakları görmek için duvar kesitini açın.',
     lvFocusLv: 'Sol ventrikül',
     lvFocusMv: 'Mitral kapak',
@@ -1806,6 +1820,7 @@ export const uiTranslations = {
     rvFocusRv: 'Right ventricle',
     rvFocusTv: 'Tricuspid valve',
     rvFocusPv: 'Pulmonary valve',
+    rvFocusMb: 'Moderator band',
     lvNote: 'The left ventricle alone: mitral valve, papillary muscles and the aortic cusps in the outflow tract. Colours show the ASE/AHA 16 segments (basal 1–6, mid 7–12, apical 13–16) and the LVOT; The segment ring is a teaching layout placed on the standard echo planes: the aortic valve direction is the middle of the anteroseptal segments, the tricuspid annulus direction the middle of the inferoseptal segments. Open the wall section to see the valves.',
     lvFocusLv: 'Left ventricle',
     lvFocusMv: 'Mitral valve',

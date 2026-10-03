@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { ahaSegment, anchoredAngles, segmentWall, lvRegions, LV_SEGMENTS } from '../src/ventricle-regions.js';
 import { pulmonaryCusp, wholeMesh, TRICUSPID_LEAFLETS } from '../src/valve-parts.js';
 import { partPieces } from '../src/echo-renderer-parts.js';
+import { moderatorRadius, createModeratorBand } from '../src/moderator-band.js';
 import { missingParts } from '../src/echo-training.js';
 
 // AHA 16 segments: levels by thirds, six 60° basal/mid sectors, four 90° apical sectors.
@@ -64,4 +65,10 @@ const view = { parts: { lv: ['3', '9'], mitral: [['A2', 'A3'], 'P2'] } };
 assert.deepEqual(missingParts(view, { 'lv:3': 1, 'lv:9': 1, 'mitral:A3': 1, 'mitral:P2': 1 }), [], 'any-of groups and required parts met');
 assert.deepEqual(missingParts(view, { 'lv:3': 1, 'mitral:A2': 0.01 }).map(m => m.text), ['9', 'A2/A3', 'P2']);
 
-console.log('PASS: ventricle regions (AHA 16 segments, valve-plane anchors, LVOT), valve parts, part pieces and part criteria');
+// Moderator band: flared at both insertions, between the measured end points.
+assert.ok(moderatorRadius(0) > moderatorRadius(0.5) && moderatorRadius(1) > moderatorRadius(0.5));
+const mb = createModeratorBand({ septal: new THREE.Vector3(0, 0, 0), papillary: new THREE.Vector3(1, 0, 0), rvCenter: new THREE.Vector3(0.5, 1, 0) });
+assert.ok(mb.path[0].distanceTo(new THREE.Vector3(0, 0, 0)) < 1e-6 && mb.path.at(-1).distanceTo(new THREE.Vector3(1, 0, 0)) < 1e-6, 'band runs between its insertions');
+assert.ok(mb.path[8].y > 0, 'and sags toward the cavity centre');
+
+console.log('PASS: moderator band; ventricle regions (AHA 16 segments, valve-plane anchors, LVOT), valve parts, part pieces and part criteria');

@@ -1,0 +1,92 @@
+/* EPS laboratory: dark recording workstation. The monitor fills the screen;
+   the console (case, stimulator, maneuvers, protocols, RF) sits on the right. */
+:root {
+  --bg: #0a1210;
+  --panel: #111d19;
+  --panel-2: #172722;
+  --line: #24382f;
+  --text: #d5e3dc;
+  --muted: #8ea79b;
+  --accent: #3fb58f;
+  --accent-ink: #062018;
+  --warn: #e2a24f;
+  --danger: #e0614f;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: dark;
+  font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100dvh; background: var(--bg); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* Header and footer */
+.app-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.app-brand h1 { margin: 0; font-size: 16px; letter-spacing: .3px; }
+.app-brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
+.app-tools { display: flex; align-items: center; gap: 12px; }
+.app-shortcuts { font: 11px var(--mono); color: var(--muted); }
+.app-lang { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.app-lang button { border: 0; background: transparent; padding: 4px 10px; font-size: 11.5px; color: var(--muted); }
+.app-lang button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.app-workspace { min-height: 0; padding: 8px; }
+.app-footer { border-top: 1px solid var(--line); padding: 6px 16px; background: var(--panel); }
+.app-footer p { margin: 0; font-size: 11px; color: var(--muted); }
+
+/* Workstation grid */
+.ep-live { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 8px; height: 100%; min-height: 0; }
+.ep-live-monitor { display: flex; flex-direction: column; gap: 6px; min-height: 0; min-width: 0; }
+.ep-live-canvas { display: block; width: 100%; flex: 1 1 auto; min-height: 320px; border-radius: 6px; background: #0e1815; border: 1px solid var(--line); }
+.ep-live-console { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; padding-right: 2px; }
+
+/* Monitor toolbar, interval readout and status line */
+.ep-view { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.ep-view select, .ep-view button { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; }
+.ep-view button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ep-view input[type=range] { flex: 1; min-width: 120px; margin: 0; accent-color: var(--accent); }
+.ep-view input[type=range]:disabled { opacity: .35; }
+.ep-live-readout { margin: 0; font: 600 13px var(--mono); color: #c8f0dc; }
+.ep-live-info { margin: 0; font: 12px var(--mono); color: var(--muted); min-height: 1.3em; }
+
+/* Console sections */
+.ep-case { display: grid; gap: 3px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.ep-case select { text-transform: none; letter-spacing: 0; font-size: 13px; }
+.ep-pace { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--panel); }
+.ep-pace-title { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+.ep-pace-field { display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
+.ep-pace-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.ep-live-console select, .ep-live-console input { width: 100%; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; }
+.ep-live-console input[type=number] { font-family: var(--mono); }
+.ep-pace-deliver { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; border-radius: 4px; padding: 6px 12px; min-height: 32px; }
+.ep-pace-retry { border: 1px solid var(--line); background: var(--panel-2); border-radius: 4px; padding: 6px 10px; min-height: 32px; font-size: 12px; }
+.ep-pace-retry[aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
+.ep-pace-result { margin: 4px 0 0; font-size: 12px; font-weight: 600; color: #9fd8ff; }
+.ep-pace-note { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+.ep-live-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 8px; }
+.ep-live-casebar { margin: 0; }
+.ep-live-shock { border-color: var(--danger); color: var(--danger); }
+.ep-live-rf[aria-pressed=true] { background: var(--danger); color: #fff; }
+.ep-live-protocols .ep-pace-actions select { flex: 1; min-width: 0; width: auto; }
+
+/* Hidden-case quiz and hints */
+.ep-live-quiz .ep-pace-answers { display: flex; flex-wrap: wrap; gap: 4px; }
+.ep-live-quiz .ep-pace-answers button { border: 1px solid var(--line); background: var(--panel-2); border-radius: 4px; padding: 4px 8px; font-size: 12px; }
+.ep-live-quiz button[aria-pressed=true] { border-color: var(--warn); }
+.ep-live-quiz button.is-correct { border-color: var(--accent); background: #143a2d; font-weight: 600; }
+.ep-live-hints { margin: 0; padding: 8px 10px 8px 24px; border-left: 3px solid var(--warn); background: #2a2216; color: #f0dcc0; font-size: 12.5px; display: grid; gap: 3px; }
+.ep-live-protocol-rows { margin: 4px 0 0; padding-left: 22px; max-height: 180px; overflow: auto; font: 11.5px var(--mono); color: var(--text); display: grid; gap: 1px; }
+
+/* Narrow screens: one column, the page scrolls */
+@media (max-width: 900px) {
+  body { height: auto; min-height: 100dvh; }
+  .app-shortcuts { display: none; }
+  .ep-live { grid-template-columns: 1fr; height: auto; }
+  .ep-live-canvas { flex: none; height: 62vh; min-height: 300px; }
+  .ep-live-console { overflow: visible; }
+  .ep-live-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

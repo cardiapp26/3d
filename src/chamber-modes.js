@@ -16,8 +16,8 @@ export const CHAMBER_MODES = Object.freeze({
   },
   rv: {
     chamber: 'rv', note: 'rvNote', flyDistance: 4.6, regions: true,
-    ids: ['rv', 'tricuspid', 'tricuspid-septal', 'tricuspid-inferior', 'tricuspid-anterior', 'tricuspid-annulus', 'pulmonary-valve', 'rv-papillary'],
-    focus: [['rv', 'rvFocusRv'], ['tricuspid', 'rvFocusTv'], ['pulmonary-valve', 'rvFocusPv']]
+    ids: ['rv', 'tricuspid', 'tricuspid-septal', 'tricuspid-inferior', 'tricuspid-anterior', 'tricuspid-annulus', 'pulmonary-valve', 'rv-papillary', 'moderator-band'],
+    focus: [['rv', 'rvFocusRv'], ['tricuspid', 'rvFocusTv'], ['pulmonary-valve', 'rvFocusPv'], ['moderator-band', 'rvFocusMb']]
   },
   lv: {
     chamber: 'lv', note: 'lvNote', flyDistance: 4.6, regions: true,

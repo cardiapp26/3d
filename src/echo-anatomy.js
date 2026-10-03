@@ -32,7 +32,8 @@ export const ECHO_STRUCTURES = Object.freeze([
   { id: 'aortic-valve', ids: ['lcc', 'rcc', 'ncc'], color: '#fce5cd', label: { tr: 'AV', en: 'AV' } },
   { id: 'pulmonary-valve', ids: ['pulmonary-valve'], color: '#d9d2e9', label: { tr: 'PuV', en: 'PV (pulm.)' } },
   { id: 'lv-papillary', ids: ['lv-papillary'], color: '#f4cccc', label: { tr: 'PM', en: 'PM' } },
-  { id: 'rv-papillary', ids: ['rv-papillary'], color: '#ead1dc', label: { tr: 'RV PM', en: 'RV PM' } }
+  { id: 'rv-papillary', ids: ['rv-papillary'], color: '#ead1dc', label: { tr: 'RV PM', en: 'RV PM' } },
+  { id: 'moderator-band', ids: ['moderator-band'], color: '#e69138', label: { tr: 'MB', en: 'MB' } }
 ]);
 
 const vec = v => v.toArray();

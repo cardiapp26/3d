@@ -27,6 +27,7 @@ import { chamberMode } from './chamber-modes.js';
 import { createEustachianValve, createChiariNetwork } from './ra-valves.js';
 import { buildCoronaryBranches, branchAt } from './coronary-branches.js';
 import { lvRegions, rvRegions } from './ventricle-regions.js';
+import { createModeratorBand } from './moderator-band.js';
 import { mitralParts, wholeMesh, TRICUSPID_LEAFLETS, AORTIC_CUSPS, pulmonaryCusp } from './valve-parts.js';
 import { computeContours, drawContours } from './fluoro-contours.js';
 import { separateAtriaFromAorta } from './transverse-sinus.js';
@@ -483,6 +484,17 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     for(const m of pulmonary){const name=pulmonaryCusp(m.userData.sourceName||m.name);if(name)m.userData.parts=wholeMesh(m,name);}
   }
 
+  // Moderator band: RV muscle bundle around the RBB, septum to the anterior papillary base.
+  function buildModeratorBand(septal, papillary, rvCenter) {
+    const band = createModeratorBand({ septal, papillary, rvCenter });
+    const mesh = new THREE.Mesh(band.geometry, material(0xa3443d));
+    mesh.name = 'Moderator band (schematic, along the measured RBB)';
+    mesh.userData = { id: 'moderator-band', layer: 'chambers', provenance: 'schematic', sourceName: mesh.name, path: band.path.map(p => p.toArray()) };
+    layers.chambers.add(mesh);
+    register(mesh, 'moderator-band');
+    sceneLabels.add({ mesh, index: Math.floor(band.geometry.attributes.position.count / 2), tone: 'crista', text: { tr: 'Moderatör bant', en: 'Moderator band' }, when: () => mode === 'rv' && !fluoroscopy });
+  }
+
   // Eustachian valve and Chiari network (schematic, from the IVC and CS ostia and the crista).
   function buildRaValves() {
     const crista = meshMap.get('crista-terminalis')?.[0];
@@ -649,6 +661,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const anteriorPapMesh = (meshMap.get('rv-papillary') || []).find(m => /anterior papillary/i.test(m.name));
     const anteriorPap = anteriorPapMesh ? new THREE.Box3().setFromObject(anteriorPapMesh).getCenter(new THREE.Vector3()) : null;
     const rbb = measureRightBundle({ hisEnd: hisSeptum, hisFrom: hisPenetrating, septum, rvVerts, rvCenter, rvApex, anteriorPapillary: anteriorPap });
+    if (rbb && anteriorPap) buildModeratorBand(rbb.band, rbb.path[rbb.path.length - 1], rvCenter);
     makeTract(rbb ? rbb.path : [
       hisSeptum.clone(),
       new THREE.Vector3(-0.06, -0.52, 0.22),

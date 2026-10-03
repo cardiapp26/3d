@@ -34,7 +34,19 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.deepEqual(anatomyMenu, ['anatomy', 'atria', 'ra', 'rv', 'lv', 'defects'], 'RV and LV sit under Anatomy');
     await open('#/mode/rv');
     assert.match(await page.locator('#scene-context').textContent(), /^04 · Sağ ventrikül/);
-    assert.deepEqual(await visibleIds(), ['pulmonary-valve', 'rv', 'rv-papillary', 'tricuspid', 'tricuspid-annulus'], 'RV mode shows the RV with its valves');
+    assert.deepEqual(await visibleIds(), ['moderator-band', 'pulmonary-valve', 'rv', 'rv-papillary', 'tricuspid', 'tricuspid-annulus'], 'RV mode shows the RV with its valves and the moderator band');
+    // The moderator band runs along the RBB from the septum to the anterior papillary base.
+    const band = await page.evaluate(() => {
+      const h = window.heart, path = h.getMeshes('moderator-band')[0].userData.path;
+      const rbb = h.scene.getObjectByName('Right bundle branch');
+      const pts = []; const p = rbb.geometry.attributes.position;
+      for (let i = 0; i < p.count; i += 7) pts.push([p.getX(i), p.getY(i), p.getZ(i)]);
+      const near = (q) => Math.min(...pts.map((r) => Math.hypot(q[0] - r[0], q[1] - r[1], q[2] - r[2])));
+      const len = path.slice(1).reduce((s, q, k) => s + Math.hypot(q[0] - path[k][0], q[1] - path[k][1], q[2] - path[k][2]), 0);
+      return { len, ends: [near(path[0]), near(path[path.length - 1])] };
+    });
+    assert.ok(band.len > 0.3 && band.len < 1, `moderator band length (${band.len.toFixed(2)})`);
+    assert.ok(band.ends.every((d) => d < 0.08), `band ends on the RBB (${band.ends.map((d) => d.toFixed(3))})`);
     assert.equal(await page.locator('#rv-tools').isVisible(), true);
     assert.equal(await page.locator('#layers').isVisible(), false);
     await page.locator('[data-chamber-wall=rv]').fill('40');
