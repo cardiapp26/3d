@@ -477,7 +477,15 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     linksBtn.title = lang === 'en' ? 'Joins the HRA, His, CS and RV signals of each activation; the conduction lines show once the reading is open.' : 'Her aktivasyonun HRA, His, CS ve RV sinyallerini birleştirir; iletim çizgileri yorum açılınca gösterilir.';
     ladderCanvas.setAttribute('aria-label', lang === 'en' ? 'Ladder diagram of the recording' : 'Kaydın ladder diyagramı');
     if (view.caliperOn) inspect.textContent = caliperText(view.caliper, lang);
-    else if (view.cursorMs == null) inspect.textContent = lang === 'en' ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
+    else if (view.cursorMs == null) {
+      if (view.links && locked) {
+        inspect.textContent = lang === 'en'
+          ? "Conduction ladder lines and Ladder diagram unlock when you click 'Show evidence'."
+          : "İletim çizgileri ve Ladder diyagramı 'Kanıtı göster' butonuna tıklayınca açılır.";
+      } else {
+        inspect.textContent = lang === 'en' ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
+      }
+    }
     else {
       const near = eventsNear(recording, view.cursorMs, [...shown]);
       const label = (ch) => EP_CHANNELS.find((c) => c.id === ch)?.label || ch;
