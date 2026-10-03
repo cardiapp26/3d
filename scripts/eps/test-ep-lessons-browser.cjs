@@ -88,6 +88,31 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.ok(await page.locator('[data-amap-map]').evaluate((c) => c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 0 && v > 200)), 'map drawn');
     assert.ok(await page.locator('[data-amap-timeline]').evaluate((c) => c.width > 0), 'timeline drawn');
 
+    // Pace map tab: catheter by click and jump list, the twelve-lead comparison and the reading follow the controls.
+    await page.locator('[data-ep-section=pacemap]').click();
+    assert.equal(await page.evaluate(() => location.hash), '#/pacemap');
+    assert.equal(await page.locator('[data-pmap]').isVisible(), true, 'pace map view shown');
+    assert.equal(await page.locator('[data-amap]').isHidden(), true);
+    await page.locator('[data-pmap-site]').selectOption('origin');
+    assert.equal(await page.locator('[data-pmap-verdict]').getAttribute('data-level'), 'good', 'source: excellent match');
+    const box = await page.locator('[data-pmap-map]').boundingBox();
+    await page.mouse.click(box.x + box.width * 0.72, box.y + box.height * 0.85);
+    assert.equal(await page.locator('[data-pmap-verdict]').getAttribute('data-level'), 'poor', 'clicked remote site: poor match');
+    await page.locator('[data-pmap-scenario]').selectOption('scar');
+    assert.equal(await page.locator('[data-pmap-mode]').isVisible(), true, 'rhythm choice for the scar VT');
+    await page.locator('[data-pmap-site]').selectOption('isthmus');
+    assert.equal(await page.locator('[data-pmap-verdict]').getAttribute('data-level'), 'poor', 'isthmus in sinus rhythm');
+    await page.locator('[data-pmap-mode]').selectOption('vt');
+    assert.equal(await page.locator('[data-pmap-verdict]').getAttribute('data-level'), 'good', 'isthmus during VT');
+    assert.match(await page.locator('[data-pmap-readout]').textContent(), /PPI - TCL/);
+    await page.locator('[data-pmap-mode]').selectOption('sinus');
+    await page.locator('[data-pmap-site]').selectOption('bystander');
+    assert.ok(await page.locator('[data-pmap-warn] li').count() > 0, 'long stim-QRS warning');
+    await page.locator('[data-pmap-scoremap]').click();
+    assert.equal(await page.locator('[data-pmap-legend]').isVisible(), true, 'match map legend');
+    await page.locator('[data-pmap-truth]').click();
+    assert.ok(await page.locator('[data-pmap-ecg]').evaluate((c) => c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 1 && v > 180)), 'twelve leads drawn');
+
     // English labels follow the switch; back to the live tab.
     await page.locator('[data-app-lang-option=en]').click();
     assert.equal(await page.locator('[data-ep-section=treatment]').textContent(), 'Treatment');
@@ -95,7 +120,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('.ep-lesson').isHidden(), true);
     assert.equal(await page.locator('[data-ep-live]').isVisible(), true);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), TR/EN, live tab');
+    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), pace map tab (source, click, scar sinus vs VT, warnings, match map), TR/EN, live tab');
   } finally {
     await browser.close();
   }
