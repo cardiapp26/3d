@@ -204,3 +204,5 @@
 .amap-view > .amap-note { margin: 0; font-size: 11px; }
 .amap-legend { flex-wrap: wrap; }
 @media (max-width: 760px) { .amap:not(.pmap) { grid-template-columns: 1fr; height: auto; } .amap:not(.pmap) .amap-side { overflow: visible; } .amap-scrub { flex-basis: 100%; } }
+
+.amap-transport select { color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 7px; min-height: 36px; max-width: 100%; }

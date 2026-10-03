@@ -28,7 +28,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   };
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => AMAP_TEXT[L()];
-  const state = { scenario: 'focal-ra', reference: 'cs-56', windowKind: 'symmetric', left: -165, width: 100, region: 'both', scale: 'even', artifact: false, truth: false, active: false, selected: null, progress: 100, playing: false };
+  const state = { scenario: 'focal-ra', reference: 'cs-56', windowKind: 'symmetric', left: -165, width: 100, region: 'both', scale: 'even', artifact: false, truth: false, active: false, selected: null, progress: 0, playing: false, motion: 'live', speed: 0.15, elapsed: 0 };
 
   const root = el('section', 'amap', { 'data-amap': '' });
   const view = el('div', 'amap-view');
@@ -44,27 +44,46 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   const scrub = el('input', '', { type: 'range', min: '0', max: '100', step: '1', 'data-amap-progress': '' });
   const cursorTime = el('output');
   scrubLabel.append(scrubText, scrub, cursorTime);
-  transport.append(play, full, scrubLabel);
+  const motion = el('select', '', { 'data-amap-motion': '', 'aria-label': 'Animation mode' });
+  const speed = el('select', '', { 'data-amap-speed': '', 'aria-label': 'Playback speed' });
+  const liveStatus = el('p', 'amap-point', { 'data-amap-live-status': '' });
+  transport.append(motion, speed, play, full, scrubLabel);
   const point = el('p', 'amap-point', { 'aria-live': 'polite', 'data-amap-point': '' });
   const anatomy = el('p', 'amap-note');
   const playbackNote = el('p', 'amap-note');
-  view.append(guide, transport, mapCanvas, legend, point, anatomy, playbackNote, timeCanvas);
+  view.append(guide, transport, liveStatus, mapCanvas, legend, point, anatomy, playbackNote, timeCanvas);
   let timer = null;
   let geometry = null;
   const stop = () => { if (timer != null) globalThis.clearInterval(timer); timer = null; state.playing = false; };
-  play.addEventListener('click', () => {
-    if (state.playing) { stop(); renderPlayback(compute()); return; }
-    if (state.progress >= 100) state.progress = 0;
+  const start = () => {
+    stop();
+    if (state.motion === 'lat' && state.progress >= 100) state.progress = 0;
     state.playing = true;
+    let previous = globalThis.performance.now();
     timer = globalThis.setInterval(() => {
-      state.progress = Math.min(100, state.progress + 1);
-      if (state.progress >= 100) stop();
+      const now = globalThis.performance.now(), dt = now - previous; previous = now;
+      if (state.motion === 'live') {
+        state.elapsed += dt * state.speed;
+        state.progress = (state.elapsed % model().tcl) / model().tcl * 100;
+      } else {
+        state.progress = Math.min(100, state.progress + dt / 50);
+        if (state.progress >= 100) stop();
+      }
       renderPlayback(compute());
-    }, 50);
+    }, 30);
+  };
+  play.addEventListener('click', () => {
+    if (state.playing) stop(); else start();
     renderPlayback(compute());
   });
-  full.addEventListener('click', () => { stop(); state.progress = 100; render(); });
-  scrub.addEventListener('input', () => { stop(); state.progress = Number(scrub.value); render(); });
+  motion.addEventListener('change', () => {
+    stop(); state.motion = motion.value; state.elapsed = 0; state.progress = state.motion === 'live' ? 0 : 100;
+    if (state.motion === 'live' && state.active) start();
+    render();
+  });
+  speed.addEventListener('change', () => { state.speed = Number(speed.value); renderPlayback(compute()); });
+  full.addEventListener('click', () => { stop(); state.progress = 100; state.motion = 'lat'; render(); });
+  scrub.addEventListener('input', () => { stop(); state.progress = Number(scrub.value); state.elapsed = state.progress / 100 * model().tcl; render(); });
   mapCanvas.addEventListener('click', (event) => {
     if (!geometry) return;
     const rect = mapCanvas.getBoundingClientRect();
@@ -118,8 +137,9 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   function setScenario(id) {
     if (!SCENARIOS[id]) return;
     const s = SCENARIOS[id];
-    stop(); state.selected = null; state.progress = 100;
+    stop(); state.selected = null; state.elapsed = 0; state.progress = state.motion === 'live' ? 0 : 100;
     Object.assign(state, { scenario: id, reference: s.reference, region: s.region || 'both', windowKind: 'symmetric', artifact: false, truth: false });
+    if (state.motion === 'live' && state.active) start();
     render();
   }
   scenarioSel.addEventListener('change', () => setScenario(scenarioSel.value));
@@ -187,7 +207,12 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
       if ((SCENARIOS[state.scenario].scar || []).some(([sx, sy]) => sx === x && sy === y)) fill = '#55534d';
       const lat = result?.lat.get(k);
       const cursor = reading?.min + (reading?.max - reading?.min) * state.progress / 100;
-      ctx.globalAlpha = lat != null && lat > cursor ? 0.16 : 1;
+      const age = ((state.elapsed - at.time[k]) % at.tcl + at.tcl) % at.tcl;
+      const trail = Math.min(45, at.tcl * 0.16);
+      const isLive = state.motion === 'live';
+      const sampled = state.region === 'both' || x < 14;
+      ctx.globalAlpha = isLive ? (sampled && age < trail ? 1 - age / trail * 0.65 : 0.18) : lat != null && lat > cursor ? 0.16 : 1;
+      if (isLive && sampled && Number.isFinite(at.time[k]) && !at.blocked.has(k) && age < trail) fill = age < trail * 0.25 ? '#ffffff' : '#34d399';
       ctx.fillStyle = fill;
       ctx.fillRect(px(x) + 0.5, py(y) + 0.5, cs - 1, cs - 1);
     }
@@ -330,12 +355,19 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
 
   function renderPlayback(c) {
     const g = GUIDE[L()];
-    play.disabled = scrub.disabled = c.reading?.min == null;
+    play.disabled = scrub.disabled = state.motion === 'lat' && c.reading?.min == null;
     if (play.disabled) stop();
-    play.textContent = state.playing ? g.pause : g.play;
+    play.textContent = state.playing ? g.pause : state.motion === 'live' ? (L() === 'en' ? '▶ Live propagation' : '▶ Canlı yayılım') : g.play;
     play.setAttribute('aria-pressed', String(state.playing));
     scrub.value = String(state.progress);
-    cursorTime.textContent = c.reading?.min == null ? '-' : `${Math.round(c.reading.min + (c.reading.max - c.reading.min) * state.progress / 100)} ms`;
+    liveStatus.hidden = state.motion !== 'live';
+    const cycle = Math.floor(state.elapsed / c.at.tcl) + 1;
+    liveStatus.textContent = L() === 'en'
+      ? `${SCENARIOS[state.scenario].reentry ? 'Reentry: wave returns around the tricuspid annulus' : 'Focal: repeated spread from the source'} · Cycle ${cycle} · TCL ${c.at.tcl} ms · ${state.speed}×`
+      : `${SCENARIOS[state.scenario].reentry ? 'Reentry: dalga triküspit anulus çevresinde geri dönüyor' : 'Fokal: odaktan tekrarlayan yayılım'} · Siklus ${cycle} · TCL ${c.at.tcl} ms · ${state.speed}×`;
+    scrubText.textContent = state.motion === 'live' ? (L() === 'en' ? 'Cycle phase' : 'Siklus fazı') : g.time;
+    if (state.motion === 'live') cursorTime.textContent = `${Math.round(state.elapsed % c.at.tcl)} / ${c.at.tcl} ms`;
+    else cursorTime.textContent = c.reading?.min == null ? '-' : `${Math.round(c.reading.min + (c.reading.max - c.reading.min) * state.progress / 100)} ms`;
     drawMap(c);
   }
 
@@ -343,8 +375,15 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     const t = T(), g = GUIDE[L()];
     guide.textContent = g.hint;
     anatomy.textContent = g.anatomy;
-    playbackNote.textContent = g.note;
-    play.textContent = state.playing ? g.pause : g.play;
+    playbackNote.textContent = state.motion === 'live'
+      ? (L() === 'en' ? 'White: wavefront · green: recently activated tissue. Teaching-model propagation; independent of reference, annotation error and window. Colours underneath remain the LAT map.' : 'Beyaz: dalga cephesi · yeşil: yeni aktive olmuş doku. Öğretim modelinin yayılımı; referans, hatalı nokta ve pencereden bağımsız. Alttaki renkler LAT haritasıdır.') : g.note;
+    motion.replaceChildren(option('lat', L() === 'en' ? 'LAT sequence' : 'LAT sırası'), option('live', L() === 'en' ? 'Live propagation / reentry' : 'Canlı yayılım / reentry'));
+    motion.value = state.motion;
+    motion.setAttribute('aria-label', L() === 'en' ? 'Animation mode' : 'Animasyon modu');
+    speed.replaceChildren(...[0.15, 0.3, 1].map(v => option(String(v), `${v}×`)));
+    speed.value = String(state.speed); speed.hidden = state.motion !== 'live';
+    speed.setAttribute('aria-label', L() === 'en' ? 'Playback speed' : 'Oynatma hızı');
+    play.textContent = state.playing ? g.pause : state.motion === 'live' ? (L() === 'en' ? '▶ Live propagation' : '▶ Canlı yayılım') : g.play;
     play.setAttribute('aria-pressed', String(state.playing));
     full.textContent = g.full; scrubText.textContent = g.time; scrub.value = String(state.progress);
     heading.textContent = t.heading;
@@ -393,7 +432,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   return {
     element: root,
     render,
-    setActive(flag) { state.active = Boolean(flag); if (!state.active) stop(); root.hidden = !state.active; if (state.active) render(); },
+    setActive(flag) { const opening = !state.active && Boolean(flag); state.active = Boolean(flag); if (!state.active) stop(); root.hidden = !state.active; if (opening && state.motion === 'live') start(); if (state.active) render(); },
     setScenario,
     /** Test hooks. */
     set(patch) { Object.assign(state, patch); return render(); },
