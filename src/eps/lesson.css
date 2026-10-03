@@ -151,6 +151,8 @@
 .amap-legend { display: flex; align-items: center; gap: 2px; font: 11px var(--mono); color: var(--muted); }
 .amap-swatch { width: 28px; height: 10px; border-radius: 2px; }
 .amap-legend-times { margin-left: 10px; }
+.amap-leg-early { color: #ef4444; font-weight: 700; margin-right: 4px; letter-spacing: .5px; }
+.amap-leg-late { color: #a855f7; font-weight: 700; margin-left: 4px; letter-spacing: .5px; }
 .amap-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; padding-right: 2px; }
 .amap-side > * { margin: 0; }
 .amap-title { font-size: 14px; }

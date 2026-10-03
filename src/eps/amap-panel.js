@@ -13,8 +13,8 @@ import { AMAP_TEXT } from './amap-text.js';
  */
 
 const GUIDE = {
-  tr: { play: '▶ LAT sırasını oynat', pause: 'Ⅱ Duraklat', full: 'Tüm harita', time: 'LAT sırası', hint: '1 · Kırmızıdan mora zamanı takip edin. 2 · Noktaya dokunun veya ok tuşlarıyla seçin. 3 · Referans ve pencereyi değiştirip karşılaştırın.', pick: 'Ölçüm için haritada bir nokta seçin.', outside: 'Haritalanmamış nokta', missing: 'Pencere dışında', point: 'Seçili nokta', beat: 'Atım', note: 'Oynatma, pencereye atanmış LAT sırasını gösterir; gerçek yayılımın doğrulaması değildir.', anatomy: 'TK: triküspit · MK: mitral · SVC/VCI: ana venler · PV: pulmoner ven · ○ referans · × hatalı nokta' },
-  en: { play: '▶ Play LAT sequence', pause: 'Ⅱ Pause', full: 'Full map', time: 'LAT sequence', hint: '1 · Follow time from red to purple. 2 · Tap a point or select with arrow keys. 3 · Change reference and window to compare.', pick: 'Select a map point to inspect its timing.', outside: 'Unsampled point', missing: 'Outside window', point: 'Selected point', beat: 'Beat', note: 'Playback shows the assigned LAT order within the window; it does not validate true propagation.', anatomy: 'TV: tricuspid · MV: mitral · SVC/IVC: caval veins · PV: pulmonary vein · ○ reference · × wrong point' }
+  tr: { play: '▶ Yayılımı oynat', pause: 'Ⅱ Duraklat', full: 'Tüm harita', time: 'Zaman', early: 'ERKEN', late: 'GEÇ', front: 'şu an uyarılan', ago: 'önce uyarıldı', waiting: 'sıra gelmedi', hint: 'Dalga beyaz cepheyle yayılır: kırmızı hücreler ERKEN (dalga oradan başlar), mor hücreler GEÇ (dalga oraya en son varır). Noktaya dokunun ya da ok tuşlarıyla gezin; referansı ve pencereyi değiştirip karşılaştırın.', pick: 'Ölçüm için haritada bir nokta seçin.', outside: 'Haritalanmamış nokta', missing: 'Pencere dışında', point: 'Seçili nokta', beat: 'Atım', note: 'Oynatma, pencereye atanmış LAT sırasını gösterir; gerçek yayılımın doğrulaması değildir.', anatomy: 'TK: triküspit · MK: mitral · SVC/VCI: ana venler · PV: pulmoner ven · ○ referans · × hatalı nokta' },
+  en: { play: '▶ Play the spread', pause: 'Ⅱ Pause', full: 'Full map', time: 'Time', early: 'EARLY', late: 'LATE', front: 'activating now', ago: 'already activated', waiting: 'not yet', hint: 'The wave spreads with a white front: red cells are EARLY (the wave starts there), purple cells are LATE (the wave arrives there last). Tap a point or walk with the arrow keys; change the reference and window to compare.', pick: 'Select a map point to inspect its timing.', outside: 'Unsampled point', missing: 'Outside window', point: 'Selected point', beat: 'Beat', note: 'Playback shows the assigned LAT order within the window; it does not validate true propagation.', anatomy: 'TV: tricuspid · MV: mitral · SVC/IVC: caval veins · PV: pulmonary vein · ○ reference · × wrong point' }
 };
 
 const BEAT_COLORS = { '-1': '#60a5fa', 0: '#e8f3ee', 1: '#fbbf24' };
@@ -52,16 +52,24 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   let timer = null;
   let geometry = null;
   const stop = () => { if (timer != null) globalThis.clearInterval(timer); timer = null; state.playing = false; };
-  play.addEventListener('click', () => {
-    if (state.playing) { stop(); renderPlayback(compute()); return; }
+  const reducedMotion = () => { try { return Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches); } catch { return false; } };
+  function startPlay() {
     if (state.progress >= 100) state.progress = 0;
     state.playing = true;
-    timer = globalThis.setInterval(() => {
-      state.progress = Math.min(100, state.progress + 1);
-      if (state.progress >= 100) stop();
-      renderPlayback(compute());
-    }, 50);
+    if (timer == null) {
+      timer = globalThis.setInterval(() => {
+        state.progress = Math.min(100, state.progress + 1);
+        if (state.progress >= 100) stop();
+        renderPlayback(compute());
+      }, 50);
+    }
     renderPlayback(compute());
+  }
+  // The wave plays by itself when the tab or a new scenario opens.
+  const autoplay = () => { if (!reducedMotion() && !play.disabled) { state.progress = 0; startPlay(); } };
+  play.addEventListener('click', () => {
+    if (state.playing) { stop(); renderPlayback(compute()); return; }
+    startPlay();
   });
   full.addEventListener('click', () => { stop(); state.progress = 100; render(); });
   scrub.addEventListener('input', () => { stop(); state.progress = Number(scrub.value); render(); });
@@ -121,6 +129,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     stop(); state.selected = null; state.progress = 100;
     Object.assign(state, { scenario: id, reference: s.reference, region: s.region || 'both', windowKind: 'symmetric', artifact: false, truth: false });
     render();
+    autoplay();
   }
   scenarioSel.addEventListener('change', () => setScenario(scenarioSel.value));
   referenceSel.addEventListener('change', () => { state.reference = referenceSel.value; render(); });
@@ -186,10 +195,17 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
       }
       if ((SCENARIOS[state.scenario].scar || []).some(([sx, sy]) => sx === x && sy === y)) fill = '#55534d';
       const lat = result?.lat.get(k);
-      const cursor = reading?.min + (reading?.max - reading?.min) * state.progress / 100;
-      ctx.globalAlpha = lat != null && lat > cursor ? 0.16 : 1;
+      const running = state.progress < 100 && reading?.min != null;
+      const cursor = running ? reading.min + (reading.max - reading.min) * state.progress / 100 : null;
+      ctx.globalAlpha = running && lat != null && lat > cursor ? 0.12 : 1;
       ctx.fillStyle = fill;
       ctx.fillRect(px(x) + 0.5, py(y) + 0.5, cs - 1, cs - 1);
+      // The leading edge of the wave lights up white as it passes.
+      if (running && lat != null && lat <= cursor && cursor - lat <= Math.max(10, (reading.max - reading.min) * 0.06)) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(px(x) + 0.5, py(y) + 0.5, cs - 1, cs - 1);
+      }
     }
     ctx.globalAlpha = 1;
     if (state.selected != null) {
@@ -279,6 +295,13 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
       }
     });
     ctx.globalAlpha = 1;
+    if (state.progress < 100 && c.reading?.min != null) {
+      const cursorLat = c.reading.min + (c.reading.max - c.reading.min) * state.progress / 100;
+      if (cursorLat >= from && cursorLat <= to) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(x(cursorLat), top); ctx.lineTo(x(cursorLat), top + plotH); ctx.stroke();
+      }
+    }
     const t = T().timeline;
     ctx.font = '10px ui-monospace, monospace';
     ctx.fillStyle = '#9fc7b6'; ctx.fillText(t.title, left, 12);
@@ -302,7 +325,13 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
 
   function renderLegend(c) {
     const { reading } = c;
-    legend.replaceChildren(...COLORS.map((color) => { const s = el('span', 'amap-swatch'); s.style.background = color; return s; }));
+    const g = GUIDE[L()];
+    const word = (text, cls) => { const s = el('span', cls); s.textContent = text; return s; };
+    legend.replaceChildren(
+      word(g.early, 'amap-leg-early'),
+      ...COLORS.map((color) => { const s = el('span', 'amap-swatch'); s.style.background = color; return s; }),
+      word(g.late, 'amap-leg-late')
+    );
     const times = el('span', 'amap-legend-times');
     times.textContent = reading?.min != null ? T().legendTimes(reading.min, reading.max) : '';
     legend.append(times);
@@ -337,6 +366,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     scrub.value = String(state.progress);
     cursorTime.textContent = c.reading?.min == null ? '-' : `${Math.round(c.reading.min + (c.reading.max - c.reading.min) * state.progress / 100)} ms`;
     drawMap(c);
+    drawTimeline(c);
   }
 
   function render() {
@@ -366,7 +396,10 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     if (k == null) point.textContent = g.pick;
     else {
       const [x, y] = cellOf(k), lat = c.result?.lat.get(k), beat = c.result?.beat.get(k);
-      const value = !c.result?.lat.has(k) ? g.outside : lat == null ? g.missing : `LAT ${lat} ms · ${g.beat}: ${beat > 0 ? '+' : ''}${beat}`;
+      const running = state.progress < 100 && c.reading?.min != null;
+      const cursorLat = running ? c.reading.min + (c.reading.max - c.reading.min) * state.progress / 100 : null;
+      const phase = !running || lat == null ? '' : ` · ${lat > cursorLat ? g.waiting : cursorLat - lat <= Math.max(10, (c.reading.max - c.reading.min) * 0.06) ? g.front : g.ago}`;
+      const value = !c.result?.lat.has(k) ? g.outside : lat == null ? g.missing : `LAT ${lat} ms · ${g.beat}: ${beat > 0 ? '+' : ''}${beat}${phase}`;
       point.textContent = `${g.point} (${x + 1}, ${y + 1}) · ${x < 14 ? t.regions.ra : L() === 'en' ? 'Left atrium / septum' : 'Sol atriyum / septum'} · ${value}`;
     }
     manual.hidden = state.windowKind !== 'manual';
@@ -393,7 +426,13 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   return {
     element: root,
     render,
-    setActive(flag) { state.active = Boolean(flag); if (!state.active) stop(); root.hidden = !state.active; if (state.active) render(); },
+    setActive(flag) {
+      const was = state.active;
+      state.active = Boolean(flag);
+      if (!state.active) stop();
+      root.hidden = !state.active;
+      if (state.active) { render(); if (!was) autoplay(); }
+    },
     setScenario,
     /** Test hooks. */
     set(patch) { Object.assign(state, patch); return render(); },

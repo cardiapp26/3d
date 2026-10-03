@@ -35,7 +35,7 @@
     "echo:calibrate": "node scripts/echo-calibrate.cjs",
     "echo:audit": "node scripts/echo-audit.cjs",
     "test:eps": "node scripts/eps/run-tests.mjs",
-    "test:eps-browser": "node scripts/eps/test-ep-live-browser.cjs && node scripts/eps/test-ep-lessons-browser.cjs && node scripts/eps/test-ep-labs-browser.cjs && node scripts/eps/test-eps-link-browser.cjs",
+    "test:eps-browser": "node scripts/eps/test-ep-live-browser.cjs && node scripts/eps/test-ep-lessons-browser.cjs && node scripts/eps/test-amap-interactions-browser.cjs && node scripts/eps/test-ep-labs-browser.cjs && node scripts/eps/test-eps-link-browser.cjs",
     "test:eps-offline": "node scripts/eps/test-eps-offline-browser.cjs"
   },
   "keywords": [],
