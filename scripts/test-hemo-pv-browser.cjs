@@ -58,6 +58,31 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.equal(peaks.size, 1, 'the systolic arch does not move with stiffness: ' + [...peaks]);
     assert.ok(edps.every((v, i) => v <= 36 && (i === 0 || v > edps[i - 1])), 'EDP rises with stiffness and stays in range: ' + edps);
 
+    // The source toggle reports its state and has an accessible name.
+    assert.equal(await page.locator('.hemo-pv-source').getAttribute('aria-label') !== null, true, 'the loop-source group is named');
+    assert.equal(await page.locator('.hemo-tab[data-pv-source=model]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('.hemo-tab[data-pv-source=scenario]').getAttribute('aria-pressed'), 'false');
+
+    // A scenario change while the model is on screen leaves the model grid and loop alone.
+    const before = await metrics();
+    await page.locator('.hemo-select').selectOption('aortic_stenosis_severe');
+    await page.waitForTimeout(150);
+    assert.deepEqual(await metrics(), before, 'the model measurements do not follow the scenario menu');
+    await page.locator('.hemo-select').selectOption('normal');
+
+    // A language switch keeps the P-V tab, the source and the condition the user chose.
+    await page.locator('[data-pv-condition]').selectOption('hfpef');
+    const langButton = page.locator('#lang-btn, [data-lang-toggle], #language-toggle').first();
+    if (await langButton.count()) {
+      await langButton.dispatchEvent('click');
+      await page.waitForTimeout(300);
+      assert.equal(await page.locator('.hemo-tab[data-pv-source=model]').getAttribute('aria-pressed'), 'true', 'language switch keeps the model source');
+      assert.equal(await page.locator('[data-pv-condition]').inputValue(), 'hfpef', 'and the condition');
+      assert.equal(await page.locator('.hemo-pv-wrap').isHidden(), false, 'and stays on the P-V tab');
+      await langButton.dispatchEvent('click');
+      await page.waitForTimeout(200);
+    }
+
     // Acute MR: forward and regurgitant rows appear.
     await page.locator('[data-pv-condition]').selectOption('mitral-regurgitation-acute');
     await page.waitForTimeout(150);

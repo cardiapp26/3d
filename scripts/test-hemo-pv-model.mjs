@@ -3,7 +3,7 @@
 // preset reproduces its characteristic shape. Teaching checks, not validation.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { PV_PRESETS, PV_LIMITS, PV_V0, pvParams, pvModelLoop } from '../src/hemo-pv-model.js';
+import { PV_PRESETS, PV_LIMITS, PV_V0, PV_LEAK, pvParams, pvModelLoop } from '../src/hemo-pv-model.js';
 
 const loop = (id, over = {}) => pvModelLoop(pvParams(over, id));
 const normal = loop('normal');
@@ -49,12 +49,13 @@ assert.ok(loop('inotrope').ef > normal.ef + 0.05, 'inotrope: higher EF');
 // Every loop closes: the last sample is one sample step from the first (AR refills during relaxation, so filling starts from that volume).
 for (const id of Object.keys(PV_PRESETS)) {
   const l = loop(id), a = l.points[0], b = l.points.at(-1);
-  assert.ok(Math.abs(a.v - b.v) < 1.5 && Math.abs(a.p - b.p) < 2, `${id}: the loop closes (dV ${(a.v - b.v).toFixed(2)}, dP ${(a.p - b.p).toFixed(2)})`);
+  assert.ok(Math.abs(a.v - b.v) < 2 && Math.abs(a.p - b.p) < 2, `${id}: the loop closes (dV ${(a.v - b.v).toFixed(2)}, dP ${(a.p - b.p).toFixed(2)})`);
 }
 const arSegments = [seg(ar, ar.phases.ivr), seg(ar, [0, ar.phases.ivc[0]])];
-assert.ok(Math.abs(arSegments[0].at(-1) - arSegments[1][0]) < 1.5, 'AR: filling starts where the relaxation refill ended');
-assert.ok(Math.abs(ar.regurgVolume - 0.18 * ar.sv) < 1e-9 && Math.abs(ar.forwardSv - 0.82 * ar.sv) < 1e-9, 'AR: refill volume = regurgitant volume');
-assert.ok(Math.abs(mr.regurgVolume - 0.25 * mr.sv) < 1e-9 && mr.forwardSv < mr.sv, 'acute MR: forward SV is below the total SV');
+assert.ok(Math.abs(arSegments[0].at(-1) - arSegments[1][0]) < 2, 'AR: filling starts where the relaxation refill ended');
+assert.ok(Math.abs(ar.regurgVolume - PV_LEAK.ar * ar.sv) < 1e-9 && Math.abs(ar.forwardSv - (1 - PV_LEAK.ar) * ar.sv) < 1e-9, 'AR: refill volume = regurgitant volume');
+assert.ok(Math.abs(mr.regurgVolume - PV_LEAK.mr * mr.sv) < 1e-9 && mr.forwardSv < normal.sv, 'acute MR: total SV is large but the forward SV is below the normal SV');
+assert.ok(ar.regurgVolume / ar.sv >= 0.3 && mr.regurgVolume / mr.sv >= 0.4, 'severe leaks, not mild ones');
 assert.equal(normal.regurgVolume, 0, 'no leak in a normal loop');
 
 // Stiffness slider sweep on every condition: EDP follows the slider upward, stays in a filling-pressure range, and the systolic arch does not move.
@@ -85,4 +86,28 @@ for (const id of Object.keys(PV_PRESETS)) {
 }
 
 assert.ok(!readFileSync(new URL('../src/hemo-pv-model.js', import.meta.url), 'utf8').includes('\u2014'), 'no em dash');
+// Extremes: every preset at every slider corner stays finite and the filling pressure stays bounded (the EDPVR grows only logarithmically beyond 40 mmHg).
+let worstEdp = 0;
+for (const id of Object.keys(PV_PRESETS)) for (const edv of PV_LIMITS.edv) for (const stiffness of PV_LIMITS.stiffness) for (const ea of PV_LIMITS.ea) for (const ees of PV_LIMITS.ees) {
+  const l = loop(id, { edv, stiffness, ea, ees });
+  assert.ok(l.points.every(q => Number.isFinite(q.v) && Number.isFinite(q.p) && q.p >= 0), `${id} corner ${edv}/${stiffness}/${ea}/${ees}: finite`);
+  assert.ok(l.peak > l.esp && Number.isFinite(l.peak), `${id} corner: peak above the ESP`);
+  if (l.edp < 0.8 * l.esp) assert.ok(l.peak < 1.46 * l.esp + 1, `${id} corner: the arch follows the ESP, not the filling pressure`);
+  worstEdp = Math.max(worstEdp, l.edp);
+}
+assert.ok(worstEdp < 250, `filling pressure stays bounded at the extremes (worst ${worstEdp.toFixed(0)} mmHg)`);
+// Preload at normal stiffness no longer reaches hundreds of mmHg either.
+assert.ok(loop('normal', { edv: 280 }).edp < 120, 'normal ventricle at the maximum EDV: bounded EDP');
+// Non-finite or missing input falls back to the preset instead of poisoning the loop.
+for (const bad of [{ edv: undefined }, { ees: NaN }, { stiffness: 'x' }, { ea: Infinity }]) {
+  const q = pvParams(bad, 'normal');
+  assert.ok(Object.values(q).every(v => v === null || Number.isFinite(v)), `bad input ${JSON.stringify(bad)} is ignored`);
+  assert.ok(pvModelLoop(q).points.every(pt => Number.isFinite(pt.p) && Number.isFinite(pt.v)), 'and the loop stays finite');
+}
+// Conditions sit where their explanations say: normal coupling Ea/Ees about 0.5, the inotrope ejects more than normal,
+// hypovolaemia lies on the normal EDPVR.
+assert.ok(normal.ea / normal.ees > 0.3 && normal.ea / normal.ees < 0.7 && normal.ef > 0.6 && normal.ef < 0.65, 'normal: EF 60-65%, Ea/Ees 0.3-0.7');
+assert.ok(loop('inotrope').sv > normal.sv && loop('inotrope').esv < normal.esv, 'inotrope: smaller ESV and a larger SV at the same EDV');
+assert.ok(Math.abs(hypo.edpvr(hypo.edv) - normal.edpvr(hypo.edv)) < 0.1, 'hypovolaemia: on the normal EDPVR');
+
 console.log('PASS hemo-pv-model: coupling, preload/contractility/afterload/stiffness responses, HFrEF/HFpEF/AS/AR/acute MR/hypovolaemia/inotrope shapes');

@@ -17,7 +17,12 @@ export const PV_LIMITS = Object.freeze({
 const REFERENCE_EDP = [2, 35];
 // Share of the total stroke volume that leaks back: into the left atrium during
 // isovolumic contraction (acute MR) or from the aorta during relaxation (AR).
-const LEAK = { mr: 0.25, ar: 0.18 };
+export const PV_LEAK = Object.freeze({ mr: 0.4, ar: 0.3 });
+const LEAK = PV_LEAK;
+// Filling pressures beyond this grow only logarithmically: a ventricle that fills this far is in pulmonary oedema,
+// and the exponential EDPVR would otherwise reach hundreds of mmHg at the slider extremes.
+const EDP_SOFT = 40, EDP_SOFT_SCALE = 15;
+const softEdp = p => (p <= EDP_SOFT ? p : EDP_SOFT + EDP_SOFT_SCALE * Math.log1p((p - EDP_SOFT) / EDP_SOFT_SCALE));
 
 /**
  * Condition presets. edp: end-diastolic pressure the EDPVR passes through at
@@ -34,8 +39,9 @@ export const PV_PRESETS = Object.freeze({
   'aortic-stenosis': { edv: 125, ees: 3.5, ea: 2.6, stiffness: 0.03, edp: 20, valve: 'as' },
   'aortic-regurgitation': { edv: 230, ees: 1.8, ea: 1.0, stiffness: 0.018, edp: 14, valve: 'ar' },
   'mitral-regurgitation-acute': { edv: 160, ees: 2.5, ea: 0.9, stiffness: 0.03, edp: 25, valve: 'mr' },
-  hypovolemia: { edv: 80, ees: 2.34, ea: 1.4, stiffness: 0.025, edp: 4 },
-  inotrope: { edv: 110, ees: 4.5, ea: 1.3, stiffness: 0.025, edp: 8 }
+  // Hypovolaemia and the inotrope sit on the normal EDPVR (same stiffness; EDP read off the normal curve at their EDV).
+  hypovolemia: { edv: 80, ees: 2.34, ea: 1.4, stiffness: 0.025, edp: 2.5 },
+  inotrope: { edv: 130, ees: 4.5, ea: 1.3, stiffness: 0.025, edp: 10 }
 });
 
 // Peak systolic pressure over the end-systolic (aortic closure) pressure: the ESP sits below the peak.
@@ -54,11 +60,17 @@ function archAmplitude(open, esp, peak) {
 }
 
 const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number(v)));
+/** Preset values overridden by the finite numeric entries of `input` only (undefined, NaN and text are ignored). */
+const merged = (base, input) => {
+  const out = { ...base };
+  for (const [key, value] of Object.entries(input || {})) if (key in base && typeof value === 'number' && Number.isFinite(value)) out[key] = value;
+  return out;
+};
 
 /** Validated parameter set (unknown preset falls back to normal). */
 export function pvParams(input = {}, presetId = 'normal') {
   const base = PV_PRESETS[presetId] || PV_PRESETS.normal;
-  const p = { ...base, ...input };
+  const p = merged(base, input);
   const edv = clamp(p.edv, PV_LIMITS.edv);
   const stiffness = clamp(p.stiffness, PV_LIMITS.stiffness);
   // EDPVR scale: the curve passes through the condition's reference volume at a pressure that follows
@@ -81,14 +93,15 @@ export function pvParams(input = {}, presetId = 'normal') {
  */
 export function pvModelLoop(params, n = 240) {
   const { edv, ees, ea, stiffness, scale, valve } = params;
-  const edpvr = v => Math.max(0, scale * (Math.exp(stiffness * (v - PV_V0)) - 1));
+  const edpvr = v => Math.max(0, softEdp(scale * (Math.exp(stiffness * (v - PV_V0)) - 1)));
   const espvr = v => Math.max(0, ees * (v - PV_V0));
   const esv = Math.max(PV_V0 + 5, (ees * PV_V0 + ea * edv) / (ees + ea));
   const esp = espvr(esv);
   const edp = edpvr(edv);
   const sv = edv - esv;
   // Aortic valve opening pressure: diastolic arterial pressure, a fraction of the end-systolic pressure.
-  const open = Math.max(edp + 5, esp * 0.78);
+  // The ejection arch follows the end-systolic pressure; a filling pressure above that only nudges the opening point.
+  const open = Math.max(edp + 2, Math.min(Math.max(edp + 5, esp * 0.78), esp * 0.9));
   const gradient = valve === 'as' ? esp * 0.2 : 0;
   const peak = Math.max(esp, open) * PEAK_OVER_ESP + gradient;
   const arch = archAmplitude(open, esp, peak);
