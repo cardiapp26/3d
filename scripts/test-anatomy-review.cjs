@@ -99,6 +99,9 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.ok(order.d1 < order.s1, `D1 (${order.d1.toFixed(2)}) proximal to S1 (${order.s1.toFixed(2)})`);
     assert.ok(order.moves.length >= 1, 'septals moved distal to D1 are recorded as an atlas adjustment');
     assert.ok(order.names.includes('D1') && order.names.includes('D2'), `LAD names: ${order.names}`);
+    // Pick on a still camera (the opening fly-to must have settled).
+    await page.waitForFunction(() => document.querySelector('#viewport')?.dataset.cameraSettled !== 'false');
+    await page.waitForTimeout(300);
     const target = await page.evaluate(() => {
       const m = window.heart.getMeshes('lad')[0], t = m.userData.branches, pos = m.geometry.attributes.position;
       const k = t.names.findIndex((n) => n.tr === '1. diagonal dal (D1)');

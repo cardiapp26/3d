@@ -36,15 +36,15 @@ export const TTE_VIEWS = Object.freeze([
 // patient's anatomy and are never a view's identity key; multi-angle sweeps
 // may be needed.
 export const TEE_VIEWS = Object.freeze([
-  { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, ase: { tr: '0–10° (triküspit anulusu için 10–20° ayar gerekebilir)', en: '0–10° (10–20° may be needed for the tricuspid annulus)' }, required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, parts: { lv: ['3', '9', '6', '12'], mitral: [['A2', 'A3'], ['P2', 'P1']] }, source: ASE_TEE },
+  { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, ase: { tr: '0–10° (triküspit anulusu için 10–20° ayar gerekebilir)', en: '0–10° (10–20° may be needed for the tricuspid annulus)' }, required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, parts: { lv: ['3', '9', '14', '6', '12', '16'], mitral: [['A2', 'A3'], ['P2', 'P1']] }, source: ASE_TEE },
   { id: 'memc', title: { tr: 'ME mitral komissüral', en: 'ME mitral commissural' }, ase: { tr: '50–70°', en: '50–70°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'aorta'], mitralChord: [0, 22], source: ASE_TEE },
-  { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, ase: { tr: '80–100° (bu preset 105°)', en: '80–100° (this preset 105°)' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'aorta'], apical: true, mitralChord: [25, 90], source: ASE_TEE },
+  { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, ase: { tr: '80–100° (bu preset 105°, fleksiyon −30° kontrol sınırında)', en: '80–100° (this preset 105°, flexion −30° at the control limit)' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'aorta'], apical: true, mitralChord: [25, 90], parts: { lv: [['1', '7', '13']] }, source: ASE_TEE },
   { id: 'melax', title: { tr: 'ME uzun eksen', en: 'ME long axis' }, ase: { tr: '120–140°', en: '120–140°' }, required: ['la', 'lv', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], mitralChord: [55, 90], parts: { lv: ['2', '8', '5', '11'], mitral: ['A2', 'P2'] }, source: ASE_TEE },
   { id: 'meavsax', title: { tr: 'ME aort kapağı kısa eksen', en: 'ME aortic valve SAX' }, ase: { tr: '25–45°', en: '25–45°' }, required: ['aortic-valve', 'la', 'ra'], avoid: ['lv', 'mitral'], source: ASE_TEE },
   { id: 'mebicaval', title: { tr: 'ME bikaval', en: 'ME bicaval' }, ase: { tr: '90–110°, şaft sağa (bu preset 85°)', en: '90–110°, shaft turned right (this preset 85°)' }, required: ['la', 'ra', 'svc'], avoid: ['lv', 'mitral'], relations: [{ a: 'ra', b: 'svc', max: 0.15, note: { tr: 'SVC-RA bileşkesi', en: 'SVC-RA junction' } }], bicaval: true, source: ASE_TEE },
   { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, ase: { tr: 'başlangıç 90–110°; çok açılı tarama (bu preset 60°)', en: 'start 90–110°; multi-angle sweep (this preset 60°)' }, required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
   { id: 'mervio', title: { tr: 'ME RV giriş-çıkış', en: 'ME RV inflow-outflow' }, ase: { tr: '50–70° (bu preset 75°)', en: '50–70° (this preset 75°)' }, required: ['ra', 'rv', 'tricuspid', 'pa'], avoid: ['mitral'], source: ASE_TEE },
-  { id: 'melaapv', title: { tr: 'ME LAA ve sol üst PV komşuluğu', en: 'ME LAA and left upper PV neighbourhood' }, ase: { tr: 'ME LAA görünümü 90–110° (LAA ve sol üst PV); bu preset 135° tarama açısıdır', en: 'ME LAA view 90–110° (LAA and left upper PV); this preset is a 135° sweep angle' }, required: ['la', 'laa', 'pv'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
+  { id: 'melaapv', title: { tr: 'ME LAA ve sol üst PV komşuluğu', en: 'ME LAA and left upper PV neighbourhood' }, ase: { tr: 'ME LAA görünümü 90–110° (LAA ve sol üst PV)', en: 'ME LAA view 90–110° (LAA and left upper PV)' }, required: ['la', 'laa', 'lspv'], relations: [{ a: 'la', b: 'lspv', max: 0.15, note: { tr: 'sol üst ven ağzı LA\'ya açılmalı', en: 'the left upper vein ostium should open into the LA' } }], avoid: ['rv', 'tricuspid', 'rspv', 'ripv'], source: ASE_TEE },
   { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, ase: { tr: '0–20°', en: '0–20°' }, required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], parts: { lv: ['7', '8', '9', '10', '11', '12'] }, source: ASE_TEE }
 ]);
 
@@ -67,6 +67,11 @@ const inPlane = (v, n) => normalize(addv(v, n, -dot(v, n)));
 const TTE_CALIBRATION = Object.freeze({ plax: { rotation: -10, rock: -30 }, 'psax-mv': { rotation: 20, tilt: -5, rock: 30 }, a2c: { tilt: -5, rock: 10, depthOffset: -0.6 }, a3c: { rock: -20 } });
 
 /** Where a TTE preset differs from the textbook image on this atlas (shown next to the view). */
+/** TEE presets that differ from the textbook image on this atlas (shown next to the view). */
+export const TEE_PRESET_NOTES = Object.freeze({
+  me2c: { tr: 'Atlas notu: bu atlasta özofagus yolundan RV\'yi dışarıda bırakıp apeksi düzlemde tutan gerçek bir iki boşluk düzlemi bulunamadı. Preset anterior duvarı (13) keser ama inferior duvar (4, 10, 15) yerine inferolateral ve anteroseptal segmentler görünür; ders kitabında ME iki boşluk anterior (1, 7, 13) ve inferior (4, 10, 15) duvarları gösterir.', en: 'Atlas note: on this atlas no true two-chamber plane that excludes the RV and keeps the apex in the plane is reachable from the oesophageal path. The preset cuts the anterior wall (13) but shows inferolateral and anteroseptal segments instead of the inferior wall (4, 10, 15); the textbook ME two-chamber shows the anterior (1, 7, 13) and inferior (4, 10, 15) walls.' }
+});
+
 export const TTE_PRESET_NOTES = Object.freeze({
   plax: { tr: 'Atlas notu: standart PLAX\'ta pulmoner kapak görülmez (önde RVOT görülür; pulmoner kapak PSAX aort düzeyinde ve RVOT görünümünde izlenir). Bu atlasta pulmoner kapak LV uzun eksen düzlemine çok yakın olduğundan kesitin ön kenarında PuV görünebilir.', en: 'Atlas note: a standard PLAX does not show the pulmonary valve (the RVOT lies in front; the pulmonary valve is seen at the PSAX aortic level and in the RVOT view). On this atlas the pulmonary valve lies very close to the LV long-axis plane, so PuV can appear at the front edge of the cut.' },
   a2c: { tr: 'A2C\'de pulmoner kapak görülmez. LA arka duvarına açılan sol pulmoner ven (burada LIPV) ve LAA kesite girebilir.', en: 'The A2C does not show the pulmonary valve. A left pulmonary vein opening into the posterior LA (here the LIPV) and the LAA can enter the cut.' }
@@ -152,8 +157,7 @@ export const TG_ADVANCE = 0.97;
  * Preset probe state of a TEE view: the level (advance) from the landmarks,
  * the pose from the atlas calibration. The multiplane angle is in the
  * guideline range except where the view text names the preset angle
- * (ME two-chamber 105°, ME bicaval 85°, ME LAA 60°, RV inflow-outflow 75°,
- * LAA-PV 135°).
+ * (ME two-chamber 105°, ME bicaval 85°, ME LAA 60°, RV inflow-outflow 75°).
  * @returns {{ advance: number, rotation: number, flexion: number, lateralFlexion: number, omega: number, depth: number }}
  */
 export function teePreset(id, A, path) {
@@ -170,7 +174,7 @@ export function teePreset(id, A, path) {
     case 'mebicaval': return pose(level(A.la[1] + 0.1) + 0.04, 30, 0, 85, 4.8);
     case 'melaa': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 60, 3);
     case 'mervio': return pose(me - 0.02, 10, 0, 75, 4.8);
-    case 'melaapv': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 135, 3.6);
+    case 'melaapv': return pose(level(A.laa ? A.laa.center[1] : A.la[1] + 0.2), -30, 0, 110, 4.8);
     case 'tgsax': return pose(TG_ADVANCE, -15, 0, 0, 4.8);
     default: return null;
   }

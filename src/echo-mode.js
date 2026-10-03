@@ -157,6 +157,8 @@ export function createEchoMode({ heart, mount, getLang }) {
       tee: modality === 'tee' ? { ...teePreset('me4c', anatomy, path), flexion: 0, lateralFlexion: 0 } : null,
       ice: modality === 'ice' ? { ...icePreset('ice-home') } : null
     };
+    // The image depth is the start pose's, not the target's (TEE views differ: 3, 3.6, 4.8).
+    if (modality === 'tee') state.depth = preset.tee.depth;
     // A start that already shows the target is no task: draw again (a few tries).
     for (let attempt = 0; attempt < 8; attempt++) {
       if (modality === 'tte') state.tte = { ...preset.tte, rotation: jitter(45), tilt: jitter(20), rock: jitter(15) };

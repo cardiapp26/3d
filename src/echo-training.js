@@ -1,12 +1,14 @@
 import { clipToSector } from './echo-renderer.js';
-import { partPieces } from './echo-renderer-parts.js';
+import { partPieces, PART_LENGTH } from './echo-renderer-parts.js';
 
 /*
  * Explainable feedback for "find the view" (report section 4, and
  * research/TTE_TEE_IYILESTIRME_RAPORU.md): not probe angle alone, but which
  * structures are in the sector, which should not be, whether the true apex
- * is in the plane and inside the image (apical views), the bicaval
- * relations (both caval entries and the atrial septum) and, for the
+ * is in the plane and inside the image (apical views), the bicaval checks
+ * (the estimated IVC orifice point, as the atlas has no IVC mesh, and the
+ * atrial septum; the SVC is a required structure with an SVC-RA relation)
+ * and, for the
  * mid-oesophageal mitral views, how the plane crosses the mitral annulus.
  * These are the model's starting criteria, teaching values without expert
  * calibration; the wording says so and never claims a clinical view.
@@ -35,8 +37,6 @@ export function visibleRuns(section, sectorAngle, depth) {
 }
 
 /** Contour length of each structure inside the sector (groups summed from their members). */
-// A part counts as shown with this much contour in the sector: an LV segment, a leaflet segment.
-const PART_LENGTH = { lv: 0.15, mitral: 0.06 };
 
 /** Visible contour length per part, keyed `${structure}:${abbr}` (LV segment numbers, A1-P3, ...). */
 export function partLengths(section, sectorAngle, depth) {
@@ -61,7 +61,7 @@ export function missingParts(view, lengths) {
   for (const [id, items] of Object.entries(view.parts || {})) {
     for (const item of items) {
       const options = Array.isArray(item) ? item : [item];
-      if (!options.some(abbr => (lengths[`${id}:${abbr}`] || 0) >= (PART_LENGTH[id] ?? PART_LENGTH.lv))) out.push({ id, text: options.join('/') });
+      if (!options.some(abbr => (lengths[`${id}:${abbr}`] || 0) >= (PART_LENGTH[id] ?? PART_LENGTH.default))) out.push({ id, text: options.join('/') });
     }
   }
   return out;
@@ -83,10 +83,8 @@ const runsOf = (runs, id) => (STRUCTURE_GROUPS[id] || [id]).flatMap(m => runs[m]
 
 /** Smallest image distance between the visible contours of two structures (Infinity if one is absent). */
 export function contourGap(runs, a, b) {
-  const pa = runsOf(runs, a).flat(), pb = runsOf(runs, b).flat();
-  let best = Infinity;
-  for (const p of pa) for (const q of pb) best = Math.min(best, Math.hypot(p[0] - q[0], p[1] - q[1]));
-  return best;
+  // Point to segment, like the septal gap: a sparsely sampled junction is not split.
+  return runGap(runsOf(runs, a), runsOf(runs, b));
 }
 
 /** Median image depth (distance from the transducer) of a structure's visible contour. */

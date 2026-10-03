@@ -3,7 +3,10 @@
 // (echo-section.js). Each part is stroked in its colour on top of the
 // structure contour; the longest visible run of a part anchors its label and
 // the visible parts are reported to the panel.
-const MIN_PART_RUN = 0.08;    // a part shorter than this in the fan is not listed or labelled
+// A part counts as shown with this much contour in the fan: an LV segment, a leaflet segment.
+// The same thresholds list the parts and score the view criteria (echo-training.js).
+export const PART_LENGTH = Object.freeze({ lv: 0.15, mitral: 0.06, default: 0.08 });
+const partMin = (id) => PART_LENGTH[id] ?? PART_LENGTH.default;
 
 function runLength(run) {
   let length = 0;
@@ -58,5 +61,5 @@ export function drawParts(ctx, geo, contours, clip, style) {
     }
   }
   ctx.lineCap = 'round';
-  return [...best.values()].filter((b) => b.total >= MIN_PART_RUN);
+  return [...best.values()].filter((b) => b.total >= partMin(b.id));
 }

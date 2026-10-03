@@ -75,7 +75,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
         }
         out[view.id] = best;
       }
-      const omegaRange = { me4c: [0, 20], memc: [45, 75], me2c: [75, 105], melax: [115, 145], meavsax: [25, 50], mebicaval: [85, 120], melaa: [60, 110], tgsax: [0, 20] };
+      const omegaRange = { me4c: [0, 20], memc: [45, 75], me2c: [75, 105], melax: [115, 145], meavsax: [25, 50], mebicaval: [85, 120], melaa: [60, 110], melaapv: [90, 145], tgsax: [0, 20] };
       for (const view of V.TEE_VIEWS) {
         if (only.length && !only.includes(view.id)) continue;
         const preset = V.teePreset(view.id, A, path);

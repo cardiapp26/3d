@@ -4,7 +4,8 @@ import { ahaSegment, anchoredAngles, segmentWall, lvRegions, LV_SEGMENTS } from 
 import { pulmonaryCusp, wholeMesh, TRICUSPID_LEAFLETS } from '../src/valve-parts.js';
 import { partPieces } from '../src/echo-renderer-parts.js';
 import { moderatorRadius, createModeratorBand } from '../src/moderator-band.js';
-import { missingParts } from '../src/echo-training.js';
+import { missingParts, contourGap } from '../src/echo-training.js';
+import { TEE_VIEWS, TTE_VIEWS } from '../src/echo-views.js';
 
 // AHA 16 segments: levels by thirds, six 60° basal/mid sectors, four 90° apical sectors.
 assert.equal(ahaSegment(0.1, 30), 2, 'basal anteroseptal');
@@ -64,6 +65,19 @@ assert.deepEqual(pieces.map(p => [p.part.abbr, p.points.length]), [['A2', 3], ['
 const view = { parts: { lv: ['3', '9'], mitral: [['A2', 'A3'], 'P2'] } };
 assert.deepEqual(missingParts(view, { 'lv:3': 1, 'lv:9': 1, 'mitral:A3': 1, 'mitral:P2': 1 }), [], 'any-of groups and required parts met');
 assert.deepEqual(missingParts(view, { 'lv:3': 1, 'mitral:A2': 0.01 }).map(m => m.text), ['9', 'A2/A3', 'P2']);
+
+// TEE views ask for the same LV walls as their TTE counterparts; the LAA-PV view names the left upper vein.
+const tee = (id) => TEE_VIEWS.find(v => v.id === id), tte = (id) => TTE_VIEWS.find(v => v.id === id);
+const basalMid = { 'lv:3': 0.25, 'lv:9': 0.25, 'lv:6': 0.25, 'lv:12': 0.25, 'mitral:A2': 0.1, 'mitral:P1': 0.1 };
+assert.deepEqual(missingParts(tee('me4c'), basalMid).map(m => m.text), ['14', '16'], 'ME 4C needs the apical segments too');
+assert.deepEqual([...tee('me4c').parts.lv].sort(), [...tte('a4c').parts.lv].sort(), 'ME 4C = A4C segments');
+assert.equal(missingParts(tee('me2c'), { 'lv:3': 1 }).length, 1, 'a septal cut is not a two-chamber view (no anterior wall)');
+const laapv = tee('melaapv');
+assert.ok(laapv.required.includes('lspv') && !laapv.required.includes('pv'), 'the left upper vein itself is required');
+assert.ok(laapv.avoid.includes('rspv') && laapv.avoid.includes('ripv'), 'right veins are not this view');
+assert.ok(laapv.relations.some(r => r.a === 'la' && r.b === 'lspv'), 'its ostium opens into the LA');
+// Relations measure point to segment: a sparsely sampled junction still meets.
+assert.ok(contourGap({ ra: [[[0, 0], [2, 0]]], svc: [[[1, 0.05], [3, 0.05]]] }, 'ra', 'svc') < 0.06);
 
 // Moderator band: flared at both insertions, between the measured end points.
 assert.ok(moderatorRadius(0) > moderatorRadius(0.5) && moderatorRadius(1) > moderatorRadius(0.5));

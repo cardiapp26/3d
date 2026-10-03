@@ -1,5 +1,5 @@
 import { TTE_LIMITS, TEE_LIMITS, ICE_LIMITS } from './echo-probe.js';
-import { ICE_PRESET_NOTES, TTE_PRESET_NOTES } from './echo-views.js';
+import { ICE_PRESET_NOTES, TTE_PRESET_NOTES, TEE_PRESET_NOTES } from './echo-views.js';
 import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
 
 /*
@@ -188,7 +188,8 @@ export function createEchoPanel(mount, handlers) {
       const value = key === 'sectorAngle' ? (state.sectorAngle * 180) / Math.PI : key === 'depth' ? state.depth : probe[key];
       if (value === undefined) continue;
       if (doc.activeElement !== s.input) s.input.value = String(value);
-      setText(s.out, s.unit === 'depth' ? `${Math.round((value / MAX_DEPTH) * 100)}%` : format(value, s.unit));
+      // Depth in atlas units (not cm): a percentage of the slider maximum read as 42% at the low end.
+      setText(s.out, s.unit === 'depth' ? value.toFixed(1) : format(value, s.unit));
     }
     // The sector names the view; the heading line is only needed for a task target.
     title.hidden = !state.task;
@@ -201,7 +202,8 @@ export function createEchoPanel(mount, handlers) {
     // In a task the manoeuvre would give the answer away.
     const iceText = state.modality === 'ice' && !state.task && view.motion
       ? `${t.iceMove}: ${view.motion[lang]}${ICE_PRESET_NOTES[view.id] ? ` ${t.iceAtlas}: ${ICE_PRESET_NOTES[view.id][lang]}` : ''}`
-      : state.modality === 'tte' && !state.task && TTE_PRESET_NOTES[view.id] ? TTE_PRESET_NOTES[view.id][lang] : '';
+      : !state.task && state.modality === 'tte' && TTE_PRESET_NOTES[view.id] ? TTE_PRESET_NOTES[view.id][lang]
+      : !state.task && state.modality === 'tee' && TEE_PRESET_NOTES[view.id] ? TEE_PRESET_NOTES[view.id][lang] : '';
     iceInfo.hidden = !iceText;
     setText(iceInfo, iceText);
     const iceFree = state.modality === 'ice' && !state.task;
