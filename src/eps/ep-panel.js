@@ -13,6 +13,9 @@ import { createLivePanel } from './ep-live-panel.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, caliperText } from './ep-user-caliper.js';
 import { createSchematic } from './ep-schematic.js';
 import { readFlag, writeFlag } from './view-prefs.js';
+import { buildLadder, drawLadder, inferLadderEvents } from './ep-ladder.js';
+import { createMappingPanel } from './amap-panel.js';
+import { AMAP_TEXT } from './amap-text.js';
 
 /*
  * Electrophysiological anatomy panel: Diagnosis / Maneuvers / Treatment tabs
@@ -99,7 +102,7 @@ const ZOOMS = [1, 2, 4];
 
 const pick = (obj, lang) => (lang === 'en' ? obj.en : obj.tr);
 
-export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live']);
+export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping']);
 
 /**
  * @param {HTMLElement} mount
@@ -111,10 +114,10 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
-  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false };
+  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
-  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves') };
+  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder') };
 
   const el = (tagName, className) => {
     const node = doc.createElement(tagName);
@@ -140,6 +143,14 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   liveTab.setAttribute('data-ep-section', 'live');
   liveTab.addEventListener('click', () => { showView('live'); notifySection(); });
   tabs.appendChild(liveTab);
+  // Activation mapping: its own tab after the live laboratory.
+  const mapTab = el('button');
+  mapTab.type = 'button';
+  mapTab.setAttribute('role', 'tab');
+  mapTab.setAttribute('data-ep-section', 'mapping');
+  mapTab.addEventListener('click', () => { showView('mapping'); notifySection(); });
+  tabs.appendChild(mapTab);
+  const mappingPanel = createMappingPanel(doc, { getLang: () => lang });
   const livePanel = createLivePanel(doc, { getLang: () => lang });
   const caseRow = el('label', 'ep-case');
   const caseName = el('span');
@@ -181,7 +192,15 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   wavesBtn.type = 'button';
   wavesBtn.setAttribute('data-ep-waves', '');
   wavesBtn.addEventListener('click', () => { view.waves = !view.waves; writeFlag('waves', view.waves); renderView(); });
-  viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, wavesBtn, fullBtn);
+  const ladderBtn = el('button', 'ep-size');
+  ladderBtn.type = 'button';
+  ladderBtn.setAttribute('data-ep-ladder', '');
+  ladderBtn.addEventListener('click', () => { view.ladder = !view.ladder; writeFlag('ladder', view.ladder); renderView(); });
+  viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, wavesBtn, ladderBtn, fullBtn);
+  // Ladder diagram under the strip, on the same time axis.
+  const ladderCanvas = el('canvas', 'egm-ladder');
+  ladderCanvas.setAttribute('role', 'img');
+  ladderCanvas.setAttribute('data-ep-ladder-canvas', '');
   const inspect = el('p', 'ep-inspect');
   const stripTime = (event) => {
     const rect = canvas.getBoundingClientRect?.();
@@ -284,12 +303,12 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   // stays in view next to its controls. The lesson content sits in one box
   // so the live laboratory can replace it as a whole.
   const stripCol = el('div', 'ep-strip');
-  stripCol.append(caseRow, title, row, viewBar, canvas, inspect, measures);
+  stripCol.append(caseRow, title, row, viewBar, canvas, ladderCanvas, inspect, measures);
   const sideCol = el('div', 'ep-side');
   sideCol.append(taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
-  root.append(tabs, lessonBox, livePanel.element);
+  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -350,8 +369,31 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     return drawEgm(target, recording, { lang, title: heading, channels: visibleChannels(recording), zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? view.caliper : null, waves: view.waves });
   }
 
+  // The ladder names the mechanism: it waits until the reading is open
+  // (neutral diagnosis, an unanswered task or pacing-laboratory question).
+  function ladderLocked() {
+    const lab = state.sim?.lab;
+    if (lab === 'task') return !taskPanel.isAnswered();
+    if (lab === 'pacing') return !pacingPanel.getScene();
+    if (lab === 'origin') return !originPanel.getScene();
+    return state.section === 'diagnosis' && !state.evidence;
+  }
+  // Catalogue recordings carry no origins: inferred once per recording from its events and the case mechanism.
+  const ladders = new WeakMap();
+  function ladderOf(recording) {
+    if (!ladders.has(recording)) {
+      const mechanism = EP_CASES.find((c) => c.id === (recording.caseId || state.caseId))?.mechanism || null;
+      ladders.set(recording, buildLadder(inferLadderEvents(recording.events, { mechanism }), { until: recording.windowMs }));
+    }
+    return ladders.get(recording);
+  }
+
   function redraw() {
     lastDrawn = drawRecording(canvas) || lastDrawn;
+    const recording = current();
+    const show = Boolean(view.ladder && recording && lastDrawn && !ladderLocked());
+    ladderCanvas.hidden = !show;
+    if (show) drawLadder(ladderCanvas, ladderOf(recording), lastDrawn, { lang });
     if (fs?.isOpen()) fs.render();
   }
 
@@ -393,6 +435,12 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     caliperBtn.setAttribute('aria-pressed', String(view.caliperOn));
     wavesBtn.textContent = lang === 'en' ? 'Wave names' : 'Dalga adları';
     wavesBtn.setAttribute('aria-pressed', String(view.waves));
+    const locked = ladderLocked();
+    ladderBtn.textContent = lang === 'en' ? 'Ladder diagram' : 'Ladder diyagram';
+    ladderBtn.setAttribute('aria-pressed', String(view.ladder && !locked));
+    ladderBtn.disabled = locked;
+    ladderBtn.title = locked ? (lang === 'en' ? 'Shown once the reading is open (it names the mechanism).' : 'Yorum açılınca gösterilir (mekanizmayı açık eder).') : '';
+    ladderCanvas.setAttribute('aria-label', lang === 'en' ? 'Ladder diagram of the recording' : 'Kaydın ladder diyagramı');
     if (view.caliperOn) inspect.textContent = caliperText(view.caliper, lang);
     else if (view.cursorMs == null) inspect.textContent = lang === 'en' ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
     else {
@@ -408,12 +456,15 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const recording = current();
     sectionButtons.forEach((button, i) => {
       button.textContent = t.sections[EP_SECTIONS[i]];
-      button.setAttribute('aria-selected', String(!state.live && EP_SECTIONS[i] === state.section));
+      button.setAttribute('aria-selected', String(!state.live && !state.mapping && EP_SECTIONS[i] === state.section));
     });
     liveTab.textContent = lang === 'en' ? 'Live recording' : 'Canlı kayıt';
     liveTab.setAttribute('aria-selected', String(state.live));
-    lessonBox.hidden = state.live;
+    mapTab.textContent = AMAP_TEXT[lang].tab;
+    mapTab.setAttribute('aria-selected', String(state.mapping));
+    lessonBox.hidden = state.live || state.mapping;
     livePanel.setActive(state.live);
+    mappingPanel.setActive(state.mapping);
     // In diagnosis the case names stay hidden (numbered cases) until the evidence view.
     const cases = EP_CASES.filter((c) => inSection(c.id, state.section));
     caseName.textContent = t.caseLabel;
@@ -550,20 +601,23 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     renderView();
   }
 
-  /** Show a lesson section or the live laboratory ('live'). */
+  /** Show a lesson section, the live laboratory ('live') or activation mapping ('mapping'). */
   function showView(id) {
     if (!EP_VIEWS.includes(id)) return;
-    view.waves = readFlag('waves');   // the live monitor may have changed the shared choice
-    const wasLive = state.live;
+    view.waves = readFlag('waves');   // the live monitor may have changed the shared choices
+    view.ladder = readFlag('ladder');
+    const wasLab = state.live || state.mapping;
     state.live = id === 'live';
-    if (!state.live) setSection(id);
-    if (state.live || wasLive) render();
+    state.mapping = id === 'mapping';
+    if (!state.live && !state.mapping) setSection(id);
+    if (state.live || state.mapping || wasLab) render();
   }
-  const currentView = () => (state.live ? 'live' : state.section);
+  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.section);
   const notifySection = () => { if (typeof onSection === 'function') onSection(currentView()); };
 
   if (EP_SECTIONS.includes(initial) && initial !== state.section) setSection(initial);
   state.live = initial === 'live';
+  state.mapping = initial === 'mapping';
   render();
   return {
     element: root,
@@ -576,8 +630,9 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     getActiveView: currentView,
     schematic,
     live: livePanel,
+    mapping: mappingPanel,
     /** View state (channels shown, zoom, pan, inspection cursor) and the delivered maneuver, if any. */
-    getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? { ...view.caliper } : null, waves: view.waves, sim: state.sim ? state.sim.choices : null }),
+    getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? { ...view.caliper } : null, waves: view.waves, ladder: view.ladder && !ladderLocked(), sim: state.sim ? state.sim.choices : null }),
     getRecording: () => current(),
     sim: simPanel,
     task: taskPanel,

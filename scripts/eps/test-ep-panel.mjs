@@ -31,12 +31,13 @@ const hasClass = (c, name) => (c.className || '').split(' ').includes(name);
 const lessonBox = panel.element.children.find((c) => hasClass(c, 'ep-lesson'));
 const columns = lessonBox.children;
 assert.deepEqual(columns.map((c) => c.className), ['ep-strip', 'ep-side'], 'strip column beside the side column');
+const viewBarOf = () => columns[0].children.find((c) => hasClass(c, 'ep-view'));
 const byClass = (name) => [...panel.element.children, ...columns.flatMap((c) => c.children)].find((c) => hasClass(c, name));
 const tabs = byClass('ep-sections');
 const row = byClass('egm-scenarios');
 const text = byClass('egm-text');
 const title = byClass('egm-title');
-assert.equal(tabs.children.length, 4, 'three lesson sections and the live recording tab');
+assert.equal(tabs.children.length, 5, 'three lesson sections, the live recording and the mapping tab');
 
 // Lesson entry: the legacy scenario ids open the treatment clips.
 panel.openLesson('sinus');
@@ -113,6 +114,17 @@ assert.equal(panel.getState().section, 'treatment');
 assert.equal(panel.schematic.getOptions().zone, 'koch-slow-pathway', 'zone on the schematic');
 tabs.children[0].listeners.click();
 assert.equal(panel.schematic.getOptions().zone, null, 'neutral diagnosis hides the zone');
+
+// Ladder: locked while the diagnosis is neutral, open with the evidence.
+const ladderBtn = viewBarOf().children.find((c) => c.attributes['data-ep-ladder'] === '');
+tabs.children[0].listeners.click();
+panel.setScenario('avnrt-typ-svt');
+ladderBtn.listeners.click();
+assert.equal(ladderBtn.disabled, true, 'locked in the neutral diagnosis');
+assert.equal(panel.getView().ladder, false);
+byClass('ep-evidence').listeners.click();
+assert.equal(ladderBtn.disabled, false, 'open with the evidence');
+assert.equal(panel.getView().ladder, true);
 
 // Views: the live tab replaces the lesson box; onSection reports tab clicks.
 const seen = [];

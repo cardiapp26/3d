@@ -334,9 +334,11 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     const events = Object.fromEntries(Object.entries(raw).map(([ch, list]) => [ch, list.map((e) => ({ ...e, t: e.t - from }))]));
     const local = state.caliperOn ? { a: state.caliper.a == null ? null : state.caliper.a - from, b: state.caliper.b == null ? null : state.caliper.b - from } : null;
     drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, t0: from, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local, waves: state.waves }) || drawn;
-    ladderCanvas.hidden = !state.ladder;
+    // The ladder names the mechanism of a hidden case: it waits for the answer.
+    const ladderOn = state.ladder && !(state.hidden && !state.answer);
+    ladderCanvas.hidden = !ladderOn;
     // Built on the absolute event times (a His names its junctional A by absolute time).
-    if (state.ladder && drawn) drawLadder(ladderCanvas, buildLadder(raw, { until: end }), { ...drawn, from: drawn.from + from, to: drawn.to + from }, { lang: L() });
+    if (ladderOn && drawn) drawLadder(ladderCanvas, buildLadder(raw, { until: end }), { ...drawn, from: drawn.from + from, to: drawn.to + from }, { lang: L() });
     const iv = liveIntervals(heart.events(end - 2500, end));
     const t = T(), f = (v) => (v == null ? t.none : `${v} ms`);
     readout.textContent = `${t.intervals}: PP ${f(iv.pp)} · RR ${f(iv.rr)} · AH ${f(iv.ah)} · HV ${f(iv.hv)} · VA ${f(iv.va)}`;
@@ -425,7 +427,9 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     wavesBtn.textContent = t.waves;
     wavesBtn.setAttribute('aria-pressed', String(state.waves));
     ladderBtn.textContent = t.ladder;
-    ladderBtn.setAttribute('aria-pressed', String(state.ladder));
+    ladderBtn.disabled = state.hidden && !state.answer;
+    ladderBtn.title = ladderBtn.disabled ? t.ladderLocked : '';
+    ladderBtn.setAttribute('aria-pressed', String(state.ladder && !ladderBtn.disabled));
     ladderCanvas.setAttribute('aria-label', t.ladderLabel);
     stimTitle.textContent = t.stim;
     for (const [span, key] of fieldLabels) span.textContent = t[key] || key;
@@ -455,7 +459,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     render,
     setActive(flag) {
       state.active = Boolean(flag);
-      if (state.active) state.waves = readFlag('waves');   // the lesson strips may have changed the shared choice
+      if (state.active) { state.waves = readFlag('waves'); state.ladder = readFlag('ladder'); }   // the lesson strips may have changed the shared choices
       root.hidden = !state.active;
       lastWall = null;
       if (state.active) { render(); if (state.running) loop(); } else cancelFrame(raf);

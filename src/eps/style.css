@@ -89,6 +89,8 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 @media (max-width: 900px) {
   body { height: auto; min-height: 100dvh; }
   .app-shortcuts { display: none; }
+  .app-brand p { display: none; }
+  .app-back { padding: 4px 8px; font-size: 11.5px; white-space: nowrap; }
   .ep-live { grid-template-columns: 1fr; height: auto; }
   .ep-live-canvas { flex: none; height: 62vh; min-height: 300px; }
   .ep-live-console { overflow: visible; }

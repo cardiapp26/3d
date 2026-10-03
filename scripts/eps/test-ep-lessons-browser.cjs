@@ -38,6 +38,17 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('.ep-schematic .sch-zone').count(), 1, 'evidence reveals the zone');
     assert.match(await page.locator('.ep-schematic-legend').textContent(), /Koch/);
 
+    // Ladder diagram: locked while neutral, then a strip under the recording with its conduction lines.
+    const ladderBtn = page.locator('[data-ep-ladder]');
+    await page.locator('[data-ep-evidence]').click();   // back to the neutral view
+    assert.equal(await ladderBtn.isDisabled(), true, 'ladder locked in the neutral diagnosis');
+    await page.locator('[data-ep-evidence]').click();
+    await ladderBtn.click();
+    assert.equal(await page.locator('[data-ep-ladder-canvas]').isVisible(), true, 'ladder under the strip once the reading is open');
+    const lb = await page.locator('[data-ep-ladder-canvas]').boundingBox(), sb = await page.locator('.egm-canvas').boundingBox();
+    assert.ok(lb.y >= sb.y + sb.height - 1 && Math.abs(lb.width - sb.width) < 2, 'same width, below the strip');
+    assert.ok(await page.locator('[data-ep-ladder-canvas]').evaluate((c) => c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 0 && v > 200)), 'ladder lines drawn');
+
     // Maneuvers: deliver the His-refractory PVC from the simulator.
     await page.locator('[data-ep-section=maneuver]').click();
     assert.equal(await page.evaluate(() => location.hash), '#/maneuver', 'tab written to the address');
@@ -57,6 +68,26 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('.ep-fullscreen').isVisible(), false, 'Escape closes it');
 
+    // Activation mapping tab: the colour map, the timeline and the reading follow the controls.
+    await page.locator('[data-ep-section=mapping]').click();
+    assert.equal(await page.evaluate(() => location.hash), '#/mapping');
+    assert.equal(await page.locator('[data-amap]').isVisible(), true, 'mapping view shown');
+    assert.equal(await page.locator('.ep-lesson').isHidden(), true);
+    const red = () => page.evaluate(() => window.epsLab.panel.mapping.set({}).reading);
+    assert.equal((await red()).redRegions, 1, 'focal map: one red region');
+    await page.locator('[data-amap-scenario]').selectOption('slow-scar');
+    assert.equal(await page.locator('[data-amap-verdict]').getAttribute('data-level'), 'impossible', 'Y > X verdict');
+    assert.ok((await red()).redRegions > 1, 'misleading map across both atria');
+    await page.locator('[data-amap-window]').selectOption('dePonti');
+    assert.match(await page.locator('[data-amap-warn]').textContent(), /De Ponti/, 'no diastole for De Ponti');
+    await page.locator('[data-amap-window]').selectOption('symmetric');
+    await page.locator('[data-amap-region]').selectOption('ra');
+    assert.equal((await red()).redRegions, 1, 'right atrium alone: one red region');
+    await page.locator('[data-amap-truth]').click();
+    assert.equal(await page.locator('[data-amap-truth]').getAttribute('aria-pressed'), 'true');
+    assert.ok(await page.locator('[data-amap-map]').evaluate((c) => c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 0 && v > 200)), 'map drawn');
+    assert.ok(await page.locator('[data-amap-timeline]').evaluate((c) => c.width > 0), 'timeline drawn');
+
     // English labels follow the switch; back to the live tab.
     await page.locator('[data-app-lang-option=en]').click();
     assert.equal(await page.locator('[data-ep-section=treatment]').textContent(), 'Treatment');
@@ -64,7 +95,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('.ep-lesson').isHidden(), true);
     assert.equal(await page.locator('[data-ep-live]').isVisible(), true);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, delivered maneuver, treatment zone on the schematic, full-screen strip, TR/EN, live tab');
+    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), TR/EN, live tab');
   } finally {
     await browser.close();
   }

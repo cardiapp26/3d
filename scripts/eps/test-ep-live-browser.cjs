@@ -109,8 +109,10 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     // Hidden case: the name is withheld until the diagnosis is answered; hints follow.
     await page.evaluate(() => window.epsLab.live.setCase('flutter-cti', { hidden: true }));
     assert.equal(await page.locator('[data-ep-live-case]').inputValue(), 'hidden', 'name hidden');
+    assert.equal(await page.locator('[data-ep-live-ladder]').isDisabled(), true, 'ladder locked during a hidden case');
     await page.locator('[data-ep-live-diagnose]').click();
     await page.locator('[data-ep-live-answer=avnrt-typical]').click();
+    assert.equal(await page.locator('[data-ep-live-ladder]').isDisabled(), false, 'ladder free after the answer');
     assert.match(await page.locator('[data-ep-live-quiz] .ep-pace-result').textContent(), /Yanlış\. Doğru yanıt: Tipik \(CTI bağımlı\) atriyal flutter/);
     assert.equal(await page.locator('[data-ep-live-case]').inputValue(), 'flutter-cti', 'name revealed after the answer');
     assert.equal(await page.locator('[data-ep-live-hint-list] li').count() >= 3, true, 'hints shown');

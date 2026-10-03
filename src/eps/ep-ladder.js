@@ -9,7 +9,7 @@
 
 // Near-field atrial activation is read on these channels; one activation
 // reaches them within ATRIAL_SPREAD_MS of its earliest site.
-const ATRIAL_CHANNELS = ['hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12'];
+const ATRIAL_CHANNELS = ['hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'halo-910', 'halo-78', 'halo-56', 'halo-34', 'halo-12'];
 const ATRIAL_SPREAD_MS = 90;
 const RETRO_NODAL = Object.freeze({ 'avn-fast': 'retro-fast', 'avn-slow': 'retro-slow' });
 const AP_ORIGINS = new Set(['ap-left', 'ap-ps']);
@@ -45,12 +45,13 @@ function atrialBeats(events) {
 export function buildLadder(events, { until = Infinity } = {}) {
   const atria = atrialBeats(events);
   const his = of(events, 'his-d', 'H');
-  const ventricles = of(events, 'rv', 'V');
+  // RV near field when recorded, else the surface QRS.
+  const ventricles = of(events, 'rv', 'V').length ? of(events, 'rv', 'V') : of(events, 'ecg-ii', 'V');
   const links = [];
   const conducted = new Set();
   for (const h of his) {
     // Antegrade over the node: the His names its junctional A.
-    const beat = h.aj == null ? null : atria.find((b) => b.hisA != null && Math.abs(b.hisA - h.aj) < 2);
+    const beat = h.aj == null ? null : atria.find((b) => Math.abs((b.hisA ?? b.t) - h.aj) < 2);
     if (beat) {
       conducted.add(beat);
       links.push({ kind: h.path === 'slow' ? 'slow' : 'fast', from: ['A', beat.t], to: ['AV', h.t] });
@@ -79,6 +80,92 @@ export function buildLadder(events, { until = Infinity } = {}) {
     }
   }
   return { atria, his, ventricles, links };
+}
+
+// ---- Lesson clips: the case catalogue records carry no origins; infer them ----
+
+const ATRIAL_MECHANISMS = new Set(['focal-at', 'flutter-ccw', 'af-pv-triggers']);
+const VENTRICULAR_MECHANISMS = new Set(['fascicular-reentry']);
+// Tachycardias whose His comes from a ventricular circuit: a His pairs with an atrial activation only at a normal AH.
+const HIS_CIRCUIT_MECHANISMS = new Set(['fascicular-reentry', 'bundle-branch-reentry']);
+// Only the AV nodal reentry cases have a slow pathway to read.
+const DUAL_PATHWAY_MECHANISMS = new Set(['avnrt-typical', 'avnrt-atypical']);
+const PATHWAY_MECHANISMS = new Set(['avrt-orthodromic', 'pjrt', 'wpw-pattern']);
+const DISTAL_CS = new Set(['cs-12', 'cs-34']);
+const ATRIAL_STIM = new Set(['hra', 'cs-910', 'cs-12', 'halo-12', 'abl-d']);
+const SLOW_AH_MS = 200;
+const JUMP_MS = 50;
+
+const stimuli = (events) => Object.entries(events).flatMap(([ch, list]) => list.filter((e) => e.type === 'S').map((e) => ({ ch, t: e.t })));
+
+/**
+ * Lesson clips (ep-cases.js) only record event times. This adds what the
+ * live model writes itself, so buildLadder reads both the same way:
+ * A origins (paced, sinus or focus, retrograde by sequence and VA), the
+ * junctional A and nodal path of each His (AH > 200 ms or a >= 50 ms jump
+ * over the previous conducted beat: slow) and the ventricular origin (delta
+ * wave: pathway; ventricular stimulus: paced). The case mechanism settles
+ * what a sequence alone cannot (an atrial tachycardia has no retrograde A).
+ * @returns {Record<string, object[]>} new events; the input is not changed
+ */
+export function inferLadderEvents(events, { mechanism = null } = {}) {
+  const out = Object.fromEntries(Object.entries(events).map(([ch, list]) => [ch, list.map((e) => ({ ...e }))]));
+  const stims = stimuli(out);
+  // Fibrillatory activity: f waves, or the monophasic A of the catalogue's AF builder.
+  const fibrillation = Object.values(out).some((list) => list.some((e) => e.type === 'f' || (e.type === 'A' && e.mono)));
+  const vList = (out.rv || []).some((e) => e.type === 'V') ? 'rv' : 'ecg-ii';
+  const ventricles = (out[vList] || []).filter((e) => e.type === 'V' && !e.far).sort((a, b) => a.t - b.t);
+  const hisList = (out['his-d'] || []).filter((e) => e.type === 'H').sort((a, b) => a.t - b.t);
+  const delta = (out['ecg-ii'] || []).filter((e) => e.type === 'delta');
+  // Ventricular origin.
+  for (const v of ventricles) {
+    if (stims.some((s) => s.ch === 'rv' && v.t - s.t >= -5 && v.t - s.t <= 40)) v.origin = 'rv';
+    else if (delta.some((d) => v.t - d.t >= -20 && v.t - d.t <= 80)) v.origin = 'ap';
+    else if (VENTRICULAR_MECHANISMS.has(mechanism) && !hisList.some((h) => v.t - h.t > 20 && v.t - h.t < 120)) v.origin = 'vt';
+    else v.origin = 'his';
+  }
+  // Atrial activations: cluster, then name the origin from pacing, sequence and timing.
+  const all = ATRIAL_CHANNELS
+    .flatMap((ch) => (out[ch] || []).filter((e) => e.type === 'A' && !e.far).map((e) => ({ e, ch }))).sort((a, b) => a.e.t - b.e.t);
+  const clusters = [];
+  for (const x of all) {
+    const c = clusters.at(-1);
+    if (c && x.e.t - c[0].e.t <= ATRIAL_SPREAD_MS) c.push(x); else clusters.push([x]);
+  }
+  for (const c of clusters) {
+    const t = c[0].e.t, first = c[0].ch;
+    const paced = stims.some((s) => ATRIAL_STIM.has(s.ch) && t - s.t >= 0 && t - s.t <= 60);
+    const before = [...ventricles.map((v) => v.t), ...hisList.map((h) => h.t)].filter((x) => x < t && t - x <= 400);
+    let origin;
+    if (paced) origin = 'paced';
+    else if (fibrillation) origin = 'af';
+    else if (ATRIAL_MECHANISMS.has(mechanism) || first === 'hra' || !before.length) origin = first.startsWith('halo') ? 'flutter' : 'sinus';
+    else {
+      const v = ventricles.filter((x) => x.t < t).at(-1);
+      const va = v ? t - v.t : Infinity;
+      // After a pre-excited ventricle (antidromic) the way up is the node.
+      const pathwayUp = v?.origin !== 'ap' && (DISTAL_CS.has(first) || PATHWAY_MECHANISMS.has(mechanism));
+      origin = pathwayUp ? (DISTAL_CS.has(first) ? 'ap-left' : 'ap-ps') : va < SLOW_AH_MS ? 'avn-fast' : 'avn-slow';
+    }
+    for (const x of c) x.e.origin = origin;
+    c.hisA = c.find((x) => x.ch === 'his-d')?.e.t ?? t;
+    c.t = t;
+  }
+  // Each His: the latest atrial activation 30-450 ms before it, unless the
+  // His came up from a ventricular activation (retrograde His).
+  let lastFastAh = null;
+  for (const h of hisList) {
+    if (ventricles.some((v) => h.t - v.t >= 0 && h.t - v.t <= 80) || stims.some((s) => s.ch === 'rv' && h.t - s.t >= 0 && h.t - s.t <= 150)) continue;
+    const c = clusters.filter((x) => h.t - x.hisA >= 30 && h.t - x.hisA <= 450).at(-1);
+    if (!c) continue;
+    const ah = h.t - c.hisA;
+    if (HIS_CIRCUIT_MECHANISMS.has(mechanism) && ah > SLOW_AH_MS) continue;
+    const slow = DUAL_PATHWAY_MECHANISMS.has(mechanism) && (ah > SLOW_AH_MS || (lastFastAh != null && ah - lastFastAh >= JUMP_MS));
+    h.aj = c.hisA;
+    h.path = slow ? 'slow' : 'fast';
+    if (!slow) lastFastAh = ah;
+  }
+  return out;
 }
 
 export const LADDER_STYLE = Object.freeze({
