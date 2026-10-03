@@ -226,6 +226,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       if(kochFocus&&!['chambers','conduction'].includes(m.userData.layer)&&!KOCH_FOCUS_IDS.includes(m.userData.id)){m.visible=false;continue;}
       if(kochFocus&&m.userData.layer==='conduction'&&m.userData.id!=='av'&&m.name!=='Bundle of His'){m.visible=false;continue;}
       const {id,layer,system:branch}=m.userData;
+      // The Chiari network is a variant (2-3%): it belongs to the RA mode, not to every view of the heart.
+      if(id==='chiari-network'&&mode!=='ra'){m.visible=false;continue;}
       if (mode === 'angiography' && m.userData.veinGroup === 'cardiac-veins') {
         m.visible = false;
         continue;

@@ -10,13 +10,15 @@ import { surface, resample, placeOnSurface } from './atrial-surface.js';
  *   Thebesian valve; the tendon of Todaro runs on from this commissure.
  * - Chiari network: a fenestrated net of fine strands from the Eustachian
  *   (and Thebesian) valve region to the crista terminalis and the RA wall;
- *   a variant (about 2-3% at autopsy), drawn here as a few strands.
+ *   a variant (about 2-3% at autopsy), drawn here as a few strands and
+ *   shown in the RA mode only.
  * Ho and Sánchez-Quintana, PMC4668306.
  */
 const BASE_OFFSET = 0.015;      // valve base this far into the cavity from the wall
 const VALVE_HEIGHT = 0.16;      // free edge height at the middle of the crescent
-const STRAND_RADIUS = 0.006;
-const STRAND_COUNT = 7;
+const STRAND_RADIUS = 0.005;
+const STRAND_COUNT = 5;
+const STRAND_SAG = 0.03;
 
 /** Crescent height along the valve base (t from the lateral end to the CS end). */
 export function eustachianHeight(t) {
@@ -48,28 +50,42 @@ export function createEustachianValve({ raMeshes, ivcOstium, csOstium }) {
 }
 
 /**
+ * Strand paths of the Chiari network. The crista path runs from the SVC end
+ * down to the IVC end, the valve edge from its lateral end to the coronary
+ * sinus mouth. The strands start on the lateral part of the valve edge and
+ * end on the lower crista, both in the same order, so neighbours run side by
+ * side without crossing; short cross links between neighbours make the net.
+ * @param {{ valveEdge: THREE.Vector3[], cristaPath: THREE.Vector3[], centre: THREE.Vector3 }} input
+ * @returns {THREE.Vector3[][]} each strand is [from, mid, to]
+ */
+export function chiariStrandPaths({ valveEdge, cristaPath, centre }) {
+  const strands = [];
+  for (let k = 0; k < STRAND_COUNT; k++) {
+    const u = k / (STRAND_COUNT - 1);
+    const from = valveEdge[Math.round((0.08 + 0.54 * u) * (valveEdge.length - 1))];
+    const to = cristaPath[Math.round((0.97 - 0.22 * u) * (cristaPath.length - 1))];
+    // Strands hang slightly into the cavity and sag, not along the wall.
+    const mid = from.clone().lerp(to, 0.5).lerp(centre, 0.12);
+    mid.y -= STRAND_SAG;
+    strands.push([from.clone(), mid, to.clone()]);
+  }
+  const at = (strand, f) => strand[0].clone().lerp(strand[2], f).lerp(centre, 0.12 * (1 - Math.abs(2 * f - 1)));
+  for (let k = 0; k + 1 < STRAND_COUNT; k++) {
+    const f = k % 2 ? 0.62 : 0.38;
+    const a = at(strands[k], f), b = at(strands[k + 1], f);
+    strands.push([a, a.clone().lerp(b, 0.5), b]);
+  }
+  return strands;
+}
+
+/**
  * @param {{ raMeshes: THREE.Mesh[], valveEdge: THREE.Vector3[], cristaPath: THREE.Vector3[] }} input
  * @returns {{ geometry: THREE.BufferGeometry, strands: THREE.Vector3[][] }}
  */
 export function createChiariNetwork({ raMeshes, valveEdge, cristaPath }) {
   const ra = surface(raMeshes);
   if (!valveEdge?.length || !cristaPath?.length) throw new Error('Chiari network needs the Eustachian valve edge and the crista terminalis');
-  const centre = ra.centre;
-  const strands = [];
-  for (let k = 0; k < STRAND_COUNT; k++) {
-    const t = (k + 0.5) / STRAND_COUNT;
-    const from = valveEdge[Math.round(t * (valveEdge.length - 1))];
-    // To the lower half of the crista, spread along it.
-    const to = cristaPath[Math.round((0.45 + 0.5 * t) * (cristaPath.length - 1))];
-    // Strands hang slightly into the cavity, not along the wall.
-    const mid = from.clone().lerp(to, 0.5).lerp(centre, 0.18);
-    strands.push([from.clone(), mid, to.clone()]);
-  }
-  // Cross links between neighbouring strands make the net.
-  for (let k = 0; k + 1 < strands.length; k += 2) {
-    const a = strands[k][1].clone().lerp(strands[k][2], 0.35), b = strands[k + 1][1].clone().lerp(strands[k + 1][0], 0.35);
-    strands.push([a, a.clone().lerp(b, 0.5).lerp(centre, 0.05), b]);
-  }
+  const strands = chiariStrandPaths({ valveEdge, cristaPath, centre: ra.centre });
   const parts = strands.map(points => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 24, STRAND_RADIUS, 6, false));
   const geometry = mergeTubes(parts);
   parts.forEach(g => g.dispose());
