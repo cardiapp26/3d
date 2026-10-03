@@ -5,11 +5,16 @@
 import { rememberRest } from './chamber-field.js';
 
 // Semilunar cusps open in their own valve frame (the aortic and pulmonary
-// roots are tilted): free edges move from the centre toward the sinus wall and
-// a little downstream; the attachment at the wall stays put. Lengths are
-// fractions of the measured root radius.
-const SL_OPEN = 0.78;    // an open free edge reaches this fraction of the root radius
-const SL_LIFT = 0.18;    // ...and moves this far downstream along the valve axis
+// roots are tilted): each cusp folds back against its sinus wall. The radial
+// distance is compressed monotonically into the band between the open
+// orifice and the wall (so the cusp never folds over itself), the vertex
+// stays in its own cusp sector (so nothing is flung across the orifice), and
+// the free edge moves a little downstream; the attachment at the wall stays
+// put. Lengths are fractions of the measured root radius.
+const SL_ORIFICE = 0.8;  // open: the free edges lie on a circle of this fraction of the root radius
+const SL_LIFT = 0.18;    // ...and move this far downstream along the valve axis
+const SL_SECTOR = (75 * Math.PI) / 180;   // a cusp stays within this angle of its own direction
+const SL_CORE = 0.35;    // inside this radius the vertex angle blends toward the cusp direction
 
 /**
  * Open pose of one cusp vertex.
@@ -22,17 +27,33 @@ export function semilunarOffset(p, opening, pose, cuspDir) {
   const k = clamp01(opening);
   if (k === 0) return [p[0], p[1], p[2]];
   const { center: c, axis: n, radius } = pose;
+  const R = Math.max(radius, 1e-4);
   const r = [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
   const along = r[0] * n[0] + r[1] * n[1] + r[2] * n[2];
   const rad = [r[0] - along * n[0], r[1] - along * n[1], r[2] - along * n[2]];
-  const radial = Math.hypot(...rad);
-  const w = clamp01(1 - radial / Math.max(radius, 1e-4));
-  // Near the centre the radial direction is undefined: lean on the cusp's own direction.
-  const dir = [rad[0] + cuspDir[0] * radius * 0.2, rad[1] + cuspDir[1] * radius * 0.2, rad[2] + cuspDir[2] * radius * 0.2];
-  const len = Math.hypot(...dir) || 1;
-  const out = Math.max(0, SL_OPEN * radius - radial) * w * k / len;
-  const lift = SL_LIFT * radius * w * k;
-  return [p[0] + dir[0] * out + n[0] * lift, p[1] + dir[1] * out + n[1] * lift, p[2] + dir[2] * out + n[2] * lift];
+  // In-plane basis: u toward the cusp, v across it. A vertex past the centre (on a
+  // neighbour's side) is projected back onto its own half-plane, so the map is continuous.
+  const u = cuspDir, v = [n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2], n[0] * u[1] - n[1] * u[0]];
+  const x = rad[0] * u[0] + rad[1] * u[1] + rad[2] * u[2], y = rad[0] * v[0] + rad[1] * v[1] + rad[2] * v[2];
+  const restRadial = Math.hypot(x, y), restAngle = Math.atan2(y, x);
+  const radial = Math.min(R, Math.hypot(Math.max(0, x), y));
+  const core = clamp01(radial / (SL_CORE * R));
+  // Angles are squeezed proportionally into the cusp sector (no clamp, no jump) and fade toward the cusp direction at the centre.
+  const angle = Math.atan2(y, Math.max(0, x)) * (SL_SECTOR / (Math.PI / 2)) * core * core * (3 - 2 * core);
+  // Monotonic map of [0, R] onto [orifice, R]: the wall stays, the centre moves furthest.
+  const openRadial = SL_ORIFICE * R + radial * (1 - SL_ORIFICE);
+  const newRadial = restRadial + (openRadial - restRadial) * k;
+  let delta = angle - restAngle;
+  if (delta > Math.PI) delta -= 2 * Math.PI; else if (delta < -Math.PI) delta += 2 * Math.PI;
+  const newAngle = restAngle + delta * k;
+  const cos = Math.cos(newAngle), sin = Math.sin(newAngle);
+  const dir = [u[0] * cos + v[0] * sin, u[1] * cos + v[1] * sin, u[2] * cos + v[2] * sin];
+  const lift = SL_LIFT * R * (1 - radial / R) * k;
+  return [
+    c[0] + n[0] * (along + lift) + dir[0] * newRadial,
+    c[1] + n[1] * (along + lift) + dir[1] * newRadial,
+    c[2] + n[2] * (along + lift) + dir[2] * newRadial
+  ];
 }
 
 export function writeLeaflet(mesh, opening, pose) {

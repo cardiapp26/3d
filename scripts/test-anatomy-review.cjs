@@ -47,10 +47,13 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     });
     assert.ok(band.len > 0.3 && band.len < 1, `moderator band length (${band.len.toFixed(2)})`);
     assert.ok(band.ends.every((d) => d < 0.08), `band ends on the RBB (${band.ends.map((d) => d.toFixed(3))})`);
+    await page.hover('.workspace > aside');
     assert.equal(await page.locator('#rv-tools').isVisible(), true);
     assert.equal(await page.locator('#layers').isVisible(), false);
+    await page.hover('.workspace > aside');
     await page.locator('[data-chamber-wall=rv]').fill('40');
     assert.ok((await page.evaluate(() => window.heart.getState().wallCuts.rv)) > 0.39, 'the RV wall slider cuts the RV');
+    await page.hover('.workspace > aside');
     await page.locator('[data-chamber-focus=tricuspid]').click();
     assert.match(await page.locator('#structure-title').textContent(), /Triküspit/);
     await open('#/mode/lv');
@@ -66,7 +69,9 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.ok(!ra.includes('chiari-network'), 'the Chiari network (a variant) is off by default');
     const labels = await allLabels();
     assert.ok(labels.includes('Östaki kapağı') && !labels.includes('Chiari ağı (varyant)'), `RA labels: ${labels}`);
+    await page.hover('.workspace > aside');
     await page.locator('[data-chamber-focus=chiari-network]').click();
+    await page.hover('.workspace > aside');
     assert.ok((await visibleIds()).includes('chiari-network') && await page.locator('[data-chiari-network]').isChecked(), 'picking the Chiari network switches it on');
     assert.ok((await allLabels()).includes('Chiari ağı (varyant)'), 'and labels it');
     assert.match(await page.locator('#structure-title').textContent(), /Chiari ağı/);
@@ -134,8 +139,10 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.equal(lvState.colours, true, 'LV mode colours the AHA segments');
     for (let n = 1; n <= 16; n++) assert.ok(lvState.names.includes(String(n)), `segment ${n}`);
     assert.ok(lvState.names.includes('LVOT'));
+    await page.hover('.workspace > aside');
     await page.locator('#lv-tools [data-ventricle-regions]').uncheck();
     assert.equal(await page.evaluate(() => window.heart.getMeshes('lv')[0].material.vertexColors), false, 'the toggle removes the colours');
+    await page.hover('.workspace > aside');
     await page.locator('#lv-tools [data-ventricle-regions]').check();
     await open('#/mode/rv');
     const rvNames = await page.evaluate(() => window.heart.getMeshes('rv')[0].userData.branches.names.map((n) => n.key));

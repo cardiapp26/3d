@@ -156,6 +156,16 @@ console.log('Running Animation Channels Unit Tests...\n');
   assert.ok(opened[2] > 0, 'and downstream along the valve axis');
   assert.ok(Math.abs(hinge[0] - 2) < 1e-9 && Math.abs(hinge[2]) < 1e-9, 'Attachment at the wall stays fixed');
   assert.ok(centre[0] > 1, 'The coaptation centre opens along the cusp direction');
+  // Monotonic opening: a vertex further from the centre never ends up closer to the axis than one nearer it (no fold).
+  const radialOpen = x => Math.hypot(...semilunarOffset([x, 0, 0], 1, pose, cusp).slice(0, 2));
+  for (let x = 0; x < 2; x += 0.1) assert.ok(radialOpen(x + 0.1) >= radialOpen(x) - 1e-9, `no fold at ${x.toFixed(1)}`);
+  assert.ok(radialOpen(0) >= 1.5, 'open orifice is wide (free edge at 0.8 R)');
+  // A vertex just past the centre (on a neighbour's side) stays in its own cusp sector when open.
+  const pastCentre = semilunarOffset([-0.1, 0.05, 0], 1, pose, cusp);
+  assert.ok(pastCentre[0] > 0, `vertex past the centre opens toward its own cusp (${pastCentre.map(v => v.toFixed(2))})`);
+  // Neighbouring vertices stay neighbours (continuity across the centre).
+  const a1 = semilunarOffset([0.01, 0.02, 0], 1, pose, cusp), a2 = semilunarOffset([-0.01, 0.02, 0], 1, pose, cusp);
+  assert.ok(Math.hypot(a1[0] - a2[0], a1[1] - a2[1], a1[2] - a2[2]) < 0.2, 'continuous across the centre');
   const ivrPose = semilunarOffset([0.2, 0, 0], computeChannelWeights(0.90).semilunarValveOpening, pose, cusp);
   assert.deepEqual(ivrPose, [0.2, 0, 0], 'Semilunar leaflet is shut during isovolumetric relaxation');
   // A flat disc: its normal is the smallest-variance axis.

@@ -974,6 +974,18 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .drawer-close{display:block;position:sticky;top:-10px;z-index:2;align-self:flex-end;margin:-2px -6px 6px 0;border:1px solid #cbd5cf;border-radius:5px;background:#fbfcf9;padding:4px 9px;font-size:11px;color:#29483e}
   .drawer-close:hover{background:#e8efe9}
   .workspace>aside .aside-bottom{padding-top:14px}
+  /* Tools drawer: compact. */
+  body[data-open-drawer=tools] .workspace>aside{width:236px;padding:8px 12px 12px}
+  body[data-open-drawer=tools] .chamber-tools{padding:4px 0;font-size:11.5px;line-height:1.5}
+  body[data-open-drawer=tools] .chamber-tools button{margin:5px 0;padding:6px 9px;font-size:12px}
+  body[data-open-drawer=tools] .chamber-tools .layer{font-size:11.5px}
+  /* Peek: opened on mode entry, the drawer waits as a slim edge tab and slides open on hover or focus. */
+  /* The edge tab sits over the scene's top-left corner: nudge the overlays there to its right. */
+  body[data-drawer-peek] :is(.myo-control,.top-badges){margin-left:36px}
+  body[data-drawer-peek] .workspace>aside{transition:width .18s ease,padding .18s ease,box-shadow .18s ease}
+  body[data-drawer-peek] .workspace>aside:not(:hover):not(:focus-within){width:30px;height:120px;padding:0;overflow:hidden;cursor:pointer;box-shadow:0 4px 12px #0000001a}
+  body[data-drawer-peek] .workspace>aside:not(:hover):not(:focus-within)>*{visibility:hidden}
+  body[data-drawer-peek] .workspace>aside:not(:hover):not(:focus-within)::before{content:attr(data-peek-label) ' ›';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:11px;font-weight:600;letter-spacing:.04em;color:#29483e}
 }
 @media (max-width:1100px){
   .header-tabs{padding:0 16px}

@@ -97,10 +97,16 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
   // ---- Layers / Tools drawer --------------------------------------------
   // The drawer stays open while the scene is used (wall cuts, layer checks);
   // only its tab, the close button or Escape closes it.
-  function setDrawer(which) {
+  // A drawer opened on mode entry only peeks: a slim tab at the left edge of
+  // the scene that slides open while the pointer is over it (or it has focus).
+  // Opening it from its header tab pins it fully open.
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+  function setDrawer(which, { peek = false } = {}) {
     drawer = which;
     if (which) document.body.dataset.openDrawer = which;
     else delete document.body.dataset.openDrawer;
+    if (which && peek) document.body.dataset.drawerPeek = 'true';
+    else delete document.body.dataset.drawerPeek;
     for (const [id, tab] of Object.entries(drawerTabs)) tab?.setAttribute('aria-expanded', String(id === which));
   }
   for (const [id, tab] of Object.entries(drawerTabs)) {
@@ -151,8 +157,9 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
     if (drawer && !available[drawer]) setDrawer(null);
     // Modes whose only controls are tools (LA, RA, septal defects) open them on entry.
     const toolsOnly = available.tools && !available.layers;
-    if (toolsOnly && !wasToolsOnly && !mobile.matches) setDrawer('tools');
+    if (toolsOnly && !wasToolsOnly && !mobile.matches) setDrawer('tools', { peek: canHover.matches });
     wasToolsOnly = toolsOnly;
+    aside.dataset.peekLabel = w.tools;
     drawerClose.textContent = `${w.close} ×`;
     drawerClose.setAttribute('aria-label', drawer ? `${w[drawer]}: ${w.close}` : w.close);
   }
