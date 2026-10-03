@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { boundaryLoops, centroid, contactPatch, sharedRim, nearestLoop, inferiorCavalOstium } from './mesh-utils.js';
+import { TS_SITES, septalAnterior, siteAt } from './transseptal-sites.js';
 
 /**
  * Procedural 3D Transseptal Puncture & Balloon Atrial Septostomy simulation.
@@ -115,7 +116,8 @@ export function createTransseptal(helpers) {
     sheath: null,
     wire: null,
     balloon: null,
-    ias: true
+    ias: true,
+    sites: false
   };
 
   function makeTube(curve, radius, material, segments = 48) {
@@ -230,6 +232,26 @@ export function createTransseptal(helpers) {
 
     group.add(iasGroup);
     stages.ias = iasGroup;
+
+    // Site-specific puncture targets per procedure (EHRA consensus 2026, Figure 2).
+    const sitesGroup = new THREE.Group();
+    sitesGroup.name = 'Procedure-specific puncture sites';
+    sitesGroup.visible = false;
+    const siteFrame = { fossa, up: septalUp, anterior: septalAnterior(septalNormal, septalUp), radius: fossaRadius };
+    for (const [key, site] of Object.entries(TS_SITES)) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.028, 0.007, 8, 24),
+        new THREE.MeshBasicMaterial({ color: site.color, transparent: true, opacity: 0.95 })
+      );
+      ring.position.copy(siteAt(key, siteFrame)).addScaledVector(septalNormal, -0.035);
+      ring.quaternion.copy(septalRotation);
+      ring.name = `Puncture site: ${key}`;
+      ring.renderOrder = 14;
+      ring.userData = { id: `ts-site-${key}`, pickId: `ts-site-${key}`, provenance: 'schematic', keepOrder: true };
+      sitesGroup.add(ring);
+    }
+    group.add(sitesGroup);
+    stages.sites = sitesGroup;
 
     // -------------------------------------------------------------
     // 1. Percutaneous access route: femoral vein -> IVC -> RA -> SVC
@@ -617,6 +639,7 @@ export function createTransseptal(helpers) {
     if (stages.pigtail) stages.pigtail.visible = catheterToggles.pigtail !== false;
     if (stages.cs) stages.cs.visible = catheterToggles.cs !== false;
     if (stages.ias) stages.ias.visible = catheterToggles.ias !== false;
+    if (stages.sites) stages.sites.visible = catheterToggles.sites === true;
 
     const sheathOn = catheterToggles.sheath !== null ? catheterToggles.sheath : (def.access || def.puncture);
     if (stages.access) stages.access.visible = (activeStep === 0) && sheathOn;
@@ -655,6 +678,7 @@ export function createTransseptal(helpers) {
     else if (key === 'wire' || key === 'cross') catheterToggles.wire = val;
     else if (key === 'balloon') catheterToggles.balloon = val;
     else if (key === 'ias' || key === 'fossa') catheterToggles.ias = val;
+    else if (key === 'sites') catheterToggles.sites = val;
     applyCatheterVisibility();
   }
 
@@ -665,7 +689,8 @@ export function createTransseptal(helpers) {
       sheath: Boolean((stages.puncture && stages.puncture.visible) || (stages.access && stages.access.visible)),
       wire: stages.cross ? stages.cross.visible : false,
       balloon: stages.balloon ? stages.balloon.visible : false,
-      ias: stages.ias ? stages.ias.visible : true
+      ias: stages.ias ? stages.ias.visible : true,
+      sites: stages.sites ? stages.sites.visible : false
     };
   }
 
@@ -676,6 +701,7 @@ export function createTransseptal(helpers) {
     catheterToggles.wire = null;
     catheterToggles.balloon = null;
     catheterToggles.ias = true;
+    catheterToggles.sites = false;
     if (initialized) applyCatheterVisibility();
   }
 
