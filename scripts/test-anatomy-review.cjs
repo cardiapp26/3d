@@ -62,10 +62,13 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     // 2. RA: Eustachian valve and Chiari network, labelled, with focus buttons.
     await open('#/mode/ra');
     const ra = await visibleIds();
-    for (const id of ['ra', 'crista-terminalis', 'eustachian-valve', 'chiari-network']) assert.ok(ra.includes(id), `${id} shown in RA mode`);
+    for (const id of ['ra', 'crista-terminalis', 'eustachian-valve']) assert.ok(ra.includes(id), `${id} shown in RA mode`);
+    assert.ok(!ra.includes('chiari-network'), 'the Chiari network (a variant) is off by default');
     const labels = await allLabels();
-    assert.ok(labels.includes('Östaki kapağı') && labels.includes('Chiari ağı (varyant)'), `RA labels: ${labels}`);
+    assert.ok(labels.includes('Östaki kapağı') && !labels.includes('Chiari ağı (varyant)'), `RA labels: ${labels}`);
     await page.locator('[data-chamber-focus=chiari-network]').click();
+    assert.ok((await visibleIds()).includes('chiari-network') && await page.locator('[data-chiari-network]').isChecked(), 'picking the Chiari network switches it on');
+    assert.ok((await allLabels()).includes('Chiari ağı (varyant)'), 'and labels it');
     assert.match(await page.locator('#structure-title').textContent(), /Chiari ağı/);
     const valve = await page.evaluate(() => {
       const v = window.heart.getMeshes('eustachian-valve')[0].userData;
