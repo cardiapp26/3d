@@ -12,6 +12,11 @@ import { AMAP_TEXT } from './amap-text.js';
  * the true mechanism) with the reading.
  */
 
+const GUIDE = {
+  tr: { play: '▶ LAT sırasını oynat', pause: 'Ⅱ Duraklat', full: 'Tüm harita', time: 'LAT sırası', hint: '1 · Kırmızıdan mora zamanı takip edin. 2 · Noktaya dokunun veya ok tuşlarıyla seçin. 3 · Referans ve pencereyi değiştirip karşılaştırın.', pick: 'Ölçüm için haritada bir nokta seçin.', outside: 'Haritalanmamış nokta', missing: 'Pencere dışında', point: 'Seçili nokta', beat: 'Atım', note: 'Oynatma, pencereye atanmış LAT sırasını gösterir; gerçek yayılımın doğrulaması değildir.', anatomy: 'TK: triküspit · MK: mitral · SVC/VCI: ana venler · PV: pulmoner ven · ○ referans · × hatalı nokta' },
+  en: { play: '▶ Play LAT sequence', pause: 'Ⅱ Pause', full: 'Full map', time: 'LAT sequence', hint: '1 · Follow time from red to purple. 2 · Tap a point or select with arrow keys. 3 · Change reference and window to compare.', pick: 'Select a map point to inspect its timing.', outside: 'Unsampled point', missing: 'Outside window', point: 'Selected point', beat: 'Beat', note: 'Playback shows the assigned LAT order within the window; it does not validate true propagation.', anatomy: 'TV: tricuspid · MV: mitral · SVC/IVC: caval veins · PV: pulmonary vein · ○ reference · × wrong point' }
+};
+
 const BEAT_COLORS = { '-1': '#60a5fa', 0: '#e8f3ee', 1: '#fbbf24' };
 
 export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
@@ -23,14 +28,62 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   };
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => AMAP_TEXT[L()];
-  const state = { scenario: 'focal-ra', reference: 'cs-56', windowKind: 'symmetric', left: -165, width: 100, region: 'both', scale: 'even', artifact: false, truth: false, active: false };
+  const state = { scenario: 'focal-ra', reference: 'cs-56', windowKind: 'symmetric', left: -165, width: 100, region: 'both', scale: 'even', artifact: false, truth: false, active: false, selected: null, progress: 100, playing: false };
 
   const root = el('section', 'amap', { 'data-amap': '' });
   const view = el('div', 'amap-view');
-  const mapCanvas = el('canvas', 'amap-canvas', { role: 'img', 'data-amap-map': '' });
+  const mapCanvas = el('canvas', 'amap-canvas', { role: 'img', tabindex: '0', 'data-amap-map': '' });
   const legend = el('div', 'amap-legend', { 'data-amap-legend': '' });
   const timeCanvas = el('canvas', 'amap-timeline', { role: 'img', 'data-amap-timeline': '' });
-  view.append(mapCanvas, legend, timeCanvas);
+  const guide = el('p', 'amap-guide');
+  const transport = el('div', 'amap-transport');
+  const play = el('button', 'amap-toggle', { type: 'button', 'data-amap-play': '' });
+  const full = el('button', 'amap-toggle', { type: 'button', 'data-amap-full': '' });
+  const scrubLabel = el('label', 'amap-scrub');
+  const scrubText = el('span');
+  const scrub = el('input', '', { type: 'range', min: '0', max: '100', step: '1', 'data-amap-progress': '' });
+  const cursorTime = el('output');
+  scrubLabel.append(scrubText, scrub, cursorTime);
+  transport.append(play, full, scrubLabel);
+  const point = el('p', 'amap-point', { 'aria-live': 'polite', 'data-amap-point': '' });
+  const anatomy = el('p', 'amap-note');
+  const playbackNote = el('p', 'amap-note');
+  view.append(guide, transport, mapCanvas, legend, point, anatomy, playbackNote, timeCanvas);
+  let timer = null;
+  let geometry = null;
+  const stop = () => { if (timer != null) globalThis.clearInterval(timer); timer = null; state.playing = false; };
+  play.addEventListener('click', () => {
+    if (state.playing) { stop(); renderPlayback(compute()); return; }
+    if (state.progress >= 100) state.progress = 0;
+    state.playing = true;
+    timer = globalThis.setInterval(() => {
+      state.progress = Math.min(100, state.progress + 1);
+      if (state.progress >= 100) stop();
+      renderPlayback(compute());
+    }, 50);
+    renderPlayback(compute());
+  });
+  full.addEventListener('click', () => { stop(); state.progress = 100; render(); });
+  scrub.addEventListener('input', () => { stop(); state.progress = Number(scrub.value); render(); });
+  mapCanvas.addEventListener('click', (event) => {
+    if (!geometry) return;
+    const rect = mapCanvas.getBoundingClientRect();
+    const { cs, ox, oy } = geometry;
+    const x = Math.floor((event.clientX - rect.left - ox) / cs);
+    const y = Math.floor((event.clientY - rect.top - oy) / cs);
+    if (x < 0 || y < 0 || x >= GRID.w || y >= GRID.h) return;
+    const k = cellKey(x, y);
+    if (!Number.isFinite(model().time[k]) || model().blocked.has(k)) return;
+    state.selected = k; render();
+  });
+  mapCanvas.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    const cells = sampledCells(model(), state.region).sort((a, b) => a - b);
+    const i = cells.indexOf(state.selected);
+    const delta = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+    state.selected = cells[(i + delta + cells.length) % cells.length]; render();
+  });
   const side = el('aside', 'amap-side');
   const heading = el('h3', 'amap-title');
   const intro = el('p', 'amap-note');
@@ -65,6 +118,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   function setScenario(id) {
     if (!SCENARIOS[id]) return;
     const s = SCENARIOS[id];
+    stop(); state.selected = null; state.progress = 100;
     Object.assign(state, { scenario: id, reference: s.reference, region: s.region || 'both', windowKind: 'symmetric', artifact: false, truth: false });
     render();
   }
@@ -120,6 +174,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     ctx.fillStyle = '#0e1815'; ctx.fillRect(0, 0, width, height);
     const cs = Math.floor(Math.min(width / GRID.w, height / GRID.h));
     const ox = Math.floor((width - cs * GRID.w) / 2), oy = Math.floor((height - cs * GRID.h) / 2);
+    geometry = { cs, ox, oy };
     const px = (x) => ox + x * cs, py = (y) => oy + y * cs;
     const { at, result, reading } = c;
     for (let k = 0; k < at.time.length; k++) {
@@ -130,8 +185,17 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
         fill = !result?.lat.has(k) ? '#25322d' : v == null ? '#4b5a54' : COLORS[colourIndex(v, reading.min, reading.max, state.scale)];
       }
       if ((SCENARIOS[state.scenario].scar || []).some(([sx, sy]) => sx === x && sy === y)) fill = '#55534d';
+      const lat = result?.lat.get(k);
+      const cursor = reading?.min + (reading?.max - reading?.min) * state.progress / 100;
+      ctx.globalAlpha = lat != null && lat > cursor ? 0.16 : 1;
       ctx.fillStyle = fill;
       ctx.fillRect(px(x) + 0.5, py(y) + 0.5, cs - 1, cs - 1);
+    }
+    ctx.globalAlpha = 1;
+    if (state.selected != null) {
+      const [sx, sy] = cellOf(state.selected);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+      ctx.strokeRect(px(sx) - 2, py(sy) - 2, cs + 4, cs + 4);
     }
     // Anatomy labels, the old CTI line.
     ctx.font = `600 ${Math.max(9, Math.floor(cs * 0.45))}px ui-monospace, monospace`;
@@ -202,6 +266,9 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     ctx.beginPath(); ctx.moveTo(x(0), top); ctx.lineTo(x(0), top + plotH); ctx.stroke(); ctx.setLineDash([]);
     cells.forEach((k, i) => {
       const y = top + (cells.length > 1 ? (i / (cells.length - 1)) * (plotH - 2) : plotH / 2) + 1;
+      if (k === state.selected) {
+        ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(left, y - 2, plotW, 4);
+      }
       for (const n of [-1, 0, 1]) {
         const t = at.time[k] - referenceTime + n * at.tcl;
         if (t < from || t > to) continue;
@@ -261,8 +328,25 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     warn.hidden = !warn.textContent;
   }
 
+  function renderPlayback(c) {
+    const g = GUIDE[L()];
+    play.disabled = scrub.disabled = c.reading?.min == null;
+    if (play.disabled) stop();
+    play.textContent = state.playing ? g.pause : g.play;
+    play.setAttribute('aria-pressed', String(state.playing));
+    scrub.value = String(state.progress);
+    cursorTime.textContent = c.reading?.min == null ? '-' : `${Math.round(c.reading.min + (c.reading.max - c.reading.min) * state.progress / 100)} ms`;
+    drawMap(c);
+  }
+
   function render() {
-    const t = T();
+    const t = T(), g = GUIDE[L()];
+    guide.textContent = g.hint;
+    anatomy.textContent = g.anatomy;
+    playbackNote.textContent = g.note;
+    play.textContent = state.playing ? g.pause : g.play;
+    play.setAttribute('aria-pressed', String(state.playing));
+    full.textContent = g.full; scrubText.textContent = g.time; scrub.value = String(state.progress);
     heading.textContent = t.heading;
     intro.textContent = t.intro;
     for (const span of side.querySelectorAll?.('[data-key]') || []) span.textContent = t[span.dataset.key];
@@ -277,6 +361,14 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     scaleSel.replaceChildren(...Object.keys(t.scales).map((id) => option(id, t.scales[id])));
     scaleSel.value = state.scale;
     const c = compute();
+    renderPlayback(c);
+    const k = state.selected;
+    if (k == null) point.textContent = g.pick;
+    else {
+      const [x, y] = cellOf(k), lat = c.result?.lat.get(k), beat = c.result?.beat.get(k);
+      const value = !c.result?.lat.has(k) ? g.outside : lat == null ? g.missing : `LAT ${lat} ms · ${g.beat}: ${beat > 0 ? '+' : ''}${beat}`;
+      point.textContent = `${g.point} (${x + 1}, ${y + 1}) · ${x < 14 ? t.regions.ra : L() === 'en' ? 'Left atrium / septum' : 'Sol atriyum / septum'} · ${value}`;
+    }
     manual.hidden = state.windowKind !== 'manual';
     if (c.win) { leftInput.value = String(c.win.left); widthInput.value = String(Math.round(((c.win.right - c.win.left) / c.at.tcl) * 100)); }
     leftOut.textContent = `${leftInput.value} ms`;
@@ -294,10 +386,14 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     return c;
   }
 
+  if (typeof globalThis.ResizeObserver === 'function') {
+    const observer = new globalThis.ResizeObserver(() => { if (state.active) { const c = compute(); drawMap(c); drawTimeline(c); } });
+    observer.observe(mapCanvas); observer.observe(timeCanvas);
+  }
   return {
     element: root,
     render,
-    setActive(flag) { state.active = Boolean(flag); root.hidden = !state.active; if (state.active) render(); },
+    setActive(flag) { state.active = Boolean(flag); if (!state.active) stop(); root.hidden = !state.active; if (state.active) render(); },
     setScenario,
     /** Test hooks. */
     set(patch) { Object.assign(state, patch); return render(); },
