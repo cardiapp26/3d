@@ -21,7 +21,11 @@ export const ECHO_STRUCTURES = Object.freeze([
   { id: 'aorta', ids: ['aorta'], color: '#ea9999', label: { tr: 'Ao', en: 'Ao' } },
   { id: 'pa', ids: ['pa'], color: '#8e7cc3', label: { tr: 'PA', en: 'PA' } },
   { id: 'svc', ids: ['svc'], color: '#76a5af', label: { tr: 'SVC', en: 'SVC' } },
-  { id: 'pv', ids: ['lspv', 'lipv', 'rspv', 'ripv'], color: '#b4a7d6', label: { tr: 'PV', en: 'PV' } },
+  // Pulmonary veins keep their identity (left / right, superior / inferior); 'pv' is their group.
+  { id: 'lspv', ids: ['lspv'], color: '#b4a7d6', label: { tr: 'LSPV', en: 'LSPV' } },
+  { id: 'lipv', ids: ['lipv'], color: '#9e8fd0', label: { tr: 'LIPV', en: 'LIPV' } },
+  { id: 'rspv', ids: ['rspv'], color: '#a4c2f4', label: { tr: 'RSPV', en: 'RSPV' } },
+  { id: 'ripv', ids: ['ripv'], color: '#8aaee8', label: { tr: 'RIPV', en: 'RIPV' } },
   { id: 'cs', ids: ['cs'], color: '#93c47d', label: { tr: 'CS', en: 'CS' } },
   { id: 'mitral', ids: ['mitral'], color: '#fff2cc', label: { tr: 'MV', en: 'MV' } },
   { id: 'tricuspid', ids: ['tricuspid'], color: '#d9ead3', label: { tr: 'TV', en: 'TV' } },

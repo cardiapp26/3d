@@ -141,7 +141,9 @@ const SHOTS = process.env.SHOT_DIR || null;
       const { sectionMeshes } = await import('/src/echo-section.js');
       const V = await import('/src/echo-views.js');
       const gm = id => window.heart.getMeshes(id).filter(m => !m.userData.micro);
-      const A = window.heart.withRestPose(() => measureEchoAnatomy({ getMeshes: gm }));
+      // The mode's anatomy: the measured landmarks plus the fossa ovalis of the transseptal module.
+      window.cardiaEcho.selectView('ice-home');
+      const A = window.cardiaEcho.getAnatomy() || window.heart.withRestPose(() => measureEchoAnatomy({ getMeshes: gm }));
       const items = echoItems(gm), failures = [];
       for (const view of [...V.TTE_VIEWS, ...V.TEE_VIEWS, ...V.ICE_VIEWS]) {
         window.cardiaEcho.selectView(view.id);

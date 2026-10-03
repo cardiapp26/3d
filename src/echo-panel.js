@@ -1,4 +1,6 @@
 import { TTE_LIMITS, TEE_LIMITS, ICE_LIMITS } from './echo-probe.js';
+import { ICE_PRESET_NOTES } from './echo-views.js';
+import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
 
 /*
  * Echo panel: TTE / TEE choice, the view set, the 2D sector, explainable
@@ -12,22 +14,22 @@ const SHORT = {
 };
 const T = {
   tr: {
-    heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm', iceLr: 'Sol (+) / sağ (−) büküm', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik İVK → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
+    heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm: ucu transdüser yüzüne doğru / ters', iceLr: 'Sol (+) / sağ (−) büküm: düzlem dışına', iceMove: 'Manevra', iceAtlas: 'Atlas notu', icePrev: '◀ Önceki görünüme geç (hareketli)', iceNext: 'Sonraki görünüme geç (hareketli) ▶', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik İVK → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
     freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
     rotation: 'Rotasyon', tilt: 'Tilt (eğim)', rock: 'Rock (düzlem içi)', slideLateral: 'Kaydır (işaret yönü)', slideElevation: 'Kaydır (dik yön)',
     advance: 'İlerlet / geri çek (göreli)', shaft: 'Şaft rotasyonu (sağ +)', flexion: 'Antefleksiyon (+) / retrofleksiyon (−)', lateralFlexion: 'Sol (+) / sağ (−) fleksiyon', omega: 'Multiplan açı',
     probe: 'Prob hareketleri', display: 'Görüntü ayarları', feedback: 'Geri bildirim', target: 'Hedef', done: 'Görev tamamlandı: hedef görünümün model ölçütleri bir kez karşılandı.', atlasAngle: 'Atlas başlangıç açısı', guideline: 'ASE/SCA yaklaşık aralığı', teePath: 'Şematik özofagus-mide yolu', current: 'Şu anki kesit', enlarge: 'Büyüt', shrink: 'Küçült',
     window: { parasternal: 'Parasternal pencere', apical: 'Apikal pencere', subcostal: 'Subkostal pencere' },
-    limits: 'Geri bildirim dinlenme (diyastol sonu) geometrisinde değerlendirilir; eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Anatomik kesit simülatörüdür: gerçek B-mod, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE probu kalbi saran şematik elipsoid bir göğüs yüzeyine oturur ve kaydırmada bu yüzeyde kalır; kaburga, interkostal aralık ve akustik pencere yoktur, kontroller interkostal yerleşimi temsil etmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; fleksiyon 2 cm uzunluğundaki distal segmenti büker ve uç lümen sınırında durur (temas kuvveti modellenmez); multiplan açısı ucu oynatmaz. Derinlik gerçek santimetre değildir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlas, proje sahibinin özgün tasarımıdır. ICE kateteri İVK\'dan sağ atriyuma uzanan şematik bir doğru üzerinde ilerler; uç bükümü düzlemi döndürür ama damar duvarı ve temas modellenmez; SVC ve septal kısa eksen bu atlasta kaynaktakinden güçlü büküm ister.'
+    limits: 'Geri bildirim dinlenme (diyastol sonu) geometrisinde değerlendirilir; eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Anatomik kesit simülatörüdür: gerçek B-mod, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE probu kalbi saran şematik elipsoid bir göğüs yüzeyine oturur ve kaydırmada bu yüzeyde kalır; kaburga, interkostal aralık ve akustik pencere yoktur, kontroller interkostal yerleşimi temsil etmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; fleksiyon 2 cm uzunluğundaki distal segmenti büker ve uç lümen sınırında durur (temas kuvveti modellenmez); multiplan açısı ucu oynatmaz. Derinlik gerçek santimetre değildir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlas, proje sahibinin özgün tasarımıdır. ICE kateteri İVK\'dan sağ atriyuma uzanan şematik düz bir şaft ve bükülebilir şematik bir distal segmentten oluşur; transdüser bu segmentin ucunda ve görüntü düzlemi aynı poz modelinden hesaplanır. Rotasyon transdüser yüzünü şaft çevresinde çevirir; büküm düğmeleri kateterin kendi yönüne göre (home pozisyonunda ön ve sol) adlandırılır, rotasyondan sonra da kateterle birlikte döner. Damar duvarı ve temas modellenmez. Hazır pozların kaynaktaki manevradan ayrıldığı yerler görünümün yanında belirtilir.'
   },
   en: {
-    heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection', iceLr: 'Left (+) / right (−) deflection', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
+    heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection: tip toward / away from the transducer face', iceLr: 'Left (+) / right (−) deflection: out of the plane', iceMove: 'Manoeuvre', iceAtlas: 'Atlas note', icePrev: '◀ Move to the previous view (animated)', iceNext: 'Move to the next view (animated) ▶', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
     freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', sector: 'Sector width', depth: 'Depth (relative)',
     rotation: 'Rotation', tilt: 'Tilt', rock: 'Rock (in plane)', slideLateral: 'Slide (marker side)', slideElevation: 'Slide (across)',
     advance: 'Advance / withdraw (relative)', shaft: 'Shaft rotation (right +)', flexion: 'Anteflexion (+) / retroflexion (−)', lateralFlexion: 'Left (+) / right (−) flexion', omega: 'Multiplane angle',
     probe: 'Probe motions', display: 'Display', feedback: 'Feedback', target: 'Target', done: 'Task done: the target view’s model criteria were met once.', atlasAngle: 'Atlas starting angle', guideline: 'ASE/SCA approximate range', teePath: 'Schematic oesophagus-stomach path', current: 'Current cut', enlarge: 'Enlarge', shrink: 'Reduce',
     window: { parasternal: 'Parasternal window', apical: 'Apical window', subcostal: 'Subcostal window' },
-    limits: 'The feedback is judged on the rest (end-diastolic) geometry; thresholds are teaching values without expert calibration. An anatomical section simulator: no real B-mode, Doppler or measurement. The section is computed from the atlas surfaces; open contours are drawn as lines, no tissue thickness is invented. The TTE probe sits on a schematic ellipsoid chest surface around the heart and stays on it while sliding; there are no ribs, intercostal spaces or acoustic windows, and the controls do not represent intercostal placement. The TEE path is a schematic oesophagus and stomach placed behind the left atrium; flexion bends a 2 cm distal section and the tip stops at the lumen wall (no contact force is modelled); the multiplane angle does not move the tip. Depth is not real centimetres. Presets were tuned automatically on this atlas; no echocardiographer has reviewed them. The atlas is an original design by the project owner. The ICE catheter advances along a schematic straight line from the IVC into the right atrium; tip deflection turns the plane but no vessel wall or contact is modelled; the SVC and septal short-axis views need stronger deflection on this atlas than the source describes.'
+    limits: 'The feedback is judged on the rest (end-diastolic) geometry; thresholds are teaching values without expert calibration. An anatomical section simulator: no real B-mode, Doppler or measurement. The section is computed from the atlas surfaces; open contours are drawn as lines, no tissue thickness is invented. The TTE probe sits on a schematic ellipsoid chest surface around the heart and stays on it while sliding; there are no ribs, intercostal spaces or acoustic windows, and the controls do not represent intercostal placement. The TEE path is a schematic oesophagus and stomach placed behind the left atrium; flexion bends a 2 cm distal section and the tip stops at the lumen wall (no contact force is modelled); the multiplane angle does not move the tip. Depth is not real centimetres. Presets were tuned automatically on this atlas; no echocardiographer has reviewed them. The atlas is an original design by the project owner. The ICE catheter is a schematic straight shaft from the IVC into the right atrium with a schematic deflectable distal segment; the transducer sits at its end and the image plane comes from the same pose model. Rotation turns the transducer face about the shaft; the deflection knobs are named for the catheter (anterior and left at the home position) and turn with it after a rotation. No vessel wall or contact is modelled. Where a preset departs from the source manoeuvre, the view says so.'
   }
 };
 const MAX_DEPTH = 6;
@@ -47,6 +49,25 @@ export function createEchoPanel(mount, handlers) {
   const viewRow = el('div', 'echo-views', { role: 'group' });
   const title = el('h3', 'echo-title');
   const sub = el('p', 'echo-sub');
+  // ICE: the move from the previous view and where the atlas preset departs from the source.
+  const iceInfo = el('p', 'echo-ice-info');
+  // ICE: animated move along the clockwise sequence, and the schematic transseptal stages.
+  const iceSweep = el('div', 'echo-row echo-ice-sweep');
+  const sweepPrev = el('button', 'echo-btn', { type: 'button', 'data-echo-sweep': '-1' });
+  const sweepNext = el('button', 'echo-btn', { type: 'button', 'data-echo-sweep': '1' });
+  sweepPrev.addEventListener('click', () => handlers.onSweep?.(-1));
+  sweepNext.addEventListener('click', () => handlers.onSweep?.(1));
+  iceSweep.append(sweepPrev, sweepNext);
+  const tsBox = el('section', 'echo-transseptal', { 'data-echo-transseptal': '' });
+  const tsTitle = el('h4', 'echo-transseptal-title');
+  const tsRow = el('div', 'echo-row');
+  const tsButtons = TRANSSEPTAL_STAGES.map(id => { const b = el('button', 'echo-btn', { type: 'button', 'data-echo-ts-stage': id }); b.addEventListener('click', () => handlers.onTransseptal?.(id)); tsRow.append(b); return b; });
+  const tsClose = el('button', 'echo-btn', { type: 'button', 'data-echo-ts-stage': 'off' });
+  tsClose.addEventListener('click', () => handlers.onTransseptal?.(null));
+  tsRow.append(tsClose);
+  const tsText = el('p', 'echo-transseptal-text', { 'aria-live': 'polite' });
+  const tsLimits = el('p', 'echo-transseptal-limits');
+  tsBox.append(tsTitle, tsRow, tsText, tsLimits);
   const canvas = el('canvas', 'echo-canvas', { role: 'img' });
   const feedback = el('div', 'echo-feedback', { 'aria-live': 'polite' });
   const taskRow = el('div', 'echo-task-row');
@@ -75,7 +96,7 @@ export function createEchoPanel(mount, handlers) {
   const limits = el('p', 'echo-limits');
   // Compact order: the sector and the probe controls come right after the view choice.
   heading.hidden = true;
-  root.append(heading, modality, viewRow, title, canvas, sub, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
+  root.append(heading, modality, viewRow, title, canvas, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -148,7 +169,7 @@ export function createEchoPanel(mount, handlers) {
 
   const setText = (node, text) => { if (node.textContent !== text) node.textContent = text; };
   let feedbackKey = '';
-  function render({ state, result, view, playing, presetOmega }) {
+  function render({ state, result, view, playing, presetOmega, hasFossa = true }) {
     const t = T[lang];
     setText(heading, t.heading);
     modality.hidden = Boolean(state.locked);
@@ -169,6 +190,27 @@ export function createEchoPanel(mount, handlers) {
     setText(sub, state.modality === 'tte' ? `${t.window[view.window]} · ${view.source}`
       : state.modality === 'ice' ? `${t.iceRotationLabel}: ${Math.round(presetOmega ?? 0)}° · ${t.iceGuide}: ${view.ase[lang]} · ${t.icePath} · ${view.source}`
         : `${t.atlasAngle}: ${Math.round(presetOmega ?? 0)}° · ${t.guideline}: ${view.ase[lang]} · ${t.teePath} · ${view.source}`);
+    // In a task the manoeuvre would give the answer away.
+    const iceText = state.modality === 'ice' && !state.task && view.motion
+      ? `${t.iceMove}: ${view.motion[lang]}${ICE_PRESET_NOTES[view.id] ? ` ${t.iceAtlas}: ${ICE_PRESET_NOTES[view.id][lang]}` : ''}` : '';
+    iceInfo.hidden = !iceText;
+    setText(iceInfo, iceText);
+    const iceFree = state.modality === 'ice' && !state.task;
+    iceSweep.hidden = !iceFree;
+    setText(sweepPrev, t.icePrev); setText(sweepNext, t.iceNext);
+    const order = handlers.views.ice.map(v => v.id), at = order.indexOf(view.id);
+    sweepPrev.disabled = at <= 0; sweepNext.disabled = at < 0 || at >= order.length - 1;
+    // Transseptal stages: only on the septal working view.
+    const ts = TRANSSEPTAL_TEXT[lang];
+    tsBox.hidden = !(iceFree && view.id === 'ice-septal-sax');
+    setText(tsTitle, ts.title);
+    tsButtons.forEach(b => { setText(b, ts.stages[b.dataset.echoTsStage]); b.setAttribute('aria-pressed', String(state.transseptal === b.dataset.echoTsStage)); });
+    setText(tsClose, ts.close);
+    tsClose.disabled = !state.transseptal;
+    tsButtons.forEach(b => { b.disabled = !hasFossa; });
+    setText(tsText, !hasFossa ? ts.unavailable : state.transseptal ? ts.text[state.transseptal] : '');
+    tsText.hidden = hasFossa && !state.transseptal;
+    setText(tsLimits, ts.limits);
     canvas.setAttribute('aria-label', `${view.title[lang]}: ${lang === 'en' ? 'anatomical section, not an ultrasound image' : 'anatomik kesit, ultrason görüntüsü değil'}`);
     taskStatus.hidden = !state.task?.done;
     setText(taskStatus, state.task?.done ? `✓ ${t.done}` : '');

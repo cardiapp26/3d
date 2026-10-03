@@ -2,6 +2,8 @@
 // atlas meshes inside an ultrasound-style fan: an anatomical section, never
 // B-mode imaging, and never a physical scale (depth is shown as a fraction).
 
+import { drawPaths } from './echo-renderer-paths.js';
+
 /** Drawing styles, in toggle order. */
 export const ECHO_STYLES = Object.freeze(['anatomy', 'gray']);
 
@@ -233,6 +235,8 @@ function overlaps(a, b) {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
 
+// Labels are placed target-first; one that still overlaps after a few shifts is
+// dropped (its structure stays drawn) rather than stacked on another label.
 function drawLabels(ctx, geo, labels, style) {
   ctx.font = 'bold 11px system-ui, sans-serif';
   const placed = [];
@@ -241,6 +245,7 @@ function drawLabels(ctx, geo, labels, style) {
     const [cx, cy] = geo.toScreen(lab.centroid);
     const box = { x: cx - w / 2, y: cy - 8, w, h: 15 };
     for (let n = 0; n < 5 && placed.some((p) => overlaps(p, box)); n++) box.y += 12;
+    if (placed.some((p) => overlaps(p, box))) continue;
     placed.push(box);
     ctx.fillStyle = 'rgba(5, 8, 7, 0.72)';
     ctx.fillRect(box.x, box.y, box.w, box.h);
@@ -281,7 +286,7 @@ function drawOverlayText(ctx, width, height, geo, opts, lang, style, empty) {
  * Draw the anatomical echo section on a canvas (DPR aware). The caller sets the CSS size.
  * @param {HTMLCanvasElement} canvas
  * @param {{ contours?: object[], structures?: object }} section
- * @param {object} [opts] style, sectorAngle, depth, info, lang, structureInfo, frozen, hideLabels, highlight
+ * @param {object} [opts] style, sectorAngle, depth, info, lang, structureInfo, frozen, hideLabels, highlight, markers, paths
  */
 function runLength(run) {
   let length = 0;
@@ -298,6 +303,8 @@ function pointAlong(run, at) {
   }
   return run[run.length - 1];
 }
+
+const MIN_LABEL_RUN = 0.15;   // contour shorter than this in the image: no label
 
 export function drawEchoSector(canvas, section, opts = {}) {
   const width = canvas?.clientWidth;
@@ -350,14 +357,19 @@ export function drawEchoSector(canvas, section, opts = {}) {
       if (!best.has(it.id) || length > best.get(it.id).length) best.set(it.id, { run, length });
     }
     const labels = [...best.entries()]
+      // Short slivers get no label (they crowd the image); targets always do.
+      .filter(([id, { length }]) => highlight.has(id) || length >= MIN_LABEL_RUN)
       .map(([id, { run, length }]) => ({
         text: String(info[id]?.label?.[lang] || info[id]?.label?.tr || id),
         centroid: pointAlong(run, length / 2),
-        color: colorOf(id)
+        color: colorOf(id),
+        target: highlight.has(id)
       }))
-      .sort((a, b) => a.centroid[1] - b.centroid[1]);
+      .sort((a, b) => (b.target - a.target) || a.centroid[1] - b.centroid[1]);
     drawLabels(ctx, geo, labels, style);
   }
+  // Schematic overlay paths (transseptal needle, tenting), clipped to the fan.
+  drawPaths(ctx, geo, o.paths, () => sectorPath(ctx, geo, h));
   // Landmark points without a mesh (e.g. the estimated IVC orifice), when in the image.
   for (const m of Array.isArray(o.markers) ? o.markers : []) {
     if (!Array.isArray(m?.point) || !geo.inside(m.point)) continue;

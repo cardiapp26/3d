@@ -1402,18 +1402,43 @@ export const rawLessons = {
       steps: [
         {
           title: 'ICE kateteri ve home görünümü',
-          text: 'Kateter (ör. 8-10 Fr, 5-10 MHz, dört yönlü uç büküm) femoral venden İVK üzerinden orta RA\'ya nötr konumda ilerletilir; sol femoral ven kullanılırsa sağ taraf cihazlara kalır. Home görünümünde (nötr, saat yönü 15–30°) yakın alanda RA, sonra triküspit kapak ve RV görülür; aort kapağı görüntünün sağında kısa eksende belirir. Mekanik (rotasyonel) ICE ise kateteri çevreleyen 360° kesit verir ve Doppler içermez (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          text: 'Kateter (ör. 8-10 Fr, 5-10 MHz, dört yönlü uç büküm) femoral venden İVK üzerinden orta RA\'ya nötr konumda ilerletilir; sol femoral ven kullanılırsa sağ taraf cihazlara kalır. Üç hareket ayrıdır: ilerletme ve geri çekme kateteri RA ekseni boyunca kaydırır, sap rotasyonu transdüser yüzünü şaft çevresinde döndürür, iki büküm düğmesi distal segmenti eğer (ön düğme ucu transdüser yüzüne doğru, sol düğme düzlem dışına; adlar home pozisyonuna göredir). Home görünümünde (nötr, saat yönü 15–30°) yakın alanda RA, sonra triküspit kapak ve RV görülür; aort kapağı görüntünün sağında yardımcı yapı olarak belirebilir. Mekanik (rotasyonel) ICE ise kateteri çevreleyen 360° kesit verir ve Doppler içermez (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-home' }
         },
         {
-          title: 'Saat yönünde tarama: RVOT, LVOT/AV, mitral ve LAA, pulmoner venler',
-          text: 'Yaklaşık 15°\'lik adımlarla saat yönünde döndürün: 30–40° RVOT ve pulmoner kapak, ~45° aort kapağı uzun eksen ve LVOT (TAVI\'de kapak düzlemini gölgelemez), 60–80° septum, LA, mitral kapak ve sağda LAA (mitral renkli Doppler ve LA trombüsü için), 90–100° sol pulmoner venler ("pantolon paçaları", PVİ görünümü), 150–180° sağ pulmoner venler. Görünüm düğmeleriyle atlayın veya rotasyon kaydırıcısıyla kendiniz tarayın (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          title: 'Çıkış yolları: RVOT ve pulmoner kapak, ardından LVOT',
+          text: 'Home\'dan saat yönünde yaklaşık 15° çevirin: 30–40°\'de aort kapağı yakın alanda, RVOT ve pulmoner kapak uzak alanda görülür. Birkaç derece daha (~45°) aort kapağı uzun eksen ve LVOT gelir; TAVI\'de kapak düzlemini gölgelemez (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). "Sonraki görünüme geç" düğmesi kateteri adım adım götürür; yapıların sektöre girip çıkışını izleyin.',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-rvot' }
+        },
+        {
+          title: 'Mitral kapak ve LAA',
+          text: 'Saat yönünde 60–80°: septum, LA, mitral kapak ve LV; LAA görüntünün sağında tanınabilir bir lob olarak görülmelidir (mitral renkli Doppler ve LA trombüsü taraması için). Sağ atriyumdan LAA uzak alandadır; çözünürlük sınırlıdır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-mitral-laa' }
         },
         {
-          title: 'Septal kısa eksen: transseptal ponksiyonun çalışma görünümü',
-          text: 'Posterior ve sağa büküm ile ek saat yönü rotasyon septal kısa ekseni verir: yakında RA, septum, solda LA, ortada aort kapağı kısa eksen. Transseptal ponksiyon ve ASD/PFO kapatmanın çalışma görünümüdür. Aortu içeren ön düzlemden kaçının; ponksiyondan önce en belirgin çadırlanma noktasını net görün; LA\'daki kılıfı serum veya kontrastla ya da renkli akımla doğrulayın. ASD kapatmada 6 sektörün tamamında en az 5 mm kenar aranır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          title: 'Sol pulmoner venler',
+          text: 'Kateter yüksek RA\'da, saat yönünde 90–100°: sol üst ve sol alt pulmoner ven ("pantolon paçaları"), ağızları LA\'ya açılır; PVİ\'de ostiyumların izlendiği görünüm (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). Model, iki sol venin ve ağızlarının birlikte görünmesini arar; sağ venler bu görünümün hedefi değildir.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-left-pv' }
+        },
+        {
+          title: 'Septal kısa eksen: transseptal çalışma görünümü',
+          text: 'Posterior ve sağa büküm ile ek saat yönü rotasyon (100–150°) septal kısa ekseni verir: yakında RA, ortada interatriyal septum ve fossa ovalis, uzakta LA, septumun önünde aort kökü. Transseptal ponksiyon ve ASD/PFO kapatmanın çalışma görünümüdür. Aortu içeren ön düzlemden kaçının; ASD kapatmada 6 sektörün tamamında en az 5 mm kenar aranır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
+        },
+        {
+          title: 'Transseptal ponksiyon: şematik aşamalar',
+          text: 'Septal kısa eksende dört aşamayı izleyin: hedef septum ve fossa, iğnenin RA tarafından yaklaşımı, temas ve LA\'ya doğru çadırlanma, geçiş. Ponksiyondan önce en belirgin çadırlanma noktasını net görün; LA\'daki kılıfı serum, kontrast veya renkli akımla doğrulayın (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). Aşamalar 3B sahnede ve kesitte aynı şematik geometriden çizilir; gerçek temas, doku direnci veya güvenli ponksiyon kanıtı değildir.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax', transseptal: 'tenting' }
+        },
+        {
+          title: 'Sağ pulmoner venler',
+          text: 'Posterior bükümü koruyup saat yönünde 150–180° devam edin: sağ üst ve sağ alt pulmoner ven, ağızları LA\'ya açılır; sağ PA görülebilir (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). Model sağ PA\'yı yardımcı yapı sayar; sol venler bu görünümün hedefi değildir.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-right-pv' }
+        },
+        {
+          title: 'SVC ve RA bileşkesi',
+          text: 'Saat yönünde 210–240° ve hafif ilerletme: RA\'nın SVC\'ye açıldığı bileşke, arkada LA. SVC\'den aortik ark dalları bile görülebilir (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). Bu atlasta kateter ekseni doğrudan SVC\'ye baktığından hazır poz kaynaktan farklı olarak güçlü posterior büküm kullanır; fark görünümün yanında belirtilir.',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-svc' }
         },
         {
           title: 'Görev: ICE görünümünü bulun',
@@ -1433,18 +1458,43 @@ export const rawLessons = {
       steps: [
         {
           title: 'The ICE catheter and the home view',
-          text: 'The catheter (for example 8-10 Fr, 5-10 MHz, four-way tip deflection) is advanced in neutral from the femoral vein through the IVC to the mid RA; using the left femoral vein leaves the right side free for devices. In the home view (neutral, clockwise 15–30°) the RA is in the near field, then the tricuspid valve and the RV; the aortic valve appears in short axis at the image right. Mechanical (rotational) ICE instead gives a 360° section around the catheter and has no Doppler (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          text: 'The catheter (for example 8-10 Fr, 5-10 MHz, four-way tip deflection) is advanced in neutral from the femoral vein through the IVC to the mid RA; using the left femoral vein leaves the right side free for devices. The three motions are separate: advance and withdraw slide the catheter along the RA axis, handle rotation turns the transducer face about the shaft, and the two knobs bend the distal segment (the anterior knob bends the tip toward the transducer face, the left knob out of the plane; the names refer to the home position). In the home view (neutral, clockwise 15–30°) the RA is in the near field, then the tricuspid valve and the RV; the aortic valve may appear at the image right as a supporting structure. Mechanical (rotational) ICE instead gives a 360° section around the catheter and has no Doppler (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-home' }
         },
         {
-          title: 'Clockwise sweep: RVOT, LVOT/AV, mitral and LAA, pulmonary veins',
-          text: 'Rotate clockwise in steps of about 15°: 30–40° the RVOT and pulmonary valve, ~45° the aortic valve long axis and LVOT (it does not shadow the valve plane during TAVI), 60–80° the septum, LA, mitral valve and the LAA on the right (mitral colour Doppler and LA thrombus), 90–100° the left pulmonary veins ("trouser legs", the PVI view), 150–180° the right pulmonary veins. Jump with the view buttons or sweep yourself with the rotation slider (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          title: 'Outflow tracts: RVOT and pulmonary valve, then the LVOT',
+          text: 'From home rotate about 15° clockwise: at 30–40° the aortic valve is in the near field, the RVOT and pulmonary valve in the far field. A few degrees more (~45°) bring the aortic valve long axis and LVOT; it does not shadow the valve plane during TAVI (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). The "Move to the next view" button moves the catheter step by step; watch the structures enter and leave the sector.',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-rvot' }
+        },
+        {
+          title: 'Mitral valve and LAA',
+          text: 'Clockwise 60–80°: the septum, LA, mitral valve and LV; the LAA should appear at the image right as a recognisable lobe (for mitral colour Doppler and LA thrombus). From the right atrium the LAA is far field; resolution is limited (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-mitral-laa' }
         },
         {
+          title: 'Left pulmonary veins',
+          text: 'Catheter in the high RA, clockwise 90–100°: the left superior and left inferior pulmonary veins ("trouser legs"), their ostia opening into the LA; the view for following the ostia during PVI (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). The model looks for both left veins and their ostia; the right veins are not this view\'s target.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-left-pv' }
+        },
+        {
           title: 'Septal short axis: the transseptal working view',
-          text: 'Posterior and rightward deflection with extra clockwise rotation gives the septal short axis: RA near, the septum, the LA on the left, the aortic valve short axis in the centre. It is the working view for transseptal puncture and ASD/PFO closure. Avoid the anterior plane that contains the aorta; see the point of maximal tenting clearly before the puncture; confirm the sheath in the LA with saline, contrast or colour flow. For ASD closure, rims of at least 5 mm are sought in all 6 sectors (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          text: 'Posterior and rightward deflection with extra clockwise rotation (100–150°) gives the septal short axis: the RA near, the interatrial septum and fossa ovalis in the middle, the LA far, the aortic root in front of the septum. It is the working view for transseptal puncture and ASD/PFO closure. Avoid the anterior plane that contains the aorta; for ASD closure, rims of at least 5 mm are sought in all 6 sectors (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
+        },
+        {
+          title: 'Transseptal puncture: schematic stages',
+          text: 'Follow four stages on the septal short axis: the target septum and fossa, the needle approaching from the RA, contact and tenting toward the LA, crossing. See the point of maximal tenting clearly before the puncture; confirm the sheath in the LA with saline, contrast or colour flow (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). The stages are drawn from one schematic geometry in the 3D scene and the section; they are not real contact, tissue resistance or evidence of a safe puncture.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax', transseptal: 'tenting' }
+        },
+        {
+          title: 'Right pulmonary veins',
+          text: 'Keep the posterior deflection and continue clockwise to 150–180°: the right superior and right inferior pulmonary veins, their ostia opening into the LA; the right PA may show (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). The model counts the right PA as a supporting structure; the left veins are not this view\'s target.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-right-pv' }
+        },
+        {
+          title: 'SVC and the RA junction',
+          text: 'Clockwise 210–240° with a slight advance: the RA opening into the SVC, the LA behind. From the SVC even the aortic arch branches can be seen (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). On this atlas the catheter axis points straight at the SVC, so the preset uses a strong posterior deflection unlike the source; the view states the difference.',
+          landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-svc' }
         },
         {
           title: 'Task: find the ICE view',

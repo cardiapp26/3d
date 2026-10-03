@@ -962,6 +962,18 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .echo-views button:disabled,.echo-modality button:disabled{opacity:.45;cursor:not-allowed}
 .echo-title{font-size:12px;margin:4px 0}
 .echo-sub{font-size:9.5px!important;color:#5f6f64!important;margin:3px 0 4px!important}
+.echo-ice-info{font-size:11.5px;line-height:1.45;color:#29483e;background:#eef5f1;border-left:3px solid #39a37f;padding:5px 8px;margin:4px 0}
+.echo-ice-info[hidden]{display:none}
+/* ICE: animated sweep between views and the schematic transseptal stages. */
+.echo-row{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0}
+.echo-row[hidden],.echo-transseptal[hidden],.echo-transseptal-text[hidden]{display:none}
+.echo-btn{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:3px;padding:3px 7px;font-size:10.5px;line-height:1.35}
+.echo-btn:disabled{opacity:.45;cursor:not-allowed}
+.echo-btn[aria-pressed=true]{background:#ffd966;border-color:#d9b23f;color:#3a2e05;font-weight:600}
+.echo-transseptal{border:1px solid #e3d29a;background:#fffaeb;border-radius:5px;padding:5px 8px;margin:4px 0}
+.echo-transseptal-title{margin:0 0 2px;font-size:11.5px;color:#5c4a12}
+.echo-transseptal-text{margin:2px 0;font-size:11.5px;line-height:1.45;color:#3d3416}
+.echo-transseptal-limits{margin:2px 0 0;font-size:10px;color:#7a6a3a}
 .echo-canvas{display:block;width:100%;height:260px;border-radius:6px;background:#050807}
 .echo-canvas.is-large{height:440px}
 .echo-task-status{font-size:10.5px!important;font-weight:600;color:#1f7a52!important;background:#eaf6ef;border-radius:4px;padding:3px 8px;margin:4px 0!important}

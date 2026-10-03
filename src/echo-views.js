@@ -166,20 +166,49 @@ export function teePreset(id, A, path) {
 
 // ICE (phased array, AcuNav-type) views from the right atrium, in the
 // textbook's clockwise sequence from the home view (PCR-EAPCI, ICE chapter
-// 2020, p.7-13): `ase` carries the source's rotation guide; presets are
-// calibrated on this atlas (scripts/echo-calibrate.cjs style search), not
-// expert-reviewed. Required/avoid lists come from the chapter's structure
-// lists, reduced to what the atlas can show; the RA is the near field of
-// every view (the catheter sits inside it), so it is not a criterion.
+// 2020, p.7-13; EHRA/EAPCI ICE statement 2026): `ase` carries the source's
+// manoeuvre; presets are calibrated on this atlas (scripts/ice-calibrate.cjs),
+// not expert-reviewed. Criteria (research/ICE_INCELEME_RAPORU.md):
+//   required: the view's targets (and the structures that make it
+//     recognisable); minLength: a target must show this much contour;
+//   relations: contours that must meet in the image (a vein ostium on the
+//     LA; RA and LA across the septum; the aortic root next to the septum);
+//   order: near-field / far-field pairs (the plane faces the right way);
+//   side: a structure's side of the image (the LAA on the image right);
+//   landmarks: measured points that must lie in the cut (fossa ovalis);
+//   optional: supporting structures the text mentions but does not require.
+// The RA is the near field of every view (the catheter sits inside it).
+// `motion` is the move from the previous view of the sequence; `note`
+// states where the atlas preset departs from the source manoeuvre.
+const ostium = (vein) => ({ a: 'la', b: vein, note: { tr: 'ven ağzı LA\'ya açılmalı', en: 'the vein ostium should open into the LA' } });
 export const ICE_VIEWS = Object.freeze([
-  { id: 'ice-home', title: { tr: 'ICE home görünümü', en: 'ICE home view' }, ase: { tr: 'orta RA, nötr, saat yönü 15–30°: RA → TV → RV', en: 'mid RA, neutral, clockwise 15–30°: RA → TV → RV' }, required: ['tricuspid', 'rv'], avoid: ['pv', 'svc'], source: ICE_SRC },
-  { id: 'ice-rvot', title: { tr: 'ICE RV çıkış yolu', en: 'ICE RVOT view' }, ase: { tr: 'saat yönü 30–40°: AV yakında, RVOT ve pulmoner kapak uzakta', en: 'clockwise 30–40°: AV near, RVOT and pulmonary valve far' }, required: ['rv', 'aortic-valve'], avoid: ['pv', 'laa'], source: ICE_SRC },
-  { id: 'ice-lvot', title: { tr: 'ICE LVOT / aort kapağı uzun eksen', en: 'ICE LVOT / aortic valve long axis' }, ase: { tr: 'saat yönü ~45°: AV uzun eksen, LVOT, LV (TAVI)', en: 'clockwise ~45°: AV long axis, LVOT, LV (TAVI)' }, required: ['aortic-valve', 'lv'], avoid: ['pv', 'svc'], source: ICE_SRC },
-  { id: 'ice-mitral-laa', title: { tr: 'ICE mitral / LAA görünümü', en: 'ICE mitral / LAA view' }, ase: { tr: 'biraz ilerlet, saat yönü 60–80°: septum → LA → MV → LV, LAA sağda', en: 'advance slightly, clockwise 60–80°: septum → LA → MV → LV, LAA on the right' }, required: ['la', 'mitral', 'lv'], avoid: ['tricuspid', 'svc'], source: ICE_SRC },
-  { id: 'ice-left-pv', title: { tr: 'ICE sol pulmoner venler', en: 'ICE left pulmonary veins' }, ase: { tr: 'yüksek RA, saat yönü 90–100°: LSPV ve LIPV ("pantolon paçaları")', en: 'high RA, clockwise 90–100°: LSPV and LIPV ("trouser legs")' }, required: ['la', 'pv'], avoid: ['tricuspid', 'rv'], source: ICE_SRC },
-  { id: 'ice-septal-sax', title: { tr: 'ICE septal kısa eksen (transseptal çalışma görünümü)', en: 'ICE septal short axis (transseptal working view)' }, ase: { tr: 'posterior + sağ büküm, saat yönü 100–150°: RA, septum, LA, AV kısa eksen', en: 'posterior + right deflection, clockwise 100–150°: RA, septum, LA, AV short axis' }, required: ['la', 'aortic-valve'], avoid: ['lv', 'tricuspid'], source: ICE_SRC },
-  { id: 'ice-right-pv', title: { tr: 'ICE sağ pulmoner venler', en: 'ICE right pulmonary veins' }, ase: { tr: 'posterior bükümle saat yönü 150–180°: RSPV, RIPV, sağ PA', en: 'posterior deflection kept, clockwise 150–180°: RSPV, RIPV, right PA' }, required: ['la', 'pv'], avoid: ['lv', 'rv', 'tricuspid'], source: ICE_SRC },
-  { id: 'ice-svc', title: { tr: 'ICE SVC (bikaval benzeri)', en: 'ICE SVC (bicaval-like) view' }, ase: { tr: 'nötr, saat yönü 210–240°, hafif ilerlet: RA → SVC, LA', en: 'neutral, clockwise 210–240°, advance slightly: RA → SVC, LA' }, required: ['svc'], avoid: ['lv', 'rv', 'tricuspid'], source: ICE_SRC }
+  { id: 'ice-home', title: { tr: 'ICE home görünümü', en: 'ICE home view' }, ase: { tr: 'orta RA, nötr, saat yönü 15–30°: RA → TV → RV', en: 'mid RA, neutral, clockwise 15–30°: RA → TV → RV' },
+    motion: { tr: 'Başlangıç: kateter orta RA\'da, büküm nötr; transdüser triküspit kapağa bakar.', en: 'Start: catheter in the mid RA, knobs neutral; the transducer faces the tricuspid valve.' },
+    required: ['tricuspid', 'rv'], optional: ['aortic-valve'], avoid: ['pv', 'svc'], source: ICE_SRC },
+  { id: 'ice-rvot', title: { tr: 'ICE RV çıkış yolu', en: 'ICE RVOT view' }, ase: { tr: 'saat yönü 30–40°: AV yakında, RVOT ve pulmoner kapak uzakta', en: 'clockwise 30–40°: AV near, RVOT and pulmonary valve far' },
+    motion: { tr: 'Home\'dan saat yönünde ~15° çevirin: aort kapağı yakın alana, RVOT ve pulmoner kapak uzak alana girer.', en: 'From home, rotate ~15° clockwise: the aortic valve enters the near field, the RVOT and pulmonary valve the far field.' },
+    required: ['rv', 'aortic-valve', 'pulmonary-valve'], order: [['aortic-valve', 'pulmonary-valve']], avoid: ['pv', 'laa'], source: ICE_SRC },
+  { id: 'ice-lvot', title: { tr: 'ICE LVOT / aort kapağı uzun eksen', en: 'ICE LVOT / aortic valve long axis' }, ase: { tr: 'saat yönü ~45°: AV uzun eksen, LVOT, LV (TAVI)', en: 'clockwise ~45°: AV long axis, LVOT, LV (TAVI)' },
+    motion: { tr: 'Biraz daha saat yönü: aort kapağı uzun ekseni ve LVOT, LV uzakta.', en: 'A little more clockwise: the aortic valve long axis and LVOT, the LV in the far field.' },
+    required: ['aortic-valve', 'lv'], optional: ['aorta'], avoid: ['pv', 'svc'], source: ICE_SRC },
+  { id: 'ice-mitral-laa', title: { tr: 'ICE mitral / LAA görünümü', en: 'ICE mitral / LAA view' }, ase: { tr: 'biraz ilerlet, saat yönü 60–80°: septum → LA → MV → LV, LAA sağda', en: 'advance slightly, clockwise 60–80°: septum → LA → MV → LV, LAA on the right' },
+    motion: { tr: 'Saat yönünde ~30° daha: LA, mitral kapak ve LV; LAA tanınabilir bir lob olarak görüntünün sağında.', en: 'About 30° more clockwise: LA, mitral valve and LV; the LAA as a recognisable lobe on the image right.' },
+    required: ['la', 'mitral', 'lv', 'laa'], minLength: { laa: 0.4 }, side: { laa: 'right' }, avoid: ['tricuspid', 'svc'], source: ICE_SRC },
+  { id: 'ice-left-pv', title: { tr: 'ICE sol pulmoner venler', en: 'ICE left pulmonary veins' }, ase: { tr: 'yüksek RA, saat yönü 90–100°: LSPV ve LIPV ("pantolon paçaları")', en: 'high RA, clockwise 90–100°: LSPV and LIPV ("trouser legs")' },
+    motion: { tr: 'Saat yönünde ~20° daha: sol üst ve alt pulmoner ven ("pantolon paçaları"), ağızları LA\'ya açılır.', en: 'About 20° more clockwise: the left superior and inferior veins ("trouser legs"), their ostia opening into the LA.' },
+    required: ['la', 'lspv', 'lipv'], relations: [ostium('lspv'), ostium('lipv'), { a: 'lspv', b: 'lipv', max: 0.6, note: { tr: 'iki sol ven yan yana ("pantolon paçaları")', en: 'the two left veins side by side ("trouser legs")' } }], avoid: ['rspv', 'ripv', 'tricuspid', 'rv'], source: ICE_SRC },
+  { id: 'ice-septal-sax', title: { tr: 'ICE septal kısa eksen (transseptal çalışma görünümü)', en: 'ICE septal short axis (transseptal working view)' }, ase: { tr: 'posterior + sağ büküm, saat yönü 100–150°: RA, septum, LA, AV kısa eksen', en: 'posterior + right deflection, clockwise 100–150°: RA, septum, LA, AV short axis' },
+    motion: { tr: 'Posterior ve sağ büküm verin: RA yakında, interatriyal septum ve fossa ovalis ortada, LA uzakta; aort kökü septumun önünde.', en: 'Add posterior and right deflection: the RA near, the interatrial septum and fossa ovalis in the middle, the LA far; the aortic root in front of the septum.' },
+    required: ['ra', 'la', 'aortic-valve'], relations: [
+      { a: 'ra', b: 'la', max: 0.2, note: { tr: 'interatriyal septum', en: 'interatrial septum' } },
+      { a: 'aortic-valve', b: 'la', max: 0.6, note: { tr: 'aort kökü septum komşuluğunda', en: 'aortic root next to the septum' } }
+    ], order: [['ra', 'la']], landmarks: ['fossa'], avoid: ['lv', 'tricuspid'], source: ICE_SRC },
+  { id: 'ice-right-pv', title: { tr: 'ICE sağ pulmoner venler', en: 'ICE right pulmonary veins' }, ase: { tr: 'posterior bükümle saat yönü 150–180°: RSPV, RIPV, sağ PA', en: 'posterior deflection kept, clockwise 150–180°: RSPV, RIPV, right PA' },
+    motion: { tr: 'Posterior bükümü koruyup saat yönünde devam edin: sağ üst ve alt pulmoner ven, ağızları LA\'ya açılır.', en: 'Keep the posterior deflection and continue clockwise: the right superior and inferior veins, their ostia opening into the LA.' },
+    required: ['la', 'rspv', 'ripv'], relations: [ostium('rspv'), ostium('ripv')], optional: ['pa'], avoid: ['lspv', 'lipv', 'lv', 'rv', 'tricuspid'], source: ICE_SRC },
+  { id: 'ice-svc', title: { tr: 'ICE SVC (bikaval benzeri)', en: 'ICE SVC (bicaval-like) view' }, ase: { tr: 'nötr, saat yönü 210–240°, hafif ilerlet: RA → SVC, LA', en: 'neutral, clockwise 210–240°, advance slightly: RA → SVC, LA' },
+    motion: { tr: 'Saat yönünde devam edip hafif ilerletin: RA\'nın SVC\'ye açıldığı bileşke, LA arkada.', en: 'Continue clockwise and advance slightly: the RA opening into the SVC, the LA behind.' },
+    required: ['svc', 'ra'], relations: [{ a: 'ra', b: 'svc', max: 0.15, note: { tr: 'SVC-RA bileşkesi', en: 'SVC-RA junction' } }], optional: ['la'], avoid: ['lv', 'rv', 'tricuspid'], source: ICE_SRC }
 ]);
 
 /**
@@ -198,19 +227,27 @@ export function icePath(A) {
   return { base, top, home, clockwise };
 }
 
-// Atlas calibration of the ICE presets (search for the smallest move from the
-// textbook rotation that meets the view's criteria at rest and through the beat).
+// Atlas calibration of the ICE presets (scripts/ice-calibrate.cjs: the
+// smallest departure from the source manoeuvre that meets the view's
+// criteria at rest and through the beat). Knob signs as in iceFrame:
+// anteroposterior - posterior, leftRight - right.
 const ICE_CALIBRATION = Object.freeze({
-  'ice-home': { advance: 0.55, rotation: 20, anteroposterior: 0, leftRight: 0 },
+  'ice-home': { advance: 0.55, rotation: 15, anteroposterior: 0, leftRight: 0 },
   'ice-rvot': { advance: 0.55, rotation: 35, anteroposterior: 0, leftRight: 0 },
-  'ice-lvot': { advance: 0.55, rotation: 45, anteroposterior: 0, leftRight: 0 },
-  'ice-mitral-laa': { advance: 0.55, rotation: 75, anteroposterior: 0, leftRight: -20 },
-  'ice-left-pv': { advance: 0.55, rotation: 95, anteroposterior: 0, leftRight: 0 },
-  // Held through the whole beat only with a deeper sector and stronger deflections on this atlas.
-  'ice-septal-sax': { advance: 0.45, rotation: 95, anteroposterior: 35, leftRight: 35, depth: 4.2 },
-  'ice-right-pv': { advance: 0.55, rotation: 165, anteroposterior: 0, leftRight: 0 },
-  // The atlas catheter axis points at the SVC: the plane needs a strong tilt to bring it into the sector.
-  'ice-svc': { advance: 0.4, rotation: 225, anteroposterior: 45, leftRight: 0 }
+  'ice-lvot': { advance: 0.55, rotation: 40, anteroposterior: 0, leftRight: 0 },
+  'ice-mitral-laa': { advance: 0.55, rotation: 75, anteroposterior: 0, leftRight: 15 },
+  'ice-left-pv': { advance: 0.7, rotation: 100, anteroposterior: 0, leftRight: -15 },
+  'ice-septal-sax': { advance: 0.55, rotation: 125, anteroposterior: -30, leftRight: -45 },
+  'ice-right-pv': { advance: 0.55, rotation: 160, anteroposterior: -30, leftRight: 0 },
+  'ice-svc': { advance: 0.55, rotation: 210, anteroposterior: -45, leftRight: 0 }
+});
+
+/** Where an atlas preset departs from the source manoeuvre (shown next to the view). */
+export const ICE_PRESET_NOTES = Object.freeze({
+  'ice-mitral-laa': { tr: 'Atlas farkı: LAA lobunun tanınabilir görünmesi için hafif sol büküm (15°) gerekti; kaynakta büküm nötr.', en: 'Atlas difference: a slight left deflection (15°) was needed for a recognisable LAA lobe; the source keeps the knobs neutral.' },
+  'ice-left-pv': { tr: 'Atlas farkı: kateter daha yukarıda (ilerletme %70, kaynaktaki "yüksek RA") ve hafif sağ bükümle (15°).', en: 'Atlas difference: the catheter sits higher (advance 70%, the source\'s "high RA") with a slight right deflection (15°).' },
+  'ice-septal-sax': { tr: 'Atlas notu: yön kaynakla aynı (posterior ve sağ büküm, saat yönü 125°); sağ büküm bu atlasta düğmenin sınırında (45°).', en: 'Atlas note: the direction matches the source (posterior and right deflection, clockwise 125°); the right deflection sits at the knob limit (45°) on this atlas.' },
+  'ice-svc': { tr: 'Atlas farkı: atlastaki kateter ekseni doğrudan SVC\'ye baktığından düğme sınırında posterior büküm (45°) gerekti; kaynakta büküm nötr.', en: 'Atlas difference: the atlas catheter axis points straight at the SVC, so a posterior deflection at the knob limit (45°) was needed; the source keeps the knobs neutral.' }
 });
 
 /** Preset probe state of an ICE view (advance, rotation, deflections, depth). */

@@ -16,6 +16,10 @@ export const APEX_OFF_PLANE = 0.15;       // apex farther than this from the pla
 export const CAVAL_OFF_PLANE = 0.2;       // IVC ostium farther than this from the plane: not in the bicaval cut
 export const SEPTUM_GAP = 0.2;            // LA and RA contours this close in the image: the atrial septum is in the cut
 export const MITRAL_CENTRE_OFF = 0.5;     // plane within this share of the annulus radius from its centre
+export const OSTIUM_GAP = 0.15;           // a vein contour this close to the LA contour in the image: its ostium is in the cut
+export const LANDMARK_OFF_PLANE = 0.2;    // a landmark point (fossa) farther than this from the plane is not in the cut
+/** Structure groups: a group counts as shown when any member is. */
+export const STRUCTURE_GROUPS = Object.freeze({ pv: ['lspv', 'lipv', 'rspv', 'ripv'] });
 
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -29,13 +33,33 @@ export function visibleRuns(section, sectorAngle, depth) {
   return out;
 }
 
-/** Contour length of each structure inside the sector. */
+/** Contour length of each structure inside the sector (groups summed from their members). */
 export function visibleLengths(section, sectorAngle, depth) {
   const out = {};
   for (const [id, runs] of Object.entries(visibleRuns(section, sectorAngle, depth))) {
     out[id] = runs.reduce((sum, run) => { for (let i = 1; i < run.length; i++) sum += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]); return sum; }, 0);
   }
+  for (const [group, members] of Object.entries(STRUCTURE_GROUPS)) {
+    const total = members.reduce((sum, id) => sum + (out[id] || 0), 0);
+    if (total) out[group] = total;
+  }
   return out;
+}
+
+const runsOf = (runs, id) => (STRUCTURE_GROUPS[id] || [id]).flatMap(m => runs[m] || []);
+
+/** Smallest image distance between the visible contours of two structures (Infinity if one is absent). */
+export function contourGap(runs, a, b) {
+  const pa = runsOf(runs, a).flat(), pb = runsOf(runs, b).flat();
+  let best = Infinity;
+  for (const p of pa) for (const q of pb) best = Math.min(best, Math.hypot(p[0] - q[0], p[1] - q[1]));
+  return best;
+}
+
+/** Median image depth (distance from the transducer) of a structure's visible contour. */
+export function contourDepth(runs, id) {
+  const r = runsOf(runs, id).flat().map(p => Math.hypot(p[0], p[1])).sort((x, y) => x - y);
+  return r.length ? r[Math.floor(r.length / 2)] : null;
 }
 
 /** A world point in image coordinates, its distance from the plane and whether the image shows it. */
@@ -102,21 +126,51 @@ export function mitralChord(frame, anatomy) {
 }
 
 /**
+ * Layout criteria of a view (all optional):
+ *   relations: [{ a, b, max }] two contours meeting in the image (a vein ostium on the LA, RA and LA across the septum);
+ *   order: [[near, far]] near field before far field (median image depth);
+ *   side: { id: 'left' | 'right' } a structure's median position on the image (screen right = +lateral);
+ *   landmarks: [id] measured points (fossa ovalis) in the plane and inside the image; unknown when the atlas lacks them.
+ */
+export function layoutChecks(section, view, ctx) {
+  const needsRuns = view.relations || view.order || view.side;
+  const runs = needsRuns ? visibleRuns(section, ctx.sectorAngle, ctx.depth) : null;
+  const relations = (view.relations || []).map(r => { const gap = contourGap(runs, r.a, r.b); return { ...r, gap, ok: gap <= (r.max ?? OSTIUM_GAP) }; });
+  const order = (view.order || []).map(([near, far]) => { const a = contourDepth(runs, near), b = contourDepth(runs, far); return { near, far, ok: a != null && b != null && a < b }; });
+  const sides = Object.entries(view.side || {}).map(([id, side]) => {
+    const xs = runsOf(runs, id).flat().map(p => p[0]).sort((u, v) => u - v);
+    const mid = xs.length ? xs[Math.floor(xs.length / 2)] : null;
+    return { id, side, ok: mid != null && (side === 'right' ? mid > 0 : mid < 0) };
+  });
+  const landmarks = (view.landmarks || []).map(id => {
+    const point = ctx.anatomy?.[id]?.center;
+    if (!point) return { id, ok: false, unknown: true };
+    const p = imagePoint(point, ctx.frame, ctx.sectorAngle, ctx.depth);
+    return { id, ok: p.off <= LANDMARK_OFF_PLANE && !p.outsideAngle && !p.beyondDepth, off: p.off };
+  });
+  return { relations, order, sides, landmarks };
+}
+
+/**
  * @param {{ contours: object[] }} section
  * @param {{ required: string[], avoid: (string | { id: string, max: number })[], apical?: boolean, bicaval?: boolean, mitralChord?: [number, number] }} view
  * @param {{ sectorAngle: number, depth: number, frame: object, anatomy: object, label: (id: string) => string, lang: 'tr'|'en' }} ctx
  */
 export function evaluateView(section, view, ctx) {
   const lengths = visibleLengths(section, ctx.sectorAngle, ctx.depth);
-  const shown = id => (lengths[id] || 0) >= VISIBLE_LENGTH;
+  // A view may ask a target to be recognisable, not just touched: minLength per structure.
+  const shown = id => (lengths[id] || 0) >= (view.minLength?.[id] ?? VISIBLE_LENGTH);
   const missing = view.required.filter(id => !shown(id));
+  const { relations, order, sides, landmarks } = layoutChecks(section, view, ctx);
+  const optional = (view.optional || []).map(id => ({ id, shown: shown(id) }));
   // An avoided structure may carry its own tolerance: { id, max } (contour length allowed in the sector).
   const wrong = view.avoid.filter(a => typeof a === 'string' ? shown(a) : (lengths[a.id] || 0) > a.max).map(a => a.id || a);
   const fs = view.apical ? foreshortening(section, ctx.frame, ctx.anatomy, ctx.sectorAngle, ctx.depth) : null;
   const caval = view.bicaval ? bicaval(section, ctx.frame, ctx.anatomy, ctx.sectorAngle, ctx.depth) : null;
   const chord = view.mitralChord ? mitralChord(ctx.frame, ctx.anatomy) : null;
   const chordOk = !chord || (chord.centred && chord.angle >= view.mitralChord[0] && chord.angle <= view.mitralChord[1]);
-  const achieved = !missing.length && !wrong.length && (!fs || fs.ok) && (!caval || caval.ok) && chordOk;
+  const achieved = !missing.length && !wrong.length && (!fs || fs.ok) && (!caval || caval.ok) && chordOk
+    && relations.every(r => r.ok) && order.every(o => o.ok) && sides.every(x => x.ok) && landmarks.every(l => l.ok);
   const tr = ctx.lang !== 'en';
   const names = ids => ids.map(ctx.label).join(', ');
   const messages = [];
@@ -141,5 +195,19 @@ export function evaluateView(section, view, ctx) {
   if (chord && !chordOk) messages.push(tr
     ? `Mitral kesit yönü bu görünüme uymuyor: komissür eksenine açı ${Math.round(chord.angle)}° (model aralığı ${view.mitralChord[0]}–${view.mitralChord[1]}°)${chord.centred ? '' : ', düzlem anulus merkezinden uzak'}.`
     : `The mitral cut does not fit this view: ${Math.round(chord.angle)}° to the commissural axis (model range ${view.mitralChord[0]}–${view.mitralChord[1]}°)${chord.centred ? '' : ', plane away from the annulus centre'}.`);
-  return { achieved, missing, wrong, foreshortening: fs, bicaval: caval, mitralChord: chord, lengths, messages };
+  for (const r of relations.filter(x => !x.ok)) messages.push(tr
+    ? `${names([r.a])} ile ${names([r.b])} görüntüde birleşmiyor${r.note ? ` (${r.note.tr})` : ''}.`
+    : `${names([r.a])} and ${names([r.b])} do not meet in the image${r.note ? ` (${r.note.en})` : ''}.`);
+  for (const o of order.filter(x => !x.ok)) messages.push(tr
+    ? `${names([o.near])} yakın alanda, ${names([o.far])} uzak alanda olmalı: kesit yönü uymuyor.`
+    : `${names([o.near])} should be near field and ${names([o.far])} far field: the plane faces the wrong way.`);
+  for (const x of sides.filter(y => !y.ok)) messages.push(tr
+    ? `${names([x.id])} görüntünün ${x.side === 'right' ? 'sağında' : 'solunda'} olmalı.`
+    : `${names([x.id])} should be on the image ${x.side}.`);
+  for (const l of landmarks.filter(x => !x.ok)) messages.push(l.unknown
+    ? (tr ? `${names([l.id])} atlasta ölçülemedi: bu ölçüt değerlendirilemedi, başarı sayılmaz.` : `${names([l.id])} could not be measured on the atlas: this criterion is not assessed and does not count as met.`)
+    : (tr ? `${names([l.id])} kesitte veya görüntüde değil (düzlemden ${l.off.toFixed(2)} birim).` : `${names([l.id])} is not in the cut or the image (${l.off.toFixed(2)} units off the plane).`));
+  const extra = optional.filter(o => o.shown).map(o => o.id);
+  if (extra.length) messages.push(tr ? `Yardımcı (zorunlu değil) yapılar da görünüyor: ${names(extra)}.` : `Supporting (not required) structures also shown: ${names(extra)}.`);
+  return { achieved, missing, wrong, foreshortening: fs, bicaval: caval, mitralChord: chord, relations, order, sides, landmarks, optional, lengths, messages };
 }

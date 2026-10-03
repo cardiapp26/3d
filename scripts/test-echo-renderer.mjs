@@ -121,6 +121,23 @@ for (const style of ECHO_STYLES) {
   }
 }
 
+// Label decluttering: a short sliver gets no label unless it is a target; overlay paths are drawn.
+{
+  const sliverSection = { contours: [...section.contours, { id: 'aorta2', points: [[0.5, 2.0], [0.55, 2.05]], closed: false, length: 0.07 }] };
+  const info = { ...structureInfo, aorta2: { color: '#abc', label: { tr: 'KISA', en: 'SHORT' } } };
+  const plain = makeCanvas();
+  drawEchoSector(plain.canvas, sliverSection, { ...base, structureInfo: info });
+  assert.ok(!plain.texts().includes('KISA'), 'a sliver below the label length has no label');
+  const target = makeCanvas();
+  drawEchoSector(target.canvas, sliverSection, { ...base, structureInfo: info, highlight: ['aorta2'] });
+  assert.ok(target.texts().includes('KISA'), 'a target sliver keeps its label');
+  const withPaths = makeCanvas();
+  drawEchoSector(withPaths.canvas, section, { ...base, paths: [{ points: [[0, 1], [0.2, 2]], color: '#ffd966', tip: true }, { points: [[0, 1]] }] });
+  assert.ok(withPaths.calls.some((c) => c.name === 'set:strokeStyle' && c.args[0] === '#ffd966'), 'overlay path drawn');
+  assert.ok(withPaths.calls.filter((c) => c.name === 'arc').length >= 1, 'path tip dot');
+  assert.doesNotThrow(() => drawEchoSector(makeCanvas().canvas, section, { ...base, paths: 'nonsense' }));
+}
+
 // Quiz mode, empty section, frozen badge.
 {
   const { canvas, texts } = makeCanvas();

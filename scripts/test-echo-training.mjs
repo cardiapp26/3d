@@ -5,7 +5,7 @@
 // tip stays in the lumen and the TTE probe stays on the chest surface.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { evaluateView, mitralChord, foreshortening } from '../src/echo-training.js';
+import { evaluateView, mitralChord, foreshortening, visibleLengths, contourGap, visibleRuns } from '../src/echo-training.js';
 import { imageFrame } from '../src/echo-section.js';
 import { createProbePath, teeFrame, tteFrame, surfaceHit, ontoSurface, LUMEN, BEND_LENGTH } from '../src/echo-probe.js';
 
@@ -35,6 +35,48 @@ const off = evaluateView(lvLine, apical, { ...ctx(1.2), anatomy: { ...anatomy, a
 assert.equal(off.achieved, false);
 assert.ok(!off.foreshortening.inPlane && off.messages.some(m => /apeksten geçmiyor/.test(m)));
 assert.deepEqual(Object.keys(foreshortening(lvLine, frame, anatomy)).sort(), ['apexOffPlane', 'beyondDepth', 'inImage', 'inPlane', 'ok', 'outsideAngle', 'ratio']);
+
+// 1b. ICE criteria (research/ICE_INCELEME_RAPORU.md): vein identities and their group, minimum
+// target length, relations (ostium on the LA), near/far order, image side and point landmarks.
+const line = (id, a, b) => ({ id, points: [a, b], closed: false });
+const veins = { contours: [line('la', [-0.3, 1], [0.3, 1]), line('lspv', [0.3, 1], [0.6, 1.3]), line('lipv', [0.32, 1.05], [0.62, 1.0])] };
+const wide = ctx(3, Math.PI);
+assert.ok(visibleLengths(veins, Math.PI, 3).pv > 0.6, 'the pulmonary vein group sums its members');
+const leftPv = { required: ['la', 'lspv', 'lipv'], relations: [{ a: 'la', b: 'lspv' }, { a: 'la', b: 'lipv' }], avoid: ['rspv', 'ripv'] };
+assert.equal(evaluateView(veins, leftPv, wide).achieved, true, 'both left veins with their ostia on the LA');
+const rightPv = { required: ['la', 'rspv', 'ripv'], avoid: ['lspv', 'lipv'] };
+const rWrong = evaluateView(veins, rightPv, wide);
+assert.ok(!rWrong.achieved && rWrong.missing.includes('rspv') && rWrong.wrong.includes('lspv'), 'left veins never meet the right-vein view');
+assert.ok(evaluateView(veins, { required: ['pv'], avoid: [] }, wide).achieved, "a 'pv' requirement (TEE) is met by any vein");
+const detached = { contours: [line('la', [-0.3, 1], [0.3, 1]), line('lspv', [0.8, 1.4], [1.1, 1.7]), line('lipv', [0.32, 1.05], [0.62, 1.0])] };
+const noOstium = evaluateView(detached, leftPv, wide);
+assert.ok(!noOstium.achieved && noOstium.relations.find(r => r.b === 'lspv').ok === false, 'a vein off the LA: ostium not in the cut');
+assert.ok(noOstium.messages.some(m => /birleşmiyor/.test(m)));
+assert.ok(Math.abs(contourGap(visibleRuns(veins, Math.PI, 3), 'la', 'lspv')) < 1e-9);
+// Minimum length: a sliver of LAA does not count as the target.
+const sliver = { contours: [line('laa', [0.4, 1], [0.6, 1])] };
+assert.equal(evaluateView(sliver, { required: ['laa'], minLength: { laa: 0.4 }, avoid: [] }, wide).achieved, false, 'LAA sliver is not a recognisable LAA');
+assert.equal(evaluateView(sliver, { required: ['laa'], avoid: [] }, wide).achieved, false, 'shorter than the default visibility length too');
+// Side: the LAA on the image right (+x), not the left.
+const laaRight = { contours: [line('laa', [0.3, 1], [0.9, 1.2])] };
+assert.equal(evaluateView(laaRight, { required: ['laa'], side: { laa: 'right' }, avoid: [] }, wide).achieved, true);
+const laaLeft = evaluateView(laaRight, { required: ['laa'], side: { laa: 'left' }, avoid: [] }, wide);
+assert.ok(!laaLeft.achieved && laaLeft.messages.some(m => /solunda olmalı/.test(m)));
+// Order: RA near field, LA far field (septal view facing the septum from the right).
+const raLa = { contours: [line('ra', [-0.3, 0.4], [0.3, 0.4]), line('la', [-0.3, 1.2], [0.3, 1.2])] };
+assert.equal(evaluateView(raLa, { required: ['ra', 'la'], order: [['ra', 'la']], avoid: [] }, wide).achieved, true);
+const flipped = evaluateView(raLa, { required: ['ra', 'la'], order: [['la', 'ra']], avoid: [] }, wide);
+assert.ok(!flipped.achieved && flipped.messages.some(m => /yakın alanda/.test(m)), 'a reversed near/far order fails');
+// Landmarks: in the plane and in the image; unknown when the atlas lacks them (never a pass).
+const withFossa = (center) => ({ ...wide, anatomy: { ...anatomy, fossa: { center } } });
+const fossaView = { required: [], landmarks: ['fossa'], avoid: [] };
+assert.equal(evaluateView(raLa, fossaView, withFossa([0, 0.8, 0])).achieved, true, 'fossa in the cut');
+assert.equal(evaluateView(raLa, fossaView, withFossa([0, 0.8, 0.5])).achieved, false, 'fossa off the plane');
+const unknown = evaluateView(raLa, fossaView, wide);
+assert.ok(!unknown.achieved && unknown.landmarks[0].unknown && unknown.messages.some(m => /değerlendirilemedi, başarı sayılmaz/.test(m)), 'unmeasured landmark is not assumed');
+// Optional structures are reported, never required.
+const opt = evaluateView(raLa, { required: ['ra'], optional: ['la'], avoid: [] }, wide);
+assert.ok(opt.achieved && opt.messages.some(m => /zorunlu değil/.test(m)));
 
 // 2. Bicaval: IVC orifice in the cut and the atrial septum (LA next to RA) both required.
 const bicavalView = { required: ['la', 'ra'], avoid: [], bicaval: true };
@@ -96,4 +138,4 @@ assert.ok(Math.abs(Math.hypot(...ontoSurface([5, 0, 0], surface).map((v, i) => v
 for (const file of ['../src/echo-training.js', '../src/echo-probe.js', '../src/echo-views.js']) {
   assert.ok(!readFileSync(new URL(file, import.meta.url), 'utf8').includes('\u2014'), `${file}: no em dash`);
 }
-console.log('PASS echo-training: clipped apex fails (depth/sector/plane messages), bicaval IVC and septum, mitral cut angle, flexion vs multiplane, lumen limit, chest contact');
+console.log('PASS echo-training: clipped apex fails (depth/sector/plane messages), ICE vein identities/group, ostium relations, LAA length and side, near/far order, fossa landmark (unknown is not a pass), optional, bicaval IVC and septum, mitral cut angle, flexion vs multiplane, lumen limit, chest contact');

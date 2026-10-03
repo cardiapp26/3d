@@ -191,31 +191,58 @@ export function teeFrame(path, state = {}) {
 
 /** Limits of the ICE motions (degrees; advance 0..1 from the IVC orifice to the upper RA). */
 export const ICE_LIMITS = Object.freeze({ rotation: [-60, 270], anteroposterior: 45, leftRight: 45 });
+/** Length of the deflectable distal segment (atlas units; schematic, not a physical length). */
+export const ICE_DISTAL = 0.5;
 
 /**
- * ICE (phased-array, side-looking) image frame. The catheter enters the RA
- * from the IVC; its long axis lies in the image plane (longitudinal imaging).
+ * ICE catheter pose and its (phased-array, side-looking) image frame, from
+ * one model. The shaft runs along the RA axis from the IVC; handle rotation
+ * turns the transducer face about the shaft; the distal segment (ICE_DISTAL
+ * long, from a knuckle below the undeflected tip) bends with the two knobs,
+ * and the transducer sits at its end, facing the beam. The catheter's distal
+ * direction lies in the image plane (longitudinal imaging; screen right).
+ *
+ * Knob convention (as on the catheter, named for the neutral home position,
+ * transducer facing anteriorly): anteroposterior + bends the tip toward the
+ * transducer face (anterior at home), - away from it (posterior);
+ * leftRight + bends it out of the image plane toward the patient's left at
+ * home, - toward the right. The knobs act on the catheter, so after a
+ * rotation they keep their catheter meaning, not a fixed patient direction.
  * @param {{ base: number[], top: number[], home: number[], clockwise: number }} path
  *   base/top: catheter axis ends (IVC orifice, upper RA); home: home-view beam
  *   direction (toward the tricuspid valve); clockwise: +1 or -1, so that a
  *   positive rotation turns the beam the way clockwise handle rotation does
  *   (from the tricuspid toward the aortic root, LA and septum).
  * @param {{ advance?: number, rotation?: number, anteroposterior?: number, leftRight?: number }} state
- *   anteroposterior: + anterior deflection (tilts the plane about its own
- *   left-right axis); leftRight: + toward the patient's left (rocks the plane
- *   about the beam).
+ * @returns {object} image frame (origin, beam, lateral, normal) plus tip, shaft (axis),
+ *   knuckle, distal (unit direction of the distal segment) and catheter (centreline points)
  */
 export function iceFrame(path, state = {}) {
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0));
   const advance = clamp(state.advance ?? 0.5, 0, 1);
   const axis = normalize([0, 1, 2].map(i => path.top[i] - path.base[i]));
-  const tip = [0, 1, 2].map(i => path.base[i] + (path.top[i] - path.base[i]) * advance);
+  const straightTip = [0, 1, 2].map(i => path.base[i] + (path.top[i] - path.base[i]) * advance);
   let beam = rotate(path.home, axis, path.clockwise * clamp(state.rotation, ...ICE_LIMITS.rotation));
-  let lateral = axis;                                   // cephalad on screen right: the catheter axis
-  const across = cross(beam, lateral);
-  const ap = clamp(state.anteroposterior, -ICE_LIMITS.anteroposterior, ICE_LIMITS.anteroposterior);
-  beam = rotate(beam, across, ap); lateral = rotate(lateral, across, ap);
-  const lr = clamp(state.leftRight, -ICE_LIMITS.leftRight, ICE_LIMITS.leftRight);
-  lateral = rotate(lateral, beam, lr);
-  return { ...imageFrame(add(tip, beam, 0.04), beam, lateral), tip, shaft: axis };
+  let distal = axis;                                    // the catheter direction: screen right of the image
+  // A positive turn about across = beam x axis carries the distal direction away from the
+  // beam; the knob value is negated so that anterior (+) bends the tip toward the face.
+  const across = cross(beam, distal);
+  const ap = -clamp(state.anteroposterior, -ICE_LIMITS.anteroposterior, ICE_LIMITS.anteroposterior);
+  beam = rotate(beam, across, ap); distal = rotate(distal, across, ap);
+  // Left (+) bends it out of the plane toward the patient's left at home: about the beam.
+  const lr = -clamp(state.leftRight, -ICE_LIMITS.leftRight, ICE_LIMITS.leftRight);
+  distal = rotate(distal, beam, lr);
+  // Centreline: straight shaft up to the knuckle, then the distal segment curving onto `distal`.
+  const knuckle = add(straightTip, axis, -ICE_DISTAL);
+  const catheter = [knuckle];
+  const STEPS = 8;
+  let point = knuckle;
+  for (let k = 1; k <= STEPS; k++) {
+    const f = (k - 0.5) / STEPS;
+    const dir = normalize([0, 1, 2].map(i => axis[i] * (1 - f) + distal[i] * f));
+    point = add(point, dir, ICE_DISTAL / STEPS);
+    catheter.push(point);
+  }
+  const tip = point;
+  return { ...imageFrame(add(tip, beam, 0.04), beam, distal), tip, shaft: axis, knuckle, distal, catheter };
 }
