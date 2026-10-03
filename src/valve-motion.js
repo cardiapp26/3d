@@ -118,6 +118,7 @@ const AV_DROP = 0.45;         // ...and this fraction deeper into the ventricle
 const AV_REACH = 1;           // hinge distance is capped at this (the free edge of a long leaflet)
 const AV_BODY_DEPTH = 0.8;    // deeper vertices are chordae, tethered to the papillary tips
 const AV_HINGE_DEPTH = 0.25;  // vertices this shallow define a leaflet's hinge side
+const AV_COAPT = 0.08;        // closed: free edges move this fraction of the radius toward the centre (seals coaptation slits)
 
 const clamp01 = value => Math.max(0, Math.min(1, value));
 
@@ -134,10 +135,14 @@ export function avLeafletWeight(hingeDistance, depth, radius, maxDepth) {
   return reach * (1 - clamp01((depth - bodyDepth) / (maxDepth - bodyDepth)));
 }
 
-/** Open pose of one AV leaflet vertex: toward the leaflet's hinge side and into the ventricle. */
+/**
+ * Pose of one AV leaflet vertex: open, toward the leaflet's hinge side and
+ * into the ventricle; closed, its free edge pressed a little toward the valve
+ * centre so neighbouring leaflets meet (coaptation).
+ */
 export function avLeafletOffset(x, y, z, opening, weight, outward, normal, radius) {
   const k = clamp01(opening) * weight;
-  const swing = AV_SWING * radius * k;
+  const swing = AV_SWING * radius * k - AV_COAPT * radius * (1 - clamp01(opening)) * weight;
   const drop = AV_DROP * radius * k;
   return [
     x + outward.x * swing + normal.x * drop,

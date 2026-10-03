@@ -12,7 +12,7 @@ import { fetchCountryCode, languageForCountry } from './entry-language.js';
 import { epsLinkMarkup, syncEpsLink, createEpsHandoff, LESSON_CLIPS } from './eps-link.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync, ecgPhaseAt} from './ecg-trace.js';
-import {drawWiggers, formatCycleTiming, wiggersPhaseAt} from './wiggers.js';
+import {drawWiggers, formatCycleTiming, wiggersPhaseAt, profileFromStations} from './wiggers.js';
 import { createHemoMode } from './hemo-mode.js';
 import { createExamMode } from './exam-mode.js';
 import { createEchoMode } from './echo-mode.js';
@@ -671,7 +671,7 @@ function updateCycleUI(state) {
   echoMode?.tick(state);
   const wigStrip = document.querySelector('#wiggers-strip');
   if (wigStrip && !wigStrip.hidden) {
-    drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en');
+    drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en', wiggersProfile());
     const timing = document.querySelector('#wiggers-timing');
     if (timing) timing.textContent = formatCycleTiming(state.bpm, isTr ? 'tr' : 'en');
   }
@@ -687,6 +687,11 @@ function syncEpsHandoff(lessonStep) {
   heart?.setEpZone?.(clip ? LESSON_CLIPS[clip]?.zone || null : null);
 }
 // Built before the cycle subscription: subscribeCycle calls updateCycleUI at once.
+// In the catheterisation mode the Wiggers strip draws the scenario's pressures (same mmHg as the tracings).
+function wiggersProfile() {
+  const stations = mode === 'cath' ? hemoMode?.getStations() : null;
+  return stations ? profileFromStations(stations) : undefined;
+}
 const hemoMode = heart ? createHemoMode({
   heart,
   mount: document.querySelector('#hemo-panel'),
@@ -1490,7 +1495,7 @@ function setWiggersOpen(open) {
   const state = lastCycleState || heart?.getCycleState?.();
   if (open && state) {
     const isTr = getContentLanguage() === 'tr';
-    drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en');
+    drawWiggers(document.querySelector('#wiggers-canvas'), state, isTr ? 'tr' : 'en', wiggersProfile());
     const timing = document.querySelector('#wiggers-timing');
     if (timing) timing.textContent = formatCycleTiming(state.bpm, isTr ? 'tr' : 'en');
   }

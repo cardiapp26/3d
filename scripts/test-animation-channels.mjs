@@ -172,7 +172,10 @@ console.log('Running Animation Channels Unit Tests...\n');
   assert.equal(avLeafletWeight(1.5, 2, 1, 2), 0, 'Chordae stay tethered at the papillary tips');
   const outward = new THREE.Vector3(1, 0, 0);
   const normal = new THREE.Vector3(0, 0, 1);
-  assert.deepEqual(avLeafletOffset(0.1, 0, 0.3, 0, 1, outward, normal, 1), [0.1, 0, 0.3], 'Closed pose is the rest pose');
+  // Closed: the free edge is pressed toward the valve centre (coaptation), not toward the ventricle.
+  const closed = avLeafletOffset(0.1, 0, 0.3, 0, 1, outward, normal, 1);
+  assert.ok(closed[0] < 0.1 && closed[0] > 0.1 - 0.1 && closed[2] === 0.3, 'Closed pose seals toward the centre, in the annulus plane');
+  assert.deepEqual(avLeafletOffset(0.1, 0, 0.3, 0, 0, outward, normal, 1), [0.1, 0, 0.3], 'The hinge stays put when closed');
   const open = avLeafletOffset(0.1, 0, 0.3, 1, 1, outward, normal, 1);
   assert.ok(open[0] > 0.1 && open[2] > 0.3, 'Open leaflet moves to its hinge side and into the ventricle');
 
@@ -202,7 +205,13 @@ console.log('Running Animation Channels Unit Tests...\n');
   assert.ok(edge.dot(new THREE.Vector3(1, 0, 0)) > 0.25, 'Free edge swings toward its hinge side in the annulus plane');
   assert.ok(edge.dot(frame.normal) > 0.3, 'Free edge drops along the tilted annulus normal');
   avChannels.applyChannels({ phase: 0.7, reducedMotion: false });
-  assert.ok(vertex(2).distanceTo(new THREE.Vector3(...positions.slice(6, 9))) < 1e-6, 'AV leaflet is shut in systole');
+  {
+    // Shut in systole: back at its rest place, pressed slightly toward the valve centre (coaptation).
+    const rest = new THREE.Vector3(...positions.slice(6, 9));
+    const moved = vertex(2).distanceTo(rest);
+    assert.ok(moved < 0.1 * frame.radius + 1e-6, `AV leaflet is shut in systole (${moved.toFixed(3)})`);
+    assert.ok(Math.abs(vertex(2).clone().sub(rest).dot(frame.normal)) < 1e-6, 'without dropping into the ventricle');
+  }
 
   console.log('PASS: AV leaflets open about their measured, tilted annulus');
 }

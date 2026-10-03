@@ -69,6 +69,8 @@ export function createHemoMode({ heart, mount, getLang, onFocus }) {
       ensurePanel();
       mount.hidden = false;
     },
+    /** Station targets of the active scenario (the Wiggers strip draws the same pressures). */
+    getStations() { return active && hemo ? hemo.getScenario().stations : null; },
     exit() {
       if (active && previousBpm !== null) heart.setBpm(previousBpm);
       active = false;

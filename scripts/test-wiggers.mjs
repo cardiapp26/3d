@@ -1,7 +1,8 @@
 import {
   ventricularPressure as lv, aorticPressure as ao, atrialPressure as la,
-  ventricularVolume as vol, ecgValue, cycleTiming, heartSounds, EVENTS
+  ventricularVolume as vol, ecgValue, cycleTiming, heartSounds, EVENTS, profileFromStations, DEFAULT_PROFILE
 } from '../src/wiggers.js';
+const ventricularPressure = lv, aorticPressure = ao, atrialPressure = la;
 import { CYCLE_SYNC, phaseToTime, timeToPhase, intervalDurations } from '../src/cardiac-cycle.js';
 
 let failures = 0;
@@ -98,6 +99,23 @@ for (let i = 0; i < 40; i++) {
   rt = Math.max(rt, Math.abs(timeToPhase(phaseToTime(u, 130), 130) - u));
 }
 check('Time warp round-trips', rt < 1e-6);
+
+// Mitral opening sits on the LA = LV crossing at u = 0, with no step at the cycle wrap.
+check('LA = LV at mitral opening (u = 0)', Math.abs(atrialPressure(0) - ventricularPressure(0)) < 1e-9);
+check('LA continuous across the cycle wrap', Math.abs(atrialPressure(0) - atrialPressure(0.99999)) < 0.05);
+check('S1 and S2 sit on their valve events', heartSounds('sinus').find(x => x.id === 'S1').u === EVENTS.mitralClose && heartSounds('sinus').find(x => x.id === 'S2').u === EVENTS.aorticClose);
+check('S3 and S4 marked optional', heartSounds('sinus').filter(x => x.optional).map(x => x.id).sort().join() === 'S3,S4');
+
+// Scenario profile: the strip draws the catheter targets (severe aortic stenosis).
+const as = profileFromStations({ lv: { systolic: 180, edp: 20 }, ao: { systolic: 115, diastolic: 70 }, pcwp: { a: 18, v: 20, mean: 16 } });
+let lvMax = 0, aoMax = 0;
+for (let u = 0; u < 1; u += 0.001) { lvMax = Math.max(lvMax, ventricularPressure(u, 'sinus', as)); aoMax = Math.max(aoMax, aorticPressure(u, 'sinus', as)); }
+check(`AS: LV peak = scenario (${lvMax.toFixed(1)})`, Math.abs(lvMax - 180) < 1);
+check(`AS: aortic systolic near the scenario (${aoMax.toFixed(1)})`, Math.abs(aoMax - 115) < 6);
+check('AS: LVEDP = scenario', Math.abs(ventricularPressure(EVENTS.mitralClose, 'sinus', as) - 20) < 1e-6);
+check('AS: LV = Ao at opening and closure', Math.abs(ventricularPressure(EVENTS.aorticOpen, 'sinus', as) - aorticPressure(EVENTS.aorticOpen, 'sinus', as)) < 1e-6 && Math.abs(ventricularPressure(EVENTS.aorticClose, 'sinus', as) - aorticPressure(EVENTS.aorticClose, 'sinus', as)) < 1e-6);
+check('AS: aortic diastolic = scenario at opening', Math.abs(aorticPressure(EVENTS.aorticOpen - 1e-6, 'sinus', as) - 70) < 0.5);
+check('Default profile unchanged', DEFAULT_PROFILE.lvPeak === 122 && DEFAULT_PROFILE.aoOpen === 80 && DEFAULT_PROFILE.aoClose === 96 && DEFAULT_PROFILE.avOpen === 12);
 
 if (failures) { console.error(`${failures} failures`); process.exit(1); }
 console.log('ALL WIGGERS TESTS PASSED');

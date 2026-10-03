@@ -51,25 +51,46 @@ function through(anchors, u) {
   return anchors[anchors.length - 1][1];
 }
 
-const AO_OPEN_P = 80;    // aortic diastolic pressure at valve opening
-const AO_CLOSE_P = 96;   // pressure at S2
-const LV_PEAK = 122;
-const AV_OPEN_P = 12;    // LA = LV at mitral opening (v-wave peak)
+/**
+ * Pressure profile (mmHg) of the curves. The default is the textbook normal
+ * the strip has always drawn; a hemodynamic scenario (cath mode) gives its
+ * own station targets through profileFromStations, so the strip and the
+ * catheter tracings show the same numbers.
+ * aoOpen: aortic diastolic at valve opening; aoClose: at S2; aoSys: aortic
+ * systolic (below lvPeak with an outflow gradient); avOpen: LA = LV at mitral
+ * opening (v-wave peak); lvedp: with an atrial kick (AFib: 4 lower).
+ */
+export const DEFAULT_PROFILE = Object.freeze({ lvPeak: 122, aoSys: 122, aoOpen: 80, aoClose: 96, avOpen: 12, lvedp: 11 });
+
+/** Profile from hemodynamic station targets ({ lv, ao, pcwp }, hemo-scenarios.js). */
+export function profileFromStations(stations) {
+  const lv = stations?.lv, ao = stations?.ao, pcwp = stations?.pcwp;
+  if (!lv || !ao) return DEFAULT_PROFILE;
+  const aoOpen = ao.diastolic, aoSys = Math.min(ao.systolic, lv.systolic);
+  return Object.freeze({
+    lvPeak: lv.systolic, aoSys, aoOpen,
+    aoClose: aoOpen + 0.4 * (aoSys - aoOpen),
+    avOpen: Math.max(pcwp?.v ?? lv.edp + 1, lv.edp + 1),
+    lvedp: lv.edp
+  });
+}
 
 const hasAtrialKick = rhythm => rhythm !== 'afib';
+const edpOf = (p, rhythm) => (hasAtrialKick(rhythm) ? p.lvedp : Math.max(3, p.lvedp - 4));
 
 /** Left ventricular pressure (mmHg) at physiologic phase u. */
-export function ventricularPressure(u, rhythm = 'sinus') {
+export function ventricularPressure(u, rhythm = 'sinus', p = DEFAULT_PROFILE) {
   const uu = wrap(u);
-  const lvedp = hasAtrialKick(rhythm) ? 11 : 7;
+  const lvedp = edpOf(p, rhythm);
+  const k = p.lvedp / DEFAULT_PROFILE.lvedp;   // diastolic shape scales with the filling pressure
   if (uu < EVENTS.mitralClose) {
     // Diastole: early drop below LA (suction), slow rise, atrial kick to LVEDP.
     return through([
-      [0.0, AV_OPEN_P],
-      [0.06, 3.5],
-      [0.18, 4.8],
-      [0.32, 5.8],
-      [0.42, hasAtrialKick(rhythm) ? 9.6 : 6.6],
+      [0.0, p.avOpen],
+      [0.06, 3.5 * k],
+      [0.18, 4.8 * k],
+      [0.32, 5.8 * k],
+      [0.42, hasAtrialKick(rhythm) ? 9.6 * k : 6.6 * k],
       [EVENTS.mitralClose, lvedp]
     ], uu);
   }
@@ -77,62 +98,69 @@ export function ventricularPressure(u, rhythm = 'sinus') {
   // flatten LV at opening and closure, breaking the pressure crossings).
   if (uu < EVENTS.aorticOpen) {
     const f = (uu - EVENTS.mitralClose) / (EVENTS.aorticOpen - EVENTS.mitralClose);
-    return lvedp + (AO_OPEN_P - lvedp) * Math.pow(f, 1.6);     // isovolumetric contraction
+    return lvedp + (p.aoOpen - lvedp) * Math.pow(f, 1.6);     // isovolumetric contraction
   }
   if (uu < S.ejectionPeak) {
     const f = (uu - EVENTS.aorticOpen) / (S.ejectionPeak - EVENTS.aorticOpen);
-    return AO_OPEN_P + (LV_PEAK - AO_OPEN_P) * (1 - (1 - f) * (1 - f)); // rapid ejection
+    return p.aoOpen + (p.lvPeak - p.aoOpen) * (1 - (1 - f) * (1 - f)); // rapid ejection
   }
   if (uu < EVENTS.aorticClose) {
     const f = (uu - S.ejectionPeak) / (EVENTS.aorticClose - S.ejectionPeak);
-    return LV_PEAK - (LV_PEAK - AO_CLOSE_P) * Math.pow(f, 2.2);        // reduced ejection
+    return p.lvPeak - (p.lvPeak - p.aoClose) * Math.pow(f, 2.2);        // reduced ejection
   }
   // Isovolumetric relaxation: steep exponential fall to the LA v-wave level.
   const decay = Math.exp(-(uu - EVENTS.aorticClose) / 0.022);
   const tail = Math.exp(-(1 - EVENTS.aorticClose) / 0.022);
-  return AV_OPEN_P + (AO_CLOSE_P - AV_OPEN_P) * (decay - tail) / (1 - tail);
+  return p.avOpen + (p.aoClose - p.avOpen) * (decay - tail) / (1 - tail);
 }
 
 /** Aortic pressure (mmHg). */
-export function aorticPressure(u, rhythm = 'sinus') {
+export function aorticPressure(u, rhythm = 'sinus', p = DEFAULT_PROFILE) {
   const uu = wrap(u);
   if (uu >= EVENTS.aorticOpen && uu <= EVENTS.aorticClose) {
     // LV slightly above aorta early in ejection, slightly below late; the two
-    // cross exactly at opening, at the peak and at closure.
-    const lv = ventricularPressure(uu, rhythm);
+    // cross exactly at opening, at the peak and at closure. An outflow
+    // gradient (LV peak above aortic systolic) opens between them mid-ejection.
+    const lv = ventricularPressure(uu, rhythm, p);
     const early = uu < S.ejectionPeak ? -2 * Math.sin(Math.PI * (uu - EVENTS.aorticOpen) / (S.ejectionPeak - EVENTS.aorticOpen)) : 0;
     const late = uu >= S.ejectionPeak ? 2.5 * Math.sin(Math.PI * (uu - S.ejectionPeak) / (EVENTS.aorticClose - S.ejectionPeak)) : 0;
-    return lv + early + late;
+    const f = (uu - EVENTS.aorticOpen) / (EVENTS.aorticClose - EVENTS.aorticOpen);
+    const fp = (S.ejectionPeak - EVENTS.aorticOpen) / (EVENTS.aorticClose - EVENTS.aorticOpen);
+    const gradient = Math.max(0, p.lvPeak - p.aoSys) * Math.sin(Math.PI * f) / Math.sin(Math.PI * fp);
+    return lv + early + late - gradient;
   }
   // Closed: runoff from the closure value down to the opening value.
   const s = wrap(uu - EVENTS.aorticClose);
   const span = 1 - (EVENTS.aorticClose - EVENTS.aorticOpen);
-  const runoff = AO_CLOSE_P - (AO_CLOSE_P - AO_OPEN_P) * Math.pow(s / span, 0.85);
+  const runoff = p.aoClose - (p.aoClose - p.aoOpen) * Math.pow(s / span, 0.85);
   const notch = 5 * gauss(s, 0.012, 0.006);   // incisura: dip right after closure
-  const bump = 1.2 * gauss(s, 0.032, 0.009);  // dicrotic wave, stays below AO_CLOSE_P
+  const bump = 1.2 * gauss(s, 0.032, 0.009);  // dicrotic wave, stays below the closure value
   return runoff - notch + bump;
 }
 
 /** Left atrial pressure (mmHg): a, c, v waves with x and y descents. */
-export function atrialPressure(u, rhythm = 'sinus') {
+export function atrialPressure(u, rhythm = 'sinus', p = DEFAULT_PROFILE) {
   const uu = wrap(u);
   const kick = hasAtrialKick(rhythm);
+  const k = p.lvedp / DEFAULT_PROFILE.lvedp;
   if (uu < EVENTS.mitralClose) {
     // Mitral open: LA sits just above LV, forward gradient into the ventricle.
-    const lv = ventricularPressure(uu, rhythm);
-    const yDescent = 3.2 * Math.exp(-uu / 0.03) * smoothstep(0, 0.012, uu);
+    // The gradient builds from zero at opening, so LA = LV at the crossing (no step at the cycle wrap).
+    const lv = ventricularPressure(uu, rhythm, p);
+    const opening = smoothstep(0, 0.012, uu);
+    const yDescent = 3.2 * Math.exp(-uu / 0.03) * opening;
     const aWave = kick ? 2.6 * gauss(uu, 0.405, 0.022) : 0;
     const close = 1 - smoothstep(0.43, EVENTS.mitralClose, uu); // gradient -> 0 at closure
-    return lv + (1.3 + yDescent + aWave) * close;
+    return lv + (1.3 * opening + yDescent + aWave) * close;
   }
   // Mitral closed: c wave, x descent, then the v wave building to opening.
   const cWave = 2.2 * gauss(uu, S.qrsPeak + 0.02, 0.012);
   const base = through([
-    [EVENTS.mitralClose, kick ? 11 : 7],
-    [0.5, 6.5],
-    [0.6, 4.2],             // x descent
-    [EVENTS.aorticClose, 9.5],
-    [1.0, AV_OPEN_P]        // v wave peak at mitral opening
+    [EVENTS.mitralClose, edpOf(p, rhythm)],
+    [0.5, 6.5 * k],
+    [0.6, 4.2 * k],         // x descent
+    [EVENTS.aorticClose, 9.5 * k],
+    [1.0, p.avOpen]         // v wave peak at mitral opening
   ], uu);
   return base + cWave;
 }
@@ -164,11 +192,12 @@ export function ecgValue(u, rhythm = 'sinus') {
 /** Heart sounds on the physiologic clock. S4 needs an atrial kick. */
 export function heartSounds(rhythm = 'sinus') {
   const list = [
-    { id: 'S1', u: EVENTS.mitralClose + 0.004, strong: true },
-    { id: 'S2', u: EVENTS.aorticClose + 0.004, strong: true },
-    { id: 'S3', u: 0.06, strong: false }
+    { id: 'S1', u: EVENTS.mitralClose, strong: true },
+    { id: 'S2', u: EVENTS.aorticClose, strong: true },
+    // S3 and S4 are drawn at their timing for teaching; often not heard in adults (optional, dashed).
+    { id: 'S3', u: 0.06, strong: false, optional: true }
   ];
-  if (hasAtrialKick(rhythm)) list.push({ id: 'S4', u: 0.425, strong: false });
+  if (hasAtrialKick(rhythm)) list.push({ id: 'S4', u: 0.425, strong: false, optional: true });
   return list;
 }
 
@@ -190,8 +219,9 @@ const COLORS = {
   grid: 'rgba(93, 138, 120, 0.16)',
   boundary: 'rgba(63, 94, 82, 0.35)',
   cursor: '#e0524d',
-  ventricular: '#2f6fb3',
-  aortic: '#d23a4f',
+  // Same colours as the catheter channels (hemodynamics.js): LV red, Ao dark, LA amber like the PCWP.
+  ventricular: '#d23a4f',
+  aortic: '#2f3a36',
   atrial: '#c0843a',
   volume: '#3a8fb8',
   ecg: '#3f7d5f',
@@ -203,7 +233,8 @@ const COLORS = {
  * Draw the diagram. x axis = real time over one RR interval at state.bpm;
  * every curve samples the physiologic phase u = timeToPhase(tau).
  */
-export function drawWiggers(canvas, state, lang = 'tr') {
+export function drawWiggers(canvas, state, lang = 'tr', profile = DEFAULT_PROFILE) {
+  const p = profile || DEFAULT_PROFILE;
   if (!canvas) return null;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const cssW = canvas.clientWidth || 600;
@@ -230,7 +261,7 @@ export function drawWiggers(canvas, state, lang = 'tr') {
   const hVolume = drawable * 0.20;
   const hEcg = drawable - hPressure - hVolume - hSounds - bandGap * 3;
   const bands = {
-    pressure: { y: top, h: hPressure, min: 0, max: 130 },
+    pressure: { y: top, h: hPressure, min: 0, max: Math.max(130, Math.ceil((p.lvPeak + 10) / 10) * 10) },
     sounds: { y: top + hPressure + bandGap, h: hSounds },
     volume: { y: top + hPressure + hSounds + bandGap * 2, h: hVolume, min: 40, max: 130 },
     ecg: { y: top + hPressure + hSounds + hVolume + bandGap * 3, h: hEcg, min: -0.35, max: 1.05 }
@@ -272,7 +303,7 @@ export function drawWiggers(canvas, state, lang = 'tr') {
       const tau = i / n;
       const u = timeToPhase(tau, bpm);
       if (u < from || u > to) { started = false; continue; }
-      const yy = yIn(band, fn(u, rhythm));
+      const yy = yIn(band, fn(u, rhythm, p));
       if (!started) { ctx.moveTo(xTau(tau), yy); started = true; }
       else ctx.lineTo(xTau(tau), yy);
     }
@@ -292,18 +323,26 @@ export function drawWiggers(canvas, state, lang = 'tr') {
     ctx.fillStyle = color;
     ctx.fillText(label, right - 3, yIn(band, value) - 3);
   };
-  tagAt(lang === 'tr' ? 'Aort' : 'Aortic', bands.pressure, aorticPressure(0.985, rhythm), COLORS.aortic);
-  tagAt(lang === 'tr' ? 'LV' : 'LV', bands.pressure, 26, COLORS.ventricular);
-  tagAt(lang === 'tr' ? 'LA' : 'LA', bands.pressure, 16, COLORS.atrial);
-  tagAt(lang === 'tr' ? 'LV hacim' : 'LV volume', bands.volume, ventricularVolume(0.985, rhythm), COLORS.volume);
-  tagAt('EKG', bands.ecg, 0.75, COLORS.ecg);
+  // Tags sit on their curve at the right edge (LV just below, LA just above: they meet there).
+  const end = timeToPhase(0.985, bpm);
+  tagAt(lang === 'tr' ? 'Aort' : 'Aortic', bands.pressure, aorticPressure(end, rhythm, p), COLORS.aortic);
+  tagAt('LV', bands.pressure, ventricularPressure(end, rhythm, p) - 6, COLORS.ventricular);
+  tagAt('LA', bands.pressure, atrialPressure(end, rhythm, p) + 4, COLORS.atrial);
+  tagAt(lang === 'tr' ? 'LV hacim' : 'LV volume', bands.volume, ventricularVolume(end, rhythm), COLORS.volume);
+  tagAt('EKG', bands.ecg, ecgValue(end, rhythm) + 0.25, COLORS.ecg);
+  // Axis units at the top left of each band.
+  ctx.textAlign = 'left';
+  ctx.fillStyle = COLORS.text;
+  ctx.fillText(`mmHg (0–${bands.pressure.max})`, left + 3, bands.pressure.y + 9);
+  ctx.fillText('ml', left + 3, bands.volume.y + 9);
+  ctx.textAlign = 'right';
 
   // Valve events at their pressure crossings.
   const events = [
-    [EVENTS.mitralClose, lang === 'tr' ? 'MV kapanır' : 'MV closes', ventricularPressure(EVENTS.mitralClose, rhythm)],
-    [EVENTS.aorticOpen, lang === 'tr' ? 'Ao açılır' : 'Ao opens', AO_OPEN_P],
-    [EVENTS.aorticClose, lang === 'tr' ? 'Ao kapanır' : 'Ao closes', AO_CLOSE_P],
-    [EVENTS.mitralOpen, lang === 'tr' ? 'MV açılır' : 'MV opens', AV_OPEN_P]
+    [EVENTS.mitralClose, lang === 'tr' ? 'MV kapanır' : 'MV closes', ventricularPressure(EVENTS.mitralClose, rhythm, p)],
+    [EVENTS.aorticOpen, lang === 'tr' ? 'Ao açılır' : 'Ao opens', p.aoOpen],
+    [EVENTS.aorticClose, lang === 'tr' ? 'Ao kapanır' : 'Ao closes', p.aoClose],
+    [EVENTS.mitralOpen, lang === 'tr' ? 'MV açılır' : 'MV opens', p.avOpen]
   ];
   ctx.font = '600 8px "DM Sans", sans-serif';
   ctx.textAlign = 'center';
@@ -329,12 +368,14 @@ export function drawWiggers(canvas, state, lang = 'tr') {
     const xx = xU(snd.u);
     ctx.strokeStyle = snd.strong ? '#31473d' : 'rgba(49, 71, 61, 0.45)';
     ctx.lineWidth = snd.strong ? 2 : 1.2;
+    ctx.setLineDash(snd.optional ? [2, 2] : []);
     ctx.beginPath();
     ctx.moveTo(xx, sb.y + (snd.strong ? 0 : 3));
     ctx.lineTo(xx, sb.y + sb.h - (snd.strong ? 0 : 3));
     ctx.stroke();
+    ctx.setLineDash([]);
     ctx.fillStyle = COLORS.label;
-    ctx.fillText(snd.id, xx + 9, sb.y + sb.h - 2);
+    ctx.fillText(snd.optional ? `(${snd.id})` : snd.id, xx + (snd.optional ? 12 : 9), sb.y + sb.h - 2);
   }
 
   // Interval labels.
@@ -375,6 +416,6 @@ export function formatCycleTiming(bpm, lang = 'tr') {
   const { cycleSec, systoleSec, diastoleSec } = cycleTiming(bpm);
   const f = v => `${v.toFixed(2)}s`;
   return lang === 'tr'
-    ? `Döngü ${f(cycleSec)} · Sistol ${f(systoleSec)} · Diyastol ${f(diastoleSec)} (${bpm}/dk)`
-    : `Cycle ${f(cycleSec)} · Systole ${f(systoleSec)} · Diastole ${f(diastoleSec)} (${bpm}/min)`;
+    ? `Döngü ${f(cycleSec)} · Sistol ${f(systoleSec)} · Diyastol ${f(diastoleSec)} (${bpm}/dk) · (S3), (S4): zamanlama gösterimi, erişkinde çoğu kez duyulmaz`
+    : `Cycle ${f(cycleSec)} · Systole ${f(systoleSec)} · Diastole ${f(diastoleSec)} (${bpm}/min) · (S3), (S4): timing shown for teaching, often not heard in adults`;
 }
