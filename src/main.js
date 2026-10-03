@@ -870,7 +870,7 @@ function showStep({ relabel = false } = {}) {
   }
 
   if (!relabel) syncEpsHandoff(s);
-  if (isCath) hemoMode?.applyStep(s);
+  if (isCath) hemoMode?.applyStep(s, { relabel });
   if (mode === 'exam') examMode?.applyStep(s);
   if (ECHO_MODALITY[mode] && !relabel) echoMode?.applyStep(s.echo);
 

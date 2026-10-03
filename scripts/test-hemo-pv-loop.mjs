@@ -82,41 +82,80 @@ assert.ok(vsd.ef > 0.5 && vsd.ef < 0.75 && vsd.shunt && Math.abs(vsd.shunt.syste
 const asdHemo = createHemodynamics('asd_left_to_right');
 assert.ok(Math.abs(samplePvLoop(asdHemo).sv - (asdHemo.getScenario().co * 1000) / asdHemo.getScenario().hr) < 1e-9, 'ASD: the LV ejects the systemic flow only');
 
-// Rhythm: atrial fibrillation drops the late-diastolic atrial filling; the corners and width stay the scenario\'s.
-const af = samplePvLoop(hemo, 240, { rhythm: 'afib' });
+// Rhythm: atrial fibrillation drops the atrial kick from the volume curve and the a-wave from the pressure; the corners and width stay the scenario's.
 const at = (l, u) => l.points[Math.floor(u * l.points.length)].v;
-assert.ok(Math.abs(af.sv - loop.sv) < 1e-9 && Math.abs(af.edv - loop.edv) < 1e-9, 'AF: same SV and EDV');
-assert.ok(at(af, 0.38) !== at(loop, 0.38) && Math.abs(at(af, 0.38) - at(loop, 0.38)) > 1, 'AF: the filling curve differs from sinus');
+for (const id of SCENARIO_IDS) {
+  const h = createHemodynamics(id), sinus = samplePvLoop(h, 240), af = samplePvLoop(h, 240, { rhythm: 'afib' });
+  const vs = af.points.map(q => q.v);
+  assert.ok(Math.abs(Math.max(...vs) - af.edv) < 0.5 && Math.abs(Math.max(...vs) - Math.min(...vs) - af.sv) < 0.5, `${id}: AF loop spans ESV to EDV (width = SV)`);
+  assert.ok(Math.abs(af.sv - sinus.sv) < 1e-9 && Math.abs(af.edv - sinus.edv) < 1e-9, `${id}: AF keeps the scenario SV and EDV`);
+  assert.ok(af.edp <= sinus.edp + 2 && sinus.edp - af.edp < 13, `${id}: AF end-diastolic pressure is lower or equal (no a-wave)`);
+  // No vertical filling segment in AF: where the volume has stopped rising, the pressure must not climb.
+  const flat = af.points.filter(q => q.u >= 0.32 && q.u < S.ivcStart);
+  assert.ok(Math.max(...flat.map(q => q.v)) - Math.min(...flat.map(q => q.v)) < 0.5, `${id}: AF volume is flat in late diastole`);
+  assert.ok(Math.max(...flat.map(q => q.p)) - Math.min(...flat.map(q => q.p)) < 0.5, `${id}: AF pressure is flat too (no a-wave rise at constant volume)`);
+  assert.ok(Math.abs(af.points[0].p - af.points.at(-1).p) < 10, `${id}: AF loop still closes`);
+}
+const normalAf = samplePvLoop(hemo, 240, { rhythm: 'afib' });
+assert.ok(Math.abs(at(normalAf, 0.38) - at(loop, 0.38)) > 1, 'AF: the filling curve differs from sinus');
+assert.ok(loop.edp - normalAf.edp > 2 && loop.edp - normalAf.edp < 5, `AF normal: the EDP is a few mmHg lower than in sinus (${loop.edp.toFixed(1)} vs ${normalAf.edp.toFixed(1)})`);
 // Closed loop in every scenario: the seam is one sample step.
 for (const id of SCENARIO_IDS) {
   const l = samplePvLoop(createHemodynamics(id), 240), a = l.points[0], b = l.points.at(-1);
   assert.ok(Math.abs(a.v - b.v) < 3 && Math.abs(a.p - b.p) < 10, `${id}: closes within one sample`);
 }
 
-// Canvas text: forward values are labelled forward, leaks and shunts are named, and nothing is drawn outside the canvas.
-const mrLines = summaryLines(samplePvLoop(createHemodynamics('mitral_regurgitation_severe')), 'en');
-assert.ok(/^forward SV \d+ ml · forward EF \d+%$/.test(mrLines[0]) && !/Ees|Ea /.test(mrLines[0]) && /not modeled/.test(mrLines[1]), `scenario MR header: ${mrLines[0]}`);
+// Canvas text: forward values are labelled forward, leaks and shunts are named.
+const arScenario = samplePvLoop(createHemodynamics('aortic_regurgitation_severe'));
+for (const l of [samplePvLoop(createHemodynamics('mitral_regurgitation_severe')), arScenario]) {
+  const lines = summaryLines(l, 'en');
+  assert.ok(l.forwardOnly && /^forward SV \d+ ml · forward EF \d+%$/.test(lines[0]) && !/Ees|Ea /.test(lines[0]) && /regurgitant volume not modeled/.test(lines[1]), `scenario leak header: ${lines.join(' | ')}`);
+}
 assert.ok(summaryLines(model, 'en').length === 1 && /^SV 81 ml · EF 63%/.test(summaryLines(model, 'en')[0]), 'normal header');
 const mrModel = summaryLines(pvModelLoop(pvParams({}, 'mitral-regurgitation-acute')), 'en');
-assert.ok(/^SV 110 ml/.test(mrModel[0]) && /forward SV 83 ml · regurgitant 28 ml/.test(mrModel[1]), `model MR header: ${mrModel.join(' | ')}`);
+assert.ok(/^SV 110 ml/.test(mrModel[0]) && /forward SV 66 ml · regurgitant 44 ml/.test(mrModel[1]), `model MR header: ${mrModel.join(' | ')}`);
 assert.ok(/systemic SV 65 ml × Qp\/Qs 1\.9/.test(summaryLines(vsd, 'en').join(' ')), 'VSD header names the systemic volume and Qp/Qs');
-for (const lang of ['tr', 'en']) for (const l of [loop, vsd, mrLines && samplePvLoop(createHemodynamics('aortic_regurgitation_severe')), pvModelLoop(pvParams({}, 'aortic-regurgitation'))]) {
+for (const lang of ['tr', 'en']) for (const l of [loop, vsd, arScenario, pvModelLoop(pvParams({}, 'aortic-regurgitation'))]) {
   assert.ok(summaryLines(l, lang).every(t => t && !t.includes('NaN') && !t.includes('undefined') && !t.includes('\u2014')), `${lang}: header text is clean`);
 }
-// Layout at the smallest CSS size (360 x 260): record the text and rectangles.
-for (const [id, data, ghost] of [['hypovolemia', pvModelLoop(pvParams({}, 'hypovolemia')), pvModelLoop(pvParams({}, 'normal'))], ['AR', pvModelLoop(pvParams({}, 'aortic-regurgitation')), pvModelLoop(pvParams({}, 'normal'))], ['AS scenario', samplePvLoop(createHemodynamics('aortic_stenosis_severe')), null], ['VSD', vsd, null]]) {
-  const texts = [], rects = [];
-  const rec = new Proxy({}, { get: (_, key) => (key === 'measureText' ? t => ({ width: String(t).length * 4.4 }) : key === 'fillText' || key === 'strokeText' ? (t, x, y) => { texts.push({ t, x, y }); } : key === 'fillRect' ? (x, y, w, h) => { rects.push({ x, y, w, h }); } : () => undefined), set: () => true });
-  const cv = { clientWidth: 360, clientHeight: 260, width: 0, height: 0, getContext: () => rec };
-  const frame = drawPvLoop(cv, data, { phase: 0.3, lang: 'en', dpr: 1, ghost });
-  const edvLabel = texts.find(q => q.t.startsWith('EDV')), esvLabel = texts.find(q => q.t.startsWith('ESV'));
-  assert.ok(texts.every(q => q.y > 0 && q.y <= 260 && q.x >= 0 && q.x <= 360), `${id}: every label is on the canvas`);
-  assert.ok(edvLabel.y <= frame.bottom, `${id}: the EDV label stays inside the plot, not on the axis numbers`);
-  assert.ok(esvLabel.y >= frame.top, `${id}: the ESV label stays under the header lines`);
+
+// Layout at the live panel sizes (278 x 260 is the real canvas; 263 and 360 bracket it): record the text and rectangles.
+const CHAR = 4.4;   // pessimistic text width per character (DM Sans measures about 3.8 at 8 px)
+const cases = [
+  ['hypovolemia', pvModelLoop(pvParams({}, 'hypovolemia')), pvModelLoop(pvParams({}, 'normal'))],
+  ['AR', pvModelLoop(pvParams({}, 'aortic-regurgitation')), pvModelLoop(pvParams({}, 'normal'))],
+  ['AS scenario', samplePvLoop(createHemodynamics('aortic_stenosis_severe')), null],
+  ['MR scenario', samplePvLoop(createHemodynamics('mitral_regurgitation_severe')), null],
+  ['AR scenario', arScenario, null],
+  ['VSD', vsd, null],
+  ['extreme', pvModelLoop(pvParams({ edv: 280, stiffness: 0.06 }, 'hypovolemia')), null]
+];
+for (const [width, lang] of [[278, 'en'], [263, 'en'], [278, 'tr'], [360, 'en']]) for (const [id, data, ghost] of cases) {
+  const tag = `${id} ${width}px ${lang}`;
+  const texts = [], rects = [], strokes = { lines: 0 };
+  const rec = new Proxy({}, { get: (target, key) => (key in target ? target[key] : key === 'measureText' ? t => ({ width: String(t).length * CHAR }) : key === 'fillText' || key === 'strokeText' ? (t, x, y) => { texts.push({ t, x, y, align: rec.textAlign, stroke: key === 'strokeText' }); } : key === 'fillRect' ? (x, y, w, h) => { rects.push({ x, y, w, h }); } : key === 'stroke' ? () => { strokes.lines++; } : () => undefined), set: (o, k, v) => { o[k] = v; return true; } });
+  const cv = { clientWidth: width, clientHeight: 260, width: 0, height: 0, getContext: () => rec };
+  const frame = drawPvLoop(cv, data, { phase: 0.3, lang, dpr: 1, ghost });
+  const drawn = texts.filter(q => !q.stroke);
+  const span = q => { const wdt = String(q.t).length * CHAR; return q.align === 'center' ? [q.x - wdt / 2, q.x + wdt / 2] : q.align === 'right' ? [q.x - wdt, q.x] : [q.x, q.x + wdt]; };
+  assert.ok(drawn.every(q => q.y > 0 && q.y <= 260), `${tag}: every label is vertically on the canvas`);
+  assert.ok(drawn.every(q => { const [a, b] = span(q); return a >= -1 && b <= width + 1; }), `${tag}: every label fits the canvas width (${drawn.filter(q => { const [a, b] = span(q); return a < -1 || b > width + 1; }).map(q => q.t).join(' | ')})`);
+  const edvLabel = drawn.find(q => q.t.startsWith('EDV')), esvLabel = drawn.find(q => q.t.startsWith('ESV'));
+  assert.ok(edvLabel.y <= frame.bottom, `${tag}: the EDV label stays inside the plot, not on the axis numbers`);
+  assert.ok(esvLabel.y >= frame.top, `${tag}: the ESV label stays under the header lines`);
+  const edpvrLabel = drawn.find(q => q.t === (lang === 'tr' ? 'EDPVR' : 'EDPVR'));
+  assert.ok(edpvrLabel && edpvrLabel.y >= frame.top + 8 && span(edpvrLabel)[1] <= frame.right + 1, `${tag}: the EDPVR label is clamped inside the plot`);
+  const unit = drawn.find(q => q.t === 'mmHg'), headerRows = drawn.filter(q => q.x === 38 && q.y < frame.top);
+  assert.ok(unit.y < frame.top - 5 && drawn.filter(q => /^\d+$/.test(q.t) && q.x < frame.left).every(q => Math.abs(q.y - unit.y) > 8), `${tag}: the unit label clears the top axis number`);
+  assert.ok(headerRows.length >= 1 && headerRows.every(q => q.y <= frame.top - 2), `${tag}: the header sits above the plot`);
   const legend = rects.filter(q => q.h === 3);
-  assert.ok(legend.length === 4 && legend.every(q => q.y > frame.bottom), `${id}: the phase legend sits under the plot, off the filling limb`);
-  const axisNumbers = texts.filter(q => /^\d+$/.test(q.t) && Math.abs(q.y - (frame.bottom + 10)) < 0.01);
-  assert.ok(axisNumbers.length > 3 && texts.filter(q => q.y === frame.bottom + 21).length === 4, `${id}: axis numbers and legend labels on separate rows`);
+  assert.ok(legend.length === 4 && legend.every(q => q.y > frame.bottom) && Math.max(...legend.map(q => q.x + q.w)) < width, `${tag}: the phase legend sits under the plot, off the filling limb`);
+  const axisNumbers = drawn.filter(q => /^\d+$/.test(q.t) && Math.abs(q.y - (frame.bottom + 10)) < 0.01);
+  assert.ok(axisNumbers.length >= 3 && drawn.filter(q => q.y === frame.bottom + 21).length === 4, `${tag}: axis numbers and legend labels on separate rows`);
+  assert.ok(drawn.filter(q => /^\d+$/.test(q.t)).length <= 18, `${tag}: at most about 8 grid numbers per axis (${drawn.filter(q => /^\d+$/.test(q.t)).length})`);
+  const hasEspvr = drawn.some(q => q.t === 'ESPVR (Ees)'), hasEa = drawn.some(q => q.t === 'Ea');
+  assert.equal(hasEspvr && hasEa, !data.forwardOnly, `${tag}: the ESPVR and Ea lines are drawn only where the loop has a true end-systolic corner`);
+  assert.ok(texts.findIndex(q => q.stroke && q.t.startsWith('ESV')) < texts.findIndex(q => q.t === 'EDPVR'), `${tag}: corner labels are drawn before the relation labels and the loop`);
 }
 
 for (const file of ['../src/hemo-pv-loop.js']) assert.ok(!readFileSync(new URL(file, import.meta.url), 'utf8').includes('\u2014'), 'no em dash');

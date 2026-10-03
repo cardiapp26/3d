@@ -77,8 +77,10 @@ export function createHemoMode({ heart, mount, getLang, onFocus }) {
       mount.hidden = true;
     },
     /** Apply a lesson step: { scenario, channels, beats, respiration, calculators, title }. */
-    applyStep(step) {
+    /** Apply a lesson step; a language switch (`relabel`) only refreshes the step title, so the tab, source and scenario the user chose stay. */
+    applyStep(step, { relabel = false } = {}) {
       const p = ensurePanel();
+      if (relabel) { p.setHint?.(step.title || ''); return; }
       if (step.scenario) {
         p.setScenario(step.scenario);
         heart.setBpm(hemo.getScenario().hr);

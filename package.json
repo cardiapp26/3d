@@ -20,6 +20,7 @@
     "test:browser": "node scripts/browser-check.cjs",
     "test:bachmann": "node scripts/bachmann-check.cjs",
     "test:mitral": "node scripts/test-mitral-scallops.cjs",
+    "test:hemo-pv": "node scripts/test-hemo-pv-browser.cjs",
     "test:atria": "node scripts/test-atria.cjs",
     "test:defects": "node scripts/test-septal-defects.cjs",
     "test:mobile": "node scripts/test-mobile-shell.cjs",

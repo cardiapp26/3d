@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const checks = ['test:resize', 'test:browser', 'test:echo', 'test:mobile', 'test:mitral', 'test:atria', 'test:bachmann', 'test:ep-flow'];
+const checks = ['test:resize', 'test:browser', 'test:echo', 'test:mobile', 'test:mitral', 'test:hemo-pv', 'test:atria', 'test:bachmann', 'test:ep-flow'];
 const screenshots = fs.mkdtempSync(path.join(os.tmpdir(), 'cardia-verify-'));
 const server = process.env.APP_URL ? null : await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true }, logLevel: 'error' });
 try {

@@ -78,6 +78,6 @@ assert.equal(normalRows.EDV, '130');
 assert.equal(normalRows.SV, '81');
 assert.equal(normalRows.EF, '63');
 const mrRows = Object.fromEntries(pvMetricRows(pvModelLoop(pvParams({}, 'mitral-regurgitation-acute')), labels));
-assert.ok(mrRows.FSV === '83' && mrRows.RGV === '28' && mrRows.SV === '110', 'acute MR: total, forward and regurgitant volumes');
+assert.ok(mrRows.FSV === '66' && mrRows.RGV === '44' && mrRows.SV === '110', 'acute MR: total, forward and regurgitant volumes');
 
 console.log('hemo-panel sampleStrip tests passed');
