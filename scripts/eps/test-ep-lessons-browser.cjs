@@ -62,6 +62,13 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('.ep-schematic .sch-zone').getAttribute('data-shape'), 'left-free-wall');
     assert.match(await page.locator('.ep-endpoint').textContent(), /\S/);
 
+    // Ladder on the channels: on and remembered; the strip still draws.
+    await page.locator('[data-ep-links]').click();
+    assert.equal(await page.locator('[data-ep-links]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.evaluate(() => localStorage.getItem('eps-strip-links')), '1');
+    assert.equal(await page.evaluate(() => window.epsLab.panel.getView().links), true);
+    await page.locator('[data-ep-links]').click();
+
     // Full-screen strip.
     await page.locator('[data-ep-fullscreen-open]').click();
     assert.equal(await page.locator('.ep-fullscreen').isVisible(), true, 'full-screen strip open');
@@ -120,7 +127,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('.ep-lesson').isHidden(), true);
     assert.equal(await page.locator('[data-ep-live]').isVisible(), true);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), pace map tab (source, click, scar sinus vs VT, warnings, match map), TR/EN, live tab');
+    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, ladder on the channels, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), pace map tab (source, click, scar sinus vs VT, warnings, match map), TR/EN, live tab');
   } finally {
     await browser.close();
   }

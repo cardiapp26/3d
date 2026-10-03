@@ -236,6 +236,38 @@ function drawWaveLabels(ctx, recording, geo, channels, gain) {
   ctx.textAlign = 'left';
 }
 
+// Ladder on the channels (ep-strip-links.js): each activation's deflections
+// joined row to row through their centres, the His potentials, and the
+// conduction lines between them in the ladder's colours.
+const GROUP_COLORS = { A: 'rgba(96, 165, 250, 0.85)', V: 'rgba(248, 113, 113, 0.8)' };
+function drawStripLinks(ctx, geo, rows, links, styles) {
+  const y = (ch) => geo.rowTop(rows.get(ch)) + geo.rowH / 2;
+  const shown = (p) => rows.has(p.ch) && p.t >= geo.from - 200 && p.t <= geo.to + 200;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(geo.x(geo.from), HEADER_H, geo.x(geo.to) - geo.x(geo.from), rows.size * geo.rowH); ctx.clip();
+  for (const g of links.groups) {
+    const pts = g.points.filter(shown).sort((a, b) => rows.get(a.ch) - rows.get(b.ch));
+    if (!pts.length) continue;
+    ctx.fillStyle = GROUP_COLORS[g.kind];
+    if (pts.length > 1) polyline(ctx, pts.map((p) => [geo.x(p.t), y(p.ch)]), GROUP_COLORS[g.kind], 1.4);
+    for (const p of pts) { ctx.beginPath(); ctx.arc(geo.x(p.t), y(p.ch), 2.6, 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.fillStyle = '#facc15';
+  for (const h of links.his.filter(shown)) { ctx.beginPath(); ctx.arc(geo.x(h.t), y(h.ch), 3, 0, Math.PI * 2); ctx.fill(); }
+  for (const c of links.conduction || []) {
+    if (!shown(c.from) && !shown(c.to)) continue;
+    if (!rows.has(c.from.ch) || !rows.has(c.to.ch)) continue;
+    const style = styles[c.kind];
+    const [x0, y0, x1, y1] = [geo.x(c.from.t), y(c.from.ch), geo.x(c.to.t), y(c.to.ch)];
+    // On one channel (A to H on the His catheter) the line bridges over the signal.
+    const lift = geo.rowH * 0.38;
+    const path = c.from.ch === c.to.ch && !c.block ? [[x0, y0], [x0, y0 - lift], [x1, y1 - lift], [x1, y1]] : [[x0, y0], [x1, y1]];
+    polyline(ctx, path, style.color, 1.8, style.dash);
+    if (c.block) polyline(ctx, [[x1 - 6, y1 - 4], [x1 + 6, y1 + 4]], style.color, 2);
+  }
+  ctx.restore();
+}
+
 /**
  * Times at which a channel is sampled for drawing: about one per pixel, on a
  * grid fixed to absolute time (recording.t0), plus each event's peaks (centre
@@ -262,14 +294,16 @@ export function sampleTimes(recording, channelId, from, to, plotW) {
  * @param {HTMLCanvasElement} canvas
  * @param {object} recording from ep-cases.js (epRecording(id)) or ep-maneuver-sim.js
  * @param {{ lang?: string, cursor?: number|null, cursorMs?: number|null, title?: string,
- *   channels?: string[], zoom?: number, pan?: number, caliper?: { a: number|null, b: number|null }|null, waves?: boolean }} [options]
+ *   channels?: string[], zoom?: number, pan?: number, caliper?: { a: number|null, b: number|null }|null, waves?: boolean,
+ *   links?: { groups, his, conduction }|null, linkStyles?: object }} [options]
  *   cursor: 0..1 fraction of the window; cursorMs: inspection time in ms;
  *   caliper: user caliper lines (ms) drawn across every channel; waves: wave names (A, H, V, P, QRS ...);
- *   channels: the rows to draw (default: the recording's list); zoom/pan: time window
+ *   channels: the rows to draw (default: the recording's list); zoom/pan: time window;
+ *   links: the ladder on the channels (stripLinks), drawn in linkStyles (LADDER_STYLE)
  * @returns {{ from: number, to: number, plotLeft: number, plotW: number, rowTop: number, rowH: number, rows: string[] }|undefined}
  *   the drawn time window and channel rows
  */
-export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null, waves = false } = {}) {
+export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null, waves = false, links = null, linkStyles = null } = {}) {
   const width = canvas?.clientWidth;
   const height = canvas?.clientHeight;
   if (!recording || !(width >= 2) || !(height >= 2)) return;
@@ -304,6 +338,7 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
     });
     ctx.stroke();
   });
+  if (links && linkStyles) drawStripLinks(ctx, geo, rows, links, linkStyles);
   if (waves) drawWaveLabels(ctx, recording, geo, channels, gain);
   drawCalipers(ctx, recording, geo, rows);
 

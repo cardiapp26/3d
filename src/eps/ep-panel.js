@@ -13,7 +13,8 @@ import { createLivePanel } from './ep-live-panel.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, caliperText } from './ep-user-caliper.js';
 import { createSchematic } from './ep-schematic.js';
 import { readFlag, writeFlag } from './view-prefs.js';
-import { buildLadder, drawLadder, inferLadderEvents } from './ep-ladder.js';
+import { buildLadder, drawLadder, inferLadderEvents, LADDER_STYLE } from './ep-ladder.js';
+import { stripLinks } from './ep-strip-links.js';
 import { createMappingPanel } from './amap-panel.js';
 import { AMAP_TEXT } from './amap-text.js';
 import { createPaceMapPanel } from './pmap-panel.js';
@@ -119,7 +120,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
-  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder') };
+  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links') };
 
   const el = (tagName, className) => {
     const node = doc.createElement(tagName);
@@ -206,7 +207,11 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   ladderBtn.type = 'button';
   ladderBtn.setAttribute('data-ep-ladder', '');
   ladderBtn.addEventListener('click', () => { view.ladder = !view.ladder; writeFlag('ladder', view.ladder); renderView(); });
-  viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, wavesBtn, ladderBtn, fullBtn);
+  const linksBtn = el('button', 'ep-size');
+  linksBtn.type = 'button';
+  linksBtn.setAttribute('data-ep-links', '');
+  linksBtn.addEventListener('click', () => { view.links = !view.links; writeFlag('links', view.links); renderView(); });
+  viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, wavesBtn, ladderBtn, linksBtn, fullBtn);
   // Ladder diagram under the strip, on the same time axis.
   const ladderCanvas = el('canvas', 'egm-ladder');
   ladderCanvas.setAttribute('role', 'img');
@@ -376,7 +381,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const heading = state.sim?.lab === 'pharma' ? pharmaPanel.stripTitle(lang) : state.sim ? pick(EP_MANEUVERS[state.sim.maneuver] || { tr: '', en: '' }, lang).name || ''
       : state.section === 'diagnosis' && !state.evidence ? EP_TEXT[lang][recording.maneuver === 'a-extra' ? 'extrastimulusTitle' : 'neutralTitle']
         : (clipText && pick(clipText, lang).title) || '';
-    return drawEgm(target, recording, { lang, title: heading, channels: visibleChannels(recording), zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? view.caliper : null, waves: view.waves });
+    return drawEgm(target, recording, { lang, title: heading, channels: visibleChannels(recording), zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? view.caliper : null, waves: view.waves, links: view.links ? linksOf(recording) : null, linkStyles: LADDER_STYLE });
   }
 
   // The ladder names the mechanism: it waits until the reading is open
@@ -396,6 +401,13 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
       ladders.set(recording, buildLadder(inferLadderEvents(recording.events, { mechanism }), { until: recording.windowMs }));
     }
     return ladders.get(recording);
+  }
+  // Ladder on the channels: the activations are joined at any time; the conduction lines wait like the ladder.
+  const stripLadders = new WeakMap();
+  function linksOf(recording) {
+    if (!stripLadders.has(recording)) stripLadders.set(recording, stripLinks(recording.events, ladderOf(recording)));
+    const links = stripLadders.get(recording);
+    return ladderLocked() ? { ...links, conduction: [] } : links;
   }
 
   function redraw() {
@@ -450,6 +462,9 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     ladderBtn.setAttribute('aria-pressed', String(view.ladder && !locked));
     ladderBtn.disabled = locked;
     ladderBtn.title = locked ? (lang === 'en' ? 'Shown once the reading is open (it names the mechanism).' : 'Yorum açılınca gösterilir (mekanizmayı açık eder).') : '';
+    linksBtn.textContent = lang === 'en' ? 'Ladder on channels' : 'Kanalda ladder';
+    linksBtn.setAttribute('aria-pressed', String(view.links));
+    linksBtn.title = lang === 'en' ? 'Joins the HRA, His, CS and RV signals of each activation; the conduction lines show once the reading is open.' : 'Her aktivasyonun HRA, His, CS ve RV sinyallerini birleştirir; iletim çizgileri yorum açılınca gösterilir.';
     ladderCanvas.setAttribute('aria-label', lang === 'en' ? 'Ladder diagram of the recording' : 'Kaydın ladder diyagramı');
     if (view.caliperOn) inspect.textContent = caliperText(view.caliper, lang);
     else if (view.cursorMs == null) inspect.textContent = lang === 'en' ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
@@ -619,6 +634,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     if (!EP_VIEWS.includes(id)) return;
     view.waves = readFlag('waves');   // the live monitor may have changed the shared choices
     view.ladder = readFlag('ladder');
+    view.links = readFlag('links');
     const wasLab = state.live || state.mapping || state.pacemap;
     state.live = id === 'live';
     state.mapping = id === 'mapping';
@@ -649,7 +665,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     mapping: mappingPanel,
     pacemap: paceMapPanel,
     /** View state (channels shown, zoom, pan, inspection cursor) and the delivered maneuver, if any. */
-    getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? { ...view.caliper } : null, waves: view.waves, ladder: view.ladder && !ladderLocked(), sim: state.sim ? state.sim.choices : null }),
+    getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? { ...view.caliper } : null, waves: view.waves, ladder: view.ladder && !ladderLocked(), links: view.links, sim: state.sim ? state.sim.choices : null }),
     getRecording: () => current(),
     sim: simPanel,
     task: taskPanel,

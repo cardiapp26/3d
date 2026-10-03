@@ -71,6 +71,10 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.live.getState().ladder), true, 'ladder choice remembered');
     await page.locator('[data-ep-live-ladder]').click();
     assert.equal(await page.locator('[data-ep-live-ladder-canvas]').isHidden(), true, 'ladder off');
+    // Ladder on the channels: drawn on the strip itself, remembered, free during a hidden case.
+    await page.locator('[data-ep-live-links]').click();
+    assert.equal(await page.locator('[data-ep-live-links]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().links), true);
 
     await page.locator('[data-app-lang-option=en]').click();
     assert.equal(await page.locator('[data-ep-live-action=shock]').textContent(), 'Cardiovert');
@@ -110,6 +114,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     await page.evaluate(() => window.epsLab.live.setCase('flutter-cti', { hidden: true }));
     assert.equal(await page.locator('[data-ep-live-case]').inputValue(), 'hidden', 'name hidden');
     assert.equal(await page.locator('[data-ep-live-ladder]').isDisabled(), true, 'ladder locked during a hidden case');
+    assert.equal(await page.locator('[data-ep-live-links]').isDisabled(), false, 'activations still joined on the channels (no conduction lines)');
     await page.locator('[data-ep-live-diagnose]').click();
     await page.locator('[data-ep-live-answer=avnrt-typical]').click();
     assert.equal(await page.locator('[data-ep-live-ladder]').isDisabled(), false, 'ladder free after the answer');
@@ -180,7 +185,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.ok(await page.locator('[data-ep-live-protocol-rows] li').count() >= 10, 'protocol rows listed');
 
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP');
   } finally {
     await browser.close();
   }

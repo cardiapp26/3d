@@ -12,7 +12,7 @@ export const LIVE_TEXT = {
   tr: {
     caseLabel: 'Substrat', hidden: '? Gizli olgu', surprise: 'Gizli olgu', diagnose: 'Tanı koy', hints: 'İpuçları',
     question: 'Bu kayıtta substrat / mekanizma nedir?', correct: 'Doğru.', wrong: (name) => `Yanlış. Doğru yanıt: ${name}.`,
-    run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper', waves: 'Dalga adları', ladder: 'Ladder diyagram', ladderLocked: 'Gizli olguda tanı verilince gösterilir (mekanizmayı açık eder).', ladderLabel: 'Ladder diyagram: atriyum, AV düğüm ve ventrikül aktivasyonu ile iletim yolları',
+    run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper', waves: 'Dalga adları', ladder: 'Ladder diyagram', links: 'Kanalda ladder', linksTitle: 'Her aktivasyonun HRA, His, CS ve RV sinyallerini birleştirir; iletim çizgileri gizli olguda tanı verilince gösterilir.', ladderLocked: 'Gizli olguda tanı verilince gösterilir (mekanizmayı açık eder).', ladderLabel: 'Ladder diyagram: atriyum, AV düğüm ve ventrikül aktivasyonu ile iletim yolları',
     stim: 'Stimülatör', site: 'Uyarı yeri', s1: 'S1 (ms)', n: 'S1 sayısı', pace: 'Uyar (S1 + ekstra)', burst: 'Burst (yalnız S1)',
     pacePause: 'Uyar ve dondur', stop: 'Uyarıyı durdur', shock: 'Kardiyoversiyon',
     sites: { hra: 'HRA', 'cs-prox': 'CS proksimal', 'cs-dist': 'CS distal', rv: 'RV apeks' },
@@ -65,7 +65,7 @@ export const LIVE_TEXT = {
   en: {
     caseLabel: 'Substrate', hidden: '? Hidden case', surprise: 'Hidden case', diagnose: 'Diagnose', hints: 'Hints',
     question: 'What is the substrate / mechanism of this recording?', correct: 'Correct.', wrong: (name) => `Incorrect. The answer: ${name}.`,
-    run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers', waves: 'Wave names', ladder: 'Ladder diagram', ladderLocked: 'Shown once the hidden case is answered (it names the mechanism).', ladderLabel: 'Ladder diagram: atrial, AV nodal and ventricular activation and the conduction routes',
+    run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers', waves: 'Wave names', ladder: 'Ladder diagram', links: 'Ladder on channels', linksTitle: 'Joins the HRA, His, CS and RV signals of each activation; the conduction lines show once the hidden case is answered.', ladderLocked: 'Shown once the hidden case is answered (it names the mechanism).', ladderLabel: 'Ladder diagram: atrial, AV nodal and ventricular activation and the conduction routes',
     stim: 'Stimulator', site: 'Pacing site', s1: 'S1 (ms)', n: 'S1 count', pace: 'Pace (S1 + extras)', burst: 'Burst (S1 only)',
     pacePause: 'Pace and freeze', stop: 'Stop pacing', shock: 'Cardiovert',
     sites: { hra: 'HRA', 'cs-prox': 'CS proximal', 'cs-dist': 'CS distal', rv: 'RV apex' },
