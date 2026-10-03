@@ -170,6 +170,28 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     await page.locator('[data-echo-control=parts]').evaluate((box) => { box.checked = false; box.dispatchEvent(new Event('change')); });
     assert.equal(await page.locator('.echo-parts').isVisible(), false, 'the parts toggle hides the list');
 
+    // Quick label switches; with labels off the pointer names the contour and its part.
+    await open('#/mode/echo');
+    const hover = await page.evaluate(() => {
+      window.cardiaEcho.selectView('a4c');
+      for (const key of ['labels', 'parts']) {
+        const b = document.querySelector(`[data-echo-quick=${key}]`);
+        if (b.getAttribute('aria-pressed') === 'true') b.click();
+      }
+      const st = window.cardiaEcho.getState();
+      const c = document.querySelector('.echo-canvas'), r = c.getBoundingClientRect(), tip = document.querySelector('.echo-tip');
+      const found = new Set();
+      for (let y = r.top + 20; y < r.bottom; y += 7) for (let x = r.left + 10; x < r.right; x += 7) {
+        c.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true }));
+        if (!tip.hidden) found.add(tip.textContent);
+      }
+      return { labels: st.labels, parts: st.parts, found: [...found] };
+    });
+    assert.equal(hover.labels, false); assert.equal(hover.parts, false);
+    assert.ok(hover.found.some((t) => /Bazal inferoseptal \(3\)/.test(t)), `pointer names LV segments: ${hover.found}`);
+    assert.ok(hover.found.some((t) => /Septal yaprakçık \(STL\)/.test(t)), 'and leaflets');
+    assert.ok(hover.found.includes('Sağ atriyum (RA)'), 'and structures');
+
     // Echo review fixes: no angle on the view buttons, no target hint in a task, a start pose independent of the target.
     await open('#/mode/tee');
     const buttons = await page.locator('[data-echo-view]').allTextContents();

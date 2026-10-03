@@ -16,7 +16,7 @@ import { createEchoPanel } from './echo-panel.js';
  */
 const HULL_IDS = ['lv', 'rv', 'la', 'ra', 'aorta', 'pa'];
 const STRUCTURE_INFO = {
-  ...Object.fromEntries(ECHO_STRUCTURES.map(s => [s.id, { color: s.color, label: s.label }])),
+  ...Object.fromEntries(ECHO_STRUCTURES.map(s => [s.id, { color: s.color, label: s.label, name: s.name }])),
   // Group and landmark names used by the view criteria.
   pv: { color: '#b4a7d6', label: { tr: 'pulmoner venler', en: 'pulmonary veins' } },
   fossa: { color: '#ffffff', label: { tr: 'fossa ovalis', en: 'fossa ovalis' } }
@@ -299,6 +299,7 @@ export function createEchoMode({ heart, mount, getLang }) {
       showParts: state.parts
     });
     panel?.setParts(state.parts ? partGroups(drawn?.parts, lang) : []);
+    panel?.setHits(drawn?.hits, STRUCTURE_INFO);
   }
 
   function ensurePanel() {

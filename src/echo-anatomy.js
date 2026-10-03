@@ -11,29 +11,29 @@ import { appendageLobe } from './la-appendage.js';
  * the TTE windows are points outside the measured heart surface.
  */
 
-/** Structures cut by the imaging plane: section id, atlas ids, 2D colour and label. */
+/** Structures cut by the imaging plane: section id, atlas ids, 2D colour, full name and label. */
 export const ECHO_STRUCTURES = Object.freeze([
-  { id: 'lv', ids: ['lv'], color: '#e06666', label: { tr: 'LV', en: 'LV' } },
-  { id: 'rv', ids: ['rv'], color: '#c27ba0', label: { tr: 'RV', en: 'RV' } },
-  { id: 'la', ids: ['la'], color: '#f6b26b', label: { tr: 'LA', en: 'LA' } },
-  { id: 'laa', ids: [], color: '#ffd966', label: { tr: 'LAA', en: 'LAA' } },
-  { id: 'ra', ids: ['ra'], color: '#6fa8dc', label: { tr: 'RA', en: 'RA' } },
-  { id: 'aorta', ids: ['aorta'], color: '#ea9999', label: { tr: 'Ao', en: 'Ao' } },
-  { id: 'pa', ids: ['pa'], color: '#8e7cc3', label: { tr: 'PA', en: 'PA' } },
-  { id: 'svc', ids: ['svc'], color: '#76a5af', label: { tr: 'SVC', en: 'SVC' } },
+  { id: 'lv', ids: ['lv'], color: '#e06666', name: { tr: 'Sol ventrikül', en: 'Left ventricle' }, label: { tr: 'LV', en: 'LV' } },
+  { id: 'rv', ids: ['rv'], color: '#c27ba0', name: { tr: 'Sağ ventrikül', en: 'Right ventricle' }, label: { tr: 'RV', en: 'RV' } },
+  { id: 'la', ids: ['la'], color: '#f6b26b', name: { tr: 'Sol atriyum', en: 'Left atrium' }, label: { tr: 'LA', en: 'LA' } },
+  { id: 'laa', ids: [], color: '#ffd966', name: { tr: 'Sol atriyal apendiks', en: 'Left atrial appendage' }, label: { tr: 'LAA', en: 'LAA' } },
+  { id: 'ra', ids: ['ra'], color: '#6fa8dc', name: { tr: 'Sağ atriyum', en: 'Right atrium' }, label: { tr: 'RA', en: 'RA' } },
+  { id: 'aorta', ids: ['aorta'], color: '#ea9999', name: { tr: 'Aort', en: 'Aorta' }, label: { tr: 'Ao', en: 'Ao' } },
+  { id: 'pa', ids: ['pa'], color: '#8e7cc3', name: { tr: 'Pulmoner arter', en: 'Pulmonary artery' }, label: { tr: 'PA', en: 'PA' } },
+  { id: 'svc', ids: ['svc'], color: '#76a5af', name: { tr: 'Superior vena kava', en: 'Superior vena cava' }, label: { tr: 'SVC', en: 'SVC' } },
   // Pulmonary veins keep their identity (left / right, superior / inferior); 'pv' is their group.
-  { id: 'lspv', ids: ['lspv'], color: '#b4a7d6', label: { tr: 'LSPV', en: 'LSPV' } },
-  { id: 'lipv', ids: ['lipv'], color: '#9e8fd0', label: { tr: 'LIPV', en: 'LIPV' } },
-  { id: 'rspv', ids: ['rspv'], color: '#a4c2f4', label: { tr: 'RSPV', en: 'RSPV' } },
-  { id: 'ripv', ids: ['ripv'], color: '#8aaee8', label: { tr: 'RIPV', en: 'RIPV' } },
-  { id: 'cs', ids: ['cs'], color: '#93c47d', label: { tr: 'CS', en: 'CS' } },
-  { id: 'mitral', ids: ['mitral'], color: '#fff2cc', label: { tr: 'MV', en: 'MV' } },
-  { id: 'tricuspid', ids: ['tricuspid'], color: '#d9ead3', label: { tr: 'TV', en: 'TV' } },
-  { id: 'aortic-valve', ids: ['lcc', 'rcc', 'ncc'], color: '#fce5cd', label: { tr: 'AV', en: 'AV' } },
-  { id: 'pulmonary-valve', ids: ['pulmonary-valve'], color: '#d9d2e9', label: { tr: 'PuV', en: 'PuV' } },
-  { id: 'lv-papillary', ids: ['lv-papillary'], color: '#f4cccc', label: { tr: 'PM', en: 'PM' } },
-  { id: 'rv-papillary', ids: ['rv-papillary'], color: '#ead1dc', label: { tr: 'RV PM', en: 'RV PM' } },
-  { id: 'moderator-band', ids: ['moderator-band'], color: '#e69138', label: { tr: 'MB', en: 'MB' } }
+  { id: 'lspv', ids: ['lspv'], color: '#b4a7d6', name: { tr: 'Sol üst pulmoner ven', en: 'Left superior pulmonary vein' }, label: { tr: 'LSPV', en: 'LSPV' } },
+  { id: 'lipv', ids: ['lipv'], color: '#9e8fd0', name: { tr: 'Sol alt pulmoner ven', en: 'Left inferior pulmonary vein' }, label: { tr: 'LIPV', en: 'LIPV' } },
+  { id: 'rspv', ids: ['rspv'], color: '#a4c2f4', name: { tr: 'Sağ üst pulmoner ven', en: 'Right superior pulmonary vein' }, label: { tr: 'RSPV', en: 'RSPV' } },
+  { id: 'ripv', ids: ['ripv'], color: '#8aaee8', name: { tr: 'Sağ alt pulmoner ven', en: 'Right inferior pulmonary vein' }, label: { tr: 'RIPV', en: 'RIPV' } },
+  { id: 'cs', ids: ['cs'], color: '#93c47d', name: { tr: 'Koroner sinüs', en: 'Coronary sinus' }, label: { tr: 'CS', en: 'CS' } },
+  { id: 'mitral', ids: ['mitral'], color: '#fff2cc', name: { tr: 'Mitral kapak', en: 'Mitral valve' }, label: { tr: 'MV', en: 'MV' } },
+  { id: 'tricuspid', ids: ['tricuspid'], color: '#d9ead3', name: { tr: 'Triküspit kapak', en: 'Tricuspid valve' }, label: { tr: 'TV', en: 'TV' } },
+  { id: 'aortic-valve', ids: ['lcc', 'rcc', 'ncc'], color: '#fce5cd', name: { tr: 'Aort kapağı', en: 'Aortic valve' }, label: { tr: 'AV', en: 'AV' } },
+  { id: 'pulmonary-valve', ids: ['pulmonary-valve'], color: '#d9d2e9', name: { tr: 'Pulmoner kapak', en: 'Pulmonary valve' }, label: { tr: 'PuV', en: 'PuV' } },
+  { id: 'lv-papillary', ids: ['lv-papillary'], color: '#f4cccc', name: { tr: 'LV papiller kas', en: 'LV papillary muscle' }, label: { tr: 'PM', en: 'PM' } },
+  { id: 'rv-papillary', ids: ['rv-papillary'], color: '#ead1dc', name: { tr: 'RV papiller kas', en: 'RV papillary muscle' }, label: { tr: 'RV PM', en: 'RV PM' } },
+  { id: 'moderator-band', ids: ['moderator-band'], color: '#e69138', name: { tr: 'Moderatör bant', en: 'Moderator band' }, label: { tr: 'MB', en: 'MB' } }
 ]);
 
 const vec = v => v.toArray();

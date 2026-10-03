@@ -874,6 +874,11 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .echo-ice-info{font-size:11.5px;line-height:1.45;color:#29483e;background:#eef5f1;border-left:3px solid #39a37f;padding:5px 8px;margin:4px 0}
 .echo-parts{margin:6px 0 0;font-size:11.5px;line-height:1.45;color:#29483e;font-variant-numeric:tabular-nums}
 .echo-parts[hidden]{display:none}
+.echo-quick-labels{display:flex;gap:6px;margin:4px 0}
+.echo-quick-labels button{font-size:11px;padding:3px 9px;border:1px solid #cbd5cf;border-radius:999px;background:#fff;color:#25473e;cursor:pointer}
+.echo-quick-labels button[aria-pressed=true]{background:#25473e;color:#fff;border-color:#25473e}
+.echo-tip{position:fixed;z-index:60;pointer-events:none;max-width:260px;padding:4px 8px;border-radius:6px;background:rgba(5,8,7,.88);color:#e8f2ec;font-size:11.5px;line-height:1.35;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.echo-tip[hidden]{display:none}
 .echo-ice-info[hidden]{display:none}
 /* ICE: animated sweep between views and the schematic transseptal stages. */
 .echo-row{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0}

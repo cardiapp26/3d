@@ -15,7 +15,7 @@ const SHORT = {
 const T = {
   tr: {
     heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm: ucu transdüser yüzüne doğru / ters', iceLr: 'Sol (+) / sağ (−) büküm: düzlem dışına', iceMove: 'Manevra', iceAtlas: 'Atlas notu', icePrev: '◀ Önceki görünüme geç (hareketli)', iceNext: 'Sonraki görünüme geç (hareketli) ▶', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik İVK → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
-    freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', parts: 'LV segmentleri ve yaprakçıklar', partsSeen: 'Kesitte', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
+    freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', parts: 'LV segmentleri ve yaprakçıklar', partsSeen: 'Kesitte', quickLabels: 'Etiketler', quickParts: 'Segmentler', quickHint: 'Etiketler kapalıyken konturun üzerine gelin: adı görünür', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
     rotation: 'Rotasyon', tilt: 'Tilt (eğim)', rock: 'Rock (düzlem içi)', slideLateral: 'Kaydır (işaret yönü)', slideElevation: 'Kaydır (dik yön)',
     advance: 'İlerlet / geri çek (göreli)', shaft: 'Şaft rotasyonu (sağ +)', flexion: 'Antefleksiyon (+) / retrofleksiyon (−)', lateralFlexion: 'Sol (+) / sağ (−) fleksiyon', omega: 'Multiplan açı',
     probe: 'Prob hareketleri', display: 'Görüntü ayarları', feedback: 'Geri bildirim', target: 'Hedef', done: 'Görev tamamlandı: hedef görünümün model ölçütleri bir kez karşılandı.', atlasAngle: 'Atlas başlangıç açısı', guideline: 'ASE/SCA yaklaşık aralığı', teePath: 'Şematik özofagus-mide yolu', current: 'Şu anki kesit', enlarge: 'Büyüt', shrink: 'Küçült',
@@ -24,7 +24,7 @@ const T = {
   },
   en: {
     heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection: tip toward / away from the transducer face', iceLr: 'Left (+) / right (−) deflection: out of the plane', iceMove: 'Manoeuvre', iceAtlas: 'Atlas note', icePrev: '◀ Move to the previous view (animated)', iceNext: 'Move to the next view (animated) ▶', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
-    freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', parts: 'LV segments and leaflets', partsSeen: 'In the cut', sector: 'Sector width', depth: 'Depth (relative)',
+    freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', parts: 'LV segments and leaflets', partsSeen: 'In the cut', quickLabels: 'Labels', quickParts: 'Segments', quickHint: 'With labels off, point at a contour to see its name', sector: 'Sector width', depth: 'Depth (relative)',
     rotation: 'Rotation', tilt: 'Tilt', rock: 'Rock (in plane)', slideLateral: 'Slide (marker side)', slideElevation: 'Slide (across)',
     advance: 'Advance / withdraw (relative)', shaft: 'Shaft rotation (right +)', flexion: 'Anteflexion (+) / retroflexion (−)', lateralFlexion: 'Left (+) / right (−) flexion', omega: 'Multiplane angle',
     probe: 'Probe motions', display: 'Display', feedback: 'Feedback', target: 'Target', done: 'Task done: the target view’s model criteria were met once.', atlasAngle: 'Atlas starting angle', guideline: 'ASE/SCA approximate range', teePath: 'Schematic oesophagus-stomach path', current: 'Current cut', enlarge: 'Enlarge', shrink: 'Reduce',
@@ -71,6 +71,38 @@ export function createEchoPanel(mount, handlers) {
   const canvas = el('canvas', 'echo-canvas', { role: 'img' });
   // Visible LV segments and leaflets of the current cut.
   const partsLine = el('p', 'echo-parts', { 'aria-live': 'polite' });
+  // Quick label switches above the image, and the name under the pointer.
+  const quickRow = el('div', 'echo-quick-labels');
+  const quickLabels = el('button', '', { type: 'button', 'data-echo-quick': 'labels' });
+  const quickParts = el('button', '', { type: 'button', 'data-echo-quick': 'parts' });
+  quickRow.append(quickLabels, quickParts);
+  let shownState = null;
+  quickLabels.addEventListener('click', () => handlers.onControl('display', 'labels', !shownState?.labels));
+  quickParts.addEventListener('click', () => handlers.onControl('display', 'parts', !shownState?.parts));
+  const tip = el('div', 'echo-tip', { role: 'tooltip' });
+  tip.hidden = true;
+  let hits = [], names = {};
+  const segmentDistance = (p, a, b) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], len = dx * dx + dy * dy;
+    const t = len ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len)) : 0;
+    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+  };
+  canvas.addEventListener('pointermove', (event) => {
+    const r = canvas.getBoundingClientRect(), p = [event.clientX - r.left, event.clientY - r.top];
+    let best = null;
+    for (const h of hits) for (let i = 1; i < h.points.length; i++) {
+      // A part (segment, leaflet) wins over its structure contour at the same place.
+      const d = segmentDistance(p, h.points[i - 1], h.points[i]) - (h.part ? 1.5 : 0);
+      if (d < 8 && (!best || d < best.d)) best = { d, h };
+    }
+    if (!best) { tip.hidden = true; return; }
+    const info = names[best.h.id] || {}, base = info.name?.[lang] ? `${info.name[lang]} (${info.label?.[lang] || best.h.id})` : (info.label?.[lang] || best.h.id);
+    tip.textContent = best.h.part ? `${base}: ${best.h.part[lang] || best.h.part.abbr}` : base;
+    tip.style.left = `${event.clientX + 12}px`;
+    tip.style.top = `${event.clientY + 12}px`;
+    tip.hidden = false;
+  });
+  canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
   const feedback = el('div', 'echo-feedback', { 'aria-live': 'polite' });
   const taskRow = el('div', 'echo-task-row');
   const resetBtn = el('button', '', { type: 'button', 'data-echo-action': 'reset' });
@@ -98,7 +130,7 @@ export function createEchoPanel(mount, handlers) {
   const limits = el('p', 'echo-limits');
   // Compact order: the sector and the probe controls come right after the view choice.
   heading.hidden = true;
-  root.append(heading, modality, viewRow, title, canvas, partsLine, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
+  root.append(heading, modality, viewRow, title, quickRow, canvas, tip, partsLine, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -243,11 +275,17 @@ export function createEchoPanel(mount, handlers) {
     styleSelect.value = state.style;
     setText(labelsName, t.labels); labelsBox.checked = state.labels;
     setText(partsName, t.parts); partsBox.checked = state.parts;
+    shownState = state;
+    setText(quickLabels, t.quickLabels); quickLabels.setAttribute('aria-pressed', String(state.labels));
+    setText(quickParts, t.quickParts); quickParts.setAttribute('aria-pressed', String(state.parts));
+    quickRow.title = t.quickHint;
     setText(limits, t.limits);
   }
 
   return {
     element: root, canvas, render,
+    /** Drawn contours in canvas pixels (renderer hits) and the structure names, for the pointer name. */
+    setHits(list, structureNames) { hits = list || []; names = structureNames || {}; },
     /** groups: [{ label, parts: string[] }] seen in the cut (empty hides the line). */
     setParts(groups) {
       partsLine.hidden = !groups?.length;

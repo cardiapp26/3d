@@ -346,7 +346,11 @@ export function drawEchoSector(canvas, section, opts = {}) {
   sectorPath(ctx, geo, h);
   ctx.clip();
   drawContours(ctx, geo, items, style);
-  const parts = o.showParts ? drawParts(ctx, geo, Array.isArray(section?.contours) ? section.contours : [], (pts) => clipToSector(pts, h * 2, depth), style) : [];
+  // Hover names: drawn runs in screen pixels, parts first (more specific than the structure).
+  const hits = [];
+  const measured = drawParts(ctx, geo, Array.isArray(section?.contours) ? section.contours : [], (pts) => clipToSector(pts, h * 2, depth), style, hits, Boolean(o.showParts));
+  const parts = o.showParts ? measured : [];
+  for (const it of items) for (const run of it.runs) hits.push({ id: it.id, points: run.map((p) => geo.toScreen(p)) });
   ctx.restore();
 
   if (!o.hideLabels && items.length) {
@@ -386,5 +390,5 @@ export function drawEchoSector(canvas, section, opts = {}) {
   }
   drawOverlayText(ctx, width, height, geo, o, lang, style, items.length === 0);
   // Visible parts per structure (the panel lists them).
-  return { parts: parts.map(({ id, part, total }) => ({ id, part, length: total })) };
+  return { parts: parts.map(({ id, part, total }) => ({ id, part, length: total })), hits };
 }

@@ -38,15 +38,18 @@ export function partPieces(contour) {
  * Stroke the parts (not in the grey style) and return, per structure and
  * part, the longest visible run and the total visible length.
  * @param {(points: number[][]) => number[][][]} clip runs of a polyline inside the fan
+ * @param {object[]} [hits] receives each visible run in screen pixels (hover names)
+ * @param {boolean} [draw] false: only measure (the pointer still names hidden parts)
  * @returns {{ id: string, part: object, run: number[][], total: number }[]}
  */
-export function drawParts(ctx, geo, contours, clip, style) {
+export function drawParts(ctx, geo, contours, clip, style, hits = null, draw = true) {
   const best = new Map();
   ctx.lineCap = 'butt';
   for (const c of contours) for (const piece of partPieces(c)) {
     for (const run of clip(piece.points)) {
       const length = runLength(run);
-      if (style !== 'gray') {
+      hits?.push({ id: c.id, part: piece.part, points: run.map((p) => geo.toScreen(p)) });
+      if (draw && style !== 'gray') {
         ctx.strokeStyle = piece.part.color || '#ffffff';
         ctx.lineWidth = 4;
         ctx.beginPath();
