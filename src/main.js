@@ -436,6 +436,7 @@ app.innerHTML = `
 <dialog id="references">
   <button id="close-dialog" data-i18n="closeDialog">${getTranslation('closeDialog')}</button>
   <h2 data-i18n="referencesTitle">${getTranslation('referencesTitle')}</h2>
+  <p class="about-thanks" data-i18n="thanksEcho">${getTranslation('thanksEcho')}</p>
   <div id="reference-selected"></div>
   <div class="about-block">
     <p data-i18n="madeBy">${getTranslation('madeBy')}</p>

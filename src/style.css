@@ -1102,3 +1102,6 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .eps-handoff-link:hover{background:#5cd0a8}
 /* Phones: the link takes the room of the wide button margins so the header row still fits. */
 @media(max-width:640px){.brand-block{flex-direction:row;align-items:center;gap:6px}.eps-link{margin-left:0;min-width:44px;min-height:44px;justify-content:center;padding:0 8px}.eps-link-icon{display:none}.header-right .lang-btn,.header-right .header-update-btn{margin-left:2px}}
+
+/* Acknowledgement at the top of the About and sources dialog. */
+.about-thanks{margin:8px 0 12px;padding:9px 12px;border-left:3px solid #39a37f;background:#eef5f1;border-radius:4px;color:#1e4336;font-weight:600;line-height:1.5}
