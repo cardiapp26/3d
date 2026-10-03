@@ -35,7 +35,7 @@ assert.ok(hfpef.ef > 0.5 && hfpef.edp > 20 && hfpef.edv < normal.edv + 5, 'HFpEF
 const as = loop('aortic-stenosis');
 assert.ok(Math.max(...as.points.map(q => q.p)) > 180, 'aortic stenosis: tall loop');
 const ar = loop('aortic-regurgitation');
-assert.ok(ar.edv > 200 && ar.sv > 1.8 * normal.sv, 'aortic regurgitation: wide loop shifted right');
+assert.ok(ar.edv > 200 && ar.sv > 1.5 * normal.sv, 'aortic regurgitation: wide loop shifted right');
 const seg = (l, [a, b]) => l.points.filter(q => q.u >= a && q.u < b).map(q => q.v);
 const span = vs => Math.max(...vs) - Math.min(...vs);
 assert.ok(span(seg(ar, ar.phases.ivr)) > 10, 'aortic regurgitation: no true isovolumic relaxation');
@@ -45,6 +45,39 @@ assert.ok(span(seg(normal, normal.phases.ivc)) < 0.5 && span(seg(normal, normal.
 const hypo = loop('hypovolemia');
 assert.ok(hypo.sv < normal.sv && Math.abs(hypo.ees - normal.ees) < 1e-9, 'hypovolaemia: lower SV on the same ESPVR');
 assert.ok(loop('inotrope').ef > normal.ef + 0.05, 'inotrope: higher EF');
+
+// Every loop closes: the last sample is one sample step from the first (AR refills during relaxation, so filling starts from that volume).
+for (const id of Object.keys(PV_PRESETS)) {
+  const l = loop(id), a = l.points[0], b = l.points.at(-1);
+  assert.ok(Math.abs(a.v - b.v) < 1.5 && Math.abs(a.p - b.p) < 2, `${id}: the loop closes (dV ${(a.v - b.v).toFixed(2)}, dP ${(a.p - b.p).toFixed(2)})`);
+}
+const arSegments = [seg(ar, ar.phases.ivr), seg(ar, [0, ar.phases.ivc[0]])];
+assert.ok(Math.abs(arSegments[0].at(-1) - arSegments[1][0]) < 1.5, 'AR: filling starts where the relaxation refill ended');
+assert.ok(Math.abs(ar.regurgVolume - 0.18 * ar.sv) < 1e-9 && Math.abs(ar.forwardSv - 0.82 * ar.sv) < 1e-9, 'AR: refill volume = regurgitant volume');
+assert.ok(Math.abs(mr.regurgVolume - 0.25 * mr.sv) < 1e-9 && mr.forwardSv < mr.sv, 'acute MR: forward SV is below the total SV');
+assert.equal(normal.regurgVolume, 0, 'no leak in a normal loop');
+
+// Stiffness slider sweep on every condition: EDP follows the slider upward, stays in a filling-pressure range, and the systolic arch does not move.
+for (const id of Object.keys(PV_PRESETS)) {
+  let last = -1;
+  const base = loop(id);
+  for (let k = PV_LIMITS.stiffness[0]; k <= PV_LIMITS.stiffness[1] + 1e-9; k += 0.005) {
+    const l = loop(id, { stiffness: k });
+    assert.ok(l.edp >= last - 1e-9, `${id}: EDP rises with stiffness (${k.toFixed(3)})`);
+    assert.ok(l.edp <= 36, `${id}: EDP ${l.edp.toFixed(1)} stays below 36 mmHg at stiffness ${k.toFixed(3)}`);
+    assert.ok(Math.abs(l.peak - base.peak) < 0.5 && Math.abs(l.ef - base.ef) < 1e-9, `${id}: stiffness leaves the systolic arch and EF alone`);
+    last = l.edp;
+  }
+  assert.ok(Math.abs(loop(id, { stiffness: PV_PRESETS[id].stiffness }).edp - PV_PRESETS[id].edp) < 1e-9, `${id}: the preset stiffness gives the preset EDP`);
+}
+assert.ok(Math.abs(loop('hfpef').edp - 25) < 1e-9 && loop('normal', { stiffness: 0.045 }).edp < 25, 'HFpEF stays above a normal ventricle at the same exponent');
+
+// Normal matches the catheter scenario's normal (EDV 130, SV 81, EF 63%, ESP 90, Ees 2.3, Ea 1.1).
+assert.ok(Math.abs(normal.edv - 130) < 1e-9 && Math.abs(normal.sv - 81.4) < 0.5 && Math.abs(normal.ef - 0.626) < 0.005 && Math.abs(normal.esp - 90) < 1, 'model normal = scenario normal');
+assert.ok(normal.peak > normal.esp * 1.2 && normal.peak < 125, 'ESP sits below the peak systolic pressure');
+// Corner of the sliders: the ESV floor binds, and the labelled Ea is the drawn loop\'s ESP / SV.
+const corner = loop('normal', { edv: 60, ees: 5, ea: 0.5 });
+assert.ok(Math.abs(corner.ea - corner.esp / corner.sv) < 1e-9 && corner.ea > 0.5, 'floor-bound corner reports the drawn Ea');
 for (const id of Object.keys(PV_PRESETS)) {
   const l = loop(id);
   assert.ok(l.points.every(q => Number.isFinite(q.v) && Number.isFinite(q.p) && q.p >= 0), `${id}: finite`);

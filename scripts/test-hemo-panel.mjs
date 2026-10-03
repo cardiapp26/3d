@@ -13,7 +13,8 @@ register('data:text/javascript,' + encodeURIComponent(
   "}"
 ));
 
-const { sampleStrip } = await import('../src/hemo-panel.js');
+const { sampleStrip, pvMetricRows } = await import('../src/hemo-panel.js');
+const { pvParams, pvModelLoop } = await import('../src/hemo-pv-model.js');
 const { createHemodynamics } = await import('../src/hemodynamics.js');
 
 const hemo = createHemodynamics('normal');
@@ -68,5 +69,15 @@ hemo.setScenario('tamponade');
 const fallback = sampleStrip({ hemo, channels: ['ao'], beats: 9, columns: 60 });
 const scenarioHr = hemo.getScenario().hr;
 assert.ok(Math.abs(fallback.times[59] - 6 * 60 / scenarioHr) < 1e-3, `six beats at the scenario rate of ${scenarioHr} bpm`);
+
+// Model measurements: the grid of the model loop reports the model's own numbers, leak rows only for leaking lesions.
+const labels = Object.fromEntries(['edv', 'esv', 'sv', 'fsv', 'rgv', 'ef', 'esp', 'peak', 'edp', 'ees', 'ea', 'coupling', 'sw'].map(k => [k, k.toUpperCase()]));
+const normalRows = Object.fromEntries(pvMetricRows(pvModelLoop(pvParams({}, 'normal')), labels).map(([k, v]) => [k, v]));
+assert.deepEqual(Object.keys(normalRows), ['EDV', 'ESV', 'SV', 'EF', 'ESP', 'PEAK', 'EDP', 'EES', 'EA', 'COUPLING', 'SW'], 'no leak rows for a normal loop');
+assert.equal(normalRows.EDV, '130');
+assert.equal(normalRows.SV, '81');
+assert.equal(normalRows.EF, '63');
+const mrRows = Object.fromEntries(pvMetricRows(pvModelLoop(pvParams({}, 'mitral-regurgitation-acute')), labels));
+assert.ok(mrRows.FSV === '83' && mrRows.RGV === '28' && mrRows.SV === '110', 'acute MR: total, forward and regurgitant volumes');
 
 console.log('hemo-panel sampleStrip tests passed');
