@@ -1,4 +1,5 @@
 import { clipToSector } from './echo-renderer.js';
+import { fossaFrame, septalCutCheck } from './echo-septal-map.js';
 import { partPieces, PART_LENGTH } from './echo-renderer-parts.js';
 
 /*
@@ -212,11 +213,13 @@ export function evaluateView(section, view, ctx) {
   const caval = view.bicaval ? bicaval(section, ctx.frame, ctx.anatomy, ctx.sectorAngle, ctx.depth) : null;
   const chord = view.mitralChord ? mitralChord(ctx.frame, ctx.anatomy) : null;
   const chordOk = !chord || (chord.centred && chord.angle >= view.mitralChord[0] && chord.angle <= view.mitralChord[1]);
+  // Septal views: the cut crosses the fossa ovalis along the view's axis (superior-inferior or anterior-posterior).
+  const septal = view.septalCut && ctx.anatomy?.fossa ? septalCutCheck(fossaFrame(ctx.anatomy.fossa), ctx.frame, view.septalCut) : null;
   // Views name the LV segments (ASE 16-segment model) and mitral segments their plane should cut.
   const partLength = view.parts ? partLengths(section, ctx.sectorAngle, ctx.depth) : {};
   const missingSegments = missingParts(view, partLength);
   const achieved = !missing.length && !wrong.length && !missingSegments.length && (!fs || fs.ok) && (!caval || caval.ok) && chordOk
-    && relations.every(r => r.ok) && order.every(o => o.ok) && sides.every(x => x.ok) && landmarks.every(l => l.ok);
+    && relations.every(r => r.ok) && order.every(o => o.ok) && sides.every(x => x.ok) && landmarks.every(l => l.ok) && (!septal || septal.ok);
   const tr = ctx.lang !== 'en';
   const names = ids => ids.map(ctx.label).join(', ');
   const messages = [];
@@ -257,7 +260,10 @@ export function evaluateView(section, view, ctx) {
   for (const l of landmarks.filter(x => !x.ok)) messages.push(l.unknown
     ? (tr ? `${names([l.id])} atlasta ölçülemedi: bu ölçüt değerlendirilemedi, başarı sayılmaz.` : `${names([l.id])} could not be measured on the atlas: this criterion is not assessed and does not count as met.`)
     : (tr ? `${names([l.id])} kesitte veya görüntüde değil (düzlemden ${l.off.toFixed(2)} birim).` : `${names([l.id])} is not in the cut or the image (${l.off.toFixed(2)} units off the plane).`));
+  if (septal && !septal.ok) messages.push(!septal.through
+    ? (tr ? 'Kesit fossa ovalisten geçmiyor: düzlemi septumun ortasına getirin.' : 'The cut misses the fossa ovalis: bring the plane to the middle of the septum.')
+    : (tr ? `Fossa kesiliyor ama yön uymuyor: ${septal.axis === 'si' ? 'üst–alt (süperior–inferior)' : 'ön–arka (anterior–posterior)'} eksenden ${Math.round(septal.along)}° sapma (model sınırı ${view.septalCut.max}°).` : `The fossa is cut but the direction is off: ${Math.round(septal.along)}° from the ${septal.axis === 'si' ? 'superior-inferior' : 'anterior-posterior'} axis (model limit ${view.septalCut.max}°).`));
   const extra = optional.filter(o => o.shown).map(o => o.id);
   if (extra.length) messages.push(tr ? `Yardımcı (zorunlu değil) yapılar da görünüyor: ${names(extra)}.` : `Supporting (not required) structures also shown: ${names(extra)}.`);
-  return { achieved, missing, wrong, missingSegments, partLengths: partLength, foreshortening: fs, bicaval: caval, mitralChord: chord, relations, order, sides, landmarks, optional, lengths, messages };
+  return { achieved, missing, wrong, missingSegments, partLengths: partLength, foreshortening: fs, bicaval: caval, mitralChord: chord, septal, relations, order, sides, landmarks, optional, lengths, messages };
 }

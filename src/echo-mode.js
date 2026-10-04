@@ -4,6 +4,7 @@ import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePa
 import { tteFrame, teeFrame, iceFrame } from './echo-probe.js';
 import { sectionMeshes } from './echo-section.js';
 import { mitralMapData, mapCutLine, drawMitralMap } from './echo-mitral-map.js';
+import { fossaFrame, septalCut, drawSeptalMap } from './echo-septal-map.js';
 import { partLengths, evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE, LANDMARK_OFF_PLANE, STRUCTURE_GROUPS } from './echo-training.js';
 import { drawEchoSector } from './echo-renderer.js';
 import { transseptalGeometry } from './echo-transseptal.js';
@@ -48,6 +49,7 @@ export function createEchoMode({ heart, mount, getLang }) {
   // ICE catheter paths by position: the RA, and the LA after the septal crossing (null without a measured fossa).
   let icePaths = { ra: null, la: null, lv: null };
   let mitralMap = null;   // TEE mitral scallop map (echo-mitral-map.js), measured at rest
+  let septal = null;      // fossa frame and the landmarks around it (echo-septal-map.js)
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
@@ -72,12 +74,13 @@ export function createEchoMode({ heart, mount, getLang }) {
       if (fossa) {
         fossa.updateWorldMatrix(true, false);
         const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(fossa.getWorldQuaternion(new THREE.Quaternion()));
-        measured.fossa = { center: fossa.getWorldPosition(new THREE.Vector3()).toArray(), normal: normal.toArray() };
+        measured.fossa = { center: fossa.getWorldPosition(new THREE.Vector3()).toArray(), normal: normal.toArray(), radius: fossa.geometry.parameters?.radius, across: fossa.scale.x };
       }
       // Oesophagus at the LA level (the schematic TEE path behind the posterior wall): an LA ICE landmark.
       measured.oesophagus = { center: measured.oesophagusPath[2] };
       anatomy = measured;   // assigned last: a failure above leaves the mode uninitialised, not half-built
       mitralMap = heart.withRestPose(() => measureMitralMap(getMeshes('mitral'), anatomy));
+      septal = anatomy.fossa ? { F: fossaFrame(anatomy.fossa), landmarks: { svc: anatomy.svc, ivc: anatomy.ivc, rupv: heart.withRestPose(() => meshCentre(getMeshes('rspv'))), ao: anatomy.av.center, tv: anatomy.tv.center } } : null;
     } catch (error) {
       console.error('Echo landmarks unavailable:', error);
       return false;
@@ -318,6 +321,12 @@ export function createEchoMode({ heart, mount, getLang }) {
       paths: transseptalPaths(frame),
       showParts: state.parts
     });
+    // Septal views: the fossa seen from the RA with its sectors and the current cut.
+    if (panel?.septalMap) {
+      const show = Boolean(septal && (view.septalCut || view.landmarks?.includes('fossa')));
+      panel.setSeptalMapVisible?.(show);
+      if (show) drawSeptalMap(panel.septalMap, septal.F, septal.landmarks, septalCut(septal.F, frame), { lang, dpr: Math.min(globalThis.devicePixelRatio || 1, 2) });
+    }
     // TEE: the mitral valve seen from the LA with the current cut across it.
     if (panel?.mitralMap) {
       const show = state.modality === 'tee' && Boolean(mitralMap);
@@ -427,6 +436,13 @@ function seededRandom(seed) {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Centre of a set of meshes (world, current pose), or null. */
+function meshCentre(meshes) {
+  const box = new THREE.Box3();
+  meshes.forEach(m => box.expandByObject(m));
+  return box.isEmpty() ? null : box.getCenter(new THREE.Vector3()).toArray();
 }
 
 /** Mitral leaflet vertices (world, rest pose) with their scallop, for the TEE mitral map. */

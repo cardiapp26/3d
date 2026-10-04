@@ -72,6 +72,9 @@ export function createEchoPanel(mount, handlers) {
   // TEE: mitral valve seen from the LA with the current cut (echo-mitral-map.js).
   const mitralMap = el('canvas', 'echo-mitral-map', { role: 'img' });
   mitralMap.hidden = true;
+  // Septal views: the fossa ovalis seen from the RA with its sectors and the cut (echo-septal-map.js).
+  const septalMap = el('canvas', 'echo-mitral-map echo-septal-map', { role: 'img' });
+  septalMap.hidden = true;
   // Visible LV segments and leaflets of the current cut.
   const partsLine = el('p', 'echo-parts', { 'aria-live': 'polite' });
   // Quick label switches above the image, and the name under the pointer.
@@ -133,7 +136,7 @@ export function createEchoPanel(mount, handlers) {
   const limits = el('p', 'echo-limits');
   // Compact order: the sector and the probe controls come right after the view choice.
   heading.hidden = true;
-  root.append(heading, modality, viewRow, title, quickRow, canvas, tip, partsLine, mitralMap, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
+  root.append(heading, modality, viewRow, title, quickRow, canvas, tip, partsLine, mitralMap, septalMap, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -305,7 +308,8 @@ export function createEchoPanel(mount, handlers) {
   }
 
   return {
-    element: root, canvas, render, mitralMap,
+    element: root, canvas, render, mitralMap, septalMap,
+    setSeptalMapVisible(show) { if (septalMap.hidden === show) { septalMap.hidden = !show; septalMap.setAttribute('aria-label', lang === 'en' ? 'Fossa ovalis seen from the right atrium with its sectors and the current cut line' : 'Sağ atriyumdan bakılan fossa ovalis, sektörleri ve kesit çizgisi'); } },
     setMitralMapVisible(show) { if (mitralMap.hidden === show) { mitralMap.hidden = !show; mitralMap.setAttribute('aria-label', lang === 'en' ? 'Mitral valve seen from the left atrium with the current cut line' : 'Sol atriyumdan bakılan mitral kapak ve kesit çizgisi'); } },
     /** Drawn contours in canvas pixels (renderer hits) and the structure names, for the pointer name. */
     setHits(list, structureNames) { hits = list || []; names = structureNames || {}; },

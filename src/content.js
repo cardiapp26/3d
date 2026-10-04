@@ -1486,7 +1486,7 @@ export const rawLessons = {
         },
         {
           title: 'Septal kısa eksen: transseptal çalışma görünümü',
-          text: 'Posterior ve sağa büküm ile ek saat yönü rotasyon (100–150°) septal kısa ekseni verir: yakında RA, ortada interatriyal septum ve fossa ovalis, uzakta LA, septumun önünde aort kökü. Transseptal ponksiyon ve ASD/PFO kapatmanın çalışma görünümüdür. Aort kökü septumun önünde görülür; ponksiyon için ondan uzak, aortu içermeyen daha posterior bir nokta seçilir; ASD kapatmada 6 sektörün tamamında en az 5 mm kenar aranır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          text: 'Posterior ve sağa büküm ile ek saat yönü rotasyon (100–150°) septal kısa ekseni verir: yakında RA, ortada interatriyal septum ve fossa ovalis, uzakta LA, septumun önünde aort kökü. Transseptal ponksiyon ve ASD/PFO kapatmanın çalışma görünümüdür. Aort kökü septumun önünde görülür; ponksiyon için ondan uzak, aortu içermeyen daha posterior bir nokta seçilir; Panelin altındaki fossa haritası septumu RA\'dan gösterir (üst yukarıda, ön sağda) ve kesitin geçtiği sektörleri (S, AS, AI, I, PI, PS) parlatır: bu görünüm ön–arka yönü, TEE bikaval üst–alt yönü verir; ikisi birlikte ponksiyon yerini sektöre yerleştirir. ASD kapatmada 6 sektörün tamamında en az 5 mm kenar aranır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
         },
         {
@@ -1582,7 +1582,7 @@ export const rawLessons = {
         },
         {
           title: 'Septal short axis: the transseptal working view',
-          text: 'Posterior and rightward deflection with extra clockwise rotation (100–150°) gives the septal short axis: the RA near, the interatrial septum and fossa ovalis in the middle, the LA far, the aortic root in front of the septum. It is the working view for transseptal puncture and ASD/PFO closure. The aortic root shows in front of the septum; the puncture site is chosen away from it, posterior to the plane that contains the aorta; for ASD closure, rims of at least 5 mm are sought in all 6 sectors (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          text: 'Posterior and rightward deflection with extra clockwise rotation (100–150°) gives the septal short axis: the RA near, the interatrial septum and fossa ovalis in the middle, the LA far, the aortic root in front of the septum. It is the working view for transseptal puncture and ASD/PFO closure. The aortic root shows in front of the septum; the puncture site is chosen away from it, posterior to the plane that contains the aorta; The fossa map below the panel shows the septum from the RA (superior up, anterior right) and highlights the sectors the cut crosses (S, AS, AI, I, PI, PS): this view gives the anterior-posterior direction, the TEE bicaval the superior-inferior; together they place the puncture in its sector. for ASD closure, rims of at least 5 mm are sought in all 6 sectors (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
         },
         {
