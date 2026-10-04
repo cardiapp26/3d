@@ -10,6 +10,11 @@ export const WPW_LOC_TEXT = {
     heading: 'WPW: delta dalgasından aksesuar yola, ablasyondan önce ve sonra',
     intro: 'Delta dalgası, aksesuar yolun ventriküle girdiği yerden uzaklaşan bir vektördür: o yöne bakan derivasyonda negatif, karşı derivasyonlarda pozitif. Klasik üçlü: kısa PR, delta dalgası, geniş QRS.',
     source: 'Derleme: Kardiyopedi WPW dersleri (aksesuar yol lokalizasyonu, WPW ablasyonu). Öğretim aracıdır, hasta karar aracı değildir.',
+    page: {
+      navigation: 'WPW öğrenme bölümleri', loc: 'Lokalizasyon', cs: 'CS aktivasyonu', abl: 'Önce / sonra', risk: 'Refrakter dönem',
+      mapTitle: 'Aksesuar yol atlası', mapNote: 'LAO benzeri kapak düzlemi, yaklaşık öğretim bölgeleri. Haritada veya listede bölge seçin: ilgili EKG örneği yüklenir. Dalga şekilleri seçenekleri anlatan şemalardır; hasta EKG’si değildir. Numara sırası karar sırası değildir.',
+      allLeads: 'Tüm derivasyonları göster', guided: 'Adım adım okumaya dön', read: 'Şimdi okuyun', decisions: 'karar tamamlandı', complete: 'Algoritma tamamlandı; önerilen bölge haritada işaretli.'
+    },
     loc: {
       title: 'Yüzey EKG ile lokalizasyon',
       hint: 'Derivasyonlardaki delta dalgasını seçin; algoritma bir sonraki bakılacak derivasyonu söyler.',
@@ -87,6 +92,11 @@ export const WPW_LOC_TEXT = {
     heading: 'WPW: from the delta wave to the pathway, before and after ablation',
     intro: 'The delta wave is a vector moving away from where the accessory pathway enters the ventricle: negative in the lead looking at that site, positive in the leads opposite. The classic triad: short PR, delta wave, wide QRS.',
     source: 'Compiled from the Kardiyopedi WPW lectures (accessory pathway localization, WPW ablation). A teaching tool, not a patient decision aid.',
+    page: {
+      navigation: 'WPW learning sections', loc: 'Localization', cs: 'CS activation', abl: 'Before / after', risk: 'Refractory period',
+      mapTitle: 'Accessory pathway atlas', mapNote: 'LAO-like valve plane, approximate teaching regions. Select a region on the map or list to load its ECG example. Waveforms illustrate the options, not patient ECGs. Numbers are not decision order.',
+      allLeads: 'Show all leads', guided: 'Back to guided reading', read: 'Read now', decisions: 'decisions completed', complete: 'Algorithm complete; suggested region highlighted on the map.'
+    },
     loc: {
       title: 'Localization on the surface ECG',
       hint: 'Pick the delta wave in each lead; the algorithm names the next lead to read.',

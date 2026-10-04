@@ -41,7 +41,8 @@
     "test:pharmacology": "node scripts/test-pharmacology.mjs",
     "test:pharmacology-browser": "node scripts/test-pharmacology-browser.cjs",
     "test:hemo-loads": "node scripts/test-hemo-loads.mjs",
-    "test:hemo-loads-browser": "node scripts/test-hemo-loads-browser.cjs"
+    "test:hemo-loads-browser": "node scripts/test-hemo-loads-browser.cjs",
+    "test:wpw-browser": "node scripts/eps/test-wpw-visual-browser.cjs"
   },
   "keywords": [],
   "author": "",

@@ -1,8 +1,9 @@
 import { LEADS, LEAD_OPTIONS, localize, PHASES, CS_CHANNELS, csSequence, ablationFindings, ERP_RANGE, pathwayRisk } from './wpw-loc-model.js';
+import { WPW_EXAMPLES, visualSvg, renderAnnulusMap, renderPolarity, renderCsTracing, renderAblationEcg } from './wpw-loc-visual.js';
 import { WPW_LOC_TEXT } from './wpw-loc-text.js';
 
 /*
- * WPW localization tab: four cards. (1) the surface ECG algorithm: delta
+ * WPW visual workbook: four learning pages. (1) the surface ECG algorithm: delta
  * polarity chosen lead by lead, the next lead named, the site decided;
  * (2) ventricular activation on the coronary sinus channels without a
  * pathway, with a left lateral pathway and after ablation; (3) the same
@@ -20,24 +21,45 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   };
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => WPW_LOC_TEXT[L()];
-  const state = { active: false, leads: {}, csPhase: 'before', ablPhase: 'before', erp: 210 };
+  const state = { active: false, page: 'loc', allLeads: false, leads: {}, csPhase: 'before', ablPhase: 'before', erp: 210 };
 
   const root = el('section', 'basics wpw', { 'data-wpw': '' });
   root.hidden = true;
   const heading = el('h3', 'amap-title');
   const intro = el('p', 'amap-note');
   const source = el('p', 'amap-source');
-  const grid = el('div', 'basics-grid');
-  root.append(heading, intro, grid, source);
+  const grid = el('div', 'wpw-workspace');
+  const nav = el('nav', 'wpw-page-nav');
+  const navButtons = new Map();
+  root.append(heading, intro, nav, grid, source);
   const card = (name) => { const c = el('section', 'basics-card', { 'data-wpw-card': name }); const h = el('h4'); c.append(h); grid.append(c); return { c, h }; };
   const button = (attrs, onClick) => { const b = el('button', 'amap-toggle', { type: 'button', ...attrs }); b.addEventListener('click', onClick); return b; };
   const chips = () => el('dl', 'amap-readout');
   const setChips = (dl, rows) => dl.replaceChildren(...rows.flatMap(([label, value]) => { const dt = el('dt'); dt.textContent = label; const dd = el('dd'); dd.textContent = value; return [dt, dd]; }));
   const note = () => el('p', 'amap-note');
+  for (const id of ['loc', 'cs', 'abl', 'risk']) {
+    const b = button({ 'data-wpw-page': id }, () => { state.page = id; root.scrollTop = 0; render(); });
+    nav.append(b); navButtons.set(id, b);
+  }
 
   // ---- 1. localization ---------------------------------------------------------------------
   const loc = card('loc');
   const locHint = note();
+  const allLeads = button({ 'data-wpw-all-leads': '' }, () => { state.allLeads = !state.allLeads; render(); });
+  const locLayout = el('div', 'wpw-localize-layout');
+  const locInputs = el('div', 'wpw-inputs');
+  const mapCard = el('aside', 'wpw-map-card');
+  const mapHeading = el('h4'), mapNote = note();
+  const mapSvg = visualSvg(doc, '0 0 420 275', 'wpw-annulus-map');
+  const mapList = el('div', 'wpw-site-list');
+  const siteButtons = new Map();
+  for (const [i, id] of Object.keys(WPW_EXAMPLES).entries()) {
+    const b = button({ 'data-wpw-example': id }, () => { state.leads = { ...WPW_EXAMPLES[id] }; render(); });
+    const number = el('span', 'wpw-site-number'); number.textContent = String(i + 1);
+    const label = el('span'); b.append(number, label); mapList.append(b); siteButtons.set(id, { b, label });
+  }
+  mapCard.append(mapHeading, mapSvg, mapNote, mapList);
+  locLayout.append(locInputs, mapCard);
   const leadBlocks = new Map();
   for (const lead of LEADS) {
     const block = el('div', 'wpw-lead', { 'data-wpw-lead': lead });
@@ -50,7 +72,10 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
         if (state.leads[lead] === option) delete state.leads[lead]; else state.leads[lead] = option;
         render();
       });
-      buttons.set(option, b); row.append(b);
+      const wave = visualSvg(doc, '0 0 114 84', 'wpw-option-wave');
+      const caption = el('span');
+      b.append(wave, caption);
+      buttons.set(option, { b, wave, caption }); row.append(b);
     }
     block.append(name, hint, row);
     leadBlocks.set(lead, { block, name, hint, buttons });
@@ -58,7 +83,9 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const verdict = el('p', 'svt-verdict', { 'data-wpw-verdict': '', role: 'status' });
   const pathList = el('ul', 'basics-lines', { 'data-wpw-path': '' });
   const locReset = button({ 'data-wpw-reset': '' }, () => { state.leads = {}; render(); });
-  loc.c.append(locHint, ...[...leadBlocks.values()].map((b) => b.block), verdict, pathList, locReset);
+  const progress = el('div', 'wpw-progress', { 'data-wpw-progress': '', role: 'status' });
+  locInputs.append(...['v1', 'd1', 'd2', 'avf', 'd3'].map(id => leadBlocks.get(id).block), allLeads);
+  loc.c.append(locHint, progress, locLayout, verdict, pathList, locReset);
 
   // ---- 2. coronary sinus -------------------------------------------------------------------
   const cs = card('cs');
@@ -72,18 +99,20 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     track.append(fill); r.append(label, track); csBars.append(r);
     return [id, { r, label, fill }];
   }));
+  const csSvg = visualSvg(doc, '0 0 420 250', 'wpw-cs-tracing');
   const csChips = chips();
   const csNote = note();
-  cs.c.append(csHint, csRow, csBars, csChips, csNote);
+  cs.c.append(csHint, csRow, csSvg, csBars, csChips, csNote);
 
   // ---- 3. before and after ablation --------------------------------------------------------
   const abl = card('abl');
   const ablBtns = ['before', 'after'].map((id) => button({ 'data-wpw-abl-phase': id }, () => { state.ablPhase = id; render(); }));
   const ablRow = el('div', 'amap-toggles'); ablRow.append(...ablBtns);
+  const ablSvg = visualSvg(doc, '0 0 420 180', 'wpw-ablation-ecg');
   const ablChips = chips();
   const steps = el('ol', 'basics-lines', { 'data-wpw-steps': '' });
   const masked = el('p', 'svt-verdict', { 'data-wpw-masked': '' });
-  abl.c.append(ablRow, ablChips, steps, masked);
+  abl.c.append(ablRow, ablSvg, ablChips, steps, masked);
 
   // ---- 4. refractory period ----------------------------------------------------------------
   const risk = card('risk');
@@ -94,22 +123,51 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   erpIn.addEventListener('input', () => { state.erp = Number(erpIn.value); render(); });
   erpLabel.append(erpName, erpIn, erpOut);
   const riskVerdict = el('p', 'svt-verdict', { 'data-wpw-risk': '', role: 'status' });
+  const riskGauge = el('div', 'wpw-risk-gauge');
+  const riskMarker = el('span');
+  riskGauge.append(riskMarker);
   const riskNote = note();
-  risk.c.append(erpLabel, riskVerdict, riskNote);
+  risk.c.append(erpLabel, riskGauge, riskVerdict, riskNote);
 
   function render() {
     const t = T();
     heading.textContent = t.heading; intro.textContent = t.intro; source.textContent = t.source;
+    nav.setAttribute('aria-label', t.page.navigation);
+    const cards = { loc, cs, abl, risk };
+    for (const [i, [id, b]] of [...navButtons].entries()) {
+      b.textContent = `${String(i + 1).padStart(2, '0')} · ${t.page[id]}`;
+      b.setAttribute('aria-pressed', String(state.page === id));
+      cards[id].c.hidden = state.page !== id;
+    }
 
     // 1
     loc.h.textContent = t.loc.title; locHint.textContent = t.loc.hint; locReset.textContent = t.loc.reset;
     const result = localize(state.leads);
+    allLeads.textContent = state.allLeads ? t.page.guided : t.page.allLeads;
+    allLeads.setAttribute('aria-pressed', String(state.allLeads));
     for (const [lead, parts] of leadBlocks) {
       const text = t.loc.leads[lead];
       parts.name.textContent = text.name; parts.hint.textContent = text.hint;
       parts.block.setAttribute('data-next', String(result.next === lead));
-      for (const [option, b] of parts.buttons) { b.textContent = text.options[option]; b.setAttribute('aria-pressed', String(state.leads[lead] === option)); }
+      for (const [option, { b, wave, caption }] of parts.buttons) {
+        caption.textContent = text.options[option];
+        b.setAttribute('aria-label', `${text.name}: ${text.options[option]}`);
+        b.setAttribute('aria-pressed', String(state.leads[lead] === option));
+        renderPolarity(doc, wave, option, L());
+      }
+      parts.block.setAttribute('data-read', String(result.path.some(p => p.lead === lead)));
+      parts.block.hidden = !state.allLeads && lead !== 'v1' && lead !== result.next && !result.path.some(p => p.lead === lead);
     }
+    mapHeading.textContent = t.page.mapTitle; mapNote.textContent = t.page.mapNote;
+    renderAnnulusMap(doc, mapSvg, { lang: L(), site: result.site, sites: t.loc.sites, onSelect(id) {
+      state.leads = { ...WPW_EXAMPLES[id] }; render();
+      mapSvg.querySelector?.(`[data-wpw-map-site=${id}]`)?.focus();
+    } });
+    for (const [id, { b, label }] of siteButtons) {
+      label.textContent = t.loc.sites[id].name;
+      b.setAttribute('aria-pressed', String(result.site === id));
+    }
+    progress.textContent = result.site ? t.page.complete : result.stalled ? t.loc.stalled : `${t.page.read}: ${t.loc.leads[result.next].name} · ${result.path.length} ${t.page.decisions}`;
     verdict.setAttribute('data-state', result.site ? 'single' : result.stalled ? 'conflict' : 'open');
     verdict.setAttribute('data-site', result.site || '');
     verdict.textContent = result.site ? `${t.loc.result}: ${t.loc.sites[result.site].name}. ${t.loc.sites[result.site].note}`
@@ -120,6 +178,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     cs.h.textContent = t.cs.title; csHint.textContent = t.cs.hint; csNote.textContent = t.cs.note;
     csBtns.forEach((b, i) => { b.textContent = t.cs.phases[PHASES[i]]; b.setAttribute('aria-pressed', String(state.csPhase === PHASES[i])); });
     const seq = csSequence(state.csPhase);
+    renderCsTracing(doc, csSvg, seq, L(), t.cs.channels);
     for (const [id, parts] of csRows) {
       parts.label.textContent = t.cs.channels[id];
       parts.fill.setAttribute('style', `width:${8 + seq.onsets[id] * 2}px`);
@@ -135,6 +194,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     abl.h.textContent = t.abl.title;
     ablBtns.forEach((b, i) => { const id = ['before', 'after'][i]; b.textContent = t.abl.phases[id]; b.setAttribute('aria-pressed', String(state.ablPhase === id)); });
     const f = ablationFindings(state.ablPhase);
+    renderAblationEcg(doc, ablSvg, state.ablPhase, L());
     setChips(ablChips, [
       [t.abl.chips.delta, f.delta ? t.abl.present : t.abl.absent],
       [t.abl.chips.pr, f.shortPr ? t.abl.shortPr : t.abl.normalPr],
@@ -152,6 +212,9 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     const r = pathwayRisk(state.erp);
     riskVerdict.textContent = t.risk[r]; riskVerdict.setAttribute('data-state', r === 'short' ? 'conflict' : 'single'); riskVerdict.setAttribute('data-risk', r);
     riskNote.textContent = t.risk.note;
+    riskMarker.setAttribute('style', `left:${(state.erp - ERP_RANGE[0]) / (ERP_RANGE[1] - ERP_RANGE[0]) * 100}%`);
+    riskMarker.textContent = `${state.erp} ms`;
+    riskGauge.setAttribute('aria-hidden', 'true');
   }
 
   return {

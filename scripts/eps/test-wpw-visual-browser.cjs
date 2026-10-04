@@ -1,0 +1,54 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
+(async () => {
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.goto(`${APP}/eps/?lang=tr#/wpw`);
+    await page.locator('[data-wpw]').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('[data-wpw-map-site]').count(), 9);
+    const verdict = () => page.locator('[data-wpw-verdict]').getAttribute('data-site');
+    await page.locator('[data-wpw-example=leftLateral]').click();
+    assert.equal(await verdict(), 'leftLateral');
+    assert.equal(await page.locator('[data-wpw-map-site=leftLateral]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-wpw-map-site=midseptal]').focus();
+    await page.keyboard.press('Enter'); assert.equal(await verdict(), 'midseptal');
+    assert.equal(await page.locator('[data-wpw-map-site=midseptal]').evaluate(el => el === document.activeElement), true, 'map retains keyboard focus');
+    await page.locator('[data-wpw-reset]').click(); assert.equal(await verdict(), '');
+    for (const option of ['v1:rGtS', 'd1:negIso', 'avf:neg']) await page.locator(`[data-wpw-option="${option}"]`).click();
+    assert.equal(await verdict(), 'leftPosterior');
+    await page.locator('[data-app-lang-option=en]').click(); assert.equal(await verdict(), 'leftPosterior');
+    assert.match(await page.locator('[data-wpw-progress]').textContent(), /Algorithm complete/);
+    const shots = process.env.SHOT_DIR || '/private/tmp/cardia-wpw-shots'; fs.mkdirSync(shots, { recursive: true });
+    await page.locator('[data-wpw]').evaluate(el => { el.scrollTop = 0; });
+    await page.screenshot({ path: `${shots}/wpw-desktop.png`, fullPage: true });
+    for (const section of ['cs', 'abl', 'risk', 'loc']) {
+      await page.locator(`[data-wpw-page=${section}]`).click();
+      assert.equal(await page.locator(`[data-wpw-card=${section}]`).isVisible(), true);
+      assert.equal(await page.locator('[data-wpw-card]:visible').count(), 1);
+      if (section === 'cs') {
+        await page.locator('[data-wpw-cs-phase=normal]').click();
+        assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), 'cs910');
+        await page.locator('[data-wpw-cs-phase=before]').click();
+        assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), 'cs12');
+      }
+      if (section === 'abl') {
+        await page.locator('[data-wpw-abl-phase=after]').click();
+        assert.equal(await page.locator('[data-wpw-masked]').isVisible(), true);
+      }
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('[data-wpw-example=rightLateral]').click(); assert.equal(await verdict(), 'rightLateral');
+    const bounds = await page.locator('[data-wpw]').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
+    assert.ok(bounds.scroll <= bounds.width + 1, `mobile overflow ${JSON.stringify(bounds)}`);
+    await page.screenshot({ path: `${shots}/wpw-mobile.png`, fullPage: true });
+    await page.locator('[data-wpw-page=cs]').click();
+    await page.screenshot({ path: `${shots}/wpw-cs-mobile.png`, fullPage: true });
+    assert.deepEqual(errors, []);
+    console.log('PASS: WPW map/examples, manual ECG decisions, keyboard, language, four pages, CS/ablation, mobile overflow');
+    console.log(`Screenshots: ${shots}`);
+  } finally { await browser.close(); }
+})().catch(e => { console.error(e); process.exit(1); });

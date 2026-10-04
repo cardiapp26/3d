@@ -91,7 +91,7 @@ class Node {
   replaceChildren(...kids) { this.children = [...kids]; }
   addEventListener(type, fn) { this.listeners[type] = fn; }
 }
-const doc = { createElement: (tag) => new Node(tag) };
+const doc = { createElement: (tag) => new Node(tag), createElementNS: (ns, tag) => new Node(tag) };
 const walk = (n, out = []) => { out.push(n); n.children.forEach((c) => walk(c, out)); return out; };
 const panel = createWpwLocPanel(doc, { getLang: () => 'tr' });
 panel.setActive(true);
@@ -99,7 +99,13 @@ const nodes = () => walk(panel.element);
 const by = (attr, value) => nodes().find((n) => n.attributes[attr] === value);
 const has = (attr) => nodes().find((n) => n.attributes[attr] !== undefined);
 assert.equal(panel.element.hidden, false);
-assert.equal(nodes().filter((n) => n.attributes['data-wpw-card']).length, 4, 'four cards');
+assert.equal(nodes().filter((n) => n.attributes['data-wpw-card']).length, 4, 'four sections retained');
+assert.equal(nodes().filter(n => n.attributes['data-wpw-map-site']).length, 9, 'nine map examples');
+assert.equal(by('data-wpw-card', 'loc').hidden, false);
+assert.equal(by('data-wpw-card', 'cs').hidden, true);
+by('data-wpw-page', 'cs').listeners.click();
+assert.equal(by('data-wpw-card', 'cs').hidden, false);
+by('data-wpw-page', 'loc').listeners.click();
 assert.match(has('data-wpw-verdict').textContent, /V1/, 'V1 is asked first');
 by('data-wpw-option', 'v1:rGtS').listeners.click();
 by('data-wpw-option', 'd1:negIso').listeners.click();
@@ -124,4 +130,10 @@ panel.set({ erp: 300 });
 assert.equal(has('data-wpw-risk').attributes['data-risk'], 'long');
 panel.setActive(false);
 assert.equal(panel.element.hidden, true);
+const { WPW_EXAMPLES } = await import('../../src/eps/wpw-loc-visual.js');
+for (const [site, leads] of Object.entries(WPW_EXAMPLES)) {
+  assert.equal(localize(leads).site, site, `example resolves to ${site}`);
+  by('data-wpw-example', site).listeners.click();
+  assert.equal(has('data-wpw-verdict').attributes['data-site'], site);
+}
 console.log('PASS wpw-loc: localization algorithm (9 sites), CS sequence, before/after ablation, refractory cut-off, texts, panel');
