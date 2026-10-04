@@ -250,3 +250,23 @@
 @media (max-width: 760px) { .amap:not(.pmap) { grid-template-columns: 1fr; height: auto; } .amap:not(.pmap) .amap-side { overflow: visible; } .amap-scrub { flex-basis: 100%; } }
 .amap-transport select { color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 7px; min-height: 36px; max-width: 100%; }
 
+/* SVT algorithm tab (svt-dx-panel.js): findings beside the candidate list. */
+.svt { display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%; overflow-y: auto; padding-right: 2px; }
+.svt > * { margin: 0; }
+.svt-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 10px; align-items: start; }
+.svt-findings { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.svt-step { margin: 6px 0 0; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.svt-group > * { margin: 0; }
+.svt-aside { position: sticky; top: 0; }
+.svt-candidates { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.svt-candidate { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 5px 8px; border-radius: 4px; background: var(--panel-2); border-left: 3px solid #4ade80; font-size: 12.5px; }
+.svt-note { grid-column: 1; font-size: 11px; color: var(--muted); }
+.svt-badge { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 11px var(--mono); color: #c8f0dc; }
+.svt-candidate[data-status=favored] { border-left-color: #fcd34d; }
+.svt-candidate[data-status=excluded] { border-left-color: #f87171; opacity: .5; text-decoration: line-through; }
+.svt-candidate[data-status=excluded] .svt-badge { text-decoration: none; color: #fca5a5; }
+.svt-verdict { font-size: 12.5px; line-height: 1.5; padding: 6px 9px; border-radius: 4px; background: var(--panel-2); border-left: 3px solid var(--accent); }
+.svt-verdict[data-state=conflict] { border-left-color: #f87171; }
+.svt-verdict[data-state=single] { border-left-color: #4ade80; }
+.svt-reasons { max-height: 260px; overflow-y: auto; }
+@media (max-width: 760px) { .svt-layout { grid-template-columns: 1fr; } .svt-aside { position: static; } }

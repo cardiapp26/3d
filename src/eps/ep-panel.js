@@ -21,6 +21,8 @@ import { createPaceMapPanel } from './pmap-panel.js';
 import { PMAP_TEXT } from './pmap-text.js';
 import { createEgmBasicsPanel } from './egm-basics-panel.js';
 import { BASICS_TEXT } from './egm-basics-text.js';
+import { createSvtDxPanel } from './svt-dx-panel.js';
+import { SVT_DX_TEXT } from './svt-dx-text.js';
 
 /*
  * Electrophysiological anatomy panel: Diagnosis / Maneuvers / Treatment tabs
@@ -107,7 +109,7 @@ const ZOOMS = [1, 2, 4];
 
 const pick = (obj, lang) => (lang === 'en' ? obj.en : obj.tr);
 
-export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'basics']);
+export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'basics', 'svt']);
 
 /**
  * @param {HTMLElement} mount
@@ -119,7 +121,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
-  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, basics: false };
+  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, basics: false, svt: false };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
   const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links') };
@@ -172,6 +174,14 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   basicsTab.addEventListener('click', () => { showView('basics'); notifySection(); });
   tabs.appendChild(basicsTab);
   const basicsPanel = createEgmBasicsPanel(doc, { getLang: () => lang });
+  // SVT algorithm: findings narrow the list of mechanisms.
+  const svtTab = el('button');
+  svtTab.type = 'button';
+  svtTab.setAttribute('role', 'tab');
+  svtTab.setAttribute('data-ep-section', 'svt');
+  svtTab.addEventListener('click', () => { showView('svt'); notifySection(); });
+  tabs.appendChild(svtTab);
+  const svtPanel = createSvtDxPanel(doc, { getLang: () => lang });
   const livePanel = createLivePanel(doc, { getLang: () => lang });
   const caseRow = el('label', 'ep-case');
   const caseName = el('span');
@@ -333,7 +343,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   sideCol.append(taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
-  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, basicsPanel.element);
+  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, basicsPanel.element, svtPanel.element);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -499,7 +509,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const recording = current();
     sectionButtons.forEach((button, i) => {
       button.textContent = t.sections[EP_SECTIONS[i]];
-      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.basics && EP_SECTIONS[i] === state.section));
+      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.basics && !state.svt && EP_SECTIONS[i] === state.section));
     });
     liveTab.textContent = lang === 'en' ? 'Live recording' : 'Canlı kayıt';
     liveTab.setAttribute('aria-selected', String(state.live));
@@ -509,11 +519,14 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     paceTab.setAttribute('aria-selected', String(state.pacemap));
     basicsTab.textContent = BASICS_TEXT[lang].tab;
     basicsTab.setAttribute('aria-selected', String(state.basics));
-    lessonBox.hidden = state.live || state.mapping || state.pacemap || state.basics;
+    svtTab.textContent = SVT_DX_TEXT[lang].tab;
+    svtTab.setAttribute('aria-selected', String(state.svt));
+    lessonBox.hidden = state.live || state.mapping || state.pacemap || state.basics || state.svt;
     livePanel.setActive(state.live);
     mappingPanel.setActive(state.mapping);
     paceMapPanel.setActive(state.pacemap);
     basicsPanel.setActive(state.basics);
+    svtPanel.setActive(state.svt);
     // In diagnosis the case names stay hidden (numbered cases) until the evidence view.
     const cases = EP_CASES.filter((c) => inSection(c.id, state.section));
     caseName.textContent = t.caseLabel;
@@ -650,22 +663,23 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     renderView();
   }
 
-  /** Show a lesson section, the live laboratory ('live'), activation mapping ('mapping') pace mapping ('pacemap') or the electrogram basics ('basics'). */
+  /** Show a lesson section, the live laboratory ('live'), activation mapping ('mapping') pace mapping ('pacemap'), the electrogram basics ('basics') or the SVT algorithm ('svt'). */
   function showView(id) {
     if (!EP_VIEWS.includes(id)) return;
     view.waves = readFlag('waves');   // the live monitor may have changed the shared choices
     view.ladder = readFlag('ladder');
     view.links = readFlag('links');
-    const wasLab = state.live || state.mapping || state.pacemap || state.basics;
+    const wasLab = state.live || state.mapping || state.pacemap || state.basics || state.svt;
     state.live = id === 'live';
     state.mapping = id === 'mapping';
     state.pacemap = id === 'pacemap';
     state.basics = id === 'basics';
-    const lab = state.live || state.mapping || state.pacemap || state.basics;
+    state.svt = id === 'svt';
+    const lab = state.live || state.mapping || state.pacemap || state.basics || state.svt;
     if (!lab) setSection(id);
     if (lab || wasLab) render();
   }
-  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.basics ? 'basics' : state.section);
+  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.basics ? 'basics' : state.svt ? 'svt' : state.section);
   const notifySection = () => { if (typeof onSection === 'function') onSection(currentView()); };
 
   if (EP_SECTIONS.includes(initial) && initial !== state.section) setSection(initial);
@@ -673,6 +687,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   state.mapping = initial === 'mapping';
   state.pacemap = initial === 'pacemap';
   state.basics = initial === 'basics';
+  state.svt = initial === 'svt';
   render();
   return {
     element: root,
@@ -688,6 +703,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     mapping: mappingPanel,
     pacemap: paceMapPanel,
     basics: basicsPanel,
+    svt: svtPanel,
     /** View state (channels shown, zoom, pan, inspection cursor) and the delivered maneuver, if any. */
     getView: () => ({ channels: current() ? visibleChannels(current()) : [], zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? { ...view.caliper } : null, waves: view.waves, ladder: view.ladder && !ladderLocked(), links: view.links, sim: state.sim ? state.sim.choices : null }),
     getRecording: () => current(),
