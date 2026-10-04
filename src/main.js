@@ -1935,17 +1935,20 @@ function initPanelResizer() {
   const STORAGE_KEY = 'cardia_article_w';
   const MIN_WIDTH = 260;
   const DEFAULT_WIDTH = window.innerWidth >= 1500 ? 350 : 320;
-  // The EP signal module is about the strip: its panel defaults to two thirds
-  // of the workspace (style.css) and keeps its own width while dragged.
-  const signalMode = () => document.documentElement.dataset.appMode === 'ablation';
-  const widthVar = () => (signalMode() ? '--article-w-ep' : '--article-w');
-  const storageKey = () => (signalMode() ? `${STORAGE_KEY}_ep` : STORAGE_KEY);
+  // Panel-first modes (the EP signal strip, the hemodynamics panel) default to
+  // two thirds of the workspace (style.css) and keep their own dragged width.
+  const WIDE_MODES = { ablation: 'ep', cath: 'cath' };
+  const wideSuffix = () => WIDE_MODES[document.documentElement.dataset.appMode] || null;
+  const signalMode = () => wideSuffix() !== null;
+  const widthVar = () => (signalMode() ? `--article-w-${wideSuffix()}` : '--article-w');
+  const storageKey = () => (signalMode() ? `${STORAGE_KEY}_${wideSuffix()}` : STORAGE_KEY);
   const maxWidth = () => {
     const maxAllowed = Math.max(MIN_WIDTH, workspace.clientWidth - 320 - 8);
     return signalMode() ? maxAllowed : Math.min(800, maxAllowed);
   };
 
-  for (const [key, name] of [[STORAGE_KEY, '--article-w'], [`${STORAGE_KEY}_ep`, '--article-w-ep']]) {
+  const storedWidths = [[STORAGE_KEY, '--article-w'], ...Object.values(WIDE_MODES).map(s => [`${STORAGE_KEY}_${s}`, `--article-w-${s}`])];
+  for (const [key, name] of storedWidths) {
     try {
       const parsed = parseInt(localStorage.getItem(key) || '', 10);
       if (!Number.isNaN(parsed) && parsed >= MIN_WIDTH) workspace.style.setProperty(name, `${parsed}px`);
@@ -2006,8 +2009,8 @@ function initPanelResizer() {
   }
 
   function onDoubleClick() {
-    // Back to the default: 320/350 px, or two thirds in the EP signal module.
-    if (signalMode()) workspace.style.removeProperty('--article-w-ep');
+    // Back to the default: 320/350 px, or two thirds in a panel-first mode.
+    if (signalMode()) workspace.style.removeProperty(widthVar());
     else workspace.style.setProperty('--article-w', `${DEFAULT_WIDTH}px`);
     try {
       localStorage.removeItem(storageKey());

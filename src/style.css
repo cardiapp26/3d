@@ -738,6 +738,10 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn] :is(.myo-control,.viewer-top,.xr-buttons){display:none}
   :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice]) body[data-sheet=learn] .view-controls,html[data-app-mode=cath] body[data-sheet=learn] .view-controls{display:none}
   :is(html[data-app-mode=echo],html[data-app-mode=tee],html[data-app-mode=ice],html[data-app-mode=angiography],html[data-app-mode=cath]) body[data-sheet=learn] #viewport{top:0;bottom:0;height:auto}
+  /* Hemodynamics is the subject in catheterization: the Learn sheet drops from
+     under the header and the scene strip moves below it. */
+  html[data-app-mode=cath] body[data-sheet=learn] .workspace>article{top:60px;bottom:auto;border-top:0;border-bottom:1px solid #d8e0d5;border-radius:0 0 14px 14px;box-shadow:0 8px 24px #0000001f}
+  html[data-app-mode=cath] body[data-sheet=learn] .workspace>main{margin-top:var(--echo-sheet-h)}
   .workspace>aside>nav,.workspace>aside>#layers,.workspace>aside>.chamber-tools,.workspace>aside>#defect-tools,.workspace>aside>.aside-bottom{display:none}
   body[data-sheet=modes] .workspace>aside>nav{display:grid}
   body[data-sheet=layers] .workspace>aside>#layers{display:grid}
@@ -1089,14 +1093,16 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .dialog-disclaimer{padding:8px 10px;border-left:3px solid #c0843a;background:#fbf6ee;color:#5c4a2e;font-size:12.5px}
 @media (max-width:640px){.site-disclaimer{display:none}}
 
-/* EP signal module: the strip is the subject, so the scene takes one third
-   and the panel two thirds (the resizer keeps a separate width for it). */
+/* Panel-first modes: in the EP signal module the strip is the subject and in
+   catheterization the hemodynamics panel is, so the scene takes one third and
+   the panel two thirds (the resizer keeps a separate width for each). */
 @media (min-width:1101px){
   :root[data-app-mode=ablation] .workspace{grid-template-columns:minmax(260px,1fr) 8px var(--article-w-ep,calc((100% - 8px) * 2 / 3))}
+  :root[data-app-mode=cath] .workspace{grid-template-columns:minmax(260px,1fr) 8px var(--article-w-cath,calc((100% - 8px) * 2 / 3))}
   /* Narrow scene column: the camera bar scrolls sideways instead of spilling out. */
-  :root[data-app-mode=ablation] .view-controls{left:8px;right:8px;transform:none;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start}
-  :root[data-app-mode=ablation] .view-controls button{flex:0 0 auto}
-  :root[data-app-mode=ablation] .view-controls button kbd{display:none}
+  :root:is([data-app-mode=ablation],[data-app-mode=cath]) .view-controls{left:8px;right:8px;transform:none;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start}
+  :root:is([data-app-mode=ablation],[data-app-mode=cath]) .view-controls button{flex:0 0 auto}
+  :root:is([data-app-mode=ablation],[data-app-mode=cath]) .view-controls button kbd{display:none}
 }
 
 /* Header link to the EPS laboratory page (eps-link.js). */

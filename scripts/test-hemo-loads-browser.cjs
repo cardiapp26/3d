@@ -1,0 +1,60 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const APP = (process.env.APP_URL || 'http://127.0.0.1:5173').replace(/\/$/, '');
+(async () => {
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.goto(APP);
+    await page.waitForSelector('#viewport[data-model-ready=true]');
+    await page.locator('[data-mode=cath]:not([data-mode-step])').dispatchEvent('click');
+    const click = sel => page.locator(sel).first().click();
+    await click('[data-hemo-view=loads]');
+    const share = await page.evaluate(() => document.querySelector('.workspace>article').getBoundingClientRect().width / document.querySelector('.workspace').clientWidth);
+    assert.ok(share > 0.6 && share < 0.7, `desktop cath panel takes two thirds (${share.toFixed(2)})`);
+    const stress = async () => Number(await page.locator('[data-load-stress]').getAttribute('data-load-stress'));
+    assert.equal(await stress(), 15);
+    assert.equal(await page.locator('.load-scene').isVisible(), true, 'animated LV section is shown');
+    assert.equal(await page.locator('.load-muscle').isVisible(), true, 'muscle-strip analogy is shown');
+    assert.equal(await page.locator('.load-formula').getAttribute('open'), null, 'formula starts folded away');
+    const wallFill = () => page.locator('.load-scene circle').nth(0).getAttribute('fill');
+    const phases = new Set();
+    for (let k = 0; k < 8; k++) { phases.add(await page.locator('.load-scene .scene-phase').textContent()); await page.waitForTimeout(450); }
+    assert.ok(phases.size >= 3, `cycle animates through phases (${[...phases].join(', ')})`);
+    assert.match(await wallFill(), /^rgb\(/, 'wall coloured by stress');
+    assert.equal(await page.locator('.hemo-metrics').isVisible(), false, 'scenario metrics hidden in independent explorer');
+    await click('[data-load-case=dilation]'); assert.equal(await stress(), 20);
+    await click('[data-load-mode=afterload]'); assert.equal(await stress(), 125);
+    await click('[data-load-case=dilation]'); assert.equal(await stress(), 175);
+    await click('[data-load-case=thickening]'); assert.ok(Math.abs(await stress() - 83.333333) < .001);
+    await click('.load-reset'); assert.equal(await stress(), 125);
+    const pressure = page.locator('[data-load-param=p]');
+    await pressure.focus(); await page.keyboard.press('ArrowRight');
+    assert.equal(await pressure.inputValue(), '125'); assert.ok(await stress() > 125, 'keyboard changes pressure and calculated stress');
+    await click('[data-load-mode=preload]'); assert.equal(await stress(), 20, 'each phase keeps its own values');
+    await page.locator('#lang-btn').dispatchEvent('click');
+    assert.equal(await stress(), 20, 'language preserves numeric state');
+    assert.equal(await page.locator('[data-hemo-view=loads]').getAttribute('aria-selected'), 'true');
+    assert.match(await page.locator('.load-definition').textContent(), /before contraction/, 'definition switches to English');
+    await click('[data-hemo-view=pv]'); assert.equal(await page.locator('.hemo-metrics').isVisible(), true);
+    await click('[data-hemo-view=loads]'); assert.equal(await stress(), 20, 'tab switching preserves controls');
+    await click('.load-reset'); assert.equal(await stress(), 15);
+    const shots = process.env.SHOT_DIR || '/private/tmp/cardia-loads-shots'; fs.mkdirSync(shots, { recursive: true });
+    await page.locator('.hemo-loads').screenshot({ path: `${shots}/loads-desktop.png` });
+    await page.setViewportSize({ width: 390, height: 844 });
+    // Phone shell: the panel lives in the Learn sheet, closed by default.
+    if (await page.evaluate(() => document.body.dataset.sheet !== 'learn')) await click('.mobile-tab[data-sheet=learn]');
+    const order = await page.evaluate(() => [document.querySelector('.workspace>article').getBoundingClientRect(), document.querySelector('.workspace>main').getBoundingClientRect()].map(r => [r.top, r.bottom]));
+    assert.ok(order[0][1] <= order[1][0] + 1, `phone: hemodynamics sheet sits above the scene strip (${JSON.stringify(order)})`);
+    await page.locator('.hemo-loads').scrollIntoViewIfNeeded();
+    const bounds = await page.locator('.hemo-loads').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
+    assert.ok(bounds.scroll <= bounds.width + 1, 'no explorer horizontal overflow on mobile');
+    await click('[data-load-mode=afterload]'); await click('[data-load-case=pressure]'); assert.equal(await stress(), 187.5);
+    await page.locator('.hemo-loads').screenshot({ path: `${shots}/loads-mobile.png` });
+    assert.deepEqual(errors, []);
+    console.log('PASS: preload/afterload controls, presets, keyboard, language, tabs, mobile and no page errors');
+    console.log(`Screenshots: ${shots}`);
+  } finally { await browser.close(); }
+})().catch(e => { console.error(e); process.exit(1); });
