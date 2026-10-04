@@ -1,5 +1,6 @@
 import { PHARMA_TOPICS } from './pharmacology-data.js';
 import './lipid-pathways.css';
+import { LIPID_SCENE, LIPID_SCENE_LABELS, createLipidFlow } from './lipid-flow.js';
 const text = (tr, en) => ({ tr, en });
 export const LIPID_TARGETS = {
   statin: { site: 'synthesis', flow: text('HMG-CoA redüktaz ⊣ → hepatik kolesterol ↓ → LDL-R ↑ → LDL temizlenmesi ↑', 'HMG-CoA reductase ⊣ → hepatic cholesterol ↓ → LDL-R ↑ → LDL clearance ↑') },
@@ -18,23 +19,10 @@ export function createLipidPathways({ mount, getLang }) {
   let selected = 'statin';
   const items = [...PHARMA_TOPICS.find(topic => topic.id === 'lipids').cards, ...extra];
   const root = document.createElement('section'); root.className = 'lipidlab';
-  root.innerHTML = `<p class="lipidlab-eyebrow"></p><h2></h2><p class="lipidlab-intro"></p><div class="lipidlab-tabs" role="group"></div><div class="lipidlab-layout"><svg viewBox="0 0 700 470" role="img"><title></title>
-    <defs><marker id="lipid-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#799b8c"/></marker></defs>
-    <rect x="20" y="55" width="160" height="280" rx="50" fill="#f2e4d0"/><text x="45" y="87" data-lipid-label="intestine"/>
-    <path d="M280 55Q435 5 626 60Q660 180 490 188Q340 190 280 55Z" fill="#d6ada8"/><text x="385" y="60" data-lipid-label="liver"/>
-    <rect x="210" y="235" width="465" height="90" rx="44" fill="#e6c1b8"/><text x="360" y="350" data-lipid-label="blood"/>
-    <rect x="360" y="395" width="275" height="55" rx="18" fill="#efdfb7"/><text x="395" y="426" data-lipid-label="tissue"/>
-    <g class="lipidlab-arrows"><path d="M178 260H238"/><path d="M390 173V250"/><path d="M420 280H440"/><path data-lipid-conversion="idl-ldl" d="M484 280H511"/><path d="M535 260Q565 204 530 177"/><path d="M372 306Q302 329 291 365"/><path d="M291 408Q310 430 360 422"/><path d="M280 120H160"/></g>
-    <g data-lipid-site="absorption"><rect x="48" y="180" width="114" height="43"/><text x="70" y="207">NPC1L1</text></g>
-    <g data-lipid-site="bile"><rect x="30" y="110" width="130" height="44"/><text x="44" y="139" data-lipid-label="bile"/></g>
-    <g data-lipid-site="synthesis"><rect x="317" y="84" width="214" height="42"/><text x="333" y="112">HMG-CoA</text></g>
-    <g data-lipid-site="receptor"><rect x="529" y="141" width="111" height="42"/><text x="550" y="169">LDL-R</text></g>
-    <g data-lipid-site="vldl"><circle cx="390" cy="280" r="29"/><text x="369" y="286">VLDL</text></g>
-    <circle cx="462" cy="280" r="22" fill="#f7e8b0"/><text x="449" y="286">IDL</text><circle cx="536" cy="280" r="25" fill="#f7e8b0"/><text x="521" y="286">LDL</text>
-    <g data-lipid-site="lpl"><rect x="242" y="365" width="97" height="43"/><text x="271" y="393">LPL</text></g>
-    <text x="212" y="225" data-lipid-label="chylomicron"/><text x="40" y="365" data-lipid-label="feces"/>
+  root.innerHTML = `<p class="lipidlab-eyebrow"></p><h2></h2><p class="lipidlab-intro"></p><div class="lipidlab-tabs" role="group"></div><div class="lipidlab-layout"><svg viewBox="0 0 700 470" role="img"><title></title>${LIPID_SCENE}
     </svg><article aria-live="polite"><h3></h3><p class="lipidlab-examples"></p><strong class="lipidlab-flow"></strong><div data-lipid-field="use"><h4></h4><p></p></div><div data-lipid-field="risk"><h4></h4><p></p></div><div data-lipid-field="monitor"><h4></h4><p></p></div></article></div><p class="lipidlab-limit"></p><details><summary></summary><ul></ul></details>`;
   mount.append(root);
+  const flow = createLipidFlow(root.querySelector('svg'), { reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
   const t = value => value[getLang() === 'en' ? 'en' : 'tr'];
   const buttons = new Map();
   for (const item of items) { const button = document.createElement('button'); button.type = 'button'; button.dataset.lipidDrug = item.id; button.addEventListener('click', () => { selected = item.id; refresh(); }); root.querySelector('.lipidlab-tabs').append(button); buttons.set(item.id, button); }
@@ -49,11 +37,12 @@ export function createLipidPathways({ mount, getLang }) {
     const item = items.find(value => value.id === selected), target = LIPID_TARGETS[selected];
     root.querySelector('.lipidlab-eyebrow').textContent = t(text('LİPOPROTEİN LABORATUVARI', 'LIPOPROTEIN LAB'));
     root.querySelector('h2').textContent = t(text('Lipid yolakları ve ilaç hedefleri', 'Lipid pathways and drug targets'));
-    root.querySelector('.lipidlab-intro').textContent = t(text('İlaç seçin: altın alan moleküler hedefi, kart mekanizma ve güvenlik bağlamını gösterir.', 'Select a drug: gold area marks its molecular target; the card explains mechanism and safety context.'));
+    root.querySelector('.lipidlab-intro').textContent = t(text('İlaç seçin: partiküller lipid yolunu izler; seçilen ilacın etki ettiği adım (altın) yavaşlar, tıkanır veya hızlanır. Hızlar görecelidir.', 'Select a drug: particles trace the lipid pathway; the step the drug acts on (gold) slows, closes or speeds up. Rates are relative.'));
     root.querySelector('[role=group]').setAttribute('aria-label', t(text('Lipid ilaç sınıfları', 'Lipid drug classes')));
     for (const [id, button] of buttons) { button.textContent = t(items.find(value => value.id === id).name); button.setAttribute('aria-pressed', String(id === selected)); }
     root.querySelectorAll('[data-lipid-site]').forEach(node => node.classList.toggle('is-active', node.dataset.lipidSite === target.site));
-    const labels = { intestine: text('Bağırsak', 'Intestine'), liver: text('Karaciğer', 'Liver'), blood: text('Dolaşım', 'Circulation'), tissue: text('Kas / yağ dokusu', 'Muscle / adipose'), bile: text('Safra asidi', 'Bile acids'), chylomicron: text('Şilomikron', 'Chylomicron'), feces: text('Dışkıyla atılım', 'Fecal loss') };
+    flow.setDrug(selected);
+    const labels = { intestine: text('Bağırsak', 'Intestine'), liver: text('Karaciğer', 'Liver'), blood: text('Dolaşım', 'Circulation'), tissue: text('Kas / yağ dokusu', 'Muscle / adipose'), bile: text('Safra asidi', 'Bile acids'), chylomicron: text('Şilomikron', 'Chylomicron'), feces: text('Dışkıyla atılım', 'Fecal loss'), ...LIPID_SCENE_LABELS };
     root.querySelectorAll('[data-lipid-label]').forEach(node => { node.textContent = t(labels[node.dataset.lipidLabel]); });
     root.querySelector('svg title').textContent = `${t(item.name)}: ${t(target.flow)}`;
     root.querySelector('article h3').textContent = t(item.name); root.querySelector('.lipidlab-examples').textContent = t(item.examples); root.querySelector('.lipidlab-flow').textContent = t(target.flow);
