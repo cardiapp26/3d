@@ -60,7 +60,7 @@ export const LIVE_TEXT = {
     sumErp: (x) => `AERP ${x.aerp ?? '< 200'} ms · AV nodal ERP ${x.avnErp ?? 'ölçülmedi'} ms${x.jump ? ` · AH sıçraması S2 ${x.jump}` : ''}${x.echo ? ` · echo S2 ${x.echo}${x.echoSequence ? ` (${ECHO_SEQUENCE.tr[x.echoSequence]})` : ''}` : ''}${x.induced ? ` · taşikardi S2 ${x.induced} (protokol durdu)` : ''}`,
     sumSnrt: (x) => `SNRT ${x.snrt ?? 'yok'} ms · düzeltilmiş SNRT ${x.csnrt ?? 'yok'} ms: ${x.abnormal ? 'uzun (> 550 ms), sinüs düğümü disfonksiyonu ile uyumlu' : 'normal (≤ 550 ms)'}.`,
     protocolRunning: 'Protokol sürüyor; oynatma hızını artırabilirsiniz.',
-    delivered: (txt) => `Verildi: ${txt}`, shocked: 'Senkronize DC şok verildi.', stopped: 'Uyarı durduruldu.'
+    delivered: (txt) => `Verildi: ${txt}`, shocked: 'Senkronize DC şok verildi.', stopped: 'Uyarı durduruldu.', stoppedRhythm: (bpm) => `Uyarı durdu ama ritim sürüyor (~${bpm}/dk): pacing ile başlayan taşikardi kendi kendine devam eder. Sonlandırmak için hızlı pacing (burst, ATP) ya da kardiyoversiyon uygulayın.`
   },
   en: {
     caseLabel: 'Substrate', hidden: '? Hidden case', surprise: 'Hidden case', diagnose: 'Diagnose', hints: 'Hints',
@@ -113,7 +113,7 @@ export const LIVE_TEXT = {
     sumErp: (x) => `AERP ${x.aerp ?? '< 200'} ms · AV nodal ERP ${x.avnErp ?? 'not reached'} ms${x.jump ? ` · AH jump at S2 ${x.jump}` : ''}${x.echo ? ` · echo at S2 ${x.echo}${x.echoSequence ? ` (${ECHO_SEQUENCE.en[x.echoSequence]})` : ''}` : ''}${x.induced ? ` · tachycardia at S2 ${x.induced} (protocol stopped)` : ''}`,
     sumSnrt: (x) => `SNRT ${x.snrt ?? 'n/a'} ms · corrected SNRT ${x.csnrt ?? 'n/a'} ms: ${x.abnormal ? 'prolonged (> 550 ms), consistent with sinus node dysfunction' : 'normal (≤ 550 ms)'}.`,
     protocolRunning: 'Protocol running; you can raise the playback speed.',
-    delivered: (txt) => `Delivered: ${txt}`, shocked: 'Synchronized DC shock delivered.', stopped: 'Pacing stopped.'
+    delivered: (txt) => `Delivered: ${txt}`, shocked: 'Synchronized DC shock delivered.', stopped: 'Pacing stopped.', stoppedRhythm: (bpm) => `Pacing stopped but the rhythm continues (~${bpm}/min): a tachycardia started by pacing runs on by itself. Terminate it with rapid pacing (burst, ATP) or cardioversion.`
   }
 };
 

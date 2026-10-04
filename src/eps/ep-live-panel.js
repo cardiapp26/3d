@@ -20,6 +20,7 @@ import { buildLadder, drawLadder, LADDER_STYLE } from './ep-ladder.js';
 import { stripLinks, shiftLinks } from './ep-strip-links.js';
 
 const PX_PER_MM = 3.78;            // CSS pixels per millimetre (96 dpi)
+const STOP_CHECK_MS = 3000, INDUCED_RR_MS = 520;   // a rate above about 115/min 3 s after pacing stopped
 const SPEEDS = [25, 50, 100];      // sweep, mm/s
 const RATES = [0.25, 0.5, 1, 2, 4]; // playback speed
 const REVIEW_MS = 30000;           // frozen history that can be scrolled back
@@ -269,6 +270,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     heart.stimulate(train);
     const used = extras.filter((x) => x > 0);
     state.status = T().delivered(`${T().sites[siteSel.value]} S1 ${s1} × ${n}${used.length ? ` + ${used.map((x, i) => `S${i + 2} ${x}`).join(', ')}` : ''}`);
+    state.stopCheckAt = null;
     state.pauseAt = kind === 'pace-pause' ? train[train.length - 1].t + 1600 : null;
     render();
   }
@@ -276,8 +278,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   paceBtn.addEventListener('click', () => deliver('pace'));
   burstBtn.addEventListener('click', () => deliver('burst'));
   pausePaceBtn.addEventListener('click', () => deliver('pace-pause'));
-  stopBtn.addEventListener('click', () => { heart.stopPacing(); state.pauseAt = null; state.status = T().stopped; render(); });
-  shockBtn.addEventListener('click', () => { if (!state.running) freeze(false); heart.cardiovert(simNow + 50); state.status = T().shocked; render(); });
+  stopBtn.addEventListener('click', () => { heart.stopPacing(); state.pauseAt = null; state.status = T().stopped; state.stopCheckAt = simNow + STOP_CHECK_MS; render(); });
+  shockBtn.addEventListener('click', () => { if (!state.running) freeze(false); heart.cardiovert(simNow + 50); state.stopCheckAt = null; state.status = T().shocked; render(); });
   runBtn.addEventListener('click', () => freeze(state.running));
   speedSel.addEventListener('change', () => { state.speed = Number(speedSel.value) || 25; render(); });
   review.addEventListener('input', () => { state.back = Number(review.value); state.caliper = noCaliper(); draw(); });
@@ -331,7 +333,18 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     render();
   });
 
+  // Pacing stops at once, but a rhythm it induced (SVT, flutter, AF, VT) goes on by itself: say so
+  // when, a few seconds later, the rate is still fast, so a running tachycardia is not read as pacing.
+  function checkAfterStop() {
+    if (state.stopCheckAt == null || simNow < state.stopCheckAt) return;
+    state.stopCheckAt = null;
+    const iv = liveIntervals(heart.events(simNow - 2500, simNow));
+    const rr = iv.rr ?? iv.pp;
+    if (rr != null && rr < INDUCED_RR_MS) { state.status = T().stoppedRhythm(Math.round(60000 / rr)); render(); }
+  }
+
   function draw() {
+    checkAfterStop();
     const span = spanMs(), end = viewEnd(), from = end - span;
     const raw = heart.events(from - 500, end + 80);   // earlier events: ladder lines entering from the left edge
     const events = Object.fromEntries(Object.entries(raw).map(([ch, list]) => [ch, list.map((e) => ({ ...e, t: e.t - from }))]));

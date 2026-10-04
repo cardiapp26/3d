@@ -93,6 +93,11 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     const iv = await page.evaluate(() => window.epsLab.live.intervals());
     assert.ok(iv.rr > 330 && iv.rr < 370 && iv.va <= 40, `AVNRT induced: ${JSON.stringify(iv)}`);
     assert.match(await page.locator('[data-ep-live-intervals]').textContent(), /VA 3\d ms/);
+    // Stop pacing: the stimuli stop at once, the induced tachycardia goes on and the status says so.
+    await page.locator('[data-ep-live-run]').click();
+    await page.locator('[data-ep-live-action=stop]').click();
+    await page.waitForFunction(() => /ritim sürüyor/.test(document.querySelector('.ep-live-info')?.textContent || ''), null, { timeout: 15000 });
+    await page.locator('[data-ep-live-run]').click();
 
     // Frozen: review slider active; two clicks place vertical calipers.
     assert.equal(await page.locator('[data-ep-live-review]').isDisabled(), false, 'review enabled when frozen');
