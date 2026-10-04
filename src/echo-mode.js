@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTURES } from './echo-anatomy.js';
-import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset, icePath, icePreset } from './echo-views.js';
+import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset, icePath, iceLaPath, icePreset, icePosition } from './echo-views.js';
 import { tteFrame, teeFrame, iceFrame } from './echo-probe.js';
 import { sectionMeshes } from './echo-section.js';
 import { evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE, LANDMARK_OFF_PLANE, STRUCTURE_GROUPS } from './echo-training.js';
@@ -19,7 +19,8 @@ const STRUCTURE_INFO = {
   ...Object.fromEntries(ECHO_STRUCTURES.map(s => [s.id, { color: s.color, label: s.label, name: s.name }])),
   // Group and landmark names used by the view criteria.
   pv: { color: '#b4a7d6', label: { tr: 'pulmoner venler', en: 'pulmonary veins' } },
-  fossa: { color: '#ffffff', label: { tr: 'fossa ovalis', en: 'fossa ovalis' } }
+  fossa: { color: '#ffffff', label: { tr: 'fossa ovalis', en: 'fossa ovalis' } },
+  oesophagus: { color: '#d9a38f', label: { tr: 'özofagus (şematik)', en: 'oesophagus (schematic)' } }
 };
 const MIN_SECTION_INTERVAL = 30;   // ms between sections while the heart beats
 
@@ -43,6 +44,8 @@ function partGroups(parts, lang) {
 export function createEchoMode({ heart, mount, getLang }) {
   let ivcAnchor = null;
   let active = false, anatomy = null, items = null, path = null, icePathData = null, hull = null, chest = null, panel = null, overlay = null;
+  // ICE catheter paths by position: the RA, and the LA after the septal crossing (null without a measured fossa).
+  let icePaths = { ra: null, la: null };
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
@@ -69,6 +72,8 @@ export function createEchoMode({ heart, mount, getLang }) {
         const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(fossa.getWorldQuaternion(new THREE.Quaternion()));
         measured.fossa = { center: fossa.getWorldPosition(new THREE.Vector3()).toArray(), normal: normal.toArray() };
       }
+      // Oesophagus at the LA level (the schematic TEE path behind the posterior wall): an LA ICE landmark.
+      measured.oesophagus = { center: measured.oesophagusPath[2] };
       anatomy = measured;   // assigned last: a failure above leaves the mode uninitialised, not half-built
     } catch (error) {
       console.error('Echo landmarks unavailable:', error);
@@ -84,8 +89,9 @@ export function createEchoMode({ heart, mount, getLang }) {
     chest = heart.withRestPose(() => chestSurface(hull));
     path = teePath(anatomy);
     icePathData = icePath(anatomy);
+    icePaths = { ra: icePathData, la: iceLaPath(anatomy) };
     ivcAnchor = anchorOnRa(anatomy.ivc);
-    overlay = createOverlay(path, chest, icePathData);
+    overlay = createOverlay(path, chest, icePaths, anatomy);
     // Schematic transseptal needle (3D): the same world points as the 2D path.
     needle = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd966, depthTest: false }));
     needle.name = 'Transseptal needle (schematic)';
@@ -111,8 +117,13 @@ export function createEchoMode({ heart, mount, getLang }) {
 
   function currentFrame() {
     if (state.modality === 'tte') return tteFrame(baseOf(state.view), state.tte);
-    if (state.modality === 'ice') return iceFrame(icePathData, state.ice);
+    if (state.modality === 'ice') return iceFrame(icePaths[currentIcePosition()] || icePathData, state.ice);
     return teeFrame(path, state.tee);
+  }
+
+  // The catheter position follows the view (a task's target during a task).
+  function currentIcePosition() {
+    return icePosition(viewById(state.task ? state.task.target : state.view));
   }
 
   function selectView(id, { keepTask = false } = {}) {
@@ -145,24 +156,25 @@ export function createEchoMode({ heart, mount, getLang }) {
     const random = seed === null ? Math.random : seededRandom(seed);
     const views = VIEWS[modality] || TTE_VIEWS;
     // A view whose landmark the atlas lacks can never be met: not a task target.
-    const pool = views.filter(v => v.id !== state.task?.target && (v.landmarks || []).every(id => anatomy[id]));
+    const pool = views.filter(v => v.id !== state.task?.target && (v.landmarks || []).every(id => anatomy[id]) && (modality !== 'ice' || icePaths[icePosition(v)]));
     const target = pool[Math.floor(random() * pool.length)];
     selectView(target.id, { keepTask: true });
     const jitter = (range) => Math.round((random() * 2 - 1) * range);
     // Start from a pose that does not depend on the target: the TTE window's
     // preset (the window is part of the view), the TEE mid-oesophageal
-    // four-chamber level with neutral flexion, the ICE home pose.
+    // four-chamber level with neutral flexion, the ICE home pose of the target's chamber
+    // (rotation offset either way: some targets lie counterclockwise of home).
     const preset = {
       tte: { ...state.tte },
       tee: modality === 'tee' ? { ...teePreset('me4c', anatomy, path), flexion: 0, lateralFlexion: 0 } : null,
-      ice: modality === 'ice' ? { ...icePreset('ice-home') } : null
+      ice: modality === 'ice' ? { ...icePreset(icePosition(target) === 'la' ? 'ice-la-home' : 'ice-home') } : null
     };
     // The image depth is the start pose's, not the target's (TEE views differ: 3, 3.6, 4.8).
     if (modality === 'tee') state.depth = preset.tee.depth;
     // A start that already shows the target is no task: draw again (a few tries).
     for (let attempt = 0; attempt < 8; attempt++) {
       if (modality === 'tte') state.tte = { ...preset.tte, rotation: jitter(45), tilt: jitter(20), rock: jitter(15) };
-      else if (modality === 'ice') state.ice = { ...preset.ice, advance: Math.min(1, Math.max(0, preset.ice.advance + jitter(8) / 100)), rotation: Math.max(0, preset.ice.rotation + Math.abs(jitter(120))), anteroposterior: preset.ice.anteroposterior + jitter(15), leftRight: preset.ice.leftRight + jitter(15) };
+      else if (modality === 'ice') state.ice = { ...preset.ice, advance: Math.min(1, Math.max(0, preset.ice.advance + jitter(8) / 100)), rotation: Math.max(-60, Math.min(270, preset.ice.rotation + jitter(120))), anteroposterior: preset.ice.anteroposterior + jitter(15), leftRight: preset.ice.leftRight + jitter(15) };
       else state.tee = { ...preset.tee, advance: Math.min(1, Math.max(0, preset.tee.advance + jitter(6) / 100)), omega: Math.round(random() * 180), rotation: jitter(30) };
       if (!solved(target)) break;
     }
@@ -215,7 +227,8 @@ export function createEchoMode({ heart, mount, getLang }) {
    */
   function sweep(dir, ms = 1600) {
     if (state.modality !== 'ice' || state.task) return null;
-    const ids = ICE_VIEWS.map(v => v.id);
+    const position = icePosition(viewById(state.view));
+    const ids = ICE_VIEWS.filter(v => icePosition(v) === position).map(v => v.id);
     const next = ids[ids.indexOf(state.view) + dir];
     if (!next) return null;
     const from = { ...state.ice, depth: state.depth };
@@ -259,10 +272,14 @@ export function createEchoMode({ heart, mount, getLang }) {
   }
 
   // Fossa ovalis (measured by the transseptal module) as a point when the cut passes through it.
-  function fossaMarker(frame) {
-    if (!anatomy.fossa || state.task) return [];
-    const p = imagePoint(anatomy.fossa.center, frame, state.sectorAngle, state.depth);
-    return p.off <= LANDMARK_OFF_PLANE ? [{ point: [p.x, p.y], label: { tr: 'Fossa ovalis', en: 'Fossa ovalis' } }] : [];
+  // Measured landmarks a view names (fossa ovalis, oesophagus) as points when the cut passes through them.
+  const LANDMARK_LABELS = { fossa: { tr: 'Fossa ovalis', en: 'Fossa ovalis' }, oesophagus: { tr: 'Özofagus (şematik)', en: 'Oesophagus (schematic)' } };
+  function landmarkMarkers(frame, ids = []) {
+    if (state.task) return [];
+    return ids.filter(id => anatomy[id]?.center).flatMap(id => {
+      const p = imagePoint(anatomy[id].center, frame, state.sectorAngle, state.depth);
+      return p.off <= LANDMARK_OFF_PLANE ? [{ point: [p.x, p.y], label: LANDMARK_LABELS[id] || { tr: id, en: id } }] : [];
+    });
   }
 
   let trailing = null, pendingTick = false;
@@ -294,7 +311,7 @@ export function createEchoMode({ heart, mount, getLang }) {
       structureInfo: STRUCTURE_INFO, frozen: state.frozen, hideLabels: !state.labels,
       // ICE: the view's targets are drawn emphasised (not during a task: that would give the answer).
       highlight: state.modality === 'ice' && !state.task ? view.required.flatMap(id => STRUCTURE_GROUPS[id] || [id]) : [],
-      markers: [...(view.bicaval ? cavalMarker(frame) : []), ...(view.landmarks?.includes('fossa') ? fossaMarker(frame) : [])],
+      markers: [...(view.bicaval ? cavalMarker(frame) : []), ...landmarkMarkers(frame, view.landmarks)],
       paths: transseptalPaths(frame),
       showParts: state.parts
     });
@@ -381,7 +398,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     // lengths: the live (current phase) section; achieved/missing/wrong: the rest-pose judgement.
     getResult: () => lastResult && { achieved: lastResult.result.achieved, missing: lastResult.result.missing, wrong: lastResult.result.wrong, lengths: lastResult.live, stats: lastResult.section.stats, view: lastResult.view.id, frame: lastResult.frame },
     // Measured landmarks and the ICE catheter path (geometry checks in tests).
-    getAnatomy: () => anatomy, getIcePath: () => icePathData,
+    getAnatomy: () => anatomy, getIcePath: (position = 'ra') => icePaths[position] || null,
     sweep, setTransseptal(stage) { state.transseptal = stage; refresh(true); },
     selectView, startTask, isActive: () => active
   };
@@ -400,7 +417,7 @@ function seededRandom(seed) {
 }
 
 /** 3D probe, imaging fan, (TTE) schematic chest surface and (TEE) oesophagus. */
-function createOverlay(path, chest, icePathData) {
+function createOverlay(path, chest, icePaths, anatomy) {
   const group = new THREE.Group();
   group.name = 'Echo probe and imaging plane';
   group.visible = false;
@@ -466,17 +483,30 @@ function createOverlay(path, chest, icePathData) {
     const tte = state.modality === 'tte', ice = state.modality === 'ice';
     tteProbe.visible = tte; chestShell.visible = tte; oesophagus.visible = !tte && !ice; shaft.visible = !tte && !ice; iceCatheterGroup.visible = ice;
     if (ice) {
-      const key = [...frame.tip, ...frame.distal, ...frame.beam].map(v => v.toFixed(3)).join('_');
-      if (key !== iceKey && icePathData && frame.catheter) {
+      const position = frame.position || 'ra';
+      const key = [position, ...frame.tip, ...frame.distal, ...frame.beam].map(v => (typeof v === 'number' ? v.toFixed(3) : v)).join('_');
+      const raPath = icePaths.ra;
+      if (key !== iceKey && raPath && frame.catheter) {
         iceKey = key;
-        const base = new THREE.Vector3(...icePathData.base);
+        const base = new THREE.Vector3(...raPath.base);
         // The shaft comes up the IVC: extend it below the orifice along the measured IVC-SVC axis.
-        const below = base.clone().addScaledVector(new THREE.Vector3(...icePathData.top).sub(base).normalize(), -1.2);
+        const below = base.clone().addScaledVector(new THREE.Vector3(...raPath.top).sub(base).normalize(), -1.2);
         const bend = frame.catheter.map(p => new THREE.Vector3(...p));
+        let shaftPoints;
+        if (position === 'la' && anatomy.fossa) {
+          // Across the septum: up the IVC, through the RA to the fossa, then into the LA to the knuckle.
+          const fossa = new THREE.Vector3(...anatomy.fossa.center), n = new THREE.Vector3(...anatomy.fossa.normal);
+          const laSide = new THREE.Vector3(...icePaths.la.top).sub(fossa);
+          if (n.dot(laSide) < 0) n.negate();
+          const raSide = fossa.clone().addScaledVector(n, -0.35);
+          const beyond = bend[0].clone().sub(fossa).dot(n) > 0.02;
+          shaftPoints = [below, base, raSide, ...(beyond ? [fossa] : []), bend[0]];
+        } else {
+          // Withdrawn far, the knuckle sits below the IVC orifice: then the shaft runs straight to it.
+          shaftPoints = bend[0].y > base.y + 0.05 ? [below, base, bend[0]] : [below, bend[0]];
+        }
         iceCatheter.geometry.dispose();
-        // Withdrawn far, the knuckle sits below the IVC orifice: then the shaft runs straight to it.
-        const shaftPoints = bend[0].y > base.y + 0.05 ? [below, base, bend[0]] : [below, bend[0]];
-        iceCatheter.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(shaftPoints), 30, 0.045, 8, false);
+        iceCatheter.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(shaftPoints), 40, 0.045, 8, false);
         iceDistal.geometry.dispose();
         iceDistal.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bend), 24, 0.047, 8, false);
         // Transducer: along the last part of the distal segment, on the beam side.

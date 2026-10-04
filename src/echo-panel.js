@@ -1,5 +1,5 @@
 import { TTE_LIMITS, TEE_LIMITS, ICE_LIMITS } from './echo-probe.js';
-import { ICE_PRESET_NOTES, TTE_PRESET_NOTES, TEE_PRESET_NOTES } from './echo-views.js';
+import { ICE_PRESET_NOTES, TTE_PRESET_NOTES, TEE_PRESET_NOTES, icePosition } from './echo-views.js';
 import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
 
 /*
@@ -10,11 +10,11 @@ import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
  */
 const SHORT = {
   plax: 'PLAX', 'psax-av': 'PSAX AV', 'psax-mv': 'PSAX MV', 'psax-pm': 'PSAX PM', a4c: 'A4C', a2c: 'A2C', a3c: 'A3C', sc4c: 'SC 4C',
-  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'ME LAX', en: 'ME LAX' }, meavsax: { tr: 'AV SAX', en: 'AV SAX' }, mebicaval: { tr: 'Bikaval', en: 'Bicaval' }, 'ice-home': 'Home', 'ice-rvot': 'RVOT', 'ice-lvot': 'LVOT/AV', 'ice-mitral-laa': { tr: 'MV/LAA', en: 'MV/LAA' }, 'ice-left-pv': { tr: 'Sol PV', en: 'Left PV' }, 'ice-septal-sax': { tr: 'Septum', en: 'Septum' }, 'ice-right-pv': { tr: 'Sağ PV', en: 'Right PV' }, 'ice-svc': 'SVC', melaa: 'ME LAA', mervio: { tr: 'RV G-Ç', en: 'RV I-O' }, melaapv: { tr: 'LAA·PV', en: 'LAA·PV' }, tgsax: 'TG SAX'
+  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'ME LAX', en: 'ME LAX' }, meavsax: { tr: 'AV SAX', en: 'AV SAX' }, mebicaval: { tr: 'Bikaval', en: 'Bicaval' }, 'ice-home': 'Home', 'ice-rvot': 'RVOT', 'ice-lvot': 'LVOT/AV', 'ice-mitral-laa': { tr: 'MV/LAA', en: 'MV/LAA' }, 'ice-left-pv': { tr: 'Sol PV', en: 'Left PV' }, 'ice-septal-sax': { tr: 'Septum', en: 'Septum' }, 'ice-right-pv': { tr: 'Sağ PV', en: 'Right PV' }, 'ice-svc': 'SVC', 'ice-la-home': { tr: 'LA home', en: 'LA home' }, 'ice-la-lspv': 'LSPV', 'ice-la-lipv': 'LIPV', 'ice-la-mitral-isthmus': { tr: 'Mitral istmus', en: 'Mitral isthmus' }, 'ice-la-posterior': { tr: 'Arka duvar', en: 'Post. wall' }, 'ice-la-ripv': 'RIPV', 'ice-la-rspv': { tr: 'RSPV/çatı', en: 'RSPV/roof' }, 'ice-la-aov': { tr: 'AV (LA)', en: 'AV (LA)' }, melaa: 'ME LAA', mervio: { tr: 'RV G-Ç', en: 'RV I-O' }, melaapv: { tr: 'LAA·PV', en: 'LAA·PV' }, tgsax: 'TG SAX'
 };
 const T = {
   tr: {
-    heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm: ucu transdüser yüzüne doğru / ters', iceLr: 'Sol (+) / sağ (−) büküm: düzlem dışına', iceMove: 'Manevra', iceAtlas: 'Atlas notu', icePrev: '◀ Önceki görünüme geç (hareketli)', iceNext: 'Sonraki görünüme geç (hareketli) ▶', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik İVK → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
+    heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceAdvanceLa: 'İlerlet / geri çek (fossadan LA içine)', iceGuideLa: 'Enriquez 2026 sol kalp ICE', icePathLa: 'Şematik fossa → LA kateter yolu', icePosRa: 'Sağ atriyum', icePosLa: 'Sol atriyum (transseptal)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm: ucu transdüser yüzüne doğru / ters', iceLr: 'Sol (+) / sağ (−) büküm: düzlem dışına', iceMove: 'Manevra', iceAtlas: 'Atlas notu', icePrev: '◀ Önceki görünüme geç (hareketli)', iceNext: 'Sonraki görünüme geç (hareketli) ▶', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik İVK → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
     freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', parts: 'LV segmentleri ve yaprakçıklar', partsSeen: 'Kesitte', quickLabels: 'Etiketler', quickParts: 'Segmentler', quickHint: 'Etiketler kapalıyken konturun üzerine gelin: adı görünür', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
     rotation: 'Rotasyon', tilt: 'Tilt (eğim)', rock: 'Rock (düzlem içi)', slideLateral: 'Kaydır (işaret yönü)', slideElevation: 'Kaydır (dik yön)',
     advance: 'İlerlet / geri çek (göreli)', shaft: 'Şaft rotasyonu (sağ +)', flexion: 'Antefleksiyon (+) / retrofleksiyon (−)', lateralFlexion: 'Sol (+) / sağ (−) fleksiyon', omega: 'Multiplan açı',
@@ -23,7 +23,7 @@ const T = {
     limits: 'Geri bildirim dinlenme (diyastol sonu) geometrisinde değerlendirilir; eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Anatomik kesit simülatörüdür: gerçek B-mod, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE probu kalbi saran şematik elipsoid bir göğüs yüzeyine oturur ve kaydırmada bu yüzeyde kalır; kaburga, interkostal aralık ve akustik pencere yoktur, kontroller interkostal yerleşimi temsil etmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; fleksiyon 2 cm uzunluğundaki distal segmenti büker ve uç lümen sınırında durur (temas kuvveti modellenmez); multiplan açısı ucu oynatmaz. Derinlik gerçek santimetre değildir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlas, proje sahibinin özgün tasarımıdır. ICE kateteri İVK\'dan sağ atriyuma uzanan şematik düz bir şaft ve bükülebilir şematik bir distal segmentten oluşur; transdüser bu segmentin ucunda ve görüntü düzlemi aynı poz modelinden hesaplanır. Rotasyon transdüser yüzünü şaft çevresinde çevirir; büküm düğmeleri kateterin kendi yönüne göre (home pozisyonunda ön ve sol) adlandırılır, rotasyondan sonra da kateterle birlikte döner. Damar duvarı ve temas modellenmez. Hazır pozların kaynaktaki manevradan ayrıldığı yerler görünümün yanında belirtilir.'
   },
   en: {
-    heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection: tip toward / away from the transducer face', iceLr: 'Left (+) / right (−) deflection: out of the plane', iceMove: 'Manoeuvre', iceAtlas: 'Atlas note', icePrev: '◀ Move to the previous view (animated)', iceNext: 'Move to the next view (animated) ▶', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
+    heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceAdvanceLa: 'Advance / withdraw (from the fossa into the LA)', iceGuideLa: 'Enriquez 2026 left-heart ICE', icePathLa: 'Schematic fossa → LA catheter path', icePosRa: 'Right atrium', icePosLa: 'Left atrium (transseptal)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection: tip toward / away from the transducer face', iceLr: 'Left (+) / right (−) deflection: out of the plane', iceMove: 'Manoeuvre', iceAtlas: 'Atlas note', icePrev: '◀ Move to the previous view (animated)', iceNext: 'Move to the next view (animated) ▶', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
     freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', parts: 'LV segments and leaflets', partsSeen: 'In the cut', quickLabels: 'Labels', quickParts: 'Segments', quickHint: 'With labels off, point at a contour to see its name', sector: 'Sector width', depth: 'Depth (relative)',
     rotation: 'Rotation', tilt: 'Tilt', rock: 'Rock (in plane)', slideLateral: 'Slide (marker side)', slideElevation: 'Slide (across)',
     advance: 'Advance / withdraw (relative)', shaft: 'Shaft rotation (right +)', flexion: 'Anteflexion (+) / retroflexion (−)', lateralFlexion: 'Left (+) / right (−) flexion', omega: 'Multiplane angle',
@@ -189,18 +189,34 @@ export function createEchoPanel(mount, handlers) {
     for (const s of sliders.values()) s.name.textContent = t[s.labelKey];
   }
   let lastViews = null;
+  // ICE views come in two groups by catheter position: the RA, and the LA after the septal crossing.
   function renderViews(views, current, task) {
     const key = `${views.map(v => v.id).join()}|${lang}`;
     if (key !== lastViews) {
       lastViews = key;
-      viewRow.replaceChildren(...views.map(v => {
+      const t = T[lang];
+      const nodes = [];
+      let group = null;
+      for (const v of views) {
+        const position = v.position || null;
+        if (position && position !== group) {
+          group = position;
+          nodes.push(el('span', 'echo-views-group', { 'data-echo-position': position }));
+          nodes.at(-1).textContent = position === 'la' ? t.icePosLa : t.icePosRa;
+        } else if (!position && views.some(x => x.position) && group !== 'ra') {
+          group = 'ra';
+          const head = el('span', 'echo-views-group', { 'data-echo-position': 'ra' });
+          head.textContent = t.icePosRa;
+          nodes.push(head);
+        }
         const b = el('button', '', { type: 'button', 'data-echo-view': v.id, title: v.title[lang] });
         const short = SHORT[v.id]; b.textContent = typeof short === 'string' ? short : short[lang];
         b.addEventListener('click', () => handlers.onView(v.id));
-        return b;
-      }));
+        nodes.push(b);
+      }
+      viewRow.replaceChildren(...nodes);
     }
-    for (const b of viewRow.children) {
+    for (const b of viewRow.querySelectorAll('[data-echo-view]')) {
       b.setAttribute('aria-pressed', String(!task && b.dataset.echoView === current));
       b.disabled = Boolean(task && !task.done);
     }
@@ -215,6 +231,9 @@ export function createEchoPanel(mount, handlers) {
     modalityButtons.forEach(b => { setText(b, t[b.dataset.echoModality]); b.setAttribute('aria-pressed', String(b.dataset.echoModality === state.modality)); b.disabled = Boolean(state.task && !state.task.done); });
     renderViews(handlers.views[state.modality], state.view, state.task);
     buildProbe(state.modality);
+    // The advance slider names where the catheter moves: in the RA, or from the fossa into the LA.
+    const advanceSlider = sliders.get('advance');
+    if (state.modality === 'ice' && advanceSlider) setText(advanceSlider.name, T[lang][icePosition(view) === 'la' ? 'iceAdvanceLa' : 'iceAdvance']);
     const probe = state[state.modality];
     for (const [key, s] of sliders) {
       const value = key === 'sectorAngle' ? (state.sectorAngle * 180) / Math.PI : key === 'depth' ? state.depth : probe[key];
@@ -229,7 +248,7 @@ export function createEchoPanel(mount, handlers) {
     // Atlas starting angle and the guideline's approximate range are different things.
     // In a task the window, atlas angle and guideline range would give the answer away.
     setText(sub, state.task ? view.source : state.modality === 'tte' ? `${t.window[view.window]} · ${view.source}`
-      : state.modality === 'ice' ? `${t.iceRotationLabel}: ${Math.round(presetOmega ?? 0)}° · ${t.iceGuide}: ${view.ase[lang]} · ${t.icePath} · ${view.source}`
+      : state.modality === 'ice' ? `${t.iceRotationLabel}: ${Math.round(presetOmega ?? 0)}° · ${icePosition(view) === 'la' ? t.iceGuideLa : t.iceGuide}: ${view.ase[lang]} · ${icePosition(view) === 'la' ? t.icePathLa : t.icePath} · ${view.source}`
         : `${t.atlasAngle}: ${Math.round(presetOmega ?? 0)}° · ${t.guideline}: ${view.ase[lang]} · ${t.teePath} · ${view.source}`);
     // In a task the manoeuvre would give the answer away.
     const iceText = state.modality === 'ice' && !state.task && view.motion
@@ -241,7 +260,7 @@ export function createEchoPanel(mount, handlers) {
     const iceFree = state.modality === 'ice' && !state.task;
     iceSweep.hidden = !iceFree;
     setText(sweepPrev, t.icePrev); setText(sweepNext, t.iceNext);
-    const order = handlers.views.ice.map(v => v.id), at = order.indexOf(view.id);
+    const order = handlers.views.ice.filter(v => icePosition(v) === icePosition(view)).map(v => v.id), at = order.indexOf(view.id);
     sweepPrev.disabled = at <= 0; sweepNext.disabled = at < 0 || at >= order.length - 1;
     // Transseptal stages: only on the septal working view.
     const ts = TRANSSEPTAL_TEXT[lang];

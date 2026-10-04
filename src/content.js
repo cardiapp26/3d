@@ -1461,7 +1461,7 @@ export const rawLessons = {
   },
   ice: {
     tr: {
-      title: 'İntrakardiyak eko (ICE) • sağ atriyumdan anatomik kesit',
+      title: 'İntrakardiyak eko (ICE) • sağ ve sol atriyumdan anatomik kesit',
       intro: 'Phased-array ICE kateteri femoral venden İVK yoluyla sağ atriyumun ortasına yerleşir; yandan bakan sektör kateterin uzun eksenini içerir. Saat yönünde rotasyon home görünümünden başlayarak sırasıyla daha posterior yapıları getirir. Kesit, atımın o anki fazındaki geometriden hesaplanır; prob ayarları ve görünümler atlasta otomatik kalibre edilmiştir, uzman onayı yoktur. Gerçek B-mod veya Doppler değildir.',
       steps: [
         {
@@ -1486,7 +1486,7 @@ export const rawLessons = {
         },
         {
           title: 'Septal kısa eksen: transseptal çalışma görünümü',
-          text: 'Posterior ve sağa büküm ile ek saat yönü rotasyon (100–150°) septal kısa ekseni verir: yakında RA, ortada interatriyal septum ve fossa ovalis, uzakta LA, septumun önünde aort kökü. Transseptal ponksiyon ve ASD/PFO kapatmanın çalışma görünümüdür. Aortu içeren ön düzlemden kaçının; ASD kapatmada 6 sektörün tamamında en az 5 mm kenar aranır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          text: 'Posterior ve sağa büküm ile ek saat yönü rotasyon (100–150°) septal kısa ekseni verir: yakında RA, ortada interatriyal septum ve fossa ovalis, uzakta LA, septumun önünde aort kökü. Transseptal ponksiyon ve ASD/PFO kapatmanın çalışma görünümüdür. Aort kökü septumun önünde görülür; ponksiyon için ondan uzak, aortu içermeyen daha posterior bir nokta seçilir; ASD kapatmada 6 sektörün tamamında en az 5 mm kenar aranır (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
         },
         {
@@ -1505,6 +1505,36 @@ export const rawLessons = {
           landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-svc' }
         },
         {
+          title: 'Sol atriyuma geçiş ve LA home görünümü',
+          text: 'ICE kateteri septumu iki yolla geçer: ayrı bir transseptal ponksiyonla 8,5 F SL1 kılıf içinden 8 F kateterle (9 F ViewFlex standart 8,5 F kılıfa girmez, Agilis kılıf ICE kateterinden uzundur) ya da kılıfsız olarak: ponksiyondan sonra kılavuz tel sol pulmoner vende bırakılır, kılıf ve dilatatör RA\'ya çekilir, ICE kateteri teli izleyerek LA\'ya ilerletilir. Floroskopisiz geçişte transseptal görünümde tel fossadayken kateter hafif ilerletilip anteriora bükülerek ucu telin uzun eksenine hizalanır ve nazikçe itilir. LA ortasında transdüser LAA\'ya bakınca LA home görünümü gelir: LAA ve mitral anulus panoramik görülür; transseptal yere göre hafif posterior büküm gerekebilir. LAA trombüsü sağdan dışlanmış olsa da burada yeniden dışlanır; skarlı veya önceden ablasyon yapılmış LA\'da sağdan görülmeyen küçük duvar trombüsleri de LA\'dan görülebilir. LAA kapatmada home görünümü TEE 90° görünümüne, LSPV görünümü 45°\'ye, supramitral görünüm 135°\'ye ve RAO kaudal floroskopiye karşılık gelir; ostium ve iniş bölgesi üç görünümde de ölçülür (Enriquez ve ark., Heart Rhythm 2026). Modeldeki LA yolu fossadan LA merkezine uzanan şematik bir eksendir; kılıf ve tel çizilmez.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-home' }
+        },
+        {
+          title: 'LA turu: sol pulmoner venler',
+          text: 'Home\'dan saat yönünde çevirince sol venler gelir: sağa bükümle sol üst pulmoner ven, LAA\'dan Coumadin (sol lateral) sırtıyla ayrılır; sola bükümle sol alt ven (LIPV düğmesi). Sağdan ICE venleri çoğunlukla kısa eksende gösterir; LA\'dan venler uzun eksende görülür, ablasyon için daha elverişlidir (Enriquez ve ark., Heart Rhythm 2026). Coumadin sırtı modelde ayrı bir yapı olarak puanlanmaz; LSPV ile LAA arasındaki dar alan olarak görülür.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-lspv' }
+        },
+        {
+          title: 'LA turu: mitral istmus',
+          text: 'Posterior bükümle mitral istmus görünür ve sağa-sola bükümle taranır: LIPV ağzından lateral mitral anulusa uzanır; anulus tarafında büyük kardiyak ven (CS) ve daha küçük sirkumfleks arter seçilir. Bu görünüm istmusun kalınlığını ve damar ilişkisini gösterir: koroner ven içinden ablasyonu yönlendirir ve pulsed field ile doğrudan sirkumfleks üzerine uygulamadan kaçınmaya yardım eder; bazen özofagus da lateral LA boyunca görülür (Enriquez ve ark., Heart Rhythm 2026). Modelde sirkumfleks arter kesite girmez; koroner sinüs görülebilir. Bu atlasta mitral kapak kesitte kalır ama atımla kesit değişir: geri bildirim diyastol sonu geometrisindedir.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-mitral-isthmus' }
+        },
+        {
+          title: 'Posterior duvar ve özofagus',
+          text: 'Kateteri hafif geri çekip saat yönünde devam edin: LA posterior duvarı ve arkasında, omurga ile inen aort arasında özofagus görülür; çoğu hastada sol venlerin antrumuna daha yakındır. Duvar kalınlığı RF dozunu ayarlamaya yardım eder; duvarın arkasındaki karanlık boşluk oblik sinüstür, perikardiyal sıvıda belirginleşir (Enriquez ve ark., Heart Rhythm 2026). Özofagus modelde LA seviyesinde şematik bir noktadır.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-posterior' }
+        },
+        {
+          title: 'Sağ venler ve LA çatısı',
+          text: 'Saat yönünde devam: sağ alt ven (RIPV düğmesi; gerekirse anterior büküm), sonra sağ üst ven ve LA çatısı; Bachmann demetinin septal tarafı burada tanınır. Sağ frenik sinir çoğu hastada RSPV antrumu boyunca parlak (hiperekojen), ortası bazen koyu bir bant olarak görülür; ablasyon kateterinin yakınında yüksek çıkışlı pacing frenik yakalama verir. Daha saat yönü SVC ve PA\'yı getirir (Enriquez ve ark., Heart Rhythm 2026). Bachmann demeti ve frenik sinir modelde puanlanmaz; bu atlasta RSPV, RIPV\'den önce ve anterior bükümle gelir (atlas notu).',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-rspv' }
+        },
+        {
+          title: 'Aort kapağı kısa ekseni ve LA ICE\'nin yeri',
+          text: 'Çıkan aort ve aort kapağının kısa ekseni: NCC anterior LA\'nın karşısında, RCC RV çıkış yoluna, LCC ve sol ana koroner LAA\'ya komşu; LAA kapatmada home\'dan biraz saat yönü tersine TEE 0° benzeri görüntü verir. LA\'dan ICE ayrıca kateter-doku temasını (kontakt kuvveti ölçmeyen pulsed field ve kriyobalon için önemli) ve lezyon oluşumunu (ekojenite artışı, şişlik) izler. Sınırlamalar: mevcut ponksiyondan geçiş daha büyük rezidüel ASD bırakabilir, ikinci ponksiyon ek risk getirir; septuma yakın panoramik görüntü kaybolur; öğrenme eğrisi vardır. Mitral kapaktan LV\'ye geçerek inferior duvar ve posteromedial papiller kas, septum uzun ekseni ve lateral duvar skarı da görüntülenir; bu LV görünümleri modelde henüz yoktur (Enriquez ve ark., Heart Rhythm 2026). Kapakçıklar modelde tek aort kapağı olarak puanlanır.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-aov' }
+        },
+        {
           title: 'Görev: ICE görünümünü bulun',
           text: 'Kateter hedeften bağımsız olarak home pozunun yakınında başlar: ilerletme, rotasyon ve bükümler rastgele kaydırılmıştır. İlerletme, saat yönü rotasyon ve iki büküm ile hedefi bulun; geri bildirim kesitte görünmesi gereken ve görünmemesi gereken yapılara bakar.',
           landmark: 'ra', view: 'anterior', echo: { modality: 'ice', task: true }
@@ -1517,7 +1547,7 @@ export const rawLessons = {
       ]
     },
     en: {
-      title: 'Intracardiac echo (ICE) • anatomical section from the right atrium',
+      title: 'Intracardiac echo (ICE) • anatomical section from the right and left atrium',
       intro: 'The phased-array ICE catheter reaches the mid right atrium from the femoral vein through the IVC; its side-looking sector contains the catheter long axis. Clockwise rotation from the home view brings progressively more posterior structures into view. The section is computed from the geometry at the current phase of the beat; probe settings and views were calibrated automatically on this atlas without expert review. It is not real B-mode or Doppler.',
       steps: [
         {
@@ -1542,7 +1572,7 @@ export const rawLessons = {
         },
         {
           title: 'Septal short axis: the transseptal working view',
-          text: 'Posterior and rightward deflection with extra clockwise rotation (100–150°) gives the septal short axis: the RA near, the interatrial septum and fossa ovalis in the middle, the LA far, the aortic root in front of the septum. It is the working view for transseptal puncture and ASD/PFO closure. Avoid the anterior plane that contains the aorta; for ASD closure, rims of at least 5 mm are sought in all 6 sectors (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
+          text: 'Posterior and rightward deflection with extra clockwise rotation (100–150°) gives the septal short axis: the RA near, the interatrial septum and fossa ovalis in the middle, the LA far, the aortic root in front of the septum. It is the working view for transseptal puncture and ASD/PFO closure. The aortic root shows in front of the septum; the puncture site is chosen away from it, posterior to the plane that contains the aorta; for ASD closure, rims of at least 5 mm are sought in all 6 sectors (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020).',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-septal-sax' }
         },
         {
@@ -1559,6 +1589,36 @@ export const rawLessons = {
           title: 'SVC and the RA junction',
           text: 'Clockwise 210–240° with a slight advance: the RA opening into the SVC, the LA behind. From the SVC even the aortic arch branches can be seen (Bortnick, Halaby, Silvestry, Herrmann; PCR-EAPCI, 2020). On this atlas the catheter axis points straight at the SVC, so the preset uses a strong posterior deflection unlike the source; the view states the difference.',
           landmark: 'ra', view: 'anterior', echo: { modality: 'ice', view: 'ice-svc' }
+        },
+        {
+          title: 'Into the left atrium and the LA home view',
+          text: 'The ICE catheter crosses the septum in two ways: through a separate transseptal puncture with an 8F catheter in an 8.5F SL1 sheath (the 9F ViewFlex does not fit a standard 8.5F sheath, and an Agilis sheath is longer than the ICE catheter), or sheath-less: after the puncture the guidewire is left in a left pulmonary vein, the sheath and dilator are pulled back to the RA, and the ICE catheter follows the wire into the LA. Without fluoroscopy, with the wire across the fossa on the transseptal view, the catheter is advanced slightly and deflected anteriorly to align its tip with the wire\'s long axis, then pushed gently across. In the mid LA with the transducer facing the LAA comes the LA home view: a panoramic view of the LAA and the mitral annulus; some posterior tilt may be needed depending on the puncture site. Exclude LAA thrombus here again even if it was ruled out from the right; small wall-adherent thrombi in a scarred or previously ablated LA, not seen from the right, can also show from the LA. For LAA closure the home view corresponds to the 90° TEE view, the LSPV view to 45° and the supramitral view to 135° and the RAO caudal fluoroscopic view; measure the ostium and landing zone in all three (Enriquez et al., Heart Rhythm 2026). The model\'s LA path is a schematic axis from the fossa through the LA centre; the sheath and wire are not drawn.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-home' }
+        },
+        {
+          title: 'LA tour: left pulmonary veins',
+          text: 'Clockwise from home the left veins come in: with right tilt the left superior vein, separated from the LAA by the Coumadin (left lateral) ridge; with left tilt the left inferior vein (LIPV button). ICE from the right mostly shows the veins in short axis; from the LA they show in long axis, which suits ablation better (Enriquez et al., Heart Rhythm 2026). The Coumadin ridge is not scored as a separate structure; it shows as the narrow strip between the LSPV and the LAA.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-lspv' }
+        },
+        {
+          title: 'LA tour: mitral isthmus',
+          text: 'With posterior flexion the mitral isthmus appears and is scanned with right and left tilt: from the LIPV ostium to the lateral mitral annulus, with the great cardiac vein (CS) and the smaller circumflex artery on the annular side. The view shows the isthmus thickness and its vessel relations: it guides ablation from within the coronary vein and helps avoid applying pulsed field energy right on the circumflex; sometimes the oesophagus also shows along the lateral LA (Enriquez et al., Heart Rhythm 2026). The circumflex artery is not part of the model\'s section; the coronary sinus can be. On this atlas the mitral valve stays in the cut, but the beat changes the section: the feedback uses end-diastolic geometry.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-mitral-isthmus' }
+        },
+        {
+          title: 'Posterior wall and oesophagus',
+          text: 'Withdraw slightly and continue clockwise: the LA posterior wall and, behind it between the spine and the descending aorta, the oesophagus, closer to the left venous antrum in most patients. The wall thickness helps titrate RF energy; the dark space behind the wall is the oblique sinus, clearer with pericardial fluid (Enriquez et al., Heart Rhythm 2026). The oesophagus is a schematic point at the LA level in the model.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-posterior' }
+        },
+        {
+          title: 'Right veins and the LA roof',
+          text: 'Continue clockwise: the right inferior vein (RIPV button; anterior flexion if needed), then the right superior vein and the LA roof, where the septal aspect of Bachmann\'s bundle shows. In most patients the right phrenic nerve is a bright (hyperechoic) band, sometimes with a dark centre, along the RSPV antrum; high-output pacing near the ablation catheter captures it. More clockwise brings the SVC and PA (Enriquez et al., Heart Rhythm 2026). Bachmann\'s bundle and the phrenic nerve are not scored; on this atlas the RSPV comes before the RIPV, with anterior tilt (atlas note).',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-rspv' }
+        },
+        {
+          title: 'Aortic valve short axis and the place of LA ICE',
+          text: 'The ascending aorta and the aortic valve in short axis: the NCC opposite the anterior LA, the RCC next to the RV outflow tract, the LCC and left main next to the LAA; in LAA closure a little counterclockwise from home gives a TEE 0°-like image. ICE from the LA also shows catheter-tissue contact (important for pulsed field and cryoballoon, which do not measure contact force) and lesion formation (increased echogenicity, swelling). Limitations: crossing through the existing puncture may leave a larger residual ASD, a second puncture adds risk; the panoramic view near the septum is lost; there is a learning curve. Crossing the mitral valve into the LV shows the inferior wall and the posteromedial papillary muscle, the septum in long axis and lateral wall scar; these LV views are not in the model yet (Enriquez et al., Heart Rhythm 2026). The cusps are scored as one aortic valve in the model.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-aov' }
         },
         {
           title: 'Task: find the ICE view',

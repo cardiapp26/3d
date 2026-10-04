@@ -879,6 +879,7 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .echo-modality button[aria-pressed=true]{background:#244f43;color:#fff;font-weight:600}
 .echo-views{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:3px;margin-bottom:6px}
 .echo-views button,.echo-task-row button{border:1px solid #cbd7c5;background:transparent;color:#3f5c4b;border-radius:3px;padding:2px 4px;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.echo-views-group{grid-column:1/-1;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5f7365;margin:4px 0 0}
 .echo-views button[aria-pressed=true]{background:#0b0f0e;color:#39e8ad;border-color:#0b0f0e}
 .echo-views button:disabled,.echo-modality button:disabled{opacity:.45;cursor:not-allowed}
 .echo-title{font-size:12px;margin:4px 0}

@@ -31,7 +31,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForFunction(() => window.cardiaEcho?.getResult());
 
     // Every starting view at its preset.
-    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'mervio', 'melaapv', 'tgsax'], ice: ['ice-home', 'ice-rvot', 'ice-lvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc'] };
+    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'mervio', 'melaapv', 'tgsax'], ice: ['ice-home', 'ice-rvot', 'ice-lvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc', 'ice-la-home', 'ice-la-lspv', 'ice-la-lipv', 'ice-la-mitral-isthmus', 'ice-la-posterior', 'ice-la-ripv', 'ice-la-rspv', 'ice-la-aov'] };
     for (const [modality, ids] of Object.entries(views)) {
       await useModality(page, modality);
       assert.equal(await page.locator('[data-echo-view]').count(), ids.length, `${modality}: ${ids.length} views`);

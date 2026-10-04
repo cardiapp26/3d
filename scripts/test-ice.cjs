@@ -53,11 +53,12 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
       const { echoItems } = await import('/src/echo-anatomy.js');
       const { sectionMeshes } = await import('/src/echo-section.js');
       const { evaluateView } = await import('/src/echo-training.js');
-      const h = window.heart, A = window.cardiaEcho.getAnatomy(), path = window.cardiaEcho.getIcePath();
+      const h = window.heart, A = window.cardiaEcho.getAnatomy();
+      const pathOf = (id) => window.cardiaEcho.getIcePath(V.icePosition(V.viewById(id)));
       const gm = (id) => h.getMeshes(id).filter((m) => !m.userData.micro);
       const items = h.withRestPose(() => echoItems(gm));
       const judge = (viewId, poseId, phase = null) => {
-        const p = V.icePreset(poseId), frame = iceFrame(path, p);
+        const p = V.icePreset(poseId), frame = iceFrame(pathOf(poseId), p);
         const ctx = { sectorAngle: V.SECTOR_ANGLE, depth: p.depth, frame, anatomy: A, label: (x) => x, lang: 'en' };
         if (phase === null) return h.withRestPose(() => evaluateView(sectionMeshes(items, frame), V.viewById(viewId), ctx));
         h.seekCycle(phase);
@@ -65,7 +66,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
       };
       // Every preset at rest and at four phases of the beat.
       const out = {};
-      for (const v of V.ICE_VIEWS) out[v.id] = [null, 0.1, 0.4, 0.55, 0.75].every((ph) => judge(v.id, v.id, ph).achieved);
+      for (const v of V.ICE_VIEWS) out[v.id] = [null, 0, 0.1, 0.4, 0.55, 0.75, 0.88].every((ph) => judge(v.id, v.id, ph).achieved);
       h.seekCycle(0);
       const lAtR = judge('ice-left-pv', 'ice-right-pv'), rAtL = judge('ice-right-pv', 'ice-left-pv');
       return {
@@ -77,9 +78,15 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
         septalAtLeftPv: judge('ice-septal-sax', 'ice-left-pv'),
         rvotAtHome: judge('ice-rvot', 'ice-home'),
         svcAtRightPv: judge('ice-svc', 'ice-right-pv'),
+        // LA tour: left and right veins keep their identity, the LAA view needs the LAA, the posterior wall the oesophagus.
+        laLeftAtRight: judge('ice-la-lspv', 'ice-la-rspv').achieved, laRightAtLeft: judge('ice-la-rspv', 'ice-la-lspv').achieved,
+        laHomeAtPosterior: judge('ice-la-home', 'ice-la-posterior').achieved, laPosteriorAtHome: judge('ice-la-posterior', 'ice-la-home'),
+        laPath: window.cardiaEcho.getIcePath('la'), raPath: window.cardiaEcho.getIcePath('ra'),
+        laTip: iceFrame(window.cardiaEcho.getIcePath('la'), V.icePreset('ice-la-home')).tip, laCentre: A.la, fossa: A.fossa.center,
         parity: V.ICE_VIEWS.every((v) => v.motion?.tr && v.motion?.en && v.ase?.tr && v.ase?.en && v.title?.tr && v.title?.en)
           && Object.values(V.ICE_PRESET_NOTES).every((n) => n.tr && n.en),
         septalLandmark: judge('ice-septal-sax', 'ice-septal-sax').landmarks,
+        lvotOrder: V.viewById('ice-lvot').order,
         septalRequires: V.viewById('ice-septal-sax'), rvot: V.viewById('ice-rvot').required, laaView: V.viewById('ice-mitral-laa').required
       };
     });
@@ -95,10 +102,19 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.ok(cross.svcAtRightPv.missing.includes('svc') || cross.svcAtRightPv.relations.some((r) => !r.ok) || cross.svcAtRightPv.wrong.length, 'SVC view fails on the SVC');
     assert.equal(cross.parity, true, 'every ICE view and atlas note has TR and EN text');
     assert.ok(cross.laaView.includes('laa') && cross.rvot.includes('pulmonary-valve'));
+    assert.deepEqual(cross.lvotOrder, [['aortic-valve', 'lv']], 'LVOT view scores AV near, LV far');
     assert.equal(cross.septalAtMitral.achieved, false, 'septal working view needs the septal relation');
     assert.equal(cross.septalAtLeftPv.achieved, false);
     assert.equal(cross.rvotAtHome.achieved, false, 'RVOT needs the pulmonary valve');
     assert.equal(cross.svcAtRightPv.achieved, false);
+    assert.equal(cross.laLeftAtRight, false, 'LA ICE: the LSPV view is not met at the RSPV pose');
+    assert.equal(cross.laRightAtLeft, false, 'LA ICE: the RSPV view is not met at the LSPV pose');
+    assert.equal(cross.laHomeAtPosterior, false, 'LA home needs the LAA and the mitral valve');
+    assert.ok(cross.laPosteriorAtHome.landmarks.some((l) => l.id === 'oesophagus'), 'the posterior wall view checks the oesophagus');
+    assert.ok(cross.laPath && cross.laPath.position === 'la' && cross.raPath.position !== 'la', 'two catheter positions');
+    const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+    assert.ok(dist(cross.laPath.base, cross.fossa) < 1e-9, 'the LA path starts at the fossa (septal crossing)');
+    assert.ok(dist(cross.laTip, cross.laCentre) < dist(cross.fossa, cross.laCentre), 'the LA home tip sits inside the LA, past the fossa');
     assert.equal(cross.septalLandmark[0].id, 'fossa'); assert.equal(cross.septalLandmark[0].ok, true, 'fossa ovalis in the septal preset');
     assert.deepEqual(cross.septalRequires.order, [['ra', 'la']], 'RA near field, LA far field');
     // The septal preset follows the source manoeuvre: posterior and right deflection, clockwise 100-150.
@@ -122,6 +138,18 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.equal(afterSweep.view, 'ice-rvot');
     const rvot = await page.evaluate(async () => (await import('/src/echo-views.js')).icePreset('ice-rvot'));
     assert.equal(afterSweep.ice.rotation, rvot.rotation, 'sweep ends on the preset');
+    // The sweep stays within the catheter position: from the last RA view there is no next view, the LA tour has its own order.
+    await page.evaluate(() => window.cardiaEcho.selectView('ice-svc'));
+    assert.equal(await page.locator('[data-echo-sweep="1"]').isDisabled(), true, 'the RA sequence ends at the SVC view');
+    await page.evaluate(() => window.cardiaEcho.selectView('ice-la-home'));
+    assert.equal(await page.locator('[data-echo-sweep="-1"]').isDisabled(), true, 'the LA tour starts at the LA home view');
+    await page.locator('[data-echo-sweep="1"]').click();
+    await page.waitForTimeout(2200);
+    assert.equal(await page.evaluate(() => window.cardiaEcho.getState().view), 'ice-la-lspv', 'LA tour: home, then the left superior vein');
+    assert.match(await page.locator('.echo-views').textContent(), /Sol atriyum \(transseptal\)/, 'the LA views have their own group');
+    const catheter = await page.evaluate(() => { const g = window.heart.scene.getObjectByName('ICE catheter (schematic)'); return g?.visible; });
+    assert.equal(catheter, true, 'the catheter is drawn across the septum');
+    assert.match(await page.locator('.echo-sub').textContent(), /Enriquez 2026.*fossa → LA/, 'LA views name their source and path in the header');
 
     // 5. Transseptal stages: only on the septal view; needle in 3D and paths in 2D.
     await page.evaluate(() => window.cardiaEcho.selectView('ice-septal-sax'));
@@ -147,7 +175,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
       return { tr: views('tr'), en: views('en') };
     });
     assert.deepEqual(lesson.tr, lesson.en, 'TR and EN lesson steps open the same views');
-    for (const id of ['ice-home', 'ice-rvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc']) assert.ok(lesson.tr.includes(id), `lesson step for ${id}`);
+    for (const id of ['ice-home', 'ice-rvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc', 'ice-la-home', 'ice-la-lspv', 'ice-la-mitral-isthmus', 'ice-la-posterior', 'ice-la-rspv', 'ice-la-aov']) assert.ok(lesson.tr.includes(id), `lesson step for ${id}`);
 
     // 7. Narrow screen: no horizontal overflow with the ICE panel.
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

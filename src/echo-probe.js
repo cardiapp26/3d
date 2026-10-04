@@ -246,5 +246,5 @@ export function iceFrame(path, state = {}) {
     catheter.push(point);
   }
   const tip = point;
-  return { ...imageFrame(add(tip, beam, 0.04), beam, distal), tip, shaft: axis, knuckle, distal, catheter };
+  return { ...imageFrame(add(tip, beam, 0.04), beam, distal), tip, shaft: axis, knuckle, distal, catheter, position: path.position || 'ra' };
 }
