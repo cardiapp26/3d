@@ -1,0 +1,40 @@
+.phys-guide,.phys-currents{display:grid;gap:12px;padding:14px;background:#fafbf5;border:1px solid #d5dfcf;border-radius:10px;color:#31483c;font-size:12px;line-height:1.6;min-width:0}
+.phys-guide h3,.phys-currents h3{margin:0;font-size:19px;line-height:1.25}
+.phys-guide p,.phys-currents p{margin:0}
+.phys-guide [hidden],.phys-currents[hidden]{display:none}
+.phys-tabs,.phys-controls{display:flex;flex-wrap:wrap;gap:6px}
+.phys-guide button{border:1px solid #c3d0bd;background:#fff;border-radius:5px;padding:7px 10px;min-height:36px;cursor:pointer;font:inherit;color:#315d4d;max-width:100%}
+.phys-guide button[aria-pressed=true]{background:#244f43;color:#fff;border-color:#244f43}
+.phys-guide button:focus-visible,.phys-guide input:focus-visible{outline:2px solid #327ca0;outline-offset:2px}
+.phys-guide svg,.phys-currents svg{width:100%;height:auto;display:block;min-width:0;overflow:visible;font:12px sans-serif}
+.phys-guide svg,.phys-currents svg{fill:#425b4c}
+.phys-line{fill:none;stroke-width:2.4;stroke-linejoin:round}
+.phys-grid{fill:none;stroke:#cedbcd;stroke-width:1}
+.phys-marker{fill:#c65d4e;stroke:#fff;stroke-width:1.5}
+.phys-phase-band{fill:#e4b459;opacity:.18}
+.phys-box{fill:#edf0e4;stroke:#bccbbe;stroke-width:1.5}
+.phys-box.is-active{fill:#f3d5a0;stroke:#b88436;stroke-width:3}
+.phys-arrow{fill:none;stroke:#aabdaf;stroke-width:3;stroke-linejoin:round}
+.phys-arrow.is-active{stroke:#b15d46;stroke-width:4}
+.phys-membrane{fill:none;stroke:#cc9475;stroke-width:9}
+.phys-fibrous{fill:#e1b8ac;stroke:#c1806f;stroke-dasharray:5 3}
+.phys-ew{fill:#ecc29b;fill-opacity:.45;stroke:#c95a61;stroke-width:2}
+.phys-pe{fill:#b7ca99;fill-opacity:.5;stroke:#829368;stroke-width:1}
+.phys-focus{fill:none;stroke:#e49930;stroke-width:6}
+.phys-lane{fill:none;stroke:#cad7c6}
+.phys-event{fill:none;stroke:#819585;stroke-width:1;stroke-dasharray:4 4}
+.phys-cursor{fill:none;stroke:#bd5c49;stroke-width:2}
+.phys-sound{fill:none;stroke:#495e4b;stroke-width:2}
+.phys-optional{fill:none;stroke:#889983;stroke-width:1;stroke-dasharray:2 2}
+.phys-slider{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;width:100%;min-width:0;margin-top:4px}
+.phys-slider input{grid-column:1/-1;width:100%;min-width:0;accent-color:#315d4d}
+.phys-slider output{font-weight:700;font-variant-numeric:tabular-nums}
+.phys-output{padding:8px 10px;background:#e6efdf;border-left:3px solid #51734c;font-weight:600;overflow-wrap:anywhere}
+.phys-guide .phys-caption{font-size:11px;color:#718267}
+.phys-extra{padding-top:8px;border-top:1px solid #d5dfcf;font-size:11px}
+.phys-caveat,.phys-sources{font-size:10px;color:#7a8a72}
+.phys-sources summary{cursor:pointer;font-weight:600}
+.phys-sources a{display:block;color:#447663}
+.pharmaep>.phys-guide,.pharmaep>.phys-currents{margin:18px 0}
+.hemo-tabs{flex-wrap:wrap;width:auto}
+@media(max-width:600px){.phys-guide,.phys-currents{padding:10px}.phys-guide h3,.phys-currents h3{font-size:17px}.phys-guide button{font-size:11px}}

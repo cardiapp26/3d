@@ -153,3 +153,5 @@ Only content-hashed files under `/assets/` get one-year immutable caching. HTML,
 Audit findings and remaining gates: [distribution review](research/DAGITIM_DENETIMI_2026-10-01.md).
 
 Farmakoloji Diüretikler: `/pharmacology/#/diuretics`, etkileşimli nefron, altı ilaç sınıfı, kullanım/yan etki ve serum K⁺/idrar Ca²⁺/asit-baz karşılaştırması. Kaynak ve düzeltmeler bileşenin kaynak bölümünde.
+
+Fizyoloji görselleri: Farmakoloji → Antiaritmikler altında ventriküler iyon akımları, kalsiyum döngüsü ve AV iletim; Hemodinami → Fizyoloji altında pompa eğrileri, P-V fazları/enerji ve Wiggers. Etkileşimli çizimler TR/EN destekler. Eğriler öğretim amaçlıdır; görsellerden ölçüm çıkarılmamıştır. [Görsel eşleştirmesi ve kaynaklar](research/PHYSIOLOGY_IMAGE_AUDIT.md). Doğrulama: `npm run test:physiology` ve çalışan Vite sunucusuna karşı `APP_URL=http://127.0.0.1:5189 npm run test:physiology-browser`.

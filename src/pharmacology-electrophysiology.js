@@ -1,4 +1,5 @@
 import { CHANNELS, FLUX, PUMP, createIonFlow } from './ep-ion-flow.js';
+import { createIonicCurrents, createPhysiologyGuide } from './physiology-guide.js';
 import { createConductionView } from './ep-conduction.js';
 
 const PHASES = {
@@ -134,6 +135,10 @@ export function createPharmacologyElectrophysiology({ mount, getLang = () => 'tr
   mount.append(root);
   const $ = selector => root.querySelector(selector);
   const t = (tr, en) => getLang() === 'en' ? en : tr;
+  const currents = createIonicCurrents({ getLang });
+  const physiology = createPhysiologyGuide({ topics: ['calcium', 'conduction'], lang: getLang() });
+  root.insertBefore(currents.element, $('.pharmaep-conduction'));
+  root.append(physiology.element);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   buildMembrane();
   const flow = createIonFlow($('.pharmaep-channel'), { reducedMotion });
@@ -336,6 +341,8 @@ export function createPharmacologyElectrophysiology({ mount, getLang = () => 'tr
     conduction.refresh();
     $('.pharmaep-conduction summary').textContent = t('İleti sistemi, vektör ve derivasyonlar (Einthoven)', 'Conduction system, vector and leads (Einthoven)');
     drawTicks(); drawPhaseControls(); drawEcg(); drawMembrane(); updateLegacyArrows(); drawCursors();
+    currents.render(cell, phase);
+    physiology.setLanguage(getLang());
     $('.pharmaep-readout strong').textContent = `${t('Faz', 'Phase')} ${phase}: ${PHASES[cell][phase][en ? 1 : 0]}`;
     const relevance = drug[2] === cell && drug[3] === phase;
     $('.pharmaep-readout p').textContent = `${drug[en ? 1 : 0]}. ${relevance
