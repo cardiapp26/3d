@@ -44,3 +44,12 @@
 .epcond-ap-ghost{fill:none;stroke:#e1e6dc;stroke-width:3}.epcond-ap{fill:none;stroke-width:3.5;stroke-linejoin:round}.epcond-lead-ink{fill:none;stroke:#35302e;stroke-width:2.6}
 .epcond-leads-title{font:700 16px system-ui;fill:#7b5a52}.epcond-cursor{stroke:#b5452f;stroke-width:2;pointer-events:none}.epcond-scrub{cursor:ew-resize}
 .epcond-triangle text{font:700 18px system-ui;fill:#c2317a}.epcond-vector,.epcond-tri-vector{transition:opacity .1s}
+/* Shared lab shell: every chapter lab uses the same surface, heading scale and accent. */
+.pharma-main{--lab-bg:#f8faf4;--lab-line:#d7e1cf;--lab-ink:#26413a;--lab-muted:#62735d;--lab-accent:#2f5d48;--lab-gold:#d3953f}
+.pharma-main .pharmaviz,.pharma-main .pharmaep,.pharma-main .coag,.pharma-main .diuretic,.pharma-main .hfpharma,.pharma-main .lipidlab,.pharma-main .lipidref,.pharma-main .anginalab{margin:0 0 22px;padding:24px;background:var(--lab-bg);border:1px solid var(--lab-line);border-radius:18px;color:var(--lab-ink);box-shadow:0 1px 0 rgba(38,65,58,.04)}
+.pharma-main :is(.pharmaviz,.pharmaep,.coag,.diuretic,.hfpharma,.lipidlab,.lipidref,.anginalab) h2{font-size:24px;line-height:1.2;letter-spacing:-.6px;margin:6px 0 8px;color:var(--lab-ink)}
+.pharma-main :is(.pharmaviz-eyebrow,.pharmaep-eyebrow,.coag-eyebrow,.diuretic-eyebrow,.hfpharma-eyebrow,.lipidlab-eyebrow,.anginalab-eyebrow){font-size:10px;letter-spacing:1.3px;font-weight:700;color:var(--lab-muted);text-transform:uppercase}
+.pharma-main :is(.pharmaviz,.pharmaep,.coag,.diuretic,.hfpharma,.lipidlab,.lipidref,.anginalab) button[aria-pressed=true]{background:var(--lab-accent);border-color:var(--lab-accent);color:#fff}
+.pharma-main :is(.pharmaviz,.pharmaep,.coag,.diuretic,.hfpharma,.lipidlab,.lipidref,.anginalab) button:focus-visible{outline:3px solid var(--lab-gold);outline-offset:3px}
+@media(max-width:640px){.pharma-main :is(.pharmaviz,.pharmaep,.coag,.diuretic,.hfpharma,.lipidlab,.lipidref,.anginalab){padding:14px}}
+.pharma-main .pharma-visual-section{background:none;border:0;padding:0;margin:0}

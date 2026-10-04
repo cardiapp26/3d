@@ -31,6 +31,7 @@ const angina = createAnginaPanel({ mount: document.querySelector('[data-pharma-a
 const panel = createPharmacologyPanel({
   mount: document.querySelector('[data-pharma-panel]'), getLang: () => lang,
   showTopicNav: false, onTopic: index => selectTopic(index),
+  canFocus: () => PHARMA_TOPICS[topicIndex].id === 'principles',
   onFocus: target => {
     visual.setTarget(target);
     document.querySelector('.pharmaviz-target[aria-pressed=true]')?.focus({ preventScroll: true });
@@ -80,9 +81,11 @@ function selectTopic(index, updateUrl = true) {
   if (!PHARMA_TOPICS[index]) return;
   topicIndex = index;
   renderHeading();
+  // One lab per chapter: the target overview belongs to principles, the EP lab to antiarrhythmics.
+  document.querySelector('[data-pharma-visual]').hidden = PHARMA_TOPICS[index].id !== 'principles';
+  document.querySelector('[data-pharma-electrical]').hidden = PHARMA_TOPICS[index].id !== 'antiarrhythmics';
   panel.setTopic(index);
   visual.setTopic(PHARMA_TOPICS[index].id);
-  document.querySelector('[data-pharma-electrical]').hidden = !['principles', 'antiarrhythmics'].includes(PHARMA_TOPICS[index].id);
   document.querySelector('[data-pharma-coagulation]').hidden = PHARMA_TOPICS[index].id !== 'antithrombotics';
   document.querySelector('[data-pharma-diuretics]').hidden = PHARMA_TOPICS[index].id !== 'diuretics';
   document.querySelector('[data-pharma-hf]').hidden = PHARMA_TOPICS[index].id !== 'heart-failure';

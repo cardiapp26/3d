@@ -1,5 +1,6 @@
 import { COAG_NODES, COAG_EDGES, COAG_FEEDBACK, COAG_DRUGS, COAG_SOURCES, coagHighlights } from './coagulation-data.js';
 import './coagulation.css';
+import { createCoagFlow } from './coag-flow.js';
 
 const WORDS = {
   tr: { title: 'Koagülasyon kaskadı', eyebrow: 'HEMOSTAZ LABORATUVARI', intro: 'Bir faktör seçin. Test kapsamını ve antikoagülanın etki yerini üst üste inceleyin.', intrinsic: 'İntrinsik yol', extrinsic: 'Ekstrinsik yol', common: 'Ortak yol', contact: 'Temas aktivasyonu (laboratuvar)', tissue: 'Doku faktörü yolu', all: 'Tüm yollar', pt: 'PT / INR', aptt: 'aPTT', feedback: 'Trombin geri beslemesi', drug: 'İlaç hedefi', key: 'Çizgi: aktivasyon · Kesik çizgi: geri besleme · Altın çerçeve: ilaç hedefi', cofactor: 'Komplekslerin kofaktörleri: Ca²⁺ (IV) + fosfolipid yüzey', table: 'Faktör rehberi', name: 'Faktör ve adı', pathway: 'Yol', tests: 'Test kapsamı', none: 'PT/aPTT ile doğrudan değerlendirilmez', reset: 'Sıfırla', sources: 'Kaynak ve doğrulama', limitation: 'Klasik kaskad, PT/aPTT öğretimi için laboratuvar modelidir. İn vivo süreç hücre yüzeylerinde başlar ve örtüşür; bu çizim ilaç yanıtı veya kanama riskini hesaplamaz.', warning: 'XIII eksikliğinde PT ve aPTT normal kalabilir. Faktör XIII aktivitesi ayrı değerlendirilir.', ptInfo: 'PT/INR: VII ve ortak yol faktörleri X, V, II, I. INR, warfarin izlemi için standardize edilir.', apttInfo: 'aPTT: XII, XI, IX, VIII ve ortak yol X, V, II, I. Faktör XIII bu testte değerlendirilmez.', feedbackInfo: 'Trombin V, VIII ve XI üzerinden amplifikasyon sağlar; XIII aktivasyonu fibrin çapraz bağlanmasına katkı verir.', selected: 'Seçili hedef', factorI: 'I · Fibrinojen', stable: 'Stabilize fibrin', note: 'Paylaşılan görselden uyarlanan özgün etkileşimli şema. XIII-test ilişkisi kaynaklarla düzeltildi.', calcium: 'IV · Kalsiyum', calciumInfo: 'Ca²⁺ bir iyon/kofaktördür; enzimatik protein faktörü değildir. Laboratuvar testlerinde örneğe kalsiyum yeniden eklenir.' },
@@ -17,7 +18,7 @@ export function createCoagulationPanel({ mount, getLang = () => 'tr' }) {
   const root = document.createElement('section');
   root.className = 'coag';
   root.innerHTML = `<p class="coag-eyebrow"></p><h2></h2><p class="coag-intro"></p>
-    <div class="coag-controls"><div class="coag-tests" role="group"></div><label class="coag-drug-label"><span></span><select data-coag-drug></select></label><label class="coag-feedback-label"><input type="checkbox" data-coag-feedback><span></span></label><button type="button" data-coag-reset></button></div>
+    <div class="coag-controls"><div class="coag-tests" role="group"></div><label class="coag-drug-label"><span></span><select data-coag-drug></select></label><label class="coag-feedback-label"><input type="checkbox" data-coag-feedback><span></span></label><button type="button" data-coag-play></button><button type="button" data-coag-reset></button></div>
     <p class="coag-test-info" role="status"></p><p class="coag-drug-info" role="status"></p>
     <div class="coag-layout"><div class="coag-map-scroll" tabindex="0"><div class="coag-map">
       <svg viewBox="0 0 960 920" aria-hidden="true"><defs><marker id="coag-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="context-stroke"/></marker></defs>
@@ -79,6 +80,9 @@ export function createCoagulationPanel({ mount, getLang = () => 'tr' }) {
     const path = svgNode('path', { d: `M397 675H${x}V${target.y}H${target.x - 83}`, class: 'coag-feedback-edge', 'marker-end': 'url(#coag-arrow)' });
     root.querySelector('[data-coag-feedback-edges]').append(path);
   }
+  const flow = createCoagFlow({ root, nodes, edges, feedbackIds: COAG_FEEDBACK });
+  const playFlow = () => flow.play({ drug, targets: COAG_DRUGS.find(item => item.id === drug).targets, feedback });
+  root.querySelector('[data-coag-play]').addEventListener('click', playFlow);
   for (const id of ['all', 'pt', 'aptt']) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -93,9 +97,9 @@ export function createCoagulationPanel({ mount, getLang = () => 'tr' }) {
     option.value = item.id;
     select.append(option);
   }
-  select.addEventListener('change', () => { drug = select.value; refresh(); });
-  root.querySelector('[data-coag-feedback]').addEventListener('change', event => { feedback = event.target.checked; refresh(); });
-  root.querySelector('[data-coag-reset]').addEventListener('click', () => { selected = 'ii'; test = 'all'; drug = 'none'; feedback = false; refresh(); });
+  select.addEventListener('change', () => { drug = select.value; refresh(); playFlow(); });
+  root.querySelector('[data-coag-feedback]').addEventListener('change', event => { feedback = event.target.checked; refresh(); if (feedback) playFlow(); });
+  root.querySelector('[data-coag-reset]').addEventListener('click', () => { selected = 'ii'; test = 'all'; drug = 'none'; feedback = false; flow.reset(); refresh(); });
   COAG_SOURCES.forEach(source => {
     const li = document.createElement('li'), link = document.createElement('a');
     link.href = source.url;
@@ -135,6 +139,7 @@ export function createCoagulationPanel({ mount, getLang = () => 'tr' }) {
     for (const option of select.options) option.textContent = t(COAG_DRUGS.find(item => item.id === option.value).title);
     select.value = drug;
     write('[data-coag-reset]', words.reset);
+    write('[data-coag-play]', lang() === 'en' ? '▶ Play the cascade' : '▶ Kaskadı oynat');
     write('.coag-test-info', test === 'pt' ? words.ptInfo : test === 'aptt' ? words.apttInfo : words.cofactor);
     write('.coag-drug-info', t(COAG_DRUGS.find(item => item.id === drug).text));
     const factor = COAG_NODES.find(item => item.id === selected);
