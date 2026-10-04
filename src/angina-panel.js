@@ -1,5 +1,6 @@
 import { ANGINA_DRUGS, ANGINA_SOURCES } from './angina-data.js';
 import './angina-panel.css';
+import { createAnginaVisual } from './angina-visual.js';
 const text = (tr, en) => ({ tr, en });
 const TARGETS = {
   rate: text('Kalp hızı ↓', 'Heart rate ↓'), contractility: text('Kontraktilite ↓', 'Contractility ↓'), afterload: text('Ard yük ↓', 'Afterload ↓'), preload: text('Ön yük ↓', 'Preload ↓'), coronary: text('Koroner vazodilatasyon', 'Coronary vasodilation'), diastolic: text('Diyastolik gerilim ↓', 'Diastolic tension ↓'), metabolic: text('Metabolik verimlilik', 'Metabolic efficiency'),
@@ -10,20 +11,15 @@ const PHENOTYPES = {
   microvascular: { title: text('Mikrovasküler', 'Microvascular'), detail: text('Küçük damar disfonksiyonu, azalmış akım rezervi veya mikrovasküler spazm bulunabilir; büyük arter açık olabilir. Tedavi endotype göre değişir, tüm ilaçların yararı aynı değildir. Ranolazinin endoteli düzelttiği genellemesi kanıtlanmış sınıf etkisi olarak gösterilmez.', 'Small-vessel dysfunction, reduced flow reserve or microvascular spasm may occur despite a patent large artery. Therapy depends on endotype; benefits are not identical for every drug. Endothelial improvement with ranolazine is not presented as an established class effect.') },
 };
 export function createAnginaPanel({ mount, getLang }) {
-  let selected = 'nitrate', phenotype = 'obstructive';
+  let selected = 'nitrate', phenotype = 'obstructive', focus = '';
   const root = document.createElement('section'); root.className = 'anginalab';
-  root.innerHTML = `<p class="anginalab-eyebrow"></p><h2></h2><p class="anginalab-intro"></p><div class="anginalab-drugs" role="group"></div><div class="anginalab-layout"><div class="anginalab-map"><div class="anginalab-demand"><h3></h3><div></div></div><svg viewBox="0 0 600 360" role="img"><title></title>
-    <path d="M295 91C219 10 101 81 159 199L294 333L430 197C489 69 370 15 295 91Z" fill="#d99483" stroke="#a16c62" stroke-width="3"/>
-    <path d="M292 94V252M292 133Q227 138 184 179M292 173Q366 175 406 216M292 231Q240 240 220 268" fill="none" stroke="#bd554d" stroke-width="8" stroke-linecap="round"/>
-    <g data-angina-vessel="obstructive"><circle cx="467" cy="60" r="42" fill="#d8b7a4" stroke="#a16c62" stroke-width="3"/><circle cx="467" cy="60" r="26" fill="#f7e7d5"/><path d="M445 70Q471 16 488 70Z" fill="#c9a648"/></g>
-    <g data-angina-vessel="vasospastic" hidden><path d="M441 16Q490 46 447 60Q419 90 458 105L489 105Q450 74 486 60Q516 42 475 16Z" fill="#d8b7a4" stroke="#a16c62" stroke-width="3"/></g>
-    <g data-angina-vessel="microvascular" hidden><path d="M438 25V70M438 46L475 24M438 57L477 83M438 70L418 100M477 83L490 110M475 24L500 12" fill="none" stroke="#bd554d" stroke-width="7"/></g>
-    <text x="215" y="352" data-angina-heart-label/></svg><div class="anginalab-supply"><h3></h3><div></div></div><p class="anginalab-legend"></p></div><article class="anginalab-detail" aria-live="polite"><h3></h3><p class="anginalab-examples"></p></article></div><section class="anginalab-phenotype"><h3></h3><div role="group"></div><p aria-live="polite"></p></section><details class="anginalab-corrections"><summary></summary><ul></ul></details><details class="anginalab-sources"><summary></summary><ul></ul></details>`;
+  root.innerHTML = `<p class="anginalab-eyebrow"></p><h2></h2><p class="anginalab-intro"></p><div class="anginalab-drugs" role="group"></div><div class="anginalab-layout"><div class="anginalab-map"><div class="anginalab-demand"><h3></h3><div></div></div><div data-angina-visual></div><div class="anginalab-supply"><h3></h3><div></div></div><p class="anginalab-legend"></p></div><article class="anginalab-detail" aria-live="polite"><h3></h3><p class="anginalab-examples"></p></article></div><section class="anginalab-phenotype"><h3></h3><div role="group"></div><p aria-live="polite"></p></section><details class="anginalab-corrections"><summary></summary><ul></ul></details><details class="anginalab-sources"><summary></summary><ul></ul></details>`;
   mount.append(root);
+  const visual = createAnginaVisual({ mount: root.querySelector('[data-angina-visual]'), getLang, onFocus: id => { focus = id; refresh(); } });
   const t = value => value[getLang() === 'en' ? 'en' : 'tr'];
   const buttons = new Map(), targetNodes = new Map(), phenotypeButtons = new Map(), fields = new Map();
-  for (const item of ANGINA_DRUGS) { const button = document.createElement('button'); button.type = 'button'; button.dataset.anginaDrug = item.id; button.addEventListener('click', () => { selected = item.id; refresh(); }); root.querySelector('.anginalab-drugs').append(button); buttons.set(item.id, button); }
-  for (const [id, label] of Object.entries(TARGETS)) { const node = document.createElement('span'); node.dataset.anginaTarget = id; node.textContent = t(label); root.querySelector(id === 'coronary' ? '.anginalab-supply > div' : '.anginalab-demand > div').append(node); targetNodes.set(id, node); }
+  for (const item of ANGINA_DRUGS) { const button = document.createElement('button'); button.type = 'button'; button.dataset.anginaDrug = item.id; button.addEventListener('click', () => { selected = item.id; focus = ''; refresh(); }); root.querySelector('.anginalab-drugs').append(button); buttons.set(item.id, button); }
+  for (const [id, label] of Object.entries(TARGETS)) { const node = document.createElement('button'); node.type = 'button'; node.dataset.anginaTarget = id; node.textContent = t(label); node.addEventListener('click', () => { focus = id; refresh(); }); root.querySelector(id === 'coronary' ? '.anginalab-supply > div' : '.anginalab-demand > div').append(node); targetNodes.set(id, node); }
   for (const id of Object.keys(PHENOTYPES)) { const button = document.createElement('button'); button.type = 'button'; button.dataset.anginaPhenotype = id; button.addEventListener('click', () => { phenotype = id; refresh(); }); root.querySelector('.anginalab-phenotype [role=group]').append(button); phenotypeButtons.set(id, button); }
   for (const key of ['mechanism', 'context', 'risk', 'monitor']) { const div = document.createElement('div'); div.dataset.anginaField = key; div.innerHTML = '<h4></h4><p></p>'; root.querySelector('article').append(div); fields.set(key, div); }
   for (const source of ANGINA_SOURCES) { const li = document.createElement('li'), node = document.createElement(source.url ? 'a' : 'span'); node.textContent = source.title; if (source.url) { node.href = source.url; node.target = '_blank'; node.rel = 'noopener noreferrer'; } li.append(node); root.querySelector('.anginalab-sources ul').append(li); }
@@ -34,12 +30,11 @@ export function createAnginaPanel({ mount, getLang }) {
     root.querySelector('.anginalab-intro').textContent = t(text('İlaç grubunu seçin. Vurgulu hedefler tipik mekanizmayı gösterir; doz, kan basıncı veya koroner akım hesaplanmaz.', 'Select a drug class. Highlighted targets show typical mechanisms; no dose, blood pressure or coronary flow is calculated.'));
     root.querySelector('.anginalab-drugs').setAttribute('aria-label', t(text('Antianginal ilaç grupları', 'Antianginal drug classes')));
     for (const [id, button] of buttons) { button.textContent = t(ANGINA_DRUGS.find(item => item.id === id).name); button.setAttribute('aria-pressed', String(selected === id)); }
-    for (const [id, node] of targetNodes) { node.textContent = `${active.targets.includes(id) ? '● ' : ''}${t(TARGETS[id])}`; node.classList.toggle('is-active', active.targets.includes(id)); }
+    for (const [id, node] of targetNodes) { node.textContent = `${active.targets.includes(id) ? '● ' : ''}${t(TARGETS[id])}`; node.classList.toggle('is-active', active.targets.includes(id)); node.classList.toggle('is-focus', focus === id); node.setAttribute('aria-pressed', String(focus === id)); }
     root.querySelector('.anginalab-demand h3').textContent = t(text('Talep / miyokard etkisi', 'Demand / myocardial effects'));
     root.querySelector('.anginalab-supply h3').textContent = t(text('Arz / koroner tonus', 'Supply / coronary tone'));
-    root.querySelector('[data-angina-heart-label]').textContent = t(text('Şematik miyokard', 'Schematic myocardium'));
-    root.querySelector('svg title').textContent = `${t(active.name)}: ${active.targets.map(id => t(TARGETS[id])).join(', ')}; ${t(PHENOTYPES[phenotype].title)}`;
-    root.querySelectorAll('[data-angina-vessel]').forEach(node => { node.style.display = node.dataset.anginaVessel === phenotype ? '' : 'none'; node.removeAttribute('hidden'); });
+    visual.update({ targets: active.targets, focus, phenotype, phenotypeTitle: t(PHENOTYPES[phenotype].title) });
+    visual.setTitle(`${t(active.name)}: ${active.targets.map(id => t(TARGETS[id])).join(', ')}; ${t(PHENOTYPES[phenotype].title)}`);
     root.querySelector('.anginalab-legend').textContent = t(text('● Altın hedef: seçili sınıf etkisi. Mekanizma özeti, etki büyüklüğü veya kanıtlanmış sağkalım faydası değildir.', '● Gold target: selected class effect. Mechanism summary, not effect size or proven survival benefit.'));
     root.querySelector('article h3').textContent = t(active.name); root.querySelector('.anginalab-examples').textContent = t(active.examples);
     const labels = { mechanism: text('Mekanizma', 'Mechanism'), context: text('Kullanım / kanıt', 'Use / evidence'), risk: text('Güvenlik', 'Safety'), monitor: text('İzlem', 'Monitoring') };
