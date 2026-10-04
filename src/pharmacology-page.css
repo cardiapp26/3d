@@ -20,3 +20,27 @@
 .pharmaviz-organ{cursor:pointer;transition:filter .15s}.pharmaviz-organ:hover{filter:brightness(1.08)}.pharmaviz-organ.is-active{filter:drop-shadow(0 0 6px rgba(214,160,72,.85))}
 .pharmaviz-organ-labels text{pointer-events:none}.pharmaviz-organ-labels text.is-active{font-weight:700;fill:#9a6a1c}
 .pharmaviz-leader{pointer-events:none}.pharmaviz-leader line{stroke:#9a6a1c;stroke-width:2}.pharmaviz-leader rect{fill:#fffaf0;stroke:#d6a048;stroke-width:2}.pharmaviz-leader text{font-size:16px;font-weight:700;fill:#36523a}
+.pharmaep-phase-hits path{fill:none;stroke:transparent;stroke-width:22;cursor:pointer}.pharmaep-phase-nums g{cursor:pointer}.pharmaep-phase-nums circle{fill:#fff;stroke:#7d957a;stroke-width:2}.pharmaep-phase-nums text{font:700 13px system-ui;fill:#36523a;pointer-events:none}.pharmaep-phase-nums g.is-active circle{fill:#d3953f;stroke:#a8702a}.pharmaep-phase-nums g.is-active text{fill:#fff}
+.pharmaep-legend text{fill:#4f6150}.pharmaep-ecg{width:100%;max-height:170px;display:block;margin:12px 0}
+
+.pharmaep-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 10px}.pharmaep .pharmaep-play{background:#335c45;color:#fff;border-color:#335c45;font-weight:700}.pharmaep-now{font-size:13px;font-weight:700;color:#8a4a2c}
+.pharmaep-stage{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.pharmaep-cursor{pointer-events:none}.pharmaep-ecg-cursor{pointer-events:none}
+.pharmaep-mech rect.is-systole{fill:#e8a99a}.pharmaep-mech rect.is-diastole{fill:#cfe0ea}.pharmaep-mech text{font:600 12px system-ui;fill:#4b4040}.pharmaep-mech .pharmaep-mech-row{fill:#7b6a62;font-weight:700}
+.pharmaep-ecg-link{font-size:12px;color:#8a4a2c;font-weight:600}
+.pharmaep-channel{width:100%;max-height:230px;display:block;background:linear-gradient(#f3f6fb 0 35%,#f4ecdf 65% 100%);border-radius:14px;margin-top:8px}
+.pharmaep-pores rect{fill:#8aa58a;transition:fill .3s}.pharmaep-pores g.is-open rect{fill:#4f8a5d}.pharmaep-pores g.is-hidden{display:none}
+.pharmaep-gate{stroke:#5d6e5a;stroke-width:5;stroke-linecap:round;transition:opacity .3s}.pharmaep-pores g.is-open .pharmaep-gate{opacity:0}
+.pharmaep-plug{display:none}.pharmaep-pores g.is-blocked .pharmaep-plug{display:inline}.pharmaep-plug circle{fill:#d3953f;stroke:#fff;stroke-width:3}.pharmaep-plug path{stroke:#fff;stroke-width:3.5;stroke-linecap:round}
+.pharmaep-pores text{font:700 14px system-ui;fill:#354d38}.pharmaep-ion-arrow,.pharmaep-ion-arrow-secondary{display:none}
+.pharmaep-beta{font-size:12px;color:#7a5a20;min-height:0;margin:6px 0}
+.pharmaep-gauge{width:96px;height:auto;background:#fff;border:1px solid #d6e0cc;border-radius:10px}
+.pharmaep-pump>circle:first-child{fill:#2f3a33}.pharmaep-pump-rotor path{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round}.pharmaep-pump text{font:700 12px system-ui;fill:#354d38}.pharmaep-pump .pharmaep-pump-sub,.pharmaep-pump .pharmaep-pump-sub2{font-weight:500;font-size:11px}
+.pharmaep-charges text{font:700 15px system-ui;fill:#b5452f;transition:fill .3s}.pharmaep-charges .is-in{fill:#3f6d9a}.pharmaep-charges.is-reversed .is-out{fill:#3f6d9a}.pharmaep-charges.is-reversed .is-in{fill:#b5452f}
+.pharmaep-conduction{margin:10px 0;background:#fff;border:1px solid #d6e0cc;border-radius:14px;padding:10px}.pharmaep-conduction summary{font-weight:700;font-size:13px;cursor:pointer;color:#36523a}
+.epcond-map{width:100%;height:auto;display:block}.epcond-stage{font:700 18px system-ui;fill:#8a4a2c}
+.epcond-regions ellipse{fill:#7cc0f0;transition:opacity .08s}.epcond-glows circle{stroke:#fff;stroke-width:2;transition:r .1s}
+.epcond-row text,.epcond-lead text{font:600 17px system-ui;fill:#4f6150}.epcond-row.is-firing text{fill:#b5452f;font-weight:800}
+.epcond-ap-ghost{fill:none;stroke:#e1e6dc;stroke-width:3}.epcond-ap{fill:none;stroke-width:3.5;stroke-linejoin:round}.epcond-lead-ink{fill:none;stroke:#35302e;stroke-width:2.6}
+.epcond-leads-title{font:700 16px system-ui;fill:#7b5a52}.epcond-cursor{stroke:#b5452f;stroke-width:2;pointer-events:none}.epcond-scrub{cursor:ew-resize}
+.epcond-triangle text{font:700 18px system-ui;fill:#c2317a}.epcond-vector,.epcond-tri-vector{transition:opacity .1s}

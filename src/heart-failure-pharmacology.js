@@ -1,5 +1,6 @@
 import { PHARMA_TOPICS } from './pharmacology-data.js';
 import './heart-failure-pharmacology.css';
+import { createHfVisual, HF_DRUG_NODES } from './hf-visual.js';
 const text = (tr, en) => ({ tr, en });
 const cards = PHARMA_TOPICS.find(topic => topic.id === 'heart-failure').cards;
 export const HF_GROUPS = [
@@ -15,10 +16,11 @@ export const HF_EXTRA = [
   { id: 'nesiritide', name: text('BNP analoğu · tarihsel bağlam', 'BNP analogue · historical context'), examples: text('Nesiritid', 'Nesiritide'), mechanism: text('Natriüretik peptid reseptörü → cGMP → vazodilatasyon.', 'Natriuretic peptide receptor → cGMP → vasodilation.'), use: text('ASCEND-HF: 30 günlük ölüm/HF yeniden yatış birleşik sonucunda yarar gösterilmedi. Güncel dört temel sınıfın parçası değildir.', 'ASCEND-HF showed no benefit for the 30-day death/HF readmission composite. Not part of the contemporary four core classes.'), risk: text('Hipotansiyon; sonuç yararı varsayılmaz.', 'Hypotension; outcome benefit should not be assumed.'), monitor: text('Kan basıncı ve böbrek işlevi; tarihsel öğretim kartı.', 'Blood pressure and renal function; historical teaching card.') },
 ];
 export function createHeartFailurePharmacology({ mount, getLang }) {
-  let selected = 'arni';
+  let selected = 'arni', node = '';
   const root = document.createElement('section'); root.className = 'hfpharma';
-  root.innerHTML = '<p class="hfpharma-eyebrow"></p><h2></h2><p class="hfpharma-intro"></p><div class="hfpharma-tree"></div><article class="hfpharma-detail" aria-live="polite"><h3></h3><p class="hfpharma-examples"></p></article><details class="hfpharma-safety"><summary></summary><p></p></details><p class="hfpharma-limit"></p><details class="hfpharma-sources"><summary></summary><ul></ul></details>';
+  root.innerHTML = '<p class="hfpharma-eyebrow"></p><h2></h2><p class="hfpharma-intro"></p><div data-hf-visual></div><div class="hfpharma-tree"></div><article class="hfpharma-detail" aria-live="polite"><h3></h3><p class="hfpharma-examples"></p></article><details class="hfpharma-safety"><summary></summary><p></p></details><p class="hfpharma-limit"></p><details class="hfpharma-sources"><summary></summary><ul></ul></details>';
   mount.append(root);
+  const visual = createHfVisual({ mount: root.querySelector('[data-hf-visual]'), getLang, onNode: id => { node = node === id ? '' : id; refresh(); } });
   const t = value => value[getLang() === 'en' ? 'en' : 'tr'];
   const items = [...cards, ...HF_EXTRA], buttons = new Map(), headings = new Map();
   for (const group of HF_GROUPS) {
@@ -26,7 +28,7 @@ export function createHeartFailurePharmacology({ mount, getLang }) {
     const heading = document.createElement('h3'); branch.append(heading); headings.set(group.id, heading);
     for (const id of group.ids) {
       const button = document.createElement('button'); button.type = 'button'; button.dataset.hfDrug = id;
-      button.addEventListener('click', () => { selected = id; refresh(); }); branch.append(button); buttons.set(id, button);
+      button.addEventListener('click', () => { selected = id; node = ''; refresh(); }); branch.append(button); buttons.set(id, button);
     }
     root.querySelector('.hfpharma-tree').append(branch);
   }
@@ -44,8 +46,9 @@ export function createHeartFailurePharmacology({ mount, getLang }) {
     root.querySelector('h2').textContent = t(text('Hedef, amaç ve kanıt', 'Target, purpose and evidence'));
     root.querySelector('.hfpharma-intro').textContent = t(text('Bir dal seçin. Kronik HFrEF temel tedavileri, konjesyon giderme ve akut destek farklı amaç taşır. ARNI uygun değilse ACEi/ARB alternatif olabilir; birlikte kullanılan ek bir temel sınıf değildir.', 'Select a branch. Chronic HFrEF core therapy, congestion relief and acute support have different purposes. ACEi/ARB may substitute when ARNI is unsuitable; they are not an additional core class used together.'));
     for (const group of HF_GROUPS) headings.get(group.id).textContent = t(group.title);
-    for (const [id, button] of buttons) { button.textContent = t(items.find(item => item.id === id).name); button.setAttribute('aria-pressed', String(id === selected)); }
+    for (const [id, button] of buttons) { button.textContent = t(items.find(item => item.id === id).name); button.setAttribute('aria-pressed', String(id === selected)); button.classList.toggle('acts-here', Boolean(node && HF_DRUG_NODES[id]?.[node])); }
     const item = items.find(item => item.id === selected);
+    visual.update({ drug: selected, node, drugName: t(item.name) });
     root.querySelector('article h3').textContent = t(item.name); root.querySelector('.hfpharma-examples').textContent = t(item.examples);
     const labels = { mechanism: text('Etki hedefi', 'Target'), use: text('Amaç / kanıt', 'Purpose / evidence'), risk: text('Güvenlik', 'Safety'), monitor: text('İzlem', 'Monitoring') };
     for (const field of fields) { const div = root.querySelector(`[data-hf-field=${field}]`); div.querySelector('h4').textContent = t(labels[field]); div.querySelector('p').textContent = t(item[field]); }
