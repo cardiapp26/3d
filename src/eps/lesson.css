@@ -270,3 +270,13 @@
 .svt-verdict[data-state=single] { border-left-color: #4ade80; }
 .svt-reasons { max-height: 260px; overflow-y: auto; }
 @media (max-width: 760px) { .svt-layout { grid-template-columns: 1fr; } .svt-aside { position: static; } }
+/* WPW localization tab (wpw-loc-panel.js). */
+.wpw-lead { display: flex; flex-direction: column; gap: 3px; padding: 5px 8px; border-radius: 4px; border-left: 3px solid transparent; }
+.wpw-lead[data-next=true] { border-left-color: var(--accent); background: var(--panel-2); }
+.wpw-lead > * { margin: 0; }
+.wpw-bars { display: grid; gap: 4px; }
+.wpw-bar { display: grid; grid-template-columns: 130px 1fr; gap: 8px; align-items: center; font-size: 12px; }
+.wpw-track { display: block; height: 10px; border-radius: 5px; background: #25322d; }
+.wpw-fill { display: block; height: 100%; border-radius: 5px; background: #7ea593; }
+.wpw-bar[data-earliest=true] .wpw-fill { background: #fcd34d; }
+.wpw-bar[data-earliest=true] > span:first-child { color: #fcd34d; font-weight: 700; }
