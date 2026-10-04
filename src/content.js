@@ -1659,9 +1659,19 @@ export const rawLessons = {
       intro: 'Prob, ultrason düzlemi ve 3B anatomi solda; aynı düzlemden hesaplanan 2B sektör kesiti sağda. Kesit, atımın o anki fazındaki geometriden hesaplanır; dondurmak iki görüntüyü birlikte durdurur. Bu bir prob-kesit-anatomi eğitimidir: gerçek ultrason, Doppler veya ölçüm değildir.',
       steps: [
         {
-          title: 'TEE: özofagus-mide yolu ve 10 görünüm',
+          title: 'TEE: özofagus-mide yolu ve 12 görünüm',
           text: 'Prob, sol atriyumun arkasındaki şematik özofagustan mideye uzanan yolda hareket eder. İlerletme/geri çekme, şaft rotasyonu, ante/retrofleksiyon, sağ/sol fleksiyon ve elektronik multiplan açısı ayrı hareketlerdir. Orta özofagus (ME): dört boşluk, mitral komissüral, iki boşluk, uzun eksen, aort kapağı kısa eksen, RV giriş-çıkış, bikaval, LAA ve LAA ile sol üst pulmoner ven komşuluğu. Transgastrik (TG): orta papiller kısa eksen. 0°\'de hastanın solu ekranın sağında, 90°\'de kranial taraf ekranın sağındadır. Bir açı tek başına görünümü garanti etmez: seviye ve şaft hareketi birlikte gerekir.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
+        },
+        {
+          title: 'Mitral skalopları: 0° tarama',
+          text: 'Mitral kapak sol atriyumdan bakıldığında (cerrah görünümü) aort kapağı üstte, ön yaprakçık A1–A3, arkadaki hilal yaprakçık P1–P3; anterolateral komissür (ALC) solda A1/P1 tarafında, posteromedial komissür (PMC) sağda A3/P3 tarafındadır. 0°\'de prob düzeyi değiştirilerek skaloplar sırayla taranır: 4 boşluk düzeyinden hafif geri çekince (aort kapağına doğru, 5 boşluk düzeyi) A1–P1, 4 boşlukta A2–P2, ilerletince (PMC\'ye doğru) A3–P3. Panelin altındaki harita kapağı LA\'dan gösterir ve o anki kesit çizgisini üstüne çizer; kesitteki skaloplar parlak yazılır. Bu görünümde A1–P1 açılır; \'0° A3-P3\' düğmesi derindeki kesiti gösterir. Skaloplar kapak kapalıyken (sistol) değerlendirilir; diyastolde yaprakçıklar kesitten çıkar. Bu atlasta A1–P1 için 20° şaft rotasyonu gerekti.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'mea1p1' }
+        },
+        {
+          title: 'Mitral skalopları: bikomissüral ve uzun eksen',
+          text: 'Multiplan açıyı ~60°\'ye getirince kesit iki komissürü birleştirir (bikomissüral, ME mitral komissüral): medialden laterale P3 – A2 – P1; ortadaki A2\'nin iki yanında posterior skaloplar görülür. Buna dik, 120–140°\'de uzun eksen (ME LAX) LVOT ile birlikte A2 – P2\'yi keser. Böylece iki dik kesit ve 0° taraması birleştirilerek prolapsus veya yırtığın hangi skalopta olduğu yerelleştirilir. Haritada kesit çizgisinin ALC–PMC hattında uzandığını, uzun eksende ise bu hatta dik olduğunu izleyin. Bu atlasta bikomissüral kesit 60°\'de, sola fleksiyon ve şaft rotasyonuyla elde edildi.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'memc' }
         },
         {
           title: 'Görev: görünümü bulun',
@@ -1680,9 +1690,19 @@ export const rawLessons = {
       intro: 'Probe, ultrasound plane and 3D anatomy on the left; the 2D sector section of the same plane on the right. The section is computed from the geometry at the current phase of the beat; freezing stops both images together. This is probe-section-anatomy training: not real ultrasound, Doppler or measurement.',
       steps: [
         {
-          title: 'TEE: oesophagus-stomach path and 10 views',
+          title: 'TEE: oesophagus-stomach path and 12 views',
           text: 'The probe moves along a schematic path from the oesophagus behind the left atrium into the stomach. Advance/withdraw, shaft rotation, ante/retroflexion, right/left flexion and the electronic multiplane angle are separate motions. Mid-oesophageal (ME): four-chamber, mitral commissural, two-chamber, long axis, aortic valve short axis, RV inflow-outflow, bicaval, LAA and the LAA with the left upper pulmonary vein. Transgastric (TG): mid-papillary short axis. At 0 degrees the patient\'s left is on the right of the screen, at 90 degrees the cephalad side is. An angle alone does not guarantee a view: level and shaft motion are needed too.',
           landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'me4c' }
+        },
+        {
+          title: 'Mitral scallops: the 0° scan',
+          text: 'Seen from the left atrium (surgeon\'s view) the mitral valve has the aortic valve on top, the anterior leaflet A1–A3 and the crescent-shaped posterior leaflet P1–P3; the anterolateral commissure (ALC) is on the left at A1/P1, the posteromedial commissure (PMC) on the right at A3/P3. At 0° the scallops are scanned by changing the probe level: withdrawn slightly from the four-chamber level (toward the aortic valve, five-chamber level) A1–P1, at the four-chamber level A2–P2, advanced (toward the PMC) A3–P3. The map below the sector shows the valve from the LA with the current cut line across it; scallops in the cut are written bright. This step opens A1–P1; the \'0° A3-P3\' button shows the deep cut. Scallops are judged with the valve closed (systole); in diastole the leaflets leave the cut. On this atlas A1–P1 needed 20° of shaft rotation.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'mea1p1' }
+        },
+        {
+          title: 'Mitral scallops: bicommissural and long axis',
+          text: 'At about 60° the cut joins the two commissures (bicommissural, ME mitral commissural): P3 – A2 – P1 from medial to lateral, the posterior scallops on either side of A2 in the middle. Perpendicular to it, the long axis at 120–140° (ME LAX) cuts A2 – P2 with the LVOT. Combining the two perpendicular cuts and the 0° scan localises a prolapse or flail to its scallop. On the map, watch the cut line run along the ALC–PMC line, and across it in the long axis. On this atlas the bicommissural cut was obtained at 60° with left flexion and shaft rotation.',
+          landmark: 'la', view: 'lateral', echo: { modality: 'tee', view: 'memc' }
         },
         {
           title: 'Task: find the view',

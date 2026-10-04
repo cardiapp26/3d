@@ -907,6 +907,8 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .echo-transseptal-title{margin:0 0 2px;font-size:11.5px;color:#5c4a12}
 .echo-transseptal-text{margin:2px 0;font-size:11.5px;line-height:1.45;color:#3d3416}
 .echo-transseptal-limits{margin:2px 0 0;font-size:10px;color:#7a6a3a}
+.echo-mitral-map{display:block;width:100%;max-width:300px;height:170px;margin:6px auto 2px;border-radius:6px;background:#050807}
+.echo-mitral-map[hidden]{display:none}
 .echo-canvas{display:block;width:100%;height:260px;border-radius:6px;background:#050807}
 .echo-canvas.is-large{height:440px}
 .echo-task-status{font-size:10.5px!important;font-weight:600;color:#1f7a52!important;background:#eaf6ef;border-radius:4px;padding:3px 8px;margin:4px 0!important}

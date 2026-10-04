@@ -31,7 +31,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForFunction(() => window.cardiaEcho?.getResult());
 
     // Every starting view at its preset.
-    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'mervio', 'melaapv', 'tgsax'], ice: ['ice-home', 'ice-rvot', 'ice-lvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc', 'ice-la-home', 'ice-la-lspv', 'ice-la-lipv', 'ice-la-mitral-isthmus', 'ice-la-posterior', 'ice-la-ripv', 'ice-la-rspv', 'ice-la-aov', 'ice-lv-inferior', 'ice-lv-septum', 'ice-lv-lateral', 'ice-lv-lvot'] };
+    const views = { tte: ['plax', 'psax-av', 'psax-mv', 'psax-pm', 'a4c', 'a2c', 'a3c', 'sc4c'], tee: ['me4c', 'memc', 'me2c', 'melax', 'meavsax', 'mebicaval', 'melaa', 'mervio', 'melaapv', 'mea1p1', 'mea3p3', 'tgsax'], ice: ['ice-home', 'ice-rvot', 'ice-lvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc', 'ice-la-home', 'ice-la-lspv', 'ice-la-lipv', 'ice-la-mitral-isthmus', 'ice-la-posterior', 'ice-la-ripv', 'ice-la-rspv', 'ice-la-aov', 'ice-lv-inferior', 'ice-lv-septum', 'ice-lv-lateral', 'ice-lv-lvot'] };
     for (const [modality, ids] of Object.entries(views)) {
       await useModality(page, modality);
       assert.equal(await page.locator('[data-echo-view]').count(), ids.length, `${modality}: ${ids.length} views`);
@@ -137,7 +137,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     // Every view at every sampled phase of the beat meets its criteria at the preset.
     const phases = await page.evaluate(async () => {
       const { measureEchoAnatomy, echoItems } = await import('/src/echo-anatomy.js');
-      const { evaluateView } = await import('/src/echo-training.js');
+      const { evaluateView, criteriaAtPhase } = await import('/src/echo-training.js');
       const { sectionMeshes } = await import('/src/echo-section.js');
       const V = await import('/src/echo-views.js');
       const gm = id => window.heart.getMeshes(id).filter(m => !m.userData.micro);
@@ -150,7 +150,7 @@ const SHOTS = process.env.SHOT_DIR || null;
         const { frame } = window.cardiaEcho.getResult(), st = window.cardiaEcho.getState();
         for (const phase of [0.1, 0.4, 0.55, 0.75]) {
           window.heart.seekCycle(phase);
-          const e = evaluateView(sectionMeshes(items, frame), view, { sectorAngle: st.sectorAngle, depth: st.depth, frame, anatomy: A, label: x => x, lang: 'en' });
+          const e = evaluateView(sectionMeshes(items, frame), criteriaAtPhase(view, phase), { sectorAngle: st.sectorAngle, depth: st.depth, frame, anatomy: A, label: x => x, lang: 'en' });
           if (!e.achieved) failures.push(`${view.id}@${phase}: ${e.messages.join(' ')}`);
         }
       }

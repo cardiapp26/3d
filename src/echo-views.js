@@ -4,7 +4,7 @@ import { createProbePath, tteFrame, surfaceHit, rotate } from './echo-probe.js';
 /*
  * The starting view sets of the echo module (report sections 4 and 5): 8 TTE
  * views (PLAX, 3 PSAX levels, 3 apical, subcostal four-chamber; ASE 2019)
- * and 10 TEE views (9 mid-oesophageal, transgastric mid SAX; ASE/SCA
+ * and 12 TEE views (11 mid-oesophageal including the 0° mitral scallop scan, transgastric mid SAX; ASE/SCA
  * 2013). The selection is the product's teaching subset, not the guideline's
  * full examination. Presets are computed from measured atlas landmarks;
  * `required` and `avoid` drive the feedback. None of this has been reviewed
@@ -35,10 +35,12 @@ export const TTE_VIEWS = Object.freeze([
 // ase: the guideline's approximate multiplane range (ASE/SCA 2013, PDF p.11-18);
 // the atlas starting angle is the preset's (teePreset). Angles vary with the
 // patient's anatomy and are never a view's identity key; multi-angle sweeps
-// may be needed.
+// may be needed. mitralPartsClosed: the mitral scallops are scored with the valve closed
+// (rest and systole, as scallops are identified); with the valve open the leaflets swing
+// out of the cut and only the other criteria apply.
 export const TEE_VIEWS = Object.freeze([
   { id: 'me4c', title: { tr: 'ME dört boşluk', en: 'ME four-chamber' }, ase: { tr: '0–10° (triküspit anulusu için 10–20° ayar gerekebilir)', en: '0–10° (10–20° may be needed for the tricuspid annulus)' }, required: ['la', 'ra', 'lv', 'rv', 'mitral', 'tricuspid'], avoid: ['aorta'], apical: true, parts: { lv: ['3', '9', '14', '6', '12', '16'], mitral: [['A2', 'A3'], ['P2', 'P1']] }, source: ASE_TEE },
-  { id: 'memc', title: { tr: 'ME mitral komissüral', en: 'ME mitral commissural' }, ase: { tr: '50–70°', en: '50–70°' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'aorta'], mitralChord: [0, 22], source: ASE_TEE },
+  { id: 'memc', title: { tr: 'ME mitral komissüral', en: 'ME mitral commissural' }, ase: { tr: '50–70°: iki komissür, P3 – A2 – P1 (medialden laterale)', en: '50–70°: both commissures, P3 – A2 – P1 (medial to lateral)' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'aorta'], mitralChord: [0, 22], parts: { mitral: ['P3', 'A2', 'P1'] }, mitralPartsClosed: true, source: ASE_TEE },
   { id: 'me2c', title: { tr: 'ME iki boşluk', en: 'ME two-chamber' }, ase: { tr: '80–100° (bu preset 105°, fleksiyon −30° kontrol sınırında)', en: '80–100° (this preset 105°, flexion −30° at the control limit)' }, required: ['la', 'lv', 'mitral'], avoid: ['rv', 'ra', 'tricuspid', 'aorta'], apical: true, mitralChord: [25, 90], parts: { lv: [['1', '7', '13']] }, source: ASE_TEE },
   { id: 'melax', title: { tr: 'ME uzun eksen', en: 'ME long axis' }, ase: { tr: '120–140°', en: '120–140°' }, required: ['la', 'lv', 'aorta', 'mitral'], avoid: ['ra', 'tricuspid'], mitralChord: [55, 90], parts: { lv: ['2', '8', '5', '11'], mitral: ['A2', 'P2'] }, source: ASE_TEE },
   { id: 'meavsax', title: { tr: 'ME aort kapağı kısa eksen', en: 'ME aortic valve SAX' }, ase: { tr: '25–45°', en: '25–45°' }, required: ['aortic-valve', 'la', 'ra'], avoid: ['lv', 'mitral'], source: ASE_TEE },
@@ -46,6 +48,11 @@ export const TEE_VIEWS = Object.freeze([
   { id: 'melaa', title: { tr: 'ME sol atriyal apendiks', en: 'ME left atrial appendage' }, ase: { tr: 'başlangıç 90–110°; çok açılı tarama (bu preset 60°)', en: 'start 90–110°; multi-angle sweep (this preset 60°)' }, required: ['la', 'laa'], avoid: ['rv', 'tricuspid'], source: ASE_TEE },
   { id: 'mervio', title: { tr: 'ME RV giriş-çıkış', en: 'ME RV inflow-outflow' }, ase: { tr: '50–70° (bu preset 75°)', en: '50–70° (this preset 75°)' }, required: ['ra', 'rv', 'tricuspid', 'pa'], avoid: ['mitral'], source: ASE_TEE },
   { id: 'melaapv', title: { tr: 'ME LAA ve sol üst PV komşuluğu', en: 'ME LAA and left upper PV neighbourhood' }, ase: { tr: 'ME LAA görünümü 90–110° (LAA ve sol üst PV)', en: 'ME LAA view 90–110° (LAA and left upper PV)' }, required: ['la', 'laa', 'lspv'], relations: [{ a: 'la', b: 'lspv', max: 0.15, note: { tr: 'sol üst ven ağzı LA\'ya açılmalı', en: 'the left upper vein ostium should open into the LA' } }], avoid: ['rv', 'tricuspid', 'rspv', 'ripv'], source: ASE_TEE },
+  // Mitral scallop scan at 0°: withdrawing toward the aortic valve (five-chamber level) cuts
+  // A1–P1, the four-chamber level A2–P2 (me4c), advancing toward the posteromedial
+  // commissure A3–P3 (the textbook mitral map; Carpentier nomenclature).
+  { id: 'mea1p1', title: { tr: 'ME 0° mitral: A1 – P1', en: 'ME 0° mitral: A1 – P1' }, ase: { tr: '0°, prob 4 boşluk düzeyinden hafif geri (aort kapağına doğru): A1 – P1', en: '0°, probe slightly withdrawn from the four-chamber level (toward the aortic valve): A1 – P1' }, required: ['la', 'lv', 'mitral'], avoid: ['pa'], parts: { mitral: ['A1', 'P1'] }, mitralPartsClosed: true, source: ASE_TEE },
+  { id: 'mea3p3', title: { tr: 'ME 0° mitral: A3 – P3', en: 'ME 0° mitral: A3 – P3' }, ase: { tr: '0°, prob 4 boşluk düzeyinden ilerletilmiş (posteromedial komissüre doğru): A3 – P3', en: '0°, probe advanced from the four-chamber level (toward the posteromedial commissure): A3 – P3' }, required: ['la', 'lv', 'mitral'], avoid: ['aorta', 'pa'], parts: { mitral: ['A3', 'P3'] }, mitralPartsClosed: true, source: ASE_TEE },
   { id: 'tgsax', title: { tr: 'TG orta papiller kısa eksen', en: 'TG mid-papillary SAX' }, ase: { tr: '0–20°', en: '0–20°' }, required: ['lv', 'lv-papillary'], avoid: ['la', 'laa', 'mitral', 'aorta', 'pa'], parts: { lv: ['7', '8', '9', '10', '11', '12'] }, source: ASE_TEE }
 ]);
 
@@ -168,7 +175,9 @@ export function teePreset(id, A, path) {
   const pose = (advance, rotation, flexion, omega, depth, lateralFlexion = 0) => ({ advance, rotation, flexion, lateralFlexion, omega, depth });
   switch (id) {
     case 'me4c': return pose(me - 0.06, 0, -20, 0, 4.8);
-    case 'memc': return pose(me - 0.04, -37.5, 10, 50, 3);
+    case 'memc': return pose(me - 0.16, -30, -30, 60, 3, -10);
+    case 'mea1p1': return pose(me - 0.045, -20, 0, 0, 4.8);
+    case 'mea3p3': return pose(me + 0.015, 10, -10, 0, 4.8);
     case 'me2c': return pose(me + 0.04, -30, -30, 105, 4.8, 10);
     case 'melax': return pose(me, -15, 0, 120, 4.8);
     case 'meavsax': return pose(level(A.av.center[1]), 0, 10, 45, 4.8);

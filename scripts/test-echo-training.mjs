@@ -5,8 +5,9 @@
 // tip stays in the lumen and the TTE probe stays on the chest surface.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { evaluateView, mitralChord, foreshortening, visibleLengths, contourGap, visibleRuns } from '../src/echo-training.js';
+import { criteriaAtPhase, evaluateView, mitralChord, foreshortening, visibleLengths, contourGap, visibleRuns } from '../src/echo-training.js';
 import { imageFrame } from '../src/echo-section.js';
+import { mitralMapData, mapCutLine } from '../src/echo-mitral-map.js';
 import { createProbePath, teeFrame, tteFrame, surfaceHit, ontoSurface, LUMEN, BEND_LENGTH } from '../src/echo-probe.js';
 
 const label = id => id;
@@ -135,7 +136,22 @@ for (const adj of [{ slideLateral: 0.4 }, { slideElevation: -0.4 }, { slideLater
 }
 assert.ok(Math.abs(Math.hypot(...ontoSurface([5, 0, 0], surface).map((v, i) => v / surface.radii[i])) - 1) < 1e-9);
 
-for (const file of ['../src/echo-training.js', '../src/echo-probe.js', '../src/echo-views.js']) {
+for (const file of ['../src/echo-mitral-map.js', '../src/echo-training.js', '../src/echo-probe.js', '../src/echo-views.js']) {
   assert.ok(!readFileSync(new URL(file, import.meta.url), 'utf8').includes('\u2014'), `${file}: no em dash`);
 }
+// Mitral scallops are scored only with the valve closed; other criteria stay.
+const scallopView = { id: 'x', required: ['mitral'], avoid: [], parts: { mitral: ['A1', 'P1'], lv: ['3'] }, mitralPartsClosed: true };
+assert.deepEqual(criteriaAtPhase(scallopView, 0.2).parts, { lv: ['3'] }, 'diastole: mitral scallops dropped');
+assert.equal(criteriaAtPhase(scallopView, 0.6), scallopView, 'systole: full criteria');
+assert.equal(criteriaAtPhase(scallopView, null), scallopView, 'rest: full criteria');
+assert.equal(criteriaAtPhase({ ...scallopView, mitralPartsClosed: false }, 0.2).parts.mitral.length, 2);
+// Mitral map: aortic valve up, A1 on the left; a cut through the A1-P1 side crosses the left of the map.
+const ring = (part, x, y) => ({ part, p: [x, 0, y] });
+const pts = [ring('A1', 0.6, 0.3), ring('A2', 0, 0.4), ring('A3', -0.6, 0.3), ring('P1', 0.7, -0.3), ring('P2', 0, -0.5), ring('P3', -0.7, -0.3)];
+const map = mitralMapData({ points: pts, center: [0, 0, 0], normal: [0, -1, 0], aortic: [0, 0, 1.2] });
+assert.ok(map.scallops.A1.c[0] < 0 && map.scallops.A3.c[0] > 0, 'A1 on the left, A3 on the right');
+assert.ok(map.scallops.A2.c[1] > 0 && map.scallops.P2.c[1] < 0 && map.aortic[1] > 0, 'anterior leaflet and aortic valve up');
+const cut = mapCutLine(map, { origin: [0.6, 0, 0], normal: [1, 0, 0] });
+assert.ok(cut && Math.abs(cut[0][0] - cut[1][0]) < 1e-9 && cut[0][0] < 0, 'a cut through A1/P1 is a vertical line on the left');
+assert.equal(mapCutLine(map, { origin: [0, 0.5, 0], normal: [0, 1, 0] }), null, 'a cut parallel to the annulus has no line');
 console.log('PASS echo-training: clipped apex fails (depth/sector/plane messages), ICE vein identities/group, ostium relations, LAA length and side, near/far order, fossa landmark (unknown is not a pass), optional, bicaval IVC and septum, mitral cut angle, flexion vs multiplane, lumen limit, chest contact');

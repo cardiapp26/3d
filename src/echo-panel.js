@@ -10,7 +10,7 @@ import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
  */
 const SHORT = {
   plax: 'PLAX', 'psax-av': 'PSAX AV', 'psax-mv': 'PSAX MV', 'psax-pm': 'PSAX PM', a4c: 'A4C', a2c: 'A2C', a3c: 'A3C', sc4c: 'SC 4C',
-  me4c: 'ME 4C', memc: 'ME MC', me2c: 'ME 2C', melax: { tr: 'ME LAX', en: 'ME LAX' }, meavsax: { tr: 'AV SAX', en: 'AV SAX' }, mebicaval: { tr: 'Bikaval', en: 'Bicaval' }, 'ice-home': 'Home', 'ice-rvot': 'RVOT', 'ice-lvot': 'LVOT/AV', 'ice-mitral-laa': { tr: 'MV/LAA', en: 'MV/LAA' }, 'ice-left-pv': { tr: 'Sol PV', en: 'Left PV' }, 'ice-septal-sax': { tr: 'Septum', en: 'Septum' }, 'ice-right-pv': { tr: 'Sağ PV', en: 'Right PV' }, 'ice-svc': 'SVC', 'ice-la-home': { tr: 'LA home', en: 'LA home' }, 'ice-la-lspv': 'LSPV', 'ice-la-lipv': 'LIPV', 'ice-la-mitral-isthmus': { tr: 'Mitral istmus', en: 'Mitral isthmus' }, 'ice-la-posterior': { tr: 'Arka duvar', en: 'Post. wall' }, 'ice-la-ripv': 'RIPV', 'ice-la-rspv': { tr: 'RSPV/çatı', en: 'RSPV/roof' }, 'ice-la-aov': { tr: 'AV (LA)', en: 'AV (LA)' }, 'ice-lv-inferior': { tr: 'İnferior+PM', en: 'Inferior+PM' }, 'ice-lv-septum': { tr: 'Septum (LV)', en: 'Septum (LV)' }, 'ice-lv-lateral': { tr: 'Lateral', en: 'Lateral' }, 'ice-lv-lvot': 'LVOT', melaa: 'ME LAA', mervio: { tr: 'RV G-Ç', en: 'RV I-O' }, melaapv: { tr: 'LAA·PV', en: 'LAA·PV' }, tgsax: 'TG SAX'
+  me4c: 'ME 4C', memc: 'ME MC', mea1p1: '0° A1-P1', mea3p3: '0° A3-P3', me2c: 'ME 2C', melax: { tr: 'ME LAX', en: 'ME LAX' }, meavsax: { tr: 'AV SAX', en: 'AV SAX' }, mebicaval: { tr: 'Bikaval', en: 'Bicaval' }, 'ice-home': 'Home', 'ice-rvot': 'RVOT', 'ice-lvot': 'LVOT/AV', 'ice-mitral-laa': { tr: 'MV/LAA', en: 'MV/LAA' }, 'ice-left-pv': { tr: 'Sol PV', en: 'Left PV' }, 'ice-septal-sax': { tr: 'Septum', en: 'Septum' }, 'ice-right-pv': { tr: 'Sağ PV', en: 'Right PV' }, 'ice-svc': 'SVC', 'ice-la-home': { tr: 'LA home', en: 'LA home' }, 'ice-la-lspv': 'LSPV', 'ice-la-lipv': 'LIPV', 'ice-la-mitral-isthmus': { tr: 'Mitral istmus', en: 'Mitral isthmus' }, 'ice-la-posterior': { tr: 'Arka duvar', en: 'Post. wall' }, 'ice-la-ripv': 'RIPV', 'ice-la-rspv': { tr: 'RSPV/çatı', en: 'RSPV/roof' }, 'ice-la-aov': { tr: 'AV (LA)', en: 'AV (LA)' }, 'ice-lv-inferior': { tr: 'İnferior+PM', en: 'Inferior+PM' }, 'ice-lv-septum': { tr: 'Septum (LV)', en: 'Septum (LV)' }, 'ice-lv-lateral': { tr: 'Lateral', en: 'Lateral' }, 'ice-lv-lvot': 'LVOT', melaa: 'ME LAA', mervio: { tr: 'RV G-Ç', en: 'RV I-O' }, melaapv: { tr: 'LAA·PV', en: 'LAA·PV' }, tgsax: 'TG SAX'
 };
 const T = {
   tr: {
@@ -69,6 +69,9 @@ export function createEchoPanel(mount, handlers) {
   const tsLimits = el('p', 'echo-transseptal-limits');
   tsBox.append(tsTitle, tsRow, tsText, tsLimits);
   const canvas = el('canvas', 'echo-canvas', { role: 'img' });
+  // TEE: mitral valve seen from the LA with the current cut (echo-mitral-map.js).
+  const mitralMap = el('canvas', 'echo-mitral-map', { role: 'img' });
+  mitralMap.hidden = true;
   // Visible LV segments and leaflets of the current cut.
   const partsLine = el('p', 'echo-parts', { 'aria-live': 'polite' });
   // Quick label switches above the image, and the name under the pointer.
@@ -130,7 +133,7 @@ export function createEchoPanel(mount, handlers) {
   const limits = el('p', 'echo-limits');
   // Compact order: the sector and the probe controls come right after the view choice.
   heading.hidden = true;
-  root.append(heading, modality, viewRow, title, quickRow, canvas, tip, partsLine, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
+  root.append(heading, modality, viewRow, title, quickRow, canvas, tip, partsLine, mitralMap, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -302,7 +305,8 @@ export function createEchoPanel(mount, handlers) {
   }
 
   return {
-    element: root, canvas, render,
+    element: root, canvas, render, mitralMap,
+    setMitralMapVisible(show) { if (mitralMap.hidden === show) { mitralMap.hidden = !show; mitralMap.setAttribute('aria-label', lang === 'en' ? 'Mitral valve seen from the left atrium with the current cut line' : 'Sol atriyumdan bakılan mitral kapak ve kesit çizgisi'); } },
     /** Drawn contours in canvas pixels (renderer hits) and the structure names, for the pointer name. */
     setHits(list, structureNames) { hits = list || []; names = structureNames || {}; },
     /** groups: [{ label, parts: string[] }] seen in the cut (empty hides the line). */

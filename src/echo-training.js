@@ -187,6 +187,18 @@ export function layoutChecks(section, view, ctx) {
  * @param {{ required: string[], avoid: (string | { id: string, max: number })[], apical?: boolean, bicaval?: boolean, mitralChord?: [number, number] }} view
  * @param {{ sectorAngle: number, depth: number, frame: object, anatomy: object, label: (id: string) => string, lang: 'tr'|'en' }} ctx
  */
+/**
+ * Criteria of a view at a beat phase: with `mitralPartsClosed`, the mitral
+ * scallops are scored only while the valve is closed (isovolumic phases and
+ * ejection, from mitral closure at `mitralClose`); in diastolic filling the
+ * leaflets swing out of the cut and only the other criteria apply.
+ */
+export function criteriaAtPhase(view, phase, mitralClose = 0.45) {
+  if (!view.mitralPartsClosed || !view.parts || phase === null || phase === undefined || phase >= mitralClose) return view;
+  const parts = Object.fromEntries(Object.entries(view.parts).filter(([k]) => k !== 'mitral'));
+  return { ...view, parts };
+}
+
 export function evaluateView(section, view, ctx) {
   const lengths = visibleLengths(section, ctx.sectorAngle, ctx.depth);
   // A view may ask a target to be recognisable, not just touched: minLength per structure.

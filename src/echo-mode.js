@@ -3,7 +3,8 @@ import { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTUR
 import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset, icePath, iceLaPath, iceLvPath, icePreset, icePosition } from './echo-views.js';
 import { tteFrame, teeFrame, iceFrame } from './echo-probe.js';
 import { sectionMeshes } from './echo-section.js';
-import { evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE, LANDMARK_OFF_PLANE, STRUCTURE_GROUPS } from './echo-training.js';
+import { mitralMapData, mapCutLine, drawMitralMap } from './echo-mitral-map.js';
+import { partLengths, evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE, LANDMARK_OFF_PLANE, STRUCTURE_GROUPS } from './echo-training.js';
 import { drawEchoSector } from './echo-renderer.js';
 import { transseptalGeometry } from './echo-transseptal.js';
 import { createEchoPanel } from './echo-panel.js';
@@ -46,6 +47,7 @@ export function createEchoMode({ heart, mount, getLang }) {
   let active = false, anatomy = null, items = null, path = null, icePathData = null, hull = null, chest = null, panel = null, overlay = null;
   // ICE catheter paths by position: the RA, and the LA after the septal crossing (null without a measured fossa).
   let icePaths = { ra: null, la: null, lv: null };
+  let mitralMap = null;   // TEE mitral scallop map (echo-mitral-map.js), measured at rest
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
@@ -75,6 +77,7 @@ export function createEchoMode({ heart, mount, getLang }) {
       // Oesophagus at the LA level (the schematic TEE path behind the posterior wall): an LA ICE landmark.
       measured.oesophagus = { center: measured.oesophagusPath[2] };
       anatomy = measured;   // assigned last: a failure above leaves the mode uninitialised, not half-built
+      mitralMap = heart.withRestPose(() => measureMitralMap(getMeshes('mitral'), anatomy));
     } catch (error) {
       console.error('Echo landmarks unavailable:', error);
       return false;
@@ -315,6 +318,16 @@ export function createEchoMode({ heart, mount, getLang }) {
       paths: transseptalPaths(frame),
       showParts: state.parts
     });
+    // TEE: the mitral valve seen from the LA with the current cut across it.
+    if (panel?.mitralMap) {
+      const show = state.modality === 'tee' && Boolean(mitralMap);
+      panel.setMitralMapVisible?.(show);
+      if (show) {
+        const lengths = partLengths(section, state.sectorAngle, state.depth);
+        const inCut = new Set(Object.entries(lengths).filter(([k, v]) => k.startsWith('mitral:') && v >= 0.05).map(([k]) => k.slice(7)));
+        drawMitralMap(panel.mitralMap, mitralMap, mapCutLine(mitralMap, frame), inCut, { lang, dpr: Math.min(globalThis.devicePixelRatio || 1, 2) });
+      }
+    }
     panel?.setParts(state.parts ? partGroups(drawn?.parts, lang) : []);
     panel?.setHits(drawn?.hits, STRUCTURE_INFO);
   }
@@ -414,6 +427,23 @@ function seededRandom(seed) {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Mitral leaflet vertices (world, rest pose) with their scallop, for the TEE mitral map. */
+function measureMitralMap(meshes, anatomy) {
+  const points = [];
+  for (const m of meshes) {
+    const parts = m.userData.parts;
+    if (!parts) continue;
+    m.updateWorldMatrix(true, false);
+    const pos = m.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const k = parts.byVertex[i];
+      if (k < 0 || !parts.names[k]) continue;
+      points.push({ part: parts.names[k].abbr, p: new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).toArray() });
+    }
+  }
+  return mitralMapData({ points, center: anatomy.mv.center, normal: anatomy.mv.normal, aortic: anatomy.av.center });
 }
 
 /** 3D probe, imaging fan, (TTE) schematic chest surface and (TEE) oesophagus. */
