@@ -254,7 +254,23 @@ export const ICE_VIEWS = Object.freeze([
     required: ['la', 'rspv'], relations: [ostium('rspv')], optional: ['svc', 'pa'], avoid: ['lspv', 'lipv', 'laa'], source: ICE_LA_SRC },
   { id: 'ice-la-aov', position: 'la', title: { tr: 'LA ICE aort kapağı kısa eksen', en: 'LA ICE aortic valve short axis' }, ase: { tr: 'saat yönü devam: çıkan aort, üst interatriyal bölge, AV kısa eksen (NCC anterior LA karşısında)', en: 'continue clockwise: ascending aorta, superior interatrial region, AV short axis (NCC opposite the anterior LA)' },
     motion: { tr: 'Turun sonunda (ya da home\'dan biraz saat yönü tersine; LAA kapatmada TEE 0° benzeri) aort kapağının kısa ekseni: NCC anterior LA\'nın karşısında, RCC RV çıkış yoluna, LCC ve sol ana koroner LAA\'ya komşu. Saat yönünde ~40° geri döndürmek home\'a getirir.', en: 'At the end of the tour (or a little counterclockwise from home; like TEE 0° in LAA closure) the aortic valve in short axis: the NCC opposite the anterior LA, the RCC next to the RV outflow tract, the LCC and left main next to the LAA. Rotating back ~40° clockwise returns to home.' },
-    required: ['la', 'aortic-valve'], relations: [{ a: 'aortic-valve', b: 'la', max: 0.6, note: { tr: 'aort kökü LA\'nın önünde', en: 'aortic root in front of the LA' } }], optional: ['aorta'], avoid: ['lspv', 'lipv', 'rspv', 'ripv'], source: ICE_LA_SRC }
+    required: ['la', 'aortic-valve'], relations: [{ a: 'aortic-valve', b: 'la', max: 0.6, note: { tr: 'aort kökü LA\'nın önünde', en: 'aortic root in front of the LA' } }], optional: ['aorta'], avoid: ['lspv', 'lipv', 'rspv', 'ripv'], source: ICE_LA_SRC },
+  // Left ventricle (position 'lv'): from the LA home view the catheter is turned toward the
+  // mitral valve, flexed anteriorly and advanced across it into the basal LV, then the flexion
+  // is released (Enriquez et al., Heart Rhythm 2026, figure 7). The atlas has one LV papillary
+  // muscle (the inferior one), so the anterolateral papillary view is not separate.
+  { id: 'ice-lv-inferior', position: 'lv', title: { tr: 'LV ICE inferior duvar + papiller kas', en: 'LV ICE inferior wall + papillary muscle' }, ase: { tr: 'LA home\'dan mitrale, anterior büküm, ilerlet, bükümü bırak', en: 'from LA home toward the MV, anterior flexion, advance, release' },
+    motion: { tr: 'LA home\'dan kateteri saat yönü tersine mitral kapağa çevirin; kapak açıklığı net görülünce anterior büküm verip nazikçe bazal LV\'ye ilerletin, sonra bükümü bırakın: inferior LV duvarı ve posteromedial papiller kas. LV içinden papiller kaslar, trabekülasyonlar ve yalancı kordonlar yakın alanda görülür; kateter navigasyonunu kolaylaştırır.', en: 'From LA home turn the catheter counterclockwise toward the mitral valve; with the valve opening clearly in view, add anterior flexion, advance gently into the basal LV, then release the flexion: the inferior LV wall and the posteromedial papillary muscle. From inside the LV the papillary muscles, trabeculations and false tendons are near field, which helps catheter navigation.' },
+    required: ['lv', 'lv-papillary'], parts: { lv: [['4', '10', '15']] }, avoid: ['ra', 'tricuspid', 'la'], source: ICE_LA_SRC },
+  { id: 'ice-lv-septum', position: 'lv', title: { tr: 'LV ICE septum uzun eksen', en: 'LV ICE septum long axis' }, ase: { tr: 'inferior görünümden saat yönü tersine: IVS bazalden apekse, RV uzakta', en: 'counterclockwise from the inferior view: IVS from base to apex, RV far field' },
+    motion: { tr: 'İnferior görünümden saat yönü tersine çevirin: interventriküler septum uzun ekseninde bazalden apekse, RV serbest duvarı uzak alanda. Duvar hareket bozuklukları, anevrizma ve septal ablasyon lezyonları burada izlenir; daha fazla çevirme inferoseptal çıkıntıyı gösterir.', en: 'Rotate counterclockwise from the inferior view: the interventricular septum in long axis from base to apex, the RV free wall in the far field. Wall motion abnormalities, aneurysms and septal ablation lesions are watched here; more rotation shows the inferoseptal process.' },
+    required: ['lv', 'rv'], order: [['lv', 'rv']], parts: { lv: [['2', '3', '8', '9'], '14'] }, avoid: ['ra', 'la'], source: ICE_LA_SRC },
+  { id: 'ice-lv-lateral', position: 'lv', title: { tr: 'LV ICE lateral duvar', en: 'LV ICE lateral wall' }, ase: { tr: 'saat yönü tersine, posterior ve sol büküm: lateral duvar, lateral mitral anulus altı', en: 'counterclockwise, posterior and left tilt: lateral wall, beneath the lateral mitral annulus' },
+    motion: { tr: 'Saat yönü tersine çevirip posterior ve sola bükün: LV lateral duvarı ve lateral mitral anulusun altındaki bölge. Burada ekojenitesi artmış skar görülebilir; bu bulgu sağdan ICE ile görülemez.', en: 'Rotate counterclockwise and tilt posterior and left: the LV lateral wall and the region beneath the lateral mitral annulus. Scar with increased echogenicity may show here, a finding that right-sided ICE cannot show.' },
+    required: ['lv'], parts: { lv: [['5', '6', '11', '12'], '16'] }, avoid: ['rv', 'ra', 'tricuspid'], source: ICE_LA_SRC },
+  { id: 'ice-lv-lvot', position: 'lv', title: { tr: 'LV ICE septum ve LVOT', en: 'LV ICE septum and LVOT' }, ase: { tr: 'LV\'ye girişten hafif manevra: IVS ve LV çıkış yolu, aort kapağı', en: 'slight manoeuvring after entering the LV: IVS and LV outflow tract, aortic valve' },
+    motion: { tr: 'LV\'ye girdikten sonra hafif manevrayla interventriküler septum ve LV çıkış yolu, ucunda aort kapağı görülür.', en: 'After entering the LV, slight manoeuvring shows the interventricular septum and the LV outflow tract, with the aortic valve at its end.' },
+    required: ['lv', 'aortic-valve'], optional: ['mitral', 'aorta', 'rv'], avoid: ['ra', 'tricuspid'], source: ICE_LA_SRC }
 ]);
 
 /** ICE catheter position of a view: the RA (default) or the LA after a transseptal crossing. */
@@ -296,6 +312,25 @@ export function iceLaPath(A) {
   return { base, top, home, clockwise, position: 'la' };
 }
 
+/**
+ * ICE catheter path in the LV, after crossing the mitral valve: the distal
+ * catheter runs from the mitral annulus centre toward the apex (advance 0..1
+ * from the annulus to 1.2 times the annulus-to-apex length); the home beam
+ * faces the inferior wall (atlas -y), and `clockwise` turns it toward the
+ * lateral wall (patient left). Null without a measured fossa (the catheter
+ * reaches the LV through the septum and the LA).
+ */
+export function iceLvPath(A) {
+  if (!A.fossa) return null;
+  const base = A.mv.center;
+  const top = addv(base, sub(A.apex, base), 1.2);
+  const axis = normalize(sub(top, base));
+  const home = inPlane([0, -1, 0], axis);
+  const left = [1, 0, 0];
+  const clockwise = dot(rotate(home, axis, 30), left) >= dot(rotate(home, axis, -30), left) ? 1 : -1;
+  return { base, top, home, clockwise, position: 'lv' };
+}
+
 // Atlas calibration of the ICE presets (scripts/ice-calibrate.cjs: the
 // smallest departure from the source manoeuvre that meets the view's
 // criteria at rest and through the beat). Knob signs as in iceFrame:
@@ -317,11 +352,19 @@ const ICE_CALIBRATION = Object.freeze({
   'ice-la-posterior': { advance: 0.4, rotation: 85, anteroposterior: 0, leftRight: 0 },
   'ice-la-ripv': { advance: 0.4, rotation: 125, anteroposterior: 0, leftRight: 0 },
   'ice-la-rspv': { advance: 0.4, rotation: 65, anteroposterior: 45, leftRight: 0 },
-  'ice-la-aov': { advance: 0.4, rotation: -40, anteroposterior: 0, leftRight: 0 }
+  'ice-la-aov': { advance: 0.4, rotation: -40, anteroposterior: 0, leftRight: 0 },
+  // LV (advance from the mitral annulus toward the apex)
+  'ice-lv-inferior': { advance: 0.2, rotation: 0, anteroposterior: -45, leftRight: 15 },
+  'ice-lv-septum': { advance: 0.45, rotation: 210, anteroposterior: -15, leftRight: 0 },
+  'ice-lv-lateral': { advance: 0.3, rotation: -15, anteroposterior: -45, leftRight: 15 },
+  'ice-lv-lvot': { advance: 0.3, rotation: 210, anteroposterior: 0, leftRight: 0 }
 });
 
 /** Where an atlas preset departs from the source manoeuvre (shown next to the view). */
 export const ICE_PRESET_NOTES = Object.freeze({
+  'ice-lv-inferior': { tr: 'Atlas farkı: LV yolu mitral anulus merkezinden apekse şematik bir eksendir; inferior duvar segmentleri ve papiller kas birlikte ancak düğme sınırında posterior büküm (45°) ve hafif sol bükümle (15°) kesite giriyor; kaynakta büküm bırakılır.', en: 'Atlas difference: the LV path is a schematic axis from the mitral annulus centre toward the apex; the inferior wall segments and the papillary muscle enter the cut together only with posterior tilt at the knob limit (45°) and slight left tilt (15°); the source releases the flexion.' },
+  'ice-lv-septum': { tr: 'Atlas notu: septum, inferior görünümden 150° saat yönü tersinde (döner sınır nedeniyle 210° saat yönü olarak); kaynakla aynı yön.', en: 'Atlas note: the septum lies 150° counterclockwise from the inferior view (reached as 210° clockwise because of the rotation limit); the same direction as the source.' },
+  'ice-lv-lvot': { tr: 'Atlas notu: LVOT ve aort kapağı bu atlasta LV yolunun 210° saat yönündedir; kaynak yalnız "hafif manevra" der.', en: 'Atlas note: on this atlas the LVOT and aortic valve lie 210° clockwise on the LV path; the source only says "slight manoeuvring".' },
   'ice-la-home': { tr: 'Atlas notu: LA yolu fossadan mitral anulus merkezine doğru şematik bir eksendir; home için 30° posterior büküm gerekti (kaynak: transseptal yere göre posterior büküm gerekebilir).', en: 'Atlas note: the LA path is a schematic axis from the fossa toward the mitral annulus centre; home needed a 30° posterior tilt (the source: posterior tilt may be needed depending on the puncture site).' },
   'ice-la-lspv': { tr: 'Atlas notu: bu atlasta LSPV home rotasyonunda yalnız sağ bükümle (30°) geliyor; kaynakta önce saat yönü rotasyon.', en: 'Atlas note: on this atlas the LSPV comes in at the home rotation with right tilt alone (30°); the source rotates clockwise first.' },
   'ice-la-lipv': { tr: 'Atlas farkı: LIPV için 85° saat yönü ve hafif posterior büküm (15°) gerekti; sol büküm kaynakla aynı yönde (15°).', en: 'Atlas difference: the LIPV needed 85° clockwise and a slight posterior tilt (15°); the left tilt matches the source direction (15°).' },

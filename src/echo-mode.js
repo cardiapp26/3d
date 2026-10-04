@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTURES } from './echo-anatomy.js';
-import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset, icePath, iceLaPath, icePreset, icePosition } from './echo-views.js';
+import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset, icePath, iceLaPath, iceLvPath, icePreset, icePosition } from './echo-views.js';
 import { tteFrame, teeFrame, iceFrame } from './echo-probe.js';
 import { sectionMeshes } from './echo-section.js';
 import { evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE, LANDMARK_OFF_PLANE, STRUCTURE_GROUPS } from './echo-training.js';
@@ -45,7 +45,7 @@ export function createEchoMode({ heart, mount, getLang }) {
   let ivcAnchor = null;
   let active = false, anatomy = null, items = null, path = null, icePathData = null, hull = null, chest = null, panel = null, overlay = null;
   // ICE catheter paths by position: the RA, and the LA after the septal crossing (null without a measured fossa).
-  let icePaths = { ra: null, la: null };
+  let icePaths = { ra: null, la: null, lv: null };
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
@@ -89,7 +89,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     chest = heart.withRestPose(() => chestSurface(hull));
     path = teePath(anatomy);
     icePathData = icePath(anatomy);
-    icePaths = { ra: icePathData, la: iceLaPath(anatomy) };
+    icePaths = { ra: icePathData, la: iceLaPath(anatomy), lv: iceLvPath(anatomy) };
     ivcAnchor = anchorOnRa(anatomy.ivc);
     overlay = createOverlay(path, chest, icePaths, anatomy);
     // Schematic transseptal needle (3D): the same world points as the 2D path.
@@ -167,7 +167,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     const preset = {
       tte: { ...state.tte },
       tee: modality === 'tee' ? { ...teePreset('me4c', anatomy, path), flexion: 0, lateralFlexion: 0 } : null,
-      ice: modality === 'ice' ? { ...icePreset(icePosition(target) === 'la' ? 'ice-la-home' : 'ice-home') } : null
+      ice: modality === 'ice' ? { ...icePreset({ la: 'ice-la-home', lv: 'ice-lv-inferior' }[icePosition(target)] || 'ice-home') } : null
     };
     // The image depth is the start pose's, not the target's (TEE views differ: 3, 3.6, 4.8).
     if (modality === 'tee') state.depth = preset.tee.depth;
@@ -493,14 +493,17 @@ function createOverlay(path, chest, icePaths, anatomy) {
         const below = base.clone().addScaledVector(new THREE.Vector3(...raPath.top).sub(base).normalize(), -1.2);
         const bend = frame.catheter.map(p => new THREE.Vector3(...p));
         let shaftPoints;
-        if (position === 'la' && anatomy.fossa) {
+        if ((position === 'la' || position === 'lv') && anatomy.fossa) {
           // Across the septum: up the IVC, through the RA to the fossa, then into the LA to the knuckle.
           const fossa = new THREE.Vector3(...anatomy.fossa.center), n = new THREE.Vector3(...anatomy.fossa.normal);
           const laSide = new THREE.Vector3(...icePaths.la.top).sub(fossa);
           if (n.dot(laSide) < 0) n.negate();
           const raSide = fossa.clone().addScaledVector(n, -0.35);
           const beyond = bend[0].clone().sub(fossa).dot(n) > 0.02;
-          shaftPoints = [below, base, raSide, ...(beyond ? [fossa] : []), bend[0]];
+          // In the LV the catheter continues from the fossa across the LA and through the mitral valve.
+          const mv = new THREE.Vector3(...anatomy.mv.center), mvAbove = mv.clone().addScaledVector(new THREE.Vector3(...anatomy.mv.normal), -0.3);
+          const laPart = position === 'lv' ? [fossa, mvAbove, mv] : (beyond ? [fossa] : []);
+          shaftPoints = [below, base, raSide, ...laPart, bend[0]];
         } else {
           // Withdrawn far, the knuckle sits below the IVC orifice: then the shaft runs straight to it.
           shaftPoints = bend[0].y > base.y + 0.05 ? [below, base, bend[0]] : [below, bend[0]];

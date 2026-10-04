@@ -22,7 +22,10 @@ const SOURCE = {
   'ice-la-home': { rot: [-10, 30], ap: -1, lr: 0, la: true }, 'ice-la-lspv': { rot: [0, 60], ap: 0, lr: -1, la: true },
   'ice-la-lipv': { rot: [30, 90], ap: 0, lr: 1, la: true }, 'ice-la-mitral-isthmus': { rot: [30, 100], ap: -1, lr: 0, la: true },
   'ice-la-posterior': { rot: [60, 130], ap: 0, lr: 0, la: true }, 'ice-la-ripv': { rot: [90, 160], ap: 0, lr: 0, la: true },
-  'ice-la-rspv': { rot: [40, 200], ap: 0, lr: 0, la: true }, 'ice-la-aov': { rot: [-60, 0], ap: 0, lr: 0, la: true }
+  'ice-la-rspv': { rot: [40, 200], ap: 0, lr: 0, la: true }, 'ice-la-aov': { rot: [-60, 0], ap: 0, lr: 0, la: true },
+  // LV views (figure 7): order and knob directions only; the whole rotation range is searched.
+  'ice-lv-inferior': { rot: [-45, 45], ap: 0, lr: 0, la: true, lv: true }, 'ice-lv-septum': { rot: [-60, 270], ap: 0, lr: 0, la: true, lv: true },
+  'ice-lv-lateral': { rot: [-60, 270], ap: -1, lr: 1, la: true, lv: true }, 'ice-lv-lvot': { rot: [-60, 270], ap: 0, lr: 0, la: true, lv: true }
 };
 
 (async () => {
@@ -41,13 +44,14 @@ const SOURCE = {
       const h = window.heart;
       const getMeshes = id => { const l = []; h.scene.traverse(o => { if (o.isMesh && o.userData.id === id && !o.userData.micro) l.push(o); }); return l; };
       const A = window.cardiaEcho.getAnatomy();
-      const paths = { ra: window.cardiaEcho.getIcePath('ra'), la: window.cardiaEcho.getIcePath('la') };
+      const paths = { ra: window.cardiaEcho.getIcePath('ra'), la: window.cardiaEcho.getIcePath('la'), lv: window.cardiaEcho.getIcePath('lv') };
       const items = h.withRestPose(() => echoItems(getMeshes));
       const angle = V.SECTOR_ANGLE;
       const range = (a, b, step) => { const out = []; for (let v = a; v <= b + 1e-9; v += step) out.push(+v.toFixed(3)); return out; };
-      const PHASES = [0.1, 0.4, 0.55, 0.75];
+      const PHASES = [0, 0.1, 0.4, 0.55, 0.75, 0.88];
       const fails = e => e.missing.length * 3 + e.wrong.length * 2 + (e.relations || []).filter(r => !r.ok).length * 2
-        + (e.order || []).filter(o => !o.ok).length * 2 + (e.landmarks || []).filter(l => !l.ok).length * 2;
+        + (e.order || []).filter(o => !o.ok).length * 2 + (e.landmarks || []).filter(l => !l.ok).length * 2
+        + (e.missingSegments || []).length * 2;
       const evalAt = (frame, view, depth, phase) => {
         const section = phase === null ? h.withRestPose(() => sectionMeshes(items, frame)) : (h.seekCycle(phase), sectionMeshes(items, frame));
         return evaluateView(section, view, { sectorAngle: angle, depth, frame, anatomy: A, label: x => x, lang: 'en' });
@@ -58,12 +62,12 @@ const SOURCE = {
         const src = SOURCE[view.id];
         if (!src) continue;
         const path = paths[V.icePosition(view)];
-        const home = src.la ? 0.4 : 0.55, step = src.la ? 10 : 5;
+        const home = src.lv ? 0.3 : src.la ? 0.4 : 0.55, step = src.lv ? 15 : src.la ? 10 : 5;
         const departure = st => Math.abs(st.advance - home) + Math.max(0, src.rot[0] - st.rotation, st.rotation - src.rot[1]) / 10
           + (src.ap ? (Math.sign(st.anteroposterior) === src.ap ? 0 : 1 + Math.abs(st.anteroposterior) / 30) : Math.abs(st.anteroposterior) / 30)
           + (src.lr ? (Math.sign(st.leftRight) === src.lr ? 0 : 1 + Math.abs(st.leftRight) / 30) : Math.abs(st.leftRight) / 30);
         const cands = [];
-        for (const advance of (src.la ? [0.2, 0.3, 0.4, 0.5, 0.65] : [0.4, 0.5, 0.55, 0.6, 0.7])) for (const rotation of range(Math.max(-60, src.rot[0] - 15), Math.min(270, src.rot[1] + 15), step))
+        for (const advance of (src.lv ? [0.1, 0.2, 0.3, 0.45] : src.la ? [0.2, 0.3, 0.4, 0.5, 0.65] : [0.4, 0.5, 0.55, 0.6, 0.7])) for (const rotation of range(Math.max(-60, src.rot[0] - 15), Math.min(270, src.rot[1] + 15), step))
           for (const anteroposterior of range(-45, 45, 15)) for (const leftRight of range(-45, 45, 15)) for (const depth of [3.6, 4.2, 4.8]) {
             const st = { advance, rotation, anteroposterior, leftRight };
             const frame = iceFrame(path, st);

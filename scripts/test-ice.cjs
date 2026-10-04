@@ -81,6 +81,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
         // LA tour: left and right veins keep their identity, the LAA view needs the LAA, the posterior wall the oesophagus.
         laLeftAtRight: judge('ice-la-lspv', 'ice-la-rspv').achieved, laRightAtLeft: judge('ice-la-rspv', 'ice-la-lspv').achieved,
         laHomeAtPosterior: judge('ice-la-home', 'ice-la-posterior').achieved, laPosteriorAtHome: judge('ice-la-posterior', 'ice-la-home'),
+        lvPath: window.cardiaEcho.getIcePath('lv'), lvSeptumOrder: JSON.stringify(V.viewById('ice-lv-septum').order) === '[["lv","rv"]]',
         laPath: window.cardiaEcho.getIcePath('la'), raPath: window.cardiaEcho.getIcePath('ra'),
         laTip: iceFrame(window.cardiaEcho.getIcePath('la'), V.icePreset('ice-la-home')).tip, laCentre: A.la, fossa: A.fossa.center,
         parity: V.ICE_VIEWS.every((v) => v.motion?.tr && v.motion?.en && v.ase?.tr && v.ase?.en && v.title?.tr && v.title?.en)
@@ -111,6 +112,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.equal(cross.laRightAtLeft, false, 'LA ICE: the RSPV view is not met at the LSPV pose');
     assert.equal(cross.laHomeAtPosterior, false, 'LA home needs the LAA and the mitral valve');
     assert.ok(cross.laPosteriorAtHome.landmarks.some((l) => l.id === 'oesophagus'), 'the posterior wall view checks the oesophagus');
+    assert.ok(cross.lvPath && cross.lvPath.position === 'lv' && cross.lvSeptumOrder, 'LV position: path and septal order (LV near, RV far)');
     assert.ok(cross.laPath && cross.laPath.position === 'la' && cross.raPath.position !== 'la', 'two catheter positions');
     const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
     assert.ok(dist(cross.laPath.base, cross.fossa) < 1e-9, 'the LA path starts at the fossa (septal crossing)');
@@ -175,7 +177,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
       return { tr: views('tr'), en: views('en') };
     });
     assert.deepEqual(lesson.tr, lesson.en, 'TR and EN lesson steps open the same views');
-    for (const id of ['ice-home', 'ice-rvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc', 'ice-la-home', 'ice-la-lspv', 'ice-la-mitral-isthmus', 'ice-la-posterior', 'ice-la-rspv', 'ice-la-aov']) assert.ok(lesson.tr.includes(id), `lesson step for ${id}`);
+    for (const id of ['ice-home', 'ice-rvot', 'ice-mitral-laa', 'ice-left-pv', 'ice-septal-sax', 'ice-right-pv', 'ice-svc', 'ice-la-home', 'ice-la-lspv', 'ice-la-mitral-isthmus', 'ice-la-posterior', 'ice-la-rspv', 'ice-la-aov', 'ice-lv-inferior', 'ice-lv-septum']) assert.ok(lesson.tr.includes(id), `lesson step for ${id}`);
 
     // 7. Narrow screen: no horizontal overflow with the ICE panel.
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

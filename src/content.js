@@ -1461,7 +1461,7 @@ export const rawLessons = {
   },
   ice: {
     tr: {
-      title: 'İntrakardiyak eko (ICE) • sağ ve sol atriyumdan anatomik kesit',
+      title: 'İntrakardiyak eko (ICE) • sağ ve sol kalp boşluklarından anatomik kesit',
       intro: 'Phased-array ICE kateteri femoral venden İVK yoluyla sağ atriyumun ortasına yerleşir; yandan bakan sektör kateterin uzun eksenini içerir. Saat yönünde rotasyon home görünümünden başlayarak sırasıyla daha posterior yapıları getirir. Kesit, atımın o anki fazındaki geometriden hesaplanır; prob ayarları ve görünümler atlasta otomatik kalibre edilmiştir, uzman onayı yoktur. Gerçek B-mod veya Doppler değildir.',
       steps: [
         {
@@ -1531,8 +1531,18 @@ export const rawLessons = {
         },
         {
           title: 'Aort kapağı kısa ekseni ve LA ICE\'nin yeri',
-          text: 'Çıkan aort ve aort kapağının kısa ekseni: NCC anterior LA\'nın karşısında, RCC RV çıkış yoluna, LCC ve sol ana koroner LAA\'ya komşu; LAA kapatmada home\'dan biraz saat yönü tersine TEE 0° benzeri görüntü verir. LA\'dan ICE ayrıca kateter-doku temasını (kontakt kuvveti ölçmeyen pulsed field ve kriyobalon için önemli) ve lezyon oluşumunu (ekojenite artışı, şişlik) izler. Sınırlamalar: mevcut ponksiyondan geçiş daha büyük rezidüel ASD bırakabilir, ikinci ponksiyon ek risk getirir; septuma yakın panoramik görüntü kaybolur; öğrenme eğrisi vardır. Mitral kapaktan LV\'ye geçerek inferior duvar ve posteromedial papiller kas, septum uzun ekseni ve lateral duvar skarı da görüntülenir; bu LV görünümleri modelde henüz yoktur (Enriquez ve ark., Heart Rhythm 2026). Kapakçıklar modelde tek aort kapağı olarak puanlanır.',
+          text: 'Çıkan aort ve aort kapağının kısa ekseni: NCC anterior LA\'nın karşısında, RCC RV çıkış yoluna, LCC ve sol ana koroner LAA\'ya komşu; LAA kapatmada home\'dan biraz saat yönü tersine TEE 0° benzeri görüntü verir. LA\'dan ICE ayrıca kateter-doku temasını (kontakt kuvveti ölçmeyen pulsed field ve kriyobalon için önemli) ve lezyon oluşumunu (ekojenite artışı, şişlik) izler. Sınırlamalar: mevcut ponksiyondan geçiş daha büyük rezidüel ASD bırakabilir, ikinci ponksiyon ek risk getirir; septuma yakın panoramik görüntü kaybolur; öğrenme eğrisi vardır. Mitral kapaktan LV\'ye geçerek inferior duvar ve posteromedial papiller kas, septum uzun ekseni ve lateral duvar skarı da görüntülenir; bu LV görünümleri sonraki adımlardadır (Enriquez ve ark., Heart Rhythm 2026). Kapakçıklar modelde tek aort kapağı olarak puanlanır.',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-aov' }
+        },
+        {
+          title: 'LV\'ye geçiş: inferior duvar ve papiller kas',
+          text: 'LA home\'dan kateter saat yönü tersine mitral kapağa çevrilir; kapak açıklığı net görülünce anterior büküm verilip kateter nazikçe bazal LV\'ye ilerletilir, sonra büküm bırakılır: inferior LV duvarı ve posteromedial papiller kas. LV içinden papiller kaslar, trabekülasyonlar ve yalancı kordonlar yakın alanda yüksek çözünürlükle görülür; kateter navigasyonu kolaylaşır, substrat (ekojenite artışı, incelme, duvar hareket bozukluğu) ve skar sınırı daha iyi ayırt edilir (Enriquez ve ark., Heart Rhythm 2026). Atlasta tek LV papiller kası (inferior) vardır; anterolateral papiller kas ayrı bir görünüm olarak yoktur. Modelin LV yolu mitral anulus merkezinden apekse uzanan şematik bir eksendir.',
+          landmark: 'lv', view: 'lateral', echo: { modality: 'ice', view: 'ice-lv-inferior' }
+        },
+        {
+          title: 'LV septumu, lateral duvar ve LVOT',
+          text: 'İnferior görünümden saat yönü tersine çevirince interventriküler septum uzun ekseninde bazalden apekse görülür, RV serbest duvarı uzak alanda: duvar hareket bozukluğu, anevrizma ve septal ablasyon lezyonları (RF ile ekojenite artışı) buradan izlenir. Posterior ve sola bükümle lateral duvar ve lateral mitral anulusun altı gelir; buradaki skar sağdan ICE ile görülemez. LV\'ye girdikten sonra hafif manevrayla IVS ve LV çıkış yolu, ucunda aort kapağı görülür. LV içinden ICE kateter-doku temasını, lezyon oluşumunu ve buhar patlamasından önce görülebilen mikrokabarcıkları izler; büyük kardiyak ven içinden epikardiyal ablasyonda sirkumfleks arterin kateter ucuna uzaklığı LA\'dan gösterilip koroner anjiyografiyle doğrulanır (Enriquez ve ark., Heart Rhythm 2026). Lateral ve LVOT görünümleri düğmelerle açılır.',
+          landmark: 'lv', view: 'lateral', echo: { modality: 'ice', view: 'ice-lv-septum' }
         },
         {
           title: 'Görev: ICE görünümünü bulun',
@@ -1547,7 +1557,7 @@ export const rawLessons = {
       ]
     },
     en: {
-      title: 'Intracardiac echo (ICE) • anatomical section from the right and left atrium',
+      title: 'Intracardiac echo (ICE) • anatomical section from the right and left heart chambers',
       intro: 'The phased-array ICE catheter reaches the mid right atrium from the femoral vein through the IVC; its side-looking sector contains the catheter long axis. Clockwise rotation from the home view brings progressively more posterior structures into view. The section is computed from the geometry at the current phase of the beat; probe settings and views were calibrated automatically on this atlas without expert review. It is not real B-mode or Doppler.',
       steps: [
         {
@@ -1617,8 +1627,18 @@ export const rawLessons = {
         },
         {
           title: 'Aortic valve short axis and the place of LA ICE',
-          text: 'The ascending aorta and the aortic valve in short axis: the NCC opposite the anterior LA, the RCC next to the RV outflow tract, the LCC and left main next to the LAA; in LAA closure a little counterclockwise from home gives a TEE 0°-like image. ICE from the LA also shows catheter-tissue contact (important for pulsed field and cryoballoon, which do not measure contact force) and lesion formation (increased echogenicity, swelling). Limitations: crossing through the existing puncture may leave a larger residual ASD, a second puncture adds risk; the panoramic view near the septum is lost; there is a learning curve. Crossing the mitral valve into the LV shows the inferior wall and the posteromedial papillary muscle, the septum in long axis and lateral wall scar; these LV views are not in the model yet (Enriquez et al., Heart Rhythm 2026). The cusps are scored as one aortic valve in the model.',
+          text: 'The ascending aorta and the aortic valve in short axis: the NCC opposite the anterior LA, the RCC next to the RV outflow tract, the LCC and left main next to the LAA; in LAA closure a little counterclockwise from home gives a TEE 0°-like image. ICE from the LA also shows catheter-tissue contact (important for pulsed field and cryoballoon, which do not measure contact force) and lesion formation (increased echogenicity, swelling). Limitations: crossing through the existing puncture may leave a larger residual ASD, a second puncture adds risk; the panoramic view near the septum is lost; there is a learning curve. Crossing the mitral valve into the LV shows the inferior wall and the posteromedial papillary muscle, the septum in long axis and lateral wall scar; these LV views follow in the next steps (Enriquez et al., Heart Rhythm 2026). The cusps are scored as one aortic valve in the model.',
           landmark: 'la', view: 'lateral', echo: { modality: 'ice', view: 'ice-la-aov' }
+        },
+        {
+          title: 'Into the LV: inferior wall and papillary muscle',
+          text: 'From LA home the catheter is turned counterclockwise toward the mitral valve; with the valve opening clearly in view, anterior flexion is added, the catheter is advanced gently into the basal LV and the flexion is released: the inferior LV wall and the posteromedial papillary muscle. From inside the LV the papillary muscles, trabeculations and false tendons are near field at high resolution; catheter navigation is easier and the substrate (increased echogenicity, thinning, wall motion abnormality) and scar border are better delineated (Enriquez et al., Heart Rhythm 2026). The atlas has one LV papillary muscle (the inferior one); the anterolateral papillary muscle is not a separate view. The model\'s LV path is a schematic axis from the mitral annulus centre toward the apex.',
+          landmark: 'lv', view: 'lateral', echo: { modality: 'ice', view: 'ice-lv-inferior' }
+        },
+        {
+          title: 'LV septum, lateral wall and LVOT',
+          text: 'Counterclockwise from the inferior view the interventricular septum shows in long axis from base to apex, the RV free wall in the far field: wall motion abnormalities, aneurysms and septal ablation lesions (increased echogenicity with RF) are watched from here. Posterior and left tilt bring the lateral wall and the region beneath the lateral mitral annulus; scar there cannot be seen with right-sided ICE. After entering the LV, slight manoeuvring shows the IVS and the LV outflow tract with the aortic valve at its end. From inside the LV, ICE shows catheter-tissue contact, lesion formation and the microbubbles that may precede steam pops; during epicardial ablation from the great cardiac vein the distance of the circumflex artery from the catheter tip is shown from the LA and confirmed by coronary angiography (Enriquez et al., Heart Rhythm 2026). The lateral and LVOT views open from the buttons.',
+          landmark: 'lv', view: 'lateral', echo: { modality: 'ice', view: 'ice-lv-septum' }
         },
         {
           title: 'Task: find the ICE view',
