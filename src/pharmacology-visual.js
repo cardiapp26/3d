@@ -11,6 +11,11 @@ const TARGETS = {
   intestine: ['İnce bağırsak', 'Small intestine', 'Ezetimib, bağırsak fırçamsı kenarındaki NPC1L1 üzerinden kolesterol emilimini azaltır.', 'Ezetimibe reduces cholesterol absorption through NPC1L1 at the intestinal brush border.'],
 };
 
+/** Anterior render of the app's own 3D heart model (scripts/render-pharmacology-heart.cjs). */
+const HEART_IMAGE = new URL('./assets/pharmacology-heart.webp', import.meta.url).href;
+/** Targets inside the heart (not on the anterior surface) get a dashed ring. */
+const INTERNAL_TARGETS = new Set(['av']);
+
 /** Educational, schematic target map; no physiologic or patient simulation. */
 export function createPharmacologyVisual({ mount, getLang = () => 'tr', onSelect }) {
   let active = 'lv';
@@ -23,17 +28,16 @@ export function createPharmacologyVisual({ mount, getLang = () => 'tr', onSelect
       <title id="pharmaviz-title">Drug target map</title>
       <defs><linearGradient id="pharmaviz-heart" x2="1" y2="1"><stop stop-color="#eea090"/><stop offset="1" stop-color="#c45c53"/></linearGradient></defs>
       <rect x="1" y="1" width="638" height="468" rx="32" fill="#f4f5ec"/>
-      <circle cx="323" cy="235" r="175" fill="#e2ebda"/>
-      <path d="M327 169 C320 123 351 86 397 81 L430 83 M349 114 L350 51 M379 89 L390 45 M410 83 L429 45" stroke="#bb7264" stroke-width="24" fill="none" stroke-linecap="round"/>
-      <path d="M285 154 C245 132 208 149 195 184 C171 244 226 318 314 380 C384 342 435 275 419 210 C408 161 366 140 327 169 C307 139 300 141 285 154Z" fill="url(#pharmaviz-heart)" stroke="#a9534c" stroke-width="3"/>
-      <path d="M324 190 C291 237 299 293 314 358 M329 207 C363 222 383 250 395 285 M310 247 L261 282 M343 216 L373 187" stroke="#f7dfba" stroke-width="6" fill="none" stroke-linecap="round"/>
-      <path d="M246 163 L248 102 M232 111 L272 111" stroke="#789d99" stroke-width="22" stroke-linecap="round"/>
-      <path d="M303 193 Q270 196 268 235 Q288 247 315 222" fill="#eab0a2" stroke="#af6459" stroke-width="2"/>
-      <path d="M347 253 Q375 285 321 344 Q299 291 321 253Z" fill="#b9544d" opacity=".65"/>
-      <path d="M79 279 C49 258 42 291 48 317 C58 348 83 348 88 326 L75 309 C92 299 94 288 79 279Z" fill="#ba8371"/>
-      <path d="M548 309 C521 275 482 288 483 315 C510 344 554 338 578 316 L581 287Z" fill="#bd8970"/>
-      <path d="M487 374 Q515 358 545 373 Q566 389 540 400 Q503 412 490 393 Q481 380 516 382 Q548 384 535 393" fill="none" stroke="#bf9476" stroke-width="12" stroke-linecap="round"/>
-      <g fill="#b9a978" stroke="#8f8455" stroke-width="2"><circle cx="541" cy="174" r="19"/><circle cx="565" cy="185" r="14"/><circle cx="554" cy="151" r="12"/></g>
+      <ellipse cx="316" cy="240" rx="175" ry="205" fill="#e6eedd"/>
+      <ellipse cx="322" cy="438" rx="130" ry="10" fill="#cfd8c4" opacity=".7"/>
+      <image class="pharmaviz-organ" data-organ="heart" href="${HEART_IMAGE}" x="160" y="30" width="311" height="405"/>
+      <path class="pharmaviz-organ" data-organ="kidney" d="M95 280C60 280 50 325 60 355C70 390 115 395 125 365C130 350 112 340 112 325C112 310 130 300 125 290C120 282 108 280 95 280Z" fill="#b97a6a"/>
+      <path d="M112 325Q100 325 94 320" stroke="#e7c4b6" stroke-width="3" fill="none"/>
+      <path class="pharmaviz-organ" data-organ="liver" transform="translate(24 0)" d="M478 270C500 240 600 238 615 262C620 292 588 322 548 330C512 336 484 312 478 270Z" fill="#9c5a4c"/>
+      <path class="pharmaviz-organ" data-organ="intestine" transform="translate(24 0)" d="M488 392Q500 370 528 376Q556 382 552 400Q548 418 520 414Q500 410 508 396Q518 386 534 396M552 400Q572 404 590 390" fill="none" stroke="#d3a07f" stroke-width="13" stroke-linecap="round"/>
+      <g class="pharmaviz-organ" data-organ="platelet" transform="translate(24 0)" fill="#d9c58c" stroke="#a39256" stroke-width="2"><ellipse cx="530" cy="122" rx="20" ry="9"/><ellipse cx="572" cy="110" rx="16" ry="8" transform="rotate(-20 572 110)"/><ellipse cx="560" cy="146" rx="18" ry="8" transform="rotate(15 560 146)"/><path d="M515 160Q545 150 585 168" stroke="#b8a46a" fill="none"/></g>
+      <g class="pharmaviz-organ-labels" font-size="17" fill="#4d6150" text-anchor="middle"></g>
+      <g class="pharmaviz-leader"><line/><rect rx="9" height="32"/><text/></g>
       <g class="pharmaviz-node-dots"></g>
     </svg>
     <div class="pharmaviz-targets" role="group"></div>
@@ -46,7 +50,9 @@ export function createPharmacologyVisual({ mount, getLang = () => 'tr', onSelect
       </svg><p class="pharmaviz-signal-caption"></p>
     </div>`;
   mount.append(root);
-  const positions = { lv: [356, 297], sa: [245, 157], av: [287, 218], coronaries: [366, 242], aorta: [369, 91], la: [370, 179], kidney: [70, 308], platelet: [548, 171], liver: [531, 311], intestine: [526, 390] };
+  const positions = { lv: [358, 306], sa: [215, 158], av: [243, 259], coronaries: [396, 306], aorta: [289, 52], la: [365, 192], kidney: [92, 332], platelet: [572, 130], liver: [572, 285], intestine: [548, 398] };
+  /** Always-visible organ captions (outside the heart); heart targets get a leader tag when active. */
+  const ORGAN_LABELS = { kidney: [92, 418], liver: [572, 352], intestine: [564, 445], platelet: [574, 190] };
   const buttons = new Map();
   const dots = new Map();
   const lang = () => getLang() === 'en' ? 'en' : 'tr';
@@ -68,8 +74,38 @@ export function createPharmacologyVisual({ mount, getLang = () => 'tr', onSelect
     dot.setAttribute('fill', '#496c53');
     dot.style.cursor = 'pointer';
     dot.addEventListener('click', () => { setTarget(id); onSelect?.(id); });
+    dot.addEventListener('pointerenter', () => drawLeader(id));
+    dot.addEventListener('pointerleave', () => drawLeader(active));
+    dot.classList.add('pharmaviz-dot');
+    if (INTERNAL_TARGETS.has(id)) dot.setAttribute('stroke-dasharray', '4 3');
     root.querySelector('.pharmaviz-node-dots').append(dot);
     dots.set(id, dot);
+  }
+  for (const [id, [x, y]] of Object.entries(ORGAN_LABELS)) {
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', x); label.setAttribute('y', y); label.dataset.organLabel = id;
+    root.querySelector('.pharmaviz-organ-labels').append(label);
+  }
+  root.querySelectorAll('.pharmaviz-organ').forEach(shape => {
+    const id = shape.dataset.organ === 'heart' ? 'lv' : shape.dataset.organ;
+    shape.addEventListener('click', () => { setTarget(id); onSelect?.(id); });
+  });
+  function drawLeader(id) {
+    const [x, y] = positions[id];
+    const text = TARGETS[id][lang() === 'en' ? 1 : 0];
+    const width = text.length * 9 + 24;
+    const toRight = x < 320;
+    const boxX = toRight ? Math.max(12, x - width - 40) : Math.min(628 - width, x + 40);
+    const boxY = Math.min(Math.max(y - 58, 10), 424);
+    const leader = root.querySelector('.pharmaviz-leader');
+    leader.style.display = ORGAN_LABELS[id] ? 'none' : '';
+    const line = leader.querySelector('line');
+    line.setAttribute('x1', x); line.setAttribute('y1', y);
+    line.setAttribute('x2', boxX + (toRight ? width : 0)); line.setAttribute('y2', boxY + 16);
+    const rect = leader.querySelector('rect');
+    rect.setAttribute('x', boxX); rect.setAttribute('y', boxY); rect.setAttribute('width', width);
+    const label = leader.querySelector('text');
+    label.setAttribute('x', boxX + 12); label.setAttribute('y', boxY + 22); label.textContent = text;
   }
   const signalButtons = {};
   for (const id of ['ventricular', 'nodal']) {
@@ -99,6 +135,14 @@ export function createPharmacologyVisual({ mount, getLang = () => 'tr', onSelect
       dots.get(id).setAttribute('r', active === id ? '14' : '8');
       dots.get(id).setAttribute('fill', active === id ? '#d6a048' : '#496c53');
     }
+    root.querySelectorAll('[data-organ-label]').forEach(node => {
+      node.textContent = TARGETS[node.dataset.organLabel][lang() === 'en' ? 1 : 0];
+      node.classList.toggle('is-active', node.dataset.organLabel === active);
+    });
+    root.querySelectorAll('.pharmaviz-organ').forEach(shape => {
+      shape.classList.toggle('is-active', (shape.dataset.organ === 'heart' ? ['lv', 'sa', 'av', 'coronaries', 'la'].includes(active) : shape.dataset.organ === active));
+    });
+    drawLeader(active);
     root.querySelector('.pharmaviz-detail strong').textContent = TARGETS[active][lang() === 'en' ? 1 : 0];
     root.querySelector('.pharmaviz-detail p').textContent = TARGETS[active][lang() === 'en' ? 3 : 2];
     root.querySelector('.pharmaviz-detail small').textContent = focusedCard
