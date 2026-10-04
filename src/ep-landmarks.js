@@ -327,14 +327,14 @@ export function createEPLandmarks(helpers) {
     }
 
     // Catheter colours are kept apart in hue in 3D and under fluoroscopy:
-    // yellow ablation, magenta His, blue CS.
+    // light blue ablation, magenta His, blue CS.
     // Slow pathway ablation catheter (femoral): up the RA cavity, onto the
     // inferior paraseptal target from the cavity side.
     const ablationRoute = tip => [...femoral(), cavityAt(between(ivcOs.y, tip.y, 0.4), ra), cavityAt(between(ivcOs.y, tip.y, 0.7), ra),
       tip.clone().lerp(ra, 0.3), tip.clone()];
     const ablationRings = [0.88, 0.93, 0.97, 1];
     const ablation = catheter({
-      name: 'Slow pathway ablation catheter (schematic)', pickId: 'koch-catheter', color: 0xfacc15, radius: 0.014, tint: 0xd09a00, cavity: [ivcOs, slowPathwayCenter],
+      name: 'Slow pathway ablation catheter (schematic)', pickId: 'koch-catheter', color: 0x38bdf8, radius: 0.014, tint: 0x5cc8f5, cavity: [ivcOs, slowPathwayCenter],
       points: ablationRoute(slowPathwayCenter),
       rings: ablationRings
     });
