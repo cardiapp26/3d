@@ -1,0 +1,22 @@
+.pharma-panel{--pharma-accent:#257967;font-size:13px;line-height:1.55;min-width:0}
+.pharma-topic-nav,.pharma-view-nav,.pharma-card-actions{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.pharma-panel button{border:1px solid #cfdcd5;border-radius:7px;background:#fff;color:#24443a;padding:7px 9px;font:inherit;cursor:pointer}
+.pharma-panel button:focus-visible,.pharma-panel input:focus-visible,.pharma-panel a:focus-visible{outline:3px solid #4f9384;outline-offset:2px}
+.pharma-panel button[aria-current=true],.pharma-panel button[aria-pressed=true]{background:var(--pharma-accent);color:white;border-color:var(--pharma-accent)}
+.pharma-panel button:disabled{cursor:default;opacity:.8}
+.pharma-topic-nav button{font-size:11px;padding:5px 8px}
+.pharma-safety,.pharma-anatomy-note,.pharma-pk small{font-size:11px;color:#647368}
+.pharma-search-label{display:block;font-size:11px;font-weight:600;margin:12px 0}
+.pharma-search-label input{display:block;width:100%;box-sizing:border-box;margin-top:6px;border:1px solid #ccd8d0;border-radius:8px;padding:10px;background:white;font:inherit;font-size:13px}
+.pharma-result-count{color:#647368;font-size:11px}
+.pharma-card,.pharma-pk{background:#fbfdfb;border:1px solid #dce6de;border-radius:12px;margin:14px 0;padding:14px;overflow-wrap:anywhere}
+.pharma-card h4,.pharma-pk h4,.pharma-quiz h4{font-size:15px;margin:0 0 8px;color:#24443a}
+.pharma-examples{font-size:12px;color:#5b7465;margin:4px 0 12px}
+.pharma-card dl{margin:0}.pharma-field{margin:10px 0}.pharma-field dt{font-size:10px;text-transform:uppercase;font-weight:700;letter-spacing:.6px;color:#5b7465}.pharma-field dd{margin:3px 0 0}
+.pharma-risk{border-left:3px solid #c08a43;padding-left:9px}.pharma-risk dt{color:#875e2c}
+.pharma-refs{display:block;font-size:10px;color:#63776a;margin-top:10px}.pharma-panel a{color:var(--pharma-accent);text-decoration:underline}
+.pharma-notice:not(:empty){padding:8px;border-radius:6px;background:#fff2df;color:#775523}
+.pharma-compare-scroll{overflow-x:auto}.pharma-compare-table{border-collapse:collapse;width:100%;font-size:12px;table-layout:fixed}.pharma-compare-table caption{text-align:left;font-weight:700;margin:10px 0}.pharma-compare-table th,.pharma-compare-table td{padding:8px;border:1px solid #dce6de;vertical-align:top;overflow-wrap:anywhere}.pharma-compare-table th{background:#eff5ef;text-align:left}.pharma-compare-table th:first-child{width:22%}.pharma-compare-table button{float:right;padding:0 5px}
+.pharma-options{display:grid;gap:7px}.pharma-options button{text-align:left}.pharma-options .correct{background:#e0f1e7;border-color:#479479;color:#215f49}.pharma-options .incorrect{background:#f9e8e4;border-color:#c2897b}.pharma-feedback{padding:12px;background:#f0f5ef;border-radius:8px;margin-top:12px}
+.pharma-pk svg{width:100%;height:auto;color:#526b5b;font-size:10px}.pharma-pk label{display:block;font-size:12px}.pharma-pk input{width:100%;accent-color:var(--pharma-accent)}.pharma-pk output{float:right;font-weight:700}
+.pharma-sources{border-top:1px solid #dce6de;margin-top:18px;padding-top:12px;font-size:11px}.pharma-sources summary{cursor:pointer;font-weight:700}.pharma-sources ol{padding-left:20px}.pharma-sources li{margin:14px 0;overflow-wrap:anywhere;scroll-margin-top:20px}.pharma-sources p{margin:4px 0}

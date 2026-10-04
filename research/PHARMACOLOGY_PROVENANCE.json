@@ -1,0 +1,310 @@
+{
+  "date": "2026-10-04",
+  "inputs": [
+    {
+      "file": "cardiac-drugs.pdf",
+      "bytes": 817473,
+      "sha256": "63a5c95415baed442508963b8e39707013392a7e5951c8bb2b5f8af53b394340"
+    },
+    {
+      "file": "cardiovascular Reviews Pharmacology 7th edition.pdf",
+      "bytes": 16371912,
+      "sha256": "4bd2803c527a0997732e20fa06fb8fd87bbcf747ae7599b44406172a0964fcb2"
+    },
+    {
+      "file": "s-action potentials-drugs.pptx",
+      "bytes": 934238,
+      "sha256": "c9c100e1119e11126e474abc6f82e8beb59b68600e22ebc046648c71998005ca"
+    },
+    {
+      "file": "s-antiaritmikler.pptx",
+      "bytes": 31496553,
+      "sha256": "e5e6cf576f73b1a9069b976b5303edfbc695bdac667833109b38c61e719fe33b"
+    },
+    {
+      "file": "codex-clipboard-424ba30e-8163-4274-8d01-30fa9b9b721a.png",
+      "bytes": 1806173,
+      "sha256": "36d9de261c82f7c4c7d3eb8e8d18b5b69e20917b96cca71408b662eb90648221",
+      "role": "User cascade reference; reauthored as SVG/HTML, incorrect XIII screening-test relationship corrected"
+    },
+    {
+      "file": "codex-clipboard-678a05a9-b276-46dc-b657-266c133493a7.png",
+      "bytes": 202014,
+      "sha256": "ebef5acd95ba46ee02da746beb6866c7ccd70e765dd899bbcd0f20f75e97f9c9",
+      "role": "User diuretic mind map; reauthored as interactive SVG/HTML with checked clinical caveats"
+    },
+    {
+      "file": "codex-clipboard-2f1d1c24-21ad-4e35-82a2-6dfd2c2fd74a.png",
+      "bytes": 799473,
+      "sha256": "8b985b3b6ba9c7264a772aba79634e211164e732ca35f57aafd23c8daa89ff22",
+      "role": "User Netter loop reference; original interactive causal flow, no source image redistribution"
+    },
+    {
+      "file": "codex-clipboard-365077b9-7341-4577-993d-4ce9836d5482.png",
+      "bytes": 692048,
+      "sha256": "954218313c753ca6f12d616109360686503c82a6ab5e7a55be68495cab213dde",
+      "role": "User historical HF chart; original interactive hierarchy updated against guidelines"
+    },
+    {
+      "file": "codex-clipboard-3c02f0b8-0ef3-411b-95d5-0de8d8b0e1bc.png",
+      "bytes": 825457,
+      "sha256": "e11da1831718fde17e115158849482d80fdb88fa962847af5ecd614f498a4541",
+      "role": "User lipid mechanism reference; original simplified SVG/HTML adaptation, no source image redistribution"
+    },
+    {
+      "file": "codex-clipboard-3387b360-a6d1-499e-ac55-0bd4742b4157.png",
+      "bytes": 2841024,
+      "sha256": "23b9a67efbc0651be2d89f237ef64e57a49cf74fca18855edefe27c87ff7120a",
+      "role": "Historical dyslipidemia table; reauthored, corrected against2026guideline and FDAlabels"
+    },
+    {
+      "file": "codex-clipboard-5fe2bc3d-a329-479c-84c6-6d5705121f7f.png",
+      "bytes": 275892,
+      "sha256": "78bd7cf3bea6e0977332ef914518288092107adb8c46e48f2ef139ff0c830307",
+      "role": "Historical dyslipidemia table; reauthored, corrected against2026guideline and FDAlabels"
+    },
+    {
+      "file": "codex-clipboard-4dabbc70-cfb6-4f85-b07e-ed4136a02299.png",
+      "bytes": 755307,
+      "sha256": "43178795bd1326ce2ee26e50f149ae02171c8e030bd54a191b66f8ebf4e0827b",
+      "role": "User angina reference; original mechanism/phenotype adaptation, sourcechecked corrections"
+    },
+    {
+      "file": "codex-clipboard-578744a0-4e79-4f8f-8eab-c0ade43c117c.png",
+      "bytes": 595322,
+      "sha256": "d55a9629c1705ffd74a26096bcc7c1eb48691d497407a43b8a7fb0d87899b1da",
+      "role": "User angina reference; original mechanism/phenotype adaptation, sourcechecked corrections"
+    }
+  ],
+  "web": "https://www.textbookofcardiology.org/wiki/Cardiac_Pharmacology",
+  "extraction": {
+    "pdf": "pdftotext -layout; pdfinfo for metadata",
+    "pptx": "Python zipfile + ElementTree, ppt/slides/slideN.xml, numeric slide order",
+    "python": "3.10.7"
+  },
+  "outputs": [
+    "src/pharmacology-data.js",
+    "src/pharmacology-visual.js",
+    "src/pharmacology-electrophysiology.js",
+    "src/coagulation-data.js",
+    "src/coagulation-panel.js",
+    "src/diuretics-data.js",
+    "src/diuretics-panel.js",
+    "src/diuretics.css",
+    "src/loop-diuretics.js",
+    "src/heart-failure-pharmacology.js",
+    "src/heart-failure-pharmacology.css",
+    "src/lipid-pathways.js",
+    "src/lipid-pathways.css",
+    "src/lipid-reference-data.js",
+    "src/lipid-reference-panel.js",
+    "src/lipid-reference.css",
+    "src/lipid-lab-model.js",
+    "src/angina-data.js",
+    "src/angina-panel.js",
+    "src/angina-panel.css"
+  ],
+  "notes": "Original educational paraphrases. No source PDFs or slide media redistributed. Image-only slides not interpreted as text.",
+  "outputIdentities": [
+    {
+      "file": "src/coagulation-data.js",
+      "sha256": "de34fd7367c371984ca5c38395ea72a84fd179a4fed58c34573a674de5163027"
+    },
+    {
+      "file": "src/coagulation-panel.js",
+      "sha256": "2131eb53b1024fea8fffa7ccae3c071bfb246b5f7fce086e784c1a8437edfed6"
+    },
+    {
+      "file": "src/coagulation.css",
+      "sha256": "3124220fd4785ffd78adf4edfd77edf8cefb6b6bfce8677e4c5b97e9cde1f7de"
+    },
+    {
+      "file": "src/pharmacology-data.js",
+      "sha256": "d30a9b0b50108b6745ea032b1da989bc2c14f8a89936d9446e943a2229328c84"
+    },
+    {
+      "file": "src/pharmacology-electrophysiology.js",
+      "sha256": "12a7efc4cfadbc10fdcffe1f08affa6a297f178637a15c44da248b68855576ee"
+    },
+    {
+      "file": "src/pharmacology-link.js",
+      "sha256": "e16840cf1cb0dbb723d93933b4f103589827cac20d66f8329798ab559cddf5ef"
+    },
+    {
+      "file": "src/pharmacology-main.js",
+      "sha256": "a3f671cc62d8c1d852479d7b34236c3d73167683b7e0228c81ecb71d36b69a49"
+    },
+    {
+      "file": "src/pharmacology-model.js",
+      "sha256": "f6b61ef37a2d59ab8749568245ed7d8f189a26501bb9a0960dbb1bbcae38c421"
+    },
+    {
+      "file": "src/pharmacology-page.css",
+      "sha256": "b606a4c24b0e27055b120b98b2bbc595583fa8f55c77a3743bd5ab745bb6cbdf"
+    },
+    {
+      "file": "src/pharmacology-panel.js",
+      "sha256": "a597787bce48a0ce2f598b406950553ea02babbc1021c4307a22c251ea3d14cb"
+    },
+    {
+      "file": "src/pharmacology-visual.js",
+      "sha256": "0d3527eb8d1df66a0934eb7e03c3f60a7af59cd2df67d1747b9aedf6139f3c80"
+    },
+    {
+      "file": "src/pharmacology.css",
+      "sha256": "8f419c77baaf4fff4cb4480599315745ed63cb773d82170a76ad4289f8a66434"
+    },
+    {
+      "file": "src/diuretics-data.js",
+      "sha256": "f8425878cef8512feb904c7c0f670590aadbb2dc579104b2d1b7c6cc6e9e5fc5"
+    },
+    {
+      "file": "src/diuretics-panel.js",
+      "sha256": "a14d44781f27d62a572b4966360d9e24cc8bbf918376930d77a586df291553d9"
+    },
+    {
+      "file": "src/diuretics.css",
+      "sha256": "ad503b2941b2cfaf0c90fc941191f82e99f357d7aa6d61b4274250bb8959d9bd"
+    },
+    {
+      "file": "src/loop-diuretics.js",
+      "sha256": "6cc04cd352e04376a86f6f271f1efbc3ab0fc721c78caadadc5e8ace507b16bb"
+    },
+    {
+      "file": "src/heart-failure-pharmacology.js",
+      "sha256": "d913169cab70b441fc3d402dcfbf99bfaee3e249d30e1ce319e46b9fac8fbb51"
+    },
+    {
+      "file": "src/heart-failure-pharmacology.css",
+      "sha256": "ea812d9c013f9b331bedf26cb2c75db581e8d05c5fb812e269f41ff8dacda04a"
+    },
+    {
+      "file": "src/lipid-pathways.js",
+      "sha256": "628adce0a6800ba89f9d7f2b20f183d27ae3a2dee3c30247c4787302231a6fbe"
+    },
+    {
+      "file": "src/lipid-pathways.css",
+      "sha256": "870058e45cdd3759c7e203ffe5dfa6af842a5159b5910ebc5a2ba6719d866fe8"
+    },
+    {
+      "file": "src/lipid-reference-data.js",
+      "sha256": "f7d1163b6f6ca1bce85f5c5a678bf19d5fbaffe0c713ce91ab320ac891c9de69"
+    },
+    {
+      "file": "src/lipid-reference-panel.js",
+      "sha256": "7f8731cb9aea7bf40ba5709dcb443425b292cefa3adf397859f5801cb7f35778"
+    },
+    {
+      "file": "src/lipid-reference.css",
+      "sha256": "be4cc440eb348eb776d3c5d2cc98bdbca22cf07ab899a9c6ca59f231e3c7f66d"
+    },
+    {
+      "file": "src/lipid-lab-model.js",
+      "sha256": "65333213bdb80eb5b2bab2196d10ac8ad4fa5d0555a51cb4a51cf436ea7df497"
+    },
+    {
+      "file": "src/angina-data.js",
+      "sha256": "126f6b11357eb432893452ebafa43817827ccf5c692a61b68e5fc6fc9ab959e8"
+    },
+    {
+      "file": "src/angina-panel.js",
+      "sha256": "03c0f0b1c241ef0e64aff9642a2c5e3b4d94d1147943551f0c0f1a055b9e621d"
+    },
+    {
+      "file": "src/angina-panel.css",
+      "sha256": "a78a5bdd5d158c698f140f10245805d93705be2fef5f91e338a87259c76099cb"
+    }
+  ],
+  "environment": {
+    "node": "v22.14.0",
+    "pdftotext": "pdftotext version 26.02.0",
+    "vite": "8.3.0"
+  },
+  "verification": {
+    "npm run check": "PASS, exit 0; syntax check, no separate type checker or linter configured",
+    "npm test": "PASS exit0;143PASS lines including angina",
+    "npm run build": "PASS, exit 0; three page entries",
+    "npm run test:pharmacology-browser": "PASS, exit 0; desktop/mobile, focus, phase arrows, interactions",
+    "npm run test:mobile": "PASS, exit 0; existing 320px shell regression",
+    "npm run verify:browser": "PARTIAL: existing eight browser groups passed, then Missing script: test:ep-flow; pharmacology tested separately. New pharmacology check added to runner before missing script.",
+    "coagulation": "PASS graph/test/target invariants, actual desktop/mobile interactions including PT/aPTT masks, warfarin/Xa overlays, feedback, native focus and TR/EN persistence; review no must-fix",
+    "diuretics": "PASS six classes, bilingual sources, renal segment and electrolyte invariants; Chrome desktop/mobile, focus, selection, comparison, language preservation and reset; independent code review: no actionable defects",
+    "loopDetail": "PASS check, full unit suite (140 PASS lines), build and pharmacology Chrome; four steps, focus, visibility, persistent selection, language and PK notes; independent review no actionable defects",
+    "heartFailure": "PASS check, full unit suite (140 PASS lines), build and pharmacology Chrome; ten groups, native focus, language preservation, safety panel and 390px overflow; independent review no actionable defects",
+    "lipids": "PASS check, full unit suite (140 PASS lines), build and Chrome; six target mappings, focus, persistent TR/EN selection and 390px layout. Review missing IDL-LDL arrow fixed and re-reviewed approved.",
+    "lipidReference": "PASS check, full suite142PASS, build and Chrome desktop/mobile; search, group filter, selected detail/focus, intensity7rows, LDL400threshold, inconsistentinputs, language/state preservation; independent review approved no must-fix",
+    "angina": "PASS check, full unit suite143PASS, build and Chrome desktop/mobile; eight target mappings, three phenotype SVG views, nativefocus, language state preservation; independent review no actionable defects"
+  },
+  "coagulation": {
+    "entry": "/pharmacology/#/antithrombotics",
+    "model": "Classical laboratory cascade; no kinetics, bleeding risk or dose model",
+    "corrections": [
+      "PT: VII, X, V, II, I; no XIII",
+      "aPTT: XII, XI, IX, VIII, X, V, II, I; no XIII",
+      "Cell-based in vivo physiology distinguished from lab cascade",
+      "Drug overlays distinguish functional factor synthesis, direct/AT-mediated inhibition and fibrinolysis"
+    ],
+    "sourcesCode": "src/coagulation-data.js"
+  },
+  "diuretics": {
+    "entry": "/pharmacology/#/diuretics",
+    "sourcesCode": "src/diuretics-data.js",
+    "model": "Schematic nephron and typical class tendencies; no dosing or patient prediction",
+    "corrections": [
+      "AKI: volume overload context only",
+      "Mannitol: anuria/pulmonary edema restrictions and initial volume expansion",
+      "Ethacrynic acid: non-sulfonamide",
+      "Lithium NDI: amiloride-specific",
+      "Topical dorzolamide distinguished from systemic acetazolamide",
+      "Calcium comparison refers to urine"
+    ],
+    "loopDetail": "Four selectable causal steps; source-checked PK context, no fixed GFR guarantee or universal absence of hypocalcemia"
+  },
+  "heartFailure": {
+    "entry": "/pharmacology/#/heart-failure",
+    "model": "Three purpose branches, ten native class controls; existing core cards reused; no dose/treatment algorithm",
+    "corrections": [
+      "Four HFrEF core classes include SGLT2",
+      "RAAS drugs are alternatives, not simultaneous extra pillars",
+      "Labetalol not an evidence-based HFrEF core beta blocker",
+      "Digoxin symptom/hospitalization context distinct from survival",
+      "IV inotrope bridge/palliative exceptions",
+      "Nesiritide historical outcome context",
+      "Digoxin electrolyte susceptibility distinct from acute toxicity hyperkalemia"
+    ]
+  },
+  "lipids": {
+    "entry": "/pharmacology/#/lipids",
+    "classes": 6,
+    "model": "Schematic target map, no kinetics; HDL/remnant paths partial",
+    "corrections": [
+      "PCSK9 receptor degradation/recycling distinct from synthesis",
+      "Fibrates PPAR-alpha mediated LPL relationship",
+      "Niacin lipid change distinct from AIM-HIGH clinical outcome",
+      "Bile sequestrants can increase TG and impair drug absorption"
+    ]
+  },
+  "lipidReference": {
+    "entries": 11,
+    "sourceCode": "src/lipid-reference-data.js",
+    "units": "mg/dL",
+    "formula": "nonHDL=TC-HDL; historical LDL=TC-HDL-TG/5",
+    "limits": "No prescription/risk engine; no LDL if TG>=400 or negative estimate; 2026 estimators preferred but not implemented",
+    "intensitySource": "https://tools.acc.org/LDL/"
+  },
+  "angina": {
+    "entry": "/pharmacology/#/antianginals",
+    "classes": 8,
+    "phenotypes": 3,
+    "sourceCode": "src/angina-data.js",
+    "model": "Typical class targets; no dose, pressure/flow or prognosis model",
+    "corrections": [
+      "Ivabradine inhibitsIf",
+      "DHP vsnonDHP separated",
+      "Ranolazine endothelial claim notestablished",
+      "Phenotype specificcontext",
+      "Symptom relief distinctfrom ASCVD prevention",
+      "No historical nitrite/cyanide emergencyalgorithm"
+    ]
+  }
+}

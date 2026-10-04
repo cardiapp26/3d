@@ -73,4 +73,7 @@ assert.equal(await (await request('/eps/?lang=en', 'navigate')).text(), `fresh:$
 assert.equal(await (await request('/eps', 'navigate')).text(), `fresh:${origin}/eps/index.html`);
 assert.equal(await (await request('/epsilon', 'navigate')).text(), `fresh:${origin}/index.html`, 'prefix match stops at the path segment');
 assert.ok((await request('/eps/', 'navigate')).ok, 'EPS page precached at install');
-console.log('PASS service-worker: fixed names revalidate, hashed assets cache, offline fallback per page (simulator, EPS), isolated cache ownership');
+assert.equal(await (await request('/pharmacology/?lang=en', 'navigate')).text(), `fresh:${origin}/pharmacology/index.html`, 'pharmacology offline shell');
+assert.equal(await (await request('/pharmacology', 'navigate')).text(), `fresh:${origin}/pharmacology/index.html`);
+assert.equal(await (await request('/pharmacology-extra', 'navigate')).text(), `fresh:${origin}/index.html`, 'pharmacology prefix stops at path segment');
+console.log('PASS service-worker: fixed names revalidate, hashed assets cache, offline fallback per page (simulator, EPS, pharmacology), isolated cache ownership');

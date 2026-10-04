@@ -2,7 +2,7 @@
 // Strategy:
 //   - Fixed names: revalidate online, same-build cache fallback offline
 //   - Vite content-hashed assets: cache-first
-//   - Two pages: the 3D simulator (./) and the EPS laboratory (./eps/); an
+//   - Three pages: simulator, EPS and pharmacology; an
 //     offline navigation falls back to the shell of its own page
 const VERSION = 'v11';
 const CACHE = `cardia-${VERSION}`;
@@ -11,11 +11,14 @@ const CORE = [
   './',
   './index.html',
   './eps/',
-  './eps/index.html'
+  './eps/index.html',
+  './pharmacology/',
+  './pharmacology/index.html'
 ];
 
-/** Offline shell of a navigation: the EPS page for /eps/..., else the simulator. */
-const shellFor = (pathname) => (/^\/eps(\/|$)/.test(pathname) ? './eps/index.html' : './index.html');
+/** Keep navigation fallbacks inside the page that owns the requested path. */
+const shellFor = (pathname) => /^\/pharmacology(\/|$)/.test(pathname) ? './pharmacology/index.html'
+  : /^\/eps(\/|$)/.test(pathname) ? './eps/index.html' : './index.html';
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {

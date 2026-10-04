@@ -1,5 +1,13 @@
 # Cardia: cardiac anatomy studio
 
+## Pharmacology page (`/pharmacology/`)
+
+An independent visual module beside EPS in the header. Nine bilingual chapters cover PK/PD, antihypertensives, diuretics, heart failure, antiarrhythmics, antianginals, antithrombotics, lipid lowering and interactions. Explore an organ target map, ventricular/nodal action-potential phases and drug classes, and a first-order half-life curve. Search class cards, compare two classes across chapters, and answer six mechanism/safety questions. Each card links to its source record. Deep link: `/pharmacology/#/antiarrhythmics`. The 3D, EPS and pharmacology pages share the explicit language choice and offline worker.
+
+Content uses the two supplied PDFs, two supplied slide decks and Cardiac Pharmacology wiki, with selected safety claims checked against DailyMed/AHA. No source files are redistributed. Visuals are schematic teaching aids, not patient responses or prescribing tools. Provenance: `research/FARMAKOLOJI_KAYNAKLAR.md`. Run `npm run test:pharmacology` and `APP_URL=http://127.0.0.1:5180 npm run test:pharmacology-browser`.
+
+The antithrombotics chapter also has an interactive coagulation cascade adapted from the supplied reference image: factor selection, PT/INR and aPTT coverage, thrombin feedback, and warfarin, UFH, apixaban, dabigatran and alteplase target overlays. Factor XIII is correctly excluded from PT/aPTT screening. The classical laboratory model is distinguished from cell-based coagulation in vivo; calcium/phospholipid cofactors and the factor guide are explained. Sources and image corrections are listed inside the component.
+
 ## Current revision: coronary registration and wall windows
 
 Heart chambers, aortic root/arch, coronary arteries, cardiac veins and leaflets load from the **same existing local `public/models/cardiovascular.glb`**. Every source node transform is preserved before a single uniform normalization. The earlier mixture of HuBMAP chambers and hand-authored vessel curves is no longer displayed.
@@ -139,3 +147,5 @@ Before public distribution:
 Only content-hashed files under `/assets/` get one-year immutable caching. HTML, service worker and fixed-name models/Draco files revalidate; version JSON is not stored. The legacy `heart.glb` is preserved under `research/before-coronary-fix/`, excluded from public assets and Docker. Already-distributed browser/CDN cache entries require validation after rollout; these source fixes do not change a running server.
 
 Audit findings and remaining gates: [distribution review](research/DAGITIM_DENETIMI_2026-10-01.md).
+
+Farmakoloji Diüretikler: `/pharmacology/#/diuretics`, etkileşimli nefron, altı ilaç sınıfı, kullanım/yan etki ve serum K⁺/idrar Ca²⁺/asit-baz karşılaştırması. Kaynak ve düzeltmeler bileşenin kaynak bölümünde.

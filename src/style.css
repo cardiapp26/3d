@@ -1118,3 +1118,12 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 
 /* Acknowledgement at the top of the About and sources dialog. */
 .about-thanks{margin:8px 0 12px;padding:9px 12px;border-left:3px solid #39a37f;background:#eef5f1;border-radius:4px;color:#1e4336;font-weight:600;line-height:1.5}
+
+/* Independent pharmacology page alongside EPS. */
+.pharmacology-link{background:#eef3e7;color:#244f43;border-color:#b4c7ad;letter-spacing:0;font-size:11px}
+.pharmacology-link:hover{background:#dde9d2}
+@media(max-width:640px){.brand-block .pharmacology-link{font-size:10px;padding:0 6px}.brand-block{gap:4px}.brand-block .brand{gap:3px}.brand-block .brand strong{font-size:14px}}
+.header-module-links{display:flex;align-items:center;gap:6px}.header-module-links .eps-link{margin-left:0}
+@media(max-width:640px){.header-module-links{gap:4px}.brand-block .brand{font-size:14px}.brand-block .brand strong{font-size:13px}.header-module-links .eps-link{min-height:40px;padding:0 6px}.header-right #sources{padding:6px 4px}}
+@media(max-width:640px){header .brand-block,header .header-module-links{flex-shrink:0}header .header-right{gap:3px}header #sources{min-width:44px;min-height:44px;padding:0;justify-content:center}header #sources span{font-size:0}header #sources::before{content:'ⓘ';font-size:17px}header .header-right button{margin-left:0}}
+@media(max-width:360px){header .brand-block .brand strong{display:none}header .brand-block .brand{font-size:19px}header .header-module-links .eps-link{font-size:10px}}

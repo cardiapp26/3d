@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#183e34" />
+    <title>Cardia · Farmakoloji</title>
+  </head>
+  <body class="pharma-app">
+    <header class="pharma-header">
+      <a class="pharma-brand" href="../">✳ CARDIA</a>
+      <nav aria-label="Modules" data-pharma-modules>
+        <a href="../" data-pharma-back>3D Anatomi</a>
+        <a href="../eps/">EPS</a>
+        <a href="./" aria-current="page" data-pharma-module>Farmakoloji</a>
+      </nav>
+      <div class="pharma-lang" role="group" aria-label="Language">
+        <button type="button" data-pharma-lang="tr">TR</button>
+        <button type="button" data-pharma-lang="en">EN</button>
+      </div>
+    </header>
+    <main class="pharma-workspace">
+      <aside class="pharma-sidebar">
+        <p class="pharma-eyebrow" data-pharma-eyebrow></p>
+        <h1 data-pharma-title>Farmakoloji</h1>
+        <p data-pharma-subtitle></p>
+        <nav class="pharma-chapters" data-pharma-chapters aria-label="Topics"></nav>
+        <p class="pharma-sidebar-note" data-pharma-source-note></p>
+      </aside>
+      <div class="pharma-main">
+        <section class="pharma-topic-heading">
+          <p class="pharma-eyebrow" data-pharma-chapter-number></p>
+          <h2 data-pharma-topic-title></h2>
+          <p data-pharma-topic-intro></p>
+        </section>
+        <section data-pharma-coagulation hidden></section>
+        <section data-pharma-diuretics hidden></section>
+        <section data-pharma-hf hidden></section>
+        <section data-pharma-lipids hidden></section>
+        <section data-pharma-lipid-reference hidden></section>
+        <section data-pharma-angina hidden></section>
+        <section class="pharma-visual-section" data-pharma-visual></section>
+        <section class="pharma-electrical-section" data-pharma-electrical hidden></section>
+        <section data-pharma-panel></section>
+      </div>
+    </main>
+    <footer class="pharma-footer" data-pharma-disclaimer></footer>
+    <script type="module" src="../src/pharmacology-main.js"></script>
+  </body>
+</html>
