@@ -1138,6 +1138,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setEpZone(zoneId){epZones.setZone(zoneId||null);requestRender();},
     getEpZone(){return epZones.getZone();},
     getEpOptional(){return epLandmarks.getOptional();},
+    // Slow pathway catheter tip on the Koch triangle, site { u, v } (koch-sp-model.js).
+    setKochTip(site){epLandmarks.setKochTip(site);catheterPickables=null;requestRender();},
+    getKochTip(){return epLandmarks.getKochTip();},
     // Scene identity labels: 'hover' (on demand, default) or 'all'.
     setSceneLabelMode(value){sceneLabels.setMode(value);requestRender();},
     getSceneLabelMode(){return sceneLabels.getMode();},

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { sharedRim, nearestLoop, inferiorCavalOstium, coronarySinusOstium, vesselCenterline, centroid } from './mesh-utils.js';
 import { surface } from './atrial-surface.js';
+import { DEFAULT_SITE, clampSite, sitePoint } from './koch-sp-model.js';
 
 /**
  * Procedural 3D Clinical Electrophysiology (EP) Landmarks and Ablation Targets.
@@ -21,6 +22,8 @@ export function createEPLandmarks(helpers) {
   const optional = { his: [], cs: [], lesions: [] };
   const shown = { his: true, cs: true, lesions: false };
   let kochCentre = null;
+  // Movable slow pathway catheter tip (koch-sp-model.js site; set from the mapping panel).
+  let kochTip = null;
 
   // Materials
   const matLesion = new THREE.MeshStandardMaterial({
@@ -277,7 +280,10 @@ export function createEPLandmarks(helpers) {
 
     // Slow pathway: septal isthmus between the CS ostium and the septal
     // tricuspid hinge, just above the base (ablation target).
-    const slowPathwayCenter = lift(baseAnterior.clone().lerp(csOs, 0.45).lerp(apexPt, 0.18));
+    // Site (u, v) of koch-sp-model.js on this triangle; the default site is the target.
+    const kochFrame = { todaro: basePosterior, csOs, hinge: baseAnterior, apex: apexPt };
+    const kochPoint = site => lift(sitePoint(site, kochFrame, (a, b, f) => a.clone().lerp(b, f)));
+    const slowPathwayCenter = kochPoint(DEFAULT_SITE);
     const slowTarget = new THREE.Mesh(new THREE.SphereGeometry(0.045, 18, 18), new THREE.MeshBasicMaterial({
       color: 0x30d158, wireframe: true, transparent: true, opacity: 0.4, depthWrite: false
     }));
@@ -320,16 +326,35 @@ export function createEPLandmarks(helpers) {
       return { group: catheterGroup, curve, electrodes };
     }
 
+    // Catheter colours are kept apart in hue in 3D and under fluoroscopy:
+    // yellow ablation, magenta His, blue CS.
     // Slow pathway ablation catheter (femoral): up the RA cavity, onto the
     // inferior paraseptal target from the cavity side.
+    const ablationRoute = tip => [...femoral(), cavityAt(between(ivcOs.y, tip.y, 0.4), ra), cavityAt(between(ivcOs.y, tip.y, 0.7), ra),
+      tip.clone().lerp(ra, 0.3), tip.clone()];
+    const ablationRings = [0.88, 0.93, 0.97, 1];
     const ablation = catheter({
-      name: 'Slow pathway ablation catheter (schematic)', pickId: 'koch-catheter', color: 0xa78bfa, radius: 0.014, tint: 0x3b2a6b, cavity: [ivcOs, slowPathwayCenter],
-      points: [...femoral(), cavityAt(between(ivcOs.y, slowPathwayCenter.y, 0.4), ra), cavityAt(between(ivcOs.y, slowPathwayCenter.y, 0.7), ra),
-        slowPathwayCenter.clone().lerp(ra, 0.3), slowPathwayCenter.clone()],
-      rings: [0.88, 0.93, 0.97, 1]
+      name: 'Slow pathway ablation catheter (schematic)', pickId: 'koch-catheter', color: 0xfacc15, radius: 0.014, tint: 0xd09a00, cavity: [ivcOs, slowPathwayCenter],
+      points: ablationRoute(slowPathwayCenter),
+      rings: ablationRings
     });
     ablation.electrodes[3].name = 'Slow pathway catheter tip';
     kochGroup.add(ablation.group);
+    // Rebuild the body along a new route when the tip moves (mapping panel).
+    kochTip = {
+      site: { ...DEFAULT_SITE },
+      move(site) {
+        const next = clampSite(site);
+        const tip = kochPoint(next);
+        const curve = new THREE.CatmullRomCurve3(ablationRoute(tip));
+        const body = ablation.group.children[0];
+        body.geometry.dispose();
+        body.geometry = new THREE.TubeGeometry(curve, 96, 0.014, 8, false);
+        ablationRings.forEach((t, i) => ablation.electrodes[i].position.copy(curve.getPointAt(t)));
+        ablation.group.userData.cavity = [ivcOs.toArray(), tip.toArray()];
+        this.site = next;
+      }
+    };
 
     // His reference catheter (femoral quadripolar): across the septal
     // tricuspid hinge next to the His bundle, distal pair just inside the RV.
@@ -341,7 +366,7 @@ export function createEPLandmarks(helpers) {
     const hisTip = hisHinge.clone().add(rvCentre.clone().sub(hisHinge).setLength(0.1));
     const hisApproach = hisHinge.clone().add(ra.clone().sub(hisHinge).setLength(0.16));
     const his = catheter({
-      name: 'His reference catheter (schematic)', pickId: 'ep-his-cath', color: 0xd946ef, radius: 0.013, tint: 0x5b1a63, cavity: [ivcOs, hisApproach],
+      name: 'His reference catheter (schematic)', pickId: 'ep-his-cath', color: 0xd946ef, radius: 0.013, tint: 0xc026d3, cavity: [ivcOs, hisApproach],
       points: [...femoral(new THREE.Vector3(0.07, 0, 0.05)), cavityAt(between(ivcOs.y, hisHinge.y, 0.45), ra), cavityAt(between(ivcOs.y, hisHinge.y, 0.8), ra),
         hisApproach, hisTip],
       rings: [0.9, 0.94, 0.97, 1]
@@ -362,7 +387,7 @@ export function createEPLandmarks(helpers) {
     const svcBottom = svcVerts.length ? centroid(svcVerts.filter(v => v.y < svcY[0] + 0.12)) : ra.clone().add(new THREE.Vector3(0, 1.1, -0.2));
     const csBody = vesselCenterline(meshVertices('cs'), csOs, 0.1).slice(1, 9);
     const csCatheter = catheter({
-      name: 'CS reference catheter (schematic)', pickId: 'ep-cs-cath', color: 0x3b82f6, radius: 0.013, tint: 0x1c3f8f, cavity: [svcBottom, csOs.clone().lerp(ra, 0.25)],
+      name: 'CS reference catheter (schematic)', pickId: 'ep-cs-cath', color: 0x3b82f6, radius: 0.013, tint: 0x2f7cf0, cavity: [svcBottom, csOs.clone().lerp(ra, 0.25)],
       points: [svcTop, svcTop.clone().lerp(svcBottom, 0.5), svcBottom, cavityAt(between(svcBottom.y, csOs.y, 0.4), ra), cavityAt(between(svcBottom.y, csOs.y, 0.8), ra),
         csOs.clone().lerp(ra, 0.25), csOs.clone(), ...csBody],
       rings: []
@@ -581,6 +606,9 @@ export function createEPLandmarks(helpers) {
     setOptional,
     getOptional: () => ({ ...shown }),
     kochCentre: () => kochCentre?.clone() ?? null,
+    /** Move the slow pathway catheter tip to a Koch site { u, v } (koch-sp-model.js). */
+    setKochTip(site) { init(); kochTip?.move(site); },
+    getKochTip: () => (kochTip ? { ...kochTip.site } : null),
     labels,
     targets
   };

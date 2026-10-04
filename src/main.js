@@ -17,6 +17,7 @@ import {drawWiggers, formatCycleTiming, wiggersPhaseAt, profileFromStations} fro
 import { createHemoMode } from './hemo-mode.js';
 import { createExamMode } from './exam-mode.js';
 import { createEchoMode } from './echo-mode.js';
+import { createKochSpPanel } from './koch-sp-panel.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
 
@@ -412,6 +413,7 @@ app.innerHTML = `
     <section id="lesson" hidden>
       <div id="echo-panel" class="echo-panel-mount" hidden></div>
       <div id="eps-handoff" class="eps-handoff" hidden></div>
+        <div id="koch-sp" class="koch-sp-mount" hidden></div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div class="divider"></div>
       <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
@@ -689,6 +691,17 @@ function updateCycleUI(state) {
 // recording in the EPS laboratory page, and the 3D arc shows the zone its
 // reading names (none while a diagnosis clip is still neutral).
 const epsHandoff = createEpsHandoff(document.querySelector('#eps-handoff'), { getLang: getContentLanguage });
+// Koch steps: slow pathway mapping (koch-sp-panel.js) moves the 3D ablation tip
+// and can show the triangle in the RAO/LAO close-ups under fluoroscopy.
+const kochSp = heart ? createKochSpPanel({
+  mount: document.querySelector('#koch-sp'),
+  getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
+  onSite: site => heart.setKochTip(site),
+  onView: (view, fluoro) => {
+    if (view) showKochCloseUp(view);
+    setFluoroscopyActive(fluoro);
+  }
+}) : null;
 function syncEpsHandoff(lessonStep) {
   const clip = mode === 'ablation' ? lessonStep?.egm : null;
   epsHandoff.show(clip);
@@ -869,6 +882,7 @@ function showStep({ relabel = false } = {}) {
   } else if (mode === 'ablation') {
     heart?.setAblationStep(step);
     syncEpTools(s.view);
+    kochSp?.setActive([1, 4].includes(step));
     if (!relabel) setTissueOpacity(String(s.view).startsWith('koch_') ? KOCH_TISSUE_PERCENT : Math.round(LESSON_TISSUE_OPACITY * 100));
   }
 
@@ -931,13 +945,14 @@ function syncEpTools(view = null) {
 }
 // The close-ups look through the free walls at the septum: fainter tissue.
 const KOCH_TISSUE_PERCENT = 15;
-document.querySelectorAll('[data-ep-view]').forEach(button => button.addEventListener('click', () => {
+function showKochCloseUp(view) {
   // The close-ups frame Koch's triangle: go to the Koch step first if another target is shown.
   if (mode === 'ablation' && ![1, 4].includes(step)) { step = 1; showStep(); }
   setTissueOpacity(KOCH_TISSUE_PERCENT);
-  heart?.setView(button.dataset.epView, true);
-  syncEpTools(button.dataset.epView);
-}));
+  heart?.setView(view, true);
+  syncEpTools(view);
+}
+document.querySelectorAll('[data-ep-view]').forEach(button => button.addEventListener('click', () => showKochCloseUp(button.dataset.epView)));
 document.querySelectorAll('[data-ep-optional]').forEach(box => box.addEventListener('change', () => heart?.setEpOptional(box.dataset.epOptional, box.checked)));
 // The Chiari network is a variant: shown only on request (the switch, or picking it from the focus list).
 function setChiariNetwork(on) {
@@ -1047,7 +1062,7 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#layers').hidden = mode === 'micro' || Boolean(chamberMode(mode)) || mode === 'defects';
   document.querySelectorAll('.chamber-tools').forEach(section => { section.hidden = section.dataset.chamberMode !== mode; });
   document.querySelector('#ep-tools').hidden = mode !== 'ablation';
-  if (mode !== 'ablation') epsHandoff.show(null);
+  if (mode !== 'ablation') { epsHandoff.show(null); kochSp?.setActive(false); }
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
@@ -1765,6 +1780,7 @@ function updateLanguageUI() {
   hemoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   examMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   epsHandoff.render();
+  kochSp?.setLanguage();
   echoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   updateCycleUI(heart?.getCycleState());
 }
@@ -1867,6 +1883,8 @@ document.querySelector('#close-shortcuts').addEventListener('click', () => short
 // Keyboard shortcuts (1-9, A, P, R, L, S, C, 0, Space, ?, N)
 window.addEventListener('keydown', e => {
   if (dialog.open || shortcutsModal.open) return;
+  // A focused widget that handled the key itself (e.g. the Koch mapping tip) keeps it.
+  if (e.defaultPrevented) return;
   if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
     e.preventDefault();
     focusQuickSearch();
