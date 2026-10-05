@@ -1,0 +1,26 @@
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert=require('node:assert/strict');const fs=require('node:fs');
+(async()=>{const browser=await chromium.launch({headless:true,channel:'chrome'});try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(`${process.env.APP_URL||'http://127.0.0.1:5189'}/pharmacology/?lang=tr#/vasoactive`);
+ await page.locator('.vasolab').waitFor({state:'visible'});assert.equal(await page.locator('[data-pharma-panel]').isVisible(),false);
+ assert.equal(await page.locator('[data-vaso-drug]').count(),10);
+ await page.locator('[data-vaso-profile=both]').click();assert.equal(await page.locator('[data-vaso-agent]').count(),2);
+ assert.equal(await page.locator('[data-vaso-profile=both]').evaluate(el=>el===document.activeElement),true);
+ await page.locator('[data-vaso-flag=escalating]').check();assert.equal(await page.locator('[data-vaso-agent=vasopressin]').count(),1);
+ await page.locator('[data-vaso-flag=renal]').check();await page.locator('[data-vaso-flag=tachy]').check();assert.match(await page.locator('.vaso-context').textContent(),/milrinon/);
+ await page.locator('[data-vaso-agent=dobutamine]').click();assert.equal(await page.locator('[data-vaso-page=drugs]').isVisible(),true);
+ await page.locator('[data-vaso-drug=angiotensin]').click();await page.locator('.vaso-dose summary').click();assert.match(await page.locator('.vaso-dose p').textContent(),/20 ng\/kg/);
+ await page.locator('[data-pharma-lang=en]').click();assert.equal(await page.locator('[data-vaso-drug=angiotensin]').getAttribute('aria-pressed'),'true');assert.match(await page.locator('.vaso-dose p').textContent(),/maximum 40/);assert.equal(await page.locator('.vaso-dose').getAttribute('open'),'');
+ assert.equal(await page.locator('[data-map=co]').textContent(),'CO Variable');
+ await page.locator('[data-vaso-drug=metaraminol]').click();assert.equal(await page.locator('[data-map=target]').textContent(),'α dominant');
+ await page.locator('[data-vaso-drug=angiotensin]').click();
+ const shots='/private/tmp/cardia-vasoactive-shots';fs.mkdirSync(shots,{recursive:true});await page.locator('.vasolab').screenshot({path:`${shots}/drugs.png`});
+ await page.locator('[data-vaso-view=scenarios]').click();await page.locator('[data-vaso-scenario=obstructive]').click();await page.locator('[data-vaso-return]').click();assert.match(await page.locator('.vaso-result h3').textContent(),/Correct cause first/);assert.equal(await page.locator('[data-vaso-agent]').count(),1);
+ await page.locator('[data-vaso-view=scenarios]').click();await page.locator('[data-vaso-scenario=septic]').click();await page.locator('[data-vaso-return]').click();await page.locator('[data-vaso-profile=output]').click();assert.equal(await page.locator('[data-vaso-agent=vasopressin]').count(),0);
+ await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('.vasolab').evaluate(el=>el.scrollWidth>el.clientWidth+1),false);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+ await page.locator('.vasolab').screenshot({path:`${shots}/algorithm-mobile.png`});
+ await page.locator('[data-vaso-view=drugs]').click();assert.equal(await page.locator('.vasolab').evaluate(el=>el.scrollWidth>el.clientWidth+1),false);
+ await page.evaluate(()=>{location.hash='#/interactions';});await page.locator('.pharma-interactions').waitFor({state:'visible'});assert.equal(await page.locator('.vasolab').isVisible(),false);assert.equal(await page.locator('[data-pharma-panel]').isVisible(),true);assert.ok(await page.locator('.pharma-interactions .pharma-card').count()>0);
+ assert.deepEqual(errors,[]);console.log('PASS vasoactive browser: route, three branches, adjuncts, scenario cause-first, flags, drug/dose selection, retained language/focus, mobile, interactions regression');console.log(`Screenshots: ${shots}`);
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1);});

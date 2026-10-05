@@ -155,3 +155,5 @@ Audit findings and remaining gates: [distribution review](research/DAGITIM_DENET
 Farmakoloji Diüretikler: `/pharmacology/#/diuretics`, etkileşimli nefron, altı ilaç sınıfı, kullanım/yan etki ve serum K⁺/idrar Ca²⁺/asit-baz karşılaştırması. Kaynak ve düzeltmeler bileşenin kaynak bölümünde.
 
 Fizyoloji görselleri: Farmakoloji → Antiaritmikler altında ventriküler iyon akımları, kalsiyum döngüsü ve AV iletim; Hemodinami → Fizyoloji altında pompa eğrileri, P-V fazları/enerji ve Wiggers. Etkileşimli çizimler TR/EN destekler. Eğriler öğretim amaçlıdır; görsellerden ölçüm çıkarılmamıştır. [Görsel eşleştirmesi ve kaynaklar](research/PHYSIOLOGY_IMAGE_AUDIT.md). Doğrulama: `npm run test:physiology` ve çalışan Vite sunucusuna karşı `APP_URL=http://127.0.0.1:5189 npm run test:physiology-browser`.
+
+Vazopressör / İnotrop: `/pharmacology/?lang=tr#/vasoactive`, üç hemodinamik profil, 10 ilaç hedefi, beş şok senaryosu, kaynak doz kartları ve perfüzyon izlemi. [Kaynak doğrulaması ve görsel düzeltmeleri](research/VASOACTIVE_MODULE_AUDIT.md). Testler: `npm run test:vasoactive` ve `npm run test:vasoactive-browser`.

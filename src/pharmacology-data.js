@@ -1220,6 +1220,13 @@ export const PHARMA_TOPICS = [
   }
 ];
 
+PHARMA_TOPICS.push({
+  id: 'vasoactive',
+  title: { tr: 'Şok: Vazopressör / İnotrop', en: 'Shock: Vasopressors / Inotropes' },
+  intro: { tr: 'Damar tonusu, pompa işlevi ve perfüzyonu birlikte değerlendir; şok nedenine göre seçim yolunu keşfet.', en: 'Assess vascular tone, pump function and perfusion together; explore selection pathways by shock cause.' },
+  cards: []
+});
+
 export const PHARMA_INTERACTIONS = [
   {
     "id": "ace-arni",

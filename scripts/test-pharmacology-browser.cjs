@@ -14,7 +14,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5180').replace(/\/$/, '');
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${APP}/pharmacology/?lang=tr`);
     await page.waitForSelector('.pharma-card');
-    assert.equal(await page.locator('[data-pharma-chapter]').count(), 9);
+    assert.equal(await page.locator('[data-pharma-chapter]').count(), 10, 'ten chapters including vasoactive');
     assert.equal(await page.locator('html').getAttribute('lang'), 'tr');
     assert.ok(await page.locator('.pharmaviz-map').isVisible());
     await page.locator('.pharmaviz-target[data-target=kidney]').click();

@@ -13,7 +13,7 @@ PHARMA_SOURCES.forEach(source => bilingual(source.detail));
 const sourced = item => { assert.ok(item.sources.length); item.sources.forEach(id => assert.ok(sourceIds.has(id), `source exists: ${id}`)); };
 const cards = allPharmaCards();
 assert.equal(new Set(cards.map(card => card.id)).size, cards.length, 'comparison ids unique');
-assert.equal(PHARMA_TOPICS.length, 9, 'nine requested teaching domains');
+assert.equal(PHARMA_TOPICS.length, 10, 'ten teaching domains including vasoactive selection');
 for (const topic of PHARMA_TOPICS) {
   bilingual(topic.title); bilingual(topic.intro);
   for (const card of topic.cards) {
