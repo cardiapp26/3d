@@ -88,10 +88,15 @@ export function ecgSample(t, opts = {}) {
   if (u >= timing.q && u < timing.j) {
     const f=(u-timing.q)/timing.qrs;
     const anchors=opts.bizarreQrs ? [[0,0],[.15,.6],[.3,.45],[.6,1.1],[.8,-.5],[1,st]] : [[0,0],[.12,-.12],[.35,1.25],[.65,-.3],[1,st]];
-    for(let i=1;i<anchors.length;i++)if(f<=anchors[i][0]){const [a,v]=anchors[i-1],[b,w]=anchors[i];return v+(w-v)*(f-a)/(b-a);}
+    // Cosine easing between anchors: smooth deflections, anchor values kept exactly.
+    for(let i=1;i<anchors.length;i++)if(f<=anchors[i][0]){const [a,v]=anchors[i-1],[b,w]=anchors[i];return v+(w-v)*(1-Math.cos(Math.PI*(f-a)/(b-a)))/2;}
   }
-  if (u >= timing.j && u < timing.tStart) return st;
-  if (u >= timing.tStart && u < timing.tEnd) {const f=(u-timing.tStart)/(timing.tEnd-timing.tStart);return st*(1-f)+(opts.invertT?-1:1)*.35*Math.sin(f*Math.PI);}
+  // ST: flat for 20 ms after J, then a gentle convex slope that merges into the T wave.
+  // Elevation: convex ST rising into a taller (hyperacute) T; depression: down-sloping ST.
+  const stRise = .3*st, stFlat = timing.j+.02, tAmp = .35+.8*Math.max(0,st);
+  if (u >= timing.j && u < stFlat) return st;
+  if (u >= stFlat && u < timing.tStart) {const f=(u-stFlat)/Math.max(1e-6,timing.tStart-stFlat);return st+stRise*Math.sin(f*Math.PI/2);}
+  if (u >= timing.tStart && u < timing.tEnd) {const f=(u-timing.tStart)/(timing.tEnd-timing.tStart);return (st+stRise)*(1-f)+(opts.invertT?-1:1)*tAmp*Math.sin(f*Math.PI);}
   return 0;
   };
   let value = 0;

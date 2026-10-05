@@ -1,6 +1,7 @@
 import { ecgSample, ecgTiming } from './guyton-render.js';
-import { CHEST_LEADS, projectLead, reentryMetrics, ringSnapshot, RHYTHM_EXAMPLES, rhythmSample, rhythmEvents } from './ecg-lab-model.js';
+import { CHEST_LEADS, projectLead, reentryMetrics, ringSnapshot, RHYTHM_EXAMPLES } from './ecg-lab-model.js';
 import { ventricularSample } from '../physiology-model.js';
+import { drawRhythmStrip } from './rhythm-strip.js';
 import './ecg-labs.css';
 const NS='http://www.w3.org/2000/svg';
 const svgNode=(tag,attrs={},text)=>{const n=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));if(attrs.stroke)n.style.stroke=attrs.stroke;if(text)n.textContent=text;return n;};
@@ -86,32 +87,39 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
   note.textContent=tr('J noktası evrensel “gerçek sıfır” değildir. ST, uygun TP/PR bazal çizgisine göre değerlendirilir. Örnek kaymalar tanı eşiği değildir; ardışık derivasyon, yaş/cinsiyet, semptom ve seri EKG gerekir. Posterior örnekte inferior elevasyon zorunlu değildir; V7–V9 ek bakış sağlar.','J point is not universal “true zero”. Evaluate ST against appropriate TP/PR baseline. Example shifts are not diagnostic cutoffs; contiguous leads, age/sex, symptoms and serial ECG matter. Inferior elevation is not required in posterior involvement; V7–V9 provide an additional view.');
  }
  function drawRing(){
-  const m=reentryMetrics(state.length,state.velocity,state.erp,state.block),cx=230,cy=200,r=120;
+  // Homogeneous ring: wavefront (gold, arrow), refractory tail (purple), excitable gap (green), block site (red).
+  const m=reentryMetrics(state.length,state.velocity,state.erp,state.block),cx=200,cy=205,r=118;
+  const snap=ringSnapshot(m,state.time*1000,state.erp,state.block),top=-Math.PI/2,head=top+snap.progress*Math.PI*2;
+  const arcPts=(a0,a1,rad=r)=>{const n=Math.max(2,Math.ceil(Math.abs(a1-a0)/.03));return Array.from({length:n+1},(_,k)=>{const a=a0+(a1-a0)*k/n;return [cx+rad*Math.cos(a),cy+rad*Math.sin(a)];});};
   svg.append(svgNode('circle',{cx,cy,r,class:'lab-ring'}));
-  const snap=ringSnapshot(m,state.time*1000,state.erp,state.block),angle=-Math.PI/2+snap.progress*Math.PI*2;
+  text(cx,cy-r-34,tr('Uyarı girişi','Stimulus entry'),{'text-anchor':'middle',class:'ring-caption'});
+  svg.append(svgNode('path',{d:`M${cx} ${cy-r-28}V${cy-r-12}`,class:'ring-entry'}),svgNode('path',{d:`M${cx-5} ${cy-r-18}L${cx} ${cy-r-10}L${cx+5} ${cy-r-18}`,class:'ring-entry'}));
+  const arrowAt=(a,dir)=>{const x=cx+r*Math.cos(a),y=cy+r*Math.sin(a),tx=-Math.sin(a)*dir,ty=Math.cos(a)*dir,nx=Math.cos(a),ny=Math.sin(a);svg.append(svgNode('path',{d:`M${x+tx*12} ${y+ty*12}L${x-tx*2+nx*9} ${y-ty*2+ny*9}L${x-tx*2-nx*9} ${y-ty*2-ny*9}Z`,class:'ring-head'}));};
   if(state.block){
-    if(snap.tail>0){const tail=angle-snap.tail*Math.PI*2;line(Array.from({length:121},(_,i)=>{const a=tail+i/120*(angle-tail);return [cx+r*Math.cos(a),cy+r*Math.sin(a)];}),'lab-refractory');}
-    if(snap.head)svg.append(svgNode('circle',{cx:cx+r*Math.cos(angle),cy:cy+r*Math.sin(angle),r:12,class:'lab-active'}));
-    text(230,53,tr('Başlangıçta tek yönlü blok','Initiating unidirectional block'),{'text-anchor':'middle'});
+    const tail=snap.tail*Math.PI*2;
+    if(snap.head&&m.possible){const gapEnd=head-tail+Math.PI*2;line(arcPts(head,gapEnd),'ring-gap');}
+    if(tail>0)line(arcPts(head-tail,head),'ring-refractory');
+    // Block just counter-clockwise of the entry: the impulse can only travel clockwise.
+    const b=top-.16;svg.append(svgNode('path',{d:`M${cx+(r-16)*Math.cos(b)} ${cy+(r-16)*Math.sin(b)}L${cx+(r+16)*Math.cos(b)} ${cy+(r+16)*Math.sin(b)}`,class:'ring-block'}));
+    text(cx+(r+20)*Math.cos(b)-14,cy+(r+20)*Math.sin(b)+10,tr('tek yönlü blok','one-way block'),{class:'ring-caption ring-block-text','text-anchor':'end'});
+    if(snap.head){svg.append(svgNode('circle',{cx:cx+r*Math.cos(head),cy:cy+r*Math.sin(head),r:11,class:'lab-active'}));arrowAt(head,1);}
   } else {
-    if(snap.collision)svg.append(svgNode('circle',{cx,cy:cy+r,r:14,class:'lab-active'}));
-    if(snap.head)for(const sign of [-1,1]){const a=-Math.PI/2+sign*snap.progress*Math.PI;svg.append(svgNode('circle',{cx:cx+r*Math.cos(a),cy:cy+r*Math.sin(a),r:12,class:'lab-active'}));}
-    text(230,53,tr('İki dalga → çarpışma → sönme','Two waves → collision → extinction'),{'text-anchor':'middle'});
+    for(const sign of [-1,1]){const a=top+sign*snap.progress*Math.PI;line(arcPts(top,a),'ring-refractory');if(snap.head){svg.append(svgNode('circle',{cx:cx+r*Math.cos(a),cy:cy+r*Math.sin(a),r:11,class:'lab-active'}));arrowAt(a,sign);}}
+    if(snap.collision)svg.append(svgNode('circle',{cx,cy:cy+r,r:16,class:'ring-collision'}));
+    text(cx,cy+r+30,tr('çarpışma → sönme','collision → extinction'),{'text-anchor':'middle',class:'ring-caption'});
   }
-  text(230,192,`λ ${m.wavelengthCm.toFixed(1)} cm`,{'text-anchor':'middle'});text(230,217,`L ${state.length} cm`,{'text-anchor':'middle'});
-  text(405,145,tr('Tur süresi','Loop time'));text(405,170,`${m.loopMs.toFixed(0)} ms`);text(405,218,'ERP');text(405,242,`${state.erp} ms`);text(405,290,tr('Boşluk','Gap'));text(405,314,`${m.gapCm.toFixed(1)} cm`);
+  text(cx,cy-6,`λ = ${m.wavelengthCm.toFixed(1)} cm`,{'text-anchor':'middle',class:'ring-centre'});text(cx,cy+18,`L = ${state.length} cm`,{'text-anchor':'middle',class:'ring-centre'});
+  const cards=[[tr('Tur süresi','Loop time'),`${m.loopMs.toFixed(0)} ms`],['ERP',`${state.erp} ms`],[tr('Dalga boyu λ','Wavelength λ'),`${m.wavelengthCm.toFixed(1)} cm`],[tr('Uyarılabilir boşluk','Excitable gap'),`${m.gapCm.toFixed(1)} cm`]];
+  cards.forEach(([k,v],n)=>{const y=70+n*70;svg.append(svgNode('rect',{x:372,y,width:200,height:56,rx:8,class:n===3?(m.gapCm>0?'ring-card ring-card-gap':'ring-card ring-card-none'):'ring-card'}));text(386,y+21,k,{class:'ring-card-label'});text(386,y+44,v,{class:'ring-card-value'});});
   result.textContent=`λ = CV × ERP = ${m.wavelengthCm.toFixed(1)} cm · ${m.possible?tr('Sürme koşulu mümkün','Sustaining condition possible'):tr('Bu modelde sürmez','Not sustained in this model')}`;
-  note.textContent=tr('Mor: refrakter kuyruk · altın: dalga başı · gri: uyarılabilir doku. Basit homojen halka: tek yönlü başlatma + L > λ. Uzun yol, yavaş iletim ve kısa ERP üç ayrı zorunlu koşul değil, dalga boyunu/yol oranını etkileyen etmenlerdir. Fibrilasyon veya hasta ritmi modellenmez.','Purple: refractory tail · gold: wavefront · gray: excitable tissue. Simple homogeneous ring: unidirectional initiation + L > λ. Long path, slow conduction and short ERP are factors affecting wavelength/path ratio, not three separate mandatory conditions. No fibrillation or patient rhythm is modeled.');
+  note.textContent=tr('Mor: refrakter kuyruk · yeşil: uyarılabilir boşluk · altın: dalga cephesi · kırmızı: tek yönlü blok. Basit homojen halka: tek yönlü başlatma + L > λ. Uzun yol, yavaş iletim ve kısa ERP üç ayrı zorunlu koşul değil, dalga boyunu/yol oranını etkileyen etmenlerdir. Fibrilasyon veya hasta ritmi modellenmez.','Purple: refractory tail · green: excitable gap · gold: wavefront · red: one-way block. Simple homogeneous ring: unidirectional initiation + L > λ. Long path, slow conduction and short ERP are factors affecting wavelength/path ratio, not three separate mandatory conditions. No fibrillation or patient rhythm is modeled.');
   root.querySelector('[data-lab-action=play]').textContent=state.running?tr('Duraklat','Pause'):tr('Başlat','Play');
  }
  let rhythmSvg, rhythmResult;
  function drawRhythm(){
   if(!rhythmSvg)return;
-  rhythmSvg.replaceChildren();
-  rhythmSvg.append(svgNode('rect',{x:40,y:35,width:520,height:110,fill:'#fff7ef'}));
-  for(let sec=0;sec<=6;sec++){rhythmSvg.append(svgNode('path',{d:`M${40+sec/6*520} 35V145`,class:'lab-grid-major'}),svgNode('text',{x:40+sec/6*520,y:170,'text-anchor':'middle'},`${sec}s`));}
-  rhythmSvg.append(svgNode('path',{d:path(Array.from({length:1561},(_,i)=>[40+i/1560*520,112-rhythmSample(i/1560*6,state.rhythm)*45])),class:'lab-trace',stroke:'#243a45'}));
-  const events=rhythmEvents(state.rhythm);events.p.forEach(at=>rhythmSvg.append(svgNode('text',{x:40+at/6*520,y:30,'text-anchor':'middle'},'P')));events.q.forEach(({at,pvc})=>rhythmSvg.append(svgNode('text',{x:40+at/6*520,y:190,'text-anchor':'middle'},pvc?'PVC':'R')));
+  // Calibrated strip with P waves marked and an A / AV / V ladder (rhythm-strip.js).
+  drawRhythmStrip(rhythmSvg,state.rhythm,{fWaves:tr('f dalgaları: organize P yok','f waves: no organized P'),ladder:tr('Merdiven diyagramı: A atriyum · AV ileti · V ventrikül','Ladder diagram: A atrium · AV conduction · V ventricle')});
   const descriptions={sinus:tr('P → QRS, sabit PR, düzenli RR','P → QRS, fixed PR, regular RR'),first:tr('Her P iletilir; PR örneği 280 ms','Every P conducts; example PR 280 ms'),wenckebach:tr('PR: 160 → 200 → 240 ms; ardından iletilmeyen P','PR: 160 → 200 → 240 ms; then a nonconducted P'),complete:tr('P ve kaçış QRS dizileri bağımsız; bu örnekte geniş kaçış','Independent P and escape-QRS sequences; wide escape in this example'),pvc:tr('Erken geniş vuru; örnek tam kompanzatuvar duraklama','Premature wide beat; illustrative full compensatory pause'),af:tr('Organize P yok; düzensiz RR','No organized P; irregular RR'),flutter:tr('Atriyal testere dişi; örnek düzenli 3:1 iletim','Atrial sawtooth pattern; illustrative regular 3:1 conduction')};
   const r=RHYTHM_EXAMPLES.find(x=>x.id===state.rhythm);rhythmResult.textContent=`${descriptions[state.rhythm]} · Netter ${tr('PDF s.','PDF p.')} ${r.pdf}`;
   root.querySelectorAll('[data-lab-rhythm]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.labRhythm===state.rhythm)));
@@ -119,7 +127,7 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
  if(topic==='ch13_arrhythmias'){
   const section=document.createElement('section');section.className='ecg-rhythm-gallery';const title=document.createElement('h3');title.textContent=tr('Ritim şeridini karşılaştır','Compare rhythm strips');const nav=document.createElement('div');nav.className='ecg-lab-controls';
   for(const rhythm of RHYTHM_EXAMPLES){const b=document.createElement('button');b.type='button';b.dataset.labRhythm=rhythm.id;b.textContent=rhythm[getLang()==='en'?'en':'tr'];b.addEventListener('click',()=>{state.rhythm=rhythm.id;drawRhythm();});nav.append(b);}
-  rhythmSvg=svgNode('svg',{viewBox:'0 0 600 215',role:'img','aria-label':tr('Örnek 6 saniyelik ritim şeridi','Illustrative six-second rhythm strip')});rhythmResult=document.createElement('p');rhythmResult.className='ecg-lab-result';rhythmResult.setAttribute('role','status');const disclaimer=document.createElement('p');disclaimer.className='ecg-lab-note';disclaimer.textContent=tr('Şematik karşılaştırma; morfolojiden tek başına tanı konmaz. Tam AV blokta kaçış QRS dar veya geniş olabilir. PVC duraklaması her zaman tam kompanzatuvar değildir.','Schematic comparison; morphology alone is not a diagnosis. Complete-block escape may be narrow or wide. PVC pauses need not always be fully compensatory.');const visual=document.createElement('div');visual.className='ecg-lab-visual';visual.append(rhythmSvg);section.append(title,nav,visual,rhythmResult,disclaimer);root.append(section);drawRhythm();
+  rhythmSvg=svgNode('svg',{viewBox:'0 0 760 320',role:'img',class:'rs-svg','aria-label':tr('Örnek 6 saniyelik ritim şeridi ve merdiven diyagramı','Illustrative six-second rhythm strip and ladder diagram')});const legend=document.createElement('ul');legend.className='rs-legend';for(const [cls,label] of [['conducted',tr('İletilen P','Conducted P')],['blocked',tr('İletilmeyen P (P×)','Non-conducted P (P×)')],['dissociated',tr('Disosiye P (AV ilişkisi yok)','Dissociated P (no AV relation)')],['ectopic',tr('Ektopik ventrikül vurusu (PVC)','Ectopic ventricular beat (PVC)')],['escape',tr('Kaçış vurusu','Escape beat')]]){const li=document.createElement('li');li.dataset.rs=cls;li.textContent=label;legend.append(li);}rhythmResult=document.createElement('p');rhythmResult.className='ecg-lab-result';rhythmResult.setAttribute('role','status');const disclaimer=document.createElement('p');disclaimer.className='ecg-lab-note';disclaimer.textContent=tr('Şematik karşılaştırma; morfolojiden tek başına tanı konmaz. Tam AV blokta kaçış QRS dar veya geniş olabilir. PVC duraklaması her zaman tam kompanzatuvar değildir.','Schematic comparison; morphology alone is not a diagnosis. Complete-block escape may be narrow or wide. PVC pauses need not always be fully compensatory.');const visual=document.createElement('div');visual.className='ecg-lab-visual';visual.append(rhythmSvg);section.append(title,nav,visual,legend,rhythmResult,disclaimer);root.append(section);drawRhythm();
  }
  function tick(now){if(state.running&&!document.hidden){if(last!==null)state.time+=(now-last)/1000;draw();}last=now;raf=requestAnimationFrame(tick);}
  draw();if(topic==='ch13_arrhythmias')raf=requestAnimationFrame(tick);

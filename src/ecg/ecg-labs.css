@@ -1,3 +1,50 @@
 .ecg-lab{display:grid;gap:16px;padding:22px;border:1px solid #31556b;border-radius:14px;background:linear-gradient(135deg,#0f2333,#131e2c);margin-top:20px;min-width:0}.ecg-lab h3,.ecg-lab p{margin:0}.ecg-lab-controls{display:flex;gap:8px;flex-wrap:wrap}.ecg-lab button{border:1px solid #486079;border-radius:7px;background:#1c3043;color:#dfeff4;padding:5px 10px;cursor:pointer;min-height:30px;font:inherit;font-size:12px;line-height:1.2}.ecg-lab button[aria-pressed=true]{color:#111e2a;background:#e7b968;border-color:#e7b968}.ecg-lab-controls label{display:grid;grid-template-columns:1fr auto;width:100%;gap:6px;font-size:12px}.ecg-lab-controls input{grid-column:1/-1;width:100%;accent-color:#e7b968}.ecg-lab svg{width:100%;height:auto;display:block;min-width:0;font:12px sans-serif;fill:#d8e9ec}.ecg-lab-result{padding:12px;background:#233c4d;border-left:3px solid #e7b968;font-size:13px}.ecg-lab-note{font-size:12px;line-height:1.7;color:#aec5cd}.lab-trace{fill:none;stroke:#75c7dc;stroke-width:2;stroke-linejoin:round}.lab-grid{fill:none;stroke:#e9b5b0;stroke-width:.35}.lab-grid-major{fill:none;stroke:#ce8e88;stroke-width:.65}.lab-axis,.lab-divider{fill:none;stroke:#61818f;stroke-width:1}.lab-divider{stroke-dasharray:3 3}.lab-cursor{fill:none;stroke:#f2bb5f;stroke-width:2;stroke-dasharray:4 3}.lab-band{fill:#e3a754;opacity:.18}.lab-measure{fill:none;stroke:#e9b75f;stroke-width:3}.lab-torso{fill:#1e3648;stroke:#607e8b;stroke-width:2}.lab-heart{fill:#233c4b;stroke:#6f909a;stroke-width:2}.lab-active{fill:#efb75e;stroke:#fff0ca;stroke-width:2}.lab-activated{fill:#a775bf;opacity:.6}.lab-dot{fill:#376983;stroke:#99c7d8;stroke-width:2}.lab-electrode{cursor:pointer}.lab-baseline{fill:none;stroke:#7a8263;stroke-width:1;stroke-dasharray:5 3}.lab-ring{fill:none;stroke:#425363;stroke-width:25}.lab-refractory{fill:none;stroke:#a478bd;stroke-width:25}.ecg-lab button:focus-visible,.ecg-lab input:focus-visible,.lab-electrode:focus-visible{outline:3px solid #7addf1;outline-offset:3px}.guyton-studio [role=tab][aria-selected=true]{border-color:#e7b968}.guyton-studio canvas{max-width:100%}.guyton-studio .guyton-card{min-width:0}.guyton-studio button:focus-visible{outline:2px solid #7addf1;outline-offset:3px}.ecg-lab-controls output{font-variant-numeric:tabular-nums}@media(max-width:650px){.ecg-lab{padding:12px}.ecg-header{height:auto;min-height:64px;flex-wrap:wrap;gap:8px;padding:10px 12px}.ecg-modules{flex-wrap:wrap}.ecg-modules a{padding:6px 8px;font-size:12px}.ecg-lang{margin-left:auto}.ecg-workspace{padding:16px 12px}.ecg-lab h3{font-size:16px}}
 .ecg-lab-visual{overflow:auto;min-width:0}.ecg-topic-sources{margin-top:18px;padding:14px;color:#a5bac5;font-size:12px;line-height:1.7}.ecg-topic-sources summary{cursor:pointer}.ecg-rhythm-gallery{display:grid;gap:14px;margin-top:20px;padding-top:20px;border-top:1px solid #37556c}@media(max-width:650px){.ecg-lab-visual>svg{min-width:540px}}
 .ecg-lab-visual>svg{max-width:920px;margin-inline:auto}.ecg-topic-sources a{display:block;margin-top:7px;color:#80c3d7}@media(max-width:650px){.ecg-lab-visual::before{content:'↔';display:block;color:#8fcddd;font-size:18px}}
+/* Rhythm strip and ladder (rhythm-strip.js). */
+.rs-svg{display:block;width:100%;height:auto;font:11px system-ui,sans-serif}
+.rs-paper{fill:#fdf3f1}
+.rs-grid-minor{stroke:#f4c6bd;stroke-width:.5;fill:none}
+.rs-grid-major{stroke:#e8998a;stroke-width:.9;fill:none}
+.rs-trace{fill:none;stroke:#1f2937;stroke-width:1.6;stroke-linejoin:round}
+.rs-p-band{opacity:.22}
+.rs-p-conducted{fill:#3b82f6}.rs-p-blocked{fill:#ef4444;opacity:.28}.rs-p-dissociated{fill:#8b5cf6}
+.rs-mark{font-weight:800;font-size:11px;paint-order:stroke;stroke:#fdf3f1;stroke-width:3px}
+.rs-mark-p{fill:#1d4ed8}.rs-mark-blocked{fill:#dc2626}.rs-mark-dissociated{fill:#7c3aed}
+.rs-mark-r{fill:#334155}.rs-mark-pvc{fill:#c2410c}.rs-mark-f{fill:#0f766e}
+.rs-pr{fill:none;stroke:#1d4ed8;stroke-width:1.2}
+.rs-pr-text{fill:#1d4ed8;font-size:9px;font-weight:700;paint-order:stroke;stroke:#fdf3f1;stroke-width:3px}
+.rs-sec{fill:#8ea3b8;font-size:10px}
+.rs-row{fill:#0f1e2e;stroke:#2b3d52}
+.rs-row-label{fill:#b8c7d6;font-weight:700;font-size:11px}
+.rs-ladder-title{fill:#8ea3b8;font-size:10.5px;font-weight:700}
+.rs-ladder-a{stroke:#60a5fa;stroke-width:2.4}
+.rs-ladder-flutter{stroke:#2dd4bf;stroke-width:1.6}
+.rs-ladder-f{fill:none;stroke:#2dd4bf;stroke-width:1.2}
+.rs-ladder-av{stroke:#e2e8f0;stroke-width:1.6}
+.rs-ladder-blocked{stroke:#f87171}
+.rs-ladder-block{stroke:#f87171;stroke-width:2.6}
+.rs-ladder-v{stroke:#f8fafc;stroke-width:2.4}
+.rs-ladder-ectopic{fill:#fb923c}.rs-ladder-escape{fill:#f472b6}
+.rs-ladder-dissociated{stroke:#a78bfa}
+.rs-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;padding:0;list-style:none;font-size:11.5px;color:#b8c7d6}
+.rs-legend li{display:flex;align-items:center;gap:6px}
+.rs-legend li::before{content:"";width:12px;height:10px;border-radius:2px}
+.rs-legend [data-rs=conducted]::before{background:#3b82f6}.rs-legend [data-rs=blocked]::before{background:#ef4444}
+.rs-legend [data-rs=dissociated]::before{background:#8b5cf6}.rs-legend [data-rs=ectopic]::before{background:#fb923c;border-radius:50%}.rs-legend [data-rs=escape]::before{background:#f472b6;border-radius:50%}
+/* Re-entry ring (drawRing). */
+.ecg-lab .lab-ring{fill:none;stroke:#3b5266;stroke-width:22}
+.ecg-lab .ring-refractory{fill:none;stroke:#a855f7;stroke-width:22;stroke-linecap:butt;opacity:.85}
+.ecg-lab .ring-gap{fill:none;stroke:#22c55e;stroke-width:22;opacity:.45}
+.ecg-lab .ring-head{fill:#16212c}
+.ecg-lab .ring-block{stroke:#ef4444;stroke-width:5;stroke-linecap:round}
+.ecg-lab .ring-entry{fill:none;stroke:#e7b968;stroke-width:2.4;stroke-linecap:round}
+.ecg-lab .ring-collision{fill:#ef4444;fill-opacity:.35;stroke:#ef4444}
+.ecg-lab .ring-caption{fill:#b8c7d6;font-size:12px}
+.ecg-lab .ring-block-text{fill:#fca5a5;font-weight:700}
+.ecg-lab .ring-centre{fill:#e2e8f0;font-size:15px;font-weight:700}
+.ecg-lab .ring-card{fill:#152839;stroke:#2b3d52}
+.ecg-lab .ring-card-gap{fill:#12351f;stroke:#22c55e}
+.ecg-lab .ring-card-none{fill:#3a1820;stroke:#ef4444}
+.ecg-lab .ring-card-label{fill:#8ea3b8;font-size:11.5px}
+.ecg-lab .ring-card-value{fill:#f1f5f9;font-size:17px;font-weight:700}
