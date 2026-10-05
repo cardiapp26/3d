@@ -114,22 +114,35 @@ export async function triggerAppUpdate() {
 }
 
 /**
- * The built files a page loads: its hashed /assets/ scripts and stylesheets, sorted.
- * A new deploy changes these names even when nobody stamped a new version, so
- * comparing them finds a changed build that version.json alone calls current.
+ * The built files a page references: its hashed /assets/ scripts and stylesheets, sorted.
+ * A new deploy changes these names even when nobody stamped a new version.
  */
 export function bundleSignature(html) {
   return [...new Set(String(html || '').match(/\/assets\/[\w.-]+\.(?:js|css)/g) || [])].sort().join(',');
 }
 
-/** Whether the page on the server is a different build from the one running. */
+/**
+ * Files the server page references that the running page has not loaded.
+ * The running page always has extra entries (lazy chunks, modulepreload links,
+ * injected stylesheets), so only names missing from it mean a new build;
+ * comparing the two lists for equality reported an update on every check.
+ * @param {string} liveHtml page from the server
+ * @param {string} runningHtml the running document
+ * @param {string[]} loaded URLs the running page has fetched (performance entries)
+ */
+export function missingBundles(liveHtml, runningHtml, loaded = []) {
+  const live = bundleSignature(liveHtml).split(',').filter(Boolean);
+  const have = new Set([...bundleSignature(runningHtml).split(','), ...bundleSignature(loaded.join(' ')).split(',')].filter(Boolean));
+  return live.filter(name => !have.has(name));
+}
+
+/** Whether the page on the server references built files this page has not loaded. */
 export async function checkBundleChange() {
   try {
     const res = await fetch(window.location.pathname, { cache: 'no-store' });
     if (!res.ok) return false;
-    const live = bundleSignature(await res.text());
-    const mine = bundleSignature(document.documentElement.outerHTML);
-    return Boolean(live && mine && live !== mine);
+    const loaded = (performance.getEntriesByType?.('resource') || []).map(entry => entry.name);
+    return missingBundles(await res.text(), document.documentElement.outerHTML, loaded).length > 0;
   } catch (_) {
     return false;
   }

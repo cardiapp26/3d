@@ -53,6 +53,13 @@ assert.equal(typeof updater.checkBundleChange, 'function');
 assert.equal(sig(page('Aa1Bb2Cc', 'Dd3Ee4Ff')), sig(`${page('Aa1Bb2Cc', 'Dd3Ee4Ff')}<p>other text</p>`), 'same files, same signature');
 assert.notEqual(sig(page('Aa1Bb2Cc', 'Dd3Ee4Ff')), sig(page('Gg5Hh6Ii', 'Dd3Ee4Ff')), 'a new script hash changes the signature');
 assert.notEqual(sig(page('Aa1Bb2Cc', 'Dd3Ee4Ff')), sig(page('Aa1Bb2Cc', 'Jj7Kk8Ll')), 'a new stylesheet hash changes the signature');
+// Only files the server lists but the running page lacks count: lazy chunks and
+// preload links the running page added must not report an update on every check.
+const miss = updater.missingBundles;
+const running = `${page('Aa1Bb2Cc', 'Dd3Ee4Ff')}<link rel="modulepreload" href="/assets/lazy-Mm1Nn2Oo.js"><link rel="stylesheet" href="/assets/panel-Pp3Qq4Rr.css">`;
+assert.deepEqual(miss(page('Aa1Bb2Cc', 'Dd3Ee4Ff'), running), [], 'same build with extra loaded chunks: no update');
+assert.deepEqual(miss(page('Gg5Hh6Ii', 'Dd3Ee4Ff'), running), ['/assets/main-Gg5Hh6Ii.js'], 'a new entry script is an update');
+assert.deepEqual(miss(page('Aa1Bb2Cc', 'Dd3Ee4Ff'), '', ['https://x.test/assets/main-Aa1Bb2Cc.js', 'https://x.test/assets/main-Dd3Ee4Ff.css', 'https://x.test/assets/three-Zz9yQw1x.js']), [], 'loaded resources count as present');
 assert.equal(sig(''), '');
 assert.equal(sig(null), '');
 
