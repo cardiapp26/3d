@@ -2,7 +2,7 @@
 const t = (tr, en) => ({ tr, en });
 export const LIPID_REFERENCE_SOURCES = [
   { id: 'acc-lipid-manager', title: 'ACC Lipid Manager: 2026 statin intensity and risk references', url: 'https://tools.acc.org/LDL/' },
-  { id: 'pdf-pharmacology', title: 'Lippincott Illustrated Reviews: Pharmacology, 7th edition, Chapter 22 (user-provided PDF)' },
+  { id: 'pdf-pharmacology', title: 'Lippincott Illustrated Reviews: Pharmacology, 7th edition, Chapter 22' },
   { id: 'guideline-2026', title: '2026 ACC/AHA Dyslipidemia Guideline', url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001423' },
   { id: 'statin-pregnancy', title: 'FDA: Statins and pregnancy, 2021 safety communication', url: 'https://www.fda.gov/drugs/drug-safety-and-availability/fda-requests-removal-strongest-warning-against-using-cholesterol-lowering-statins-during-pregnancy' },
   { id: 'lovaza', title: 'DailyMed: LOVAZA prescribing information', url: 'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=21cfa4ce-0b05-47ed-b268-339eb1b83b75' },

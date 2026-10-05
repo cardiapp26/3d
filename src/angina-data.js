@@ -2,7 +2,7 @@
 const text = (tr, en) => ({ tr, en });
 
 export const ANGINA_SOURCES = [
-  { id: 'pharma7-angina', title: 'Lippincott Illustrated Reviews: Pharmacology, 7th edition, Chapter 20 (user-provided PDF)' },
+  { id: 'pharma7-angina', title: 'Lippincott Illustrated Reviews: Pharmacology, 7th edition, Chapter 20' },
   { id: 'esc-ccs-2024', title: '2024 ESC Guidelines for the management of chronic coronary syndromes', url: 'https://academic.oup.com/eurheartj/article/45/36/3415/7743115' },
   { id: 'nitroglycerin-label', title: 'DailyMed: nitroglycerin prescribing information', url: 'https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=041f127e-5166-4484-bc1a-0a373d1187ae' },
   { id: 'ranolazine-label', title: 'DailyMed: ranolazine prescribing information', url: 'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=989e1688-a0b5-4297-bf91-234de2a0b445' },

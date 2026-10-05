@@ -4,16 +4,16 @@ export const PHARMA_SOURCES = [
     "id": "slides",
     "title": "Drugs that Affect the Cardiovascular System",
     "detail": {
-      "tr": "Kullanıcı PDF: cardiac-drugs.pdf. PDF sayfaları 34–54 (kan basıncı/diüretikler), 66–68 (antikoagülanlar); sayfa numaraları PDF sırasıdır.",
-      "en": "User PDF: cardiac-drugs.pdf. PDF pages 34–54 (blood pressure/diuretics), 66–68 (anticoagulants); page numbers follow PDF order."
+      "tr": "Belge sayfaları 34–54 (kan basıncı/diüretikler), 66–68 (antikoagülanlar); sayfa numaraları PDF sırasıdır.",
+      "en": "Document pages 34–54 (blood pressure/diuretics), 66–68 (anticoagulants); page numbers follow PDF order."
     }
   },
   {
     "id": "review",
-    "title": "Lippincott Illustrated Reviews: Pharmacology · Karen Whalen (7th edition: file label)",
+    "title": "Lippincott Illustrated Reviews: Pharmacology · Karen Whalen (7th edition)",
     "detail": {
-      "tr": "Kullanıcı PDF: PDF s. 16–38 (antihipertansifler), 58–83 (diüretikler), 100–118 (kalp yetersizliği), 120–153 (antiaritmikler), 161–175 (anjina), 193–227 (antitrombotikler), 240–252 (lipitler). PDF sırası; basılı sayfalar farklıdır.",
-      "en": "User PDF: Lippincott Illustrated Reviews: Pharmacology, Karen Whalen (verified PDF metadata). Pages 16–38 (antihypertensives), 58–83 (diuretics), 100–118 (heart failure), 120–153 (antiarrhythmics), 161–175 (angina), 193–227 (antithrombotics), 240–252 (lipids). PDF order differs from printed pages."
+      "tr": "Belge s. 16–38 (antihipertansifler), 58–83 (diüretikler), 100–118 (kalp yetersizliği), 120–153 (antiaritmikler), 161–175 (anjina), 193–227 (antitrombotikler), 240–252 (lipitler). PDF sırası; basılı sayfalar farklıdır.",
+      "en": "Lippincott Illustrated Reviews: Pharmacology, Karen Whalen. Document pages 16–38 (antihypertensives), 58–83 (diuretics), 100–118 (heart failure), 120–153 (antiarrhythmics), 161–175 (angina), 193–227 (antithrombotics), 240–252 (lipids). PDF order differs from printed pages."
     }
   },
   {
@@ -74,16 +74,16 @@ export const PHARMA_SOURCES = [
     "id": "action-slides",
     "title": "Action potentials / drugs (PPTX)",
     "detail": {
-      "tr": "Kullanıcı sunumu: slayt 2–3 (uyarılabilirlik, iyonlar), 5–11 (iletim sistemi ve düğüm hücrelerinde Ca bağımlı depolarizasyon). Metni olmayan slaytlardan ek iddia çıkarılmadı.",
-      "en": "User slide deck: slides 2–3 (electrical properties and ions), 5–11 (conduction system and Ca-dependent nodal depolarization). Image-only slides not inferred."
+      "tr": "Sunum: slayt 2–3 (uyarılabilirlik, iyonlar), 5–11 (iletim sistemi ve düğüm hücrelerinde Ca bağımlı depolarizasyon). Metni olmayan slaytlardan ek iddia çıkarılmadı.",
+      "en": "Slide deck: slides 2–3 (electrical properties and ions), 5–11 (conduction system and Ca-dependent nodal depolarization). Image-only slides not inferred."
     }
   },
   {
     "id": "antiarrhythmic-slides",
     "title": "Antiaritmikler (PPTX)",
     "detail": {
-      "tr": "Kullanıcı sunumu: slayt 7–10 (Vaughan Williams ve sınıf IC), 11 (amiodaron), 15–17 (QT, renal eliminasyon, digoksin). Sotalol/LV disfonksiyonu ve amiodaron güvenliği genellemeleri güncel etiketle sınırlandı; olgu slaytlarındaki QRS birim hataları aktarılmadı.",
-      "en": "User slide deck: slides 7–10 (Vaughan Williams and class IC), 11 (amiodarone), 15–17 (QT, renal elimination, digoxin). Broad sotalol/LV dysfunction and amiodarone safety statements constrained by current labels; QRS unit errors in case slides not carried over."
+      "tr": "Sunum: slayt 7–10 (Vaughan Williams ve sınıf IC), 11 (amiodaron), 15–17 (QT, renal eliminasyon, digoksin). Sotalol/LV disfonksiyonu ve amiodaron güvenliği genellemeleri güncel etiketle sınırlandı; olgu slaytlarındaki QRS birim hataları aktarılmadı.",
+      "en": "Slide deck: slides 7–10 (Vaughan Williams and class IC), 11 (amiodarone), 15–17 (QT, renal elimination, digoxin). Broad sotalol/LV dysfunction and amiodarone safety statements constrained by current labels; QRS unit errors in case slides not carried over."
     }
   }
 ];
