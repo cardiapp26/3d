@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { DEFAULT_SITE, ZONES, assessSite, clampSite, ratioLabel, sitePoint, siteSignals, siteZone } from '../src/koch-sp-model.js';
 import { EGM_BEATS, EGM_CHANNELS, EGM_TIMES, channelTrace, peakBetween } from '../src/koch-sp-egm.js';
 import { KOCH_SP_TEXT } from '../src/koch-sp-text.js';
+import { ENTRANCE, LANDMARKS, LAYERS, PIVOT, functionalAt, landmarkNear, vectorAt } from '../src/koch-sp-functional.js';
 
 // The default site is the slow pathway target: small A, large V, no His.
 const target = assessSite(DEFAULT_SITE);
@@ -62,4 +63,35 @@ for (const lang of ['tr', 'en']) {
   for (const zone of ['target', 'atrial', 'ventricular']) assert.ok(t.advice[zone].includes('{r}'));
   assert.ok(!JSON.stringify(t).includes(String.fromCharCode(0x2014)), `${lang}: no em dash`);
 }
-console.log('PASS koch-sp: target site, A:V and His direction rules, all zones, triangle map, recording, texts');
+// Functional layers (Sakamoto 2026): PF and wave speed peak at the slow pathway entrance, fall with distance and
+// where the RIE runs deep or is fractionated; vectors converge on the entrance, ascend toward the His above it and
+// a bystander vector descends near landmark (e); the pivot point is about 10 mm (0.12 of the frame) from the entrance.
+const atEntrance = functionalAt(ENTRANCE);
+for (const far of [{ u: 0.9, v: 0.2 }, { u: 0.05, v: 0.1 }, { u: 0.6, v: 0.65 }, { u: 0.3, v: 0.55 }]) {
+  const f = functionalAt(far);
+  assert.ok(f.pf < atEntrance.pf && f.speed < atEntrance.speed, `PF and speed lower away from the entrance ${JSON.stringify(far)}`);
+}
+assert.ok(atEntrance.pf > 0.9 && atEntrance.speed > 0.95);
+assert.ok(functionalAt({ u: 0.3, v: 0.55 }).pf < functionalAt({ u: 0.3, v: 0.9 }).pf || functionalAt({ u: 0.3, v: 0.55 }).fractionation > 0.5, 'fractionated tail has lower PF');
+for (const s of [{ u: 0.1, v: 0.5 }, { u: 0.3, v: 0.95 }, { u: 0.25, v: 0.6 }]) {
+  const v = vectorAt(s), toward = { du: ENTRANCE.u - s.u, dv: ENTRANCE.v - s.v };
+  assert.ok(v.du * toward.du + v.dv * toward.dv > 0, `vector points to the entrance ${JSON.stringify(s)}`);
+}
+assert.equal(vectorAt({ u: 0.7, v: 0.2 }).kind, 'ascending');
+assert.equal(vectorAt({ u: 0.58, v: 0.4 }).kind, 'bystander');
+assert.ok(vectorAt({ u: 0.58, v: 0.4 }).du < 0, 'bystander vector descends');
+const pivotDist = Math.hypot(PIVOT.u - ENTRANCE.u, PIVOT.v - ENTRANCE.v);
+assert.ok(pivotDist > 0.08 && pivotDist < 0.2, `pivot about 10 mm from the entrance (${pivotDist.toFixed(2)})`);
+assert.deepEqual(LANDMARKS.map((l) => l.id), ['a', 'b', 'c', 'd', 'e']);
+assert.ok(LANDMARKS.find((l) => l.id === 'a').u > LANDMARKS.find((l) => l.id === 'b').u && LANDMARKS.find((l) => l.id === 'b').u > ENTRANCE.u, 'His above the nodal-His transition above the entrance');
+assert.equal(landmarkNear(ENTRANCE).id, 'c');
+assert.equal(landmarkNear({ u: 0.4, v: 0.9 }, 0.05), null);
+assert.deepEqual([...LAYERS], ['pf', 'vectors', 'speed', 'landmarks']);
+for (const lang of ['tr', 'en']) {
+  const f = KOCH_SP_TEXT[lang].func;
+  for (const k of LAYERS) assert.ok(f.layers[k], `${lang} layer ${k}`);
+  for (const l of LANDMARKS) assert.equal(f.points[l.id].length, 2, `${lang} point ${l.id}`);
+  for (const k of ['convergence', 'converging', 'ascending', 'descending', 'bystander']) assert.ok(f.vectorKinds[k], `${lang} vector ${k}`);
+  assert.ok(f.source.includes('1398'), `${lang} cites the study`);
+}
+console.log('PASS koch-sp: target site, A:V and His direction rules, all zones, triangle map, recording, functional layers (PF, wave speed, vectors, pivot, landmarks a-e), texts');

@@ -64,6 +64,23 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.equal(await panel.getAttribute('data-zone'), 'target');
     assert.ok((await tip3d()).toTarget < 1e-6, 'go to target restores the target tip');
 
+    // Functional layers (Sakamoto 2026): toggles draw on the schematic, a landmark moves the tip.
+    assert.equal(await page.locator('.ksp-func > *').count(), 0, 'no layer by default');
+    await page.locator('[data-ksp-layer=pf]').click();
+    assert.equal(await page.locator('.ksp-heat-pf polygon').count(), 400);
+    await page.locator('[data-ksp-layer=vectors]').click();
+    assert.ok(await page.locator('.ksp-vec').count() > 30);
+    await page.locator('[data-ksp-layer=landmarks]').click();
+    assert.equal(await page.locator('.ksp-lm').count(), 5);
+    await page.locator('[data-landmark=a]').click();
+    assert.equal(await panel.getAttribute('data-zone'), 'his', 'landmark a (His) moves the tip to the His zone');
+    assert.match(await page.locator('.ksp-func-point').textContent(), /His/);
+    await page.locator('[data-landmark=c]').click();
+    assert.equal(await panel.getAttribute('data-zone'), 'target');
+    assert.match(await page.locator('.ksp-funcbox .ksp-facts').textContent(), /100 %/, 'PF and wave speed at the entrance');
+    for (const id of ['pf', 'vectors', 'landmarks']) await page.locator(`[data-ksp-layer=${id}]`).click();
+    assert.equal(await page.locator('.ksp-func > *').count(), 0, 'layers off again');
+
     // Fluoroscopy close-ups from the panel.
     await page.locator('[data-ksp-action=rao]').click();
     await page.waitForSelector('#viewport[data-camera-settled=true]');
@@ -93,6 +110,6 @@ const SHOTS = process.env.SHOT_DIR || null;
     if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await panel.screenshot({ path: `${SHOTS}/koch-sp-mobile.png` }); }
 
     assert.deepEqual(errors, []);
-    console.log('PASS koch-sp browser: schematic places the 3D tip, His/ventricular/target readings, keyboard, fluoro RAO/LAO, language, steps, phone');
+    console.log('PASS koch-sp browser: schematic places the 3D tip, His/ventricular/target readings, keyboard, functional layers, fluoro RAO/LAO, language, steps, phone');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

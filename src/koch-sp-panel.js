@@ -6,6 +6,7 @@ import './koch-sp.css';
 import { DEFAULT_SITE, assessSite, clampSite, sitePoint, siteZone } from './koch-sp-model.js';
 import { EGM_BEATS, EGM_CHANNELS, EGM_TIMES, EGM_WINDOW_MS, channelTrace } from './koch-sp-egm.js';
 import { KOCH_SP_TEXT } from './koch-sp-text.js';
+import { LAYERS, LANDMARKS, PIVOT, functionalAt, vectorAt, landmarkNear } from './koch-sp-functional.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 // Triangle corners in the schematic (viewBox 320 x 250), same roles as the 3D frame.
@@ -76,8 +77,9 @@ function buildSchematic() {
   const place = { todaro: [72, 150, 'start'], annulus: [266, 196, 'middle'], cs: [140, 244, 'middle'], avn: [212, 104, 'end'], his: [272, 30, 'start'],
     fo: [98, 96, 'middle'], ivc: [42, 240, 'middle'], fast: [...at(0.6, 0.1, -6, 4), 'end'], slow: [...at(0.3, 0.6, -10, 6), 'end'], tcv: [286, 120, 'middle'] };
   for (const [id, [x, y, anchor]] of Object.entries(place)) labels[id] = svg('text', { x, y, 'text-anchor': anchor, class: `ksp-label ksp-label-${id}` });
-  root.append(title, bg, tv, fo, ivc, cells, base, todaro, hinge, cs, avn, his, ...Object.values(labels), catheter, tip);
-  return { root, title, catheter, tip, labels };
+  const func = svg('g', { class: 'ksp-func' });
+  root.append(title, bg, tv, fo, ivc, cells, base, todaro, hinge, cs, avn, his, func, ...Object.values(labels), catheter, tip);
+  return { root, title, catheter, tip, labels, func };
 }
 
 function buildEgm() {
@@ -125,10 +127,22 @@ export function createKochSpPanel({ mount, getLang = () => 'tr', onSite = () => 
   const laoBtn = button('lao', () => onView('koch_lao', true));
   const view3dBtn = button('3d', () => onView(null, false));
   const viewHint = el('p', 'ksp-hint'), note = el('p', 'ksp-note'), source = el('p', 'ksp-source');
+  // Functional layers (Sakamoto 2026): toggles, the reading at the tip and the note of a selected point.
+  const funcBox = el('div', 'ksp-funcbox'), funcTitle = el('p', 'ksp-egm-title'), funcBar = el('div', 'ksp-actions'), funcHint = el('p', 'ksp-hint');
+  const funcRead = el('dl', 'ksp-facts'), funcPoint = el('p', 'ksp-func-point'), funcNote = el('p', 'ksp-note'), funcSource = el('p', 'ksp-source');
+  funcPoint.setAttribute('aria-live', 'polite');
+  const layerOn = new Set();
+  const layerBtns = LAYERS.map(id => {
+    const b = el('button'); b.type = 'button'; b.dataset.kspLayer = id;
+    b.addEventListener('click', () => { layerOn.has(id) ? layerOn.delete(id) : layerOn.add(id); renderFunc(); });
+    funcBar.append(b);
+    return [id, b];
+  });
+  funcBox.append(funcTitle, funcBar, funcHint, funcRead, funcPoint, funcNote, funcSource);
   // Wide panel: schematic beside the reading and the recording (koch-sp.css).
   const figure = el('div', 'ksp-figure'), side = el('div', 'ksp-side');
   figure.append(schematic.root, legend);
-  side.append(status, egmTitle, egm.root, actions, viewHint);
+  side.append(status, egmTitle, egm.root, actions, viewHint, funcBox);
   const layout = el('div', 'ksp-layout');
   layout.append(figure, side);
   element.append(kicker, title, intro, layout, note, source);
@@ -151,7 +165,64 @@ export function createKochSpPanel({ mount, getLang = () => 'tr', onSite = () => 
       const d = channelTrace(c.id, a).map((s, i) => `${i ? 'L' : 'M'}${egm.x(s.t).toFixed(1)},${(EGM.top + EGM_CHANNELS.indexOf(c) * EGM.row + EGM.row / 2 - s.y * EGM.gain).toFixed(1)}`).join('');
       egm.traces[c.id].setAttribute('d', d);
     }
+    renderFunc();
     return a;
+  }
+
+  // Heat ramp: low (blue) to high (red); arrows follow the vector field; landmarks and the pivot are markers.
+  const heat = f => { const h = 215 - 215 * f; return `hsl(${h.toFixed(0)} 85% ${(38 + 14 * f).toFixed(0)}%)`; };
+  function renderFunc() {
+    const text = t().func;
+    const g = schematic.func;
+    g.replaceChildren();
+    for (const key of ['pf', 'speed']) {
+      if (!layerOn.has(key)) continue;
+      const cellsG = svg('g', { class: `ksp-heat ksp-heat-${key}` });
+      for (let i = 0; i < GRID; i++) for (let j = 0; j < GRID; j++) {
+        const [u0, u1, v0, v1] = [i / GRID, (i + 1) / GRID, j / GRID, (j + 1) / GRID];
+        const f = functionalAt({ u: (u0 + u1) / 2, v: (v0 + v1) / 2 })[key];
+        const pts = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]].map(([u, v]) => toXY({ u, v }).map(n => n.toFixed(1)).join(','));
+        cellsG.append(svg('polygon', { points: pts.join(' '), fill: heat(f), 'fill-opacity': (0.28 + 0.4 * f).toFixed(2) }));
+      }
+      g.append(cellsG);
+    }
+    if (layerOn.has('vectors')) {
+      const arrows = svg('g', { class: 'ksp-vectors' });
+      for (let i = 1; i < 8; i++) for (let j = 1; j < 8; j++) {
+        const s = { u: i / 8, v: j / 8 }, vec = vectorAt(s);
+        if (vec.kind === 'convergence') continue;
+        const [x0, y0] = toXY(s), [x1, y1] = toXY({ u: s.u + vec.du * 0.07, v: s.v + vec.dv * 0.07 });
+        const a = Math.atan2(y1 - y0, x1 - x0), head = 4.5;
+        const d = `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} M${x1.toFixed(1)},${y1.toFixed(1)} l${(-head * Math.cos(a - 0.5)).toFixed(1)},${(-head * Math.sin(a - 0.5)).toFixed(1)} M${x1.toFixed(1)},${y1.toFixed(1)} l${(-head * Math.cos(a + 0.5)).toFixed(1)},${(-head * Math.sin(a + 0.5)).toFixed(1)}`;
+        arrows.append(svg('path', { d, class: `ksp-vec ksp-vec-${vec.kind}` }));
+      }
+      g.append(arrows);
+    }
+    if (layerOn.has('landmarks') || layerOn.has('vectors')) {
+      const [px, py] = toXY(PIVOT);
+      const pivot = svg('path', { d: `M${px},${py - 6} L${px + 6},${py} L${px},${py + 6} L${px - 6},${py} Z`, class: 'ksp-pivot' });
+      pivot.append(svg('title', {}, text.pivot));
+      g.append(pivot);
+    }
+    if (layerOn.has('landmarks')) {
+      for (const l of LANDMARKS) {
+        const [x, y] = toXY(l);
+        const m = svg('g', { class: 'ksp-lm', tabindex: '0', role: 'button', 'data-landmark': l.id, transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
+        m.append(svg('circle', { r: 8 }), svg('text', { y: 3.5, 'text-anchor': 'middle' }, l.id));
+        m.setAttribute('aria-label', text.points[l.id][0]);
+        const go = () => setSite(l);
+        m.addEventListener('pointerdown', event => event.stopPropagation());
+        m.addEventListener('click', go);
+        m.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); } });
+        g.append(m);
+      }
+    }
+    funcTitle.textContent = text.title; funcHint.textContent = text.hint; funcNote.textContent = text.note; funcSource.textContent = text.source;
+    for (const [id, b] of layerBtns) { b.textContent = text.layers[id]; b.setAttribute('aria-pressed', String(layerOn.has(id))); }
+    const f = functionalAt(site), vec = vectorAt(site), lm = landmarkNear(site);
+    funcRead.replaceChildren(...[[text.read.pf, `${Math.round(f.pf * 100)} %`], [text.read.speed, `${Math.round(f.speed * 100)} %`], [text.read.vector, text.vectorKinds[vec.kind]]].flatMap(([k, v]) => [el('dt', '', k), el('dd', '', v)]));
+    funcPoint.textContent = lm ? `${text.points[lm.id][0]}: ${text.points[lm.id][1]}` : '';
+    funcPoint.hidden = !lm;
   }
 
   function render() {

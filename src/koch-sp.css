@@ -64,3 +64,17 @@
   .ksp-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
   .ksp-figure{position:sticky;top:8px}
 }
+
+/* Functional layers (koch-sp-functional.js). */
+.ksp-funcbox{display:grid;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line,#29493b)}
+.ksp-funcbox .ksp-actions button[aria-pressed=true]{background:var(--accent,#3fb58f);color:var(--accent-ink,#06231a)}
+.ksp-heat polygon{pointer-events:none}
+.ksp-vec{fill:none;stroke:#f1f7ec;stroke-width:1.4;stroke-linecap:round;opacity:.85;pointer-events:none}
+.ksp-vec-converging{stroke:#fcd34d}
+.ksp-vec-bystander{stroke:#f87171}
+.ksp-pivot{fill:#a78bfa;stroke:#ede9fe;stroke-width:1.2}
+.ksp-lm{cursor:pointer}
+.ksp-lm circle{fill:#0e1815;stroke:#f1f7ec;stroke-width:1.6}
+.ksp-lm text{fill:#f1f7ec;font:700 10px ui-monospace,monospace;pointer-events:none}
+.ksp-lm:hover circle,.ksp-lm:focus-visible circle{stroke:#fcd34d;stroke-width:2.6;outline:none}
+.ksp-func-point{margin:0;padding:6px 9px;border-left:3px solid #fcd34d;background:rgba(252,211,77,.08);font-size:12.5px;line-height:1.5}
