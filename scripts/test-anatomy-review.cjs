@@ -205,7 +205,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     // Echo review fixes: no angle on the view buttons, no target hint in a task, a start pose independent of the target.
     await open('#/mode/tee');
     const buttons = await page.locator('[data-echo-view]').allTextContents();
-    assert.ok(buttons.length === 10 && buttons.every((t) => !t.includes('°')), `TEE buttons without angles: ${buttons}`);
+    assert.ok(buttons.length === 12 && buttons.every((t) => !t.includes('°')), `TEE buttons without angles: ${buttons}`);
     for (const seed of [3, 11]) {
       const task = await page.evaluate((sd) => {
         window.cardiaEcho.startTask('tee', { seed: sd });
@@ -217,9 +217,17 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
       assert.equal(task.lateral, 0);
     }
     await open('#/mode/ice');
-    const ice = await page.evaluate(() => { window.cardiaEcho.startTask('ice', { seed: 5 }); return window.cardiaEcho.getState().ice; });
-    assert.ok(ice.advance >= 0.52 && ice.advance <= 0.68, `ICE task starts near home (${ice.advance})`);
-    assert.ok(Math.abs(ice.anteroposterior) <= 15 && Math.abs(ice.leftRight) <= 15, 'ICE knobs offset from the home pose');
+    // The ICE task starts near the home pose of the target's chamber (RA, LA or LV), whatever the target.
+    const ice = await page.evaluate(async () => {
+      const V = await import('/src/echo-views.js');
+      window.cardiaEcho.startTask('ice', { seed: 5 });
+      const st = window.cardiaEcho.getState();
+      const home = { la: 'ice-la-home', lv: 'ice-lv-inferior' }[V.icePosition(V.viewById(st.task.target))] || 'ice-home';
+      const h = V.icePreset(home);
+      return { advance: st.ice.advance, home: h.advance, ap: st.ice.anteroposterior - h.anteroposterior, lr: st.ice.leftRight - h.leftRight, target: st.task.target };
+    });
+    assert.ok(Math.abs(ice.advance - ice.home) <= 0.081, `ICE task starts near its chamber's home (${ice.advance} vs ${ice.home}, target ${ice.target})`);
+    assert.ok(Math.abs(ice.ap) <= 15 && Math.abs(ice.lr) <= 15, 'ICE knobs offset from the home pose');
 
     assert.deepEqual(errors, [], 'no page errors');
     console.log('PASS: RV/LV modes, Eustachian valve and Chiari network, ridge and posterior leaflet names, named coronary branches (D1 before S1), ventricle wall regions, aortic valve opening, TTE presets without PV/PA/SVC and with the textbook LV segments');

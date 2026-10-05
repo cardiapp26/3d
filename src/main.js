@@ -44,7 +44,7 @@ const MODE_KEYS = 9;
 // Modes whose lesson steps appear as menu entries under the mode itself.
 // true lists every step; a function picks the steps to list (the hemodynamics
 // mode lists its right heart catheterisation and pressure-volume loop chapters).
-const MODE_SUBSTEPS = { ablation: true, cath: step => Boolean(step.menu || step.pvLoop) };
+const MODE_SUBSTEPS = { ablation: true, cath: step => Boolean(step.menu || step.pvLoop), exam: step => Boolean(step.menuLabel) };
 
 // Right-panel tabs and phone sheets; created once the panels exist.
 let panelShell = null;
@@ -86,7 +86,7 @@ function renderModeNav() {
     const pick = MODE_SUBSTEPS[id];
     if (!pick) return '';
     return (lessons[id]?.steps || []).map((st, i) => (pick === true || pick(st)
-      ? `<button class="mode mode-substep" data-mode="${id}" data-mode-step="${i}"><span class="mode-substep-name">${st.title}</span></button>` : '')).join('');
+      ? `<button class="mode mode-substep" data-mode="${id}" data-mode-step="${i}"><span class="mode-substep-name">${st.menuLabel || st.title}</span></button>` : '')).join('');
   };
   const group = ([key, ids]) => `<div class="mode-group" data-mode-group="${key}">
       <button type="button" class="mode-group-tab" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${key}"><span class="mode-group-name" data-i18n="${key}">${getTranslation(key)}</span><span class="mode-group-current"></span><span class="mode-group-caret" aria-hidden="true">▾</span></button>
@@ -724,7 +724,17 @@ const examMode = heart ? createExamMode({
   heart,
   mount: document.querySelector('#exam-panel'),
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
-  onArea: areaId => inspect(`ausc-${areaId}`, false, false)
+  onArea: areaId => inspect(`ausc-${areaId}`, false, false),
+  // A tab click in the panel moves the lesson to the first step of that section.
+  onView: view => {
+    if (mode !== 'exam') return;
+    const steps = lessons.exam?.steps || [];
+    const inJvp = i => Boolean(steps[i]?.jvp);
+    if (inJvp(step) === (view === 'jvp')) return;
+    const first = steps.findIndex((st, i) => (view === 'jvp' ? inJvp(i) : !inJvp(i)));
+    // The panel is already on the chosen tab: only the lesson text and list follow it.
+    if (first >= 0) { step = first; showStep({ keepExamPanel: true }); }
+  }
 }) : null;
 const echoMode = heart ? createEchoMode({
   heart,
@@ -844,7 +854,22 @@ document.querySelector('#root-window').addEventListener('change', e => {heart?.s
 
 // relabel: only the language changed; keep the step's interactive state
 // (echo probe and task, EGM scenario, tissue opacity).
-function showStep({ relabel = false } = {}) {
+// Lesson step list. A lesson with sections (steps carrying `menuLabel`, as in the physical
+// examination: auscultation, venous pressure) lists only the current section's steps; the
+// other sections stay as headings that open their first step.
+function stepListMarkup(steps, current) {
+  const sectionOf = steps.map((_, i) => { let k = -1; for (let j = 0; j <= i; j++) if (steps[j].menuLabel) k = j; return k; });
+  const sectioned = mode === 'exam' && steps.some(st => st.menuLabel);
+  return steps.map((st, i) => {
+    const button = `<button data-step="${i}" class="${i === current ? 'current' : ''}">${i + 1}. ${st.title}</button>`;
+    if (!sectioned) return button;
+    const open = sectionOf[i] === sectionOf[current];
+    const head = st.menuLabel ? (open ? `<div class="steps-group">${st.menuLabel}</div>` : `<button type="button" class="steps-group steps-group-link" data-step="${i}">${st.menuLabel} ›</button>`) : '';
+    return head + (open ? button : '');
+  }).join('');
+}
+
+function showStep({ relabel = false, keepExamPanel = false } = {}) {
   const isPacemaker = mode === 'pacemaker';
   const isBachmann = mode === 'bachmann';
   const isTransseptal = mode === 'transseptal';
@@ -865,7 +890,8 @@ function showStep({ relabel = false } = {}) {
   if (!lesson) return;
   const s = lesson.steps[step];
   document.querySelector('#step-detail').textContent = s.text;
-  document.querySelector('#steps').innerHTML = lesson.steps.map((st, i) => `<button data-step="${i}" class="${i === step ? 'current' : ''}">${i + 1}. ${st.title}</button>`).join('');
+  // Sections of a lesson (menuLabel) head their steps in the list (physical examination: auscultation, venous pressure).
+  document.querySelector('#steps').innerHTML = stepListMarkup(lesson.steps, step);
   const isLast = step === lesson.steps.length - 1;
   const nextBtnText = isLast ? getTranslation('restartExploration') : getTranslation('nextLandmark');
   document.querySelector('#next-step').textContent = nextBtnText;
@@ -893,7 +919,7 @@ function showStep({ relabel = false } = {}) {
 
   if (!relabel) syncEpsHandoff(s);
   if (isCath) hemoMode?.applyStep(s, { relabel });
-  if (mode === 'exam') examMode?.applyStep(s);
+  if (mode === 'exam' && !keepExamPanel) examMode?.applyStep(s);
   if (ECHO_MODALITY[mode] && !relabel) echoMode?.applyStep(s.echo);
 
   if (s.view) {
@@ -1038,9 +1064,10 @@ function setMode(newMode, updateUrl = true) {
   document.querySelector('#cycle-panel').hidden=isDefects;
   const structInfoEl = document.querySelector('#structure-info');
   // Echo: the sector, controls and feedback come first; the structure card would push them down.
-  if (structInfoEl) structInfoEl.hidden = isDefects || isEcho;
+  // Physical examination: the auscultation / venous pressure panel and the lesson lead; the structure card would push them down.
+  if (structInfoEl) structInfoEl.hidden = isDefects || isEcho || mode === 'exam';
   const structureIndexEl = document.querySelector('.structure-index');
-  if (structureIndexEl) structureIndexEl.hidden = isEcho;
+  if (structureIndexEl) structureIndexEl.hidden = isEcho || mode === 'exam';
 
   if (mode === 'cath') hemoMode?.enter(); else hemoMode?.exit();
   // Like the EP panel: the hemodynamics panel heads the lesson column, the structure card steps aside.
@@ -1675,7 +1702,8 @@ function applyChromeTranslations() {
     if (labelEl && label) labelEl.textContent = label;
     // Menu lesson-step entries follow the lesson language.
     if (btn.dataset.modeStep !== undefined) {
-      const title = lessons[btn.dataset.mode]?.steps[Number(btn.dataset.modeStep)]?.title;
+      const st = lessons[btn.dataset.mode]?.steps[Number(btn.dataset.modeStep)];
+      const title = st?.menuLabel || st?.title;
       const nameEl = btn.querySelector('.mode-substep-name');
       if (nameEl && title) nameEl.textContent = title;
     }

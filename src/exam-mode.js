@@ -11,7 +11,7 @@ import { JVP_TEXT } from './jvp-content.js';
 /**
  * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en', onArea?: (areaId: string) => void }} deps
  */
-export function createExamMode({ heart, mount, getLang, onArea }) {
+export function createExamMode({ heart, mount, getLang, onArea, onView }) {
   let panel = null, jvp = null, tabs = null;
   let active = false, view = 'auscultation';
   const sections = {};
@@ -26,7 +26,7 @@ export function createExamMode({ heart, mount, getLang, onArea }) {
       tab.type = 'button';
       tab.setAttribute('role', 'tab');
       tab.dataset.examView = id;
-      tab.addEventListener('click', () => showView(id));
+      tab.addEventListener('click', () => { showView(id); onView?.(id); });
       tabs.append(tab);
       sections[id] = document.createElement('div');
       sections[id].className = `exam-view exam-view-${id}`;

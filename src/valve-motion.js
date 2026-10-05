@@ -15,6 +15,8 @@ const SL_ORIFICE = 0.8;  // open: the free edges lie on a circle of this fractio
 const SL_LIFT = 0.18;    // ...and move this far downstream along the valve axis
 const SL_SECTOR = (75 * Math.PI) / 180;   // a cusp stays within this angle of its own direction
 const SL_CORE = 0.35;    // inside this radius the vertex angle blends toward the cusp direction
+const SL_WALL_GAP = 0.85; // an open cusp stays inside this fraction of the measured root wall radius
+const WALL_STEP = 0.04, WALL_SECTORS = 12;
 
 /**
  * Open pose of one cusp vertex.
@@ -41,19 +43,89 @@ export function semilunarOffset(p, opening, pose, cuspDir) {
   // Angles are squeezed proportionally into the cusp sector (no clamp, no jump) and fade toward the cusp direction at the centre.
   const angle = Math.atan2(y, Math.max(0, x)) * (SL_SECTOR / (Math.PI / 2)) * core * core * (3 - 2 * core);
   // Monotonic map of [0, R] onto [orifice, R]: the wall stays, the centre moves furthest.
-  const openRadial = SL_ORIFICE * R + radial * (1 - SL_ORIFICE);
+  let openRadial = SL_ORIFICE * R + radial * (1 - SL_ORIFICE);
+  const lift = SL_LIFT * R * (1 - radial / R);
+  // The cusps' hinge ring is wider than the trunk above it on the atlas: an open cusp
+  // folds against the wall, it does not pass through it (a vertex already near the wall stays just inside it).
+  const wall = pose.wall ? wallRadius(pose.wall, along + lift, angle, u, v) : null;
+  if (wall) openRadial = Math.min(openRadial, Math.max(Math.min(restRadial, wall * 0.98), wall * (pose.wall.gap || SL_WALL_GAP)));
   const newRadial = restRadial + (openRadial - restRadial) * k;
   let delta = angle - restAngle;
   if (delta > Math.PI) delta -= 2 * Math.PI; else if (delta < -Math.PI) delta += 2 * Math.PI;
   const newAngle = restAngle + delta * k;
   const cos = Math.cos(newAngle), sin = Math.sin(newAngle);
   const dir = [u[0] * cos + v[0] * sin, u[1] * cos + v[1] * sin, u[2] * cos + v[2] * sin];
-  const lift = SL_LIFT * R * (1 - radial / R) * k;
+  const liftK = lift * k;
   return [
-    c[0] + n[0] * (along + lift) + dir[0] * newRadial,
-    c[1] + n[1] * (along + lift) + dir[1] * newRadial,
-    c[2] + n[2] * (along + lift) + dir[2] * newRadial
+    c[0] + n[0] * (along + liftK) + dir[0] * newRadial,
+    c[1] + n[1] * (along + liftK) + dir[1] * newRadial,
+    c[2] + n[2] * (along + liftK) + dir[2] * newRadial
   ];
+}
+
+/** Wall radius at a height along the valve axis, in the direction `angle` of the cusp frame (null without data). */
+function wallRadius(wall, height, angle, u, v) {
+  const d = [u[0] * Math.cos(angle) + v[0] * Math.sin(angle), u[1] * Math.cos(angle) + v[1] * Math.sin(angle), u[2] * Math.cos(angle) + v[2] * Math.sin(angle)];
+  const a = (Math.atan2(d[0] * wall.e2[0] + d[1] * wall.e2[1] + d[2] * wall.e2[2], d[0] * wall.e1[0] + d[1] * wall.e1[1] + d[2] * wall.e1[2]) + 2 * Math.PI) % (2 * Math.PI);
+  // Bilinear in height and angle over the smoothed grid, clamped to the measured height range.
+  const fh = (height - wall.h0) / WALL_STEP;
+  if (fh < 0 || fh > wall.grid.length - 1) return null;
+  let h0 = Math.floor(fh), h1 = Math.min(wall.grid.length - 1, h0 + 1), th = fh - h0;
+  // No cap where the trunk wall was not measured (the sinuses bulge beyond the tube).
+  if (!wall.fill && !wall.measured[h0] && !wall.measured[h1]) return null;
+  if (!wall.fill) { if (!wall.measured[h0]) { h0 = h1; th = 0; } else if (!wall.measured[h1]) { h1 = h0; th = 0; } }
+  const fa = (a / (2 * Math.PI)) * WALL_SECTORS - 0.5;
+  const a0 = ((Math.floor(fa) % WALL_SECTORS) + WALL_SECTORS) % WALL_SECTORS, a1 = (a0 + 1) % WALL_SECTORS, ta = fa - Math.floor(fa);
+  const at = row => row[a0] * (1 - ta) + row[a1] * ta;
+  return at(wall.grid[h0]) * (1 - th) + at(wall.grid[h1]) * th;
+}
+
+/**
+ * Root wall profile around a semilunar valve: the smallest wall radius per
+ * height step along the axis and per angular sector (atlas trunk surface),
+ * gaps filled from the neighbours and smoothed, so the cap on an open cusp is
+ * continuous (a stepped cap would crumple the leaflet).
+ */
+export function wallProfile(pose, wallPositions) {
+  const { center: c, axis: n } = pose;
+  const e1 = Math.abs(n[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const d1 = e1[0] * n[0] + e1[1] * n[1] + e1[2] * n[2];
+  const a1 = [e1[0] - d1 * n[0], e1[1] - d1 * n[1], e1[2] - d1 * n[2]];
+  const l1 = Math.hypot(...a1); const u1 = a1.map(x => x / l1);
+  const u2 = [n[1] * u1[2] - n[2] * u1[1], n[2] * u1[0] - n[0] * u1[2], n[0] * u1[1] - n[1] * u1[0]];
+  const h0 = -pose.radius, steps = Math.ceil((pose.radius * 3) / WALL_STEP) + 1;
+  const raw = Array.from({ length: steps }, () => new Array(WALL_SECTORS).fill(Infinity));
+  for (const arr of wallPositions) {
+    for (let i = 0; i < arr.length; i += 3) {
+      const d = [arr[i] - c[0], arr[i + 1] - c[1], arr[i + 2] - c[2]];
+      const al = d[0] * n[0] + d[1] * n[1] + d[2] * n[2];
+      const hi = Math.round((al - h0) / WALL_STEP);
+      if (hi < 0 || hi >= steps) continue;
+      const r = [d[0] - al * n[0], d[1] - al * n[1], d[2] - al * n[2]];
+      const rad = Math.hypot(...r);
+      if (rad > pose.radius * 2) continue;     // other branches of the trunk
+      const a = (Math.atan2(r[0] * u2[0] + r[1] * u2[1] + r[2] * u2[2], r[0] * u1[0] + r[1] * u1[1] + r[2] * u1[2]) + 2 * Math.PI) % (2 * Math.PI);
+      const si = Math.floor((a / (2 * Math.PI)) * WALL_SECTORS) % WALL_SECTORS;
+      raw[hi][si] = Math.min(raw[hi][si], rad);
+    }
+  }
+  const measured = raw.map(row => row.some(Number.isFinite));
+  if (!measured.some(Boolean)) return null;
+  // Fill: empty sectors from the row minimum, empty rows from the nearest measured row.
+  const filled = raw.map(row => { const m = Math.min(...row.filter(Number.isFinite)); return row.map(x => (Number.isFinite(x) ? x : m)); });
+  const near = hi => { for (let k = 0; k < steps; k++) { if (measured[hi - k]) return hi - k; if (measured[hi + k]) return hi + k; } return hi; };
+  const rows = filled.map((row, hi) => (measured[hi] ? row : filled[near(hi)]));
+  // Smooth over neighbouring sectors and steps (minimum-preserving enough: a light blur of the inner surface).
+  const grid = rows.map((row, hi) => row.map((_, si) => {
+    let sum = 0, w = 0;
+    for (let dh = -1; dh <= 1; dh++) for (let ds = -1; ds <= 1; ds++) {
+      const r = rows[hi + dh]; if (!r) continue;
+      const k = (dh === 0 ? 2 : 1) * (ds === 0 ? 2 : 1);
+      sum += r[(si + ds + WALL_SECTORS) % WALL_SECTORS] * k; w += k;
+    }
+    return Math.min(row[si], sum / w * 1.0);
+  }));
+  return { h0, grid, measured, e1: u1, e2: u2 };
 }
 
 export function writeLeaflet(mesh, opening, pose) {
@@ -228,8 +300,9 @@ export function writeAvLeaflet(mesh, opening, frame) {
 }
 
 const VALVE_GROUPS = [
-  { ids: ['lcc', 'rcc', 'ncc'], kind: 'semilunar', channel: 'semilunarValveOpening', upstream: 'lv' },
-  { ids: ['pulmonary-valve'], kind: 'semilunar', channel: 'semilunarValveOpening', upstream: 'rv' },
+  // The trunk meshes start above the sinuses: there the nearest measured wall caps the cusps too (fill).
+  { ids: ['lcc', 'rcc', 'ncc'], kind: 'semilunar', channel: 'semilunarValveOpening', upstream: 'lv', wall: { id: 'aorta', name: /ascending/i, gap: 0.9, fill: true } },
+  { ids: ['pulmonary-valve'], kind: 'semilunar', channel: 'semilunarValveOpening', upstream: 'rv', wall: { id: 'pa', name: /pulmonary trunk/i, fill: true } },
   { ids: ['mitral'], kind: 'av', channel: 'avValveOpening' },
   { ids: ['tricuspid'], kind: 'av', channel: 'avValveOpening' }
 ];
@@ -246,7 +319,7 @@ export function createValveMotion(meshMap) {
     return { x: (b.min.x + b.max.x) / 2, y: (b.min.y + b.max.y) / 2, z: (b.min.z + b.max.z) / 2 };
   };
 
-  function valveGroup({ ids, kind, upstream }) {
+  function valveGroup({ ids, kind, upstream, wall }) {
     const key = ids.join('|');
     if (valveCache.has(key)) return valveCache.get(key);
     const meshes = [];
@@ -261,6 +334,12 @@ export function createValveMotion(meshMap) {
       return null;
     }
     const group = { meshes, frame: null, semilunar: kind === 'semilunar' ? semilunarPose(meshes, centreOf(upstream)) : null };
+    // The root trunk the cusps open against (ascending aorta, pulmonary trunk).
+    if (group.semilunar && wall) {
+      const walls = (meshMap.get(wall.id) || []).filter(m => wall.name.test(m.name || m.userData.sourceName || ''));
+      if (walls.length) group.semilunar.wall = wallProfile(group.semilunar, walls.map(m => m.userData.restPosition || m.geometry.attributes.position.array));
+      if (group.semilunar.wall) Object.assign(group.semilunar.wall, { gap: wall.gap, fill: Boolean(wall.fill) });
+    }
     // AV valves move in their measured annulus frame when the ring is known.
     const ring = ids.length === 1 ? (meshMap.get(`${ids[0]}-annulus`) || [])[0]?.userData : null;
     if (ring?.frame && ring.rim) {

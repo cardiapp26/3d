@@ -19,7 +19,9 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
     await page.goto(`${APP}/#/mode/exam`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
-    const steps = await page.locator('#steps button').count();
+    // The step list shows one section at a time (auscultation, venous pressure); the total comes from the lesson.
+    const steps = await page.evaluate(async () => (await import('/src/content.js')).lessons.exam.steps.length);
+    assert.equal(await page.locator('#steps .steps-group-link').textContent(), 'Venöz basınç (JVP) ›', 'the venous pressure section is a heading link');
     assert.equal(await page.evaluate(() => window.cardiaExam.getView()), 'auscultation', 'exam opens on auscultation');
 
     // First venous pulse step: the JVP tab, the normal pattern, the a wave.

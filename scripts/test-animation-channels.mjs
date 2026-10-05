@@ -18,6 +18,7 @@ import {
   followWeight,
   isSurfaceFollower,
   semilunarOffset,
+  wallProfile,
   smallestAxis,
   writeFollower
 } from '../src/animation-channels.js';
@@ -166,6 +167,15 @@ console.log('Running Animation Channels Unit Tests...\n');
   // Neighbouring vertices stay neighbours (continuity across the centre).
   const a1 = semilunarOffset([0.01, 0.02, 0], 1, pose, cusp), a2 = semilunarOffset([-0.01, 0.02, 0], 1, pose, cusp);
   assert.ok(Math.hypot(a1[0] - a2[0], a1[1] - a2[1], a1[2] - a2[2]) < 0.2, 'continuous across the centre');
+  // A root wall narrower than the hinge ring: the open cusp folds against it, never through it.
+  const wallPts = [];
+  for (let h = -2; h <= 4; h += 0.04) for (let t = 0; t < 360; t += 6) wallPts.push(1.4 * Math.cos(t * Math.PI / 180), 1.4 * Math.sin(t * Math.PI / 180), h);
+  const walled = { ...pose, wall: wallProfile(pose, [Float32Array.from(wallPts)]) };
+  for (const x of [0, 0.5, 1, 1.5]) {
+    const o = semilunarOffset([x, 0.1, 0], 1, walled, cusp);
+    assert.ok(Math.hypot(o[0], o[1]) <= 1.4 + 1e-6, `open vertex from ${x} stays inside the 1.4 wall (${Math.hypot(o[0], o[1]).toFixed(3)})`);
+  }
+  assert.ok(Math.hypot(...semilunarOffset([0.1, 0, 0], 1, walled, cusp).slice(0, 2)) >= 1.4 * 0.85 - 1e-6, 'and still opens up to the wall');
   const ivrPose = semilunarOffset([0.2, 0, 0], computeChannelWeights(0.90).semilunarValveOpening, pose, cusp);
   assert.deepEqual(ivrPose, [0.2, 0, 0], 'Semilunar leaflet is shut during isovolumetric relaxation');
   // A flat disc: its normal is the smallest-variance axis.

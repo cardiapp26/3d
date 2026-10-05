@@ -262,7 +262,7 @@ export const ICE_VIEWS = Object.freeze([
     motion: { tr: 'Saat yönünde daha: sağ üst pulmoner ven ve LA çatısı; Bachmann demetinin septal tarafı burada tanınır. Sağ frenik sinir çoğu hastada RSPV antrumu boyunca parlak (hiperekojen), ortası bazen koyu bir bant olarak görülür. Daha saat yönü SVC ve PA\'yı getirir.', en: 'More clockwise: the right superior vein and the LA roof; the septal aspect of Bachmann\'s bundle shows here. In most patients the right phrenic nerve is a bright (hyperechoic) band, sometimes with a dark centre, along the RSPV antrum. More clockwise brings in the SVC and PA.' },
     required: ['la', 'rspv'], relations: [ostium('rspv')], optional: ['svc', 'pa'], avoid: ['lspv', 'lipv', 'laa'], source: ICE_LA_SRC },
   { id: 'ice-la-aov', position: 'la', title: { tr: 'LA ICE aort kapağı kısa eksen', en: 'LA ICE aortic valve short axis' }, ase: { tr: 'saat yönü devam: çıkan aort, üst interatriyal bölge, AV kısa eksen (NCC anterior LA karşısında)', en: 'continue clockwise: ascending aorta, superior interatrial region, AV short axis (NCC opposite the anterior LA)' },
-    motion: { tr: 'Turun sonunda (ya da home\'dan biraz saat yönü tersine; LAA kapatmada TEE 0° benzeri) aort kapağının kısa ekseni: NCC anterior LA\'nın karşısında, RCC RV çıkış yoluna, LCC ve sol ana koroner LAA\'ya komşu. Saat yönünde ~40° geri döndürmek home\'a getirir.', en: 'At the end of the tour (or a little counterclockwise from home; like TEE 0° in LAA closure) the aortic valve in short axis: the NCC opposite the anterior LA, the RCC next to the RV outflow tract, the LCC and left main next to the LAA. Rotating back ~40° clockwise returns to home.' },
+    motion: { tr: 'Turun sonunda (ya da home\'dan biraz saat yönü tersine; LAA kapatmada TEE 0° benzeri) aort kapağının kısa ekseni: NCC anterior LA\'nın karşısında, RCC RV çıkış yoluna, LCC ve sol ana koroner LAA\'ya komşu. Saat yönünde ~30° geri döndürmek home\'a getirir.', en: 'At the end of the tour (or a little counterclockwise from home; like TEE 0° in LAA closure) the aortic valve in short axis: the NCC opposite the anterior LA, the RCC next to the RV outflow tract, the LCC and left main next to the LAA. Rotating back ~30° clockwise returns to home.' },
     required: ['la', 'aortic-valve'], relations: [{ a: 'aortic-valve', b: 'la', max: 0.6, note: { tr: 'aort kökü LA\'nın önünde', en: 'aortic root in front of the LA' } }], optional: ['aorta'], avoid: ['lspv', 'lipv', 'rspv', 'ripv'], source: ICE_LA_SRC },
   // Left ventricle (position 'lv'): from the LA home view the catheter is turned toward the
   // mitral valve, flexed anteriorly and advanced across it into the basal LV, then the flexion
@@ -346,7 +346,7 @@ export function iceLvPath(A) {
 // anteroposterior - posterior, leftRight - right.
 const ICE_CALIBRATION = Object.freeze({
   'ice-home': { advance: 0.6, rotation: 15, anteroposterior: 0, leftRight: 0 },
-  'ice-rvot': { advance: 0.55, rotation: 35, anteroposterior: 0, leftRight: 0 },
+  'ice-rvot': { advance: 0.55, rotation: 40, anteroposterior: 0, leftRight: 0 },
   'ice-lvot': { advance: 0.55, rotation: 40, anteroposterior: 0, leftRight: 0 },
   'ice-mitral-laa': { advance: 0.55, rotation: 75, anteroposterior: 0, leftRight: 15 },
   'ice-left-pv': { advance: 0.7, rotation: 100, anteroposterior: 0, leftRight: -15 },
@@ -361,7 +361,7 @@ const ICE_CALIBRATION = Object.freeze({
   'ice-la-posterior': { advance: 0.4, rotation: 85, anteroposterior: 0, leftRight: 0 },
   'ice-la-ripv': { advance: 0.4, rotation: 125, anteroposterior: 0, leftRight: 0 },
   'ice-la-rspv': { advance: 0.4, rotation: 65, anteroposterior: 45, leftRight: 0 },
-  'ice-la-aov': { advance: 0.4, rotation: -40, anteroposterior: 0, leftRight: 0 },
+  'ice-la-aov': { advance: 0.4, rotation: -30, anteroposterior: 0, leftRight: 0 },
   // LV (advance from the mitral annulus toward the apex)
   'ice-lv-inferior': { advance: 0.2, rotation: 0, anteroposterior: -45, leftRight: 15 },
   'ice-lv-septum': { advance: 0.45, rotation: 210, anteroposterior: -15, leftRight: 0 },
@@ -379,7 +379,7 @@ export const ICE_PRESET_NOTES = Object.freeze({
   'ice-la-lipv': { tr: 'Atlas farkı: LIPV için 85° saat yönü ve hafif posterior büküm (15°) gerekti; sol büküm kaynakla aynı yönde (15°).', en: 'Atlas difference: the LIPV needed 85° clockwise and a slight posterior tilt (15°); the left tilt matches the source direction (15°).' },
   'ice-la-posterior': { tr: 'Atlas notu: özofagus, şematik TEE yolunun LA seviyesindeki noktasıdır; atlasta özofagus ve inen aort yoktur.', en: 'Atlas note: the oesophagus is the schematic TEE path\'s point at the LA level; the atlas has no oesophagus or descending aorta.' },
   'ice-la-rspv': { tr: 'Atlas farkı: RSPV bu atlasta RIPV\'den önce (65°) ve düğme sınırında anterior bükümle (45°) geliyor; kaynakta RIPV\'den sonra, gerekirse posterior bükümle.', en: 'Atlas difference: on this atlas the RSPV comes before the RIPV (65°) with anterior tilt at the knob limit (45°); the source has it after the RIPV, with posterior tilt if needed.' },
-  'ice-la-aov': { tr: 'Atlas notu: aort kapağı kısa ekseni home\'dan 40° saat yönü tersinde (kaynağın LAA kapatma tarifiyle aynı yön); döner sınır nedeniyle turun sonundan değil.', en: 'Atlas note: the aortic valve short axis sits 40° counterclockwise from home (the direction of the source\'s LAA closure description), not at the end of the clockwise tour, because of the rotation limit.' },
+  'ice-la-aov': { tr: 'Atlas notu: aort kapağı kısa ekseni home\'dan 30° saat yönü tersinde (kaynağın LAA kapatma tarifiyle aynı yön); döner sınır nedeniyle turun sonundan değil.', en: 'Atlas note: the aortic valve short axis sits 30° counterclockwise from home (the direction of the source\'s LAA closure description), not at the end of the clockwise tour, because of the rotation limit.' },
   'ice-mitral-laa': { tr: 'Atlas farkı: LAA lobunun tanınabilir görünmesi için hafif sol büküm (15°) gerekti; kaynakta büküm nötr. Kaynaktaki "biraz ilerlet" bu atlasta uygulanmadı: ilerletme %55, home\'un (%60) biraz gerisinde.', en: 'Atlas difference: a slight left deflection (15°) was needed for a recognisable LAA lobe; the source keeps the knobs neutral. The source\'s "advance slightly" is not applied on this atlas: the advance is 55%, a little behind home (60%).' },
   'ice-left-pv': { tr: 'Atlas farkı: kateter daha yukarıda (ilerletme %70, kaynaktaki "yüksek RA") ve hafif sağ bükümle (15°).', en: 'Atlas difference: the catheter sits higher (advance 70%, the source\'s "high RA") with a slight right deflection (15°).' },
   'ice-septal-sax': { tr: 'Atlas notu: yön kaynakla aynı (posterior ve sağ büküm, saat yönü 125°); sağ büküm bu atlasta düğmenin sınırında (45°).', en: 'Atlas note: the direction matches the source (posterior and right deflection, clockwise 125°); the right deflection sits at the knob limit (45°) on this atlas.' },
