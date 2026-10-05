@@ -1103,7 +1103,7 @@ export const rawLessons = {
         {
           title: 'Kavotriküspit İstmus (CTI) • Atriyal Flatter',
           text: 'Kavotriküspit istmus (CTI), triküspit anulusunun inferior kenarı ile İVC ağzı arasındaki sağ atriyum tabanıdır; tipik saat yönü tersi atriyal flatter devresinin zorunlu geçididir. Standart lezyon hattı LAO projeksiyonunda saat 6 hizasında (santral istmus), CS ostiyumunun lateralinden anulustan İVC\'ye çekilir; hedef çift yönlü istmus blokudur. Mavi halka ölçülen İVC ağzını gösterir (atlasta İVC mesh\'i yoktur).',
-          landmark: 'ivc',
+          landmark: 'cti-line',
           view: 'lao',
           egm: 'flutter-svt'
         },
@@ -1144,7 +1144,7 @@ export const rawLessons = {
         {
           title: 'Cavotricuspid Isthmus (CTI) • Atrial Flutter',
           text: 'The cavotricuspid isthmus (CTI) is the right atrial floor between the inferior tricuspid annulus and the IVC orifice, the obligatory corridor of typical counterclockwise flutter. The standard lesion line runs at 6 o\'clock in LAO (central isthmus), lateral to the CS ostium, from the annulus to the IVC; the goal is bidirectional isthmus block. The blue ring marks the measured IVC orifice (the atlas has no IVC mesh).',
-          landmark: 'ivc',
+          landmark: 'cti-line',
           view: 'lao',
           egm: 'flutter-svt'
         },

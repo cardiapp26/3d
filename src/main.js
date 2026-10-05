@@ -556,7 +556,10 @@ function inspect(id, flyTo = true, updateUrl = true, branch = null) {
   heart?.selectStructure(cleanId, flyTo);
   updateSceneContext();
   const listed = heart?.getState().structures || [];
-  const stMatch = defect ? { provenance: 'schematic' } : listed.find(item => item.id === cleanId) || listed.find(item => item.valveId === cleanId);
+  // Scene overlays (EP lines, Koch structures, catheter stations, auscultation points) are drawn
+  // schematically but are not atlas layers; their content source says so.
+  const schematicOverlay = /schematic/i.test(s.source || '') ? { provenance: 'schematic' } : null;
+  const stMatch = defect ? { provenance: 'schematic' } : listed.find(item => item.id === cleanId) || listed.find(item => item.valveId === cleanId) || schematicOverlay;
   const indexEl = document.querySelector('.structure-index');
   if (indexEl) {
     if (stMatch) {
