@@ -129,7 +129,14 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.match(await page.locator('[data-basics-card=poles] .amap-readout').textContent(), /QS/, 'focus: unipolar QS');
     await page.locator('[data-basics-hp="30"]').click();
     assert.match(await page.locator('[data-basics-card=filters] .amap-readout').textContent(), /hayır/, '30 Hz breaks the QS');
+    await page.locator('[data-basics-catheter=his]').dispatchEvent('click');
+    assert.equal(await page.locator('[data-basics-koch]').isVisible(), true, 'His catheter shows the triangle of Koch');
+    assert.ok(await page.locator('[data-basics-koch] polygon').count() > 100, 'peak frequency map drawn');
+    await page.locator('[data-basics-koch-pf]').click();
+    assert.equal(await page.locator('[data-basics-koch] polygon').count(), 0, 'map toggled off');
+    await page.locator('[data-basics-koch-pf]').click();
     await page.locator('[data-basics-catheter=cs]').click();
+    assert.equal(await page.locator('[data-basics-koch]').isHidden(), true, 'other catheters hide it');
     assert.match(await page.locator('[data-basics-catheter-name]').textContent(), /CS/);
     await page.locator('[data-basics-hv]').fill('105');
     assert.equal(await page.locator('[data-basics-iv=hv]').getAttribute('data-state'), 'high', 'HV 105: high risk');

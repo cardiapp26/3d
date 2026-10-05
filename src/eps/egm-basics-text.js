@@ -35,6 +35,11 @@ export const BASICS_TEXT = {
         his: { name: 'HIS', where: 'Koch üçgeni tepesi, triküspit septal anulus', lines: ['A, H, V sırası. H süresi yaklaşık 15-25 ms.', 'Anlamlı His için A ve V\'nin birlikte görünmesi gerekir.', 'AH ve HV, blok seviyesi.'] },
         cs: { name: 'CS', where: 'Koroner sinüs, AV oluk', lines: ['Sol atriyum (A) ve sol ventrikül (V) birlikte.', 'Sinüste proksimalden distale aktivasyon.', 'Sol atriyal sıra, sol aksesuar yol.'] },
         rv: { name: 'RVA', where: 'Sağ ventrikül apeksi', lines: ['Ventriküler potansiyel (V).', 'Ventriküler pacing.', 'VA iletimi.'] }
+      },
+      koch: {
+        title: 'Koch üçgeni: yavaş yol girişi', toggle: 'Tepe frekansı ve vektörler',
+        his: 'His', transition: 'düğüm-His geçişi', entrance: 'RIE girişi',
+        note: 'His kateteri üçgenin tepesini işaretler. Yüksek çözünürlüklü haritalamada (Sakamoto 2026) tepe frekansı arka septumda, yavaş yol girişinde yüksektir; vektörler orada birleşir. Azalmış His potansiyeli (b) düğüm-His geçişidir ve yavaş yol bunun altındadır. Öğretim şemasıdır, hasta verisi değildir.'
       }
     },
     intervals: {
@@ -105,6 +110,11 @@ export const BASICS_TEXT = {
         his: { name: 'HIS', where: 'Apex of the triangle of Koch, tricuspid septal annulus', lines: ['A, H, V in order. H lasts about 15-25 ms.', 'A meaningful His needs A and V together.', 'AH and HV, block level.'] },
         cs: { name: 'CS', where: 'Coronary sinus, AV groove', lines: ['Left atrium (A) and left ventricle (V) together.', 'Proximal to distal activation in sinus.', 'Left atrial sequence, left accessory pathway.'] },
         rv: { name: 'RVA', where: 'Right ventricular apex', lines: ['Ventricular potential (V).', 'Ventricular pacing.', 'VA conduction.'] }
+      },
+      koch: {
+        title: 'Triangle of Koch: slow pathway entrance', toggle: 'Peak frequency and vectors',
+        his: 'His', transition: 'nodal-His transition', entrance: 'RIE entrance',
+        note: 'The His catheter marks the apex of the triangle. In high-resolution mapping (Sakamoto 2026) peak frequency is high in the posterior septum at the slow pathway entrance, and the vectors converge there. A reduced His potential (b) is the nodal-His transition; the slow pathway lies below it. A teaching schematic, not patient data.'
       }
     },
     intervals: {

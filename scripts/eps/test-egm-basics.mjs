@@ -80,6 +80,7 @@ for (const lang of ['tr', 'en']) {
   for (const id of BLOCK_CASES) assert.ok(t.block.cases[id], `${lang} case ${id}`);
   for (const level of ['normal', 'delay', 'nodal', 'intraHis', 'infraHis']) assert.equal(t.block.levels[level].length, 2, `${lang} ${level}`);
   for (const id of ['hra', 'his', 'cs', 'rv']) assert.ok(t.catheters.items[id].lines.length >= 3, `${lang} ${id}`);
+  for (const k of ['title', 'toggle', 'his', 'transition', 'entrance', 'note']) assert.ok(t.catheters.koch[k], `${lang} koch ${k}`);
   for (const k of ['short', 'normal', 'long', 'borderline', 'high']) assert.ok(t.intervals.states[k]);
 }
 console.log('PASS egm-basics: unipolar QS vs rS, bipolar far field reduced not erased and lost across the axis, filter band (QS kept, 30 Hz rebound, baseline, downstroke), interval ranges and HV limits, six block cases at their level, decremental AH and the jump with a slow pathway, TR/EN texts');

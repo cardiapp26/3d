@@ -5,6 +5,7 @@ import {
   electrodePair, filterBeat, classifyIntervals, blockCase, ahAt, ahCurve
 } from './egm-basics-model.js';
 import { BASICS_TEXT } from './egm-basics-text.js';
+import { functionalAt, vectorAt, ENTRANCE, LANDMARKS } from '../koch-sp-functional.js';
 
 /*
  * EGM basics tab: six interactive cards, each a diagram first and a caption
@@ -46,7 +47,7 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     catheter: 'his',
     pa: 40, ah: 85, hv: 45,
     block: 'wenckebach-nodal',
-    a1a2: 400, dual: false, sweeping: false
+    a1a2: 400, dual: false, sweeping: false, kochPf: true
   };
 
   const root = el('section', 'basics', { 'data-basics': '' });
@@ -226,7 +227,20 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
   const cathCanvas = el('canvas', 'basics-canvas basics-strip', { role: 'img', 'data-basics-catheter-canvas': '' });
   const cathTitle = el('p', 'amap-verdict', { 'data-basics-catheter-name': '' });
   const cathLines = el('ul', 'basics-lines');
-  catheters.append(heart, cathTitle, cathLines, cathCanvas);
+  // His catheter: where the slow pathway entrance lies (Sakamoto 2026), as a small triangle of Koch with
+  // peak frequency, converging vectors and the His / nodal-His / entrance points.
+  const kochBox = el('div', 'basics-koch', { 'data-basics-koch': '' });
+  const kochSvg = svg('svg', { viewBox: '0 0 330 170', class: 'basics-svg basics-koch-svg', role: 'img' });
+  const kochTop = [[22, 150], [100, 160], [168, 158], [190, 22]];   // Todaro corner, CS ostium, hinge, apex
+  const kochPoint = ({ u, v }) => {
+    const [t, c, h, a] = kochTop;
+    const base = v <= 0.5 ? [t[0] + (c[0] - t[0]) * v * 2, t[1] + (c[1] - t[1]) * v * 2] : [c[0] + (h[0] - c[0]) * (v * 2 - 1), c[1] + (h[1] - c[1]) * (v * 2 - 1)];
+    return [base[0] + (a[0] - base[0]) * u, base[1] + (a[1] - base[1]) * u];
+  };
+  const kochPf = button({ 'data-basics-koch-pf': '' }, () => { state.kochPf = !state.kochPf; render(); });
+  const kochNote = el('p', 'amap-note');
+  kochBox.append(kochPf, kochSvg, kochNote);
+  catheters.append(heart, cathTitle, cathLines, cathCanvas, kochBox);
   const sinusRecording = () => {
     const beats = [150, 950].map((t0) => sinusBeat(t0));
     const rv = { rv: beats.map((_, i) => ev('V', 150 + i * 800 + 35 + 80 + 45 - 5, 0.9)) };
@@ -237,6 +251,43 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     for (const [id, g, tx] of catheterBtns) { tx.textContent = t.items[id].name; g.setAttribute('aria-pressed', String(id === state.catheter)); g.setAttribute('aria-label', t.items[id].name); g.setAttribute('class', `basics-catheter${id === state.catheter ? ' is-on' : ''}`); }
     cathTitle.textContent = `${item.name}: ${item.where}`;
     cathLines.replaceChildren(...item.lines.map((x) => { const li = el('li'); li.textContent = x; return li; }));
+    renderKoch();
+  }
+  function renderKoch() {
+    const t = T().catheters.koch;
+    kochBox.hidden = state.catheter !== 'his';
+    kochPf.textContent = t.toggle; kochPf.setAttribute('aria-pressed', String(state.kochPf));
+    kochNote.textContent = t.note;
+    kochSvg.replaceChildren();
+    kochSvg.setAttribute('aria-label', t.title);
+    const [tt, cs, hh, ap] = kochTop;
+    kochSvg.append(svg('path', { d: `M${tt} L${hh} L${ap} Z`, class: 'basics-koch-tri' }));
+    if (state.kochPf) {
+      const N = 14;
+      for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+        const [u0, u1, v0, v1] = [i / N, (i + 1) / N, j / N, (j + 1) / N];
+        const f = functionalAt({ u: (u0 + u1) / 2, v: (v0 + v1) / 2 }).pf;
+        const pts = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]].map(([u, v]) => kochPoint({ u, v }).map((n) => n.toFixed(1)).join(','));
+        kochSvg.append(svg('polygon', { points: pts.join(' '), fill: `hsl(${(215 - 215 * f).toFixed(0)} 85% ${(38 + 14 * f).toFixed(0)}%)`, 'fill-opacity': (0.3 + 0.45 * f).toFixed(2) }));
+      }
+      for (let i = 1; i < 6; i++) for (let j = 1; j < 6; j++) {
+        const s = { u: i / 6, v: j / 6 }, vec = vectorAt(s);
+        if (vec.kind === 'convergence') continue;
+        const [x0, y0] = kochPoint(s), [x1, y1] = kochPoint({ u: s.u + vec.du * 0.09, v: s.v + vec.dv * 0.09 });
+        kochSvg.append(svg('path', { d: `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)}`, class: 'basics-koch-vec' }));
+      }
+    }
+    kochSvg.append(svg('path', { d: `M${tt} Q ${(tt[0] + ap[0]) / 2 - 8} ${(tt[1] + ap[1]) / 2} ${ap}`, class: 'basics-koch-edge' }), svg('path', { d: `M${hh} L${ap}`, class: 'basics-koch-edge' }), svg('path', { d: `M${tt} L${hh}`, class: 'basics-koch-edge' }));
+    const mark = (id, label, cls) => {
+      const l = id === 'c' ? ENTRANCE : LANDMARKS.find((x) => x.id === id), [x, y] = kochPoint(l);
+      const g = svg('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})`, class: `basics-koch-pt ${cls}` });
+      g.append(svg('circle', { r: 8 }), svg('text', { y: 3.5, 'text-anchor': 'middle' }));
+      g.lastChild.textContent = id;
+      const lab = svg('text', { x: 12, y: 4, class: 'basics-koch-lbl' }); lab.textContent = label;
+      g.append(lab);
+      kochSvg.append(g);
+    };
+    mark('a', t.his, 'is-his'); mark('b', t.transition, 'is-his'); mark('c', t.entrance, 'is-entrance');
   }
   function drawCatheters() {
     drawEgm(cathCanvas, sinusRecording(), { lang: L(), channels: CATHETERS[state.catheter].channels, waves: true });
