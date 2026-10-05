@@ -78,3 +78,15 @@
 .ksp-lm text{fill:#f1f7ec;font:700 10px ui-monospace,monospace;pointer-events:none}
 .ksp-lm:hover circle,.ksp-lm:focus-visible circle{stroke:#fcd34d;stroke-width:2.6;outline:none}
 .ksp-func-point{margin:0;padding:6px 9px;border-left:3px solid #fcd34d;background:rgba(252,211,77,.08);font-size:12.5px;line-height:1.5}
+/* Functional layer bar under the schematic: one layer at a time. */
+.ksp-figure .ksp-funcbox{margin-top:0;padding-top:0;border-top:0;gap:6px}
+.ksp-func-title{margin:0;font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#5f6e64}
+.ksp-layerbar{display:flex;flex-wrap:wrap;gap:4px}
+.ksp .ksp-layerbar button{flex:0 0 auto;min-height:28px;padding:4px 10px;border:1px solid #c6d2c6;border-radius:999px;background:#fff;color:#315d4d;font:inherit;font-size:11.5px;font-weight:600;cursor:pointer}
+.ksp .ksp-layerbar button[aria-pressed=true]{background:#244f43;border-color:#244f43;color:#fff}
+.ksp .ksp-layerbar button:focus-visible{outline:2px solid #247a92;outline-offset:2px}
+.ksp-scale{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#5f6e64}
+.ksp-scale[hidden]{display:none}
+.ksp-scale-bar{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(215 85% 38%),hsl(160 85% 42%),hsl(90 85% 45%),hsl(45 85% 48%),hsl(0 85% 52%))}
+.ksp-func-take{margin:0;padding:6px 9px;border-radius:6px;background:#eef3ee;font-size:12px;line-height:1.5;color:#263e3b}
+.ksp-func-read[hidden]{display:none}

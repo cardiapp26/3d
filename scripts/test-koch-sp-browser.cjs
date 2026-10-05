@@ -64,12 +64,19 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.equal(await panel.getAttribute('data-zone'), 'target');
     assert.ok((await tip3d()).toTarget < 1e-6, 'go to target restores the target tip');
 
-    // Functional layers (Sakamoto 2026): toggles draw on the schematic, a landmark moves the tip.
+    // Functional layers (Sakamoto 2026): one at a time under the schematic; a heat layer hides the zones.
     assert.equal(await page.locator('.ksp-func > *').count(), 0, 'no layer by default');
+    assert.equal(await page.locator('[data-ksp-layer=zones]').getAttribute('aria-pressed'), 'true', 'zones view by default');
+    assert.ok(await page.evaluate(() => { const bar = document.querySelector('.ksp-layerbar').getBoundingClientRect(), map = document.querySelector('.ksp-schematic').getBoundingClientRect(); return bar.top - map.bottom < 60; }), 'layer bar right under the schematic');
     await page.locator('[data-ksp-layer=pf]').click();
     assert.equal(await page.locator('.ksp-heat-pf polygon').count(), 400);
+    assert.equal(await page.locator('.ksp-zones').isVisible(), false, 'zone colours hidden under a heat layer');
+    assert.equal(await page.locator('.ksp-scale').isVisible(), true, 'colour scale shown');
+    assert.match(await page.locator('.ksp-func-take').textContent(), /c noktası/);
     await page.locator('[data-ksp-layer=vectors]').click();
     assert.ok(await page.locator('.ksp-vec').count() > 30);
+    assert.equal(await page.locator('.ksp-heat-pf').count(), 0, 'one layer at a time');
+    assert.equal(await page.locator('[data-ksp-layer][aria-pressed=true]').count(), 1);
     await page.locator('[data-ksp-layer=landmarks]').click();
     assert.equal(await page.locator('.ksp-lm').count(), 5);
     await page.locator('[data-landmark=a]').click();
@@ -78,8 +85,9 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.locator('[data-landmark=c]').click();
     assert.equal(await panel.getAttribute('data-zone'), 'target');
     assert.match(await page.locator('.ksp-funcbox .ksp-facts').textContent(), /100 %/, 'PF and wave speed at the entrance');
-    for (const id of ['pf', 'vectors', 'landmarks']) await page.locator(`[data-ksp-layer=${id}]`).click();
-    assert.equal(await page.locator('.ksp-func > *').count(), 0, 'layers off again');
+    await page.locator('[data-ksp-layer=landmarks]').click();
+    assert.equal(await page.locator('.ksp-func > *').count(), 0, 'clicking the open layer returns to the zones');
+    assert.equal(await page.locator('.ksp-zones').isVisible(), true);
 
     // Fluoroscopy close-ups from the panel.
     await page.locator('[data-ksp-action=rao]').click();

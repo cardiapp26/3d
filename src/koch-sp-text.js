@@ -44,7 +44,15 @@ export const KOCH_SP_TEXT = Object.freeze({
     func: {
       title: 'Fonksiyonel haritalar (Sakamoto 2026)',
       hint: 'Bir katman seçin; (a) – (e) noktalarına tıklayın, ucu oraya götürür.',
-      layers: { pf: 'Tepe frekansı', vectors: 'Aktivasyon vektörü', speed: 'Dalga hızı', landmarks: 'Kayıt noktaları a–e' },
+      layers: { zones: 'Bölgeler', pf: 'Tepe frekansı', vectors: 'Aktivasyon vektörü', speed: 'Dalga hızı', landmarks: 'Kayıt noktaları a–e' },
+      scale: ['düşük', 'yüksek'],
+      takeaway: {
+        zones: 'Ablasyon kararı için temel görünüm: yeşil yavaş yol hedefi, mavi hızlı yol girişi, kırmızı His ve kompakt AV düğüm.',
+        pf: 'Neye bakıyoruz: tepe frekansı arka septumda, c noktası çevresinde en yüksek; başarılı ablasyon yerleri burada toplandı. Parçalı (fraksiyone) sinyallerin frekansı daha düşüktür.',
+        vectors: 'Neye bakıyoruz: sinüs ritminde vektörler c noktasında birleşir (yavaş yol girişi). Üstte His\'e doğru çıkar, e çevresinde aşağı iner (bystander). Elmas: pivot noktası.',
+        speed: 'Neye bakıyoruz: dalga hızı yavaş yol girişinde (c) en yüksek, buradan uzaklaştıkça azalır.',
+        landmarks: 'a–e noktalarına tıklayın: uç oraya gider; sinyal, okuma ve nokta açıklaması değişir.'
+      },
       read: { pf: 'Tepe frekansı (göreli)', speed: 'Dalga hızı (göreli)', vector: 'Vektör' },
       vectorKinds: { convergence: 'yakınsama noktası', converging: 'girişe yakınsıyor', ascending: 'yukarı (His yönü)', descending: 'aşağı', bystander: 'aşağı, bystander atriyal' },
       pivot: 'Pivot noktası: sinüs ritminde hastaların %60\'ında, başarılı ablasyon yerinden yaklaşık 10 mm uzakta; RIE\'nin derinliğine ve seyrine bağlı.',
@@ -105,7 +113,15 @@ export const KOCH_SP_TEXT = Object.freeze({
     func: {
       title: 'Functional maps (Sakamoto 2026)',
       hint: 'Pick a layer; click points (a) to (e) to move the tip there.',
-      layers: { pf: 'Peak frequency', vectors: 'Activation vectors', speed: 'Wave speed', landmarks: 'Recording points a-e' },
+      layers: { zones: 'Zones', pf: 'Peak frequency', vectors: 'Activation vectors', speed: 'Wave speed', landmarks: 'Recording points a-e' },
+      scale: ['low', 'high'],
+      takeaway: {
+        zones: 'The basic view for the ablation decision: green slow pathway target, blue fast pathway input, red His and compact AV node.',
+        pf: 'What to look for: peak frequency is highest in the posterior septum around point c, where the successful ablation sites were. Fractionated signals have a lower frequency.',
+        vectors: 'What to look for: in sinus rhythm the vectors converge at point c (the slow pathway entrance); above it they rise toward the His, around e they descend (bystander). Diamond: pivot point.',
+        speed: 'What to look for: wave speed is highest at the slow pathway entrance (c) and falls with distance from it.',
+        landmarks: 'Click points a to e: the tip moves there and the signal, reading and point note change.'
+      },
       read: { pf: 'Peak frequency (relative)', speed: 'Wave speed (relative)', vector: 'Vector' },
       vectorKinds: { convergence: 'convergence point', converging: 'converging on the entrance', ascending: 'ascending (toward the His)', descending: 'descending', bystander: 'descending, bystander atrial' },
       pivot: 'Pivot point: seen in sinus rhythm in 60 % of patients, about 10 mm from the successful ablation site; it depends on the depth and course of the RIE.',

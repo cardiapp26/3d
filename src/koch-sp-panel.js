@@ -128,24 +128,31 @@ export function createKochSpPanel({ mount, getLang = () => 'tr', onSite = () => 
   const view3dBtn = button('3d', () => onView(null, false));
   const viewHint = el('p', 'ksp-hint'), note = el('p', 'ksp-note'), source = el('p', 'ksp-source');
   // Functional layers (Sakamoto 2026): toggles, the reading at the tip and the note of a selected point.
-  const funcBox = el('div', 'ksp-funcbox'), funcTitle = el('p', 'ksp-egm-title'), funcBar = el('div', 'ksp-actions'), funcHint = el('p', 'ksp-hint');
-  const funcRead = el('dl', 'ksp-facts'), funcPoint = el('p', 'ksp-func-point'), funcNote = el('p', 'ksp-note'), funcSource = el('p', 'ksp-source');
+  // Functional layers (Sakamoto 2026): one layer at a time, chosen right under the
+  // schematic it draws on, with its colour scale and a one-line reading of what it shows.
+  const funcBox = el('div', 'ksp-funcbox'), funcTitle = el('p', 'ksp-func-title'), funcBar = el('div', 'ksp-layerbar');
+  funcBar.setAttribute('role', 'group');
+  const funcTake = el('p', 'ksp-func-take'), funcHint = el('p', 'ksp-hint');
+  const scale = el('div', 'ksp-scale'), scaleLow = el('span'), scaleBar = el('span', 'ksp-scale-bar'), scaleHigh = el('span');
+  scale.append(scaleLow, scaleBar, scaleHigh);
+  const funcRead = el('dl', 'ksp-facts ksp-func-read'), funcPoint = el('p', 'ksp-func-point'), funcNote = el('p', 'ksp-note'), funcSource = el('p', 'ksp-source');
   funcPoint.setAttribute('aria-live', 'polite');
-  const layerOn = new Set();
-  const layerBtns = LAYERS.map(id => {
+  let layer = 'zones';
+  const layerBtns = ['zones', ...LAYERS].map(id => {
     const b = el('button'); b.type = 'button'; b.dataset.kspLayer = id;
-    b.addEventListener('click', () => { layerOn.has(id) ? layerOn.delete(id) : layerOn.add(id); renderFunc(); });
+    // Clicking the open layer again returns to the zone view.
+    b.addEventListener('click', () => { layer = layer === id ? 'zones' : id; renderFunc(); });
     funcBar.append(b);
     return [id, b];
   });
-  funcBox.append(funcTitle, funcBar, funcHint, funcRead, funcPoint, funcNote, funcSource);
+  funcBox.append(funcTitle, funcBar, scale, funcTake, funcRead, funcPoint);
   // Wide panel: schematic beside the reading and the recording (koch-sp.css).
   const figure = el('div', 'ksp-figure'), side = el('div', 'ksp-side');
-  figure.append(schematic.root, legend);
-  side.append(status, egmTitle, egm.root, actions, viewHint, funcBox);
+  figure.append(schematic.root, funcBox, legend);
+  side.append(status, egmTitle, egm.root, actions, viewHint);
   const layout = el('div', 'ksp-layout');
   layout.append(figure, side);
-  element.append(kicker, title, intro, layout, note, source);
+  element.append(kicker, title, intro, layout, note, funcNote, source, funcSource);
   mount.append(element);
 
   function renderSite() {
@@ -175,8 +182,11 @@ export function createKochSpPanel({ mount, getLang = () => 'tr', onSite = () => 
     const text = t().func;
     const g = schematic.func;
     g.replaceChildren();
+    const heatLayer = layer === 'pf' || layer === 'speed';
+    // A heat layer replaces the zone colours so the two do not mix.
+    schematic.root.querySelector('.ksp-zones').style.display = heatLayer ? 'none' : '';
     for (const key of ['pf', 'speed']) {
-      if (!layerOn.has(key)) continue;
+      if (layer !== key) continue;
       const cellsG = svg('g', { class: `ksp-heat ksp-heat-${key}` });
       for (let i = 0; i < GRID; i++) for (let j = 0; j < GRID; j++) {
         const [u0, u1, v0, v1] = [i / GRID, (i + 1) / GRID, j / GRID, (j + 1) / GRID];
@@ -186,7 +196,7 @@ export function createKochSpPanel({ mount, getLang = () => 'tr', onSite = () => 
       }
       g.append(cellsG);
     }
-    if (layerOn.has('vectors')) {
+    if (layer === 'vectors') {
       const arrows = svg('g', { class: 'ksp-vectors' });
       for (let i = 1; i < 8; i++) for (let j = 1; j < 8; j++) {
         const s = { u: i / 8, v: j / 8 }, vec = vectorAt(s);
@@ -198,13 +208,13 @@ export function createKochSpPanel({ mount, getLang = () => 'tr', onSite = () => 
       }
       g.append(arrows);
     }
-    if (layerOn.has('landmarks') || layerOn.has('vectors')) {
+    if (layer === 'landmarks' || layer === 'vectors') {
       const [px, py] = toXY(PIVOT);
       const pivot = svg('path', { d: `M${px},${py - 6} L${px + 6},${py} L${px},${py + 6} L${px - 6},${py} Z`, class: 'ksp-pivot' });
       pivot.append(svg('title', {}, text.pivot));
       g.append(pivot);
     }
-    if (layerOn.has('landmarks')) {
+    if (layer === 'landmarks') {
       for (const l of LANDMARKS) {
         const [x, y] = toXY(l);
         const m = svg('g', { class: 'ksp-lm', tabindex: '0', role: 'button', 'data-landmark': l.id, transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
@@ -218,7 +228,13 @@ export function createKochSpPanel({ mount, getLang = () => 'tr', onSite = () => 
       }
     }
     funcTitle.textContent = text.title; funcHint.textContent = text.hint; funcNote.textContent = text.note; funcSource.textContent = text.source;
-    for (const [id, b] of layerBtns) { b.textContent = text.layers[id]; b.setAttribute('aria-pressed', String(layerOn.has(id))); }
+    funcBar.setAttribute('aria-label', text.title);
+    for (const [id, b] of layerBtns) { b.textContent = text.layers[id]; b.setAttribute('aria-pressed', String(layer === id)); }
+    element.dataset.layer = layer;
+    scale.hidden = !heatLayer;
+    scaleLow.textContent = text.scale[0]; scaleHigh.textContent = text.scale[1];
+    funcTake.textContent = text.takeaway[layer];
+    funcRead.hidden = layer === 'zones';
     const f = functionalAt(site), vec = vectorAt(site), lm = landmarkNear(site);
     funcRead.replaceChildren(...[[text.read.pf, `${Math.round(f.pf * 100)} %`], [text.read.speed, `${Math.round(f.speed * 100)} %`], [text.read.vector, text.vectorKinds[vec.kind]]].flatMap(([k, v]) => [el('dt', '', k), el('dd', '', v)]));
     funcPoint.textContent = lm ? `${text.points[lm.id][0]}: ${text.points[lm.id][1]}` : '';
