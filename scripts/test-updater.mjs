@@ -46,4 +46,14 @@ assert.equal(typeof updater.dismissUpdatePrompt, 'function', 'dismissUpdatePromp
 assert.equal(typeof updater.checkAppUpdate, 'function', 'checkAppUpdate must be a function');
 assert.equal(typeof updater.triggerAppUpdate, 'function', 'triggerAppUpdate must be a function');
 
+// 6. An unstamped deploy: same version.json, different hashed files, is still an update.
+const page = (js, css) => `<link rel="stylesheet" href="/assets/main-${css}.css"><script type="module" src="/assets/main-${js}.js"></script><link rel="modulepreload" href="/assets/three-Zz9yQw1x.js">`;
+const sig = updater.bundleSignature;
+assert.equal(typeof updater.checkBundleChange, 'function');
+assert.equal(sig(page('Aa1Bb2Cc', 'Dd3Ee4Ff')), sig(`${page('Aa1Bb2Cc', 'Dd3Ee4Ff')}<p>other text</p>`), 'same files, same signature');
+assert.notEqual(sig(page('Aa1Bb2Cc', 'Dd3Ee4Ff')), sig(page('Gg5Hh6Ii', 'Dd3Ee4Ff')), 'a new script hash changes the signature');
+assert.notEqual(sig(page('Aa1Bb2Cc', 'Dd3Ee4Ff')), sig(page('Aa1Bb2Cc', 'Jj7Kk8Ll')), 'a new stylesheet hash changes the signature');
+assert.equal(sig(''), '');
+assert.equal(sig(null), '');
+
 console.log('PASS: PWA updater, aligned release metadata, no-JS message and i18n');

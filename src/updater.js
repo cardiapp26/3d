@@ -113,6 +113,28 @@ export async function triggerAppUpdate() {
   }, 1000);
 }
 
+/**
+ * The built files a page loads: its hashed /assets/ scripts and stylesheets, sorted.
+ * A new deploy changes these names even when nobody stamped a new version, so
+ * comparing them finds a changed build that version.json alone calls current.
+ */
+export function bundleSignature(html) {
+  return [...new Set(String(html || '').match(/\/assets\/[\w.-]+\.(?:js|css)/g) || [])].sort().join(',');
+}
+
+/** Whether the page on the server is a different build from the one running. */
+export async function checkBundleChange() {
+  try {
+    const res = await fetch(window.location.pathname, { cache: 'no-store' });
+    if (!res.ok) return false;
+    const live = bundleSignature(await res.text());
+    const mine = bundleSignature(document.documentElement.outerHTML);
+    return Boolean(live && mine && live !== mine);
+  } catch (_) {
+    return false;
+  }
+}
+
 export async function checkVersionJsonFallback() {
   try {
     const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
@@ -125,6 +147,11 @@ export async function checkVersionJsonFallback() {
     const hasNewVersion = Boolean(data.version && metaVer && data.version !== metaVer);
 
     if (data && (hasNewBuild || hasNewVersion)) {
+      showUpdatePrompt({ version: data.version, build: data.build });
+      return true;
+    }
+    // Same stamp, different files: a deploy that was not stamped is still an update.
+    if (data && await checkBundleChange()) {
       showUpdatePrompt({ version: data.version, build: data.build });
       return true;
     }
