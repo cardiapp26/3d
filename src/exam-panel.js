@@ -115,9 +115,14 @@ function buildDom() {
     r.areas.append(chip);
     return [id, chip];
   }));
-  r.element.append(header, textEl('h4', 'exam-section-title', 'maneuvers'), r.maneuvers, r.progress, r.note, r.canvasWrap,
-    audioRow, r.hint, r.lvot.box, textEl('h4', 'exam-section-title', 'table'), r.tableWrap, r.citation,
-    textEl('h4', 'exam-section-title', 'areas'), r.areas, r.card);
+  // Two sections share the finding, the phonocardiogram and the sound: auscultation (areas)
+  // and maneuvers (buttons, LVOT gauge, response table). setSection shows one of them.
+  r.groups = { maneuvers: [el('div', 'exam-group exam-group-maneuvers'), el('div', 'exam-group exam-group-maneuvers')], auscultation: [el('div', 'exam-group exam-group-auscultation')] };
+  r.groups.maneuvers[0].append(textEl('h4', 'exam-section-title', 'maneuvers'), r.maneuvers);
+  r.groups.maneuvers[1].append(r.lvot.box, textEl('h4', 'exam-section-title', 'table'), r.tableWrap, r.citation);
+  r.groups.auscultation[0].append(textEl('h4', 'exam-section-title', 'areas'), r.areas, r.card);
+  r.element.append(header, r.groups.maneuvers[0], r.progress, r.note, r.canvasWrap, audioRow, r.hint,
+    r.groups.auscultation[0], r.groups.maneuvers[1]);
   return r;
 }
 
@@ -433,6 +438,12 @@ export function createExamPanel(root, options = {}) {
       return true;
     },
     setHint(text) { refs.hint.textContent = text || ''; refs.hint.hidden = !text; },
+    /** Show the auscultation (areas) or the maneuvers (buttons, gauge, table) section. */
+    setSection(id) {
+      const section = id === 'maneuvers' ? 'maneuvers' : 'auscultation';
+      for (const [key, nodes] of Object.entries(refs.groups)) for (const node of nodes) node.hidden = key !== section;
+      return section;
+    },
     setAudioEnabled(enabled) {
       const onNow = audio.setEnabled(Boolean(enabled));
       refs.audioBox.checked = onNow;

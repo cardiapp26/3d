@@ -21,8 +21,23 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.waitForSelector('#viewport[data-model-ready=true]');
     // The step list shows one section at a time (auscultation, venous pressure); the total comes from the lesson.
     const steps = await page.evaluate(async () => (await import('/src/content.js')).lessons.exam.steps.length);
-    assert.equal(await page.locator('#steps .steps-group-link').textContent(), 'Venöz basınç (JVP) ›', 'the venous pressure section is a heading link');
+    assert.deepEqual(await page.locator('#steps .steps-group-link').allTextContents(), ['Manevralar ›', 'Venöz basınç (JVP) ›'], 'the other sections are heading links');
     assert.equal(await page.evaluate(() => window.cardiaExam.getView()), 'auscultation', 'exam opens on auscultation');
+    assert.deepEqual(await page.locator('.exam-subtabs button').allTextContents(), ['Oskültasyon', 'Manevralar', 'Venöz basınç (JVP)'], 'three panel tabs');
+    const visible = sel => page.locator(sel).isVisible();
+    assert.equal(await visible('.exam-areas'), true, 'auscultation tab: areas shown');
+    assert.equal(await visible('.exam-maneuvers'), false, 'auscultation tab: maneuver buttons hidden');
+    // The Maneuvers tab: buttons and response table, no area chips; the lesson follows to its first step.
+    await page.locator('[data-exam-view=maneuvers]').click();
+    assert.equal(await visible('.exam-maneuvers'), true, 'maneuvers tab: buttons shown');
+    assert.equal(await visible('.exam-table'), true, 'maneuvers tab: response table shown');
+    assert.equal(await visible('.exam-areas'), false, 'maneuvers tab: areas hidden');
+    assert.equal(await page.locator('#steps .steps-group:not(.steps-group-link)').textContent(), 'Manevralar', 'lesson moved to the maneuvers section');
+    // A maneuvers step opens the maneuvers tab; an auscultation step goes back.
+    await page.locator('#steps button[data-step]:not(.steps-group)').nth(2).click();
+    assert.equal(await page.locator('[data-exam-view=maneuvers]').getAttribute('aria-selected'), 'true', 'maneuvers step keeps the maneuvers tab');
+    await page.locator('#steps .steps-group-link', { hasText: 'Oskültasyon' }).click();
+    assert.equal(await page.locator('[data-exam-view=auscultation]').getAttribute('aria-selected'), 'true', 'auscultation section opens its tab');
 
     // First venous pulse step: the JVP tab, the normal pattern, the a wave.
     await page.locator(`#steps [data-step="${steps - 6}"]`).click();

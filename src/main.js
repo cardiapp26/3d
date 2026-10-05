@@ -729,9 +729,8 @@ const examMode = heart ? createExamMode({
   onView: view => {
     if (mode !== 'exam') return;
     const steps = lessons.exam?.steps || [];
-    const inJvp = i => Boolean(steps[i]?.jvp);
-    if (inJvp(step) === (view === 'jvp')) return;
-    const first = steps.findIndex((st, i) => (view === 'jvp' ? inJvp(i) : !inJvp(i)));
+    if (steps[sectionHeadOf(steps, step)]?.examView === view) return;
+    const first = steps.findIndex(st => st.examView === view);
     // The panel is already on the chosen tab: only the lesson text and list follow it.
     if (first >= 0) { step = first; showStep({ keepExamPanel: true }); }
   }
@@ -854,11 +853,17 @@ document.querySelector('#root-window').addEventListener('change', e => {heart?.s
 
 // relabel: only the language changed; keep the step's interactive state
 // (echo probe and task, EGM scenario, tissue opacity).
+// Index of the step that opens the section holding step i (the last `menuLabel` at or before it), or -1.
+function sectionHeadOf(steps, i) {
+  for (let j = i; j >= 0; j--) if (steps[j]?.menuLabel) return j;
+  return -1;
+}
+
 // Lesson step list. A lesson with sections (steps carrying `menuLabel`, as in the physical
-// examination: auscultation, venous pressure) lists only the current section's steps; the
-// other sections stay as headings that open their first step.
+// examination: auscultation, maneuvers, venous pressure) lists only the current section's
+// steps; the other sections stay as headings that open their first step.
 function stepListMarkup(steps, current) {
-  const sectionOf = steps.map((_, i) => { let k = -1; for (let j = 0; j <= i; j++) if (steps[j].menuLabel) k = j; return k; });
+  const sectionOf = steps.map((_, i) => sectionHeadOf(steps, i));
   const sectioned = mode === 'exam' && steps.some(st => st.menuLabel);
   return steps.map((st, i) => {
     const button = `<button data-step="${i}" class="${i === current ? 'current' : ''}">${i + 1}. ${st.title}</button>`;
@@ -919,7 +924,7 @@ function showStep({ relabel = false, keepExamPanel = false } = {}) {
 
   if (!relabel) syncEpsHandoff(s);
   if (isCath) hemoMode?.applyStep(s, { relabel });
-  if (mode === 'exam' && !keepExamPanel) examMode?.applyStep(s);
+  if (mode === 'exam' && !keepExamPanel) examMode?.applyStep(s, lesson.steps[sectionHeadOf(lesson.steps, step)]?.examView);
   if (ECHO_MODALITY[mode] && !relabel) echoMode?.applyStep(s.echo);
 
   if (s.view) {

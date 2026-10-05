@@ -3,8 +3,8 @@ import { createJvpPanel } from './jvp-panel.js';
 import { JVP_TEXT } from './jvp-content.js';
 
 // Glue between the lesson UI, the 3D auscultation markers and the physical
-// examination panels: auscultation and the jugular venous pulse, as two
-// sub-tabs. Built the first time the mode is entered; lesson steps pick the
+// examination panels as three sub-tabs: auscultation, maneuvers (both on the
+// auscultation panel) and the jugular venous pulse. Built the first time the mode is entered; lesson steps pick the
 // finding, the maneuver and the auscultation area, or (`jvp`) the venous
 // pattern, the breathing phase and a wave.
 
@@ -21,13 +21,15 @@ export function createExamMode({ heart, mount, getLang, onArea, onView }) {
     tabs = document.createElement('div');
     tabs.className = 'exam-subtabs';
     tabs.setAttribute('role', 'tablist');
-    for (const id of ['auscultation', 'jvp']) {
+    for (const id of ['auscultation', 'maneuvers', 'jvp']) {
       const tab = document.createElement('button');
       tab.type = 'button';
       tab.setAttribute('role', 'tab');
       tab.dataset.examView = id;
       tab.addEventListener('click', () => { showView(id); onView?.(id); });
       tabs.append(tab);
+    }
+    for (const id of ['auscultation', 'jvp']) {
       sections[id] = document.createElement('div');
       sections[id].className = `exam-view exam-view-${id}`;
     }
@@ -57,11 +59,12 @@ export function createExamMode({ heart, mount, getLang, onArea, onView }) {
     const lang = getLang() === 'en' ? 'en' : 'tr';
     for (const tab of tabs.children) {
       const on = tab.dataset.examView === id;
-      tab.textContent = JVP_TEXT[lang][tab.dataset.examView === 'jvp' ? 'tab' : 'auscultation'];
+      tab.textContent = JVP_TEXT[lang][tab.dataset.examView === 'jvp' ? 'tab' : tab.dataset.examView];
       tab.setAttribute('aria-selected', String(on));
     }
-    sections.auscultation.hidden = id !== 'auscultation';
+    sections.auscultation.hidden = id === 'jvp';
     sections.jvp.hidden = id !== 'jvp';
+    if (id !== 'jvp') panel?.setSection(id);
     if (id === 'jvp') { panel?.setAudioEnabled?.(false); heart.highlightAuscultation(null); jvp.draw(heart.getCycleState()); }
     else jvp?.pause();
   }
@@ -79,15 +82,18 @@ export function createExamMode({ heart, mount, getLang, onArea, onView }) {
       jvp?.reset();
       heart.highlightAuscultation(null);
     },
-    /** Apply a lesson step: { finding, maneuver, area, title } or { jvp: { view, scenario, respiration, wave, response, peep, atrialRate } }. */
-    applyStep(step) {
+    /**
+     * Apply a lesson step: { finding, maneuver, area, title } or { jvp: { view, scenario, respiration, wave, response, peep, atrialRate } }.
+     * `section` is the lesson section's panel tab ('auscultation' | 'maneuvers').
+     */
+    applyStep(step, section) {
       const p = ensurePanel();
       if (step.jvp) {
         showView('jvp');
         jvp.apply(step.jvp);
         return;
       }
-      showView('auscultation');
+      showView(section === 'maneuvers' ? 'maneuvers' : 'auscultation');
       if (step.finding) p.setFinding(step.finding);
       if (step.maneuver) p.setManeuver(step.maneuver, { autoplay: false });
       if (step.area) p.setArea(step.area);
@@ -99,7 +105,7 @@ export function createExamMode({ heart, mount, getLang, onArea, onView }) {
     /** A 3D auscultation marker was picked (pickId `ausc-<area>`). */
     focusArea(areaId) {
       if (!panel) return;
-      showView('auscultation');
+      if (view === 'jvp') showView('auscultation');
       panel.setArea(areaId);
       heart.highlightAuscultation(areaId);
     },

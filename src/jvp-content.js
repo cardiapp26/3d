@@ -15,7 +15,7 @@ export const JVP_SOURCES = Object.freeze([
 
 export const JVP_TEXT = Object.freeze({
   tr: {
-    tab: 'Venöz basınç (JVP)', auscultation: 'Oskültasyon',
+    tab: 'Venöz basınç (JVP)', auscultation: 'Oskültasyon', maneuvers: 'Manevralar',
     heading: 'JUGULER VENÖZ NABIZ · ŞEMATİK SAĞ ATRİYUM BASINCI',
     scenario: 'Örüntü', compare: 'Normalle karşılaştır', labels: 'Dalga etiketleri', slow: 'Yavaş oynat',
     freeze: 'Dondur', play: 'Oynat', exp: 'Ekspiryum', insp: 'İnspiryum', respiration: 'Spontan solunum',
@@ -83,7 +83,7 @@ export const JVP_TEXT = Object.freeze({
     ]
   },
   en: {
-    tab: 'Venous pressure (JVP)', auscultation: 'Auscultation',
+    tab: 'Venous pressure (JVP)', auscultation: 'Auscultation', maneuvers: 'Maneuvers',
     heading: 'JUGULAR VENOUS PULSE · SCHEMATIC RIGHT ATRIAL PRESSURE',
     scenario: 'Pattern', compare: 'Compare with normal', labels: 'Wave labels', slow: 'Slow motion',
     freeze: 'Freeze', play: 'Play', exp: 'Expiration', insp: 'Inspiration', respiration: 'Spontaneous breathing',
