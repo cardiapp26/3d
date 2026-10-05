@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d1520" />
+    <title>Cardia · EKG</title>
+  </head>
+  <body class="ecg-app">
+    <header class="ecg-header">
+      <div class="ecg-brand-wrap">
+        <a class="ecg-brand" href="../">✳ CARDIA</a>
+        <span class="ecg-brand-badge">EKG FİZYOLOJİSİ</span>
+      </div>
+      <nav aria-label="Modules" class="ecg-modules" data-ecg-modules>
+        <a href="../" data-ecg-back>3D Anatomi</a>
+        <a href="../eps/">EPS</a>
+        <a href="../pharmacology/">Farmakoloji</a>
+        <a href="./" aria-current="page" data-ecg-module>EKG</a>
+      </nav>
+      <div class="ecg-lang" role="group" aria-label="Language">
+        <button type="button" data-ecg-lang="tr">TR</button>
+        <button type="button" data-ecg-lang="en">EN</button>
+      </div>
+    </header>
+    <main class="ecg-workspace" data-ecg-workspace></main>
+    <footer class="ecg-footer" data-ecg-disclaimer></footer>
+    <script type="module" src="../src/ecg/main.js"></script>
+  </body>
+</html>

@@ -9,7 +9,12 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
-      input: { main: page('./index.html'), eps: page('./eps/index.html'), pharmacology: page('./pharmacology/index.html') },
+      input: {
+        main: page('./index.html'),
+        eps: page('./eps/index.html'),
+        pharmacology: page('./pharmacology/index.html'),
+        ecg: page('./ecg/index.html')
+      },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/three/')) {

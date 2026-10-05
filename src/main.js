@@ -2,6 +2,7 @@ import { createSeptalDefectsPanel } from './septal-defects-panel.js';
 import { createPanelShell } from './panel-shell.js';
 import { createHeaderTabs } from './header-tabs.js';
 import { pharmacologyLinkMarkup, syncPharmacologyLink } from './pharmacology-link.js';
+import { ecgLinkMarkup, syncEcgLink } from './ecg-link.js';
 import { createQuickSearch, rememberMode } from './quick-search.js';
 import { createPractice } from './practice.js';
 import { DEFECT_TYPES } from './septal-defects-data.js';
@@ -114,7 +115,7 @@ app.innerHTML = `
 <header>
   <div class="brand-block">
     <a class="brand" href="#/">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
-    <div class="header-module-links">${epsLinkMarkup(getContentLanguage())}${pharmacologyLinkMarkup(getContentLanguage())}</div>
+    <div class="header-module-links">${epsLinkMarkup(getContentLanguage())}${pharmacologyLinkMarkup(getContentLanguage())}${ecgLinkMarkup(getContentLanguage())}</div>
   </div>
   <div id="header-search" class="header-search"></div>
   <div class="header-right">
@@ -1705,6 +1706,7 @@ function applyChromeTranslations() {
 function updateLanguageUI() {
   syncEpsLink(getContentLanguage());
   syncPharmacologyLink(getContentLanguage());
+  syncEcgLink(getContentLanguage());
   defectPanel.refresh();
   panelShell?.refresh();
   quickSearches.forEach(search => search.refresh());

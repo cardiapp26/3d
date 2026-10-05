@@ -1,0 +1,31 @@
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert=require('node:assert/strict'),fs=require('node:fs');
+(async()=>{const browser=await chromium.launch({headless:true,channel:'chrome'});try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(`${process.env.APP_URL||'http://127.0.0.1:5189'}/ecg/?lang=tr`);await page.locator('[data-ecg-lab=ch11_basics]').waitFor({state:'visible'});
+ assert.ok(!(await page.title()).includes('Guyton'));assert.ok(!(await page.locator('.ecg-header').textContent()).includes('GUYTON'));
+ const slide=async(key,v)=>page.locator(`[data-lab-param=${key}]`).evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));},String(v));
+ await page.locator('[data-lab-control="interval-QRS"]').click();assert.match(await page.locator('.ecg-lab-result').textContent(),/80 ms = 2.0/);
+ await page.locator('[data-lab-control="speed-50"]').click();assert.match(await page.locator('.ecg-lab-result').textContent(),/80 ms = 4.0/);
+ await slide('cursor',420);assert.equal(await page.locator('.lab-cursor').count(),2);await slide('cursor',700);await slide('rate',100);assert.equal(await page.locator('[data-lab-param=cursor]').inputValue(),'599');assert.equal(await page.locator('[data-lab-param=cursor]').getAttribute('max'),'599');await slide('rate',90);
+ const shots='/private/tmp/cardia-ecg-labs';fs.mkdirSync(shots,{recursive:true});await page.locator('.ecg-lab').screenshot({path:`${shots}/basics.png`});
+ await page.locator('[data-topic="1"]').click();await page.locator('[data-lab-control="lead-V4"]').click();assert.match(await page.locator('.ecg-lab-result').textContent(),/5. interkostal/);
+ await page.locator('.lab-electrode[aria-label=V6]').focus();await page.keyboard.press('Enter');assert.match(await page.locator('.ecg-lab-result').textContent(),/V6/);
+ await page.locator('[data-lab-control="lead-aVR"]').click();assert.match(await page.locator('.ecg-lab-result').textContent(),/RA\(\+\)/);
+ await page.locator('#vec-slider').evaluate(el=>{el.value=120;el.dispatchEvent(new Event('input',{bubbles:true}));});assert.match(await page.locator('.ecg-lab svg').textContent(),/120°/);
+ await page.locator('[data-lab-control="lead-V4"]').click();await page.locator('.ecg-lab').screenshot({path:`${shots}/leads.png`});
+ await page.locator('[data-topic="2"]').click();await page.locator('[data-step="0"]').click();assert.equal(await page.locator('[data-step="0"]').evaluate(el=>el===document.activeElement),true);assert.match(await page.locator('.ecg-lab-result').textContent(),/0.01 s/);assert.equal(await page.locator('.ecg-lab .lab-trace').count(),5);
+ await page.locator('[data-topic="3"]').click();await slide('angle',-15);assert.match(await page.locator('.ecg-lab-result').textContent(),/Normal/);await slide('angle',-50);assert.match(await page.locator('.ecg-lab-result').textContent(),/Sol aks/);
+ await page.locator('[data-cond="rad_rvh"]').click();assert.equal(await page.locator('[data-lab-param=angle]').inputValue(),'120');
+ await page.locator('[data-ecg-lang=en]').click();assert.equal(await page.locator('[data-lab-param=angle]').inputValue(),'120');assert.match(await page.locator('.ecg-lab-result').textContent(),/Right axis/);assert.ok(!(await page.locator('h1,h2,h3').allTextContents()).join(' ').includes('Guyton'));
+ await page.locator('[data-topic="4"]').click();await page.locator('[data-case=posterior_mi]').click();assert.match(await page.locator('.ecg-lab svg').textContent(),/V7–V9/);await slide('shift',.4);await page.locator('[data-lab-control="reference-J"]').click();assert.equal(await page.locator('.ecg-lab .lab-measure').count(),4);
+ await page.locator('[data-topic="5"]').click();assert.match(await page.locator('.ecg-lab-result').first().textContent(),/possible/);await slide('erp',600);assert.match(await page.locator('.ecg-lab-result').first().textContent(),/Not sustained/);await page.locator('[data-lab-action=play]').click();await page.waitForTimeout(180);await page.locator('[data-lab-action=play]').click();
+ for(let i=0;i<20;i++)await page.locator('[data-lab-action=step]').click();assert.equal(await page.locator('.lab-refractory').count(),0,'failed ring recovers after ERP');
+ await page.locator('[data-lab-rhythm=wenckebach]').click();assert.match(await page.locator('.ecg-rhythm-gallery .ecg-lab-result').textContent(),/160 → 200 → 240/);await page.locator('[data-lab-rhythm=af]').click();assert.match(await page.locator('.ecg-rhythm-gallery .ecg-lab-result').textContent(),/irregular RR/);
+ await page.locator('[data-ecg-lang=tr]').click();assert.equal(await page.locator('[data-lab-param=erp]').inputValue(),'600');assert.equal(await page.locator('[data-lab-rhythm=af]').getAttribute('aria-pressed'),'true');
+ await page.locator('.ecg-lab').screenshot({path:`${shots}/ring-rhythms.png`});
+ await page.setViewportSize({width:390,height:844});for(let i=0;i<6;i++){await page.locator(`[data-topic="${i}"]`).click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,`mobile overflow topic ${i}`);}
+ await page.locator('.ecg-lab').screenshot({path:`${shots}/mobile.png`});
+ await page.locator('[data-topic="5"]').focus();await page.keyboard.press('Home');assert.equal(await page.locator('[data-topic="0"]').getAttribute('aria-selected'),'true');
+ assert.deepEqual(errors,[]);console.log('PASS ECG browser: six visual labs, calibrated measurements, chest/limb selection, sequential traces, axis cases, ST references, reentry animation, rhythm gallery, naming, keyboard focus, TR/EN retention and mobile');console.log(`Screenshots: ${shots}`);
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1);});

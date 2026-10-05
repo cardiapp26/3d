@@ -63,6 +63,8 @@ function renderShell() {
   back.title = t.backTitle;
   back.href = CARDIA_URL;
   document.querySelector('[data-app-pharmacology]').textContent = lang === 'tr' ? 'Farmakoloji' : 'Pharmacology';
+  const ecgLink = document.querySelector('[data-app-ecg]');
+  if (ecgLink) ecgLink.textContent = lang === 'tr' ? 'EKG' : 'ECG';
   disclaimer.textContent = t.disclaimer;
 }
 

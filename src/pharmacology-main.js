@@ -52,6 +52,7 @@ function renderShell() {
   text('[data-pharma-eyebrow]', w.eyebrow);
   text('[data-pharma-subtitle]', w.subtitle);
   text('[data-pharma-back]', w.back);
+  text('[data-pharma-ecg]', lang === 'tr' ? 'EKG' : 'ECG');
   text('[data-pharma-source-note]', w.sourceNote);
   text('[data-pharma-disclaimer]', w.disclaimer);
   const nav = document.querySelector('[data-pharma-chapters]');
