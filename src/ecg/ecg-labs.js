@@ -1,10 +1,12 @@
 import { ecgSample, ecgTiming } from './guyton-render.js';
-import { CHEST_LEADS, projectLead, axisCategory, reentryMetrics, ringSnapshot, stepProjections, RHYTHM_EXAMPLES, rhythmSample, rhythmEvents } from './ecg-lab-model.js';
+import { CHEST_LEADS, projectLead, reentryMetrics, ringSnapshot, RHYTHM_EXAMPLES, rhythmSample, rhythmEvents } from './ecg-lab-model.js';
 import { ventricularSample } from '../physiology-model.js';
 import './ecg-labs.css';
 const NS='http://www.w3.org/2000/svg';
 const svgNode=(tag,attrs={},text)=>{const n=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));if(attrs.stroke)n.style.stroke=attrs.stroke;if(text)n.textContent=text;return n;};
 const path=points=>points.map(([x,y],i)=>`${i?'L':'M'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
+// One smooth beat (P, R, S, T as gaussian deflections) across `width` px; amplitudes in mV.
+const beatPoints=(x,base,width,{p=.12,r=0,s=0,t=.25},scale)=>Array.from({length:Math.ceil(width)+1},(_,i)=>{const u=i/width,g=(c,w,a)=>a*Math.exp(-(((u-c)/w)**2));return [x+i,base-(g(.16,.045,p)+g(.38,.018,r)-g(.425,.02,s)+g(.7,.075,t))*scale];});
 export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}){
  const defaults={rate:75,speed:25,gain:10,interval:'PR',cursor:300,lead:'V1',angle:59,shift:.25,reference:'TP',length:12,velocity:40,erp:250,block:true,running:false,time:0,rhythm:'sinus'};
  for(const [k,v] of Object.entries(defaults))if(state[k]===undefined)state[k]=v;
@@ -24,7 +26,6 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
   for(const v of ['P','PR','QRS','QT','T'])button('interval',v,v);sliders.cursor=slider('cursor',tr('Atım içi zaman (ms)','Time within beat (ms)'),0,799);
  }
  if(topic==='ch11_leads')for(const id of ['I','II','III','aVR','aVL','aVF',...CHEST_LEADS.map(l=>l.id)])button('lead',id,id);
- if(topic==='ch12_axis')sliders.angle=slider('angle',tr('Frontal QRS aksı (°)','Frontal QRS axis (°)'),-180,180);
  if(topic==='ch12_injury'){sliders.shift=slider('shift',tr('ST değişimi (mV, örnek)','ST shift (mV, example)'),0,.5,.05);for(const r of ['TP','J'])button('reference',r,r);}
  if(topic==='ch13_arrhythmias'){
   sliders.length=slider('length',tr('Yol uzunluğu (cm)','Path length (cm)'),4,24);
@@ -37,11 +38,10 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
  function grid(x,y,w,height,pxMm=4){svg.append(svgNode('rect',{x,y,width:w,height,fill:'#fff7ef'}));for(let i=0;i<=w;i+=pxMm)line([[x+i,y],[x+i,y+height]],i%(pxMm*5)?'lab-grid':'lab-grid-major');for(let i=0;i<=height;i+=pxMm)line([[x,y+i],[x+w,y+i]],i%(pxMm*5)?'lab-grid':'lab-grid-major');}
  function waveform(x,y,w,height,opts={},color='#e9b66b'){const base=y+height*.62,scale=opts.gain??36;line(Array.from({length:Math.ceil(w*2)+1},(_,i)=>{const px=Math.min(w,i/2);return [x+px,base-ecgSample(px/(opts.pxSec??100),opts)*scale];}),'lab-trace',{stroke:color});return base;}
  function torso(){svg.append(svgNode('path',{d:'M200 35L170 70L140 245Q290 285 450 245L420 70L385 35L330 55H260Z',class:'lab-torso'}));line([[258,55],[258,215]],'lab-divider');text(135,40,tr('Hasta sağı','Patient right'));text(393,40,tr('Hasta solu','Patient left'));}
- function heart(step=-1){svg.append(svgNode('path',{d:'M135 110C85 40 28 96 62 160L135 238L209 160C242 96 185 40 135 110Z',class:'lab-heart'}));const pts=[[132,123],[136,201],[185,158],[139,91],[135,165]];pts.slice(0,step===4?4:Math.max(0,step+1)).forEach(([cx,cy],i)=>svg.append(svgNode('circle',{cx,cy,r:i===step?20:13,class:i===step?'lab-active':'lab-activated'})));text(135,272,tr('Aktivasyon şeması','Activation schematic'),{'text-anchor':'middle'});}
  function draw(){
   svg.replaceChildren();for(const [key,{input,out}] of Object.entries(sliders)){input.value=state[key];out.textContent=state[key];}
   controls.querySelectorAll('[data-lab-control]').forEach(b=>{const [key,...parts]=b.dataset.labControl.split('-');b.setAttribute('aria-pressed',String(String(state[key])===parts.join('-')));});
-  if(topic==='ch11_basics')drawBasics();if(topic==='ch11_leads')drawLeads();if(topic==='ch12_vectors')drawVectors();if(topic==='ch12_axis')drawAxis();if(topic==='ch12_injury')drawInjury();if(topic==='ch13_arrhythmias')drawRing();
+  if(topic==='ch11_basics')drawBasics();if(topic==='ch11_leads')drawLeads();if(topic==='ch12_injury')drawInjury();if(topic==='ch13_arrhythmias')drawRing();
  }
  function drawBasics(){
   const timing=ecgTiming({rate:state.rate}),pxSec=state.speed*4,pxMv=state.gain*4,rrMs=timing.rr*1000;
@@ -62,7 +62,7 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
   torso();const chosen=CHEST_LEADS.find(l=>l.id===state.lead);
   if(!chosen){drawLimb();return;}
   CHEST_LEADS.forEach(l=>{const g=svgNode('g',{role:'button',tabindex:'0','aria-label':l.id,'aria-pressed':String(l.id===state.lead),class:'lab-electrode'});g.append(svgNode('circle',{cx:l.x,cy:l.y,r:13,class:l.id===state.lead?'lab-active':'lab-dot'}),svgNode('text',{x:l.x,y:l.y-19,'text-anchor':'middle'},l.id));const select=()=>{state.lead=l.id;draw();svg.querySelector(`[aria-label=${l.id}]`)?.focus();};g.addEventListener('click',select);g.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();select();}});svg.append(g);});
-  CHEST_LEADS.forEach((l,i)=>{const x=30+i*95,y=340;line([[x,y],[x+10,y],[x+14,y+4],[x+24,y-l.r*45],[x+36,y-l.s*45],[x+52,y],[x+70,y]],'lab-trace',{stroke:l.id===state.lead?'#f2b651':'#789dab'});text(x+30,407,l.id,{'text-anchor':'middle'});});
+  CHEST_LEADS.forEach((l,i)=>{const x=22+i*95,y=345;line(beatPoints(x,y,86,{p:.1,r:l.r,s:-l.s,t:l.id==='V1'?-.05:.12+.12*l.r},40),'lab-trace',{stroke:l.id===state.lead?'#f2b651':'#789dab'});text(x+43,407,l.id,{'text-anchor':'middle'});});
   result.textContent=`${chosen.id}: ${chosen[getLang()==='en'?'en':'tr']}`;
   note.textContent=tr('Anatomik ölçekli değildir. V1 hastanın sağında, V2 solunda; V4–V6 aynı yatay düzeyde. Sağdan sola rS → geçiş → R baskın örneği. Geçiş çoğu kez V3–V4 civarıdır; değişkenlik ve elektrot hataları olabilir. V1–V2 kalbin “arka yüzünü” görmez.','Not anatomically to scale. V1 is patient-right, V2 patient-left; V4–V6 share a horizontal level. Illustrative rS → transition → R dominance. Transition often occurs near V3–V4; variation and placement errors occur. V1–V2 do not view the posterior heart directly.');
  }
@@ -74,25 +74,9 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
   for(const [id,pt] of Object.entries(points))if(['RA','LA','LL'].includes(id)){svg.append(svgNode('circle',{cx:pt[0],cy:pt[1],r:8,class:'lab-dot'}));text(pt[0],pt[1]-20,id,{'text-anchor':'middle'});}
   text(b[0]+20,b[1],'+');text(a[0]-20,a[1],'−');
   const angle=getExternal().vectorAngle??59,leadAngles={I:0,II:60,III:120,aVR:-150,aVL:-30,aVF:90},v=projectLead(angle,1,leadAngles[state.lead]);
-  line([[60,340],[180,340],[200,340-v*50],[220,340],[540,340]],'lab-trace');text(300,395,`${state.lead}: ${v.toFixed(2)} · ${angle}°`,{'text-anchor':'middle'});
+  const r=(1+v)**2/4,sw=(1-v)**2/4;line(beatPoints(60,345,480,{p:.12*Math.cos((60-leadAngles[state.lead])*Math.PI/180),r,s:sw,t:.3*v},60),'lab-trace');text(300,395,`${state.lead}: ${v.toFixed(2)} · ${angle}°`,{'text-anchor':'middle'});
   result.textContent=`${state.lead}: ${positive}(+) − ${negative}(−)`;
   note.textContent=tr('Augmented derivasyonların eksi kutbu diğer iki ekstremitenin ortalamasıdır. Altın çizgi ölçüm yönünü gösterir. Üstteki açı kaydırıcısı frontal izdüşümü değiştirir; genlikler aynı ideal dipol ölçeğinde göreli örneklerdir. Netter Levha 2-16.','Augmented leads reference the average of the other two limbs. Gold line shows measurement direction. Angle slider above changes frontal projection; amplitudes are relative examples on the same ideal-dipole scale. Netter Plate 2-16.');
- }
- function drawVectors(){
-  const {step,index}=getExternal(),waves=stepProjections(step);heart(index);
-  const steps=getExternal().steps,keys=['lead1','lead2','lead3','v1','v6'];
-  keys.forEach((key,j)=>{const y=64+j*60;line([[275,y],[570,y]],'lab-divider');const values=steps.map(s=>stepProjections(s)[key]);line([[275,y],...values.map((v,i)=>[290+i*60,y-v*24]),[560,y]],'lab-trace');text(248,y+4,['I','II','III','V1','V6'][j],{'text-anchor':'end'});svg.append(svgNode('circle',{cx:290+index*60,cy:y-waves[key]*24,r:5,class:'lab-active'}));});
-  line([[290+index*60,35],[290+index*60,325]],'lab-cursor');text(410,356,tr('QRS içi örnek zaman noktaları','Example times within QRS'),{'text-anchor':'middle'});
-  result.textContent=`${step.time} · ${step.name[getLang()==='en'?'en':'tr']} · I + III − II = ${(waves.lead1+waves.lead3-waves.lead2).toFixed(3)}`;
-  note.textContent=tr('Frontal I–II–III izleri aynı vektörün izdüşümünden hesaplanır. V1/V6 bağımsız yatay düzlem öğretim örnekleridir; frontal aksın doğrudan izdüşümü değildir. Noktalar arası çizgi ölçülmüş EKG değildir.','Frontal I–II–III traces project the same vector. V1/V6 are independent horizontal-plane teaching examples, not direct frontal-axis projections. Connecting sampled points does not produce a measured ECG.');
- }
- function drawAxis(){
-  const a=state.angle,category=axisCategory(a),names={normal:tr('Normal aralık','Normal range'),left:tr('Sol aks sapması','Left axis deviation'),right:tr('Sağ aks sapması','Right axis deviation'),extreme:tr('Ekstrem aks','Extreme axis')};
-  const cx=170,cy=185,r=125;svg.append(svgNode('circle',{cx,cy,r,fill:'#0e2637',stroke:'#496777'}));
-  line([[cx-r,cy],[cx+r,cy]],'lab-axis');line([[cx,cy-r],[cx,cy+r]],'lab-axis');text(cx+r+7,cy,'I 0°');text(cx,cy+r+25,'aVF +90°',{'text-anchor':'middle'});
-  const rad=a*Math.PI/180,xx=cx+r*.85*Math.cos(rad),yy=cy+r*.85*Math.sin(rad);line([[cx,cy],[xx,yy]],'lab-measure');svg.append(svgNode('circle',{cx:xx,cy:yy,r:6,class:'lab-active'}));
-  [['I',0],['aVF',90],['II',60]].forEach(([name,angle],i)=>{const v=projectLead(a,1,angle),y=100+i*100;line([[370,y],[566,y]],'lab-divider');line([[370,y],[425,y],[436,y-v*38],[450,y],[560,y]],'lab-trace');text(370,y-35,`${name}: ${Math.abs(v)<.01?'≈0':v>0?'+':'−'} (${v.toFixed(2)})`);});
-  result.textContent=`${a}° · ${names[category]}`;note.textContent=tr('I+/aVF− bölgesinde II pozitifse −30° ile 0° arası normal olabilir; II negatifse sol aks sapmasını destekler. Aks tek başına hipertrofi veya dal bloğu tanısı koydurmaz; RBBB/LBBB normal aksla da görülebilir.','With I+/aVF−, positive II may indicate normal −30° to 0°; negative II supports left axis deviation. Axis alone does not diagnose hypertrophy or bundle block; RBBB/LBBB can have a normal axis.');
  }
  function drawInjury(){
   const anterior=getExternal().caseId!=='posterior_mi',shift=state.shift;

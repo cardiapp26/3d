@@ -132,7 +132,7 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
 .guyton-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   border-bottom: 1px solid #334155;
   padding-bottom: 10px;
 }
@@ -141,14 +141,14 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  padding: 8px 14px;
+  gap: 1px;
+  padding: 5px 10px;
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 6px;
   color: #94a3b8;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -166,7 +166,7 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
 }
 
 .guyton-tab-ch {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.05em;
   opacity: 0.85;
@@ -446,8 +446,9 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  padding: 8px 12px;
+  gap: 1px;
+  padding: 5px 10px;
+  font-size: 12px;
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 6px;

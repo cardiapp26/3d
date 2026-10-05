@@ -1,6 +1,7 @@
 // Interactive Guyton ECG Studio UI Panel Component
 import { createEcgLab } from './ecg-labs.js';
-import { stepProjections } from './ecg-lab-model.js';
+import { createAxisLab } from './axis-lab.js';
+import { createQrsVectorLab } from './qrs-vector-lab.js';
 import { GUYTON_TOPICS } from './guyton-data.js';
 import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial } from './guyton-render.js';
 
@@ -8,9 +9,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let activeTopicIdx = 0;
   let vectorAngle = 59; // Normal axis
   let vectorMag = 1.0;
-  let activeVectorStep = 2; // Step 3 peak
   let activeInjuryCase = 'anterior_mi';
-  let activeAxisId = 'normal';
   let lab = null;
   const labStates = {};
   const container = document.createElement('div');
@@ -74,9 +73,11 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     } else if (topic.id === 'ch11_leads') {
       renderChapter11Leads(mountNode, isTr);
     } else if (topic.id === 'ch12_vectors') {
-      renderChapter12Vectors(mountNode, isTr);
+      // Continuous QRS genesis: activation map, vector loop and six leads (qrs-vector-lab.js).
+      mountNode.replaceChildren();
     } else if (topic.id === 'ch12_axis') {
-      renderChapter12Axis(mountNode, isTr);
+      // One interactive lab: hexaxial wheel, six leads, reading methods and quiz (axis-lab.js).
+      mountNode.replaceChildren();
     } else if (topic.id === 'ch12_injury') {
       renderChapter12Injury(mountNode, isTr);
     } else if (topic.id === 'ch13_arrhythmias') {
@@ -94,8 +95,12 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       ['Cardiac propagation and re-entry','https://doi.org/10.1161/CIRCEP.113.000311']
     ]) { const a=document.createElement('a'); a.textContent=title;a.href=url;a.target='_blank';a.rel='noopener noreferrer';source.append(a); }
 
-    lab = createEcgLab({ mount: mountNode, topic: topic.id, getLang, state: labStates[topic.id] ||= {},
-      getExternal: () => ({ index:activeVectorStep, step:GUYTON_TOPICS[2].vectors[activeVectorStep], steps:GUYTON_TOPICS[2].vectors, caseId:activeInjuryCase, vectorAngle }) });
+    lab = topic.id === 'ch12_axis'
+      ? createAxisLab({ mount: mountNode, getLang, conditions: topic.conditions, state: labStates[topic.id] ||= {} })
+      : topic.id === 'ch12_vectors'
+      ? createQrsVectorLab({ mount: mountNode, getLang, steps: topic.vectors, state: labStates[topic.id] ||= {} })
+      : createEcgLab({ mount: mountNode, topic: topic.id, getLang, state: labStates[topic.id] ||= {},
+      getExternal: () => ({ caseId:activeInjuryCase, vectorAngle }) });
     mountNode.append(source);
   }
 
@@ -172,165 +177,6 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     });
 
     update();
-  }
-
-  // Chapter 12 Vectors: Sequential Step Depolarization Engine (Guyton Fig 12-7)
-  function renderChapter12Vectors(mountNode, isTr) {
-    const topic = GUYTON_TOPICS[2];
-    const curStep = topic.vectors[activeVectorStep];
-    const waves = stepProjections(curStep);
-
-    mountNode.innerHTML = `
-      <div class="guyton-grid-2col">
-        <div class="guyton-card">
-          <h3>${isTr ? 'QRS Kompleksinin Ardışık Depolarizasyon Aşamaları' : 'Sequential Depolarization Steps'}</h3>
-          <p class="guyton-card-desc">
-            ${isTr
-              ? 'Guyton Fig 12-7: Ventriküllerin 0.01s ile 0.08s arasındaki anlık elektriksel vektörleri ve 3 standart ekstremite derivasyonundaki anlık izleri:'
-              : 'Guyton Fig 12-7: Instantaneous vectors between 0.01s and 0.08s and their projections in the standard leads:'}
-          </p>
-
-          <div class="guyton-step-selector">
-            ${topic.vectors.map((v, i) => `
-              <button type="button" class="guyton-step-btn ${i === activeVectorStep ? 'active' : ''}" data-step="${i}">
-                <span class="num">${v.step}</span>
-                <span class="txt">${v.time} • ${v.name[isTr ? 'tr' : 'en']}</span>
-              </button>
-            `).join('')}
-          </div>
-
-          <div class="guyton-canvas-wrap">
-            <canvas id="seq-canvas" width="560" height="300"></canvas>
-          </div>
-        </div>
-
-        <div class="guyton-card">
-          <h3>${curStep.name[isTr ? 'tr' : 'en']} (${curStep.time})</h3>
-          <div class="guyton-callout" style="margin-top:10px;">
-            <p>${curStep.details[isTr ? 'tr' : 'en']}</p>
-          </div>
-
-          <div class="guyton-leads-strip-preview">
-            <h4>${isTr ? 'Anlık Derivasyon Genlikleri' : 'Instantaneous Lead Amplitudes'}</h4>
-            <div class="guyton-amp-meters">
-              <div class="meter-box">
-                <span>Lead I</span>
-                <strong>${(waves.lead1).toFixed(2)} mV</strong>
-              </div>
-              <div class="meter-box">
-                <span>Lead II</span>
-                <strong>${(waves.lead2).toFixed(2)} mV</strong>
-              </div>
-              <div class="meter-box">
-                <span>Lead III</span>
-                <strong>${(waves.lead3).toFixed(2)} mV</strong>
-              </div>
-              <div class="meter-box">
-                <span>V1</span>
-                <strong>${(waves.v1).toFixed(2)} mV</strong>
-              </div>
-              <div class="meter-box">
-                <span>V6</span>
-                <strong>${(waves.v6).toFixed(2)} mV</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Bind step buttons
-    mountNode.querySelectorAll('.guyton-step-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activeVectorStep = Number(btn.dataset.step);
-        renderActiveTopic(mountNode, isTr ? 'tr' : 'en');
-        mountNode.querySelector(`[data-step="${activeVectorStep}"]`)?.focus();
-      });
-    });
-
-    // Draw Vector diagram for step
-    const canvas = mountNode.querySelector('#seq-canvas');
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      drawVectorHexaxial(ctx, canvas.width, canvas.height, curStep.vectorAngle, curStep.magnitude);
-    }
-  }
-
-  // Chapter 12 Axis: Axis Deviation Simulator
-  function renderChapter12Axis(mountNode, isTr) {
-    const topic = GUYTON_TOPICS[3];
-    let selectedCond = topic.conditions.find(c => c.id === activeAxisId) || topic.conditions[0];
-
-    mountNode.innerHTML = `
-      <div class="guyton-grid-2col">
-        <div class="guyton-card">
-          <h3>${isTr ? 'Ortalama Elektriksel Aks ve Patolojiler' : 'Mean Electrical Axis & Deviations'}</h3>
-          <p class="guyton-card-desc">
-            ${isTr
-              ? 'Ventriküler QRS ortalama elektrik aksı normalde +59° civarındadır (-30° ile +90° arası normal). Hipertrofiler ve dal blokları aksı saptırır.'
-              : 'The mean QRS axis averages +59° (normal range -30° to +90°). Hypertrophy and bundle blocks deviate the axis.'}
-          </p>
-
-          <div class="guyton-axis-cond-list">
-            ${topic.conditions.map(c => `
-              <button type="button" class="guyton-cond-btn" data-cond="${c.id}">
-                <strong>${c.name[isTr ? 'tr' : 'en']}</strong>
-                <span>${c.status[isTr ? 'tr' : 'en']}</span>
-              </button>
-            `).join('')}
-          </div>
-
-          <div class="guyton-canvas-wrap" style="margin-top:14px;">
-            <canvas id="axis-canvas" width="560" height="300"></canvas>
-          </div>
-        </div>
-
-        <div class="guyton-card" id="axis-details-box"></div>
-      </div>
-    `;
-
-    const canvas = mountNode.querySelector('#axis-canvas');
-    const detailsBox = mountNode.querySelector('#axis-details-box');
-
-    function updateCond(cond) {
-      selectedCond = cond;
-      activeAxisId = cond.id;
-      lab?.sync({ angle:cond.angle });
-      mountNode.querySelectorAll('[data-cond]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cond === cond.id)));
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        drawVectorHexaxial(ctx, canvas.width, canvas.height, cond.angle, 1.25);
-      }
-
-      detailsBox.innerHTML = `
-        <h3>${cond.name[isTr ? 'tr' : 'en']}</h3>
-        <div class="guyton-callout" style="margin-top:10px;">
-          <strong>${isTr ? 'Fizyopatolojik Mekanizma:' : 'Pathophysiological Mechanism:'}</strong>
-          <p>${cond.causes[isTr ? 'tr' : 'en']}</p>
-        </div>
-
-        <div class="guyton-axis-leads-summary">
-          <h4>${isTr ? 'Derivasyon I ve III Net Polaritesi (QRS Alanı)' : 'Net QRS Polarity in Leads I and III'}</h4>
-          <div class="lead-polarity-card">
-            <span>Lead I:</span>
-            <strong class="${cond.lead1Net > 0 ? 'pos' : 'neg'}">${cond.lead1Net > 0 ? (isTr ? 'Pozitif (R baskın)' : 'Positive (R dominant)') : (isTr ? 'Negatif (S baskın)' : 'Negative (S dominant)')}</strong>
-          </div>
-          <div class="lead-polarity-card">
-            <span>Lead III:</span>
-            <strong class="${cond.lead3Net > 0 ? 'pos' : 'neg'}">${cond.lead3Net > 0 ? (isTr ? 'Pozitif (R baskın)' : 'Positive (R dominant)') : (isTr ? 'Negatif (S baskın)' : 'Negative (S dominant)')}</strong>
-          </div>
-        </div>
-      `;
-    }
-
-    mountNode.querySelectorAll('.guyton-cond-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const c = topic.conditions.find(x => x.id === btn.dataset.cond);
-        if (c) updateCond(c);
-      });
-    });
-
-    updateCond(selectedCond);
   }
 
   // Chapter 12 Injury: Current of Injury & J Point

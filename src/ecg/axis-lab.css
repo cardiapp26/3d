@@ -1,0 +1,83 @@
+/* Frontal axis lab (axis-lab.js). Dark page, ECG-paper strips, compact controls. */
+.axl{display:grid;gap:12px;padding:16px;border:1px solid #2b3d52;border-radius:12px;background:linear-gradient(160deg,#122235,#0d1726);color:#e2e8f0;font-size:13px;container-type:inline-size}
+.axl p,.axl ol{margin:0}
+.axl button{font:inherit;font-size:12px;line-height:1.2;min-height:28px;padding:5px 10px;border:1px solid #38506a;border-radius:6px;background:#172a3e;color:#dbe7f0;cursor:pointer}
+.axl button:hover{border-color:#5d7a96;background:#1d344b}
+.axl button[aria-pressed=true],.axl button[aria-selected=true]{background:#e7b968;border-color:#e7b968;color:#16212c;font-weight:650}
+.axl button:focus-visible,.axl input:focus-visible,.axl-arrow-user:focus-visible{outline:2px solid #7addf1;outline-offset:2px}
+.axl button:disabled{opacity:.45;cursor:default}
+.axl-top{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.axl-seg{display:inline-flex;border:1px solid #38506a;border-radius:7px;overflow:hidden}
+.axl-seg button{border:0;border-radius:0;border-right:1px solid #38506a}
+.axl-seg button:last-child{border-right:0}
+.axl-chips{display:flex;flex-wrap:wrap;gap:5px}
+.axl-chips button{border-radius:999px;padding:4px 10px}
+.axl-main{display:grid;gap:14px;align-items:start}
+.axl-wheel-box{margin:0;display:grid;gap:4px;justify-items:center}
+.axl-wheel{width:100%;max-width:380px;height:auto;touch-action:none;cursor:crosshair;user-select:none;font:11px system-ui,sans-serif}
+.axl-caption{font-size:11px;color:#8ea3b8;text-align:center}
+.axl-disc{fill:#0b1522;stroke:#2b3d52}
+.axl-deg{fill:#8ea3b8;font-size:10.5px;font-variant-numeric:tabular-nums}
+.axl-lead line{stroke-width:2.2}
+.axl-lead .axl-neg{stroke-dasharray:3 4;stroke-opacity:.45;stroke-width:1.4}
+.axl-lead-label{font-weight:700;font-size:11px;paint-order:stroke;stroke:#0b1522;stroke-width:3px}
+.axl-lead{cursor:pointer}
+.axl-lead.is-picked line{stroke-width:4}
+.axl-lead.is-iso .axl-pos,.axl-lead.is-iso .axl-neg{stroke:#fff;stroke-opacity:1;stroke-width:3.2;stroke-dasharray:none}
+.axl-quadrant{fill:#e7b968;fill-opacity:.16;stroke:#e7b968;stroke-opacity:.6;stroke-dasharray:4 3}
+.axl-perp{stroke:#f8fafc;stroke-width:1.6;stroke-dasharray:6 4}
+.axl-cand{fill:#0b1522;stroke:#f8fafc;stroke-width:2}
+.axl-drop{stroke:#cbd5e1;stroke-width:1.2;stroke-dasharray:3 3}
+.axl-proj-pos{stroke:#4ade80;stroke-width:6;stroke-linecap:round;opacity:.85}
+.axl-proj-neg{stroke:#f87171;stroke-width:6;stroke-linecap:round;opacity:.85}
+.axl-arrow line{stroke-width:4.5;stroke-linecap:round}
+.axl-arrow-user line{stroke:#e7b968}.axl-arrow-user path{fill:#e7b968}
+.axl-arrow-user .axl-handle{fill:#e7b968;fill-opacity:.25;stroke:#e7b968;stroke-width:2;cursor:grab}
+.axl-arrow-user.is-guess line{stroke:#c084fc}.axl-arrow-user.is-guess path{fill:#c084fc}
+.axl-arrow-user.is-guess .axl-handle{fill:#c084fc;stroke:#c084fc}
+.axl-arrow-truth line{stroke:#e7b968;stroke-width:3;stroke-dasharray:6 3}.axl-arrow-truth path{fill:#e7b968}.axl-arrow-truth .axl-handle{display:none}
+.axl[data-mode=explore] .axl-arrow-truth{display:none}
+.axl-centre{fill:#e2e8f0}
+.axl-side{display:grid;gap:8px;min-width:0}
+.axl-leads-title{font-size:11px;font-weight:700;letter-spacing:.4px;color:#8ea3b8;text-transform:uppercase}
+.axl-strips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.axl .axl-strip{display:grid;gap:2px;padding:4px 5px 5px;border-radius:6px;background:#fdf3f1;border:2px solid transparent;color:#1f2937;text-align:left}
+.axl .axl-strip:hover{background:#fff7f5;border-color:#f3c3b8}
+.axl .axl-strip[aria-pressed=true]{background:#fff;border-color:#e7b968;color:#1f2937;font-weight:400}
+.axl-strip-head{display:flex;align-items:baseline;gap:6px;min-width:0}
+.axl-strip-label{font-weight:800;font-size:12px;text-shadow:0 0 1px #0006}
+.axl-strip-svg{width:100%;height:auto;max-height:170px;display:block;border-radius:3px}
+.axl-strip-net{margin-left:auto;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:#475569;white-space:nowrap}
+.axl-strip-net[data-sign=pos]{color:#15803d}.axl-strip-net[data-sign=neg]{color:#b91c1c}.axl-strip-net[data-sign=iso]{color:#7c3aed;font-weight:700}
+.axl-grid-minor{stroke:#f4c6bd;stroke-width:.5;fill:none}
+.axl-grid-major{stroke:#e8998a;stroke-width:.9;fill:none}
+.axl-trace{fill:none;stroke-width:1.6;stroke-linejoin:round}
+.axl-mm{font-size:10px;color:#64748b;font-variant-numeric:tabular-nums;white-space:nowrap}
+.axl-proj{font-size:12px;color:#cbd5e1;min-height:1.5em}
+.axl-slider{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:12px;color:#cbd5e1}
+.axl-slider output{font-weight:700;font-variant-numeric:tabular-nums;color:#e7b968}
+.axl-slider input{grid-column:1/-1;width:100%;accent-color:#e7b968}
+.axl-result{padding:8px 12px;border-radius:7px;background:#172a3e;border-left:4px solid #64748b;font-weight:650}
+.axl-result[data-cat=normal]{border-left-color:#22c55e}.axl-result[data-cat=left]{border-left-color:#f59e0b}
+.axl-result[data-cat=right]{border-left-color:#3b82f6}.axl-result[data-cat=extreme]{border-left-color:#ef4444}
+.axl-quiz{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.axl-quiz[hidden]{display:none}
+.axl-quiz-text{flex:1 1 260px;font-size:12px}
+.axl-quiz-text[data-verdict=correct]{color:#4ade80}.axl-quiz-text[data-verdict=close]{color:#facc15}.axl-quiz-text[data-verdict=wrong]{color:#f87171}
+.axl-score{font-size:12px;color:#8ea3b8;font-variant-numeric:tabular-nums}
+.axl-method{display:grid;gap:8px}
+.axl-method[hidden]{display:none}
+.axl-method-tabs{flex-wrap:wrap;max-width:100%}
+.axl-steps{display:grid;gap:5px;padding-left:20px;font-size:12.5px;line-height:1.5;color:#dbe7f0}
+.axl-steps li::marker{color:#e7b968;font-weight:700}
+.axl-cause{padding:9px 12px;border-radius:7px;background:#0f1e2e;border:1px solid #2b3d52;font-size:12px;display:grid;gap:4px}
+.axl-cause[hidden]{display:none}
+.axl-cause p{color:#b8c7d6}
+.axl-note{font-size:11px;color:#8ea3b8;line-height:1.5}
+@container (min-width:760px){
+  .axl-main{grid-template-columns:minmax(300px,380px) minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .axl{padding:12px}
+  .axl-strips{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
