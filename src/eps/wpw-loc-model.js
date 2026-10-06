@@ -88,14 +88,65 @@ export function csSequence(phase = 'before', site = 'leftLateral') {
   return { onsets, earliest: order[0], order };
 }
 
+/** Which wall a site belongs to: left free wall, septal, or right free wall. */
+export function siteGroup(site) {
+  if (site === 'leftLateral' || site === 'leftPosterior') return 'left';
+  if (site === 'rightAnterior' || site === 'rightLateral' || site === 'rightPosterior') return 'right';
+  return 'septal';
+}
+
 /**
- * Surface findings of the same patient before and after ablation: the left
- * lateral pathway pre-excites the left ventricle and hides a left bundle
- * branch block that shows once the pathway is gone.
+ * Surface and intracardiac findings before and after ablation of `site`.
+ * Every pathway: delta and short PR before, gone after. Only the lecture
+ * patient (left lateral pathway) also carries a left bundle branch block
+ * that the pre-excitation hid; with other sites the QRS is narrow after.
  */
-export function ablationFindings(phase = 'before') {
+export function ablationFindings(phase = 'before', site = 'leftLateral') {
   const after = phase === 'after';
-  return { delta: !after, shortPr: !after, lbbbVisible: after, lbbbPresent: true, csEarliest: csSequence(phase).earliest };
+  const lbbbPresent = site === 'leftLateral';
+  const tl = epTimeline(phase, site);
+  return {
+    delta: !after, shortPr: !after, lbbbVisible: after && lbbbPresent, lbbbPresent,
+    csEarliest: csSequence(phase, site).earliest, group: siteGroup(site),
+    pr: tl.pr, hv: tl.hv, ablLead: tl.ablLead
+  };
+}
+
+// Teaching timings (ms from the onset of atrial activation), not measurements.
+const T = Object.freeze({
+  hisA: 35, his: 105, deltaOnset: 100, qrsAfter: 150, narrowQrs: 80, preexQrs: 120, lbbbQrs: 140,
+  ablLeadBefore: 10, ablVAfter: 25, csA: 40, csAStep: 8, csVBefore: 5, csVAfter: 15
+});
+// Atrial timing at the ablation catheter: near the sinus node early, far on the left late.
+const ABL_A = Object.freeze({ left: 65, septal: 45, right: 40 });
+
+/**
+ * Channel events of a sinus beat for the laboratory monitor: surface D1 and
+ * aVL, the His bundle electrogram, the ablation catheter tip on the pathway
+ * (ABL d) and the coronary sinus. Returns onsets in ms plus PR, HV and how
+ * far the local V at the ablation tip leads the delta wave (ablLead).
+ * Delta polarity in D1 / aVL: negative over a left free wall pathway.
+ */
+export function epTimeline(phase = 'before', site = 'leftLateral') {
+  const before = phase === 'before';
+  const group = siteGroup(site);
+  const lbbb = !before && site === 'leftLateral';
+  const vStart = before ? T.deltaOnset : T.qrsAfter;
+  const polarity = before && group === 'left' ? 'neg' : 'pos';
+  const surface = { onset: vStart, width: before ? T.preexQrs : lbbb ? T.lbbbQrs : T.narrowQrs, delta: before, polarity, lbbb };
+  const ablA = ABL_A[group];
+  const ablV = before ? vStart - T.ablLeadBefore : vStart + T.ablVAfter;
+  const seq = csSequence(phase, site);
+  const cs = Object.fromEntries(CS_CHANNELS.map((id, i) => [id, {
+    a: T.csA + i * T.csAStep,
+    v: vStart + (before ? T.csVBefore : T.csVAfter) + seq.onsets[id]
+  }]));
+  return {
+    d1: surface, avl: surface,
+    his: { a: T.hisA, h: T.his, v: Math.max(vStart, T.his) + 10 },
+    abl: { a: ablA, v: ablV, fused: before },
+    cs, pr: vStart, hv: vStart - T.his, ablLead: before ? vStart - ablV : null
+  };
 }
 
 /** Anterograde refractory period of the pathway (ms): at or below 250 ms conducts fast. */

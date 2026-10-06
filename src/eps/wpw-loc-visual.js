@@ -17,8 +17,8 @@ const POSITIONS = {
   rightAnterior: [118, 52], rightLateral: [60, 131], rightPosterior: [98, 205]
 };
 const LABELS = {
-  tr: { map: 'Kapak düzleminde aksesuar yol bölgeleri', anterior: 'ANTERİOR', posterior: 'POSTERİOR', ta: 'Trikuspit', ma: 'Mitral', example: 'Örneği yükle', delta: 'Delta', schematic: 'Şematik', time: 'Göreli V başlangıcı (ms)', before: 'Preeksitasyon', after: 'Delta kayboldu; LBBB görünür', ecg: 'Şematik EKG, gerçek kayıt değil' },
-  en: { map: 'Accessory pathway regions on the valve plane', anterior: 'ANTERIOR', posterior: 'POSTERIOR', ta: 'Tricuspid', ma: 'Mitral', example: 'Load example', delta: 'Delta', schematic: 'Schematic', time: 'Relative V onset (ms)', before: 'Pre-excitation', after: 'Delta lost; LBBB visible', ecg: 'Schematic ECG, not a recording' }
+  tr: { map: 'Kapak düzleminde aksesuar yol bölgeleri', anterior: 'ANTERİOR', posterior: 'POSTERİOR', ta: 'Trikuspit', ma: 'Mitral', example: 'Örneği yükle', delta: 'Delta', schematic: 'Şematik', time: 'Göreli V başlangıcı (ms)', before: 'Preeksitasyon', after: 'Delta kayboldu; LBBB görünür', ecg: 'Şematik EKG, gerçek kayıt değil', monitor: 'Şematik EP kaydı, gerçek kayıt değil', monitorTime: 'Zaman (ms, atriyal aktivasyondan)' },
+  en: { map: 'Accessory pathway regions on the valve plane', anterior: 'ANTERIOR', posterior: 'POSTERIOR', ta: 'Tricuspid', ma: 'Mitral', example: 'Load example', delta: 'Delta', schematic: 'Schematic', time: 'Relative V onset (ms)', before: 'Pre-excitation', after: 'Delta lost; LBBB visible', ecg: 'Schematic ECG, not a recording', monitor: 'Schematic EP recording, not a patient recording', monitorTime: 'Time (ms from atrial onset)' }
 };
 const s = (doc, tag, attrs = {}, text) => {
   const n = doc.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -79,15 +79,59 @@ export function renderCsTracing(doc, svg, sequence, lang, channels) {
   });
   svg.append(s(doc, 'text', { x: 258, y: 238, class: 'wpwv-caption' }, t.time));
 }
-export function renderAblationEcg(doc, svg, phase, lang) {
-  const t = LABELS[lang], before = phase === 'before';
-  svg.replaceChildren(s(doc, 'title', {}, t.ecg));
-  svg.setAttribute('aria-label', `${t.ecg}. ${before ? t.before : t.after}`);
-  for (let x = 20; x <= 400; x += 20) svg.append(s(doc, 'line', { x1: x, y1: 20, x2: x, y2: 140, class: 'wpwv-grid' }));
-  for (let y = 20; y <= 140; y += 20) svg.append(s(doc, 'line', { x1: 20, y1: y, x2: 400, y2: y, class: 'wpwv-grid' }));
-  const path = before ? 'M20 100 L48 100 Q58 78 68 100 L88 100 L114 85 L126 35 L135 122 L148 100 L235 100 Q265 66 295 100 L400 100'
-    : 'M20 100 L48 100 Q58 78 68 100 L140 100 L145 48 L160 40 L170 55 L180 40 L198 115 L212 100 L267 100 Q300 123 329 100 L400 100';
-  svg.append(s(doc, 'path', { d: path, class: 'wpwv-wave' }));
-  if (before) svg.append(s(doc, 'path', { d: 'M88 100 L114 85', class: 'wpwv-delta' }), s(doc, 'text', { x: 99, y: 73, class: 'wpwv-caption' }, t.delta));
-  svg.append(s(doc, 'text', { x: 210, y: 164, class: 'wpwv-caption' }, before ? t.before : t.after));
+// Laboratory monitor of one sinus beat (wpw-loc-model.js epTimeline): surface
+// D1 and aVL, His, ablation tip and the coronary sinus, on one time axis.
+const MON = Object.freeze({ left: 74, right: 412, top: 30, row: 31, ms: 1.08, spike: 7 });
+export function renderEpMonitor(doc, svg, timeline, lang, labels) {
+  const t = LABELS[lang];
+  const x = ms => MON.left + ms * MON.ms;
+  const rows = [['d1', labels.d1], ['avl', labels.avl], ['his', labels.his], ['abl', labels.abl], ...Object.keys(timeline.cs).map(id => [id, labels.cs[id].split(' (')[0]])];
+  const height = MON.top + rows.length * MON.row + 18;
+  svg.setAttribute('viewBox', `0 0 420 ${height}`);
+  svg.replaceChildren(s(doc, 'title', {}, t.monitor));
+  svg.setAttribute('aria-label', `${t.monitor}. PR ${timeline.pr} ms, HV ${timeline.hv} ms`);
+  for (let ms = 0; ms <= 300; ms += 50) {
+    svg.append(s(doc, 'line', { x1: x(ms), y1: MON.top - 14, x2: x(ms), y2: height - 16, class: 'wpwv-grid' }), s(doc, 'text', { x: x(ms), y: MON.top - 18, class: 'wpwv-caption' }, String(ms)));
+  }
+  const onset = timeline.d1.onset;
+  svg.append(s(doc, 'line', { x1: x(onset), y1: MON.top - 12, x2: x(onset), y2: height - 16, class: 'wpwv-onset-line', 'data-wpw-onset': String(onset) }));
+  // Sharp local electrogram: a biphasic spike of amplitude a at time ms.
+  const spike = (ms, a) => `L${x(ms) - 2} 0 L${x(ms)} ${-a} L${x(ms) + 3} ${a * 0.8} L${x(ms) + 5} 0`;
+  rows.forEach(([id, label], i) => {
+    const y = MON.top + i * MON.row + MON.row / 2;
+    const g = s(doc, 'g', { transform: `translate(0 ${y})`, 'data-wpw-monitor': id });
+    let d;
+    if (id === 'd1' || id === 'avl') d = surfacePath(timeline[id], x);
+    else {
+      const ev = id === 'his' ? [[timeline.his.a, 4], [timeline.his.h, 5], [timeline.his.v, MON.spike]]
+        : id === 'abl' ? [[timeline.abl.a, 5], [timeline.abl.v, MON.spike + 2]]
+        : [[timeline.cs[id].a, 4], [timeline.cs[id].v, MON.spike]];
+      d = `M${MON.left} 0 ${ev.sort((a, b) => a[0] - b[0]).map(([ms, a]) => spike(ms, a)).join(' ')} L${MON.right} 0`;
+      // On the pathway before ablation A runs into V with no isoelectric gap.
+      if (id === 'abl' && timeline.abl.fused) d = `M${MON.left} 0 ${spike(timeline.abl.a, 5)} ${fusedBridge(timeline.abl.a + 5, timeline.abl.v - 2, x)} ${spike(timeline.abl.v, MON.spike + 2)} L${MON.right} 0`;
+    }
+    g.append(s(doc, 'text', { x: 4, y: 3, class: 'wpwv-monitor-label' }, label),
+      s(doc, 'path', { d, class: id === 'abl' ? 'wpwv-wave wpwv-early' : 'wpwv-wave' }));
+    if (id === 'his') g.append(s(doc, 'text', { x: x(timeline.his.h), y: -8, class: 'wpwv-caption' }, 'H'));
+    svg.append(g);
+  });
+  svg.append(s(doc, 'text', { x: 243, y: height - 3, class: 'wpwv-caption' }, t.monitorTime));
+}
+// Low fractionated activity joining the local A to the local V.
+function fusedBridge(from, to, x) {
+  const parts = [];
+  for (let ms = from, k = 0; ms < to; ms += 3, k += 1) parts.push(`L${x(ms)} ${k % 2 ? 2.5 : -2.5}`);
+  return parts.join(' ');
+}
+// Surface lead: P wave, then a delta slur (pre-excitation) or a narrow / LBBB QRS, then T.
+function surfacePath(lead, x) {
+  const sign = lead.polarity === 'neg' ? 1 : -1;      // SVG y grows downward
+  const o = lead.onset, w = lead.width;
+  const p = `M${MON.left} 0 L${x(15)} 0 Q${x(45)} ${-6} ${x(75)} 0`;
+  let qrs;
+  if (lead.delta) qrs = `L${x(o)} 0 L${x(o + 35)} ${sign * 7} L${x(o + 50)} ${sign * 22} L${x(o + 65)} ${-sign * 6} L${x(o + w)} 0`;
+  else if (lead.lbbb) qrs = `L${x(o)} 0 L${x(o + 30)} -16 L${x(o + 55)} -12 L${x(o + 80)} -18 L${x(o + w)} 0`;
+  else qrs = `L${x(o)} 0 L${x(o + 10)} 2 L${x(o + 30)} -20 L${x(o + 50)} 5 L${x(o + w)} 0`;
+  const tEnd = Math.min(300, o + w + 90);
+  return `${p} ${qrs} Q${x((o + w + tEnd) / 2)} ${lead.lbbb ? 6 : -7} ${x(tEnd)} 0 L${MON.right} 0`;
 }

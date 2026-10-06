@@ -40,6 +40,8 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
       if (section === 'cs') {
         await page.locator('[data-wpw-cs-phase=normal]').click();
         assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), 'cs910');
+        assert.equal(await page.locator('[data-wpw-cs-title]').getAttribute('data-site'), 'none', 'no pathway: neutral title');
+        assert.equal(await page.locator('[data-wpw-card=cs] [data-wpw-map-site][aria-pressed=true]').count(), 0, 'no region marked without a pathway');
         await page.locator('[data-wpw-cs-site=leftLateral]').click();
         await page.locator('[data-wpw-cs-phase=before]').click();
         assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), 'cs12');
@@ -57,7 +59,14 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
         await page.screenshot({ path: `${shots}/wpw-cs-desktop.png`, fullPage: true });
       }
       if (section === 'abl') {
+        await page.locator('[data-wpw-abl-site]').selectOption('posteroseptal');
+        await page.locator('[data-wpw-abl-phase=before]').click();
+        assert.equal(await page.locator('[data-wpw-monitor]').count(), 9, 'lead I, aVL, His, ABL d and five CS channels');
+        assert.equal(await page.locator('.amap-readout[data-group]').getAttribute('data-group'), 'septal');
         await page.locator('[data-wpw-abl-phase=after]').click();
+        assert.equal(await page.locator('[data-wpw-masked]').isVisible(), false, 'no masked block outside the lecture patient');
+        await page.screenshot({ path: `${shots}/wpw-ablation-septal.png`, fullPage: true });
+        await page.locator('[data-wpw-abl-site]').selectOption('leftLateral');
         assert.equal(await page.locator('[data-wpw-masked]').isVisible(), true);
       }
     }

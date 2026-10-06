@@ -2,7 +2,7 @@
 // delta wave algorithm of the lecture, the coronary sinus sequence, the
 // findings before and after ablation, the refractory period cut-off.
 import assert from 'node:assert/strict';
-import { LEADS, LEAD_OPTIONS, SITES, localize, CS_CHANNELS, PHASES, csSequence, ablationFindings, ERP_LIMIT, pathwayRisk } from '../../src/eps/wpw-loc-model.js';
+import { LEADS, LEAD_OPTIONS, SITES, localize, CS_CHANNELS, PHASES, csSequence, ablationFindings, epTimeline, siteGroup, ERP_LIMIT, pathwayRisk } from '../../src/eps/wpw-loc-model.js';
 import { WPW_LOC_TEXT } from '../../src/eps/wpw-loc-text.js';
 import { createWpwLocPanel } from '../../src/eps/wpw-loc-panel.js';
 
@@ -73,7 +73,7 @@ for (const lang of ['tr', 'en']) {
   for (const id of SITES) assert.ok(t.loc.sites[id]?.name && t.loc.sites[id]?.note, `${lang} site ${id}`);
   for (const id of PHASES) assert.ok(t.cs.phases[id], `${lang} phase ${id}`);
   for (const id of CS_CHANNELS) assert.ok(t.cs.channels[id], `${lang} channel ${id}`);
-  assert.equal(t.abl.steps.length, 4);
+  for (const group of ['left', 'septal', 'right']) assert.equal(t.abl.steps[group].length, 4, `${group} ablation steps`);
   assert.ok(t.risk.short && t.risk.long);
   assert.ok(!JSON.stringify(t).includes(String.fromCharCode(0x2014)), 'no em dash');
 }
@@ -119,12 +119,39 @@ has('data-wpw-reset').listeners.click();
 assert.deepEqual(panel.getState().leads, {});
 by('data-wpw-cs-phase', 'normal').listeners.click();
 assert.equal(has('data-wpw-cs-bars').children.find((c) => c.attributes['data-earliest'] === 'true').attributes['data-wpw-cs-channel'], 'cs910');
+// No accessory pathway: neutral title, no region selected on the map or in the list.
+assert.equal(has('data-wpw-cs-title').textContent, WPW_LOC_TEXT.tr.cs.normalTitle);
+assert.equal(has('data-wpw-cs-title').attributes['data-site'], 'none');
+assert.ok(nodes().filter((n) => n.attributes['data-wpw-cs-site']).every((n) => n.attributes['aria-pressed'] === 'false'), 'no site pressed without a pathway');
+by('data-wpw-cs-site', 'leftLateral').listeners.click();
+assert.equal(panel.getState().csPhase, 'before', 'picking a region brings the pathway back');
+by('data-wpw-cs-phase', 'before').listeners.click();
 by('data-wpw-cs-phase', 'before').listeners.click();
 assert.equal(has('data-wpw-cs-bars').children.find((c) => c.attributes['data-earliest'] === 'true').attributes['data-wpw-cs-channel'], 'cs12');
 by('data-wpw-abl-phase', 'after').listeners.click();
 assert.equal(has('data-wpw-masked').hidden, false, 'the unmasked block is explained after ablation');
 by('data-wpw-abl-phase', 'before').listeners.click();
 assert.equal(has('data-wpw-masked').hidden, true);
+// Every pathway has its own before/after: monitor channels, wall-specific steps, normal HV after.
+for (const site of SITES) {
+  panel.set({ csSite: site, leads: {}, ablPhase: 'before' });
+  const monitor = nodes().find((n) => n.attributes.class === 'wpw-ablation-ecg');
+  assert.equal(monitor.attributes['data-site'], site);
+  const rows = monitor.children.filter((n) => n.attributes['data-wpw-monitor']).map((n) => n.attributes['data-wpw-monitor']);
+  assert.deepEqual(rows, ['d1', 'avl', 'his', 'abl', ...CS_CHANNELS], `${site} monitor channels`);
+  assert.equal(has('data-wpw-steps').children.length, 4);
+  const before = ablationFindings('before', site), after = ablationFindings('after', site);
+  assert.ok(before.delta && !after.delta && before.hv < 35 && after.hv >= 35 && after.hv <= 55, `${site} delta and HV`);
+  assert.ok(before.ablLead > 0 && after.ablLead === null, `${site} local V leads the delta before ablation`);
+  assert.equal(after.csEarliest, 'cs910');
+  assert.equal(after.lbbbVisible, site === 'leftLateral', `${site}: only the lecture patient unmasks LBBB`);
+  panel.set({ ablPhase: 'after' });
+  assert.equal(has('data-wpw-masked').hidden, site !== 'leftLateral');
+}
+assert.equal(epTimeline('before', 'leftLateral').d1.polarity, 'neg', 'left free wall: negative delta in lead I');
+assert.equal(epTimeline('before', 'rightLateral').d1.polarity, 'pos');
+assert.equal(siteGroup('anteroseptal'), 'septal');
+panel.set({ csSite: 'leftLateral', ablPhase: 'before' });
 assert.equal(has('data-wpw-risk').attributes['data-risk'], 'short', 'the lecture patient: 210 ms');
 panel.set({ erp: 300 });
 assert.equal(has('data-wpw-risk').attributes['data-risk'], 'long');
@@ -151,4 +178,4 @@ for (const id of SITES) {
 }
 assert.equal(csSequence('before', 'leftPosterior').earliest, 'cs56');
 assert.deepEqual(csSequence('before', 'leftPosterior').onsets, { cs910: 20, cs78: 10, cs56: 0, cs34: 10, cs12: 20 });
-console.log('PASS wpw-loc: localization algorithm (9 sites), CS sequence, before/after ablation, refractory cut-off, texts, panel');
+console.log('PASS wpw-loc: localization algorithm (9 sites), CS sequence, no-pathway state, before/after ablation for every site (monitor channels, HV, local V lead), refractory cut-off, texts, panel');

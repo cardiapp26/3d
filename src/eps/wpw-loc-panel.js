@@ -1,5 +1,5 @@
-import { LEADS, LEAD_OPTIONS, localize, PHASES, CS_CHANNELS, csSequence, ablationFindings, ERP_RANGE, pathwayRisk } from './wpw-loc-model.js';
-import { WPW_EXAMPLES, visualSvg, renderAnnulusMap, renderPolarity, renderCsTracing, renderAblationEcg } from './wpw-loc-visual.js';
+import { LEADS, LEAD_OPTIONS, SITES, localize, PHASES, CS_CHANNELS, csSequence, ablationFindings, epTimeline, ERP_RANGE, pathwayRisk } from './wpw-loc-model.js';
+import { WPW_EXAMPLES, visualSvg, renderAnnulusMap, renderPolarity, renderCsTracing, renderEpMonitor } from './wpw-loc-visual.js';
 import { WPW_LOC_TEXT } from './wpw-loc-text.js';
 import { createBostonGuide } from './ap-boston-guide.js';
 
@@ -7,9 +7,10 @@ import { createBostonGuide } from './ap-boston-guide.js';
  * WPW visual workbook: four learning pages. (1) the surface ECG algorithm: delta
  * polarity chosen lead by lead, the next lead named, the site decided;
  * (2) ventricular activation on the coronary sinus channels without a
- * pathway, with a left lateral pathway and after ablation; (3) the same
- * patient before and after ablation (delta, PR, the masked left bundle
- * branch block); (4) the anterograde refractory period cut-off.
+ * pathway, with the selected pathway and after ablation; (3) the selected
+ * pathway before and after ablation on a laboratory monitor (lead I, aVL,
+ * His, ablation tip, CS), with the masked left bundle branch block of the
+ * lecture patient; (4) the anterograde refractory period cut-off.
  * Pure logic lives in wpw-loc-model.js.
  */
 
@@ -99,7 +100,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const csMapSvg = visualSvg(doc, '0 0 420 275', 'wpw-annulus-map');
   const csSiteList = el('div', 'wpw-site-list');
   const csSiteButtons = new Map();
-  const selectCsSite = id => { state.csSite = id; state.leads = { ...WPW_EXAMPLES[id] }; render(); };
+  const selectCsSite = id => { state.csSite = id; state.leads = { ...WPW_EXAMPLES[id] }; if (state.csPhase === 'normal') state.csPhase = 'before'; render(); };
   for (const [i, id] of Object.keys(WPW_EXAMPLES).entries()) {
     const b = button({ 'data-wpw-cs-site': id }, () => selectCsSite(id));
     const number = el('span', 'wpw-site-number'); number.textContent = String(i + 1);
@@ -128,11 +129,18 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const abl = card('abl');
   const ablBtns = ['before', 'after'].map((id) => button({ 'data-wpw-abl-phase': id }, () => { state.ablPhase = id; render(); }));
   const ablRow = el('div', 'amap-toggles'); ablRow.append(...ablBtns);
-  const ablSvg = visualSvg(doc, '0 0 420 180', 'wpw-ablation-ecg');
+  const ablSiteLabel = el('label', 'wpw-abl-site');
+  const ablSiteName = el('span');
+  const ablSite = el('select', '', { 'data-wpw-abl-site': '' });
+  let ablSiteLang = null;
+  ablSite.addEventListener('change', () => { state.csSite = ablSite.value; state.leads = { ...WPW_EXAMPLES[ablSite.value] }; render(); });
+  ablSiteLabel.append(ablSiteName, ablSite);
+  const ablSvg = visualSvg(doc, '0 0 420 330', 'wpw-ablation-ecg');
+  const ablMonitorNote = note();
   const ablChips = chips();
   const steps = el('ol', 'basics-lines', { 'data-wpw-steps': '' });
   const masked = el('p', 'svt-verdict', { 'data-wpw-masked': '' });
-  abl.c.append(ablRow, ablSvg, ablChips, steps, masked);
+  abl.c.append(ablSiteLabel, ablRow, ablSvg, ablMonitorNote, ablChips, steps, masked);
 
   // ---- 4. refractory period ----------------------------------------------------------------
   const risk = card('risk');
@@ -199,14 +207,17 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     // 2
     cs.h.textContent = t.cs.title; csHint.textContent = t.cs.hint;
     csMapHeading.textContent = t.page.mapTitle; csMapNote.textContent = t.cs.mapNote;
-    csSiteHeading.textContent = t.loc.sites[state.csSite].name;
-    renderAnnulusMap(doc, csMapSvg, { lang: L(), site: state.csSite, sites: t.loc.sites, onSelect(id) {
+    // "No accessory pathway": no site is selected anywhere on this page.
+    const csSite = state.csPhase === 'normal' ? null : state.csSite;
+    csSiteHeading.textContent = csSite ? t.loc.sites[csSite].name : t.cs.normalTitle;
+    csSiteHeading.setAttribute('data-site', csSite || 'none');
+    renderAnnulusMap(doc, csMapSvg, { lang: L(), site: csSite, sites: t.loc.sites, onSelect(id) {
       selectCsSite(id);
       csMapSvg.querySelector?.(`[data-wpw-map-site=${id}]`)?.focus();
     } });
     for (const [id, { b, label }] of csSiteButtons) {
       label.textContent = t.loc.sites[id].name;
-      b.setAttribute('aria-pressed', String(state.csSite === id));
+      b.setAttribute('aria-pressed', String(csSite === id));
     }
     csNote.textContent = t.cs.profiles[state.csPhase !== 'before' ? 'normal' : state.csSite === 'leftLateral' ? 'lateral' : state.csSite === 'leftPosterior' ? 'posterior' : 'proximal'];
     csBtns.forEach((b, i) => { b.textContent = t.cs.phases[PHASES[i]]; b.setAttribute('aria-pressed', String(state.csPhase === PHASES[i])); });
@@ -225,17 +236,28 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
 
     // 3
     abl.h.textContent = t.abl.title;
+    ablSiteName.textContent = t.abl.site;
+    if (ablSiteLang !== L()) {   // options rebuilt only when the language changes
+      ablSite.replaceChildren(...SITES.map((id, i) => { const o = el('option', '', { value: id }); o.textContent = `${i + 1}. ${t.loc.sites[id].name}`; return o; }));
+      ablSiteLang = L();
+    }
+    ablSite.value = state.csSite;
     ablBtns.forEach((b, i) => { const id = ['before', 'after'][i]; b.textContent = t.abl.phases[id]; b.setAttribute('aria-pressed', String(state.ablPhase === id)); });
-    const f = ablationFindings(state.ablPhase);
-    renderAblationEcg(doc, ablSvg, state.ablPhase, L());
+    const f = ablationFindings(state.ablPhase, state.csSite);
+    renderEpMonitor(doc, ablSvg, epTimeline(state.ablPhase, state.csSite), L(), { ...t.abl.channels, cs: t.cs.channels });
+    ablSvg.setAttribute('data-site', state.csSite);
+    ablMonitorNote.textContent = t.abl.monitor;
     setChips(ablChips, [
       [t.abl.chips.delta, f.delta ? t.abl.present : t.abl.absent],
-      [t.abl.chips.pr, f.shortPr ? t.abl.shortPr : t.abl.normalPr],
-      [t.abl.chips.lbbb, f.lbbbVisible ? t.abl.shown : t.abl.hidden],
+      [t.abl.chips.pr, `${f.pr} ms · ${f.shortPr ? t.abl.shortPr : t.abl.normalPr}`],
+      [t.abl.chips.hv, `${f.hv} ms · ${f.hv < 35 ? t.abl.hvShort : t.abl.hvNormal}`],
+      [t.abl.chips.ablLead, f.ablLead === null ? t.abl.notApplicable : `${f.ablLead} ms ${t.abl.earlier} · ${t.abl.fused}`],
+      ...(f.lbbbPresent ? [[t.abl.chips.lbbb, f.lbbbVisible ? t.abl.shown : t.abl.hidden]] : []),
       [t.abl.chips.csFirst, t.cs.channels[f.csEarliest]]
     ]);
     ablChips.setAttribute('data-phase', state.ablPhase);
-    steps.replaceChildren(...t.abl.steps.map((s) => { const li = el('li'); li.textContent = s; return li; }));
+    ablChips.setAttribute('data-group', f.group);
+    steps.replaceChildren(...t.abl.steps[f.group].map((s) => { const li = el('li'); li.textContent = s; return li; }));
     masked.textContent = t.abl.masked;
     masked.hidden = !f.lbbbVisible;
 

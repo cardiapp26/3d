@@ -60,6 +60,7 @@ export const WPW_LOC_TEXT = {
       title: 'Koroner sinüste ventrikül aktivasyonu (sinüs ritmi)',
       hint: 'Septum önce uyarılırsa proksimal erken olur; sol lateral yol varsa en erken ventrikül distalde görülür.',
       phases: { normal: 'Aksesuar yol yok', before: 'Seçili yol, ablasyondan önce', after: 'Ablasyondan sonra' },
+      normalTitle: 'Normal iletim (aksesuar yol yok)',
       channels: { cs910: 'CS 9-10 (proksimal)', cs78: 'CS 7-8', cs56: 'CS 5-6', cs34: 'CS 3-4', cs12: 'CS 1-2 (distal)' },
       earliest: 'En erken ventrikül',
       order: { proximal: 'proksimalden distale', distal: 'distalden proksimale', middle: 'ortadan iki yöne' },
@@ -73,18 +74,36 @@ export const WPW_LOC_TEXT = {
       note: 'Distalde A ile V iç içe: atriyal elektrogramın hemen arkasından gelen erken V, yolun sol lateralde olduğunu gösterir.'
     },
     abl: {
-      title: 'Ablasyondan önce ve sonra aynı hasta',
+      title: 'Ablasyondan önce ve sonra: seçili yol',
+      site: 'Aksesuar yol',
       phases: { before: 'Ablasyondan önce', after: 'Ablasyondan sonra' },
-      chips: { delta: 'Delta dalgası', pr: 'PR', lbbb: 'Sol dal bloğu görünümü', csFirst: 'CS\'te en erken V' },
+      chips: { delta: 'Delta dalgası', pr: 'PR', hv: 'HV', ablLead: 'ABL d yerel V, deltaya göre', lbbb: 'Sol dal bloğu görünümü', csFirst: 'CS\'te en erken V' },
+      channels: { d1: 'D1', avl: 'aVL', his: 'His (HBE)', abl: 'ABL d' },
+      monitor: 'Şematik EP kaydı (eğitim zamanlamaları, ölçülmüş kayıt değil). Kesik çizgi: delta veya QRS başlangıcı.',
+      hvShort: 'kısa veya negatif (His V içinde)', hvNormal: 'normal (35–55 ms)', earlier: 'önce', fused: 'A ve V iç içe', notApplicable: 'yol yok',
       present: 'var', absent: 'yok', shortPr: 'kısa', normalPr: 'normal',
       hidden: 'gizli (preeksitasyon maskeliyor)', shown: 'belirgin',
-      steps: [
-        'Hedef: kateter ucunda en erken ventrikül aktivasyonu; CS distalindeki V\'den bile erken, A ve V iç içe.',
-        'Sol yola retrograd aortik yolla sol ventriküle girilerek ulaşıldı.',
-        'RF verildikten birkaç saniye içinde preeksitasyon kayboldu.',
-        'CS sırası tersine döndü: önce proksimal, sonra distal.'
-      ],
-      masked: 'Hastada baştan sol dal bloğu vardı; sol lateral yol sol ventrikülü erken uyardığı için görünmüyordu. Yol ablasyonla kapanınca ortaya çıktı: komplikasyon değil, maskenin düşmesi.'
+      steps: {
+        left: [
+          'Hedef: mitral anülüste deltadan önce gelen en erken yerel V; A ile V iç içe, CS distalindeki V\'den bile erken.',
+          'Erişim: retrograd aortik yolla sol ventrikülden ya da transseptal yolla sol atriyumdan.',
+          'RF verildikten birkaç saniye içinde delta kaybolur; D1 ve aVL\'deki negatif delta gider.',
+          'CS sırası normale döner: önce proksimal, sonra distal; HV normal aralığa çıkar.'
+        ],
+        septal: [
+          'Hedef: septal anülüste (CS ağzı çevresi ya da His komşuluğu) deltadan önce gelen yerel V.',
+          'His ve kompakt AV düğüme yakınlık nedeniyle enerji kontrollü verilir; anteroseptal ve midseptal yollarda AV blok riski artar, kriyoablasyon seçilebilir.',
+          'Başarıda inferior derivasyonlardaki negatif delta kaybolur, QRS daralır.',
+          'His kaydında HV normale döner; CS yine proksimalden başlar.'
+        ],
+        right: [
+          'Hedef: triküspit anülüste deltadan önce gelen yerel V; A ile V iç içe.',
+          'Erişim femoral venden; anülüste temas için uzun ya da yönlendirilebilir kılıf yardımcı olur.',
+          'Başarıda V1\'deki derin S ve delta kaybolur, dar QRS döner.',
+          'CS proksimalden başlar: CS sağ serbest duvar yollarını ayırmaz, anülüs haritası gerekir.'
+        ]
+      },
+      masked: 'Ders hastası (sol lateral yol): hastada baştan sol dal bloğu vardı; sol lateral yol sol ventrikülü erken uyardığı için görünmüyordu. Yol ablasyonla kapanınca ortaya çıktı: komplikasyon değil, maskenin düşmesi.'
     },
     risk: {
       title: 'Antegrad refrakter periyot',
@@ -149,6 +168,7 @@ export const WPW_LOC_TEXT = {
       title: 'Ventricular activation on the coronary sinus (sinus rhythm)',
       hint: 'If the septum is activated first the proximal channel is early; with a left lateral pathway the earliest ventricle is distal.',
       phases: { normal: 'No accessory pathway', before: 'Selected pathway, before ablation', after: 'After ablation' },
+      normalTitle: 'Normal conduction (no accessory pathway)',
       channels: { cs910: 'CS 9-10 (proximal)', cs78: 'CS 7-8', cs56: 'CS 5-6', cs34: 'CS 3-4', cs12: 'CS 1-2 (distal)' },
       earliest: 'Earliest ventricle',
       order: { proximal: 'proximal to distal', distal: 'distal to proximal', middle: 'middle to both ends' },
@@ -162,18 +182,36 @@ export const WPW_LOC_TEXT = {
       note: 'A and V run together distally: an early V right behind the atrial electrogram places the pathway on the left lateral wall.'
     },
     abl: {
-      title: 'The same patient before and after ablation',
+      title: 'Before and after ablation: selected pathway',
+      site: 'Accessory pathway',
       phases: { before: 'Before ablation', after: 'After ablation' },
-      chips: { delta: 'Delta wave', pr: 'PR', lbbb: 'Left bundle branch block pattern', csFirst: 'Earliest V on the CS' },
+      chips: { delta: 'Delta wave', pr: 'PR', hv: 'HV', ablLead: 'ABL d local V versus delta', lbbb: 'Left bundle branch block pattern', csFirst: 'Earliest V on the CS' },
+      channels: { d1: 'Lead I', avl: 'aVL', his: 'His (HBE)', abl: 'ABL d' },
+      monitor: 'Schematic EP recording (teaching timings, not a measured recording). Dashed line: delta or QRS onset.',
+      hvShort: 'short or negative (His inside the V)', hvNormal: 'normal (35–55 ms)', earlier: 'earlier', fused: 'A and V merged', notApplicable: 'no pathway',
       present: 'present', absent: 'absent', shortPr: 'short', normalPr: 'normal',
       hidden: 'hidden (masked by pre-excitation)', shown: 'visible',
-      steps: [
-        'Target: the earliest ventricular activation at the catheter tip; earlier than the V on the distal CS, with A and V merged.',
-        'The pathway was reached through the left ventricle by the retrograde aortic route.',
-        'Within a few seconds of RF the pre-excitation vanished.',
-        'The CS sequence reversed: proximal first, then distal.'
-      ],
-      masked: 'The patient had a left bundle branch block all along; the left lateral pathway, exciting the left ventricle early, hid it. It appeared when the pathway was closed: not a complication, the mask falling.'
+      steps: {
+        left: [
+          'Target: the earliest local V on the mitral annulus, ahead of the delta wave; A and V merged, earlier than the V on the distal CS.',
+          'Access: into the left ventricle by the retrograde aortic route, or into the left atrium transseptally.',
+          'Within a few seconds of RF the delta wave vanishes; the negative delta in lead I and aVL goes.',
+          'The CS sequence returns to normal, proximal then distal; the HV interval becomes normal.'
+        ],
+        septal: [
+          'Target: a local V ahead of the delta wave on the septal annulus (around the CS ostium or next to the His).',
+          'Energy is given with care near the His bundle and compact AV node; anteroseptal and midseptal pathways carry a higher AV block risk, and cryoablation may be chosen.',
+          'Success removes the negative delta in the inferior leads and narrows the QRS.',
+          'On the His recording the HV interval returns to normal; the CS still starts proximally.'
+        ],
+        right: [
+          'Target: a local V ahead of the delta wave on the tricuspid annulus; A and V merged.',
+          'Access from the femoral vein; a long or steerable sheath helps contact on the annulus.',
+          'Success removes the deep S and delta in V1 and the narrow QRS returns.',
+          'The CS starts proximally: the CS does not separate right free wall pathways, an annular map is needed.'
+        ]
+      },
+      masked: 'Lecture patient (left lateral pathway): the patient had a left bundle branch block all along; the left lateral pathway, exciting the left ventricle early, hid it. It appeared when the pathway was closed: not a complication, the mask falling.'
     },
     risk: {
       title: 'Anterograde refractory period',
