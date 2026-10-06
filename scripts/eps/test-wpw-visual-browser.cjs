@@ -33,7 +33,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     const shots = process.env.SHOT_DIR || '/private/tmp/cardia-wpw-shots'; fs.mkdirSync(shots, { recursive: true });
     await page.locator('[data-wpw]').evaluate(el => { el.scrollTop = 0; });
     await page.screenshot({ path: `${shots}/wpw-desktop.png`, fullPage: true });
-    for (const section of ['cs', 'abl', 'risk', 'loc']) {
+    for (const section of ['cs', 'risk', 'loc']) {
       await page.locator(`[data-wpw-page=${section}]`).click();
       assert.equal(await page.locator(`[data-wpw-card=${section}]`).isVisible(), true);
       assert.equal(await page.locator('[data-wpw-card]:visible').count(), 1);
@@ -58,15 +58,17 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
         assert.ok(map.x + map.width <= trace.x, 'desktop map and tracing side by side');
         await page.screenshot({ path: `${shots}/wpw-cs-desktop.png`, fullPage: true });
       }
-      if (section === 'abl') {
-        await page.locator('[data-wpw-abl-site]').selectOption('posteroseptal');
-        await page.locator('[data-wpw-abl-phase=before]').click();
+      if (section === 'cs') {
+        // Ablation lives on the same page: the selected pathway's monitor, before and after.
+        await page.locator('[data-wpw-cs-site=posteroseptal]').click();
+        await page.locator('[data-wpw-cs-phase=before]').click();
         assert.equal(await page.locator('[data-wpw-monitor]').count(), 9, 'lead I, aVL, His, ABL d and five CS channels');
+        assert.ok(await page.locator('[data-wpw-card=cs] [data-wave="δ"]').count() >= 2, 'delta named on lead I and aVL');
         assert.equal(await page.locator('.amap-readout[data-group]').getAttribute('data-group'), 'septal');
-        await page.locator('[data-wpw-abl-phase=after]').click();
+        await page.locator('[data-wpw-cs-phase=after]').click();
         assert.equal(await page.locator('[data-wpw-masked]').isVisible(), false, 'no masked block outside the lecture patient');
         await page.screenshot({ path: `${shots}/wpw-ablation-septal.png`, fullPage: true });
-        await page.locator('[data-wpw-abl-site]').selectOption('leftLateral');
+        await page.locator('[data-wpw-cs-site=leftLateral]').click();
         assert.equal(await page.locator('[data-wpw-masked]').isVisible(), true);
       }
     }
@@ -80,7 +82,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     assert.ok(csBounds.scroll <= csBounds.width + 1, 'CS mobile has no overflow');
     await page.screenshot({ path: `${shots}/wpw-cs-mobile.png`, fullPage: true });
     assert.deepEqual(errors, []);
-    console.log('PASS: WPW map/examples, manual ECG decisions, keyboard, language, four pages, CS/ablation, mobile overflow');
+    console.log('PASS: WPW map/examples, manual ECG decisions, keyboard, language, three pages, merged CS and ablation with wave names, mobile overflow');
     console.log(`Screenshots: ${shots}`);
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

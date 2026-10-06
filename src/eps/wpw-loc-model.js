@@ -96,17 +96,19 @@ export function siteGroup(site) {
 }
 
 /**
- * Surface and intracardiac findings before and after ablation of `site`.
+ * Surface and intracardiac findings before and after ablation of `site`
+ * ('normal': no pathway at all).
  * Every pathway: delta and short PR before, gone after. Only the lecture
  * patient (left lateral pathway) also carries a left bundle branch block
  * that the pre-excitation hid; with other sites the QRS is narrow after.
  */
 export function ablationFindings(phase = 'before', site = 'leftLateral') {
-  const after = phase === 'after';
-  const lbbbPresent = site === 'leftLateral';
+  const before = phase === 'before';
+  // 'normal' is a heart without a pathway: no lecture patient, no masked block.
+  const lbbbPresent = phase !== 'normal' && site === 'leftLateral';
   const tl = epTimeline(phase, site);
   return {
-    delta: !after, shortPr: !after, lbbbVisible: after && lbbbPresent, lbbbPresent,
+    delta: before, shortPr: before, lbbbVisible: phase === 'after' && lbbbPresent, lbbbPresent,
     csEarliest: csSequence(phase, site).earliest, group: siteGroup(site),
     pr: tl.pr, hv: tl.hv, ablLead: tl.ablLead
   };
@@ -114,8 +116,8 @@ export function ablationFindings(phase = 'before', site = 'leftLateral') {
 
 // Teaching timings (ms from the onset of atrial activation), not measurements.
 const T = Object.freeze({
-  hisA: 35, his: 105, deltaOnset: 100, qrsAfter: 150, narrowQrs: 80, preexQrs: 120, lbbbQrs: 140,
-  ablLeadBefore: 10, ablVAfter: 25, csA: 40, csAStep: 8, csVBefore: 5, csVAfter: 15
+  hisA: 35, his: 100, deltaOnset: 100, qrsAfter: 150, narrowQrs: 80, preexQrs: 120, lbbbQrs: 140,
+  ablLeadBefore: 25, ablVAfter: 25, csA: 40, csAStep: 8, csVBefore: 5, csVAfter: 15
 });
 // Atrial timing at the ablation catheter: near the sinus node early, far on the left late.
 const ABL_A = Object.freeze({ left: 65, septal: 45, right: 40 });
@@ -130,7 +132,7 @@ const ABL_A = Object.freeze({ left: 65, septal: 45, right: 40 });
 export function epTimeline(phase = 'before', site = 'leftLateral') {
   const before = phase === 'before';
   const group = siteGroup(site);
-  const lbbb = !before && site === 'leftLateral';
+  const lbbb = phase === 'after' && site === 'leftLateral';
   const vStart = before ? T.deltaOnset : T.qrsAfter;
   const polarity = before && group === 'left' ? 'neg' : 'pos';
   const surface = { onset: vStart, width: before ? T.preexQrs : lbbb ? T.lbbbQrs : T.narrowQrs, delta: before, polarity, lbbb };

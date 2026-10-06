@@ -9,9 +9,9 @@ export const WPW_LOC_TEXT = {
     tab: 'WPW lokalizasyon',
     heading: 'WPW: delta dalgasından aksesuar yola, ablasyondan önce ve sonra',
     intro: 'Delta dalgası, aksesuar yolun ventriküle girdiği yerden uzaklaşan bir vektördür: o yöne bakan derivasyonda negatif, karşı derivasyonlarda pozitif. Klasik üçlü: kısa PR, delta dalgası, geniş QRS.',
-    source: 'Derleme: Kardiyopedi WPW dersleri (aksesuar yol lokalizasyonu, WPW ablasyonu). Öğretim aracıdır, hasta karar aracı değildir.',
+    source: 'Derleme: Kardiyopedi WPW dersleri (aksesuar yol lokalizasyonu, WPW ablasyonu); ablasyon ölçütleri: Josephson\'s Clinical Cardiac Electrophysiology, 2025, bölüm 11 (aksesuar yol ablasyonu). Öğretim aracıdır, hasta karar aracı değildir.',
     page: {
-      navigation: 'WPW öğrenme bölümleri', loc: 'Lokalizasyon', cs: 'CS aktivasyonu', abl: 'Önce / sonra', risk: 'Refrakter dönem',
+      navigation: 'WPW öğrenme bölümleri', loc: 'Lokalizasyon', cs: 'CS ve ablasyon', risk: 'Refrakter dönem',
       mapTitle: 'Aksesuar yol atlası', mapNote: 'LAO benzeri kapak düzlemi, yaklaşık öğretim bölgeleri. Haritada veya listede bölge seçin: ilgili EKG örneği yüklenir. Dalga şekilleri seçenekleri anlatan şemalardır; hasta EKG’si değildir. Numara sırası karar sırası değildir.',
       allLeads: 'Tüm derivasyonları göster', guided: 'Adım adım okumaya dön', read: 'Şimdi okuyun', decisions: 'karar tamamlandı', complete: 'Algoritma tamamlandı; önerilen bölge haritada işaretli.'
     },
@@ -57,7 +57,7 @@ export const WPW_LOC_TEXT = {
       }
     },
     cs: {
-      title: 'Koroner sinüste ventrikül aktivasyonu (sinüs ritmi)',
+      title: 'CS aktivasyonu ve ablasyon (sinüs ritmi)',
       hint: 'Septum önce uyarılırsa proksimal erken olur; sol lateral yol varsa en erken ventrikül distalde görülür.',
       phases: { normal: 'Aksesuar yol yok', before: 'Seçili yol, ablasyondan önce', after: 'Ablasyondan sonra' },
       normalTitle: 'Normal iletim (aksesuar yol yok)',
@@ -74,18 +74,15 @@ export const WPW_LOC_TEXT = {
       note: 'Distalde A ile V iç içe: atriyal elektrogramın hemen arkasından gelen erken V, yolun sol lateralde olduğunu gösterir.'
     },
     abl: {
-      title: 'Ablasyondan önce ve sonra: seçili yol',
-      site: 'Aksesuar yol',
-      phases: { before: 'Ablasyondan önce', after: 'Ablasyondan sonra' },
       chips: { delta: 'Delta dalgası', pr: 'PR', hv: 'HV', ablLead: 'ABL d yerel V, deltaya göre', lbbb: 'Sol dal bloğu görünümü', csFirst: 'CS\'te en erken V' },
       channels: { d1: 'D1', avl: 'aVL', his: 'His (HBE)', abl: 'ABL d' },
-      monitor: 'Şematik EP kaydı (eğitim zamanlamaları, ölçülmüş kayıt değil). Kesik çizgi: delta veya QRS başlangıcı.',
-      hvShort: 'kısa veya negatif (His V içinde)', hvNormal: 'normal (35–55 ms)', earlier: 'önce', fused: 'A ve V iç içe', notApplicable: 'yol yok',
+      monitor: 'Şematik EP kaydı (eğitim zamanlamaları, ölçülmüş kayıt değil). Kesik çizgi: delta veya QRS başlangıcı. Etiketler: P, δ delta, QRS, T; intrakardiyak A atriyum, H His, V ventrikül.',
+      hvShort: 'kısa veya sıfır (delta His ile birlikte başlar)', hvNormal: 'normal (<55 ms)', earlier: 'önce', fused: 'A ve V iç içe', notApplicable: 'yol yok',
       present: 'var', absent: 'yok', shortPr: 'kısa', normalPr: 'normal',
       hidden: 'gizli (preeksitasyon maskeliyor)', shown: 'belirgin',
       steps: {
         left: [
-          'Hedef: mitral anülüste deltadan önce gelen en erken yerel V; A ile V iç içe, CS distalindeki V\'den bile erken.',
+          'Hedef: mitral anülüste deltadan önce gelen en erken yerel V (çizimde 25 ms); A ile V iç içe, CS distalindeki V\'den bile erken.',
           'Erişim: retrograd aortik yolla sol ventrikülden ya da transseptal yolla sol atriyumdan.',
           'RF verildikten birkaç saniye içinde delta kaybolur; D1 ve aVL\'deki negatif delta gider.',
           'CS sırası normale döner: önce proksimal, sonra distal; HV normal aralığa çıkar.'
@@ -97,7 +94,7 @@ export const WPW_LOC_TEXT = {
           'His kaydında HV normale döner; CS yine proksimalden başlar.'
         ],
         right: [
-          'Hedef: triküspit anülüste deltadan önce gelen yerel V; A ile V iç içe.',
+          'Hedef: triküspit anülüste deltadan en az 25 ms önce gelen yerel V (Josephson); A ile V iç içe.',
           'Erişim femoral venden; anülüste temas için uzun ya da yönlendirilebilir kılıf yardımcı olur.',
           'Başarıda V1\'deki derin S ve delta kaybolur, dar QRS döner.',
           'CS proksimalden başlar: CS sağ serbest duvar yollarını ayırmaz, anülüs haritası gerekir.'
@@ -117,9 +114,9 @@ export const WPW_LOC_TEXT = {
     tab: 'WPW localization',
     heading: 'WPW: from the delta wave to the pathway, before and after ablation',
     intro: 'The delta wave is a vector moving away from where the accessory pathway enters the ventricle: negative in the lead looking at that site, positive in the leads opposite. The classic triad: short PR, delta wave, wide QRS.',
-    source: 'Compiled from the Kardiyopedi WPW lectures (accessory pathway localization, WPW ablation). A teaching tool, not a patient decision aid.',
+    source: 'Compiled from the Kardiyopedi WPW lectures (accessory pathway localization, WPW ablation); ablation criteria: Josephson\'s Clinical Cardiac Electrophysiology, 2025, chapter 11 (accessory pathway ablation). A teaching tool, not a patient decision aid.',
     page: {
-      navigation: 'WPW learning sections', loc: 'Localization', cs: 'CS activation', abl: 'Before / after', risk: 'Refractory period',
+      navigation: 'WPW learning sections', loc: 'Localization', cs: 'CS and ablation', risk: 'Refractory period',
       mapTitle: 'Accessory pathway atlas', mapNote: 'LAO-like valve plane, approximate teaching regions. Select a region on the map or list to load its ECG example. Waveforms illustrate the options, not patient ECGs. Numbers are not decision order.',
       allLeads: 'Show all leads', guided: 'Back to guided reading', read: 'Read now', decisions: 'decisions completed', complete: 'Algorithm complete; suggested region highlighted on the map.'
     },
@@ -165,7 +162,7 @@ export const WPW_LOC_TEXT = {
       }
     },
     cs: {
-      title: 'Ventricular activation on the coronary sinus (sinus rhythm)',
+      title: 'CS activation and ablation (sinus rhythm)',
       hint: 'If the septum is activated first the proximal channel is early; with a left lateral pathway the earliest ventricle is distal.',
       phases: { normal: 'No accessory pathway', before: 'Selected pathway, before ablation', after: 'After ablation' },
       normalTitle: 'Normal conduction (no accessory pathway)',
@@ -182,18 +179,15 @@ export const WPW_LOC_TEXT = {
       note: 'A and V run together distally: an early V right behind the atrial electrogram places the pathway on the left lateral wall.'
     },
     abl: {
-      title: 'Before and after ablation: selected pathway',
-      site: 'Accessory pathway',
-      phases: { before: 'Before ablation', after: 'After ablation' },
       chips: { delta: 'Delta wave', pr: 'PR', hv: 'HV', ablLead: 'ABL d local V versus delta', lbbb: 'Left bundle branch block pattern', csFirst: 'Earliest V on the CS' },
       channels: { d1: 'Lead I', avl: 'aVL', his: 'His (HBE)', abl: 'ABL d' },
-      monitor: 'Schematic EP recording (teaching timings, not a measured recording). Dashed line: delta or QRS onset.',
-      hvShort: 'short or negative (His inside the V)', hvNormal: 'normal (35–55 ms)', earlier: 'earlier', fused: 'A and V merged', notApplicable: 'no pathway',
+      monitor: 'Schematic EP recording (teaching timings, not a measured recording). Dashed line: delta or QRS onset. Labels: P, δ delta, QRS, T; intracardiac A atrium, H His, V ventricle.',
+      hvShort: 'short or zero (the delta starts with His activation)', hvNormal: 'normal (<55 ms)', earlier: 'earlier', fused: 'A and V merged', notApplicable: 'no pathway',
       present: 'present', absent: 'absent', shortPr: 'short', normalPr: 'normal',
       hidden: 'hidden (masked by pre-excitation)', shown: 'visible',
       steps: {
         left: [
-          'Target: the earliest local V on the mitral annulus, ahead of the delta wave; A and V merged, earlier than the V on the distal CS.',
+          'Target: the earliest local V on the mitral annulus, ahead of the delta wave (25 ms here); A and V merged, earlier than the V on the distal CS.',
           'Access: into the left ventricle by the retrograde aortic route, or into the left atrium transseptally.',
           'Within a few seconds of RF the delta wave vanishes; the negative delta in lead I and aVL goes.',
           'The CS sequence returns to normal, proximal then distal; the HV interval becomes normal.'
@@ -205,7 +199,7 @@ export const WPW_LOC_TEXT = {
           'On the His recording the HV interval returns to normal; the CS still starts proximally.'
         ],
         right: [
-          'Target: a local V ahead of the delta wave on the tricuspid annulus; A and V merged.',
+          'Target: a local V at least 25 ms ahead of the delta wave on the tricuspid annulus (Josephson); A and V merged.',
           'Access from the femoral vein; a long or steerable sheath helps contact on the annulus.',
           'Success removes the deep S and delta in V1 and the narrow QRS returns.',
           'The CS starts proximally: the CS does not separate right free wall pathways, an annular map is needed.'

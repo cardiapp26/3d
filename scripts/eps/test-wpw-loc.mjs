@@ -99,7 +99,7 @@ const nodes = () => walk(panel.element);
 const by = (attr, value) => nodes().find((n) => n.attributes[attr] === value);
 const has = (attr) => nodes().find((n) => n.attributes[attr] !== undefined);
 assert.equal(panel.element.hidden, false);
-assert.equal(nodes().filter((n) => n.attributes['data-wpw-card']).length, 4, 'four sections retained');
+assert.equal(nodes().filter((n) => n.attributes['data-wpw-card']).length, 3, 'four sections retained');
 assert.equal(nodes().filter(n => n.attributes['data-wpw-map-site']).length, 18, 'nine regions on each of two maps');
 assert.equal(by('data-wpw-card', 'loc').hidden, false);
 assert.equal(by('data-wpw-card', 'cs').hidden, true);
@@ -128,13 +128,13 @@ assert.equal(panel.getState().csPhase, 'before', 'picking a region brings the pa
 by('data-wpw-cs-phase', 'before').listeners.click();
 by('data-wpw-cs-phase', 'before').listeners.click();
 assert.equal(has('data-wpw-cs-bars').children.find((c) => c.attributes['data-earliest'] === 'true').attributes['data-wpw-cs-channel'], 'cs12');
-by('data-wpw-abl-phase', 'after').listeners.click();
+by('data-wpw-cs-phase', 'after').listeners.click();
 assert.equal(has('data-wpw-masked').hidden, false, 'the unmasked block is explained after ablation');
-by('data-wpw-abl-phase', 'before').listeners.click();
+by('data-wpw-cs-phase', 'before').listeners.click();
 assert.equal(has('data-wpw-masked').hidden, true);
 // Every pathway has its own before/after: monitor channels, wall-specific steps, normal HV after.
 for (const site of SITES) {
-  panel.set({ csSite: site, leads: {}, ablPhase: 'before' });
+  panel.set({ csSite: site, leads: {}, csPhase: 'before' });
   const monitor = nodes().find((n) => n.attributes.class === 'wpw-ablation-ecg');
   assert.equal(monitor.attributes['data-site'], site);
   const rows = monitor.children.filter((n) => n.attributes['data-wpw-monitor']).map((n) => n.attributes['data-wpw-monitor']);
@@ -145,13 +145,25 @@ for (const site of SITES) {
   assert.ok(before.ablLead > 0 && after.ablLead === null, `${site} local V leads the delta before ablation`);
   assert.equal(after.csEarliest, 'cs910');
   assert.equal(after.lbbbVisible, site === 'leftLateral', `${site}: only the lecture patient unmasks LBBB`);
-  panel.set({ ablPhase: 'after' });
+  panel.set({ csPhase: 'after' });
   assert.equal(has('data-wpw-masked').hidden, site !== 'leftLateral');
 }
 assert.equal(epTimeline('before', 'leftLateral').d1.polarity, 'neg', 'left free wall: negative delta in lead I');
 assert.equal(epTimeline('before', 'rightLateral').d1.polarity, 'pos');
 assert.equal(siteGroup('anteroseptal'), 'septal');
-panel.set({ csSite: 'leftLateral', ablPhase: 'before' });
+// Josephson 2025, ch. 11: the local V at the ablation tip precedes the delta by at least 25 ms; normal HV < 55 ms.
+for (const site of SITES) assert.ok(ablationFindings('before', site).ablLead >= 25 && ablationFindings('after', site).hv < 55);
+// No pathway on the merged page: no delta, no steps, no masked block, wave names on the monitor.
+panel.set({ csSite: 'leftLateral', csPhase: 'normal' });
+assert.equal(ablationFindings('normal', 'leftLateral').lbbbPresent, false);
+assert.equal(has('data-wpw-steps').hidden, true);
+assert.equal(has('data-wpw-masked').hidden, true);
+const waves = walk(nodes().find((n) => n.attributes.class === 'wpw-ablation-ecg')).map((n) => n.attributes['data-wave']).filter(Boolean);
+for (const name of ['P', 'QRS', 'T', 'A', 'H', 'V']) assert.ok(waves.includes(name), `wave name ${name}`);
+assert.ok(!waves.includes('δ'), 'no delta label without a pathway');
+panel.set({ csPhase: 'before' });
+assert.ok(walk(nodes().find((n) => n.attributes.class === 'wpw-ablation-ecg')).some((n) => n.attributes['data-wave'] === 'δ'), 'delta labelled before ablation');
+panel.set({ csSite: 'leftLateral', csPhase: 'before' });
 assert.equal(has('data-wpw-risk').attributes['data-risk'], 'short', 'the lecture patient: 210 ms');
 panel.set({ erp: 300 });
 assert.equal(has('data-wpw-risk').attributes['data-risk'], 'long');

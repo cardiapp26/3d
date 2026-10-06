@@ -63,22 +63,6 @@ export function renderPolarity(doc, svg, option, lang) {
     s(doc, 'path', { d, class: 'wpwv-wave' }), s(doc, 'path', { d: `M24 46 L36 ${46 + delta}`, class: 'wpwv-delta' }));
   svg.setAttribute('aria-hidden', 'true');
 }
-export function renderCsTracing(doc, svg, sequence, lang, channels) {
-  const t = LABELS[lang];
-  svg.replaceChildren(s(doc, 'title', {}, t.time));
-  svg.setAttribute('aria-label', `${t.time}. ${sequence.order.map(id => `${channels[id]}: ${sequence.onsets[id]} ms`).join('; ')}`);
-  const x = time => 150 + time * 4.8;
-  for (const ms of [0, 10, 20, 30, 40]) {
-    svg.append(s(doc, 'line', { x1: x(ms), y1: 24, x2: x(ms), y2: 215, class: 'wpwv-grid' }), s(doc, 'text', { x: x(ms), y: 18, class: 'wpwv-caption' }, String(ms)));
-  }
-  Object.entries(sequence.onsets).forEach(([id, onset], i) => {
-    const y = 47 + i * 36, at = x(onset), early = id === sequence.earliest;
-    svg.append(s(doc, 'text', { x: 70, y: y + 4, class: 'wpwv-channel' }, channels[id].split(' (')[0]),
-      s(doc, 'path', { d: `M143 ${y} L${at} ${y} L${at + 3} ${y - 14} L${at + 7} ${y + 15} L${at + 12} ${y} L375 ${y}`, class: early ? 'wpwv-wave wpwv-early' : 'wpwv-wave' }),
-      s(doc, 'circle', { cx: at, cy: y, r: 3, class: 'wpwv-onset' }));
-  });
-  svg.append(s(doc, 'text', { x: 258, y: 238, class: 'wpwv-caption' }, t.time));
-}
 // Laboratory monitor of one sinus beat (wpw-loc-model.js epTimeline): surface
 // D1 and aVL, His, ablation tip and the coronary sinus, on one time axis.
 const MON = Object.freeze({ left: 74, right: 412, top: 30, row: 31, ms: 1.08, spike: 7 });
@@ -101,18 +85,24 @@ export function renderEpMonitor(doc, svg, timeline, lang, labels) {
     const y = MON.top + i * MON.row + MON.row / 2;
     const g = s(doc, 'g', { transform: `translate(0 ${y})`, 'data-wpw-monitor': id });
     let d;
-    if (id === 'd1' || id === 'avl') d = surfacePath(timeline[id], x);
-    else {
-      const ev = id === 'his' ? [[timeline.his.a, 4], [timeline.his.h, 5], [timeline.his.v, MON.spike]]
-        : id === 'abl' ? [[timeline.abl.a, 5], [timeline.abl.v, MON.spike + 2]]
-        : [[timeline.cs[id].a, 4], [timeline.cs[id].v, MON.spike]];
+    const names = [];   // [ms, label]: wave names written above the trace
+    if (id === 'd1' || id === 'avl') {
+      const lead = timeline[id];
+      d = surfacePath(lead, x);
+      names.push([45, 'P'], [lead.onset + lead.width / 2 + (lead.delta ? 8 : 0), 'QRS'], [Math.min(285, lead.onset + lead.width + 45), 'T']);
+      if (lead.delta) names.push([lead.onset + 14, 'δ']);
+    } else {
+      const ev = id === 'his' ? [[timeline.his.a, 4, 'A'], [timeline.his.h, 5, 'H'], [timeline.his.v, MON.spike, 'V']]
+        : id === 'abl' ? [[timeline.abl.a, 5, 'A'], [timeline.abl.v, MON.spike + 2, 'V']]
+        : [[timeline.cs[id].a, 4, 'A'], [timeline.cs[id].v, MON.spike, 'V']];
+      ev.forEach(([ms, , name]) => names.push([ms + 1, name]));
       d = `M${MON.left} 0 ${ev.sort((a, b) => a[0] - b[0]).map(([ms, a]) => spike(ms, a)).join(' ')} L${MON.right} 0`;
       // On the pathway before ablation A runs into V with no isoelectric gap.
       if (id === 'abl' && timeline.abl.fused) d = `M${MON.left} 0 ${spike(timeline.abl.a, 5)} ${fusedBridge(timeline.abl.a + 5, timeline.abl.v - 2, x)} ${spike(timeline.abl.v, MON.spike + 2)} L${MON.right} 0`;
     }
     g.append(s(doc, 'text', { x: 4, y: 3, class: 'wpwv-monitor-label' }, label),
       s(doc, 'path', { d, class: id === 'abl' ? 'wpwv-wave wpwv-early' : 'wpwv-wave' }));
-    if (id === 'his') g.append(s(doc, 'text', { x: x(timeline.his.h), y: -8, class: 'wpwv-caption' }, 'H'));
+    for (const [ms, name] of names) g.append(s(doc, 'text', { x: x(ms), y: -11, class: 'wpwv-wave-label', 'data-wave': name }, name));
     svg.append(g);
   });
   svg.append(s(doc, 'text', { x: 243, y: height - 3, class: 'wpwv-caption' }, t.monitorTime));

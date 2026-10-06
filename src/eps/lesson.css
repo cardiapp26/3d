@@ -351,9 +351,8 @@
 .wpwv-delta{fill:none;stroke:#f3b364;stroke-width:4;stroke-linecap:round}
 .wpwv-early{stroke:#fcd34d}
 .wpwv-monitor-label{fill:#c1d9ce;font:9.5px sans-serif;text-anchor:start}
+.wpwv-wave-label{fill:#9fb9ad;font:8.5px sans-serif;text-anchor:middle}
 .wpwv-onset-line{stroke:#f3b364;stroke-width:1;stroke-dasharray:4 3}
-.wpw-abl-site{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12px}
-.wpw-abl-site select{min-width:0;max-width:100%}
 .wpwv-channel{fill:#c1d9ce;font:12px sans-serif;text-anchor:middle}
 .wpwv-onset{fill:#f3b364}
 @media(max-width:900px){.wpw-localize-layout{grid-template-columns:1fr}.wpw-map-card{position:static;grid-row:1}.wpw-annulus-map{max-width:520px;justify-self:center}.wpw-site-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
