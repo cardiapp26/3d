@@ -7,7 +7,7 @@ const PHASES = {
     0: ['Hızlı Na⁺ girişi', 'Rapid Na⁺ influx'],
     1: ['Erken repolarizasyon: geçici dışa K⁺ akımı', 'Early repolarization: transient outward K⁺ current'],
     2: ['Plato: içe Ca²⁺ ve dışa K⁺ akımlarının dengesi', 'Plateau: balance of inward Ca²⁺ and outward K⁺ currents'],
-    3: ['Repolarizasyon: dışa K⁺ akımları', 'Repolarization: outward K⁺ currents'],
+    3: ['Ventriküler repolarizasyon: dışa K⁺ akımları (IKr/IKs); atriyal IKur karşılaştırması aşağıda', 'Ventricular repolarization: outward K⁺ currents (IKr/IKs); atrial IKur comparison below'],
     4: ['Kararlı dinlenim potansiyeli', 'Stable resting potential'],
   },
   nodal: {

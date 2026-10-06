@@ -29,11 +29,24 @@ function chart(svg, { xmin, xmax, ymin, ymax, xlabel, ylabel, series, marker }) 
 }
 export function createIonicCurrents({ getLang }) {
   const element = el('section', 'phys-currents'), heading = el('h3'), svg = sv('svg', { viewBox: '0 0 600 245', role: 'img' }), note = el('p');
-  element.append(heading, svg, note);
+  // Informational atrial layer, separate from the ventricular current simulation.
+  const atrial = el('details', 'phys-atrial-currents'), atrialSummary = el('summary'), atrialNote = el('p');
+  const atrialSvg = sv('svg', { viewBox: '0 0 600 85', role: 'img' });
+  atrialSvg.append(sv('path', { d: 'M180 70V15 M173 25L180 15L187 25', stroke: '#8260a5', fill: 'none', 'stroke-width': 4 }));
+  label(atrialSvg, 200, 40, 'IKur · Kv1.5 · K⁺');
+  const source = el('a', '', 'Wettwer et al. (2004)');
+  source.href = 'https://pubmed.ncbi.nlm.nih.gov/15477405/';
+  atrial.append(atrialSummary, atrialSvg, atrialNote, source);
+  element.append(heading, svg, note, atrial);
   return { element, render(cell, phase) {
     const en = getLang() === 'en';
     element.hidden = cell !== 'ventricular';
     heading.textContent = en ? 'Ionic currents accompanying the selected phase' : 'Seçili faza eşlik eden iyon akımları';
+    atrialSummary.textContent = en ? 'Atrial comparison: IKur (optional)' : 'Atriyal karşılaştırma: IKur (isteğe bağlı)';
+    atrialSvg.setAttribute('aria-label', en ? 'Atrial IKur: outward potassium current, direction only' : 'Atriyal IKur: dışa potasyum akımı, yalnızca yön gösterimi');
+    atrialNote.textContent = en
+      ? 'Human atrial repolarization includes IKur (Kv1.5), unlike the ventricular model above. Atrial plateau shape and duration differ from ventricular tissue; IKur blockade effects depend on rate and atrial remodeling. Arrow shows direction only, with no measured amplitude or simulated atrial waveform. Class IC drugs primarily block INa; an IKur mechanism does not establish atrial-selective protection for flecainide or propafenone.'
+      : 'İnsan atriyal repolarizasyonuna IKur (Kv1.5) katılır; yukarıdaki ventrikül modeli bu akımı içermez. Atriyal plato biçimi ve süresi ventrikülden farklıdır; IKur blokajının etkisi hıza ve atriyal yeniden yapılanmaya bağlıdır. Ok yalnızca yönü gösterir; ölçülmüş genlik veya atriyal dalga simülasyonu değildir. Sınıf IC ilaçların temel hedefi INa’dır; IKur mekanizması flekainid veya propafenon için atriyuma özgü koruma kanıtı oluşturmaz.';
     svg.replaceChildren();
     svg.setAttribute('aria-label', en ? 'Relative inward sodium/calcium and outward potassium currents; schematic 360 ms cycle' : 'İçe Na/Ca, dışa K akımları; şematik 360 ms döngü');
     const x = ms => 78 + ms / 360 * 468, y = value => 105 - value * 90;

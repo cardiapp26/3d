@@ -1,4 +1,4 @@
-// Original bilingual educational summaries. No dosing or prescribing algorithm.
+// Original bilingual educational summaries with label examples, not patient-specific dosing or prescribing decisions.
 export const PHARMA_SOURCES = [
   {
     "id": "slides",
@@ -85,6 +85,69 @@ export const PHARMA_SOURCES = [
       "tr": "Sunum: slayt 7–10 (Vaughan Williams ve sınıf IC), 11 (amiodaron), 15–17 (QT, renal eliminasyon, digoksin). Sotalol/LV disfonksiyonu ve amiodaron güvenliği genellemeleri güncel etiketle sınırlandı; olgu slaytlarındaki QRS birim hataları aktarılmadı.",
       "en": "Slide deck: slides 7–10 (Vaughan Williams and class IC), 11 (amiodarone), 15–17 (QT, renal elimination, digoxin). Broad sotalol/LV dysfunction and amiodarone safety statements constrained by current labels; QRS unit errors in case slides not carried over."
     }
+  },
+  {
+    "id": "adenosine-label",
+    "title": "DailyMed: adenosine prescribing information",
+    "detail": {
+      "tr": "Mekanizma, kullanım ve güvenlik doğrulaması. Erişim: 6 Ekim 2026.",
+      "en": "Mechanism, context and safety verification. Accessed: 6 October 2026."
+    },
+    "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=91a601ab-d3cc-4013-9108-1b5432476076"
+  },
+  {
+    "id": "als-guideline",
+    "title": "AHA: Adult Advanced Life Support",
+    "detail": {
+      "tr": "Mekanizma, kullanım ve güvenlik doğrulaması. Erişim: 6 Ekim 2026.",
+      "en": "Mechanism, context and safety verification. Accessed: 6 October 2026."
+    },
+    "url": "https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines/adult-advanced-life-support"
+  },
+  {
+    "id": "dofetilide-label",
+    "title": "DailyMed: dofetilide prescribing information",
+    "detail": {
+      "tr": "Mekanizma, kullanım ve güvenlik doğrulaması. Erişim: 6 Ekim 2026.",
+      "en": "Mechanism, context and safety verification. Accessed: 6 October 2026."
+    },
+    "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=02438044-d6a3-49e9-a1ac-3aad21ef2c8c"
+  },
+  {
+    "id": "dronedarone-label",
+    "title": "DailyMed: dronedarone prescribing information",
+    "detail": {
+      "tr": "Mekanizma, kullanım ve güvenlik doğrulaması. Erişim: 6 Ekim 2026.",
+      "en": "Mechanism, context and safety verification. Accessed: 6 October 2026."
+    },
+    "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=7fa41601-7fb5-4155-8e50-2ae903f0d2d6"
+  },
+  {
+    "id": "mexiletine-label",
+    "title": "DailyMed: mexiletine prescribing information",
+    "detail": {
+      "tr": "Mekanizma, kullanım ve güvenlik doğrulaması. Erişim: 6 Ekim 2026.",
+      "en": "Mechanism, context and safety verification. Accessed: 6 October 2026."
+    },
+    "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=e2c0430d-35ee-460c-b0d5-f117d43430c5"
+  },
+  {
+    "id": "quinidine-label",
+    "title": "DailyMed: quinidine prescribing information",
+    "detail": {
+      "tr": "Mekanizma, kullanım ve güvenlik doğrulaması. Erişim: 6 Ekim 2026.",
+      "en": "Mechanism, context and safety verification. Accessed: 6 October 2026."
+    },
+    "url": "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=a10b6ded-4fe0-4059-bd77-c45acc3c876d"
+  },
+  {
+    "id": "va-guideline",
+    "title": "2017 AHA/ACC/HRS Ventricular Arrhythmia Guideline",
+    "detail": {
+      "tr": "Mekanizma, kullanım ve güvenlik doğrulaması. Erişim: 6 Ekim 2026.",
+      "en": "Mechanism, context and safety verification. Accessed: 6 October 2026."
+    },
+    "url": "https://www.heartrhythmjournal.com/article/S1547-5271%2817%2931250-X/fulltext"
   }
 ];
 
@@ -622,16 +685,16 @@ export const PHARMA_TOPICS = [
           "en": "Digoxin"
         },
         "mechanism": {
-          "tr": "Na/K-ATPaz inhibisyonu ve vagal etki: inotropi artar, AV iletimi yavaşlar.",
-          "en": "Na/K-ATPase inhibition and vagal effects increase inotropy and slow AV conduction."
+          "tr": "Na⁺/K⁺-ATPaz inhibisyonu → hücre içi Ca²⁺/inotropi artışı. Vagal etki AV iletimini yavaşlatır, nodal refrakterliği uzatır (PR uzar). Ventrikül/Purkinje’de refrakterlik kısalabilir; Ca²⁺ yükü özellikle toksisitede tetiklenmiş aktivite/otomatisiteyi artırır.",
+          "en": "Na⁺/K⁺-ATPase inhibition → increased intracellular Ca²⁺/inotropy. Vagal effects slow AV conduction and prolong nodal refractoriness (longer PR). Ventricular/Purkinje refractoriness may shorten; Ca²⁺ loading promotes triggered activity/automaticity, especially in toxicity."
         },
         "use": {
           "tr": "Seçilmiş HF semptomları veya AF hız kontrolü; sağkalım ilacı değildir.",
           "en": "Selected HF symptoms or AF rate control; not a survival therapy."
         },
         "risk": {
-          "tr": "Dar terapötik aralık; hipokalemi toksisiteyi artırır.",
-          "en": "Narrow therapeutic window; hypokalemia increases toxicity."
+          "tr": "Dar terapötik aralık; hipokalemi/hipomagnezemi duyarlılığı artırır. Toksisitede AV blok ile PVC, bigemini, çift yönlü VT veya VF birlikte görülebilir.",
+          "en": "Narrow therapeutic window; hypokalemia/hypomagnesemia increase susceptibility. Toxicity may combine AV block with PVCs, bigeminy, bidirectional VT or VF."
         },
         "monitor": {
           "tr": "Ritim, böbrek işlevi, K, Mg ve gerektiğinde serum düzeyi.",
@@ -664,8 +727,8 @@ export const PHARMA_TOPICS = [
           "en": "Class I: sodium channels"
         },
         "examples": {
-          "tr": "IA: prokainamid; IB: lidokain; IC: flekainid",
-          "en": "IA: procainamide; IB: lidocaine; IC: flecainide"
+          "tr": "IA: prokainamid, kinidin; IB: lidokain, meksiletin; IC: flekainid, propafenon",
+          "en": "IA: procainamide, quinidine; IB: lidocaine, mexiletine; IC: flecainide, propafenone"
         },
         "mechanism": {
           "tr": "Hızlı Na akımını baskılar; alt sınıflar iletim ve repolarizasyonda farklıdır.",
@@ -730,8 +793,8 @@ export const PHARMA_TOPICS = [
           "en": "Class III: repolarization"
         },
         "examples": {
-          "tr": "Amiodaron, sotalol",
-          "en": "Amiodarone, sotalol"
+          "tr": "Amiodaron, sotalol, dofetilid, dronedaron",
+          "en": "Amiodarone, sotalol, dofetilide, dronedarone"
         },
         "mechanism": {
           "tr": "K akımı blokajı refrakterliği uzatır; amiodaron çok kanallı, sotalol ayrıca beta blokerdir.",
@@ -799,25 +862,150 @@ export const PHARMA_TOPICS = [
           "en": "Adenosine"
         },
         "mechanism": {
-          "tr": "AV düğümde çok kısa süreli iletim blokajı oluşturur.",
-          "en": "Produces very brief AV-nodal conduction block."
+          "tr": "A1 reseptörü üzerinden çok kısa AV nod blokajı; yarı ömür <10 saniye.",
+          "en": "A1 receptor action produces brief AV-nodal block; half-life <10 seconds."
         },
         "use": {
-          "tr": "Seçilmiş düzenli AV düğüme bağımlı SVT; AF tedavisi değildir.",
-          "en": "Selected regular AV-node-dependent SVT; not AF treatment."
+          "tr": "Düzenli AV nod bağımlı SVT. Erişkin periferik IV etiket örneği: 6 mg, 1–2 saniyede; yanıt yoksa 1–2 dakika sonra 12 mg. Hastaya yakın giriş ve hemen hızlı SF yıkama. Nakil/santral kateterde düşük başlangıç dozu uzman protokolüne göre; AHA 1 mg yeterli olabileceğini belirtir.",
+          "en": "Regular AV-node-dependent SVT. Adult peripheral IV label example: 6 mg over 1–2 seconds; if unsuccessful, 12 mg after 1–2 minutes. Use patient-proximal access and immediate rapid saline flush. Transplant/central-line patients need reduced initial dosing under specialist protocol; AHA notes 1 mg may suffice."
         },
         "risk": {
-          "tr": "Geçici AV blok, göğüs rahatsızlığı ve bronkospazm.",
-          "en": "Transient AV block, chest discomfort and bronchospasm."
+          "tr": "Pre-eksite AF (WPW) ve düzensiz/polimorfik geniş QRS taşikardide verilmez: VF riski. WPW ile düzenli ortodromik AVRT aynı durum değildir. Astım/aktif bronkospazmda kontrendike. Geçici AV blok/asistoli, flushing ve göğüs sıkışması yapabilir.",
+          "en": "Do not give in pre-excited AF (WPW) or irregular/polymorphic wide-complex tachycardia: VF risk. Regular orthodromic AVRT with WPW is a different setting. Contraindicated in asthma/active bronchospasm. May cause transient AV block/asystole, flushing and chest pressure."
         },
         "monitor": {
-          "tr": "Sürekli EKG ve ritmin doğru tanımlanması.",
-          "en": "Continuous ECG and correct rhythm identification."
+          "tr": "Sürekli EKG, ritim tanımlama ve resüsitasyon hazırlığı. Kısa süreli korku/rahatsızlık önceden açıklanır. Kafein/teofilin etkisini azaltır; dipiridamol artırır; karbamazepin AV bloğu ağırlaştırabilir.",
+          "en": "Continuous ECG, rhythm identification and resuscitation readiness. Explain brief dread/discomfort beforehand. Caffeine/theophylline reduce effects; dipyridamole enhances them; carbamazepine may worsen AV block."
         },
         "target": "av",
         "sources": [
-          "review",
-          "action-slides"
+          "adenosine-label",
+          "als-guideline"
+        ]
+      },
+      {
+        "id": "quinidine",
+        "name": {
+          "tr": "Kinidin · IA",
+          "en": "Quinidine · IA"
+        },
+        "examples": {
+          "tr": "Kinidin · IA",
+          "en": "Quinidine · IA"
+        },
+        "mechanism": {
+          "tr": "Na⁺ ve K⁺ akımlarını baskılar; vagolitik etki AV iletimini artırabilir.",
+          "en": "Blocks Na⁺ and K⁺ currents; vagolysis may increase AV conduction."
+        },
+        "use": {
+          "tr": "Seçilmiş aritmilerde uzman seçimi; Brugada’da tekrarlayan polimorfik VT/ICD şokları bağlamında değerlendirilir.",
+          "en": "Specialist selection for certain arrhythmias; considered in Brugada with recurrent polymorphic VT/ICD shocks."
+        },
+        "risk": {
+          "tr": "QT uzaması/TdP; sinçonizm: tinnitus, baş dönmesi, görme/işitme belirtileri.",
+          "en": "QT prolongation/TdP; cinchonism: tinnitus, vertigo, visual/hearing symptoms."
+        },
+        "monitor": {
+          "tr": "QTc, QRS, K/Mg, organ işlevi ve ilaç etkileşimleri.",
+          "en": "QTc, QRS, K/Mg, organ function and drug interactions."
+        },
+        "target": "lv",
+        "sources": [
+          "quinidine-label",
+          "va-guideline"
+        ]
+      },
+      {
+        "id": "mexiletine",
+        "name": {
+          "tr": "Meksiletin · IB",
+          "en": "Mexiletine · IB"
+        },
+        "examples": {
+          "tr": "Meksiletin · IB",
+          "en": "Mexiletine · IB"
+        },
+        "mechanism": {
+          "tr": "Oral Na⁺ kanal blokeri; lidokain benzeri. Başlıca hepatik metabolizma; yarı ömür yaklaşık 10–12 saat.",
+          "en": "Oral Na⁺ channel blocker, lidocaine-like. Mainly hepatic metabolism; half-life about 10–12 hours."
+        },
+        "use": {
+          "tr": "Yaşamı tehdit eden ventriküler aritmilerde uzman tedavisi; rutin PVC baskılama amacıyla kullanılmaz.",
+          "en": "Specialist treatment of life-threatening ventricular arrhythmias; not routine PVC suppression."
+        },
+        "risk": {
+          "tr": "Proaritmi; bulantı, tremor/baş dönmesi; karaciğer hastalığında birikim.",
+          "en": "Proarrhythmia; nausea, tremor/dizziness; accumulation in liver disease."
+        },
+        "monitor": {
+          "tr": "EKG, karaciğer işlevi, nörolojik/Gİ belirtiler ve etkileşimler.",
+          "en": "ECG, liver function, neurological/GI symptoms and interactions."
+        },
+        "target": "lv",
+        "sources": [
+          "mexiletine-label"
+        ]
+      },
+      {
+        "id": "dofetilide",
+        "name": {
+          "tr": "Dofetilid · III",
+          "en": "Dofetilide · III"
+        },
+        "examples": {
+          "tr": "Dofetilid · III",
+          "en": "Dofetilide · III"
+        },
+        "mechanism": {
+          "tr": "Seçici IKr blokajı; başlıca renal eliminasyon, QT uzaması.",
+          "en": "Selective IKr blockade; mainly renal elimination and QT prolongation."
+        },
+        "use": {
+          "tr": "Seçilmiş AF/flutter dönüşümü ve sinüs ritmi sürdürülmesi. Başlama/yeniden başlama en az 3 gün hastanede sürekli EKG gerektirir.",
+          "en": "Selected AF/flutter conversion and sinus-rhythm maintenance. Initiation/reinitiation requires at least 3 days of inpatient continuous ECG."
+        },
+        "risk": {
+          "tr": "TdP. Bazal QT/QTc >440 ms (ventriküler ileti bozukluğunda >500 ms) veya CrCl <20 mL/dk: kontrendike. HCTZ ve verapamil ile birlikte kontrendike.",
+          "en": "TdP. Baseline QT/QTc >440 ms (>500 ms with ventricular conduction abnormalities) or CrCl <20 mL/min: contraindicated. Concomitant HCTZ and verapamil contraindicated."
+        },
+        "monitor": {
+          "tr": "QT/QTc, hesaplanmış kreatinin klirensi, K/Mg ve tüm etkileşen ilaçlar; böbrek işlevine göre doz uzman protokolüyle belirlenir.",
+          "en": "QT/QTc, calculated creatinine clearance, K/Mg and all interacting drugs; renal dosing follows specialist protocol."
+        },
+        "target": "lv",
+        "sources": [
+          "dofetilide-label"
+        ]
+      },
+      {
+        "id": "dronedarone",
+        "name": {
+          "tr": "Dronedaron · III",
+          "en": "Dronedarone · III"
+        },
+        "examples": {
+          "tr": "Dronedaron · III",
+          "en": "Dronedarone · III"
+        },
+        "mechanism": {
+          "tr": "İyotsuz çok kanallı antiaritmik; CYP3A metabolizması; yarı ömür 13–19 saat.",
+          "en": "Noniodinated multichannel antiarrhythmic; CYP3A metabolism; half-life 13–19 hours."
+        },
+        "use": {
+          "tr": "Paroksismal/persistan AF öyküsü olan sinüs ritmindeki seçilmiş hastalarda AF yatış riskini azaltır.",
+          "en": "Reduces AF hospitalization risk in selected patients in sinus rhythm with paroxysmal/persistent AF history."
+        },
+        "risk": {
+          "tr": "Kalıcı AF, yakın dönemde hastaneye yatış gerektiren dekompanse semptomatik HF veya NYHA IV HF: kontrendike, mortalite riski. QT uzaması, karaciğer/akciğer toksisitesi.",
+          "en": "Permanent AF, recently decompensated symptomatic HF requiring hospitalization or NYHA IV HF: contraindicated, mortality risk. QT prolongation and liver/lung toxicity."
+        },
+        "monitor": {
+          "tr": "Ritim, QTc, HF belirtileri, karaciğer ve böbrek işlevi; CYP3A ve digoksin etkileşimleri.",
+          "en": "Rhythm, QTc, HF symptoms, liver and renal function; CYP3A and digoxin interactions."
+        },
+        "target": "lv",
+        "sources": [
+          "dronedarone-label"
         ]
       }
     ]
@@ -1337,6 +1525,60 @@ export const PHARMA_INTERACTIONS = [
     "sources": [
       "sotalol-label",
       "review"
+    ]
+  },
+  {
+    "id": "adenosine-methylxanthines",
+    "title": {
+      "tr": "Adenozin + metilksantinler",
+      "en": "Adenosine + methylxanthines"
+    },
+    "why": {
+      "tr": "Kafein, teofilin/aminofilin reseptör antagonizmasıyla yanıtı azaltabilir.",
+      "en": "Caffeine, theophylline/aminophylline may reduce response by receptor antagonism."
+    },
+    "action": {
+      "tr": "Maruziyet sorgulanır; doz değişikliği uzman protokolüne göre, otomatik artırılmaz.",
+      "en": "Review exposure; dose changes follow specialist protocol, never automatic escalation."
+    },
+    "sources": [
+      "adenosine-label"
+    ]
+  },
+  {
+    "id": "adenosine-dipyridamole",
+    "title": {
+      "tr": "Adenozin + dipiridamol",
+      "en": "Adenosine + dipyridamole"
+    },
+    "why": {
+      "tr": "Geri alım inhibisyonu adenozin etkisini artırır.",
+      "en": "Uptake inhibition enhances adenosine effects."
+    },
+    "action": {
+      "tr": "Düşük doz gereksinimi ve AV blok riski uzman protokolünde değerlendirilir.",
+      "en": "Assess reduced dose requirements and AV-block risk under specialist protocol."
+    },
+    "sources": [
+      "adenosine-label"
+    ]
+  },
+  {
+    "id": "adenosine-carbamazepine",
+    "title": {
+      "tr": "Adenozin + karbamazepin",
+      "en": "Adenosine + carbamazepine"
+    },
+    "why": {
+      "tr": "AV blok derecesi artabilir.",
+      "en": "Degree of AV block may increase."
+    },
+    "action": {
+      "tr": "İlaç öyküsü ve sürekli EKG; uzman değerlendirmesi.",
+      "en": "Medication review and continuous ECG; specialist assessment."
+    },
+    "sources": [
+      "adenosine-label"
     ]
   }
 ];

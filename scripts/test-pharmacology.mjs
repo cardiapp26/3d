@@ -44,6 +44,25 @@ assert.ok(findPharmaCards('antiarrhythmics', 'AMIODARONE', 'en').length > 0, 'En
 assert.ok(findPharmaCards('antiarrhythmics', 'amiodaron', 'tr').length > 0, 'Turkish search');
 assert.equal(findPharmaCards('antiarrhythmics', 'unknown-nonsense').length, 0);
 assert.equal(findPharmaCards('missing').length, 0);
+for (const id of ['quinidine', 'mexiletine', 'dofetilide', 'dronedarone']) {
+  assert.ok(all.some(card => card.id === id), `individual antiarrhythmic card: ${id}`);
+  for (const lang of ['tr', 'en']) {
+    const card = all.find(item => item.id === id);
+    assert.ok(findPharmaCards('antiarrhythmics', card.name[lang], lang).some(item => item.id === id));
+  }
+}
+const dofetilide = all.find(card => card.id === 'dofetilide');
+assert.match(dofetilide.risk.en, />440 ms.*>500 ms.*CrCl <20/);
+assert.match(dofetilide.risk.en, /HCTZ.*verapamil/);
+assert.match(dofetilide.use.en, /3 days.*inpatient/);
+const adenosine = all.find(card => card.id === 'adenosine');
+assert.match(adenosine.risk.en, /pre-excited AF.*irregular\/polymorphic/);
+assert.match(adenosine.risk.en, /orthodromic AVRT/);
+assert.match(adenosine.use.en, /1 mg may suffice/);
+for (const id of ['adenosine-methylxanthines', 'adenosine-dipyridamole', 'adenosine-carbamazepine']) {
+  assert.ok(PHARMA_INTERACTIONS.some(item => item.id === id));
+}
+assert.equal(new Set(PHARMA_TOPICS.map(topic => topic.id)).size, PHARMA_TOPICS.length);
 const factors = new Set(COAG_NODES.map(item => item.id));
 assert.equal(factors.size, COAG_NODES.length);
 COAG_NODES.forEach(item => { bilingual(item.name); bilingual(item.role); });

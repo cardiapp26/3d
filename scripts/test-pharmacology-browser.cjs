@@ -6,7 +6,7 @@ const { resolve } = require('node:path');
 const APP = (process.env.APP_URL || 'http://127.0.0.1:5180').replace(/\/$/, '');
 
 (async () => {
-  const { PHARMA_QUESTIONS, PHARMA_TOPICS } = await import(pathToFileURL(resolve('src/pharmacology-data.js')).href);
+    const { PHARMA_QUESTIONS, PHARMA_TOPICS, PHARMA_INTERACTIONS } = await import(pathToFileURL(resolve('src/pharmacology-data.js')).href);
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Istanbul' });
@@ -245,7 +245,10 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5180').replace(/\/$/, '');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('[data-pharma-lang=tr]').click();
     await page.locator('[data-pharma-chapter="8"]').click();
-    assert.equal(await page.locator('.pharma-interactions .pharma-card').count(), 6);
+    assert.equal(await page.locator('.pharma-interactions .pharma-card').count(), PHARMA_INTERACTIONS.length);
+    assert.match(await page.locator('.pharma-interactions').textContent(), /Adenozin \+ metilksantinler/);
+    assert.match(await page.locator('.pharma-interactions').textContent(), /Adenozin \+ dipiridamol/);
+    assert.match(await page.locator('.pharma-interactions').textContent(), /Adenozin \+ karbamazepin/);
     const overflows = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
     assert.equal(overflows, false, 'mobile page fits viewport');
     await page.locator('[data-pharma-chapter="4"]').click();

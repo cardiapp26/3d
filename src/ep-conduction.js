@@ -21,7 +21,7 @@ const SITES = [
   { id: 'atrial', name: text('Atriyum kası', 'Atrial muscle'), on: 0.05, off: 0.24, shape: 'atrial', color: '#5f9a3c' },
   { id: 'av', name: text('AV düğüm', 'AV node'), on: 0.1, off: 0.4, shape: 'nodal', color: '#e0a92a' },
   { id: 'his', name: text('His demeti', 'Bundle of His'), on: 0.19, off: 0.58, shape: 'fast', color: '#e48a4a' },
-  { id: 'bundle', name: text('Dal blokları', 'Bundle branches'), on: 0.2, off: 0.61, shape: 'fast', color: '#d9455f' },
+  { id: 'bundle', name: text('Demet dalları', 'Bundle branches'), on: 0.2, off: 0.61, shape: 'fast', color: '#d9455f' },
   { id: 'purkinje', name: text('Purkinje lifleri', 'Purkinje fibers'), on: 0.21, off: 0.64, shape: 'fast', color: '#8a5aa0' },
   { id: 'ventricle', name: text('Ventrikül kası', 'Ventricular muscle'), on: 0.22, off: 0.6, shape: 'fast', color: '#7f93a8' },
 ];
@@ -105,7 +105,9 @@ export function createConductionView({ mount, getLang, onSeek }) {
     <text class="epcond-leads-title" x="${AXIS.x0}" y="340"></text>
     <line class="epcond-cursor" x1="${AXIS.x0}" x2="${AXIS.x0}" y1="10" y2="630"/>
     <rect class="epcond-scrub" x="${AXIS.x0}" y="0" width="${AXIS.x1 - AXIS.x0}" height="640" fill="transparent"/>
-  </svg>`;
+  </svg><details class="epcond-velocities"><summary></summary><p></p>
+    <a href="https://cvphysiology.com/arrhythmias/a003">CV Physiology · Klabunde</a> ·
+    <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2711367/">Purkinje-ventricular conduction (2009)</a></details>`;
   mount.append(root);
   const $ = selector => root.querySelector(selector);
   for (const [cx, cy, rx, ry, rot] of REGIONS) {
@@ -160,6 +162,11 @@ export function createConductionView({ mount, getLang, onSeek }) {
     drawVector(u);
   }
   function refresh() {
+    $('.epcond-velocities summary').textContent = t(text('İleti hızları: yaklaşık eğitim referansı (m/s)', 'Conduction velocities: approximate teaching reference (m/s)'));
+    $('.epcond-velocities p').textContent = t(text(
+      'Atriyal kas ≈ 0.5 m/s · AV düğüm ≈ 0.05 m/s · Purkinje ≈ 4 m/s · Ventrikül kası ≈ 0.5 m/s. Temsili değerlerdir; doku, lif yönü ve fizyolojik duruma göre değişir. AV düğüm için 0.2 m/s standart referans değildir. Animasyondaki zamanlama bu hızlardan hesaplanmaz.',
+      'Atrial muscle ≈ 0.5 m/s · AV node ≈ 0.05 m/s · Purkinje ≈ 4 m/s · Ventricular muscle ≈ 0.5 m/s. Representative values vary with tissue, fiber direction and physiological state. 0.2 m/s is not the standard AV nodal reference. Animation timing is not calculated from these velocities.'
+    ));
     root.querySelectorAll('.epcond-row').forEach((row, i) => { row.querySelector('text').textContent = t(SITES[i].name); });
     $('.epcond-leads-title').textContent = t('Ekstremite derivasyonları (vektör izdüşümünden türetilir)', 'Limb leads (derived from the vector projection)');
     $('.epcond-map title').textContent = t('İleti sistemi aktivasyonu, bölgesel aksiyon potansiyelleri ve Einthoven üçgeni', 'Conduction activation, regional action potentials and the Einthoven triangle');
