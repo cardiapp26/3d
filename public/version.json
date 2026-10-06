@@ -1,7 +1,7 @@
 {
-  "version": "1.11.0",
-  "build": "v11",
-  "date": "2026-10-03",
+  "version": "1.12.0",
+  "build": "v12",
+  "date": "2026-10-06",
   "name": "Cardia 3D",
-  "description": "EPS laboratory page (/eps/) with live recording, dual AV nodal protocols and offline support; ICE review, ventricle regions, fluoroscopy contours, moderator band, Koch labels"
+  "description": "ECG laboratory (axis and QRS vector labs, rhythm strips with P waves), pharmacology labs and vasoactive selection, EPS standard SVT recordings and source links, Koch functional layers, JVP and catheter cross-links, quick search over lesson steps, cardiac physiology guide, updater fix"
 }
