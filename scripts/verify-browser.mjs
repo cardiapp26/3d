@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const checks = ['test:resize', 'test:browser', 'test:echo', 'test:mobile', 'test:mitral', 'test:hemo-pv', 'test:atria', 'test:bachmann', 'test:pharmacology-browser', 'test:ep-flow'];
+const checks = ['test:resize', 'test:browser', 'test:echo', 'test:mobile', 'test:mitral', 'test:hemo-pv', 'test:atria', 'test:bachmann', 'test:pharmacology-browser', 'test:eps-browser'];
 const screenshots = fs.mkdtempSync(path.join(os.tmpdir(), 'cardia-verify-'));
 const server = process.env.APP_URL ? null : await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true }, logLevel: 'error' });
 try {
@@ -13,7 +13,7 @@ try {
   for (const check of checks) {
     console.log(`VERIFY ${check} against ${url}`);
     const code = await new Promise((resolve, reject) => {
-      const child = spawn('npm', ['run', check], { stdio: 'inherit', env: { ...process.env, APP_URL: url, SHOT_DIR: screenshots } });
+      const child = spawn('npm', ['run', check], { stdio: 'inherit', env: { ...process.env, APP_URL: url, EPS_URL: process.env.EPS_URL || `${url}/eps`, SHOT_DIR: screenshots } });
       child.once('error', reject);
       child.once('exit', (code, signal) => resolve(signal ? 1 : code));
     });
