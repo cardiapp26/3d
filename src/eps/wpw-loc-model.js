@@ -71,7 +71,7 @@ export function localize(sel = {}) {
 /** Channels of the coronary sinus, proximal (ostium) to distal (lateral wall). */
 export const CS_CHANNELS = Object.freeze(['cs910', 'cs78', 'cs56', 'cs34', 'cs12']);
 export const PHASES = Object.freeze(['normal', 'before', 'after']);
-const SPAN = 40;   // teaching value: ms between the first and the last channel
+const SPAN = 40;   // teaching value: four sampled steps of 10 ms each
 
 /**
  * Ventricular activation on the coronary sinus channels in sinus rhythm.
@@ -79,10 +79,11 @@ const SPAN = 40;   // teaching value: ms between the first and the last channel
  * pathway before ablation: the pre-excited wall first, so distal first.
  * Returns { onsets: { channel: ms }, earliest, order }.
  */
-export function csSequence(phase = 'before') {
-  const distalFirst = phase === 'before';
+export function csSequence(phase = 'before', site = 'leftLateral') {
+  // Illustrative sampling profiles, not measured timings or nine diagnostic rules.
+  const firstIndex = phase !== 'before' ? 0 : site === 'leftLateral' ? 4 : site === 'leftPosterior' ? 2 : 0;
   const onsets = {};
-  CS_CHANNELS.forEach((id, i) => { onsets[id] = Math.round((distalFirst ? CS_CHANNELS.length - 1 - i : i) * SPAN / (CS_CHANNELS.length - 1)); });
+  CS_CHANNELS.forEach((id, i) => { onsets[id] = Math.abs(i - firstIndex) * SPAN / (CS_CHANNELS.length - 1); });
   const order = [...CS_CHANNELS].sort((a, b) => onsets[a] - onsets[b]);
   return { onsets, earliest: order[0], order };
 }

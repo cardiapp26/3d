@@ -15,3 +15,11 @@ Verification:
 - `npm run check`, `npm test`, `npm run build`.
 
 Background code review was attempted but the reviewer agent could not run because its usage limit was reached. Local diff and visual review completed; no independent clinical validation performed.
+
+## Side-by-side CS localization (2026-10-06)
+
+The CS page now pairs the interactive nine-region annulus map with the tracing, phase controls and onset readout. Region selection is shared with the ECG localization page; narrow screens stack the panels.
+
+The added profiles are explicitly illustrative, not measured or independently validated localization rules: left lateral retains distal-first activation, left posterior illustrates middle-first spread in both directions, and septal/right regions share a proximal-first sampling example. CS alone does not distinguish those seven regions. Their local His/tricuspid annular recordings are not simulated here. Timings use 10 ms per sampled step; the middle-first example spans 20 ms, the end-first examples 40 ms. Successful ablation/no-pathway phases preserve the original proximal-first teaching sequence. The separate before/after ECG page remains the original left lateral lecture case with masked LBBB.
+
+Primary background for the sampling limitations and variation in septal/venous anatomy: [Septal Accessory Pathway: Anatomy, Causes for Difficulty, and an Approach to Ablation](https://pmc.ncbi.nlm.nih.gov/articles/PMC2907089/). This source does not provide the synthetic millisecond values used here.

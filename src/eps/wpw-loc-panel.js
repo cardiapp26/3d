@@ -22,7 +22,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   };
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => WPW_LOC_TEXT[L()];
-  const state = { active: false, page: 'loc', allLeads: false, leads: {}, csPhase: 'before', ablPhase: 'before', erp: 210 };
+  const state = { active: false, page: 'loc', allLeads: false, leads: {}, csPhase: 'before', csSite: 'leftLateral', ablPhase: 'before', erp: 210 };
 
   const root = el('section', 'basics wpw', { 'data-wpw': '' });
   root.hidden = true;
@@ -55,7 +55,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const mapList = el('div', 'wpw-site-list');
   const siteButtons = new Map();
   for (const [i, id] of Object.keys(WPW_EXAMPLES).entries()) {
-    const b = button({ 'data-wpw-example': id }, () => { state.leads = { ...WPW_EXAMPLES[id] }; render(); });
+    const b = button({ 'data-wpw-example': id }, () => { state.leads = { ...WPW_EXAMPLES[id] }; state.csSite = id; render(); });
     const number = el('span', 'wpw-site-number'); number.textContent = String(i + 1);
     const label = el('span'); b.append(number, label); mapList.append(b); siteButtons.set(id, { b, label });
   }
@@ -93,6 +93,21 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   // ---- 2. coronary sinus -------------------------------------------------------------------
   const cs = card('cs');
   const csHint = note();
+  const csLayout = el('div', 'wpw-cs-layout');
+  const csMapCard = el('aside', 'wpw-map-card');
+  const csMapHeading = el('h4'), csMapNote = note();
+  const csMapSvg = visualSvg(doc, '0 0 420 275', 'wpw-annulus-map');
+  const csSiteList = el('div', 'wpw-site-list');
+  const csSiteButtons = new Map();
+  const selectCsSite = id => { state.csSite = id; state.leads = { ...WPW_EXAMPLES[id] }; render(); };
+  for (const [i, id] of Object.keys(WPW_EXAMPLES).entries()) {
+    const b = button({ 'data-wpw-cs-site': id }, () => selectCsSite(id));
+    const number = el('span', 'wpw-site-number'); number.textContent = String(i + 1);
+    const label = el('span'); b.append(number, label); csSiteList.append(b); csSiteButtons.set(id, { b, label });
+  }
+  csMapCard.append(csMapHeading, csMapSvg, csMapNote, csSiteList);
+  const csTraceCard = el('div', 'wpw-cs-detail');
+  const csSiteHeading = el('h4', '', { 'data-wpw-cs-title': '', role: 'status' });
   const csBtns = PHASES.map((id) => button({ 'data-wpw-cs-phase': id }, () => { state.csPhase = id; render(); }));
   const csRow = el('div', 'amap-toggles'); csRow.append(...csBtns);
   const csBars = el('div', 'wpw-bars', { role: 'img', 'data-wpw-cs-bars': '' });
@@ -105,7 +120,9 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const csSvg = visualSvg(doc, '0 0 420 250', 'wpw-cs-tracing');
   const csChips = chips();
   const csNote = note();
-  cs.c.append(csHint, csRow, csSvg, csBars, csChips, csNote);
+  csTraceCard.append(csSiteHeading, csRow, csSvg, csBars, csChips, csNote);
+  csLayout.append(csMapCard, csTraceCard);
+  cs.c.append(csHint, csLayout);
 
   // ---- 3. before and after ablation --------------------------------------------------------
   const abl = card('abl');
@@ -147,6 +164,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     boston.render();
     loc.h.textContent = t.loc.title; locHint.textContent = t.loc.hint; locReset.textContent = t.loc.reset;
     const result = localize(state.leads);
+    if (result.site) state.csSite = result.site;
     allLeads.textContent = state.allLeads ? t.page.guided : t.page.allLeads;
     allLeads.setAttribute('aria-pressed', String(state.allLeads));
     for (const [lead, parts] of leadBlocks) {
@@ -164,7 +182,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     }
     mapHeading.textContent = t.page.mapTitle; mapNote.textContent = t.page.mapNote;
     renderAnnulusMap(doc, mapSvg, { lang: L(), site: result.site, sites: t.loc.sites, onSelect(id) {
-      state.leads = { ...WPW_EXAMPLES[id] }; render();
+      state.leads = { ...WPW_EXAMPLES[id] }; state.csSite = id; render();
       mapSvg.querySelector?.(`[data-wpw-map-site=${id}]`)?.focus();
     } });
     for (const [id, { b, label }] of siteButtons) {
@@ -179,9 +197,20 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     pathList.replaceChildren(...result.path.map((p) => { const li = el('li', '', { 'data-wpw-step': p.lead }); li.textContent = `${t.loc.leads[p.lead].name}: ${t.loc.leads[p.lead].options[p.option]}. ${t.loc.means[p.means]}`; return li; }));
 
     // 2
-    cs.h.textContent = t.cs.title; csHint.textContent = t.cs.hint; csNote.textContent = t.cs.note;
+    cs.h.textContent = t.cs.title; csHint.textContent = t.cs.hint;
+    csMapHeading.textContent = t.page.mapTitle; csMapNote.textContent = t.cs.mapNote;
+    csSiteHeading.textContent = t.loc.sites[state.csSite].name;
+    renderAnnulusMap(doc, csMapSvg, { lang: L(), site: state.csSite, sites: t.loc.sites, onSelect(id) {
+      selectCsSite(id);
+      csMapSvg.querySelector?.(`[data-wpw-map-site=${id}]`)?.focus();
+    } });
+    for (const [id, { b, label }] of csSiteButtons) {
+      label.textContent = t.loc.sites[id].name;
+      b.setAttribute('aria-pressed', String(state.csSite === id));
+    }
+    csNote.textContent = t.cs.profiles[state.csPhase !== 'before' ? 'normal' : state.csSite === 'leftLateral' ? 'lateral' : state.csSite === 'leftPosterior' ? 'posterior' : 'proximal'];
     csBtns.forEach((b, i) => { b.textContent = t.cs.phases[PHASES[i]]; b.setAttribute('aria-pressed', String(state.csPhase === PHASES[i])); });
-    const seq = csSequence(state.csPhase);
+    const seq = csSequence(state.csPhase, state.csSite);
     renderCsTracing(doc, csSvg, seq, L(), t.cs.channels);
     for (const [id, parts] of csRows) {
       parts.label.textContent = t.cs.channels[id];
@@ -191,7 +220,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     }
     csBars.setAttribute('aria-label', t.cs.title);
     const proximalFirst = seq.earliest === CS_CHANNELS[0];
-    setChips(csChips, [[t.cs.earliest, t.cs.channels[seq.earliest]], [t.cs.title.split(' (')[0], proximalFirst ? t.cs.order.proximal : t.cs.order.distal]]);
+    setChips(csChips, [[t.cs.earliest, t.cs.channels[seq.earliest]], [t.cs.title.split(' (')[0], proximalFirst ? t.cs.order.proximal : seq.earliest === 'cs12' ? t.cs.order.distal : t.cs.order.middle]]);
     csChips.setAttribute('data-earliest', seq.earliest);
 
     // 3

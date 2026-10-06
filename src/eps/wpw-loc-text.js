@@ -59,10 +59,17 @@ export const WPW_LOC_TEXT = {
     cs: {
       title: 'Koroner sinüste ventrikül aktivasyonu (sinüs ritmi)',
       hint: 'Septum önce uyarılırsa proksimal erken olur; sol lateral yol varsa en erken ventrikül distalde görülür.',
-      phases: { normal: 'Aksesuar yol yok', before: 'Sol lateral yol, ablasyondan önce', after: 'Ablasyondan sonra' },
+      phases: { normal: 'Aksesuar yol yok', before: 'Seçili yol, ablasyondan önce', after: 'Ablasyondan sonra' },
       channels: { cs910: 'CS 9-10 (proksimal)', cs78: 'CS 7-8', cs56: 'CS 5-6', cs34: 'CS 3-4', cs12: 'CS 1-2 (distal)' },
       earliest: 'En erken ventrikül',
-      order: { proximal: 'proksimalden distale', distal: 'distalden proksimale' },
+      order: { proximal: 'proksimalden distale', distal: 'distalden proksimale', middle: 'ortadan iki yöne' },
+      mapNote: 'Bölge seçin; yanındaki CS grafiği birlikte güncellenir. Zamanlar şematik eğitim değerleridir, ölçülmüş kayıt değildir.',
+      profiles: {
+        normal: 'Yol yokken veya başarılı ablasyondan sonra proksimalden distale örnek aktivasyon gösterilir.',
+        lateral: 'Sol lateral örnekte CS 1-2 erken, yayılım distalden proksimale. Zamanlar şematiktir.',
+        posterior: 'Sol posterior örnekte orta CS erken ve yayılım iki yönlü çizilmiştir. Erken çift kateter konumuna ve yol girişine göre değişir.',
+        proximal: 'Bu bölge için proksimal erken örnek gösterilir. CS tek başına septal ve sağ serbest duvar bölgelerini ayıramaz; His ve triküspit anülüs kayıtları gerekir.'
+      },
       note: 'Distalde A ile V iç içe: atriyal elektrogramın hemen arkasından gelen erken V, yolun sol lateralde olduğunu gösterir.'
     },
     abl: {
@@ -141,10 +148,17 @@ export const WPW_LOC_TEXT = {
     cs: {
       title: 'Ventricular activation on the coronary sinus (sinus rhythm)',
       hint: 'If the septum is activated first the proximal channel is early; with a left lateral pathway the earliest ventricle is distal.',
-      phases: { normal: 'No accessory pathway', before: 'Left lateral pathway, before ablation', after: 'After ablation' },
+      phases: { normal: 'No accessory pathway', before: 'Selected pathway, before ablation', after: 'After ablation' },
       channels: { cs910: 'CS 9-10 (proximal)', cs78: 'CS 7-8', cs56: 'CS 5-6', cs34: 'CS 3-4', cs12: 'CS 1-2 (distal)' },
       earliest: 'Earliest ventricle',
-      order: { proximal: 'proximal to distal', distal: 'distal to proximal' },
+      order: { proximal: 'proximal to distal', distal: 'distal to proximal', middle: 'middle to both ends' },
+      mapNote: 'Select a region to update the adjacent CS tracing. Timings are schematic teaching values, not measured recordings.',
+      profiles: {
+        normal: 'Without a pathway or after successful ablation, an illustrative proximal-to-distal sequence is shown.',
+        lateral: 'In this left lateral example CS 1-2 is early, spreading distal to proximal. Timings are schematic.',
+        posterior: 'This left posterior example illustrates early middle CS with spread in both directions. The earliest pair depends on catheter position and pathway insertion.',
+        proximal: 'An illustrative proximal-first sequence is shown for this region. CS alone cannot distinguish septal and right free wall regions; His and tricuspid annular recordings are needed.'
+      },
       note: 'A and V run together distally: an early V right behind the atrial electrogram places the pathway on the left lateral wall.'
     },
     abl: {

@@ -9,7 +9,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto(`${APP}/eps/?lang=tr#/wpw`);
     await page.locator('[data-wpw]').waitFor({ state: 'visible' });
-    assert.equal(await page.locator('[data-wpw-map-site]').count(), 9);
+    assert.equal(await page.locator('[data-wpw-card=loc] [data-wpw-map-site]').count(), 9);
     const guide = page.locator('[data-wpw] [data-ap-boston-guide]');
     await guide.locator('summary').click();
     assert.match(await guide.textContent(), /delta.*retrograd P/s);
@@ -19,10 +19,10 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     const verdict = () => page.locator('[data-wpw-verdict]').getAttribute('data-site');
     await page.locator('[data-wpw-example=leftLateral]').click();
     assert.equal(await verdict(), 'leftLateral');
-    assert.equal(await page.locator('[data-wpw-map-site=leftLateral]').getAttribute('aria-pressed'), 'true');
-    await page.locator('[data-wpw-map-site=midseptal]').focus();
+    assert.equal(await page.locator('[data-wpw-card=loc] [data-wpw-map-site=leftLateral]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-wpw-card=loc] [data-wpw-map-site=midseptal]').focus();
     await page.keyboard.press('Enter'); assert.equal(await verdict(), 'midseptal');
-    assert.equal(await page.locator('[data-wpw-map-site=midseptal]').evaluate(el => el === document.activeElement), true, 'map retains keyboard focus');
+    assert.equal(await page.locator('[data-wpw-card=loc] [data-wpw-map-site=midseptal]').evaluate(el => el === document.activeElement), true, 'map retains keyboard focus');
     await page.locator('[data-wpw-reset]').click(); assert.equal(await verdict(), '');
     for (const option of ['v1:rGtS', 'd1:negIso', 'avf:neg']) await page.locator(`[data-wpw-option="${option}"]`).click();
     assert.equal(await verdict(), 'leftPosterior');
@@ -40,8 +40,21 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
       if (section === 'cs') {
         await page.locator('[data-wpw-cs-phase=normal]').click();
         assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), 'cs910');
+        await page.locator('[data-wpw-cs-site=leftLateral]').click();
         await page.locator('[data-wpw-cs-phase=before]').click();
         assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), 'cs12');
+      }
+      if (section === 'cs') {
+        for (const site of ['leftLateral', 'leftPosterior', 'posteroseptal', 'septalAnnulus', 'midseptal', 'anteroseptal', 'rightAnterior', 'rightLateral', 'rightPosterior']) {
+          await page.locator(`[data-wpw-cs-site=${site}]`).click();
+          assert.equal(await page.locator(`[data-wpw-card=cs] [data-wpw-map-site=${site}]`).getAttribute('aria-pressed'), 'true');
+          const expected = site === 'leftLateral' ? 'cs12' : site === 'leftPosterior' ? 'cs56' : 'cs910';
+          assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), expected);
+        }
+        const map = await page.locator('[data-wpw-card=cs] .wpw-map-card').boundingBox();
+        const trace = await page.locator('.wpw-cs-detail').boundingBox();
+        assert.ok(map.x + map.width <= trace.x, 'desktop map and tracing side by side');
+        await page.screenshot({ path: `${shots}/wpw-cs-desktop.png`, fullPage: true });
       }
       if (section === 'abl') {
         await page.locator('[data-wpw-abl-phase=after]').click();
@@ -54,6 +67,8 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     assert.ok(bounds.scroll <= bounds.width + 1, `mobile overflow ${JSON.stringify(bounds)}`);
     await page.screenshot({ path: `${shots}/wpw-mobile.png`, fullPage: true });
     await page.locator('[data-wpw-page=cs]').click();
+    const csBounds = await page.locator('[data-wpw]').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
+    assert.ok(csBounds.scroll <= csBounds.width + 1, 'CS mobile has no overflow');
     await page.screenshot({ path: `${shots}/wpw-cs-mobile.png`, fullPage: true });
     assert.deepEqual(errors, []);
     console.log('PASS: WPW map/examples, manual ECG decisions, keyboard, language, four pages, CS/ablation, mobile overflow');

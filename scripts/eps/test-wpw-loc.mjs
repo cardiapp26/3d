@@ -100,7 +100,7 @@ const by = (attr, value) => nodes().find((n) => n.attributes[attr] === value);
 const has = (attr) => nodes().find((n) => n.attributes[attr] !== undefined);
 assert.equal(panel.element.hidden, false);
 assert.equal(nodes().filter((n) => n.attributes['data-wpw-card']).length, 4, 'four sections retained');
-assert.equal(nodes().filter(n => n.attributes['data-wpw-map-site']).length, 9, 'nine map examples');
+assert.equal(nodes().filter(n => n.attributes['data-wpw-map-site']).length, 18, 'nine regions on each of two maps');
 assert.equal(by('data-wpw-card', 'loc').hidden, false);
 assert.equal(by('data-wpw-card', 'cs').hidden, true);
 by('data-wpw-page', 'cs').listeners.click();
@@ -136,4 +136,19 @@ for (const [site, leads] of Object.entries(WPW_EXAMPLES)) {
   by('data-wpw-example', site).listeners.click();
   assert.equal(has('data-wpw-verdict').attributes['data-site'], site);
 }
+for (const id of SITES) {
+  by('data-wpw-cs-site', id).listeners.click();
+  assert.equal(panel.getState().csSite, id);
+  assert.equal(has('data-wpw-cs-title').textContent, WPW_LOC_TEXT.tr.loc.sites[id].name);
+  assert.equal(by('data-wpw-cs-site', id).attributes['aria-pressed'], 'true');
+  assert.equal(has('data-wpw-verdict').attributes['data-site'], id);
+  for (const phase of PHASES) {
+    const seq = csSequence(phase, id);
+    assert.equal(Math.min(...Object.values(seq.onsets)), 0);
+    assert.ok(Object.values(seq.onsets).every(Number.isFinite));
+    if (phase !== 'before') assert.equal(seq.earliest, 'cs910');
+  }
+}
+assert.equal(csSequence('before', 'leftPosterior').earliest, 'cs56');
+assert.deepEqual(csSequence('before', 'leftPosterior').onsets, { cs910: 20, cs78: 10, cs56: 0, cs34: 10, cs12: 20 });
 console.log('PASS wpw-loc: localization algorithm (9 sites), CS sequence, before/after ablation, refractory cut-off, texts, panel');

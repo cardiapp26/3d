@@ -356,3 +356,7 @@
 @media(max-width:560px){.wpw{padding:10px 3px 20px;gap:12px}.wpw-workspace>.basics-card{padding:12px}.wpw-page-nav{display:grid;grid-template-columns:1fr 1fr}.wpw-page-nav button{font-size:11px;padding:8px}.wpw-site-list{grid-template-columns:1fr 1fr}.wpw-map-card{padding:10px}.wpw-site-list button{font-size:10px}.wpw-lead .amap-toggles{grid-template-columns:repeat(auto-fit,minmax(85px,1fr))}}
 
 .wpw [hidden]{display:none}
+
+.wpw-cs-layout{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(0,1.2fr);gap:22px;align-items:start}
+.wpw-cs-detail{display:flex;flex-direction:column;gap:14px;min-width:0}
+@media(max-width:900px){.wpw-cs-layout{grid-template-columns:1fr}}
