@@ -9,7 +9,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto(`${APP}/eps/?lang=tr#/wpw`);
     await page.locator('[data-wpw]').waitFor({ state: 'visible' });
-    assert.equal(await page.locator('[data-wpw-card=loc] [data-wpw-map-site]').count(), 9);
+    assert.equal(await page.locator('[data-wpw-card=loc] [data-wpw-map-site]').count(), 10, 'ten Arruda sites');
     const guide = page.locator('[data-wpw] [data-ap-boston-guide]');
     await guide.locator('summary').click();
     assert.match(await guide.textContent(), /delta.*retrograd P/s);
@@ -24,7 +24,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     await page.keyboard.press('Enter'); assert.equal(await verdict(), 'midseptal');
     assert.equal(await page.locator('[data-wpw-card=loc] [data-wpw-map-site=midseptal]').evaluate(el => el === document.activeElement), true, 'map retains keyboard focus');
     await page.locator('[data-wpw-reset]').click(); assert.equal(await verdict(), '');
-    for (const option of ['v1:rGtS', 'd1:negIso', 'avf:neg']) await page.locator(`[data-wpw-option="${option}"]`).click();
+    for (const option of ['d1:negIso', 'avf:neg']) await page.locator(`[data-wpw-option="${option}"]`).click();
     assert.equal(await verdict(), 'leftPosterior');
     await page.locator('[data-app-lang-option=en]').click(); assert.equal(await verdict(), 'leftPosterior');
     assert.match(await page.locator('[data-wpw-progress]').textContent(), /Algorithm complete/);
@@ -47,7 +47,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
         assert.equal(await page.locator('[data-wpw-cs-bars] [data-earliest=true]').getAttribute('data-wpw-cs-channel'), 'cs12');
       }
       if (section === 'cs') {
-        for (const site of ['leftLateral', 'leftPosterior', 'posteroseptal', 'septalAnnulus', 'midseptal', 'anteroseptal', 'rightAnterior', 'rightLateral', 'rightPosterior']) {
+        for (const site of ['leftLateral', 'leftPosterior', 'posteroseptalEpi', 'posteroseptalTricuspid', 'posteroseptalMitral', 'midseptal', 'anteroseptal', 'rightAnterior', 'rightLateral', 'rightPosterior']) {
           await page.locator(`[data-wpw-cs-site=${site}]`).click();
           assert.equal(await page.locator(`[data-wpw-card=cs] [data-wpw-map-site=${site}]`).getAttribute('aria-pressed'), 'true');
           const expected = site === 'leftLateral' ? 'cs12' : site === 'leftPosterior' ? 'cs56' : 'cs910';
@@ -60,11 +60,11 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
       }
       if (section === 'cs') {
         // Ablation lives on the same page: the selected pathway's monitor, before and after.
-        await page.locator('[data-wpw-cs-site=posteroseptal]').click();
+        await page.locator('[data-wpw-cs-site=posteroseptalTricuspid]').click();
         await page.locator('[data-wpw-cs-phase=before]').click();
         assert.equal(await page.locator('[data-wpw-monitor]').count(), 9, 'lead I, aVL, His, ABL d and five CS channels');
         assert.ok(await page.locator('[data-wpw-card=cs] [data-wave="δ"]').count() >= 2, 'delta named on lead I and aVL');
-        assert.equal(await page.locator('.amap-readout[data-group]').getAttribute('data-group'), 'septal');
+        assert.equal(await page.locator('.amap-readout[data-group]').getAttribute('data-group'), 'posteroseptal');
         await page.locator('[data-wpw-cs-phase=after]').click();
         assert.equal(await page.locator('[data-wpw-masked]').isVisible(), false, 'no masked block outside the lecture patient');
         await page.screenshot({ path: `${shots}/wpw-ablation-septal.png`, fullPage: true });

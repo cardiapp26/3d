@@ -86,7 +86,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const pathList = el('ul', 'basics-lines', { 'data-wpw-path': '' });
   const locReset = button({ 'data-wpw-reset': '' }, () => { state.leads = {}; render(); });
   const progress = el('div', 'wpw-progress', { 'data-wpw-progress': '', role: 'status' });
-  locInputs.append(...['v1', 'd1', 'd2', 'avf', 'd3'].map(id => leadBlocks.get(id).block), allLeads);
+  locInputs.append(...['d1', 'v1', 'd2', 'avf', 'd3'].map(id => leadBlocks.get(id).block), allLeads);
   loc.c.append(locHint, progress, locLayout, verdict, pathList, locReset);
   const boston = createBostonGuide(doc, L);
   loc.c.append(boston.element);
@@ -173,7 +173,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
         renderPolarity(doc, wave, option, L());
       }
       parts.block.setAttribute('data-read', String(result.path.some(p => p.lead === lead)));
-      parts.block.hidden = !state.allLeads && lead !== 'v1' && lead !== result.next && !result.path.some(p => p.lead === lead);
+      parts.block.hidden = !state.allLeads && lead !== 'd1' && lead !== result.next && !result.path.some(p => p.lead === lead);
     }
     mapHeading.textContent = t.page.mapTitle; mapNote.textContent = t.page.mapNote;
     renderAnnulusMap(doc, mapSvg, { lang: L(), site: result.site, sites: t.loc.sites, onSelect(id) {

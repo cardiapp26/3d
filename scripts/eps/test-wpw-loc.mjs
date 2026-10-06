@@ -1,5 +1,5 @@
 // WPW localization tab (src/eps/wpw-loc-model.js, wpw-loc-panel.js): the
-// delta wave algorithm of the lecture, the coronary sinus sequence, the
+// Arruda delta wave algorithm, the coronary sinus sequence, the
 // findings before and after ablation, the refractory period cut-off.
 import assert from 'node:assert/strict';
 import { LEADS, LEAD_OPTIONS, SITES, localize, CS_CHANNELS, PHASES, csSequence, ablationFindings, epTimeline, siteGroup, ERP_LIMIT, pathwayRisk } from '../../src/eps/wpw-loc-model.js';
@@ -8,41 +8,49 @@ import { createWpwLocPanel } from '../../src/eps/wpw-loc-panel.js';
 
 const site = (sel) => localize(sel).site;
 
-// Left side: V1 R > S and D1 negative or isoelectric, then aVF.
-assert.equal(localize({}).next, 'v1', 'V1 is read first');
-assert.equal(localize({ v1: 'rGtS' }).next, 'd1');
-assert.equal(localize({ v1: 'rGtS', d1: 'negIso' }).next, 'avf');
-assert.equal(site({ v1: 'rGtS', d1: 'negIso', avf: 'pos' }), 'leftLateral');
-assert.equal(site({ v1: 'rGtS', d1: 'negIso', avf: 'neg' }), 'leftPosterior');
-assert.equal(localize({ v1: 'rGtS', d1: 'pos' }).stalled, true, 'a positive D1 with R > S is not classified');
+// Arruda (Josephson 2025, fig. 8.46 / 11.12). Step 1: lead I negative or isoelectric, or V1 R >= S: left free wall.
+assert.equal(localize({}).next, 'd1', 'lead I is read first');
+assert.equal(localize({ d1: 'negIso' }).next, 'avf');
+assert.equal(site({ d1: 'negIso', avf: 'pos' }), 'leftLateral');
+assert.equal(site({ d1: 'negIso', avf: 'neg' }), 'leftPosterior');
+assert.equal(site({ d1: 'negIso', avf: 'iso' }), 'leftPosterior');
+assert.equal(localize({ d1: 'pos' }).next, 'v1');
+assert.equal(site({ d1: 'pos', v1: 'rGtS', avf: 'pos' }), 'leftLateral', 'V1 R >= S with a positive lead I is still left free wall');
 
-// Right free wall: positive delta with S > R, then aVF, then D2.
-assert.equal(localize({ v1: 'sGtR' }).next, 'avf');
-assert.equal(site({ v1: 'sGtR', avf: 'pos' }), 'rightAnterior');
-assert.equal(localize({ v1: 'sGtR', avf: 'neg' }).next, 'd2');
-assert.equal(site({ v1: 'sGtR', avf: 'neg', d2: 'pos' }), 'rightLateral');
-assert.equal(site({ v1: 'sGtR', avf: 'iso', d2: 'negIso' }), 'rightPosterior');
+// Step 2: negative delta in II: subepicardial posteroseptal, whatever V1 shows next.
+assert.equal(localize({ d1: 'pos', v1: 'isoNeg' }).next, 'd2');
+assert.equal(site({ d1: 'pos', v1: 'isoNeg', d2: 'neg' }), 'posteroseptalEpi');
+assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'neg' }), 'posteroseptalEpi');
 
-// Septal: V1 isoelectric or negative with D2 negative, then aVF, then D3.
-assert.equal(localize({ v1: 'isoNeg' }).next, 'd2');
-assert.equal(localize({ v1: 'isoNeg', d2: 'pos' }).stalled, true);
-assert.equal(site({ v1: 'isoNeg', d2: 'negIso', avf: 'neg' }), 'posteroseptal');
-assert.equal(site({ v1: 'isoNeg', d2: 'negIso', avf: 'iso' }), 'septalAnnulus');
-assert.equal(localize({ v1: 'isoNeg', d2: 'negIso', avf: 'pos' }).next, 'd3');
-assert.equal(site({ v1: 'isoNeg', d2: 'negIso', avf: 'pos', d3: 'rGtS' }), 'anteroseptal');
-assert.equal(site({ v1: 'isoNeg', d2: 'negIso', avf: 'pos', d3: 'rLtS' }), 'midseptal');
+// Step 3: septal (V1 isoelectric or negative): aVF then III.
+assert.equal(site({ d1: 'pos', v1: 'isoNeg', d2: 'iso', avf: 'neg' }), 'posteroseptalTricuspid');
+assert.equal(site({ d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'iso' }), 'posteroseptalMitral');
+assert.equal(localize({ d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos' }).next, 'd3');
+assert.equal(site({ d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos', d3: 'rGtS' }), 'anteroseptal');
+assert.equal(site({ d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos', d3: 'rLtS' }), 'midseptal');
 
-// Every site is reachable and every decision is explained.
+// Step 4: right free wall (V1 positive, R < S): aVF positive anterior, isoelectric lateral, negative posterior.
+assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'pos' }), 'rightAnterior');
+assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'iso' }), 'rightLateral');
+assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'neg' }), 'rightPosterior', 'negative aVF is posterior, never lateral');
+
+// Anteroseptal and midseptal never need a negative lead II; the examples follow the algorithm.
+const { WPW_EXAMPLES: EXAMPLES } = await import('../../src/eps/wpw-loc-visual.js');
+assert.equal(EXAMPLES.anteroseptal.d2, 'pos');
+assert.equal(EXAMPLES.midseptal.d2, 'pos');
+
+// Every site is reachable, every walk ends or asks, every decision is explained.
 const reached = new Set();
 const pick = (lead) => LEAD_OPTIONS[lead];
-for (const v1 of pick('v1')) for (const d1 of [undefined, ...pick('d1')]) for (const d2 of [undefined, ...pick('d2')]) for (const avf of [undefined, ...pick('avf')]) for (const d3 of [undefined, ...pick('d3')]) {
-  const sel = { v1, ...(d1 && { d1 }), ...(d2 && { d2 }), ...(avf && { avf }), ...(d3 && { d3 }) };
+for (const d1 of pick('d1')) for (const v1 of [undefined, ...pick('v1')]) for (const d2 of [undefined, ...pick('d2')]) for (const avf of [undefined, ...pick('avf')]) for (const d3 of [undefined, ...pick('d3')]) {
+  const sel = { d1, ...(v1 && { v1 }), ...(d2 && { d2 }), ...(avf && { avf }), ...(d3 && { d3 }) };
   const r = localize(sel);
   if (r.site) reached.add(r.site);
-  assert.ok(r.site || r.next || r.stalled, 'every walk ends, asks or stalls');
+  assert.ok((r.site || r.next) && !r.stalled, 'every walk ends or asks');
   assert.ok(!(r.site && r.next), 'a decided site asks nothing');
 }
-assert.deepEqual([...reached].sort(), [...SITES].sort(), 'all nine sites are reachable');
+assert.deepEqual([...reached].sort(), [...SITES].sort(), 'all ten sites are reachable');
+assert.equal(SITES.length, 10);
 
 // Coronary sinus sequence.
 assert.equal(csSequence('normal').earliest, 'cs910', 'septum first: proximal earliest');
@@ -52,7 +60,7 @@ assert.deepEqual(csSequence('before').order, [...CS_CHANNELS].reverse());
 assert.equal(csSequence('before').onsets.cs12, 0);
 assert.equal(PHASES.length, 3);
 
-// Findings before and after ablation: the left bundle branch block is masked, then shows.
+// Findings before and after ablation: the left bundle branch block of the lecture patient is masked, then shows.
 assert.deepEqual([ablationFindings('before').delta, ablationFindings('before').lbbbVisible], [true, false]);
 assert.deepEqual([ablationFindings('after').delta, ablationFindings('after').lbbbVisible], [false, true]);
 assert.equal(ablationFindings('after').lbbbPresent && ablationFindings('before').lbbbPresent, true, 'the block is there all along');
@@ -73,7 +81,7 @@ for (const lang of ['tr', 'en']) {
   for (const id of SITES) assert.ok(t.loc.sites[id]?.name && t.loc.sites[id]?.note, `${lang} site ${id}`);
   for (const id of PHASES) assert.ok(t.cs.phases[id], `${lang} phase ${id}`);
   for (const id of CS_CHANNELS) assert.ok(t.cs.channels[id], `${lang} channel ${id}`);
-  for (const group of ['left', 'septal', 'right']) assert.equal(t.abl.steps[group].length, 4, `${group} ablation steps`);
+  for (const group of ['left', 'posteroseptal', 'superiorSeptal', 'right']) assert.equal(t.abl.steps[group].length, 4, `${group} ablation steps`);
   assert.ok(t.risk.short && t.risk.long);
   assert.ok(!JSON.stringify(t).includes(String.fromCharCode(0x2014)), 'no em dash');
 }
@@ -100,19 +108,18 @@ const by = (attr, value) => nodes().find((n) => n.attributes[attr] === value);
 const has = (attr) => nodes().find((n) => n.attributes[attr] !== undefined);
 assert.equal(panel.element.hidden, false);
 assert.equal(nodes().filter((n) => n.attributes['data-wpw-card']).length, 3, 'four sections retained');
-assert.equal(nodes().filter(n => n.attributes['data-wpw-map-site']).length, 18, 'nine regions on each of two maps');
+assert.equal(nodes().filter(n => n.attributes['data-wpw-map-site']).length, 20, 'ten regions on each of two maps');
 assert.equal(by('data-wpw-card', 'loc').hidden, false);
 assert.equal(by('data-wpw-card', 'cs').hidden, true);
 by('data-wpw-page', 'cs').listeners.click();
 assert.equal(by('data-wpw-card', 'cs').hidden, false);
 by('data-wpw-page', 'loc').listeners.click();
-assert.match(has('data-wpw-verdict').textContent, /V1/, 'V1 is asked first');
-by('data-wpw-option', 'v1:rGtS').listeners.click();
+assert.match(has('data-wpw-verdict').textContent, /D1/, 'lead I is asked first');
 by('data-wpw-option', 'd1:negIso').listeners.click();
 by('data-wpw-option', 'avf:pos').listeners.click();
 assert.equal(has('data-wpw-verdict').attributes['data-site'], 'leftLateral');
 assert.match(has('data-wpw-verdict').textContent, /Sol lateral/);
-assert.equal(nodes().filter((n) => n.attributes['data-wpw-step']).length, 3, 'three decisions listed');
+assert.equal(nodes().filter((n) => n.attributes['data-wpw-step']).length, 2, 'two decisions listed');
 by('data-wpw-option', 'avf:pos').listeners.click();
 assert.equal(has('data-wpw-verdict').attributes['data-site'], '', 'a second click clears the lead');
 has('data-wpw-reset').listeners.click();
@@ -150,9 +157,17 @@ for (const site of SITES) {
 }
 assert.equal(epTimeline('before', 'leftLateral').d1.polarity, 'neg', 'left free wall: negative delta in lead I');
 assert.equal(epTimeline('before', 'rightLateral').d1.polarity, 'pos');
-assert.equal(siteGroup('anteroseptal'), 'septal');
-// Josephson 2025, ch. 11: the local V at the ablation tip precedes the delta by at least 25 ms; normal HV < 55 ms.
-for (const site of SITES) assert.ok(ablationFindings('before', site).ablLead >= 25 && ablationFindings('after', site).hv < 55);
+assert.equal(siteGroup('anteroseptal'), 'superiorSeptal');
+assert.equal(siteGroup('posteroseptalEpi'), 'posteroseptal');
+// Lead I / aVL polarity by site (Josephson 2025, ch. 8): left lateral negative in both, left posterior isoelectric.
+assert.deepEqual([epTimeline('before', 'leftLateral').avl.polarity, epTimeline('before', 'leftPosterior').d1.polarity, epTimeline('before', 'leftPosterior').avl.polarity], ['neg', 'iso', 'iso']);
+assert.equal(epTimeline('before', 'anteroseptal').d1.polarity, 'pos');
+// Next to the His the His catheter records the early V with the ablation tip; far from it, it does not.
+const near = epTimeline('before', 'anteroseptal'), far = epTimeline('before', 'leftLateral');
+assert.ok(Math.abs(near.his.v - near.abl.v) <= 5, 'anteroseptal: His V beside ABL V');
+assert.ok(far.his.v - far.abl.v >= 25, 'left lateral: His V well after ABL V');
+// Normal HV 35-55 ms after ablation; short (< 35 ms) before. The local V leads the delta (Josephson, ch. 11).
+for (const site of SITES) { const before = ablationFindings('before', site), after = ablationFindings('after', site); assert.ok(before.ablLead >= 25 && before.hv < 35 && after.hv >= 35 && after.hv <= 55, site); }
 // No pathway on the merged page: no delta, no steps, no masked block, wave names on the monitor.
 panel.set({ csSite: 'leftLateral', csPhase: 'normal' });
 assert.equal(ablationFindings('normal', 'leftLateral').lbbbPresent, false);
@@ -190,4 +205,4 @@ for (const id of SITES) {
 }
 assert.equal(csSequence('before', 'leftPosterior').earliest, 'cs56');
 assert.deepEqual(csSequence('before', 'leftPosterior').onsets, { cs910: 20, cs78: 10, cs56: 0, cs34: 10, cs12: 20 });
-console.log('PASS wpw-loc: localization algorithm (9 sites), CS sequence, no-pathway state, before/after ablation for every site (monitor channels, HV, local V lead), refractory cut-off, texts, panel');
+console.log('PASS wpw-loc: Arruda localization (10 sites, lead I first), CS sequence, no-pathway state, before/after ablation for every site (monitor channels, HV, local V lead), refractory cut-off, texts, panel');

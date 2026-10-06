@@ -1,19 +1,20 @@
 // Original schematic visuals. Examples encode the existing lecture algorithm,
 // not measured ECGs or independently validated localization rules.
 export const WPW_EXAMPLES = Object.freeze({
-  leftLateral: { v1: 'rGtS', d1: 'negIso', avf: 'pos' },
-  leftPosterior: { v1: 'rGtS', d1: 'negIso', avf: 'neg' },
-  posteroseptal: { v1: 'isoNeg', d2: 'negIso', avf: 'neg' },
-  septalAnnulus: { v1: 'isoNeg', d2: 'negIso', avf: 'iso' },
-  midseptal: { v1: 'isoNeg', d2: 'negIso', avf: 'pos', d3: 'rLtS' },
-  anteroseptal: { v1: 'isoNeg', d2: 'negIso', avf: 'pos', d3: 'rGtS' },
-  rightAnterior: { v1: 'sGtR', avf: 'pos' },
-  rightLateral: { v1: 'sGtR', avf: 'iso', d2: 'pos' },
-  rightPosterior: { v1: 'sGtR', avf: 'neg', d2: 'negIso' }
+  leftLateral: { d1: 'negIso', avf: 'pos' },
+  leftPosterior: { d1: 'negIso', avf: 'neg' },
+  posteroseptalEpi: { d1: 'pos', v1: 'isoNeg', d2: 'neg' },
+  posteroseptalTricuspid: { d1: 'pos', v1: 'isoNeg', d2: 'iso', avf: 'neg' },
+  posteroseptalMitral: { d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'iso' },
+  midseptal: { d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos', d3: 'rLtS' },
+  anteroseptal: { d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos', d3: 'rGtS' },
+  rightAnterior: { d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'pos' },
+  rightLateral: { d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'iso' },
+  rightPosterior: { d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'neg' }
 });
 const POSITIONS = {
-  leftLateral: [336, 134], leftPosterior: [308, 208], posteroseptal: [207, 213],
-  septalAnnulus: [222, 167], midseptal: [202, 131], anteroseptal: [202, 80],
+  leftLateral: [336, 134], leftPosterior: [308, 208], posteroseptalEpi: [222, 240],
+  posteroseptalTricuspid: [188, 206], posteroseptalMitral: [240, 196], midseptal: [202, 131], anteroseptal: [202, 80],
   rightAnterior: [118, 52], rightLateral: [60, 131], rightPosterior: [98, 205]
 };
 const LABELS = {
@@ -32,7 +33,7 @@ export function renderAnnulusMap(doc, svg, { lang, site, sites, onSelect }) {
   svg.replaceChildren(s(doc, 'title', {}, t.map));
   svg.setAttribute('aria-label', t.map); svg.setAttribute('role', 'group');
   svg.append(s(doc, 'text', { x: 210, y: 20, class: 'wpwv-caption' }, t.anterior),
-    s(doc, 'text', { x: 210, y: 256, class: 'wpwv-caption' }, t.posterior),
+    s(doc, 'text', { x: 210, y: 270, class: 'wpwv-caption' }, t.posterior),
     s(doc, 'ellipse', { cx: 124, cy: 134, rx: 65, ry: 81, class: 'wpwv-ring' }),
     s(doc, 'ellipse', { cx: 277, cy: 134, rx: 61, ry: 76, class: 'wpwv-ring' }),
     s(doc, 'text', { x: 124, y: 132, class: 'wpwv-ring-label' }, t.ta),
@@ -119,7 +120,9 @@ function surfacePath(lead, x) {
   const o = lead.onset, w = lead.width;
   const p = `M${MON.left} 0 L${x(15)} 0 Q${x(45)} ${-6} ${x(75)} 0`;
   let qrs;
-  if (lead.delta) qrs = `L${x(o)} 0 L${x(o + 35)} ${sign * 7} L${x(o + 50)} ${sign * 22} L${x(o + 65)} ${-sign * 6} L${x(o + w)} 0`;
+  // Isoelectric delta: flat first 20-35 ms, then a modest upright QRS.
+  if (lead.delta && lead.polarity === 'iso') qrs = `L${x(o)} 0 L${x(o + 35)} 0 L${x(o + 52)} -14 L${x(o + 68)} 5 L${x(o + w)} 0`;
+  else if (lead.delta) qrs = `L${x(o)} 0 L${x(o + 35)} ${sign * 7} L${x(o + 50)} ${sign * 22} L${x(o + 65)} ${-sign * 6} L${x(o + w)} 0`;
   else if (lead.lbbb) qrs = `L${x(o)} 0 L${x(o + 30)} -16 L${x(o + 55)} -12 L${x(o + 80)} -18 L${x(o + w)} 0`;
   else qrs = `L${x(o)} 0 L${x(o + 10)} 2 L${x(o + 30)} -20 L${x(o + 50)} 5 L${x(o + w)} 0`;
   const tEnd = Math.min(300, o + w + 90);
