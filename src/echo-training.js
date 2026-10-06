@@ -242,7 +242,7 @@ export function evaluateView(section, view, ctx) {
     ? `Görüntüdeki LV uzunluğu ölçülen uzunluğun %${Math.round(fs.ratio * 100)}'i: LV kısalmış olabilir.`
     : `The LV length in the image is ${Math.round(fs.ratio * 100)}% of the measured length: the LV may be foreshortened.`);
   if (caval && !caval.ivcOk) messages.push(tr
-    ? 'İVK ağzı kesitte veya görüntüde değil (atlasta İVK mesh’i yok; ağız kestirilen bir noktadır). Tam bikaval görünüm sayılmaz.'
+    ? 'IVC ağzı kesitte veya görüntüde değil (atlasta IVC mesh’i yok; ağız kestirilen bir noktadır). Tam bikaval görünüm sayılmaz.'
     : 'The IVC orifice is not in the cut or the image (the atlas has no IVC mesh; the orifice is an estimated point). Not a full bicaval view.');
   if (caval && !caval.septumOk) messages.push(tr ? 'İnteratriyal septum (LA ile RA komşuluğu) kesitte görünmüyor.' : 'The interatrial septum (LA next to RA) is not in the cut.');
   if (chord && !chordOk) messages.push(tr

@@ -49,7 +49,7 @@ export const EP_ZONE_TEXT = Object.freeze({
     en: { name: 'Crista terminalis (focal AT source)', risk: 'The commonest source of focal AT (cristal tachycardia). It is not an annular pathway zone; the schematic marks the course of the crista along the lateral right atrial wall. Its long RP picture overlaps atypical AVNRT and PJRT.' }
   },
   'cavotricuspid-isthmus': {
-    tr: { name: 'Kavotriküspit istmus (CTI)', risk: 'Triküspit anulus ile İVK ağzı arasındaki sağ atriyum tabanı; tipik flutterin yavaş iletim koridoru. CS ağzı ve Koch bölgesi komşudur; hat yeri şematiktir.' },
+    tr: { name: 'Kavotriküspit istmus (CTI)', risk: 'Triküspit anulus ile IVC ağzı arasındaki sağ atriyum tabanı; tipik flutterin yavaş iletim koridoru. CS ağzı ve Koch bölgesi komşudur; hat yeri şematiktir.' },
     en: { name: 'Cavotricuspid isthmus (CTI)', risk: 'The right atrial floor between the tricuspid annulus and the IVC orifice; the slow conduction corridor of typical flutter. The CS ostium and the Koch region are next to it; the line position is schematic.' }
   },
   'cs-mcv': {

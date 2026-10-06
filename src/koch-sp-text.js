@@ -6,7 +6,7 @@ export const KOCH_SP_TEXT = Object.freeze({
     intro: 'Şemaya tıklayın, ucu sürükleyin ya da ok tuşlarını kullanın. 3B kateter, floroskopi ve ablasyon sinyali birlikte değişir.',
     schematic: 'Koch üçgeni şeması (RAO bakış); kateter ucunu yerleştirmek için tıklayın',
     tipLabel: 'Ablasyon kateteri ucu',
-    labels: { todaro: 'Todaro tendonu', annulus: 'Triküspit anulus', cs: 'CS', avn: 'AVN', his: 'His', fo: 'FO', ivc: 'İVK', fast: 'Hızlı yol', slow: 'Yavaş yol', tcv: 'TV' },
+    labels: { todaro: 'Todaro tendonu', annulus: 'Triküspit anulus', cs: 'CS', avn: 'AVN', his: 'His', fo: 'FO', ivc: 'IVC', fast: 'Hızlı yol', slow: 'Yavaş yol', tcv: 'TV' },
     legend: [['slow', 'Yavaş yol (hedef)'], ['fast', 'Hızlı yol girişi'], ['avn', 'Kompakt AVN'], ['his', 'His']],
     egm: 'Ablasyon kateteri kaydı',
     egmAria: 'Sentetik intrakardiyak kayıt: II, HRA, His, CS 9-10, CS 1-2, ablasyon distal ve proksimal',

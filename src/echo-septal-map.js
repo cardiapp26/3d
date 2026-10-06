@@ -84,7 +84,7 @@ export function septalCutCheck(F, frame, spec) {
 
 const LANDMARK_COLORS = { svc: '#76a5af', ivc: '#76a5af', rupv: '#a4c2f4', ao: '#ea9999', tv: '#d9ead3' };
 const TEXT = {
-  tr: { title: 'Fossa ovalis (RA\'dan bakış) ve kesit', svc: 'SVC', ivc: 'İVK', rupv: 'RUPV', ao: 'Ao', tv: 'TV', sup: 'üst', ant: 'ön', none: 'Kesit septuma paralel' },
+  tr: { title: 'Fossa ovalis (RA\'dan bakış) ve kesit', svc: 'SVC', ivc: 'IVC', rupv: 'RUPV', ao: 'Ao', tv: 'TV', sup: 'üst', ant: 'ön', none: 'Kesit septuma paralel' },
   en: { title: 'Fossa ovalis (view from the RA) and the cut', svc: 'SVC', ivc: 'IVC', rupv: 'RUPV', ao: 'Ao', tv: 'TV', sup: 'sup', ant: 'ant', none: 'Cut parallel to the septum' }
 };
 

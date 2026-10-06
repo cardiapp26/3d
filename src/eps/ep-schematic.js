@@ -94,7 +94,7 @@ const LABELS = Object.freeze([
   { text: { tr: 'MA', en: 'MA' }, x: MA.cx, y: MA.cy + 4 },
   { text: { tr: 'His', en: 'His' }, x: HIS[0], y: HIS[1] - 8 },
   { text: { tr: 'CS', en: 'CS' }, x: CS_OS[0] + 16, y: CS_OS[1] + 4 },
-  { text: { tr: 'VCI', en: 'IVC' }, x: IVC.cx + 26, y: IVC.cy + 4 },
+  { text: { tr: 'IVC', en: 'IVC' }, x: IVC.cx + 26, y: IVC.cy + 4 },
   { text: { tr: 'PV', en: 'PV' }, x: 298, y: 196 }
 ]);
 

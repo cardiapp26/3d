@@ -23,7 +23,7 @@ const rect = (x0, y0, x1, y1) => { const out = []; for (let y = y0; y <= y1; y++
 // Anatomy: holes (not tissue) with labels for the drawing.
 export const HOLES = Object.freeze([
   { id: 'svc', label: { tr: 'SVC', en: 'SVC' }, cells: rect(5, 0, 7, 1) },
-  { id: 'ivc', label: { tr: 'VCI', en: 'IVC' }, cells: rect(3, 14, 6, 15) },
+  { id: 'ivc', label: { tr: 'IVC', en: 'IVC' }, cells: rect(3, 14, 6, 15) },
   { id: 'tv', label: { tr: 'TK', en: 'TV' }, cells: rect(7, 6, 10, 9) },
   { id: 'mv', label: { tr: 'MK', en: 'MV' }, cells: rect(20, 6, 23, 9) },
   { id: 'rspv', label: { tr: 'RSPV', en: 'RSPV' }, cells: rect(17, 0, 18, 1) },

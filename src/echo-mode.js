@@ -224,7 +224,7 @@ export function createEchoMode({ heart, mount, getLang }) {
   }
   function cavalMarker(frame) {
     const p = imagePoint(liveIvc(), frame, state.sectorAngle, state.depth);
-    return p.off <= CAVAL_OFF_PLANE ? [{ point: [p.x, p.y], label: { tr: 'İVK ağzı (kestirim)', en: 'IVC orifice (estimated)' } }] : [];
+    return p.off <= CAVAL_OFF_PLANE ? [{ point: [p.x, p.y], label: { tr: 'IVC ağzı (kestirim)', en: 'IVC orifice (estimated)' } }] : [];
   }
 
   /**

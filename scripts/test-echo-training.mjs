@@ -89,7 +89,7 @@ const atria = gap => ({ contours: [
 assert.equal(evaluateView(atria(0.05), bicavalView, ctx(3, Math.PI / 2, { ivc: [0.3, 2, 0] })).achieved, true, 'IVC and septum: passes');
 const noIvc = evaluateView(atria(0.05), bicavalView, ctx(3, Math.PI / 2, { ivc: [0.3, 2, 0.6] }));
 assert.equal(noIvc.achieved, false, 'IVC orifice off the cut: not a full bicaval view');
-assert.ok(noIvc.messages.some(m => /İVK ağzı/.test(m)));
+assert.ok(noIvc.messages.some(m => /IVC ağzı/.test(m)));
 const noSeptum = evaluateView(atria(1.2), bicavalView, ctx(3, Math.PI / 2, { ivc: [0.3, 2, 0] }));
 assert.equal(noSeptum.achieved, false, 'LA and RA apart: no septum in the cut');
 assert.ok(noSeptum.messages.some(m => /septum/.test(m)));
