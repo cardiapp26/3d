@@ -30,6 +30,16 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
   assert.equal(rankSearch('sol on', items)[0].id, 'lad', 'multi-word prefixes');
   assert.deepEqual(rankSearch('', items), []);
   assert.deepEqual(rankSearch('zzz', items), []);
+  // Lesson steps: title in either language, then the normalized step text below every name match.
+  const steps = [...items,
+    { kind: 'step', id: 'ablation:2', label: 'Pulmoner Ven İzolasyonu (WACA / PVI) • AF', alt: 'Pulmonary Vein Isolation (WACA / PVI) • AF', body: normalizeSearch('Antral lezyonlar ven ağzını çevreler.') },
+    { kind: 'step', id: 'cath:6', label: 'Oksimetri, debi, dirençler', alt: 'Oximetry, output, resistances', body: normalizeSearch('Fick debisi = VO2 / (CaO2 - CvO2); Kussmaul bulgusu konstriksiyonda.') },
+  ];
+  assert.equal(rankSearch('waca', steps)[0].id, 'ablation:2', 'abbreviation in a step title');
+  assert.equal(rankSearch('fick', steps)[0].id, 'cath:6', 'step text');
+  assert.equal(rankSearch('kussmaul', steps)[0].id, 'cath:6', 'step text, any position');
+  assert.equal(rankSearch('lv', steps)[0].id, 'lv', 'names still win');
+  assert.deepEqual(rankSearch('ic', steps).filter(item => item.kind === 'step' && /cath/.test(item.id)), [], 'short queries skip step text');
 
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
@@ -51,6 +61,16 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'ablation');
     await input.focus();
     assert.equal(await page.locator('#header-search .quick-search-option').first().getAttribute('data-id'), 'anatomy', 'recent mode first');
+    await page.keyboard.press('Escape');
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
+
+    // Lesson step: a term from the step text opens that mode at that step.
+    await input.fill('waca');
+    await page.locator('#header-search .quick-search-option[data-kind=step][data-id="ablation:2"]').click();
+    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'ablation');
+    assert.match(await page.locator('#step-detail').textContent(), /WACA|antral|antrum/i, 'PVI step text shown');
+    await input.fill('kussmaul');
+    assert.ok(await page.locator('#header-search .quick-search-option[data-kind=step]').count() >= 1, 'term only in step text is found');
     await page.keyboard.press('Escape');
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
 
@@ -115,6 +135,6 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 
     assert.deepEqual(errors, []);
-    console.log('PASS: quick search ranking (TR folding, abbreviations, bilingual, modes first), mode picker with recents, hidden-structure reveal, mode exit, keyboard, Ctrl+K, TR/EN, phone sheet');
+    console.log('PASS: quick search ranking (TR folding, abbreviations, bilingual, modes first, lesson steps by title and text), step pick, mode picker with recents, hidden-structure reveal, mode exit, keyboard, Ctrl+K, TR/EN, phone sheet');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

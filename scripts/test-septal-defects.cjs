@@ -9,8 +9,11 @@ const assert = require('node:assert/strict');
     await page.waitForSelector('#viewport[data-model-ready=true]');
     const state=()=>page.evaluate(()=>window.heart.getState());
     assert.equal((await state()).defects.available.length,9);
+    // Type pickers sit on top of the right panel card only (no hover drawer needed, no duplicate).
+    assert.equal(await page.locator('#defect-details [data-defect-family=asd]').isVisible(),true);
+    assert.equal(await page.locator('#defect-tools [data-defect-family]').count(),0);
     for(const id of (await state()).defects.available){
-      await page.hover('.workspace > aside');await page.locator(`[data-defect-family=${id.split('-')[0]}]`).click();
+      await page.locator(`[data-defect-family=${id.split('-')[0]}]`).click();
       await page.locator(`[data-defect-id=${id}]`).click();
       assert.equal((await state()).selected,id);
       assert.equal((await state()).defects.selected,id);
@@ -23,7 +26,7 @@ const assert = require('node:assert/strict');
     await page.screenshot({path:'research/screenshots/defects-vsd.png'});
     await page.reload();await page.waitForSelector('#viewport[data-model-ready=true]');
     assert.equal((await state()).selected,'vsd-outlet');
-    await page.hover('.workspace > aside');await page.locator('[data-defect-family=asd]').click();
+    await page.locator('[data-defect-family=asd]').click();
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     await page.screenshot({path:'research/screenshots/defects-asd.png'});
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');assert.equal((await state()).defects.visible,false);

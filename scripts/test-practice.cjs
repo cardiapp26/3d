@@ -43,7 +43,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(await page.locator('.panel-tabs').isVisible(), false, 'single tab: no tab bar in lesson modes');
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.locator('.practice').isVisible(), true, 'practice switcher in the anatomy mode');
-    assert.deepEqual(await page.locator('.panel-tabs [role=tab]').allInnerTexts(), ['Öğren', 'Bulgu']);
+    assert.deepEqual(await page.locator('.panel-tabs [role=tab]').allInnerTexts(), ['Öğren', 'İlerleme']);
     assert.equal(await page.locator('#practice-banner').isVisible(), false, 'no task in Explore');
 
     // Learn: starting moves to general anatomy and shows the task on the scene.

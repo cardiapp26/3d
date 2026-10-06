@@ -1,4 +1,5 @@
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
+import { linkToLastRoute } from '../entry-route.js';
 import { createGuytonEcgStudio } from './guyton-studio.js';
 import './guyton-studio.css';
 
@@ -44,6 +45,7 @@ function renderShell() {
 
   text('.ecg-brand-badge', t.badge);
   text('[data-ecg-back]', t.back);
+  linkToLastRoute(document);
   text('[data-ecg-module]', t.module);
   text('[data-ecg-disclaimer]', t.disclaimer);
 

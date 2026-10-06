@@ -184,6 +184,22 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     await page.locator('[data-mode=anatomy]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.getCycleState().speed), 1, 'slow motion restored when leaving the mode');
 
+    // Cross-links: JVP constriction -> catheter case with the RA tracing; catheter tamponade -> JVP tamponade.
+    await page.locator('[data-mode=exam]:not([data-mode-step])').dispatchEvent('click');
+    await page.evaluate(() => window.cardiaExam.applyStep({ jvp: { scenario: 'constriction' } }));
+    await page.locator('[data-jvp-action=cath]').click();
+    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'cath');
+    assert.match(await page.locator('#steps .current').textContent(), /konstrikt|constrict/i, 'constriction step');
+    assert.equal(await page.locator('#hemo-panel [data-hemo-action=jvp]').isVisible(), true, 'the catheter case links back');
+    const tamponadeStep = await page.locator('#steps [data-step]').evaluateAll(list => list.find(b => /tampona/i.test(b.textContent))?.dataset.step);
+    await page.locator(`#steps [data-step="${tamponadeStep}"]`).click();
+    await page.locator('#hemo-panel [data-hemo-action=jvp]').click();
+    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'exam');
+    assert.equal(await page.locator('.jvp-panel [data-jvp-control=scenario]').inputValue(), 'tamponade', 'tamponade applied on the y-descent step');
+    await page.evaluate(() => window.cardiaExam.applyStep({ jvp: { scenario: 'tr' } }));
+    assert.equal(await page.locator('[data-jvp-action=cath]').isVisible(), false, 'no catheter case for a JVP-only pattern');
+    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
+
     // Phone: no horizontal overflow with the JVP panel.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${APP}/#/mode/exam`);
@@ -194,7 +210,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'phone: no horizontal overflow with a strip');
 
     assert.deepEqual(errors, []);
-    console.log('PASS jvp-browser: sub-tabs, lesson steps, wave picking on the shared clock, keyboard, patterns and normal reference, breathing and Kussmaul, strips (AVD/AF/AJR/PPV) driving the heart pose, freeze/slow/restart, protocol judgement, PEEP, export label, slow motion restored, TR/EN, phone');
+    console.log('PASS jvp-browser: sub-tabs, JVP <-> catheter case links, lesson steps, wave picking on the shared clock, keyboard, patterns and normal reference, breathing and Kussmaul, strips (AVD/AF/AJR/PPV) driving the heart pose, freeze/slow/restart, protocol judgement, PEEP, export label, slow motion restored, TR/EN, phone');
   } finally {
     await browser.close();
   }

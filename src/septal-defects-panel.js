@@ -3,8 +3,8 @@ import { DEFECT_TYPES, DEFECT_COPY } from './septal-defects-data.js';
 import { defectMap, MAP_WORDS } from './septal-defects-map.js';
 
 const WORDS = {
-  tr: { focus: '3B modelde odakla', types: 'Defekt tipleri', source: 'Kaynak', more: 'Ek kaynaklar', asd: 'ASD · Atriyal', vsd: 'VSD · Ventriküler', prevalence: 'Sıklık', associations: 'Eşlik eden', conduction: 'İleti sistemi', closure: 'Kapatma', legend: 'Kodlar 3B işaretlerle aynıdır.' },
-  en: { focus: 'Focus in 3D', types: 'Defect types', source: 'Source', more: 'Further reading', asd: 'ASD · Atrial', vsd: 'VSD · Ventricular', prevalence: 'Frequency', associations: 'Associated', conduction: 'Conduction', closure: 'Closure', legend: 'Codes match the 3D markers.' },
+  tr: { focus: '3B modelde odakla', types: 'Defekt tipleri', source: 'Kaynak', more: 'Ek kaynaklar', asd: 'ASD · Atriyal', vsd: 'VSD · Ventriküler', prevalence: 'Sıklık', associations: 'Eşlik eden', conduction: 'İleti sistemi', closure: 'Kapatma', legend: 'Kodlar 3B işaretlerle aynıdır.', pickHere: 'Defekt tipini sağ paneldeki kartın üstünden seçin.' },
+  en: { focus: 'Focus in 3D', types: 'Defect types', source: 'Source', more: 'Further reading', asd: 'ASD · Atrial', vsd: 'VSD · Ventricular', prevalence: 'Frequency', associations: 'Associated', conduction: 'Conduction', closure: 'Closure', legend: 'Codes match the 3D markers.', pickHere: 'Choose the defect type at the top of the card in the right panel.' },
 };
 const FACT_KEYS = ['prevalence', 'associations', 'conduction', 'closure'];
 
@@ -58,6 +58,12 @@ export function createSeptalDefectsPanel({ mount, mountDetails, getLang = () => 
     root.replaceChildren();
     root.setAttribute('aria-label', copy.title);
     root.append(node('h3', 'defect-heading', copy.title), node('p', 'defect-intro', copy.intro));
+    // The type pickers live in one place: on top of the explanation card when it has its own panel.
+    const explanationTarget = detailsRoot || root;
+    if (detailsRoot) {
+      detailsRoot.replaceChildren();
+      root.append(node('p', 'defect-note', words.pickHere));
+    }
 
     const families = node('div', 'defect-families');
     families.setAttribute('role', 'group');
@@ -70,7 +76,7 @@ export function createSeptalDefectsPanel({ mount, mountDetails, getLang = () => 
       button.addEventListener('click', () => choose(DEFECT_TYPES.find(item => item.family === family).id));
       families.append(button);
     }
-    root.append(families);
+    explanationTarget.append(families);
 
     const types = node('div', 'defect-types');
     types.setAttribute('role', 'group');
@@ -84,7 +90,7 @@ export function createSeptalDefectsPanel({ mount, mountDetails, getLang = () => 
       button.addEventListener('click', () => choose(item.id));
       types.append(button);
     }
-    root.append(types);
+    explanationTarget.append(types);
 
     const card = node('div', 'defect-card');
     card.append(node('h4', 'defect-title', current.title[lang]), node('p', 'defect-location', current.location[lang]));
@@ -99,8 +105,6 @@ export function createSeptalDefectsPanel({ mount, mountDetails, getLang = () => 
     card.append(link('defect-source', `${words.source}: ${current.source.title}`, current.source.url));
     for (const ref of current.references || []) card.append(link('defect-source defect-source-extra', `${words.more}: ${ref.title}`, ref.url));
 
-    const explanationTarget = detailsRoot || root;
-    if (detailsRoot) detailsRoot.replaceChildren();
     explanationTarget.append(card, node('p', 'defect-note', copy.schematic), node('p', 'defect-note', copy.flowNote));
     if (current.family === 'asd') explanationTarget.append(node('p', 'defect-note', copy.pfoNote));
     if (current.id === 'asd-primum' || current.id === 'vsd-inlet') explanationTarget.append(node('p', 'defect-note', copy.avsdNote));
@@ -112,7 +116,7 @@ export function createSeptalDefectsPanel({ mount, mountDetails, getLang = () => 
     render();
     const family = DEFECT_TYPES.find(item => item.id === id).family;
     const target = family === previousFamily ? `[data-defect-id="${id}"]` : `[data-defect-family="${family}"]`;
-    root.querySelector(target)?.focus();
+    (detailsRoot || root).querySelector(target)?.focus();
     onSelect(id);
   }
   render();

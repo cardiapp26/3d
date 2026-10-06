@@ -3,13 +3,13 @@ import { createPanelShell } from './panel-shell.js';
 import { createHeaderTabs } from './header-tabs.js';
 import { pharmacologyLinkMarkup, syncPharmacologyLink } from './pharmacology-link.js';
 import { ecgLinkMarkup, syncEcgLink } from './ecg-link.js';
-import { createQuickSearch, rememberMode } from './quick-search.js';
+import { createQuickSearch, rememberMode, normalizeSearch } from './quick-search.js';
 import { createPractice } from './practice.js';
 import { DEFECT_TYPES } from './septal-defects-data.js';
 import * as THREE from 'three';
 import './style.css';
 import {createHeart} from './heart.js';
-import {structures,rawStructures,uiTranslations,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
+import {structures,rawStructures,rawLessons,uiTranslations,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
 import { fetchCountryCode, languageForCountry } from './entry-language.js';
 import { epsLinkMarkup, syncEpsLink, createEpsHandoff, LESSON_CLIPS } from './eps-link.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
@@ -21,6 +21,7 @@ import { createEchoMode } from './echo-mode.js';
 import { createKochSpPanel } from './koch-sp-panel.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
+import { rememberRoute } from './entry-route.js';
 
 document.documentElement.lang = getContentLanguage();
 
@@ -205,7 +206,7 @@ app.innerHTML = `
       <button data-view="mitral" title="Mitral scallops · A1–A3 / P1–P3">Mitral</button>
       </div>
       <div class="view-tools">
-      <button id="carm-toggle-dock" class="carm-dock-btn" title="C-Arm & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
+      <button id="carm-toggle-dock" class="carm-dock-btn" type="button" aria-controls="carm-panel" aria-expanded="false" title="C-Arm & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
       <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
       <button id="fluoro-contours-toggle" class="fluoro-contours-btn" title="${getTranslation('fluoroContoursTitle')}" aria-pressed="true" hidden><span data-i18n="fluoroContours">${getTranslation('fluoroContours')}</span></button>
       <button id="reset" title="Reset camera (0)">↺</button>
@@ -268,7 +269,6 @@ app.innerHTML = `
   <article>
     <!-- C-ARM FLUOROSCOPY & JOYSTICK PANEL -->
     <div id="carm-panel" class="carm-panel collapsed" aria-label="C-Arm Anjiyografi Kontrolü">
-      <button id="carm-edge-tab" class="carm-edge-tab" type="button" aria-controls="carm-content" aria-expanded="false" title="C-Arm & Joystick Paneli"><span data-i18n="carmTitle">${getTranslation('carmTitle')}</span></button>
       <div class="carm-header" id="carm-header">
         <div class="carm-title-group">
           <span class="carm-led-pulse"></span>
@@ -721,13 +721,15 @@ const hemoMode = heart ? createHemoMode({
   heart,
   mount: document.querySelector('#hemo-panel'),
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
-  onFocus: station => inspect(`cath-${station === 'pcwp' ? 'wedge' : station}`, false, false)
+  onFocus: station => inspect(`cath-${station === 'pcwp' ? 'wedge' : station}`, false, false),
+  onOpenJvp: scenario => openJvpCase(scenario)
 }) : null;
 const examMode = heart ? createExamMode({
   heart,
   mount: document.querySelector('#exam-panel'),
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
   onArea: areaId => inspect(`ausc-${areaId}`, false, false),
+  onOpenCath: scenario => openCathCase(scenario),
   // A tab click in the panel moves the lesson to the first step of that section.
   onView: view => {
     if (mode !== 'exam') return;
@@ -738,6 +740,30 @@ const examMode = heart ? createExamMode({
     if (first >= 0) { step = first; showStep({ keepExamPanel: true }); }
   }
 }) : null;
+// The JVP and the catheter RA tracing share their scenarios (jvp-physiology.js):
+// each side opens the other at the lesson step of the same case.
+function openLessonStep(target, index) {
+  panelShell?.closeSheet();
+  setMode(target);
+  step = Math.max(0, Math.min((lessons[target]?.steps.length || 1) - 1, index));
+  showStep();
+  if (panelShell?.isMobile()) panelShell.open('learn');
+}
+function openCathCase(hemoScenario) {
+  const steps = lessons.cath?.steps || [];
+  const withRa = steps.findIndex(st => st.scenario === hemoScenario && st.channels?.includes('ra'));
+  openLessonStep('cath', withRa >= 0 ? withRa : steps.findIndex(st => st.scenario === hemoScenario));
+  hemoMode?.focusStation('cath-ra');   // the RA tracing joins the step's channels
+}
+function openJvpCase(jvpScenario) {
+  const steps = lessons.exam?.steps || [];
+  const match = steps.findIndex(st => st.jvp?.scenario === jvpScenario);
+  // No step of its own (tamponade): the y-descent step, with the scenario applied on top.
+  const fallback = steps.findIndex(st => st.jvp?.wave === 'y');
+  const index = match >= 0 ? match : fallback >= 0 ? fallback : steps.findIndex(st => st.jvp);
+  openLessonStep('exam', index);
+  if (match < 0) examMode?.getJvp()?.apply({ ...steps[index]?.jvp, scenario: jvpScenario });
+}
 const echoMode = heart ? createEchoMode({
   heart,
   mount: document.querySelector('#echo-panel'),
@@ -752,7 +778,7 @@ const defectPanel = createSeptalDefectsPanel({
 panelShell = createPanelShell({ getLang: getContentLanguage });
 headerTabs = createHeaderTabs({ getLang: getContentLanguage });
 
-const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'Bulgu', en: 'Findings' }, onShow: () => practice?.refresh() });
+const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'İlerleme', en: 'Progress' }, onShow: () => practice?.refresh() });
 practice = createPractice({
   mount: document.querySelector('#panel-learn'),
   findings: findingsPanel,
@@ -778,7 +804,24 @@ function searchItems() {
   const otherModes = new Map((uiTranslations[otherLang()]?.modes || []).map(([id, , label]) => [id, label]));
   const modes = getUiModes().map(([id, n, label]) => ({ kind: 'mode', id, label, alt: otherModes.get(id), meta: `${n} · ${modeGroupOf(id) ? getTranslation(modeGroupOf(id)) : ''}` }));
   const items = [...select.options].map(option => ({ kind: 'structure', id: option.value, label: option.text, alt: rawStructures[option.value]?.[otherLang()]?.title }));
-  return [...modes, ...items];
+  return [...modes, ...stepItems(), ...items];
+}
+// Lesson steps: titles in both languages, the step text normalized once per language.
+const stepSearchCache = new Map();
+function stepItems() {
+  const lang = getContentLanguage();
+  if (!stepSearchCache.has(lang)) {
+    const modeLabels = new Map(getUiModes().map(([id, n, label]) => [id, `${n} · ${label}`]));
+    stepSearchCache.set(lang, Object.entries(rawLessons).filter(([id]) => modeLabels.has(id)).flatMap(([id, raw]) => {
+      const own = raw[lang] || raw.tr;
+      const other = raw[otherLang()];
+      return (own.steps || []).map((st, i) => ({
+        kind: 'step', id: `${id}:${i}`, mode: id, step: i, label: st.title, alt: other?.steps?.[i]?.title,
+        meta: modeLabels.get(id), body: normalizeSearch(st.text)
+      }));
+    }));
+  }
+  return stepSearchCache.get(lang);
 }
 function searchModeGroups() {
   const modes = new Map(searchItems().filter(item => item.kind === 'mode').map(item => [item.id, item]));
@@ -805,9 +848,14 @@ function pickStructure(id) {
   if (panelShell?.isMobile()) panelShell.open('learn');
 }
 function onSearchPick(item) {
-  if (item.kind === 'mode') {
+  if (item.kind === 'mode' || item.kind === 'step') {
     panelShell?.closeSheet();
-    setMode(item.id);
+    setMode(item.kind === 'step' ? item.mode : item.id);
+    if (item.kind === 'step') {
+      step = Math.max(0, Math.min((lessons[item.mode]?.steps.length || 1) - 1, item.step));
+      showStep();
+      if (panelShell?.isMobile()) panelShell.open('learn');
+    }
   } else pickStructure(item.id);
 }
 const quickSearches = ['#header-search', '#aside-search'].map(sel => document.querySelector(sel)).filter(Boolean).map(mount => createQuickSearch({
@@ -942,13 +990,12 @@ const carmPanel = document.querySelector('#carm-panel');
 const carmToggleBtn = document.querySelector('#carm-toggle-btn');
 const carmDockBtn = document.querySelector('#carm-toggle-dock');
 const carmHeader = document.querySelector('#carm-header');
-const carmEdgeTab = document.querySelector('#carm-edge-tab');
 
 function setCarmPanelOpen(open) {
   if (!carmPanel) return;
   carmPanel.classList.toggle('collapsed', !open);
   if (carmToggleBtn) carmToggleBtn.textContent = open ? '−' : '+';
-  carmEdgeTab?.setAttribute('aria-expanded', String(open));
+  carmDockBtn?.setAttribute('aria-expanded', String(open));
 }
 
 function toggleCarmPanel() {
@@ -959,7 +1006,6 @@ function toggleCarmPanel() {
 
 carmToggleBtn?.addEventListener('click', toggleCarmPanel);
 carmDockBtn?.addEventListener('click', toggleCarmPanel);
-carmEdgeTab?.addEventListener('click', toggleCarmPanel);
 
 function filterAtrialOptions() {
   for (const option of select.options) {
@@ -1089,7 +1135,7 @@ function setMode(newMode, updateUrl = true) {
   const usesPractice = mode === 'anatomy' || Boolean(chamberMode(mode));
   document.documentElement.dataset.practice = usesPractice ? 'on' : 'off';
   panelShell?.setTabVisible('findings', usesPractice);
-  // The C-Arm is a drawer hidden at the right edge in every mode; the edge tab, the dock button or C opens it.
+  // The C-Arm is a drawer hidden at the right edge in every mode; the dock button or C opens it.
   setCarmPanelOpen(false);
 
   const opacity = lessons[mode] ? Math.round(LESSON_TISSUE_OPACITY * 100) : 100;
@@ -1134,6 +1180,7 @@ function syncUrl() {
   if (window.location.hash !== hash) {
     history.replaceState(null, '', hash);
   }
+  rememberRoute(hash);
 }
 
 function handleHashChange() {
@@ -1156,6 +1203,7 @@ function handleHashChange() {
     if (targetStructure && structures[targetStructure]) {
       inspect(targetStructure, true, false);
     }
+    rememberRoute(window.location.hash);   // a deep link is a visit too (syncUrl is skipped here)
   } finally {
     isUpdatingRoute = false;
   }

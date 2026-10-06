@@ -1,4 +1,5 @@
 import { initialLanguage, rememberLanguage } from './entry-language.js';
+import { linkToLastRoute } from './entry-route.js';
 import { PHARMA_TOPICS } from './pharmacology-data.js';
 import { pharmaText } from './pharmacology-model.js';
 import { createPharmacologyPanel } from './pharmacology-panel.js';
@@ -52,6 +53,7 @@ function renderShell() {
   text('[data-pharma-eyebrow]', w.eyebrow);
   text('[data-pharma-subtitle]', w.subtitle);
   text('[data-pharma-back]', w.back);
+  linkToLastRoute(document);
   text('[data-pharma-ecg]', lang === 'tr' ? 'EKG' : 'ECG');
   text('[data-pharma-source-note]', w.sourceNote);
   text('[data-pharma-disclaimer]', w.disclaimer);

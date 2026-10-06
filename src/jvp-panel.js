@@ -1,6 +1,6 @@
 import { CYCLE_SYNC as S } from './cardiac-cycle.js';
 import { ecgSample } from './ecg-trace.js';
-import { JVP_SCENARIOS, jvpCurve, heightAboveSternalAngle } from './jvp-physiology.js';
+import { JVP_SCENARIOS, jvpCurve, heightAboveSternalAngle, jvpHemoScenario } from './jvp-physiology.js';
 import { JVP_TEXT, JVP_SOURCES } from './jvp-content.js';
 import { buildStrip, evaluateAjr, STRIP_MODES } from './jvp-timeline.js';
 import { PARAMETER_VERSION, parametersFor, toCsv } from './jvp-parameters.js';
@@ -87,7 +87,10 @@ export function createJvpPanel(mount, deps) {
   const params = el('ul', 'jvp-params');
   const sources = el('p', 'jvp-note');
   more.append(moreSummary, questions, paramTitle, params, sources);
-  root.append(heading, controls, waveRow, canvas, readout, result, card, bedsideNote, synthetic, more);
+  // Scenarios shared with the catheterization module open the same case there (deps.onOpenCath).
+  const cathLink = el('button', 'jvp-crosslink', null, { type: 'button', 'data-jvp-action': 'cath' });
+  cathLink.addEventListener('click', () => { const hemo = jvpHemoScenario(state.scenario); if (hemo) deps.onOpenCath?.(hemo); });
+  root.append(heading, controls, waveRow, canvas, readout, result, card, cathLink, bedsideNote, synthetic, more);
   mount.append(root);
 
   viewField.select.addEventListener('change', () => set({ view: viewField.select.value }));
@@ -268,10 +271,13 @@ export function createJvpPanel(mount, deps) {
     respNote.hidden = !respNote.textContent;
     bedsideNote.hidden = false;
     bedsideNote.textContent = t.bedsideNote;
+    cathLink.hidden = !(deps.onOpenCath && jvpHemoScenario(state.scenario));
+    cathLink.textContent = t.toCath;
     canvas.setAttribute('aria-label', `${t.axis}: ${t.scenarios[state.scenario].title}`);
   }
 
   function renderStrip(t) {
+    cathLink.hidden = true;
     waveRow.hidden = true;
     waveRow.replaceChildren();
     cardTitle.textContent = t.views[state.view];

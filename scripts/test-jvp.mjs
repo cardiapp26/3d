@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CYCLE_SYNC as S, CARDIAC_INTERVALS, timeToPhase } from '../src/cardiac-cycle.js';
 import { realTimeMean, createHemodynamics } from '../src/hemodynamics.js';
-import { JVP_SCENARIOS, jvpCurve, targetMean, heightAboveSternalAngle, tricuspidOpen, WAVE_PHASE } from '../src/jvp-physiology.js';
+import { JVP_SCENARIOS, jvpCurve, targetMean, heightAboveSternalAngle, tricuspidOpen, WAVE_PHASE, jvpHemoScenario, hemoJvpScenario } from '../src/jvp-physiology.js';
 import { JVP_TEXT } from '../src/jvp-content.js';
 
 const at = (id, wave, opts) => jvpCurve(id, opts).labels.find(l => l.id === wave);
@@ -87,4 +87,13 @@ for (const file of ['../src/jvp-physiology.js', '../src/jvp-content.js', '../src
   assert.ok(!readFileSync(new URL(file, import.meta.url), 'utf8').includes('\u2014'), `${file}: no em dash`);
 }
 assert.ok(Number.isFinite(timeToPhase(0.5, 72)));
-console.log('PASS jvp: wave timing, TR/TS/AF/constriction/tamponade/cannon patterns, breathing and Kussmaul, units, catheterization cross-check, TR/EN text');
+
+// Cross-links: the shared scenarios map both ways; JVP-only patterns have no catheter case.
+for (const [jvp, hemo] of [['normal', 'normal'], ['constriction', 'constrictive_pericarditis'], ['tamponade', 'tamponade']]) {
+  assert.equal(jvpHemoScenario(jvp), hemo);
+  assert.equal(hemoJvpScenario(hemo), jvp);
+}
+for (const id of ['af', 'tr', 'ts', 'cannon', 'unknown']) assert.equal(jvpHemoScenario(id), null);
+assert.equal(hemoJvpScenario('aortic_stenosis_severe'), null);
+for (const lang of ['tr', 'en']) assert.match(JVP_TEXT[lang].toCath, /\S/);
+console.log('PASS jvp: wave timing, TR/TS/AF/constriction/tamponade/cannon patterns, breathing and Kussmaul, units, catheterization cross-check and links, TR/EN text');

@@ -71,6 +71,15 @@ const SHAPES = {
 };
 
 export const JVP_SCENARIOS = Object.freeze(Object.keys(SHAPES));
+
+/** Catheterization scenario (hemo-scenarios.js) a JVP scenario shares its numbers with, or null. */
+export function jvpHemoScenario(id) {
+  return SHAPES[id]?.hemo || null;
+}
+/** JVP scenario drawn from a catheterization scenario, or null. */
+export function hemoJvpScenario(hemoId) {
+  return JVP_SCENARIOS.find(id => SHAPES[id].hemo === hemoId) || null;
+}
 /** Scenarios with a spontaneous-breathing Kussmaul response (not tamponade). */
 const KUSSMAUL = new Set(['constriction']);
 

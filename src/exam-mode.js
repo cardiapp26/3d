@@ -9,9 +9,11 @@ import { JVP_TEXT } from './jvp-content.js';
 // pattern, the breathing phase and a wave.
 
 /**
- * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en', onArea?: (areaId: string) => void }} deps
+ * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en', onArea?: (areaId: string) => void,
+ *   onOpenCath?: (hemoScenario: string) => void }} deps
+ *   onOpenCath: the JVP scenario's catheterization case is requested.
  */
-export function createExamMode({ heart, mount, getLang, onArea, onView }) {
+export function createExamMode({ heart, mount, getLang, onArea, onView, onOpenCath }) {
   let panel = null, jvp = null, tabs = null;
   let active = false, view = 'auscultation';
   const sections = {};
@@ -47,7 +49,8 @@ export function createExamMode({ heart, mount, getLang, onArea, onView }) {
       getCycleState: () => heart.getCycleState(),
       onSeek: (phase, options) => heart.seekCycle(phase, options),
       onFreeze: frozen => heart.setBeating(!frozen),
-      onSlow: slow => heart.setCycleSpeed(slow ? 0.35 : 1)
+      onSlow: slow => heart.setCycleSpeed(slow ? 0.35 : 1),
+      onOpenCath
     });
     showView(view);
     return panel;

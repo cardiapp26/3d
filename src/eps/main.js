@@ -10,6 +10,7 @@ import './lesson.css';
 import { APP_TEXT, LANGS, CARDIA_URL, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
 import { createEpPanel, EP_VIEWS } from './ep-panel.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
+import { simulatorHref } from '../entry-route.js';
 import { registerOffline } from './offline.js';
 
 let lang = resolveLang(location.search, initialLanguage());
@@ -61,7 +62,7 @@ function renderShell() {
   shortcuts.textContent = t.shortcuts;
   back.textContent = t.back;
   back.title = t.backTitle;
-  back.href = CARDIA_URL;
+  back.href = simulatorHref(CARDIA_URL);
   document.querySelector('[data-app-pharmacology]').textContent = lang === 'tr' ? 'Farmakoloji' : 'Pharmacology';
   const ecgLink = document.querySelector('[data-app-ecg]');
   if (ecgLink) ecgLink.textContent = lang === 'tr' ? 'EKG' : 'ECG';

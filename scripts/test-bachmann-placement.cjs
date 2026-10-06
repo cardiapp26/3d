@@ -112,10 +112,10 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
     // Mode identity: the badge names mode and selection; the target and labels are lesson-only.
     assert.match(await page.locator('#scene-context').textContent(), /^13 · Bachmann demeti & pacing · Seçili: Bachmann/);
     const frames = () => page.evaluate(() => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res))));
-    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click();
+    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-toggle-dock').click(); await page.locator('#fluoroscopy-toggle').click();
     await frames();
     assert.equal(await page.locator('.scene-label:not([hidden])').count(), 0, 'no identity labels over the fluoroscopy image');
-    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click();
+    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-toggle-dock').click(); await page.locator('#fluoroscopy-toggle').click();
     await page.locator('[data-mode=atria]').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Bachmann pacing target').visible), false);
     await page.waitForTimeout(300);

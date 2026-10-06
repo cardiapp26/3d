@@ -13,18 +13,13 @@ dialog#references a{color:#21493f}
 /* C-ARM & ANGIOGRAPHY JOYSTICK CONTROLS */
 .carm-panel{position:relative;width:100%;margin:0 0 12px;background:rgba(14,24,21,0.94);border:1px solid rgba(52,160,137,0.38);border-radius:12px;color:#e3ede8;box-shadow:0 6px 20px rgba(0,0,0,0.18);transition:box-shadow 0.2s ease;user-select:none}
 .carm-panel.collapsed .carm-content{display:none}
-.carm-edge-tab{display:none}
-/* Desktop: the C-Arm is a drawer docked to the right edge of the window. Closed, only its edge tab shows;
+/* Desktop: the C-Arm is a drawer docked to the right edge of the window, opened from the dock button (C);
    the panel keeps its state and opens over the lesson column. Phones keep the bottom drawer below. */
 @media(min-width:769px){
   .carm-panel{position:fixed;right:0;top:140px;width:min(360px,92vw);margin:0;border-radius:12px 0 0 12px;border-right:0;z-index:70;background:#0e1815;transition:transform .22s ease,box-shadow .2s ease}
   .carm-panel.collapsed{transform:translateX(100%);box-shadow:none}
   .carm-panel.collapsed .carm-header{visibility:hidden}
   .carm-panel .carm-content{max-height:calc(100vh - 254px);overflow-y:auto}
-  .carm-edge-tab{display:flex;align-items:center;justify-content:center;position:absolute;left:-30px;top:12px;width:30px;padding:12px 0;border:1px solid rgba(52,160,137,0.45);border-right:0;border-radius:8px 0 0 8px;background:rgba(14,24,21,0.94);color:#6ce9be;cursor:pointer;box-shadow:-3px 3px 10px rgba(0,0,0,0.16)}
-  .carm-edge-tab span{writing-mode:vertical-rl;font-size:11px;font-weight:700;letter-spacing:1.4px}
-  .carm-edge-tab:hover{background:rgba(29,66,55,0.98);color:#b8f6dd}
-  .carm-edge-tab:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
 }
 .carm-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(22,38,33,0.85);border-top-left-radius:11px;border-top-right-radius:11px;border-bottom:1px solid rgba(52,160,137,0.25);cursor:pointer}
 .carm-panel.collapsed .carm-header{border-bottom:0;border-radius:11px}
@@ -952,6 +947,9 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .jvp-card p{font-size:11px;line-height:1.45;margin:3px 0;color:#4d5e52}
 .jvp-resp-note{color:#2f6f8f!important;font-weight:600}
 .jvp-note{font-size:10px!important;line-height:1.5!important;color:#5f6f64!important}
+.jvp-crosslink,.hemo-crosslink{display:block;width:100%;margin:6px 0;padding:6px 10px;border:1px solid #9fc0b2;border-radius:6px;background:#eef6f1;color:#244f43;font-size:11.5px;font-weight:600;text-align:left;cursor:pointer}
+.jvp-crosslink:hover,.hemo-crosslink:hover{background:#dcefe5}
+.jvp-crosslink[hidden],.hemo-crosslink[hidden]{display:none}
 .jvp-more summary{font-size:11px;font-weight:600;color:#536e5b;cursor:pointer}
 .jvp-questions{font-size:11px;color:#4d5e52;padding-left:18px;margin:4px 0}
 .jvp-panel [hidden]{display:none!important}
@@ -1133,8 +1131,9 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .pharmacology-link:hover{background:#dde9d2}
 @media(max-width:640px){.brand-block .pharmacology-link{font-size:10px;padding:0 6px}.brand-block{gap:4px}.brand-block .brand{gap:3px}.brand-block .brand strong{font-size:14px}}
 .header-module-links{display:flex;align-items:center;gap:6px}.header-module-links .eps-link{margin-left:0}
-@media(max-width:640px){.header-module-links{gap:4px}.brand-block .brand{font-size:14px}.brand-block .brand strong{font-size:13px}.header-module-links .eps-link{min-height:40px;padding:0 6px}.header-right #sources{padding:6px 4px}}
+@media(max-width:640px){.header-module-links{gap:4px}.brand-block .brand{font-size:14px}.brand-block .brand strong{font-size:13px}.header-module-links .eps-link{min-height:44px;padding:0 6px}.header-right #sources{padding:6px 4px}}
 @media(max-width:640px){header .brand-block,header .header-module-links{flex-shrink:0}header .header-right{gap:3px}header #sources{min-width:44px;min-height:44px;padding:0;justify-content:center}header #sources span{font-size:0}header #sources::before{content:'ⓘ';font-size:17px}header .header-right button{margin-left:0}}
+@media(max-width:420px){.brand-block .brand strong{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
 @media(max-width:360px){header .brand-block .brand strong{display:none}header .brand-block .brand{font-size:19px}header .header-module-links .eps-link{font-size:10px}}
 
 /* Lesson step list: section headings (physical examination: auscultation, venous pressure). */

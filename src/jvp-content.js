@@ -29,7 +29,7 @@ export const JVP_TEXT = Object.freeze({
     kussmaulNote: 'Bu örüntüde inspiryumda basınç düşmüyor, yükseliyor (Kussmaul).',
     respNormalNote: 'Spontan inspiryumda negatif göğüs içi basınçla venöz basınç düşer; sağ kalbe dönüş artar.',
     tamponadeRespNote: 'Tamponadda bu şema otomatik Kussmaul vermez: dolgun boyun venleri Kussmaul ile aynı şey değildir.',
-    view: 'Görünüm', restart: 'Baştan başlat', exportCsv: 'CSV indir', seconds: 's',
+    view: 'Görünüm', restart: 'Baştan başlat', exportCsv: 'CSV indir', seconds: 's', toCath: 'Kateterde aynı olgu: RA basınç eğrisi →',
     views: {
       beat: 'Tek atım (kalp döngüsü)', af: 'Ritim şeridi: atriyal fibrilasyon', avd: 'Ritim şeridi: AV dissosiyasyonu (cannon a)',
       ajr: 'Abdominojuguler test', ppv: 'Pozitif basınçlı ventilasyon'
@@ -97,7 +97,7 @@ export const JVP_TEXT = Object.freeze({
     kussmaulNote: 'In this pattern the pressure does not fall on inspiration; it rises (Kussmaul).',
     respNormalNote: 'On spontaneous inspiration the negative intrathoracic pressure lowers the venous pressure while return to the right heart increases.',
     tamponadeRespNote: 'This schematic gives tamponade no automatic Kussmaul response: full neck veins are not the same as Kussmaul.',
-    view: 'View', restart: 'Restart', exportCsv: 'Download CSV', seconds: 's',
+    view: 'View', restart: 'Restart', exportCsv: 'Download CSV', seconds: 's', toCath: 'Same case in the cath lab: RA pressure tracing →',
     views: {
       beat: 'Single beat (cardiac cycle)', af: 'Rhythm strip: atrial fibrillation', avd: 'Rhythm strip: AV dissociation (cannon a)',
       ajr: 'Abdominojugular test', ppv: 'Positive pressure ventilation'

@@ -73,7 +73,7 @@ const openDrawer = async (page, id) => {
     await page.locator('#steps [data-step="3"]').click();
     await settle();
     assert.equal(await page.evaluate(() => window.heart.getState().angio.laoRao), 40);
-    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-edge-tab').click(); await page.locator('#fluoroscopy-toggle').click(); await settle();
+    if (await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed'))) await page.locator('#carm-toggle-dock').click(); await page.locator('#fluoroscopy-toggle').click(); await settle();
     await page.screenshot({path:path.join(shotDir, 'bachmann-pacing-lao40.png')});
     await page.locator('#lang-btn').click();
     assert.match(await page.locator('#lesson-title').textContent(), /Bachmann bundle/);

@@ -329,12 +329,13 @@ const openDrawer = async (page, id) => {
     await page.evaluate(() => window.heart.setLayer('cardiac-veins', true));
     assert.ok(await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).every(s => !s.visible), cardiacVeinIds), 'cardiac vein toggle cannot reveal veins in angiography');
     assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm stays hidden at the right edge in angiography mode');
-    const edge = await page.locator('#carm-edge-tab').boundingBox();
-    assert.ok(edge && edge.x + edge.width >= page.viewportSize().width - 2, 'desktop: only the edge tab shows, at the right edge of the window');
-    await page.locator('#carm-edge-tab').click();
-    assert.ok(!await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'the edge tab opens the C-Arm drawer');
+    assert.equal(await page.locator('#carm-edge-tab').count(), 0, 'no edge tab over the lesson panel');
+    const drawer = await page.locator('#carm-panel').boundingBox();
+    assert.ok(!drawer || drawer.x >= page.viewportSize().width - 2, 'desktop: the closed drawer sits beyond the right edge');
+    await page.locator('#carm-toggle-dock').click();
+    assert.ok(!await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'the dock button opens the C-Arm drawer');
     assert.equal(await page.locator('#carm-toggle-btn').textContent(), '−');
-    assert.equal(await page.locator('#carm-edge-tab').getAttribute('aria-expanded'), 'true');
+    assert.equal(await page.locator('#carm-toggle-dock').getAttribute('aria-expanded'), 'true');
 
     // While panel is open, test C-Arm conduction quick-toggle button sync
     await page.locator('#carm-conduction-toggle').click();

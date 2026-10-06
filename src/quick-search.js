@@ -1,12 +1,12 @@
 /**
- * Quick search: one combobox that finds learning modes and anatomical
- * structures by name or abbreviation in either language. With an empty query
+ * Quick search: one combobox that finds learning modes, lesson steps and
+ * anatomical structures by name or abbreviation in either language. With an empty query
  * it doubles as the mode picker (recent modes first, then grouped modes).
  * The ranking is a pure function so it can be tested without a DOM.
  */
 const WORDS = {
-  tr: { placeholder: 'Yapı veya mod ara', label: 'Yapı veya eğitim modu ara', modes: 'Modlar', recent: 'Son kullanılan', structures: 'Yapılar', none: 'Sonuç yok. Başka bir ad veya kısaltma deneyin.', hint: 'Ctrl K' },
-  en: { placeholder: 'Search structure or mode', label: 'Search a structure or learning mode', modes: 'Modes', recent: 'Recent', structures: 'Structures', none: 'No results. Try another name or abbreviation.', hint: 'Ctrl K' },
+  tr: { placeholder: 'Yapı veya mod ara', label: 'Yapı veya eğitim modu ara', modes: 'Modlar', steps: 'Ders adımları', recent: 'Son kullanılan', structures: 'Yapılar', none: 'Sonuç yok. Başka bir ad veya kısaltma deneyin.', hint: 'Ctrl K' },
+  en: { placeholder: 'Search structure or mode', label: 'Search a structure or learning mode', modes: 'Modes', steps: 'Lesson steps', recent: 'Recent', structures: 'Structures', none: 'No results. Try another name or abbreviation.', hint: 'Ctrl K' },
 };
 const RECENT_KEY = 'cardia.recentModes';
 const MAX_RESULTS = 8;
@@ -26,9 +26,11 @@ export function abbreviations(text) {
 }
 
 /**
- * Rank `items` ({ kind, id, label, alt? }) for `query`. Exact abbreviation,
+ * Rank `items` ({ kind, id, label, alt?, body? }) for `query`. Exact abbreviation,
  * then word prefix, then substring; modes win ties so "ablasyon" finds the
- * mode before any structure mentioning it.
+ * mode before any structure mentioning it. `body` is already normalized
+ * (normalizeSearch) lesson text: a word starting with the query there ranks
+ * below every name match, so "Fick" or "Kussmaul" still find their step.
  */
 export function rankSearch(query, items, limit = MAX_RESULTS) {
   const q = normalizeSearch(query);
@@ -45,6 +47,7 @@ export function rankSearch(query, items, limit = MAX_RESULTS) {
       else if (norm.includes(q)) best = Math.max(best, 30);
       else if (q.includes(' ') && q.split(' ').every(part => words.some(w => w.startsWith(part)))) best = Math.max(best, 45);
     }
+    if (!best && item.body && q.length >= 3 && ` ${item.body}`.includes(` ${q}`)) best = 15;
     if (best) scored.push({ item, score: best + (item.kind === 'mode' ? 5 : 0) });
   }
   scored.sort((a, b) => b.score - a.score || a.item.label.localeCompare(b.item.label));
@@ -135,9 +138,12 @@ export function createQuickSearch({ mount, getLang = () => 'tr', getItems, getMo
     if (normalizeSearch(query)) {
       const found = rankSearch(query, getItems());
       const modes = found.filter(item => item.kind === 'mode');
+      const steps = found.filter(item => item.kind === 'step');
       const structures = found.filter(item => item.kind === 'structure');
       if (modes.length) { list.append(heading(w.modes)); modes.forEach(add); }
+      // Steps last: Enter takes the first row, and a structure name should not lose to a step text.
       if (structures.length) { list.append(heading(w.structures)); structures.forEach(add); }
+      if (steps.length) { list.append(heading(w.steps)); steps.forEach(add); }
       if (!found.length) {
         const empty = document.createElement('div');
         empty.className = 'quick-search-empty';
