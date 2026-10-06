@@ -11,26 +11,36 @@ import { AT_EXAMPLES, AT_SOURCE, AT_RECORDING_TEXT, atRecording } from './at-mar
 
 export const svtExampleRecording = (id) => epRecording(id) || avrtLocalizationRecording(id) || standardEpsRecording(id) || ectorRecording(id) || apAblationRecording(id) || atRecording(id);
 
-export const SVT_EXAMPLES = Object.freeze([
-  ...STANDARD_EPS_EXAMPLES,
-  ...AP_ABLATION_EXAMPLES,
-  ['avnrt-typ-svt', 'Tipik AVNRT', 'Typical AVNRT'],
-  ECTOR_EXAMPLE,
-  ['avnrt-atyp-svt', 'Atipik AVNRT', 'Atypical AVNRT'],
-  ['ap-ll-svt', 'Ortodromik AVRT: sol lateral yol', 'Orthodromic AVRT: left lateral pathway'],
-  ['ap-ips-svt', 'Ortodromik AVRT: inferior paraseptal yol', 'Orthodromic AVRT: inferior paraseptal pathway'],
-  ['ph-svt', 'Ortodromik AVRT: para-Hisian yol', 'Orthodromic AVRT: para-Hisian pathway'],
-  ...AVRT_LOCALIZATIONS.map((s) => [s.id, `Ortodromik AVRT: ${s.names[0]} yol`, `Orthodromic AVRT: ${s.names[1]} pathway`]),
-  ['pjrt-svt', 'PJRT: yavaş retrograd yol', 'PJRT: slow retrograde pathway'],
-  ['at-svt', 'Atriyal taşikardi', 'Atrial tachycardia'],
-  ...AT_EXAMPLES,
-  ['flutter-svt', 'Atriyal flutter', 'Atrial flutter'],
-  ['avnrt-ah-jump', 'AH jump', 'AH jump'],
-  ['avnrt-jump-echo', 'AH jump + eko', 'AH jump + echo'],
-  ['avnrt-typ-hispvc', 'AVNRT: His-refrakter PVC', 'AVNRT: His-refractory PVC'],
-  ['ap-ll-hispvc', 'AVRT: His-refrakter PVC', 'AVRT: His-refractory PVC'],
-  ['at-vop', 'AT: ventriküler overdrive', 'AT: ventricular overdrive']
-].map(Object.freeze));
+// Examples grouped for the side list; SVT_EXAMPLES is the same order, flat.
+export const SVT_EXAMPLE_GROUPS = Object.freeze([
+  { tr: 'Normal EPS', en: 'Normal EPS', items: [...STANDARD_EPS_EXAMPLES] },
+  { tr: 'Aksesuar yol ablasyonu', en: 'Accessory pathway ablation', items: [...AP_ABLATION_EXAMPLES] },
+  { tr: 'AVNRT', en: 'AVNRT', items: [
+    ['avnrt-typ-svt', 'Tipik AVNRT', 'Typical AVNRT'],
+    ECTOR_EXAMPLE,
+    ['avnrt-atyp-svt', 'Atipik AVNRT', 'Atypical AVNRT']
+  ] },
+  { tr: 'AVRT', en: 'AVRT', items: [
+    ['ap-ll-svt', 'Ortodromik AVRT: sol lateral yol', 'Orthodromic AVRT: left lateral pathway'],
+    ['ap-ips-svt', 'Ortodromik AVRT: inferior paraseptal yol', 'Orthodromic AVRT: inferior paraseptal pathway'],
+    ['ph-svt', 'Ortodromik AVRT: para-Hisian yol', 'Orthodromic AVRT: para-Hisian pathway'],
+    ...AVRT_LOCALIZATIONS.map((s) => [s.id, `Ortodromik AVRT: ${s.names[0]} yol`, `Orthodromic AVRT: ${s.names[1]} pathway`]),
+    ['pjrt-svt', 'PJRT: yavaş retrograd yol', 'PJRT: slow retrograde pathway']
+  ] },
+  { tr: 'Atriyal taşikardi ve flutter', en: 'Atrial tachycardia and flutter', items: [
+    ['at-svt', 'Atriyal taşikardi', 'Atrial tachycardia'],
+    ...AT_EXAMPLES,
+    ['flutter-svt', 'Atriyal flutter', 'Atrial flutter']
+  ] },
+  { tr: 'Manevralar', en: 'Maneuvers', items: [
+    ['avnrt-ah-jump', 'AH jump', 'AH jump'],
+    ['avnrt-jump-echo', 'AH jump + eko', 'AH jump + echo'],
+    ['avnrt-typ-hispvc', 'AVNRT: His-refrakter PVC', 'AVNRT: His-refractory PVC'],
+    ['ap-ll-hispvc', 'AVRT: His-refrakter PVC', 'AVRT: His-refractory PVC'],
+    ['at-vop', 'AT: ventriküler overdrive', 'AT: ventricular overdrive']
+  ] }
+].map((g) => Object.freeze({ ...g, items: Object.freeze(g.items.map(Object.freeze)) })));
+export const SVT_EXAMPLES = Object.freeze(SVT_EXAMPLE_GROUPS.flatMap((g) => g.items));
 
 export function createSvtRecordings(doc, getLang) {
   const el = (tag, cls, attr) => {
@@ -68,14 +78,32 @@ export function createSvtRecordings(doc, getLang) {
   source.setAttribute('href', AVRT_LOCALIZATION_SOURCE);
   source.setAttribute('target', '_blank');
   source.setAttribute('rel', 'noopener noreferrer');
+  // Side list of examples (desktop); the select stays as the compact picker on phones.
+  const list = el('nav', 'svt-example-list', 'data-svt-example-list');
+  const groupHeads = [];
+  const items = new Map();
+  for (const group of SVT_EXAMPLE_GROUPS) {
+    const head = el('p', 'svt-example-group'); groupHeads.push([head, group]); list.append(head);
+    for (const [exampleId] of group.items) {
+      const b = el('button', 'svt-example-item');
+      b.type = 'button'; b.setAttribute('data-svt-example-item', exampleId);
+      b.addEventListener('click', () => choose(exampleId));
+      items.set(exampleId, b); list.append(b);
+    }
+  }
+  const main = el('div', 'svt-recording-main');
+  const layout = el('div', 'svt-recording-layout');
   label.append(labelText, select); scroll.append(strip, ladderCanvas);
-  root.append(title, label, controls, scroll, readout, interpretation, stages, legend, source, note);
+  main.append(label, controls, scroll, readout, interpretation, stages, legend, source, note);
+  layout.append(list, main);
+  root.append(title, layout);
   let id = SVT_EXAMPLES[0][0], active = false;
   select.value = id;
-  select.addEventListener('change', () => {
-    if (!SVT_EXAMPLES.some((example) => example[0] === select.value)) return;
-    id = select.value; render();
-  });
+  function choose(next) {
+    if (!SVT_EXAMPLES.some((example) => example[0] === next)) return;
+    id = next; select.value = next; render();
+  }
+  select.addEventListener('change', () => choose(select.value));
   const cache = new Map();
   function data() {
     if (!cache.has(id)) {
@@ -104,6 +132,13 @@ export function createSvtRecordings(doc, getLang) {
     title.textContent = en ? 'Worked recordings: signals and ladder' : 'Örnek kayıtlar: sinyaller ve ladder';
     labelText.textContent = en ? 'Example' : 'Örnek';
     options.forEach((o, i) => { o.textContent = SVT_EXAMPLES[i][en ? 2 : 1]; });
+    list.setAttribute('aria-label', en ? 'Examples' : 'Örnekler');
+    for (const [head, group] of groupHeads) head.textContent = group[en ? 'en' : 'tr'];
+    SVT_EXAMPLES.forEach(([exampleId, tr, enName]) => {
+      const b = items.get(exampleId);
+      b.textContent = en ? enName : tr;
+      b.setAttribute('aria-pressed', String(exampleId === id));
+    });
     buttons.forEach((b, i) => {
       const key = Object.keys(flags)[i];
       b.textContent = (en ? ['Wave names', 'Ladder on channels', 'Ladder diagram'] : ['Dalga adları', 'Kanalda ladder', 'Ladder diyagram'])[i];
