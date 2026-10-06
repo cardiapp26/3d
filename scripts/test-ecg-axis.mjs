@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { LIMB_LEADS, LEAD_ANGLE, QRS_AMPLITUDE, angleError, axisCategory, axisFromNet, gradeAnswer, isoelectric, leadQrs, limbLeads, normAngle, pickCandidate, quadrant, quizAxis } from '../src/ecg/axis-model.js';
+import { LIMB_LEADS, LEAD_ANGLE, leadScale, netSign, QRS_AMPLITUDE, angleError, axisCategory, axisFromNet, gradeAnswer, isoelectric, leadQrs, limbLeads, normAngle, pickCandidate, quadrant, quizAxis } from '../src/ecg/axis-model.js';
 
 const close = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
 
@@ -10,7 +10,7 @@ assert.equal(normAngle(270), -90); assert.equal(normAngle(-180), 180); assert.eq
 // Morphology: net = amplitude x projection; parallel = pure R, opposite = QS, perpendicular = equiphasic.
 for (let a = -179; a <= 180; a += 7) for (const l of LIMB_LEADS) {
   const q = leadQrs(a, l.angle);
-  assert.ok(close(q.net, QRS_AMPLITUDE * Math.cos(((a - l.angle) * Math.PI) / 180)), `net ∝ projection (${a}°, ${l.id})`);
+  assert.ok(close(q.net, QRS_AMPLITUDE * leadScale(l.angle) * Math.cos(((a - l.angle) * Math.PI) / 180)), `net ∝ projection (${a}°, ${l.id})`);
   assert.ok(q.r >= 0 && q.s >= 0);
 }
 assert.ok(close(leadQrs(60, 60).s, 0) && close(leadQrs(60, 60).r, QRS_AMPLITUDE), 'parallel lead: pure R');
@@ -19,6 +19,20 @@ const perp = leadQrs(60, -30);
 assert.ok(close(perp.r, perp.s), 'perpendicular lead: R = S');
 // Einthoven: I + III = II for the net QRS.
 for (let a = -180; a < 180; a += 10) { const L = Object.fromEntries(limbLeads(a).map(l => [l.id, l.net])); assert.ok(close(L.I + L.III, L.II, 1e-9), `Einthoven at ${a}°`); }
+
+// Goldberger identities must hold, independently of the inverse-axis formula.
+for (let a = -180; a <= 180; a++) {
+  const L = Object.fromEntries(limbLeads(a).map(l => [l.id, l.net]));
+  assert.ok(close(L.aVR, -(L.I + L.II) / 2));
+  assert.ok(close(L.aVL, L.I - L.II / 2));
+  assert.ok(close(L.aVF, L.II - L.I / 2));
+}
+assert.equal(netSign(1e-16), 0);
+assert.ok(close(axisFromNet(1, Math.sqrt(3) / 2), 45));
+assert.equal(quadBoundary(-30), 'normal-left');
+assert.equal(quadBoundary(-90), 'left');
+assert.equal(quadBoundary(90), 'normal');
+function quadBoundary(a) { const L = Object.fromEntries(limbLeads(a).map(l => [l.id, l.net])); return quadrant(L.I, L.aVF, L.II).id; }
 
 // Method 3: atan2(aVF, I) recovers every axis exactly.
 for (let a = -179; a <= 180; a++) {
@@ -58,4 +72,4 @@ const seen = new Set(Array.from({ length: 18 }, (_, i) => axisCategory(quizAxis(
 assert.deepEqual([...seen].sort(), ['extreme', 'left', 'normal', 'right'], 'quiz covers all four categories');
 assert.equal(quizAxis(-1), quizAxis(17));
 
-console.log(`PASS ECG axis: net ∝ projection, Einthoven, exact atan2(aVF, I), isoelectric method ≤ ${worst}°, quadrants with lead II, quiz grading`);
+console.log(`PASS ECG axis: net ∝ projection, Einthoven, Goldberger identities, exact atan2(2·aVF/√3, I), isoelectric method ≤ ${worst}°, quadrants with lead II, quiz grading`);

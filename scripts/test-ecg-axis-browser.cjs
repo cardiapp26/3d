@@ -29,6 +29,7 @@ const SHOTS = process.env.SHOT_DIR || null;
       const p = new DOMPoint(180 + rr * Math.cos(a * Math.PI / 180), 180 + rr * Math.sin(a * Math.PI / 180)).matrixTransform(root.getScreenCTM());
       return { x: p.x, y: p.y };
     }, [angle, r]);
+    await page.locator('.axl-wheel').scrollIntoViewIfNeeded();
     const at = await wheelPoint(-60, 70);
     await page.mouse.move(at.x, at.y); await page.mouse.down(); await page.mouse.up();
     assert.match(await result(), /−60° · Sol aks sapması/);
@@ -49,13 +50,30 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.equal(await page.locator('.axl-lead.is-iso').getAttribute('data-wheel-lead'), 'aVL');
     await page.locator('[data-axis-method="2"]').click();
     assert.match(await page.locator('.axl-steps').textContent(), /atan2[\s\S]*≈ \+60°/);
+    await page.locator('[data-lab-param=angle]').evaluate(el => { el.value = '-180'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    assert.match(await result(), /\+180° · Sağ aks sapması/);
+    // Boundary reading uses equiphasic, not a floating-point positive sign.
+    await page.locator('[data-axis-boundary="-30"]').click();
+    await page.locator('[data-axis-method="0"]').click();
+    assert.match(await result(), /−30° · Normal aks/);
+    assert.match(await page.locator('[data-axis-decision="II"]').textContent(), /Eşfazlı/);
+    assert.match(await page.locator('.axl-steps').textContent(), /Sınır/);
+    await page.locator('[data-axis-region="extreme"]').click();
+    assert.match(await result(), /−135° · Aşırı/);
+    assert.equal(await page.locator('.axl-bar-row').count(), 6);
+    await page.locator('[data-lab-param=angle]').evaluate(el => { el.value = '60'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.locator('[data-axis-method="2"]').click();
+    assert.equal(await page.locator('.axl-component-path').count(), 1);
+    assert.match(await page.locator('.axl-steps').textContent(), /2·aVF\/√3/);
     // Keyboard on the arrow: +5°.
     await page.locator('.axl-arrow-user').focus(); await page.keyboard.press('ArrowRight');
     assert.match(await result(), /\+65°/);
-    if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await lab.screenshot({ path: `${SHOTS}/axis-explore.png` }); }
+    if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await lab.screenshot({ style: 'header { visibility: hidden !important; }', path: `${SHOTS}/axis-explore.png` }); }
 
     // Quiz: the axis and the methods are hidden; the true axis of question 0 is +60°.
     await page.locator('[data-axis-mode="quiz"]').click();
+    assert.equal(await page.locator('.axl-insights').isVisible(), false, 'projection bars hidden');
+    assert.equal(await page.locator('.axl-legend').isVisible(), false, 'category hidden');
     assert.equal(await page.locator('.axl-method').isVisible(), false, 'methods hidden before answering');
     assert.equal(await page.locator('.axl-arrow-truth').isVisible(), false, 'true axis hidden');
     assert.equal(await page.locator('.axl-lead.is-iso').count(), 0, 'no isoelectric hint in the quiz');
@@ -64,10 +82,11 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.locator('[data-axis-action=check]').click();
     assert.match(await page.locator('.axl-quiz-text').textContent(), /Doğru[\s\S]*\+60°[\s\S]*Hata 5°/);
     assert.match(await page.locator('.axl-score').textContent(), /1\/1/);
+    assert.equal(await page.locator('[data-lab-param=angle]').isDisabled(), true, 'graded estimate locked');
     assert.equal(await page.locator('.axl-method').isVisible(), true, 'methods shown after answering');
     await page.locator('[data-axis-action=next]').click();
     assert.equal(await page.locator('[data-axis-action=check]').isDisabled(), false);
-    if (SHOTS) await lab.screenshot({ path: `${SHOTS}/axis-quiz.png` });
+    if (SHOTS) await lab.screenshot({ style: 'header { visibility: hidden !important; }', path: `${SHOTS}/axis-quiz.png` });
 
     // Language keeps the state.
     await page.locator('[data-ecg-lang=en]').click();
@@ -78,7 +97,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     // Phone: no horizontal overflow.
     await page.setViewportSize({ width: 390, height: 844 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal overflow on a phone');
-    if (SHOTS) await lab.screenshot({ path: `${SHOTS}/axis-mobile.png` });
+    if (SHOTS) await lab.screenshot({ style: 'header { visibility: hidden !important; }', path: `${SHOTS}/axis-mobile.png` });
 
     assert.deepEqual(errors, []);
     console.log('PASS ECG axis browser: wheel drag, six strips, lead projection, quadrant/isoelectric/atan2 methods, keyboard, quiz grading, language, phone');

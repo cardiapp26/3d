@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-06",
+  "environment": {
+    "os": "macOS-26.5.1-arm64-arm-64bit",
+    "node": "22.14.0",
+    "vite": "8.3.0"
+  },
+  "inputs": {
+    "patient_data": false,
+    "amplitude_mV": 1.2,
+    "angles_degrees": "-179..180, integer sweep",
+    "randomness": "none; deterministic 18-axis quiz pool"
+  },
+  "sha256": {
+    "src/ecg/axis-model.js": "02e4aeb3b8a03c24b7b941d673f609f9e1ab1d267506438b726cd84334dfb9b4",
+    "src/ecg/axis-lab.js": "35ca67db57a22e1078cd312256cd14b72808ccdb28a1d47fd8d6c54ca7227a65",
+    "src/ecg/axis-lab.css": "909cf3a52e71985896b29a1cb0a4155ab3e8618551bf14fe9d026bdd7cae12a9",
+    "scripts/test-ecg-axis.mjs": "dc230941655ead803148d7d083fafcb79a6341692f6dacb9dcd056c28ffc72e7",
+    "scripts/test-ecg-axis-browser.cjs": "0f94e2bbf616bbe99ae44cd941e3d9d54a5e7991a2bfe07f66860fc2149e3af5"
+  },
+  "verification": [
+    "npm run check",
+    "npm test",
+    "npm run build",
+    "SHOT_DIR=/tmp/ecg-axis-shots node scripts/test-ecg-axis-browser.cjs",
+    "git diff --check"
+  ]
+}

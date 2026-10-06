@@ -3,7 +3,7 @@
 // three reading methods (quadrant, isoelectric lead, net I/aVF) and a quiz.
 // Model: axis-model.js. Teaching drawings, not patient recordings.
 import './axis-lab.css';
-import { LIMB_LEADS, LEAD_ANGLE, angleError, axisCategory, axisFromNet, gradeAnswer, isoelectric, limbLeads, normAngle, pickCandidate, projection, quadrant, quizAxis } from './axis-model.js';
+import { LIMB_LEADS, LEAD_ANGLE, angleError, axisCategory, axisFromNet, gradeAnswer, isoelectric, limbLeads, normAngle, pickCandidate, netSign, projection, quadrant, quizAxis } from './axis-model.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const C = 180, RING = 128;
@@ -29,15 +29,15 @@ const T = {
       `aVF ${f >= 0 ? 'pozitif' : 'negatif'}: aks ${f >= 0 ? 'alt yarıda (0° ile 180°)' : 'üst yarıda (0° ile −180°)'}.`,
       ...(i >= 0 && f < 0 ? [`I+ / aVF− bölgesi 0° ile −90° arası: II ${ii >= 0 ? 'pozitif → aks −30° ile 0° arası, normal' : 'negatif → aks −30°\'den daha sol, sol aks sapması'}.`] : []),
       `Sonuç: ${q}.`],
-    qText: { normal: '0° ile +90° (normal)', 'normal-left': '−30° ile 0° (normal, sola yönelim)', left: '−30° ile −90° (sol aks sapması)', right: '+90° ile 180° (sağ aks sapması)', extreme: '−90° ile 180° (aşırı aks)' },
+    qText: { normal: '0° ile +90° (normal)', 'normal-left': '−30° ile 0° (normal, sola yönelim)', left: '−30° ile −90° (sol aks sapması)', right: '+90° ile 180° (sağ aks sapması)', extreme: '−180° ile −90° (aşırı aks)' },
     m2: (lead, c1, c2, tallest, axis) => [
-      `En izoelektrik (R ≈ S) derivasyon: ${lead}. Aks bu derivasyona diktir.`,
+      `En izoelektrik (R ≈ S) derivasyon: ${lead}. Aks yaklaşık olarak bu derivasyona diktir; tam R = S ise diklik kesindir.`,
       `Dik olan iki yön: ${fmt(c1)} ve ${fmt(c2)}.`,
-      `En pozitif derivasyon ${tallest}; ona yakın olan seçilir: aks ≈ ${fmt(axis)}.`],
+      `Ölçeğe göre düzeltilmiş en pozitif derivasyon ${tallest}; ona yakın olan seçilir: aks ≈ ${fmt(axis)}.`],
     m3: (ni, nf, axis) => [
       `Net QRS = R − S (mm). I: ${signed(ni)} mm, aVF: ${signed(nf)} mm.`,
-      `I (0°) ve aVF (+90°) birbirine diktir: aks = atan2(aVF, I) = atan2(${signed(nf)}, ${signed(ni)}) ≈ ${fmt(axis)}.`,
-      'Pratikte: önce kadranı bulun, sonra izoelektrik derivasyonla dereceyi daraltın; hesap kontrol içindir.'],
+      `I (0°) ve aVF (+90°) birbirine diktir: aks = atan2(2·aVF/√3, I) = atan2(${signed(nf * 2 / Math.sqrt(3))}, ${signed(ni)}) ≈ ${fmt(axis)}.`,
+      'Artırılmış aVF ölçeği 2/√3 ile düzeltilir. Gerçek QRS için net ≈ R + R′ − |Q| − |S|; alan temelli ortalama aks farklı olabilir. Pratikte: önce kadranı bulun, sonra izoelektrik derivasyonla dereceyi daraltın; hesap kontrol içindir.'],
     quizIntro: 'Aks gizlendi. Altı derivasyonu okuyun, oku tahmininize çevirin ve kontrol edin.',
     check: 'Kontrol et', next: 'Yeni EKG', your: 'Tahmininiz', truth: 'Gerçek aks',
     verdict: { correct: 'Doğru', close: 'Yakın', wrong: 'Uzak' },
@@ -59,15 +59,15 @@ const T = {
       `aVF ${f >= 0 ? 'positive' : 'negative'}: the axis is in the ${f >= 0 ? 'lower half (0° to 180°)' : 'upper half (0° to −180°)'}.`,
       ...(i >= 0 && f < 0 ? [`I+ / aVF− lies between 0° and −90°: II ${ii >= 0 ? 'positive → axis −30° to 0°, normal' : 'negative → beyond −30°, left axis deviation'}.`] : []),
       `Result: ${q}.`],
-    qText: { normal: '0° to +90° (normal)', 'normal-left': '−30° to 0° (normal, leftward)', left: '−30° to −90° (left axis deviation)', right: '+90° to 180° (right axis deviation)', extreme: '−90° to 180° (extreme axis)' },
+    qText: { normal: '0° to +90° (normal)', 'normal-left': '−30° to 0° (normal, leftward)', left: '−30° to −90° (left axis deviation)', right: '+90° to 180° (right axis deviation)', extreme: '−180° to −90° (extreme axis)' },
     m2: (lead, c1, c2, tallest, axis) => [
-      `Most isoelectric (R ≈ S) lead: ${lead}. The axis is perpendicular to it.`,
+      `Most isoelectric (R ≈ S) lead: ${lead}. The axis is approximately perpendicular; exact only when R = S.`,
       `The two perpendicular directions: ${fmt(c1)} and ${fmt(c2)}.`,
-      `The most positive lead is ${tallest}; take the direction nearer to it: axis ≈ ${fmt(axis)}.`],
+      `The scale-adjusted most positive lead is ${tallest}; take the direction nearer to it: axis ≈ ${fmt(axis)}.`],
     m3: (ni, nf, axis) => [
       `Net QRS = R − S (mm). I: ${signed(ni)} mm, aVF: ${signed(nf)} mm.`,
-      `I (0°) and aVF (+90°) are perpendicular: axis = atan2(aVF, I) = atan2(${signed(nf)}, ${signed(ni)}) ≈ ${fmt(axis)}.`,
-      'In practice: find the quadrant first, then narrow the degree with the isoelectric lead; the calculation is a check.'],
+      `I (0°) and aVF (+90°) are perpendicular: axis = atan2(2·aVF/√3, I) = atan2(${signed(nf * 2 / Math.sqrt(3))}, ${signed(ni)}) ≈ ${fmt(axis)}.`,
+      'Correct augmented aVF by 2/√3. For real QRS, net ≈ R + R′ − |Q| − |S|; an area-based mean axis may differ. In practice: find the quadrant first, then narrow the degree with the isoelectric lead; the calculation is a check.'],
     quizIntro: 'The axis is hidden. Read the six leads, turn the arrow to your estimate and check.',
     check: 'Check', next: 'New ECG', your: 'Your estimate', truth: 'True axis',
     verdict: { correct: 'Correct', close: 'Close', wrong: 'Off' },
@@ -103,12 +103,12 @@ const arc = (r1, r2, a0, a1) => {
 function leadSample(time, lead) {
   const t = time % BEAT_MS;
   const g = (c, w, a) => a * Math.exp(-(((t - c) / w) ** 2));
-  const p = projection(60, lead.angle) * 0.14;
-  return g(110, 28, p) + g(196, 9, lead.r) + g(222, 9, -lead.s) + g(470, 62, lead.p * 0.32);
+  const p = projection(60, lead.angle) * 0.14 * lead.scale;
+  return g(110, 28, p) + g(196, 9, lead.r) + g(222, 9, -lead.s) + g(470, 62, lead.p * 0.32 * lead.scale);
 }
 
 function buildWheel(onAngle) {
-  const root = svg('svg', { viewBox: '0 0 360 360', class: 'axl-wheel', role: 'img' });
+  const root = svg('svg', { viewBox: '0 0 360 360', class: 'axl-wheel', role: 'group' });
   const title = svg('title');
   root.append(title, svg('circle', { cx: C, cy: C, r: RING, class: 'axl-disc' }));
   for (const [cat, [a0, a1]] of Object.entries(CAT_RANGE)) root.append(svg('path', { d: arc(RING + 2, RING + 12, a0, a1), fill: CAT_COLOR[cat], 'fill-opacity': 0.75, 'data-cat': cat }));
@@ -130,6 +130,8 @@ function buildWheel(onAngle) {
     root.append(g);
     leadLines[l.id] = g;
   }
+  const components = svg('g', { class: 'axl-components' });
+  root.append(components);
   const iso = svg('g', { class: 'axl-iso' });
   const projectionG = svg('g', { class: 'axl-projection' });
   const truth = svg('g', { class: 'axl-arrow axl-arrow-truth' });
@@ -154,7 +156,7 @@ function buildWheel(onAngle) {
   root.addEventListener('pointermove', e => { if (dragging) { const a = angleAt(e); if (a !== null) onAngle(a); } });
   root.addEventListener('pointerup', () => { dragging = false; });
   root.addEventListener('pointercancel', () => { dragging = false; });
-  return { root, title, leadLines, quadrantShade, iso, projectionG, truth, user };
+  return { root, title, components, leadLines, quadrantShade, iso, projectionG, truth, user };
 }
 
 function setArrow(g, angle, show) {
@@ -242,7 +244,37 @@ export function createAxisLab({ mount, getLang = () => 'tr', conditions = [], st
   const methodBody = el('ol', 'axl-steps');
   method.append(methodTabs, methodBody);
   const cause = el('div', 'axl-cause'), note = el('p', 'axl-note');
-  root.append(top, main, sliderRow, result, quizBar, method, cause, note);
+  const orientation = el('p', 'axl-orientation');
+  wheelBox.prepend(orientation);
+  const legend = el('div', 'axl-legend');
+  const regionButtons = Object.keys(CAT_RANGE).map(cat => {
+    const b = el('button'); b.type = 'button'; b.dataset.axisRegion = cat;
+    b.style.setProperty('--region', CAT_COLOR[cat]);
+    b.addEventListener('click', () => { st.angle = {normal:60,left:-60,right:120,extreme:-135}[cat]; st.cond = null; render(); });
+    legend.append(b); return b;
+  });
+  const decisions = el('div', 'axl-decisions');
+  const decisionCards = ['I', 'aVF', 'II'].map(id => {
+    const b = el('button', 'axl-decision'); b.type = 'button'; b.dataset.axisDecision = id;
+    b.addEventListener('click', () => { st.lead = id; st.method = 0; render(); });
+    decisions.append(b); return b;
+  });
+  const boundaries = el('div', 'axl-boundaries');
+  for (const angle of [-90, -30, 0, 90, 180]) {
+    const b = el('button', '', fmt(angle)); b.type = 'button'; b.dataset.axisBoundary = angle;
+    b.addEventListener('click', () => { st.angle = angle; st.cond = null; render(); }); boundaries.append(b);
+  }
+  const insights = el('div', 'axl-insights');
+  const references = el('details', 'axl-references');
+  const refSummary = el('summary');
+  const refText = el('p');
+  references.append(refSummary, refText);
+  for (const [label, href] of [
+    ['AHA/ACCF/HRS · ECG Part III (2009)', 'https://doi.org/10.1161/CIRCULATIONAHA.108.191095'],
+    ['AHA/ACCF/HRS · ECG Part I (2007)', 'https://doi.org/10.1161/CIRCULATIONAHA.106.180200'],
+    ['Einthoven’s Triangle Revisited (2022)', 'https://arxiv.org/abs/2205.06772']
+  ]) { const a = el('a', '', label); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; references.append(a); }
+  root.append(top, legend, main, decisions, sliderRow, result, quizBar, method, boundaries, insights, references, cause, note);
   mount.append(root);
 
   // Keyboard on the arrow handle: ±5°.
@@ -255,6 +287,7 @@ export function createAxisLab({ mount, getLang = () => 'tr', conditions = [], st
   });
 
   function drawOverlays(axis, leads, show) {
+    wheel.components.replaceChildren();
     wheel.iso.replaceChildren(); wheel.projectionG.replaceChildren(); wheel.quadrantShade.setAttribute('d', '');
     for (const [id, g] of Object.entries(wheel.leadLines)) { g.classList.toggle('is-picked', id === st.lead); g.classList.remove('is-iso'); }
     if (!show) return;
@@ -269,6 +302,12 @@ export function createAxisLab({ mount, getLang = () => 'tr', conditions = [], st
       wheel.iso.append(svg('line', { x1, y1, x2, y2, class: 'axl-perp' }));
       wheel.leadLines[lead.id].classList.add('is-iso');
       for (const c of candidates) { const [x, y] = polar(RING, c); wheel.iso.append(svg('circle', { cx: x, cy: y, r: 5, class: 'axl-cand' })); }
+    }
+    if (st.method === 2) {
+      const [x, y] = polar(RING - 6, axis);
+      wheel.components.append(svg('path', { d: `M${C},${C}H${x}V${y}`, class: 'axl-component-path' }),
+        svg('text', { x: (C+x)/2, y: C-8, class: 'axl-component-label' }, 'I'),
+        svg('text', { x: x+8, y: (C+y)/2, class: 'axl-component-label' }, '2·aVF/√3'));
     }
     const lead = st.lead ? byId[st.lead] : null;
     if (lead) {
@@ -294,6 +333,7 @@ export function createAxisLab({ mount, getLang = () => 'tr', conditions = [], st
   }
 
   function render() {
+    st.angle = normAngle(st.angle);
     const text = t(), quiz = st.mode === 'quiz';
     const axis = quiz ? quizAxis(st.quizSeed) : st.angle;
     const leads = limbLeads(axis);
@@ -310,6 +350,10 @@ export function createAxisLab({ mount, getLang = () => 'tr', conditions = [], st
     setArrow(wheel.truth, axis, revealed);
     setArrow(wheel.user, quiz ? st.guess : axis, true);
     wheel.user.classList.toggle('is-guess', quiz);
+    wheel.user.setAttribute('aria-valuemin', '-180');
+    wheel.user.setAttribute('aria-valuemax', '180');
+    wheel.user.setAttribute('aria-disabled', String(quiz && st.answered));
+    input.disabled = quiz && st.answered;
     wheel.user.setAttribute('aria-valuenow', String(quiz ? st.guess : axis));
     wheel.user.setAttribute('aria-valuetext', fmt(quiz ? st.guess : axis));
     wheel.user.setAttribute('aria-label', quiz ? text.your : text.slider);
@@ -337,10 +381,37 @@ export function createAxisLab({ mount, getLang = () => 'tr', conditions = [], st
     if (st.method === 0) { const q = quadrant(byId.I.net, byId.aVF.net, byId.II.net); steps = text.m1(byId.I.net, byId.aVF.net, byId.II.net, text.qText[q.id]); }
     else if (st.method === 1) { const iso = isoelectric(leads); const pick = pickCandidate(iso.candidates, leads); steps = text.m2(iso.lead.id, iso.candidates[0], iso.candidates[1], pick.tallest.id, pick.axis); }
     else steps = text.m3(ni, nf, axisFromNet(ni, nf));
+    if ([byId.I, byId.aVF, byId.II].some(l => netSign(l.net) === 0) && st.method === 0) {
+      steps = [getLang() === 'en' ? 'Boundary: a zero net QRS is equiphasic, not positive or negative. Use the other leads and the perpendicular direction.' : 'Sınır: net QRS sıfırsa eşfazlıdır, pozitif veya negatif sayılmaz. Diğer derivasyonları ve dik yönü kullanın.', ` ${fmt(axis)} · ${text.cat[cat]}`];
+    }
     methodBody.replaceChildren(...steps.map(s => el('li', '', s)));
     const cond = !quiz && conditions.find(c => c.id === st.cond);
     cause.hidden = !cond;
     if (cond) { const lang = getLang() === 'en' ? 'en' : 'tr'; cause.replaceChildren(el('strong', '', `${text.cause}: ${cond.name[lang]}`), el('p', '', cond.causes[lang])); }
+    const en = getLang() === 'en';
+    orientation.textContent = en ? 'Frontal view · patient’s right ← → patient’s left · +90° toward feet' : 'Önden görünüm · hastanın sağı ← → hastanın solu · +90° ayaklara';
+    legend.hidden = boundaries.hidden = insights.hidden = !revealed;
+    regionButtons.forEach(b => { const [lo, hi] = CAT_RANGE[b.dataset.axisRegion]; b.textContent = `${text.cat[b.dataset.axisRegion]} · ${fmt(lo)}…${fmt(hi)}`; b.setAttribute('aria-pressed', String(cat === b.dataset.axisRegion)); b.disabled = quiz; });
+    boundaries.setAttribute('aria-label', en ? 'Explore axis boundaries' : 'Aks sınırlarını keşfet');
+    boundaries.querySelectorAll('button').forEach(b => { b.disabled = quiz; });
+    decisionCards.forEach(b => {
+      const l = byId[b.dataset.axisDecision], sign = netSign(l.net);
+      b.dataset.sign = sign === 0 ? 'iso' : sign > 0 ? 'pos' : 'neg';
+      b.replaceChildren(el('strong', '', `${l.id} · ${signed(l.net * 10)} mm`), el('span', '', sign === 0 ? (en ? 'Equiphasic · boundary' : 'Eşfazlı · sınır') : sign > 0 ? (en ? 'Positive' : 'Pozitif') : (en ? 'Negative' : 'Negatif')));
+      b.setAttribute('aria-pressed', String(st.lead === l.id));
+    });
+    insights.replaceChildren(el('strong', '', en ? 'Direction → projection → QRS' : 'Yön → izdüşüm → QRS'));
+    for (const l of leads) {
+      const row = el('div', 'axl-bar-row');
+      row.append(el('span', '', l.id));
+      const track = el('div', 'axl-bar-track'), bar = el('span', 'axl-bar');
+      bar.style.width = `${Math.abs(l.p) * 50}%`; bar.style.left = `${l.p < 0 ? 50 - Math.abs(l.p) * 50 : 50}%`;
+      bar.style.background = LEAD_COLOR[l.id]; track.append(bar);
+      row.append(track, el('span', '', signed(l.p))); insights.append(row);
+    }
+    insights.append(el('p', '', en ? 'Bars: normalized cos(θ − α), not mV. Solid ray: positive pole; dashed ray: negative pole. Perpendicular → balanced R/S.' : 'Çubuklar: normalize cos(θ − α), mV değil. Düz ışın: pozitif kutup; kesikli ışın: negatif kutup. Dik yön → dengeli R/S.'));
+    refSummary.textContent = en ? 'Sources & reading pitfalls' : 'Kaynaklar ve okuma tuzakları';
+    refText.textContent = en ? 'Adult convention: −30° and +90° included in normal range; −90° included in LAD, +180° in RAD. Pediatric ranges differ. Check electrode placement, QRS duration and morphology before attributing deviation to hypertrophy or fascicular block. These are synthetic traces; no diagnostic validation.' : 'Erişkin sınıflaması: −30° ve +90° normal aralığa, −90° sol aks sapmasına, +180° sağ aks sapmasına dahildir. Çocuk aralıkları farklıdır. Sapmayı hipertrofi veya fasiküler bloğa bağlamadan önce elektrot yerleşimini, QRS süresini ve morfolojisini kontrol edin. Çizimler sentetiktir; tanısal doğrulama yapılmadı.';
     note.textContent = text.note;
     Object.assign(state, st);
   }
