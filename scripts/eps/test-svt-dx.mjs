@@ -4,6 +4,40 @@ import assert from 'node:assert/strict';
 import { MECHANISMS, GROUPS, evaluate, groupEnabled, optionIds } from '../../src/eps/svt-dx-model.js';
 import { SVT_DX_TEXT } from '../../src/eps/svt-dx-text.js';
 import { createSvtDxPanel } from '../../src/eps/svt-dx-panel.js';
+import { SVT_EXAMPLES, svtExampleRecording } from '../../src/eps/svt-dx-recordings.js';
+import { AVRT_LOCALIZATIONS } from '../../src/eps/svt-avrt-localizations.js';
+import { EP_CASES, measure } from '../../src/eps/ep-cases.js';
+import { selectableChannels } from '../../src/eps/ep-egm.js';
+import { buildLadder, inferLadderEvents } from '../../src/eps/ep-ladder.js';
+import { stripLinks } from '../../src/eps/ep-strip-links.js';
+
+for (const [id, tr, en] of SVT_EXAMPLES) {
+  const recording = svtExampleRecording(id);
+  assert.ok(recording && tr && en, `example ${id} exists and is bilingual`);
+  const channels = selectableChannels(recording);
+  for (const [ch, events] of Object.entries(recording.events)) {
+    if (events.length) assert.ok(channels.includes(ch), `${id} displays ${ch}`);
+  }
+  const mechanism = recording.mechanism || EP_CASES.find((c) => c.id === recording.caseId)?.mechanism;
+  const ladder = buildLadder(inferLadderEvents(recording.events, { mechanism }), { until: recording.windowMs });
+  assert.ok(ladder.atria.length && ladder.ventricles.length && ladder.links.length, `${id} has a conduction ladder`);
+  const links = stripLinks(recording.events, ladder);
+  assert.ok(links.groups.length && links.conduction.length, `${id} links ladder to signals`);
+}
+for (const site of AVRT_LOCALIZATIONS) {
+  const r = svtExampleRecording(site.id);
+  const atria = Object.entries(r.events).flatMap(([ch, events]) => events.filter((e) => e.type === 'A').map((e) => ({ ch, t: e.t })));
+  const earliest = [...atria].sort((a, b) => a.t - b.t)[0];
+  assert.equal(earliest.ch, 'abl-d', `${site.id} local mapping A is earliest`);
+  const diagnostic = atria.filter((e) => e.ch !== 'abl-d').sort((a, b) => a.t - b.t)[0];
+  assert.equal(diagnostic.ch, site.earliest, `${site.id} diagnostic catheter sequence`);
+  assert.equal(measure(r, r.calipers[0]), 400);
+  assert.equal(measure(r, r.calipers[2]), 85);
+  for (const events of Object.values(r.events)) for (const e of events) assert.ok(e.t >= 0 && e.t <= r.windowMs);
+  const ladder = buildLadder(inferLadderEvents(r.events, { mechanism: r.mechanism }), { until: r.windowMs });
+  assert.equal(ladder.atria.length, 4, `${site.id} one atrial activation per cycle`);
+  assert.ok(ladder.links.some((l) => l.kind === 'ap-retro'), `${site.id} accessory pathway return`);
+}
 
 const left = (selection) => evaluate(selection).remaining.sort();
 const status = (selection, id) => evaluate(selection).mechanisms.find((m) => m.id === id).status;

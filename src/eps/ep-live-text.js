@@ -37,9 +37,9 @@ export const LIVE_TEXT = {
       unchanged: () => 'His-refrakter PVC: atriyal zamanlama değişmedi. Aksesuar yol kanıtı yok (AVNRT veya AT ile uyumlu; yol tek başına dışlanmaz).',
       'terminated-no-a': () => 'His-refrakter PVC: taşikardi atriyuma ulaşmadan sonlandı. Aksesuar yol devrenin parçası (AVRT).'
     },
-    overdrive: (r) => `TCL ${r.tcl} · pacing ${r.pacedCl} · PPI ${r.ppi ?? 'yok'} · PPI−TCL ${r.ppiTcl ?? 'yok'}${r.saVa != null ? ` · SA−VA ${r.saVa}` : ''}${r.response ? ` · yanıt ${r.response === 'VAAV' ? 'V-A-A-V' : 'V-A-V'}` : ''}`,
+    overdrive: (r) => `TCL ${r.tcl} · pacing ${r.pacedCl} · PPI ${r.ppi ?? 'yok'} · PPI−TCL ${r.ppiTcl ?? 'yok'}${r.cppiTcl != null ? ` · AH(SVT) ${r.ahTachy} · AH(return) ${r.ahReturn} · cPPI−TCL ${r.cppiTcl} ms` : ''}${r.saVa != null ? ` · SA−VA ${r.saVa}` : ''}${r.response ? ` · yanıt ${r.response === 'VAAV' ? 'V-A-A-V' : 'V-A-V'}` : ''}`,
     verdict: {
-      avnrt: 'PPI−TCL > 115 ve SA−VA > 85 ms: AVNRT ile uyumlu.', avrt: 'PPI−TCL ≤ 115 ve SA−VA ≤ 85 ms: AVRT (ortodromik) ile uyumlu.',
+      avnrt: 'Uzun dönüş aralığı AVNRT lehine olabilir; sol serbest duvar veya yavaş aksesuar yol dışlanmaz. cPPI düzeltmesi ilk dönüş AH ile taşikardi AH farkını çıkarır (110 ms çalışma eşiği).', avrt: 'Kısa dönüş ölçütleri veya cPPI−TCL <110 ms ortodromik AVRT lehine; tek manevra kesin tanı değildir.',
       at: 'V-A-A-V yanıtı: atriyal taşikardi ile uyumlu.', indeterminate: 'Ölçütler çelişkili: tek başına karar verdirmez.',
       notEntrained: 'Atriyum pacing siklusuna yakalanmadı (VA blok veya dissosiyasyon): yanıt yorumlanamaz.',
       terminated: 'Taşikardi pacing ile sonlandı: yanıt yorumlanamaz.', notCaptured: 'Uyarılar yakalamadı.',
@@ -90,9 +90,9 @@ export const LIVE_TEXT = {
       unchanged: () => 'His-refractory PVC: atrial timing unchanged. No evidence of an accessory pathway (consistent with AVNRT or AT; does not exclude a pathway by itself).',
       'terminated-no-a': () => 'His-refractory PVC: the tachycardia ended without reaching the atrium. The accessory pathway is part of the circuit (AVRT).'
     },
-    overdrive: (r) => `TCL ${r.tcl} · pacing ${r.pacedCl} · PPI ${r.ppi ?? 'n/a'} · PPI−TCL ${r.ppiTcl ?? 'n/a'}${r.saVa != null ? ` · SA−VA ${r.saVa}` : ''}${r.response ? ` · response ${r.response === 'VAAV' ? 'V-A-A-V' : 'V-A-V'}` : ''}`,
+    overdrive: (r) => `TCL ${r.tcl} · pacing ${r.pacedCl} · PPI ${r.ppi ?? 'n/a'} · PPI−TCL ${r.ppiTcl ?? 'n/a'}${r.cppiTcl != null ? ` · AH(SVT) ${r.ahTachy} · AH(return) ${r.ahReturn} · cPPI−TCL ${r.cppiTcl} ms` : ''}${r.saVa != null ? ` · SA−VA ${r.saVa}` : ''}${r.response ? ` · response ${r.response === 'VAAV' ? 'V-A-A-V' : 'V-A-V'}` : ''}`,
     verdict: {
-      avnrt: 'PPI−TCL > 115 and SA−VA > 85 ms: consistent with AVNRT.', avrt: 'PPI−TCL ≤ 115 and SA−VA ≤ 85 ms: consistent with (orthodromic) AVRT.',
+      avnrt: 'A long return interval can favor AVNRT; left free-wall or slow accessory pathways are not excluded. cPPI subtracts first-return AH minus tachycardia AH (110 ms study threshold).', avrt: 'Short return criteria or cPPI−TCL <110 ms favor orthodromic AVRT; one maneuver is not diagnostic.',
       at: 'V-A-A-V response: consistent with atrial tachycardia.', indeterminate: 'Criteria disagree: no decision on their own.',
       notEntrained: 'The atrium did not follow the pacing cycle (VA block or dissociation): response not interpretable.',
       terminated: 'Pacing ended the tachycardia: response not interpretable.', notCaptured: 'The stimuli did not capture.',

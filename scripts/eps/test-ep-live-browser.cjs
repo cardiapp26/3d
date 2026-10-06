@@ -162,7 +162,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     await page.locator('[data-ep-live-run]').click();
     await page.evaluate(() => { window.epsLab.live.advance(12000); });
     const vod = await page.locator('[data-ep-live-maneuver-result]').textContent();
-    assert.match(vod, /yanıt V-A-V.*AVNRT ile uyumlu/, vod);
+    assert.match(vod, /cPPI−TCL \d+ ms.*yanıt V-A-V.*AVNRT lehine/, vod);
 
     // Protocol: incremental atrial pacing finds the AV block cycle length.
     await page.evaluate(() => window.epsLab.live.setCase('normal'));

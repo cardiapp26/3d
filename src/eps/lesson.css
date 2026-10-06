@@ -260,6 +260,11 @@
 .amap-transport select { color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 7px; min-height: 36px; max-width: 100%; }
 
 /* SVT algorithm tab (svt-dx-panel.js): findings beside the candidate list. */
+.svt-recordings { min-width: 0; }
+.svt-recordings select { max-width: 100%; }
+.svt-recording-scroll { overflow-x: auto; min-width: 0; }
+.svt-recording-strip { display: block; width: 100%; min-width: 720px; height: 600px; background: #0e1815; border: 1px solid var(--line); border-radius: 6px; }
+.svt-recording-scroll .egm-ladder { min-width: 720px; }
 .svt { display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%; overflow-y: auto; padding-right: 2px; }
 .svt > * { margin: 0; }
 .svt-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 10px; align-items: start; }

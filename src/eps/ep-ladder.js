@@ -84,7 +84,7 @@ export function buildLadder(events, { until = Infinity } = {}) {
 
 // ---- Lesson clips: the case catalogue records carry no origins; infer them ----
 
-const ATRIAL_MECHANISMS = new Set(['focal-at', 'flutter-ccw', 'af-pv-triggers']);
+const ATRIAL_MECHANISMS = new Set(['focal-at', 'at-localized-reentry', 'at-macroreentry', 'flutter-ccw', 'af-pv-triggers']);
 const VENTRICULAR_MECHANISMS = new Set(['fascicular-reentry']);
 // Tachycardias whose His comes from a ventricular circuit: a His pairs with an atrial activation only at a normal AH.
 const HIS_CIRCUIT_MECHANISMS = new Set(['fascicular-reentry', 'bundle-branch-reentry']);
@@ -137,7 +137,11 @@ export function inferLadderEvents(events, { mechanism = null } = {}) {
     const paced = stims.some((s) => ATRIAL_STIM.has(s.ch) && t - s.t >= 0 && t - s.t <= 60);
     const before = [...ventricles.map((v) => v.t), ...hisList.map((h) => h.t)].filter((x) => x < t && t - x <= 400);
     let origin;
-    if (paced) origin = 'paced';
+    // Explicit teaching phase annotation, e.g. nodal return after AP ablation.
+    // It states known physiology; it is not diagnostic inference from timing.
+    const declared = c.find((x) => ['avn-fast', 'avn-slow', 'ap-left', 'ap-ps'].includes(x.e.ladderOrigin))?.e.ladderOrigin;
+    if (declared) origin = declared;
+    else if (paced) origin = 'paced';
     else if (fibrillation) origin = 'af';
     else if (ATRIAL_MECHANISMS.has(mechanism) || first === 'hra' || !before.length) origin = first.startsWith('halo') ? 'flutter' : 'sinus';
     else {

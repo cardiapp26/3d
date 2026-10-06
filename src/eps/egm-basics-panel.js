@@ -342,8 +342,11 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
   const levelName = el('strong'), levelText = el('span');
   levelBox.append(levelName, levelText);
   const caveat = bind(el('p', 'amap-note'), () => T().block.caveat);
+  const blockSource = el('p', 'amap-source');
+  const guideline = bind(el('a', '', { href: 'https://academic.oup.com/eurheartj/article/42/35/3427/6358547', target: '_blank', rel: 'noopener noreferrer' }), () => T().block.guideline);
+  blockSource.append(guideline);
   const flowTitle = bind(el('p', 'amap-note'), () => T().block.flowTitle);
-  block.append(row(...caseBtns), blockCanvas, flowTitle, flow, levelBox, caveat);
+  block.append(row(...caseBtns), blockCanvas, flowTitle, flow, levelBox, caveat, blockSource);
   function renderBlock() {
     const t = T().block, { c } = blockRecording(state.block);
     caseBtns.forEach((b, i) => { b.textContent = t.cases[BLOCK_CASES[i]]; b.setAttribute('aria-pressed', String(state.block === BLOCK_CASES[i])); });

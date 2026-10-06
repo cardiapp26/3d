@@ -11,10 +11,13 @@
 
 /** Recorder channels, top to bottom; each clip lists the subset it shows. */
 export const EP_CHANNELS = Object.freeze([
+  { id: 'ecg-i', label: 'I', surface: true },
   { id: 'ecg-ii', label: 'II', surface: true },
   { id: 'ecg-v1', label: 'V1', surface: true },
   { id: 'hra', label: 'HRA', noElectrode: true },
   { id: 'his-p', label: 'His p' },
+  { id: 'his-3', label: 'His 3' },
+  { id: 'his-2', label: 'His 2' },
   { id: 'his-d', label: 'His d' },
   // Right bundle potential (phase D, bundle branch reentry); no atlas electrode.
   { id: 'rb', label: 'RB', noElectrode: true },
@@ -29,6 +32,7 @@ export const EP_CHANNELS = Object.freeze([
   // Left ventricular septal catheter, basal and apical bipoles (phase D, fascicular VT); no atlas electrode.
   { id: 'lv-sep-b', label: 'LVS baz', noElectrode: true },
   { id: 'lv-sep-a', label: 'LVS apx', noElectrode: true },
+  { id: 'abl-p', label: 'ABL p' },
   { id: 'abl-d', label: 'ABL d' },
   { id: 'abl-uni', label: 'ABL uni', unipolar: true },
   // Right annular Halo (schematic decapolar, 5 bipoles): 9-10 proximal at the

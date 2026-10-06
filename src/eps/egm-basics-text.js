@@ -64,11 +64,12 @@ export const BASICS_TEXT = {
       levels: {
         normal: ['Blok yok', 'A, H, V sırayla; aralıklar normal.'],
         delay: ['AV düğümde gecikme', 'Blok yok; AH uzun. Seviye düğüm.'],
-        nodal: ['AV düğüm', 'A var, H yok. AH vuru vuru uzar. Genelde iyi seyirli.'],
-        intraHis: ['His içi', 'H var, H\' ve V yok. Bölünmüş His burada seviyeyi belirler.'],
-        infraHis: ['His altı', 'A ve H var, V yok. Kalıcı pil endikasyonu güçlü; aciliyet semptoma ve riske göre.']
+        nodal: ['AV düğüm', 'A var, H yok. AH vuru vuru uzar; HV sabittir. Nodal Wenckebach genelde iyi seyirlidir; semptom ve klinik bağlam yine değerlendirilir.'],
+        intraHis: ['His içi', 'H var, H\' ve V yok. Bölünmüş His seviyeyi belirler. His-Purkinje hastalığıdır; nodal Wenckebach gibi selim kabul edilmez.'],
+        infraHis: ['His altı: klinik uyarı', 'A ve H var, V yok. Mobitz I örneğinde AH sabitken HV uzar, ardından H sonrası V düşer. İnfranodal Wenckebach tam blok, senkop ve ani ölüm riski taşır. Geri döndürülebilir nedenler dışlandığında, doğrulanmış infranodal blok semptom olmasa da kalıcı pacing gerektirir (ESC 2021, 5.2.1.2).']
       },
-      caveat: 'Seviye yüzey EKG\'den kesin çıkmaz: geniş QRS\'li Mobitz 1 sıklıkla His altıdır. Karar A-H-V kaydıyla verilir.'
+      caveat: 'Mobitz I yüzey şekli tek başına selim demek değildir. Geniş QRS His-Purkinje hastalığını düşündürür, seviye A-H-V kaydıyla doğrulanır. Pil kararı geri döndürülebilir nedenler, belgelenmiş blok seviyesi ve klinik değerlendirmeye dayanır.',
+      guideline: 'ESC 2021 pacing kılavuzu, 5.2.1.2'
     },
     decremental: {
       title: 'Dekremental AV düğüm ve AH sıçraması',
@@ -139,11 +140,12 @@ export const BASICS_TEXT = {
       levels: {
         normal: ['No block', 'A, H, V in order; intervals normal.'],
         delay: ['Delay in the AV node', 'No block; long AH. The level is the node.'],
-        nodal: ['AV node', 'A with no H. AH lengthens beat by beat. Usually benign.'],
-        intraHis: ['Intra-His', 'H seen, H\' and V absent. A split His sets the level here.'],
-        infraHis: ['Infra-His', 'A and H seen, V absent. A strong permanent pacing indication; urgency depends on symptoms and risk.']
+        nodal: ['AV node', 'A with no H. AH lengthens beat by beat; HV stays fixed. Nodal Wenckebach is usually benign; symptoms and clinical context still matter.'],
+        intraHis: ['Intra-His', 'H seen, H\' and V absent. A split His sets the level. This is His-Purkinje disease and must not be considered benign like nodal Wenckebach.'],
+        infraHis: ['Infra-His: clinical warning', 'A and H seen, V absent. In the Mobitz I example, AH stays fixed while HV lengthens, then V drops after H. Infranodal Wenckebach carries risk of complete block, syncope and sudden death. Once reversible causes are excluded, confirmed infranodal block warrants permanent pacing even without symptoms (ESC 2021, 5.2.1.2).']
       },
-      caveat: 'The surface ECG does not settle the level: Mobitz 1 with a wide QRS is often infra-Hisian. The A-H-V recording decides.'
+      caveat: 'A surface Mobitz I pattern alone does not establish a benign prognosis. A wide QRS suggests His-Purkinje disease; confirm the level with the A-H-V recording. Pacing decisions require assessment of reversible causes, documented block level and clinical context.',
+      guideline: 'ESC 2021 pacing guideline, 5.2.1.2'
     },
     decremental: {
       title: 'The decremental AV node and the AH jump',

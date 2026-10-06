@@ -1,5 +1,7 @@
 import { MECHANISMS, GROUPS, evaluate, groupEnabled } from './svt-dx-model.js';
 import { SVT_DX_TEXT } from './svt-dx-text.js';
+import { createSvtRecordings } from './svt-dx-recordings.js';
+import { createAtGuide } from './at-markowitz-guide.js';
 
 /*
  * SVT algorithm tab: the findings of the narrow QRS tachycardia work-up
@@ -30,7 +32,9 @@ export function createSvtDxPanel(doc, { getLang = () => 'tr' } = {}) {
   const findings = el('div', 'svt-findings');
   const aside = el('aside', 'svt-aside basics-card', { 'data-svt-candidates': '' });
   layout.append(findings, aside);
-  root.append(heading, intro, layout, source);
+  const recordings = createSvtRecordings(doc, L);
+  const atGuide = createAtGuide(doc, L);
+  root.append(heading, intro, recordings.element, atGuide.element, layout, source);
 
   // Findings: one card per group, grouped under their step.
   const stepHeads = new Map();
@@ -81,9 +85,11 @@ export function createSvtDxPanel(doc, { getLang = () => 'tr' } = {}) {
   }));
 
   function render() {
+    recordings.render();
     const t = T();
     heading.textContent = t.heading; intro.textContent = t.intro; source.textContent = t.source;
     candTitle.textContent = t.candidates; reasonsTitle.textContent = t.reasons; reset.textContent = t.reset;
+    atGuide.render();
     for (const [step, head] of stepHeads) head.textContent = t.steps[step];
     for (const { card, title, hint, buttons, group } of cards.values()) {
       const text = t.groups[group.id];
@@ -121,7 +127,7 @@ export function createSvtDxPanel(doc, { getLang = () => 'tr' } = {}) {
   return {
     element: root,
     render,
-    setActive(flag) { state.active = Boolean(flag); root.hidden = !state.active; if (state.active) render(); },
+    setActive(flag) { state.active = Boolean(flag); root.hidden = !state.active; recordings.setActive(state.active); if (state.active) render(); },
     /** Test hooks. */
     set(patch) { Object.assign(state, patch); render(); return { ...state, selection: { ...state.selection } }; },
     getState: () => ({ ...state, selection: { ...state.selection } })

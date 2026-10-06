@@ -7,6 +7,9 @@ import { createPacingPanel } from './ep-pacing-panel.js';
 import { createTaskPanel } from './ep-task-panel.js';
 import { createOriginPanel } from './ep-origin-panel.js';
 import { createPviPanel } from './ep-pvi-panel.js';
+import { createApAblationPanel } from './ap-ablation-panel.js';
+import { AP_ABLATION_EXAMPLES } from './ap-ablation-recordings.js';
+import { createAtGuide } from './at-markowitz-guide.js';
 import { createPharmaPanel } from './ep-pharma-panel.js';
 import { createEpFullscreen } from './ep-fullscreen.js';
 import { createLivePanel } from './ep-live-panel.js';
@@ -325,6 +328,12 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     getLang: () => lang,
     onRecording(recording) { state.sim = recording; view.cursorMs = null; render(); }
   });
+  const apPanel = createApAblationPanel(doc, {
+    getLang: () => lang,
+    onRecording(recording) { state.sim = recording; view.cursorMs = null; render(); }
+  });
+  const apTitle = () => AP_ABLATION_EXAMPLES.find(([id]) => id === state.sim?.id)?.[lang === 'en' ? 2 : 1] || '';
+  const atGuide = createAtGuide(doc, () => lang);
   const compareBox = el('div', 'ep-compare-card');
   const mapBox = el('div', 'ep-map');
   const mapTitle = el('p', 'ep-map-title');
@@ -351,7 +360,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const stripCol = el('div', 'ep-strip');
   stripCol.append(caseRow, title, row, viewBar, canvas, ladderCanvas, inspect, measures);
   const sideCol = el('div', 'ep-side');
-  sideCol.append(taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
+  sideCol.append(taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
   root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element);
@@ -409,7 +418,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const recording = current();
     if (!recording) return null;
     const clipText = EP_CLIP_TEXT[state.clipId];
-    const heading = state.sim?.lab === 'pharma' ? pharmaPanel.stripTitle(lang) : state.sim ? pick(EP_MANEUVERS[state.sim.maneuver] || { tr: '', en: '' }, lang).name || ''
+    const heading = state.sim?.lab === 'ap-ablation' ? apTitle() : state.sim?.lab === 'pharma' ? pharmaPanel.stripTitle(lang) : state.sim ? pick(EP_MANEUVERS[state.sim.maneuver] || { tr: '', en: '' }, lang).name || ''
       : state.section === 'diagnosis' && !state.evidence ? EP_TEXT[lang][recording.maneuver === 'a-extra' ? 'extrastimulusTitle' : 'neutralTitle']
         : (clipText && pick(clipText, lang).title) || '';
     return drawEgm(target, recording, { lang, title: heading, channels: visibleChannels(recording), zoom: view.zoom, pan: view.pan, cursorMs: view.cursorMs, caliper: view.caliperOn ? view.caliper : null, waves: view.waves, links: view.links ? linksOf(recording) : null, linkStyles: LADDER_STYLE });
@@ -428,7 +437,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const ladders = new WeakMap();
   function ladderOf(recording) {
     if (!ladders.has(recording)) {
-      const mechanism = EP_CASES.find((c) => c.id === (recording.caseId || state.caseId))?.mechanism || null;
+      const mechanism = recording.mechanism || EP_CASES.find((c) => c.id === (recording.caseId || state.caseId))?.mechanism || null;
       ladders.set(recording, buildLadder(inferLadderEvents(recording.events, { mechanism }), { until: recording.windowMs }));
     }
     return ladders.get(recording);
@@ -606,11 +615,12 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const origin = state.sim?.lab === 'origin';
     const pvi = state.sim?.lab === 'pvi';
     const pharma = state.sim?.lab === 'pharma';
-    const simName = state.sim && !task && !origin && !pvi && !pharma ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
+    const ap = state.sim?.lab === 'ap-ablation';
+    const simName = state.sim && !task && !origin && !pvi && !pharma && !ap ? pick(EP_MANEUVERS[state.sim.maneuver], lang).name : '';
     const clipTitle = clipText?.title || '';
     // Do not repeat the case name when the clip title already starts with it.
     // A task recording keeps the case hidden: task number and evidence kind only.
-    title.textContent = task ? taskPanel.title(lang) : origin ? originPanel.stripTitle(lang) : pvi ? pviPanel.stripTitle(lang) : pharma ? pharmaPanel.stripTitle(lang) : state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t[recording?.maneuver === 'a-extra' ? 'extrastimulusTitle' : 'neutralTitle'];
+    title.textContent = ap ? apTitle() : task ? taskPanel.title(lang) : origin ? originPanel.stripTitle(lang) : pvi ? pviPanel.stripTitle(lang) : pharma ? pharmaPanel.stripTitle(lang) : state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t[recording?.maneuver === 'a-extra' ? 'extrastimulusTitle' : 'neutralTitle'];
     simPanel.setCase(state.caseId);
     simPanel.element.hidden = state.section !== 'maneuver' || !simPanel.supports(state.caseId);
     pacingPanel.setCase(state.caseId);
@@ -624,6 +634,10 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     // The PVI exercise owns the Treatment tab of its case; its lesion map takes clicks only there.
     pviPanel.element.hidden = !(state.section === 'treatment' && pviPanel.supports(state.caseId));
     pviPanel.setVisible(!pviPanel.element.hidden);
+    apPanel.element.hidden = state.section !== 'treatment' || !state.caseId.startsWith('ap-');
+    apPanel.render();
+    atGuide.element.hidden = !['focal-at', 'at-parahisian'].includes(state.caseId);
+    atGuide.render();
     taskPanel.element.hidden = state.section !== 'diagnosis';
     originPanel.element.hidden = state.section !== 'diagnosis';
     if (!originPanel.element.hidden) originPanel.draw();
@@ -657,7 +671,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     result.dataset.result = recording?.result || '';
     // The anatomical zone (and the schematic zone) stays hidden while the diagnosis is neutral.
     const taskZone = () => (taskPanel.isAnswered() ? EP_CASES.find((c) => c.id === state.sim.caseId)?.pathwayZone || null : null);
-    const zoneId = task ? taskZone() : origin || state.origin || pharma ? null : revealed ? currentCase()?.pathwayZone : null;
+    const zoneId = task ? taskZone() : origin || state.origin || pharma || ap ? null : revealed ? currentCase()?.pathwayZone : null;
     const zoneText = zoneId && EP_ZONE_TEXT[zoneId];
     zoneLine.textContent = zoneText ? `${lang === 'en' ? 'Zone' : 'Zon'}: ${pick(zoneText, lang).name}. ${pick(zoneText, lang).risk}` : '';
     zoneLine.hidden = !zoneLine.textContent;
@@ -693,7 +707,11 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     endpoint.textContent = state.section === 'treatment' ? `${t.endpointLabel}: ${caseText.endpoint}` : '';
     endpoint.hidden = !endpoint.textContent;
     renderSources(currentCase()?.citations || []);
+    schematic.element.hidden = sources.hidden = ap;
     canvas.setAttribute('aria-label', `${lang === 'en' ? 'Electrogram strip' : 'Elektrogram şeridi'}: ${title.textContent}`);
+    if (ap) {
+      for (const node of [schematic.element, zoneLine, mapBox, card, compare, endpoint, sources]) node.hidden = true;
+    }
     renderView();
   }
 
@@ -752,7 +770,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     pharma: pharmaPanel,
     fullscreen: () => fullscreen(),
     /** Zone of the active case; null while the diagnosis view is still neutral. */
-    getZone: () => (state.sim?.lab === 'pharma' || (state.section === 'diagnosis' && !state.evidence) ? null : currentCase()?.pathwayZone || null),
+    getZone: () => (['pharma', 'ap-ablation'].includes(state.sim?.lab) || (state.section === 'diagnosis' && !state.evidence) ? null : currentCase()?.pathwayZone || null),
     setLanguage(next) {
       lang = next === 'en' ? 'en' : 'tr';
       render();

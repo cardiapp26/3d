@@ -48,6 +48,29 @@ for (const [c, [response, verdict]] of Object.entries(expected)) {
 // Atypical AVNRT: a VA longer than the pacing cycle does not read as V-A-A-V (pseudo-V-A-A-V avoided).
 assert.ok(overdrive('avnrt-atypical').saVa > 85);
 
+// Septal ORT: AV nodal delay raises raw PPI-TCL to 150 ms;
+// first-return AH prolongation of 80 ms reduces corrected value to 70 ms.
+{
+  const stims = [1300, 1660, 2020, 2380].map((t) => ({ t, site: 'rv' }));
+  const vs = [100, 500, 900, ...stims.map((s) => s.t + 10), 2930, 3330, 3730, 4130];
+  const as = [230, 630, 1030, ...stims.map((s) => s.t + 200), 3060, 3460, 3860, 4260];
+  const events = {
+    rv: vs.map((t) => ({ type: 'V', t, origin: stims.some((s) => s.t + 10 === t) ? 'rv' : 'his' })),
+    hra: as.map((t) => ({ type: 'A', t })),
+    'his-d': [...vs.map((t) => ({ type: 'V', t })), ...as.map((t) => ({ type: 'A', t })),
+      ...[[455, 230], [855, 630], [1255, 1030], [2885, 2580]].map(([t, aj]) => ({ type: 'H', t, aj }))].sort((a, b) => a.t - b.t)
+  };
+  const r = analyzeOverdrive(events, stims);
+  assert.deepEqual([r.ppiTcl, r.ahTachy, r.ahReturn, r.ahProlongation, r.cppiTcl], [150, 225, 305, 80, 70]);
+  assert.equal(interpretOverdrive(r), 'avrt');
+  assert.equal(analyzeOverdrive(events, stims, { correctAh: false }).cppiTcl, null);
+  const missing = { ...events, 'his-d': events['his-d'].map(({ aj, ...e }) => e) };
+  assert.equal(analyzeOverdrive(missing, stims).cppiTcl, null, 'no guessed A-H association');
+  assert.equal(interpretOverdrive({ ...r, captured: false }), null);
+  assert.equal(interpretOverdrive({ ...r, cppiTcl: 110 }), 'indeterminate');
+  assert.equal(interpretOverdrive({ ...r, cppiTcl: 109 }), 'avrt');
+}
+
 // Flutter entrainment by site: CS proximal and HRA in the circuit, CS distal outside.
 const flutterPpi = (site) => {
   const h = running('flutter-cti');

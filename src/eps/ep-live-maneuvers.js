@@ -10,6 +10,7 @@
 const RETRO = new Set(['avn-fast', 'avn-slow', 'ap-left', 'ap-ps']);
 const PACE_CHANNEL = { hra: 'hra', 'cs-prox': 'cs-910', 'cs-dist': 'cs-12', rv: 'rv' };
 export const PPI_CUTOFF = 115;     // PPI - TCL from the RV: > 115 AVNRT, otherwise AVRT
+export const CPPI_CUTOFF = 110;    // Gonzalez-Torrecilla 2006, PMID 16731468: <110 supports ORT
 export const SA_VA_CUTOFF = 85;    // SA - VA: > 85 AVNRT, otherwise AVRT
 export const CSNRT_LIMIT = 550;    // corrected SNRT upper limit
 
@@ -93,7 +94,7 @@ export function planOverdrive({ site, start, tcl, offset = 30, n = 10 }) {
  * activation on the pacing channel), PPI - TCL, atrial entrainment, the
  * V-A-V / V-A-A-V response (ventricular pacing), SA - VA and termination.
  */
-export function analyzeOverdrive(events, stims) {
+export function analyzeOverdrive(events, stims, { correctAh = true } = {}) {
   if (!stims.length) return null;
   const site = stims[0].site, ch = PACE_CHANNEL[site];
   const first = stims[0].t, lastStim = stims[stims.length - 1].t;
@@ -119,7 +120,8 @@ export function analyzeOverdrive(events, stims) {
   const track = ventricular ? vAfter : tOf(events, ch, 'A').filter((x) => x > lastStim + 30);
   const resumed = tcl != null && cycles(track.slice(0, 5)).slice(1).filter((c) => Math.abs(c - tcl) <= 40).length >= 2;
   const terminated = tcl != null && !resumed;
-  const out = { site, tcl, pacedCl, ppi, ppiTcl: ppi != null && tcl != null ? ppi - tcl : null, captured, entrained, terminated, response: null, saVa: null };
+  const out = { site, tcl, pacedCl, ppi, ppiTcl: ppi != null && tcl != null ? ppi - tcl : null, captured, entrained, terminated, response: null, saVa: null,
+    ahTachy: null, ahReturn: null, ahProlongation: null, cppiTcl: null };
   if (ventricular && entrained && !terminated) {
     // Last entrained A: the last one still at the pacing cycle (with a VA longer than
     // the pacing cycle it falls after the next stimulus time; pseudo-V-A-A-V otherwise).
@@ -138,15 +140,32 @@ export function analyzeOverdrive(events, stims) {
     const vBefore = hisV.filter((v) => v < first).slice(-2)[0];
     const va = vBefore != null ? (after(hisA, vBefore) ?? NaN) - vBefore : NaN;
     if (Number.isFinite(sa) && Number.isFinite(va)) out.saVa = Math.round(sa - va);
+    if (correctAh && captured && out.response === 'VAV' && ret != null && out.ppiTcl != null) {
+      // aj explicitly ties a His to its own junctional A; do not guess from
+      // neighbouring retrograde A or use sinus AH as the reference.
+      const paired = of(events, 'his-d', 'H').filter((h) => Number.isFinite(h.aj) && h.aj < h.t
+        && of(events, 'his-d', 'A').some((a) => Math.abs(a.t - h.aj) < 2));
+      const baseline = paired.filter((h) => h.t < first).at(-1);
+      const returned = paired.find((h) => h.t > lastStim && h.t < ret && h.aj > lastStim);
+      if (baseline && returned) {
+        out.ahTachy = Math.round(baseline.t - baseline.aj);
+        out.ahReturn = Math.round(returned.t - returned.aj);
+        out.ahProlongation = out.ahReturn - out.ahTachy;
+        out.cppiTcl = out.ppiTcl - out.ahProlongation;
+      }
+    }
   }
   return out;
 }
 
 /** Overdrive interpretation: the teaching rules (AT by V-A-A-V; AVNRT versus AVRT by PPI - TCL and SA - VA). */
 export function interpretOverdrive(r) {
-  if (!r || r.terminated || !r.entrained) return null;
+  if (!r || !r.captured || r.terminated || !r.entrained) return null;
   if (r.response === 'VAAV') return 'at';
   if (r.response === 'VAV') {
+    if (r.cppiTcl != null && r.cppiTcl < CPPI_CUTOFF) return 'avrt';
+    if (r.cppiTcl === CPPI_CUTOFF) return 'indeterminate';
+    if (r.ppiTcl == null || r.saVa == null) return 'indeterminate';
     const long = (r.ppiTcl ?? 0) > PPI_CUTOFF, saLong = (r.saVa ?? 0) > SA_VA_CUTOFF;
     return long && saLong ? 'avnrt' : !long && !saLong ? 'avrt' : 'indeterminate';
   }

@@ -1,6 +1,7 @@
 import { LEADS, LEAD_OPTIONS, localize, PHASES, CS_CHANNELS, csSequence, ablationFindings, ERP_RANGE, pathwayRisk } from './wpw-loc-model.js';
 import { WPW_EXAMPLES, visualSvg, renderAnnulusMap, renderPolarity, renderCsTracing, renderAblationEcg } from './wpw-loc-visual.js';
 import { WPW_LOC_TEXT } from './wpw-loc-text.js';
+import { createBostonGuide } from './ap-boston-guide.js';
 
 /*
  * WPW visual workbook: four learning pages. (1) the surface ECG algorithm: delta
@@ -86,6 +87,8 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const progress = el('div', 'wpw-progress', { 'data-wpw-progress': '', role: 'status' });
   locInputs.append(...['v1', 'd1', 'd2', 'avf', 'd3'].map(id => leadBlocks.get(id).block), allLeads);
   loc.c.append(locHint, progress, locLayout, verdict, pathList, locReset);
+  const boston = createBostonGuide(doc, L);
+  loc.c.append(boston.element);
 
   // ---- 2. coronary sinus -------------------------------------------------------------------
   const cs = card('cs');
@@ -141,6 +144,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     }
 
     // 1
+    boston.render();
     loc.h.textContent = t.loc.title; locHint.textContent = t.loc.hint; locReset.textContent = t.loc.reset;
     const result = localize(state.leads);
     allLeads.textContent = state.allLeads ? t.page.guided : t.page.allLeads;

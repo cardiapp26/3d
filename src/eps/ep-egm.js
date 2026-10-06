@@ -7,6 +7,7 @@ import { EP_CHANNELS, measure, resolveRef } from './ep-cases.js';
 
 // Channel colours: His magenta, CS blue, ABL purple; surface leads green.
 const COLORS = {
+  'ecg-i': '#8fdc9f', 'his-3': '#e9a0fa', 'his-2': '#e38ff7', 'abl-p': '#d8b4fe',
   'ecg-ii': '#8fdc9f', 'ecg-v1': '#6fc48b', hra: '#c9d6cf', 'his-p': '#f0abfc', 'his-d': '#e879f9',
   'cs-910': '#7fb2ff', 'cs-78': '#74a6f2', 'cs-56': '#699ae6', 'cs-34': '#6090dd', 'cs-12': '#5b8cff',
   rv: '#ffd28a', 'abl-d': '#b99bff', 'abl-uni': '#d8c7ff',
@@ -205,7 +206,7 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
 export function waveLabel(e, surface) {
   if (surface) return { P: 'P', V: 'QRS', delta: 'δ', F: 'F' }[e.type] || null;
   if (e.type === 'f') return null;
-  const name = { A: 'A', H: 'H', V: 'V', S: 'S', PV: 'PV', RB: 'RB', P1: 'P1', P2: 'P2', Pk: 'Pk', U: 'U' }[e.type] || null;
+  const name = { A: 'A', H: 'H', V: 'V', S: 'S', AP: 'AP', PV: 'PV', RB: 'RB', P1: 'P1', P2: 'P2', Pk: 'Pk', U: 'U' }[e.type] || null;
   return name && e.far ? name.toLowerCase() : name;
 }
 
@@ -312,7 +313,8 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
   if (canvas.height !== Math.floor(height * dpr)) canvas.height = Math.floor(height * dpr);
   const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
   if (!ctx) return;
-  const channels = (only || recording.channels).map((id) => CHANNEL_BY_ID.get(id)).filter(Boolean);
+  const channels = (only || recording.channels).map((id) => CHANNEL_BY_ID.get(id)).filter(Boolean)
+    .map((ch) => recording.channelLabels?.[ch.id] ? { ...ch, label: recording.channelLabels[ch.id] } : ch);
   if (!channels.length) return;
   const rows = new Map(channels.map((ch, i) => [ch.id, i]));
   const plotW = Math.max(1, width - LABEL_W - 6);
