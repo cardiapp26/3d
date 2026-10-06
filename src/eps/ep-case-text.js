@@ -9,8 +9,8 @@
 export { EP_ZONE_TEXT } from './ep-zone-text.js';
 
 export const EP_CITATION_NOTE = Object.freeze({
-  tr: 'Kaynak numaraları raporun 13. bölümüne gider (research/ELEKTROFIZYOLOJIK_ANATOMI_GELISTIRME_RAPORU.md).',
-  en: 'Reference numbers point to section 13 of the report (research/ELEKTROFIZYOLOJIK_ANATOMI_GELISTIRME_RAPORU.md).'
+  tr: 'Her numara bir yayına gider; bağlantı yayının DOI sayfasını açar. Kayıtlardaki süreler kurgusal öğretim değerleridir.',
+  en: 'Each number points to a publication; the link opens its DOI page. Timings in the recordings are designed teaching values.'
 });
 
 export const EP_TEXT = Object.freeze({

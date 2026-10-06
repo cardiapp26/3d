@@ -25,6 +25,7 @@ import { createSvtDxPanel } from './svt-dx-panel.js';
 import { SVT_DX_TEXT } from './svt-dx-text.js';
 import { createWpwLocPanel } from './wpw-loc-panel.js';
 import { WPW_LOC_TEXT } from './wpw-loc-text.js';
+import { EP_REFERENCES, referenceHref } from './ep-references.js';
 
 /*
  * Electrophysiological anatomy panel: Diagnosis / Maneuvers / Treatment tabs
@@ -449,6 +450,26 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     if (fs?.isOpen()) fs.render();
   }
 
+  // Case sources: each R number links to its publication, the full citation in the tooltip.
+  function renderSources(ids) {
+    const parts = [`${EP_TEXT[lang].sources}: `];
+    ids.forEach((id, i) => {
+      const href = referenceHref(id);
+      const ref = EP_REFERENCES[id];
+      if (i) parts.push(', ');
+      if (!href) { parts.push(id); return; }
+      const link = el('a', 'ep-ref');
+      link.href = href;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = id;
+      link.title = ref.cite;
+      parts.push(link);
+    });
+    parts.push(`. ${pick(EP_CITATION_NOTE, lang)}`);
+    sources.replaceChildren(...parts);
+  }
+
   // Channel chooser, zoom, pan and the inspection readout.
   function renderView() {
     const recording = current();
@@ -671,7 +692,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     compare.hidden = !compare.textContent;
     endpoint.textContent = state.section === 'treatment' ? `${t.endpointLabel}: ${caseText.endpoint}` : '';
     endpoint.hidden = !endpoint.textContent;
-    sources.textContent = `${t.sources}: ${(currentCase()?.citations || []).join(', ')}. ${pick(EP_CITATION_NOTE, lang)}`;
+    renderSources(currentCase()?.citations || []);
     canvas.setAttribute('aria-label', `${lang === 'en' ? 'Electrogram strip' : 'Elektrogram şeridi'}: ${title.textContent}`);
     renderView();
   }

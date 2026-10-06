@@ -131,7 +131,7 @@ define({
 });
 
 // ---------------------------------------------------------------------------
-// Left posterior fascicular VT (R21-R25, R29). RBBB-like, superior axis,
+// Left posterior fascicular VT (R21-R25). RBBB-like, superior axis,
 // relatively narrow QRS with AV dissociation; at the left posterior septum
 // a diastolic Purkinje potential (P1, base to apex) and a presystolic one
 // (P2, apex to base) precede the QRS; the His is activated retrogradely.
