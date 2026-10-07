@@ -102,26 +102,38 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
       const toward = lv.boundingBox.getCenter(lm.position.clone()).sub(rv.boundingBox.getCenter(lm.position.clone()));
       const d1 = cb.ladBranchKinds(tree, toward).find((b) => b.kind === 'diagonal').node.arc;
       const septals = cb.tubeComponents(h.getMeshes('septal')[0].geometry).map((c) => cb.takeoffOnTrunk(tree, c));
-      return { d1, s1: Math.min(...septals), moves: h.atlasAdjustments().septalReorder, names: h.getMeshes('lad')[0].userData.branches.names.map((n) => n.abbr) };
+      const lcx = cb.arteryTree(cb.tubeComponents(h.getMeshes('lcx')[0].geometry), lm.geometry.boundingBox.getCenter(lm.position.clone()));
+      const om1 = Math.min(...lcx.nodes.filter((n) => n.parent === lcx.trunkIndex).map((n) => n.arc));
+      return { d1: d1 / tree.arc.at(-1), s1: Math.min(...septals) / tree.arc.at(-1), om1: om1 / lcx.arc.at(-1), moves: h.atlasAdjustments().branchMoves, names: h.getMeshes('lad')[0].userData.branches.names.map((n) => n.abbr) };
     });
-    assert.ok(order.d1 < order.s1, `D1 (${order.d1.toFixed(2)}) proximal to S1 (${order.s1.toFixed(2)})`);
-    assert.ok(order.moves.length >= 1, 'septals moved distal to D1 are recorded as an atlas adjustment');
+    // Proximal LAD ends at D1 / S1, proximal LCX at OM1: the branches leave in the proximal third.
+    assert.ok(order.d1 < 0.33, `D1 at ${order.d1.toFixed(2)} of the LAD`);
+    assert.ok(order.s1 < order.d1 + 0.05, `S1 (${order.s1.toFixed(2)}) next to or before D1 (${order.d1.toFixed(2)})`);
+    assert.ok(order.om1 < 0.4, `OM1 at ${order.om1.toFixed(2)} of the LCX`);
+    assert.ok(order.moves.lad.length >= 1 && order.moves.lcx.length >= 1, 'branch moves are recorded as an atlas adjustment');
     assert.ok(order.names.includes('D1') && order.names.includes('D2'), `LAD names: ${order.names}`);
     // Pick on a still camera (the opening fly-to must have settled).
     await page.waitForFunction(() => document.querySelector('#viewport')?.dataset.cameraSettled !== 'false');
     await page.waitForTimeout(300);
-    const target = await page.evaluate(() => {
+    // D1 now leaves near the base: try points along it until one is in view and names the branch.
+    const targets = await page.evaluate(() => {
       const m = window.heart.getMeshes('lad')[0], t = m.userData.branches, pos = m.geometry.attributes.position;
       const k = t.names.findIndex((n) => n.tr === '1. diagonal dal (D1)');
       const verts = [...t.byVertex.keys()].filter((i) => t.byVertex[i] === k);
-      const mid = verts[Math.floor(verts.length / 2 / 12) * 12];
-      const c = [0, 0, 0];
-      for (let j = 0; j < 12; j++) { c[0] += pos.getX(mid + j) / 12; c[1] += pos.getY(mid + j) / 12; c[2] += pos.getZ(mid + j) / 12; }
-      return window.heart.screenPoint(c);
+      return [0.5, 0.65, 0.8, 0.35, 0.9, 0.2].map((f) => {
+        const mid = verts[Math.floor(verts.length * f / 12) * 12];
+        const c = [0, 0, 0];
+        for (let j = 0; j < 12; j++) { c[0] += pos.getX(mid + j) / 12; c[1] += pos.getY(mid + j) / 12; c[2] += pos.getZ(mid + j) / 12; }
+        return window.heart.screenPoint(c);
+      });
     });
-    await page.mouse.move(target.x, target.y);
-    await page.waitForTimeout(150);
-    assert.match(await page.locator('#hover-badge').textContent(), /LAD · 1\. diagonal dal \(D1\)/, 'hover names the branch');
+    let target = null;
+    for (const p of targets) {
+      await page.mouse.move(p.x, p.y);
+      await page.waitForTimeout(150);
+      if (/LAD · 1\. diagonal dal \(D1\)/.test(await page.locator('#hover-badge').textContent())) { target = p; break; }
+    }
+    assert.ok(target, 'hover names the branch at some point along D1');
     await page.mouse.click(target.x, target.y);
     await page.waitForTimeout(150);
     assert.match(await page.locator('#structure-title').textContent(), /1\. diagonal dal \(D1\)/, 'click names the branch');
@@ -230,7 +242,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.ok(Math.abs(ice.ap) <= 15 && Math.abs(ice.lr) <= 15, 'ICE knobs offset from the home pose');
 
     assert.deepEqual(errors, [], 'no page errors');
-    console.log('PASS: RV/LV modes, Eustachian valve and Chiari network, ridge and posterior leaflet names, named coronary branches (D1 before S1), ventricle wall regions, aortic valve opening, TTE presets without PV/PA/SVC and with the textbook LV segments');
+    console.log('PASS: RV/LV modes, Eustachian valve and Chiari network, ridge and posterior leaflet names, named coronary branches (D1, S1 and OM1 in the proximal third), ventricle wall regions, aortic valve opening, TTE presets without PV/PA/SVC and with the textbook LV segments');
   } finally {
     await browser.close();
   }

@@ -374,10 +374,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     if (laMesh) atlasAdjustments.laaScale = shrinkAppendage(laMesh);
     // Transverse sinus: atria no longer enter the aortic root (before any measurement).
     atlasAdjustments.transverseSinus = separateAtriaFromAorta([...(meshMap.get('ra')||[]), ...(meshMap.get('la')||[])], meshMap.get('aorta')||[]);
-    // Named coronary side branches; septal perforators proximal to D1 move just distal to it (owner's request).
+    // Named coronary side branches; LAD and LCX branches and the septal perforators placed proximally (D1 ~1/4 of the LAD, S1 just before it, OM1 ~1/3 of the LCX).
     const coronary = buildCoronaryBranches(Object.fromEntries(['lad','septal','lcx','rca','lm','rcc','lv','rv'].map(id => [id, meshMap.get(id)?.[0]])));
     for (const [id, branchTable] of Object.entries(coronary.tables)) { const m = meshMap.get(id)?.[0]; if (m) m.userData.branches = branchTable; }
     atlasAdjustments.septalReorder = coronary.septalMoves;
+    atlasAdjustments.branchMoves = coronary.branchMoves;
     const lmCenter=sourceCenter('lm'),rccCenter=sourceCenter('rcc');
     rootHeight=Math.max(lmCenter?.y??.6,rccCenter?.y??.6)+.13;rootPlane.constant=rootHeight;
     ivcPlane.constant=-(chamberBounds.min.y-center.y)*scale+.45;

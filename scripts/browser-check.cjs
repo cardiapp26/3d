@@ -667,10 +667,15 @@ const openDrawer = async (page, id) => {
     const report = JSON.parse(fs.readFileSync('research/coronary-geometry-report.json','utf8'));
     const n = state.normalization;
     // Documented atlas adjustments change a structure's shape on purpose (the
-    // LAA scaled toward its neck; research/LAA_BACHMANN.md): its vertex count
+    // LAA scaled toward its neck; research/LAA_BACHMANN.md; coronary branches
+    // moved proximally): its vertex count
     // is still checked, its bounds are not.
     const adjustments = await page.evaluate(() => window.testViewer.atlasAdjustments());
-    const reshaped = new Set(adjustments.laaScale ? ['la'] : []);
+    // Coronary side branches moved proximally (coronary-branches.js) reshape the LAD, LCX and septal meshes.
+    const reshaped = new Set([...(adjustments.laaScale ? ['la'] : []),
+      ...(adjustments.branchMoves?.lad?.length ? ['lad'] : []), ...(adjustments.branchMoves?.lcx?.length ? ['lcx'] : []),
+      ...(adjustments.septalReorder?.length ? ['septal'] : [])]);
+    assert.ok(adjustments.branchMoves?.lad?.length > 0 && adjustments.branchMoves?.lcx?.length > 0, 'proximal branch placement recorded');
     assert.ok(adjustments.laaScale?.moved > 0, 'LAA scaling recorded');
     for (const [id, source] of Object.entries(report.structures)) {
       const actual = state.structures.find(m => m.name === source.name);assert.ok(actual, `rendered ${source.name}`);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { tubeComponents, arteryTree, ladNames, lcxNames, rcaNames, ladBranchKinds, moveSeptalsDistalToD1, takeoffOnTrunk, branchAt } from '../src/coronary-branches.js';
+import { tubeComponents, arteryTree, ladNames, lcxNames, rcaNames, ladBranchKinds, moveBranchesProximal, placeSeptals, takeoffOnTrunk, branchAt } from '../src/coronary-branches.js';
 
 // Synthetic tubes: 12-vertex rings around each centre point, joined by quads.
 function tubes(paths) {
@@ -49,20 +49,33 @@ assert.equal(names.get(3).abbr, 'D2');
 assert.equal(names.get(4).tr, 'D1 yan dalı', 'a branch of a branch is named after its parent');
 assert.equal(names.has(0), false, 'the trunk has no branch name');
 
-// Septal perforators: one proximal to D1 (arc 1.2 < 1.5) moves just distal to it; one distal stays.
-const septal = tubes([line([0, -0.2, -0.03], [0, -0.3, -0.5]), line([0, -1.4, -0.03], [0, -1.5, -0.5])]);
+// Septal perforators: S1 just proximal to D1, the last by the mid LAD, order kept, shape kept.
+const septal = tubes([line([0, -0.2, -0.03], [0, -0.3, -0.5]), line([0, -1.4, -0.03], [0, -1.5, -0.5]), line([0, -1.8, -0.03], [0, -1.9, -0.5])]);
 const d1Arc = ladBranchKinds(ladTree, towardLv).find(b => b.kind === 'diagonal').node.arc;
 assert.ok(Math.abs(d1Arc - 1.5) < 0.06, `D1 takeoff measured along the trunk (${d1Arc})`);
-const before = tubeComponents(septal).map(c => takeoffOnTrunk(ladTree, c));
-assert.ok(before[0] < d1Arc && before[1] > d1Arc);
-const moves = moveSeptalsDistalToD1(septal, ladTree, d1Arc);
-assert.equal(moves.length, 1, 'only the septal proximal to D1 moves');
+const ladLength = ladTree.arc.at(-1);
+const moves = placeSeptals(septal, ladTree, d1Arc);
+assert.equal(moves.length, 3);
 const after = tubeComponents(septal).map(c => takeoffOnTrunk(ladTree, c));
-assert.ok(after[0] > d1Arc && after[0] < d1Arc + 0.1, `S1 now leaves just distal to D1 (${after[0]})`);
-assert.ok(Math.abs(after[1] - before[1]) < 1e-6, 'the distal septal is untouched');
+assert.ok(Math.abs(after[0] - (d1Arc - 0.04 * ladLength)) < 0.06, `S1 just proximal to D1 (${after[0]})`);
+assert.ok(after[0] < after[1] && after[1] < after[2], 'order kept');
+assert.ok(Math.abs(after[2] - 0.6 * ladLength) < 0.06, `last septal by the mid LAD (${after[2]} of ${ladLength})`);
 const shifted = tubeComponents(septal)[0];
 assert.ok(Math.abs(shifted.length - tubeComponents(tubes([line([0, -0.2, -0.03], [0, -0.3, -0.5])]))[0].length) < 1e-6, 'a rigid shift keeps the branch shape');
-assert.deepEqual(moveSeptalsDistalToD1(septal, ladTree, d1Arc), [], 'nothing left to move');
+
+// Side branches move proximally: D1 (anchor) to a quarter of the LAD, the last stays, none moves distally.
+const lad2 = tubes([line([0, 0, 0], [0, -4, 0], 80), line([0.03, -1.0, 0], [0.8, -1.4, 0]), line([0.03, -2.4, 0], [0.8, -2.8, 0]), line([0.03, -3.2, 0], [0.8, -3.6, 0])]);
+const comps2 = tubeComponents(lad2);
+const tree2 = arteryTree(comps2, ostium);
+const total2 = tree2.arc.at(-1);
+const anchorArc = tree2.nodes.filter(n => n.parent === tree2.trunkIndex).sort((a, b) => a.arc - b.arc)[1].arc;
+const branchMoves = moveBranchesProximal(lad2, comps2, tree2, 0.25, (n) => Math.abs(n.arc - anchorArc) < 1e-6);
+const arcs2 = (() => { const c = tubeComponents(lad2); const t = arteryTree(c, ostium); return t.nodes.filter(n => n.parent === t.trunkIndex).map(n => n.arc).sort((a, b) => a - b); })();
+assert.ok(Math.abs(arcs2[1] - 0.25 * total2) < 0.08, `anchor at a quarter (${arcs2[1]})`);
+assert.ok(arcs2[0] < arcs2[1], 'a branch before the anchor stays before it');
+assert.ok(Math.abs(arcs2[2] - 3.2) < 0.08, 'the last branch keeps its place');
+assert.ok(branchMoves.every((m) => m.to <= m.from), 'no branch moves distally');
+assert.deepEqual(moveBranchesProximal(lad2, tubeComponents(lad2), arteryTree(tubeComponents(lad2), ostium), 0.25, () => true), [], 'already proximal: nothing to move');
 
 // LCX: obtuse marginals in takeoff order.
 const lcx = tubes([line([0, 1, 0], [2, 0, 0], 40), line([1.5, 0.22, 0.01], [1.6, -0.5, 0]), line([0.5, 0.72, 0.01], [0.6, 0, 0])]);
@@ -91,4 +104,4 @@ assert.equal(branchAt(table, 0), null, 'trunk vertex');
 assert.equal(branchAt(table, 2).abbr, 'D1');
 assert.equal(branchAt(undefined, 2), null, 'a mesh without a table');
 
-console.log('PASS: coronary side branches: tree, takeoff order, D/S/OM/conus/AM/RV names, septals moved distal to D1');
+console.log('PASS: coronary side branches: tree, takeoff order, D/S/OM/conus/AM/RV names, branches moved proximally (D1, OM1), septals around D1');
