@@ -22,15 +22,15 @@ export const WPW_LOC_TEXT = {
       unset: 'bakılmadı',
       leads: {
         d1: { name: 'D1', hint: 'İlk bakılacak derivasyon. İlk 20 ms\'deki delta negatif veya izoelektrikse vektör sol serbest duvardan uzaklaşıyor.', options: { negIso: 'Negatif veya izoelektrik', pos: 'Pozitif' } },
-        v1: { name: 'V1', hint: 'D1 pozitifse: R ≥ S sol serbest duvar, izoelektrik veya negatif delta septal, pozitif delta ama R < S sağ serbest duvar.', options: { rGtS: 'Pozitif delta, R ≥ S', sGtR: 'Pozitif delta, R < S', isoNeg: 'İzoelektrik veya negatif' } },
+        v1: { name: 'V1', hint: 'D1 pozitifse: R > S sol serbest duvar; ilk 20 ms\'de izoelektrik veya negatif delta septal; pozitif delta ama R < S sağ serbest duvar. Sağ serbest duvarda QRS yine ağırlıkla negatiftir (rS, sol dal bloğu benzeri): delta kısa bir başlangıç r\'si olarak pozitif görünür. Josephson bazı sağ serbest duvar yollarında V1 deltasının bifazik ya da negatif olabileceğini yazar; o zaman septal ile karışır, prekordiyal geçiş (V3\'ten sonra) sağ serbest duvarı destekler.', options: { rGtS: 'Pozitif delta, R > S', sGtR: 'Pozitif delta, R < S (rS)', isoNeg: 'İzoelektrik veya negatif' } },
         d2: { name: 'D2', hint: 'Negatif delta subepikardiyal posteroseptal yolu (CS, orta kardiyak ven) düşündürür; istisnaları vardır.', options: { pos: 'Pozitif', iso: 'İzoelektrik veya bifazik', neg: 'Negatif' } },
-        avf: { name: 'aVF', hint: 'Ön-arka ekseni: pozitifse yol önde, negatifse arkada.', options: { pos: 'Pozitif', iso: 'İzoelektrik (artı eksi)', neg: 'Negatif' } },
+        avf: { name: 'aVF', hint: 'İnferior derivasyon (+90°). Algoritmada anülüs üzerindeki ön-arka yerleşim için vekil olarak kullanılır; tek başına kesin konum vermez.', options: { pos: 'Pozitif', iso: 'İzoelektrik (artı eksi)', neg: 'Negatif' } },
         d3: { name: 'D3', hint: 'aVF pozitif septal yolda anteroseptal ile midseptali ayırır.', options: { rGtS: 'R > S', rLtS: 'R ≤ S' } }
       },
       means: {
         leftFreeWall: 'D1 negatif veya izoelektrik: sol serbest duvar.',
         notLeftByI: 'D1 pozitif: V1\'e bakın.',
-        leftFreeWallV1: 'V1\'de R ≥ S: sol serbest duvar.',
+        leftFreeWallV1: 'V1\'de R > S: sol serbest duvar.',
         leftAnterior: 'aVF pozitif: sol lateral veya anterolateral.',
         leftPosterior: 'aVF negatif veya izoelektrik: sol posterior veya posterolateral.',
         septalCandidate: 'V1 izoelektrik veya negatif: septal aday; D2\'ye bakın.',
@@ -38,29 +38,43 @@ export const WPW_LOC_TEXT = {
         epicardial: 'D2 negatif: subepikardiyal posteroseptal (CS veya orta kardiyak ven).',
         notEpicardial: 'D2 negatif değil: aVF\'ye bakın.',
         posteroseptalTricuspid: 'aVF negatif: posteroseptal, triküspit anülüs tarafı.',
-        posteroseptalMitral: 'aVF izoelektrik: posteroseptal, mitral anülüs tarafı.',
+        posteroseptalMitral: 'aVF izoelektrik: posteroseptal, triküspit ya da mitral anülüs olabilir; çoğu kez mitral taraf.',
         superiorSeptum: 'aVF pozitif: anteroseptal veya midseptal; D3\'e bakın.',
-        anteroseptal: 'D3\'te R > S: anteroseptal (His komşuluğu).',
+        anteroseptal: 'D3\'te R > S: anteroseptal veya sağ anterior paraseptal (His komşuluğu).',
         midseptal: 'D3\'te R ≤ S: midseptal.',
         rightAnterior: 'aVF pozitif: sağ anterior veya anterolateral.',
-        rightLateral: 'aVF izoelektrik: sağ lateral.',
-        rightPosterior: 'aVF negatif: sağ posterior veya posterolateral.'
+        rightNotAnterior: 'aVF izoelektrik veya negatif: D2 belirler.',
+        rightLateral: 'D2 pozitif: sağ lateral.',
+        rightPosterior: 'D2 izoelektrik veya bifazik: sağ posterior veya posterolateral.'
       },
       next: 'Sıradaki derivasyon:',
       stalled: 'Bu bulgu birleşimi derste sınıflandırılmıyor; aynı derivasyonları yeniden değerlendirin.',
       result: 'Aksesuar yol yeri',
       sites: {
-        leftLateral: { name: 'Sol lateral veya anterolateral', note: 'D1 (ya da V1 R ≥ S) sol serbest duvar, aVF pozitif. D1 ve aVL\'de negatif delta beklenir.' },
+        leftLateral: { name: 'Sol lateral veya anterolateral', note: 'D1 (ya da V1 R > S) sol serbest duvar, aVF pozitif. D1 ve aVL\'de negatif delta beklenir.' },
         leftPosterior: { name: 'Sol posterior veya posterolateral', note: 'Sol serbest duvar, aVF negatif veya izoelektrik. D1 çoğu kez izoelektrik, aVL izoelektrik veya hafif pozitif.' },
         posteroseptalEpi: { name: 'Posteroseptal, subepikardiyal (CS / orta kardiyak ven)', note: 'D1 pozitif, V1 sağ serbest duvar ya da septal biçimde, D2 negatif. Ablasyon CS içinden gerekebilir.' },
         posteroseptalTricuspid: { name: 'Posteroseptal, triküspit anülüs', note: 'V1 izoelektrik veya negatif, D2 negatif değil, aVF negatif.' },
-        posteroseptalMitral: { name: 'Posteroseptal, mitral anülüs', note: 'V1 izoelektrik veya negatif, D2 negatif değil, aVF izoelektrik.' },
+        posteroseptalMitral: { name: 'Posteroseptal, mitral anülüs', note: 'V1 izoelektrik veya negatif, D2 negatif değil, aVF izoelektrik. Arruda bu bulguda triküspit tarafı da açık bırakır.' },
         midseptal: { name: 'Midseptal', note: 'Septal, aVF pozitif, D3\'te R ≤ S.' },
         anteroseptal: { name: 'Anteroseptal', note: 'Septal, aVF pozitif, D3\'te R > S. D1, D2 ve aVF\'de pozitif delta; His komşuluğu.' },
         rightAnterior: { name: 'Sağ anterior veya anterolateral', note: 'V1 pozitif delta ama R < S, aVF pozitif.' },
-        rightLateral: { name: 'Sağ lateral', note: 'V1 pozitif delta ama R < S, aVF izoelektrik.' },
-        rightPosterior: { name: 'Sağ posterior veya posterolateral', note: 'V1 pozitif delta ama R < S, aVF negatif.' }
+        rightLateral: { name: 'Sağ lateral', note: 'V1 pozitif delta ama R < S, aVF pozitif değil, D2 pozitif.' },
+        rightPosterior: { name: 'Sağ posterior veya posterolateral', note: 'V1 pozitif delta ama R < S, aVF pozitif değil, D2 izoelektrik veya bifazik.' }
       }
+    },
+    easy: {
+      title: 'EASY-WPW ile karşılaştır',
+      intro: 'El Hamriti ve ark. 2023: 7 anüler bölge. V1\'de QRS polaritesi, sağ yollarda prekordiyal geçiş, sonra D2, D3, aVR ve aVL arasında en pozitif delta (ilk 20–40 ms). Tek yollu 211 hastada doğruluk Arruda\'dan yüksekti (%94 ve %75).',
+      inputs: {
+        v1: { name: 'V1 QRS polaritesi', options: { pos: 'Pozitif: sol yol', negIso: 'Negatif veya izoelektrik: sağ yol' } },
+        transition: { name: 'Prekordiyal QRS geçişi', options: { early: 'V3 veya öncesi', late: 'V3\'ten sonra' } },
+        lead: { name: 'En pozitif delta', options: { ii: 'D2', iii: 'D3', avr: 'aVR', avl: 'aVL' } }
+      },
+      result: 'EASY-WPW sonucu', next: 'Sıradaki:', reset: 'Sıfırla',
+      agree: 'Arruda ile aynı bölge.', differ: 'Arruda farklı bölge veriyor:', noArruda: 'Arruda sonucu için yukarıdaki derivasyonları tamamlayın.',
+      mapNote: 'EASY-WPW\'nin 7 bölgesi bu atlasın en yakın bölgelerine eşlenir (triküspit posterolateral sağ posterior, triküspit anterolateral sağ anterior olarak gösterilir).',
+      source: 'El Hamriti M ve ark. EASY-WPW. Europace 2023;25:600-609. doi:10.1093/europace/euac216'
     },
     cs: {
       title: 'CS aktivasyonu ve ablasyon (sinüs ritmi)',
@@ -90,23 +104,23 @@ export const WPW_LOC_TEXT = {
         left: [
           'Hedef: mitral anülüste en erken yerel V, deltadan önce (çizimde 25 ms); kısa yerel AV ve yol potansiyeli güçlü hedef bulgularıdır.',
           'Erişim: retrograd aortik yolla sol ventrikülden ya da transseptal yolla sol atriyumdan.',
-          'RF verildikten birkaç saniye içinde delta kaybolur; sol lateral yolda D1 ve aVL\'deki negatif delta gider, sol posteriorda inferior derivasyonlardaki negatif delta.',
+          'RF verildikten birkaç saniye içinde delta kaybolur; sol lateral yolda D1 ve aVL\'deki negatif delta gider, sol posteriorda inferior derivasyonlardaki negatif ya da izoelektrik delta.',
           'CS sırası normale döner: önce proksimal, sonra distal; HV normal aralığa (35–55 ms) çıkar.'
         ],
         posteroseptal: [
           'Hedef: CS ağzı çevresi ve triküspit ya da mitral anülüsün posteroseptal kısmı; deltadan önce gelen yerel V.',
           'D2\'de negatif delta varsa yol subepikardiyal olabilir: hedef CS içi veya orta kardiyak ven; koroner artere yakınlık nedeniyle koroner anjiyografi düşünülür.',
-          'Başarıda inferior derivasyonlardaki negatif delta kaybolur.',
+          'Başarıda delta kaybolur: triküspit tarafında inferior derivasyonlardaki negatif delta, mitral tarafında izoelektrik aVF deltası.',
           'His kaydında HV normale döner (35–55 ms); CS proksimalden başlar.'
         ],
         superiorSeptal: [
           'Hedef: His komşuluğunda deltadan önce gelen yerel V; His kateteri de aynı erken V\'yi görür, iki kayıt yan yana.',
           'Kompakt AV düğüm ve His yakın olduğundan AV blok riski artar; enerji kontrollü verilir, kriyoablasyon seçilebilir.',
-          'Başarıda D2, D3 ve aVF\'deki pozitif delta kaybolur, QRS daralır.',
+          'Başarıda D2 ve aVF\'deki pozitif delta kaybolur, QRS daralır.',
           'HV normale döner (35–55 ms); AV iletim ablasyon sırasında ve sonrasında izlenir.'
         ],
         right: [
-          'Hedef: triküspit anülüste deltadan önce gelen yerel V; Josephson triküspit anülüs yolları için en az 25 ms önerir. Kısa yerel AV ve yol potansiyeli de hedefi destekler.',
+          'Hedef: triküspit anülüste deltadan önce gelen yerel V; Josephson triküspit anülüs yolları için en az 25 ms önerir (çizimde 25 ms). Kısa yerel AV ve yol potansiyeli de hedefi destekler.',
           'Erişim femoral venden; anülüste temas için uzun ya da yönlendirilebilir kılıf yardımcı olur.',
           'Başarıda V1\'deki derin S ve delta kaybolur, dar QRS döner.',
           'CS proksimalden başlar: CS sağ serbest duvar yollarını ayırmaz, anülüs haritası gerekir.'
@@ -117,7 +131,7 @@ export const WPW_LOC_TEXT = {
     risk: {
       title: 'Antegrad refrakter periyot',
       label: 'Aksesuar yolun antegrad efektif refrakter periyodu',
-      short: '250 ms ve altı: yüksek risk özelliği. Yol kısa aralıkla yeniden uyarılabilir; AF sırasında hızlı ventrikül yanıtı olasıdır. Ablasyon önerilir.',
+      short: '250 ms ve altı: yüksek risk özelliği. Yol kısa aralıkla yeniden uyarılabilir; AF sırasında hızlı ventrikül yanıtı olasıdır. Asemptomatik hastada ablasyon lehine bir ölçüttür; semptomatik WPW ise ERP\'den bağımsız ablasyon endikasyonudur.',
       long: '250 ms üstü tek başına düşük risk demek değildir: SPERRI, birden fazla yol ve uyarılabilen AVRT de bakılır; değerlendirme izoproterenol ile yapılır.',
       note: 'ESC 2019 SVT kılavuzunda yüksek risk ölçütleri: AF\'de en kısa preeksite RR (SPERRI) ≤250 ms, yolun ERP\'si ≤250 ms, birden fazla yol ve uyarılabilen yol aracılı taşikardi. Refrakter süre iletim hızı değildir. Derste hastanın yolunun ERP\'si 210 ms idi ve ablasyon yapıldı.'
     }
@@ -139,15 +153,15 @@ export const WPW_LOC_TEXT = {
       unset: 'not read',
       leads: {
         d1: { name: 'Lead I', hint: 'Read first. A negative or isoelectric delta in the first 20 ms points away from the left free wall.', options: { negIso: 'Negative or isoelectric', pos: 'Positive' } },
-        v1: { name: 'V1', hint: 'With a positive lead I: R ≥ S left free wall, isoelectric or negative delta septal, positive delta with R < S right free wall.', options: { rGtS: 'Positive delta, R ≥ S', sGtR: 'Positive delta, R < S', isoNeg: 'Isoelectric or negative' } },
+        v1: { name: 'V1', hint: 'With a positive lead I: R > S left free wall; an isoelectric or negative delta in the first 20 ms septal; a positive delta with R < S right free wall. Over a right free wall pathway the QRS is still mostly negative (rS, LBBB-like): the delta shows as a short initial r. Josephson notes the V1 delta can be biphasic or negative with some right free wall pathways; it then overlaps the septal pattern, and a precordial transition after V3 favours the free wall.', options: { rGtS: 'Positive delta, R > S', sGtR: 'Positive delta, R < S (rS)', isoNeg: 'Isoelectric or negative' } },
         d2: { name: 'Lead II', hint: 'A negative delta suggests a subepicardial posteroseptal pathway (CS, middle cardiac vein); there are exceptions.', options: { pos: 'Positive', iso: 'Isoelectric or biphasic', neg: 'Negative' } },
-        avf: { name: 'aVF', hint: 'Anterior-posterior axis: positive means anterior, negative posterior.', options: { pos: 'Positive', iso: 'Isoelectric (plus minus)', neg: 'Negative' } },
+        avf: { name: 'aVF', hint: 'Inferior lead (+90°). The algorithm uses it as a proxy for anterior versus posterior position on the annulus; alone it does not fix the site.', options: { pos: 'Positive', iso: 'Isoelectric (plus minus)', neg: 'Negative' } },
         d3: { name: 'Lead III', hint: 'Separates anteroseptal from midseptal when aVF is positive.', options: { rGtS: 'R > S', rLtS: 'R ≤ S' } }
       },
       means: {
         leftFreeWall: 'Lead I negative or isoelectric: left free wall.',
         notLeftByI: 'Lead I positive: read V1.',
-        leftFreeWallV1: 'R ≥ S in V1: left free wall.',
+        leftFreeWallV1: 'R > S in V1: left free wall.',
         leftAnterior: 'aVF positive: left lateral or anterolateral.',
         leftPosterior: 'aVF negative or isoelectric: left posterior or posterolateral.',
         septalCandidate: 'V1 isoelectric or negative: septal candidate; read lead II.',
@@ -155,29 +169,43 @@ export const WPW_LOC_TEXT = {
         epicardial: 'Lead II negative: subepicardial posteroseptal (CS or middle cardiac vein).',
         notEpicardial: 'Lead II not negative: read aVF.',
         posteroseptalTricuspid: 'aVF negative: posteroseptal, tricuspid annulus side.',
-        posteroseptalMitral: 'aVF isoelectric: posteroseptal, mitral annulus side.',
+        posteroseptalMitral: 'aVF isoelectric: posteroseptal, tricuspid or mitral annulus; often the mitral side.',
         superiorSeptum: 'aVF positive: anteroseptal or midseptal; read lead III.',
-        anteroseptal: 'R > S in lead III: anteroseptal (next to the His).',
+        anteroseptal: 'R > S in lead III: anteroseptal or right anterior paraseptal (next to the His).',
         midseptal: 'R ≤ S in lead III: midseptal.',
         rightAnterior: 'aVF positive: right anterior or anterolateral.',
-        rightLateral: 'aVF isoelectric: right lateral.',
-        rightPosterior: 'aVF negative: right posterior or posterolateral.'
+        rightNotAnterior: 'aVF isoelectric or negative: lead II decides.',
+        rightLateral: 'Lead II positive: right lateral.',
+        rightPosterior: 'Lead II isoelectric or biphasic: right posterior or posterolateral.'
       },
       next: 'Next lead to read:',
       stalled: 'This combination is not classified in the lecture; read the same leads again.',
       result: 'Pathway site',
       sites: {
-        leftLateral: { name: 'Left lateral or anterolateral', note: 'Lead I (or V1 R ≥ S) left free wall, aVF positive. A negative delta in I and aVL is expected.' },
+        leftLateral: { name: 'Left lateral or anterolateral', note: 'Lead I (or V1 R > S) left free wall, aVF positive. A negative delta in I and aVL is expected.' },
         leftPosterior: { name: 'Left posterior or posterolateral', note: 'Left free wall, aVF negative or isoelectric. Lead I often isoelectric, aVL isoelectric or slightly positive.' },
         posteroseptalEpi: { name: 'Posteroseptal, subepicardial (CS / middle cardiac vein)', note: 'Lead I positive, V1 septal or right free wall pattern, lead II negative. Ablation may need the CS.' },
         posteroseptalTricuspid: { name: 'Posteroseptal, tricuspid annulus', note: 'V1 isoelectric or negative, lead II not negative, aVF negative.' },
-        posteroseptalMitral: { name: 'Posteroseptal, mitral annulus', note: 'V1 isoelectric or negative, lead II not negative, aVF isoelectric.' },
+        posteroseptalMitral: { name: 'Posteroseptal, mitral annulus', note: 'V1 isoelectric or negative, lead II not negative, aVF isoelectric. Arruda leaves the tricuspid side open for this finding.' },
         midseptal: { name: 'Midseptal', note: 'Septal, aVF positive, R ≤ S in lead III.' },
         anteroseptal: { name: 'Anteroseptal', note: 'Septal, aVF positive, R > S in lead III. Positive delta in I, II and aVF; next to the His.' },
         rightAnterior: { name: 'Right anterior or anterolateral', note: 'V1 positive delta with R < S, aVF positive.' },
-        rightLateral: { name: 'Right lateral', note: 'V1 positive delta with R < S, aVF isoelectric.' },
-        rightPosterior: { name: 'Right posterior or posterolateral', note: 'V1 positive delta with R < S, aVF negative.' }
+        rightLateral: { name: 'Right lateral', note: 'V1 positive delta with R < S, aVF not positive, lead II positive.' },
+        rightPosterior: { name: 'Right posterior or posterolateral', note: 'V1 positive delta with R < S, aVF not positive, lead II isoelectric or biphasic.' }
       }
+    },
+    easy: {
+      title: 'Compare with EASY-WPW',
+      intro: 'El Hamriti et al. 2023: seven annular sites. QRS polarity in V1, the precordial transition for right-sided pathways, then the most positive delta wave (first 20–40 ms) among II, III, aVR and aVL. In 211 patients with a single pathway it was more accurate than Arruda (94% versus 75%).',
+      inputs: {
+        v1: { name: 'V1 QRS polarity', options: { pos: 'Positive: left-sided', negIso: 'Negative or isoelectric: right-sided' } },
+        transition: { name: 'Precordial QRS transition', options: { early: 'At or before V3', late: 'After V3' } },
+        lead: { name: 'Most positive delta', options: { ii: 'II', iii: 'III', avr: 'aVR', avl: 'aVL' } }
+      },
+      result: 'EASY-WPW result', next: 'Next:', reset: 'Reset',
+      agree: 'Same site as Arruda.', differ: 'Arruda gives another site:', noArruda: 'Complete the leads above for the Arruda result.',
+      mapNote: 'The seven EASY-WPW sites map onto the nearest sites of this atlas (tricuspid posterolateral shows as right posterior, tricuspid anterolateral as right anterior).',
+      source: 'El Hamriti M et al. EASY-WPW. Europace 2023;25:600-609. doi:10.1093/europace/euac216'
     },
     cs: {
       title: 'CS activation and ablation (sinus rhythm)',
@@ -207,23 +235,23 @@ export const WPW_LOC_TEXT = {
         left: [
           'Target: the earliest local V on the mitral annulus, ahead of the delta (25 ms here); a short local AV and a pathway potential are strong target findings.',
           'Access: into the left ventricle by the retrograde aortic route, or into the left atrium transseptally.',
-          'Within seconds of RF the delta vanishes: the negative delta in I and aVL with a left lateral pathway, the negative inferior delta with a left posterior one.',
+          'Within seconds of RF the delta vanishes: the negative delta in I and aVL with a left lateral pathway, the negative or isoelectric inferior delta with a left posterior one.',
           'The CS sequence returns to normal, proximal then distal; HV returns to the normal range (35–55 ms).'
         ],
         posteroseptal: [
           'Target: around the CS ostium and the posteroseptal tricuspid or mitral annulus; a local V ahead of the delta.',
           'A negative delta in lead II suggests a subepicardial pathway: the target may be inside the CS or the middle cardiac vein, and coronary angiography is considered for the nearby artery.',
-          'Success removes the negative delta in the inferior leads.',
+          'Success removes the delta: the negative inferior delta on the tricuspid side, the isoelectric aVF delta on the mitral side.',
           'On the His recording HV returns to normal (35–55 ms); the CS starts proximally.'
         ],
         superiorSeptal: [
           'Target: a local V ahead of the delta next to the His bundle; the His catheter records the same early V, the two side by side.',
           'The compact AV node and His are close, so the AV block risk is higher; energy is given with care and cryoablation may be chosen.',
-          'Success removes the positive delta in II, III and aVF and narrows the QRS.',
+          'Success removes the positive delta in II and aVF and narrows the QRS.',
           'HV returns to normal (35–55 ms); AV conduction is watched during and after ablation.'
         ],
         right: [
-          'Target: a local V ahead of the delta on the tricuspid annulus; Josephson advises at least 25 ms for tricuspid annular pathways. A short local AV and a pathway potential also support the target.',
+          'Target: a local V ahead of the delta on the tricuspid annulus; Josephson advises at least 25 ms for tricuspid annular pathways (25 ms here). A short local AV and a pathway potential also support the target.',
           'Access from the femoral vein; a long or steerable sheath helps contact on the annulus.',
           'Success removes the deep S and delta in V1 and the narrow QRS returns.',
           'The CS starts proximally: the CS does not separate right free wall pathways, an annular map is needed.'
@@ -234,7 +262,7 @@ export const WPW_LOC_TEXT = {
     risk: {
       title: 'Anterograde refractory period',
       label: 'Anterograde effective refractory period of the pathway',
-      short: '250 ms or less: a high-risk feature. The pathway can be re-excited at short intervals; a fast ventricular response during AF is possible. Ablation is recommended.',
+      short: '250 ms or less: a high-risk feature. The pathway can be re-excited at short intervals; a fast ventricular response during AF is possible. In an asymptomatic patient it favours ablation; symptomatic WPW is an indication for ablation whatever the ERP.',
       long: 'Over 250 ms is not low risk on its own: SPERRI, multiple pathways and inducible AVRT are checked too, with isoproterenol.',
       note: 'High-risk criteria in the ESC 2019 SVT guideline: shortest pre-excited RR in AF (SPERRI) ≤250 ms, pathway ERP ≤250 ms, multiple pathways and inducible pathway-mediated tachycardia. Refractoriness is not conduction speed. In the lecture the patient\'s pathway ERP was 210 ms and it was ablated.'
     }

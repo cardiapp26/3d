@@ -1,4 +1,4 @@
-import { LEADS, LEAD_OPTIONS, localize, PHASES, CS_CHANNELS, csSequence, ablationFindings, epTimeline, ERP_RANGE, pathwayRisk } from './wpw-loc-model.js';
+import { LEADS, LEAD_OPTIONS, localize, EASY_OPTIONS, easyWpw, PHASES, CS_CHANNELS, csSequence, ablationFindings, epTimeline, ERP_RANGE, pathwayRisk } from './wpw-loc-model.js';
 import { WPW_EXAMPLES, visualSvg, renderAnnulusMap, renderPolarity, renderEpMonitor } from './wpw-loc-visual.js';
 import { WPW_LOC_TEXT } from './wpw-loc-text.js';
 import { createBostonGuide } from './ap-boston-guide.js';
@@ -23,7 +23,7 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   };
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => WPW_LOC_TEXT[L()];
-  const state = { active: false, page: 'loc', allLeads: false, leads: {}, csPhase: 'before', csSite: 'leftLateral', erp: 210 };
+  const state = { active: false, page: 'loc', allLeads: false, leads: {}, easy: {}, csPhase: 'before', csSite: 'leftLateral', erp: 210 };
 
   const root = el('section', 'basics wpw', { 'data-wpw': '' });
   root.hidden = true;
@@ -87,7 +87,28 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const locReset = button({ 'data-wpw-reset': '' }, () => { state.leads = {}; render(); });
   const progress = el('div', 'wpw-progress', { 'data-wpw-progress': '', role: 'status' });
   locInputs.append(...['d1', 'v1', 'd2', 'avf', 'd3'].map(id => leadBlocks.get(id).block), allLeads);
-  loc.c.append(locHint, progress, locLayout, verdict, pathList, locReset);
+  // EASY-WPW beside Arruda: the same ECG read by the 2023 algorithm.
+  const easyBox = el('section', 'wpw-easy', { 'data-wpw-easy': '' });
+  const easyTitle = el('h4'), easyIntro = note(), easyResult = el('p', 'svt-verdict', { 'data-wpw-easy-result': '', role: 'status' });
+  const easyCompare = note(), easyMapNote = note(), easySource = el('p', 'amap-source');
+  const easyRows = new Map();
+  easyBox.append(easyTitle, easyIntro);
+  for (const input of Object.keys(EASY_OPTIONS)) {
+    const block = el('div', 'wpw-easy-row', { 'data-wpw-easy-input': input });
+    const name = el('strong'); const row = el('div', 'amap-toggles');
+    const buttons = new Map(EASY_OPTIONS[input].map((option) => {
+      const b = button({ 'data-wpw-easy-option': `${input}:${option}` }, () => {
+        if (state.easy[input] === option) delete state.easy[input]; else state.easy[input] = option;
+        if (input === 'v1' && state.easy.v1 !== 'negIso') delete state.easy.transition;
+        render();
+      });
+      row.append(b); return [option, b];
+    }));
+    block.append(name, row); easyBox.append(block); easyRows.set(input, { block, name, buttons });
+  }
+  const easyReset = button({ 'data-wpw-easy-reset': '' }, () => { state.easy = {}; render(); });
+  easyBox.append(easyResult, easyCompare, easyReset, easyMapNote, easySource);
+  loc.c.append(locHint, progress, locLayout, verdict, pathList, locReset, easyBox);
   const boston = createBostonGuide(doc, L);
   loc.c.append(boston.element);
 
@@ -190,6 +211,22 @@ export function createWpwLocPanel(doc, { getLang = () => 'tr' } = {}) {
     verdict.textContent = result.site ? `${t.loc.result}: ${t.loc.sites[result.site].name}. ${t.loc.sites[result.site].note}`
       : result.stalled ? t.loc.stalled : `${t.loc.next} ${t.loc.leads[result.next].name}`;
     pathList.replaceChildren(...result.path.map((p) => { const li = el('li', '', { 'data-wpw-step': p.lead }); li.textContent = `${t.loc.leads[p.lead].name}: ${t.loc.leads[p.lead].options[p.option]}. ${t.loc.means[p.means]}`; return li; }));
+
+    const e = t.easy, easy = easyWpw(state.easy);
+    easyTitle.textContent = e.title; easyIntro.textContent = e.intro; easyReset.textContent = e.reset;
+    easyMapNote.textContent = e.mapNote; easySource.textContent = e.source;
+    for (const [input, parts] of easyRows) {
+      parts.name.textContent = e.inputs[input].name;
+      parts.block.hidden = input === 'transition' && state.easy.v1 !== 'negIso';
+      parts.block.setAttribute('data-next', String(easy.next === input));
+      for (const [option, b] of parts.buttons) { b.textContent = e.inputs[input].options[option]; b.setAttribute('aria-pressed', String(state.easy[input] === option)); }
+    }
+    easyResult.setAttribute('data-site', easy.site || '');
+    easyResult.setAttribute('data-state', easy.site ? 'single' : 'open');
+    easyResult.textContent = easy.site ? `${e.result}: ${t.loc.sites[easy.site].name}` : `${e.next} ${e.inputs[easy.next].name}`;
+    easyCompare.hidden = !easy.site;
+    easyCompare.setAttribute('data-agree', String(Boolean(easy.site && result.site === easy.site)));
+    easyCompare.textContent = !easy.site ? '' : !result.site ? e.noArruda : result.site === easy.site ? e.agree : `${e.differ} ${t.loc.sites[result.site].name}.`;
 
     // 2
     cs.h.textContent = t.cs.title; csHint.textContent = t.cs.hint;

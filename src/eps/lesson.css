@@ -366,6 +366,10 @@
 .wpwv-early{stroke:#fcd34d}
 .wpwv-monitor-label{fill:#c1d9ce;font:9.5px sans-serif;text-anchor:start}
 .wpwv-wave-label{fill:#9fb9ad;font:8.5px sans-serif;text-anchor:middle}
+.wpw-easy{display:grid;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.wpw-easy-row{display:grid;gap:4px}
+.wpw-easy > [data-wpw-easy-reset]{justify-self:start}
+.wpw-easy-row[data-next=true] strong{color:var(--accent)}
 .wpwv-onset-line{stroke:#f3b364;stroke-width:1;stroke-dasharray:4 3}
 .wpwv-channel{fill:#c1d9ce;font:12px sans-serif;text-anchor:middle}
 .wpwv-onset{fill:#f3b364}

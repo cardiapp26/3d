@@ -10,7 +10,7 @@ export const WPW_EXAMPLES = Object.freeze({
   anteroseptal: { d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos', d3: 'rGtS' },
   rightAnterior: { d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'pos' },
   rightLateral: { d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'iso' },
-  rightPosterior: { d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'neg' }
+  rightPosterior: { d1: 'pos', v1: 'sGtR', d2: 'iso', avf: 'neg' }
 });
 const POSITIONS = {
   leftLateral: [336, 134], leftPosterior: [308, 208], posteroseptalEpi: [222, 240],

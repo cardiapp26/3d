@@ -29,10 +29,23 @@ assert.equal(localize({ d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos' }).next, 
 assert.equal(site({ d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos', d3: 'rGtS' }), 'anteroseptal');
 assert.equal(site({ d1: 'pos', v1: 'isoNeg', d2: 'pos', avf: 'pos', d3: 'rLtS' }), 'midseptal');
 
-// Step 4: right free wall (V1 positive, R < S): aVF positive anterior, isoelectric lateral, negative posterior.
+// Step 4: right free wall (V1 positive, R < S). aVF positive anterior; otherwise lead II: positive lateral, isoelectric posterior.
 assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'pos' }), 'rightAnterior');
 assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'iso' }), 'rightLateral');
-assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'neg' }), 'rightPosterior', 'negative aVF is posterior, never lateral');
+assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'pos', avf: 'neg' }), 'rightLateral', 'Arruda step 4: lead II positive is lateral whatever aVF');
+assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'iso', avf: 'iso' }), 'rightPosterior');
+assert.equal(site({ d1: 'pos', v1: 'sGtR', d2: 'iso', avf: 'neg' }), 'rightPosterior');
+
+// EASY-WPW (El Hamriti 2023): V1, transition for right-sided, most positive delta among II, III, aVR, aVL.
+const { easyWpw, EASY_OPTIONS } = await import('../../src/eps/wpw-loc-model.js');
+assert.equal(easyWpw({}).next, 'v1');
+assert.equal(easyWpw({ v1: 'pos' }).next, 'lead', 'left-sided: two steps');
+assert.equal(easyWpw({ v1: 'negIso' }).next, 'transition', 'right-sided: three steps');
+const easy = (v1, lead, transition) => easyWpw({ v1, lead, transition }).site;
+assert.deepEqual(['avl', 'ii', 'avr', 'iii'].map((l) => easy('pos', l)), ['posteroseptalMitral', 'leftPosterior', 'leftPosterior', 'leftLateral']);
+assert.deepEqual(['ii', 'iii', 'avr', 'avl'].map((l) => easy('negIso', l, 'early')), ['anteroseptal', 'anteroseptal', 'posteroseptalTricuspid', 'posteroseptalTricuspid']);
+assert.deepEqual(['avl', 'ii', 'iii', 'avr'].map((l) => easy('negIso', l, 'late')), ['rightPosterior', 'rightAnterior', 'anteroseptal', 'posteroseptalTricuspid']);
+for (const v1 of EASY_OPTIONS.v1) for (const transition of EASY_OPTIONS.transition) for (const lead of EASY_OPTIONS.lead) assert.ok(SITES.includes(easy(v1, lead, transition)));
 
 // Anteroseptal and midseptal never need a negative lead II; the examples follow the algorithm.
 const { WPW_EXAMPLES: EXAMPLES } = await import('../../src/eps/wpw-loc-visual.js');
@@ -182,6 +195,16 @@ panel.set({ csSite: 'leftLateral', csPhase: 'before' });
 assert.equal(has('data-wpw-risk').attributes['data-risk'], 'short', 'the lecture patient: 210 ms');
 panel.set({ erp: 300 });
 assert.equal(has('data-wpw-risk').attributes['data-risk'], 'long');
+panel.set({ page: 'loc', leads: { d1: 'negIso', avf: 'pos' }, easy: {} });
+by('data-wpw-easy-option', 'v1:pos').listeners.click();
+assert.equal(by('data-wpw-easy-input', 'transition').hidden, true, 'no transition step for a left-sided pathway');
+by('data-wpw-easy-option', 'lead:iii').listeners.click();
+assert.equal(has('data-wpw-easy-result').attributes['data-site'], 'leftLateral');
+assert.equal(nodes().find((n) => n.attributes['data-agree'] !== undefined).attributes['data-agree'], 'true', 'EASY-WPW and Arruda agree');
+by('data-wpw-easy-option', 'lead:avl').listeners.click();
+assert.equal(nodes().find((n) => n.attributes['data-agree'] !== undefined).attributes['data-agree'], 'false');
+has('data-wpw-easy-reset').listeners.click();
+assert.deepEqual(panel.getState().easy, {});
 panel.setActive(false);
 assert.equal(panel.element.hidden, true);
 const { WPW_EXAMPLES } = await import('../../src/eps/wpw-loc-visual.js');
@@ -205,4 +228,4 @@ for (const id of SITES) {
 }
 assert.equal(csSequence('before', 'leftPosterior').earliest, 'cs56');
 assert.deepEqual(csSequence('before', 'leftPosterior').onsets, { cs910: 20, cs78: 10, cs56: 0, cs34: 10, cs12: 20 });
-console.log('PASS wpw-loc: Arruda localization (10 sites, lead I first), CS sequence, no-pathway state, before/after ablation for every site (monitor channels, HV, local V lead), refractory cut-off, texts, panel');
+console.log('PASS wpw-loc: Arruda localization (10 sites, lead I first, step 4 by lead II), EASY-WPW and comparison, CS sequence, no-pathway state, before/after ablation for every site (monitor channels, HV, local V lead), refractory cut-off, texts, panel');

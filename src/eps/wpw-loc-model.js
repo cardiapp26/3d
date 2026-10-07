@@ -60,9 +60,37 @@ export function localize(sel = {}) {
     step('d3', sel.d3 === 'rGtS' ? 'anteroseptal' : 'midseptal');
     return done(sel.d3 === 'rGtS' ? 'anteroseptal' : 'midseptal');
   }
-  // Step 4: right free wall (V1 positive, R < S): aVF positive anterior, isoelectric lateral, negative posterior.
-  step('avf', sel.avf === 'pos' ? 'rightAnterior' : sel.avf === 'iso' ? 'rightLateral' : 'rightPosterior');
-  return done(sel.avf === 'pos' ? 'rightAnterior' : sel.avf === 'iso' ? 'rightLateral' : 'rightPosterior');
+  // Step 4: right free wall (V1 positive, R < S). aVF positive: anterior or anterolateral.
+  // aVF isoelectric or negative: lead II decides, positive lateral, isoelectric posterior or posterolateral.
+  if (sel.avf === 'pos') { step('avf', 'rightAnterior'); return done('rightAnterior'); }
+  step('avf', 'rightNotAnterior');
+  step('d2', sel.d2 === 'pos' ? 'rightLateral' : 'rightPosterior');
+  return done(sel.d2 === 'pos' ? 'rightLateral' : 'rightPosterior');
+}
+
+/*
+ * EASY-WPW (El Hamriti et al., Europace 2023;25:600-609): seven annular
+ * sites from the QRS polarity in V1, the precordial transition (right side
+ * only) and the lead with the most positive delta wave among II, III, aVR
+ * and aVL. Sites map onto this atlas (MV posteroseptal -> posteroseptalMitral,
+ * TV posterolateral -> rightPosterior, TV anterolateral -> rightAnterior).
+ */
+export const EASY_OPTIONS = Object.freeze({
+  v1: ['pos', 'negIso'],
+  transition: ['early', 'late'],
+  lead: ['ii', 'iii', 'avr', 'avl']
+});
+const EASY_LEFT = Object.freeze({ avl: 'posteroseptalMitral', ii: 'leftPosterior', avr: 'leftPosterior', iii: 'leftLateral' });
+const EASY_RIGHT_EARLY = Object.freeze({ ii: 'anteroseptal', iii: 'anteroseptal', avr: 'posteroseptalTricuspid', avl: 'posteroseptalTricuspid' });
+const EASY_RIGHT_LATE = Object.freeze({ avl: 'rightPosterior', ii: 'rightAnterior', iii: 'anteroseptal', avr: 'posteroseptalTricuspid' });
+/** Returns { site, next, side }: `next` names the input still needed. */
+export function easyWpw(sel = {}) {
+  if (!sel.v1) return { site: null, next: 'v1', side: null };
+  const side = sel.v1 === 'pos' ? 'left' : 'right';
+  if (side === 'right' && !sel.transition) return { site: null, next: 'transition', side };
+  if (!sel.lead) return { site: null, next: 'lead', side };
+  const table = side === 'left' ? EASY_LEFT : sel.transition === 'early' ? EASY_RIGHT_EARLY : EASY_RIGHT_LATE;
+  return { site: table[sel.lead], next: null, side };
 }
 
 /** Channels of the coronary sinus, proximal (ostium) to distal (lateral wall). */
@@ -96,6 +124,7 @@ export function siteGroup(site) {
 // Delta polarity in lead I and aVL (Josephson 2025, ch. 8): negative in both over a
 // left lateral pathway; I isoelectric and aVL isoelectric or slightly positive over a
 // left posterior one; positive elsewhere.
+// (Arruda's step 1 also allows a frankly negative lead I over a left posterior pathway.)
 const SURFACE_POLARITY = Object.freeze({
   leftLateral: { d1: 'neg', avl: 'neg' },
   leftPosterior: { d1: 'iso', avl: 'iso' }
