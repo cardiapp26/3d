@@ -6,6 +6,13 @@ import { VES_REGIONS } from './ves-loc-model.js';
 // the RV on the viewer's left. Drawn by hand for teaching; nothing here is
 // registered to the 3D atlas or to patient imaging.
 const NS = 'http://www.w3.org/2000/svg';
+/** Basal view rendered from the app's own 3D heart (scripts/eps/render-ves-atlas.cjs). */
+const BASAL_3D = new URL('./assets/ves-basal-3d.webp', import.meta.url).href;
+const BASAL_3D_SIZE = [720, 731];
+// Image-pixel hotspots of the basal teaching regions on that render; the script prints
+// projected starting points, these are hand-adjusted onto the structures.
+const BASAL_3D_SITES = Object.freeze({ 'rvot-septal': [452, 246], 'rvot-free': [236, 148], 'lvot-cusp': [468, 392], 'lv-summit': [292, 332], 'para-his': [577, 372], tricuspid: [636, 466], mitral: [334, 578], crux: [548, 586] });
+const BASAL_3D_LABELS = Object.freeze([[330, 118, 'PV'], [470, 456, 'Ao'], [678, 410, 'TA'], [410, 690, 'MA'], [600, 348, 'His'], [600, 598, 'CS'], [214, 440, 'LAD'], [120, 520, 'GCV'], [690, 700, 'R'], [30, 700, 'L']]);
 const s = (doc, tag, attrs = {}, text = '') => {
   const node = doc.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
@@ -131,33 +138,48 @@ function cutawayView(doc, g, uid, t) {
   label(doc, g, 568, 28, t.chambers, 'ves-map-title');
 }
 
-export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base' }) {
+/** The 3D render as the basal background; markers follow BASAL_3D_SITES. */
+function basal3dView(doc, g, t) {
+  const [w, h] = BASAL_3D_SIZE;
+  g.append(s(doc, 'rect', { x: 0, y: 0, width: w, height: h, rx: 24, class: 'ves-map-frame' }));
+  g.append(s(doc, 'image', { href: BASAL_3D, x: 0, y: 0, width: w, height: h, preserveAspectRatio: 'xMidYMid meet' }));
+  for (const [x, y, text] of BASAL_3D_LABELS) label(doc, g, x, y, text, 'ves-map-caption ves-map-caption-3d');
+  label(doc, g, w / 2, 34, `${t.base} · 3D`, 'ves-map-title ves-map-title-3d');
+}
+
+export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base', atlas3d = false }) {
   const uid = `vesmap${++uidCounter}`;
+  const photo = view === 'base' && atlas3d;
   svg.replaceChildren(s(doc, 'title', {}, t.map), defs(doc, uid));
-  svg.setAttribute('aria-label', `${t.map}: ${t[view]}`); svg.setAttribute('role', 'group');
-  svg.setAttribute('viewBox', view === 'base' ? '0 0 370 350' : '380 0 380 350');
+  svg.setAttribute('aria-label', `${t.map}: ${t[view]}${photo ? ' · 3D' : ''}`); svg.setAttribute('role', 'group');
+  svg.setAttribute('viewBox', photo ? `0 0 ${BASAL_3D_SIZE[0]} ${BASAL_3D_SIZE[1]}` : view === 'base' ? '0 0 370 350' : '380 0 380 350');
+  svg.setAttribute('data-ves-atlas', photo ? '3d' : 'svg');
   const scene = s(doc, 'g', { 'aria-hidden': 'true' });
-  scene.append(s(doc, 'rect', { x: 5, y: 5, width: 356, height: 339, rx: 16, class: 'ves-map-frame' }), s(doc, 'rect', { x: 382, y: 5, width: 371, height: 339, rx: 16, class: 'ves-map-frame' }));
-  if (view === 'base') basalView(doc, scene, uid, t); else cutawayView(doc, scene, uid, t);
+  if (photo) basal3dView(doc, scene, t);
+  else {
+    scene.append(s(doc, 'rect', { x: 5, y: 5, width: 356, height: 339, rx: 16, class: 'ves-map-frame' }), s(doc, 'rect', { x: 382, y: 5, width: 371, height: 339, rx: 16, class: 'ves-map-frame' }));
+    if (view === 'base') basalView(doc, scene, uid, t); else cutawayView(doc, scene, uid, t);
+  }
   svg.append(scene);
+  const scale = photo ? 2 : 1;   // the render's viewBox is about twice the schematic's
   for (const region of VES_REGIONS) {
     if (region.view !== view) continue;
-    const [x, y] = region.xy;
+    const [x, y] = photo ? BASAL_3D_SITES[region.id] : region.xy;
     const group = s(doc, 'g', { tabindex: 0, role: 'button', class: 'ves-map-site', 'data-ves-map-site': region.id,
       'aria-label': `${t.example}: ${t.sites[region.id].name}`, 'aria-pressed': selected === region.id,
       'data-candidate': candidates.includes(region.id) });
     group.append(s(doc, 'title', {}, t.sites[region.id].name),
-      s(doc, 'circle', { cx: x, cy: y, r: 18, class: 'ves-map-halo', filter: `url(#${uid}-halo)` }),
-      s(doc, 'circle', { cx: x, cy: y, r: 13, filter: `url(#${uid}-shadow)` }),
-      s(doc, 'text', { x, y: y + 4 }, region.number));
+      s(doc, 'circle', { cx: x, cy: y, r: 18 * scale, class: 'ves-map-halo', filter: `url(#${uid}-halo)` }),
+      s(doc, 'circle', { cx: x, cy: y, r: 13 * scale, filter: `url(#${uid}-shadow)` }),
+      s(doc, 'text', { x, y: y + 4 * scale, 'font-size': 12 * scale }, region.number));
     group.addEventListener('click', () => onSelect(region.id));
     group.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(region.id); } });
     svg.append(group);
     if (selected === region.id && position) {
-      const offset = { near: [17, 8], adjacent: [30, -18], remote: [30, 27] }[position];
-      svg.append(s(doc, 'line', { x1: x + offset[0], y1: y + offset[1], x2: x + offset[0] + 14, y2: y + offset[1] - 22, class: 'ves-map-abl-shaft' }),
-        s(doc, 'circle', { cx: x + offset[0], cy: y + offset[1], r: 5, class: 'ves-map-abl', 'data-ves-electrode': position }),
-        s(doc, 'text', { x: x + offset[0], y: y + offset[1] + 17, class: 'ves-map-caption' }, 'ABL'));
+      const offset = { near: [17, 8], adjacent: [30, -18], remote: [30, 27] }[position].map(v => v * scale);
+      svg.append(s(doc, 'line', { x1: x + offset[0], y1: y + offset[1], x2: x + offset[0] + 14 * scale, y2: y + offset[1] - 22 * scale, class: 'ves-map-abl-shaft' }),
+        s(doc, 'circle', { cx: x + offset[0], cy: y + offset[1], r: 5 * scale, class: 'ves-map-abl', 'data-ves-electrode': position }),
+        s(doc, 'text', { x: x + offset[0], y: y + offset[1] + 17 * scale, class: photo ? 'ves-map-caption ves-map-caption-3d' : 'ves-map-caption' }, 'ABL'));
     }
   }
 }

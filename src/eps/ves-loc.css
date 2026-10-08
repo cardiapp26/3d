@@ -56,6 +56,9 @@
 .ves-map-caption { fill: #b3c9bd; font: 10.5px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0c1713; stroke-width: 3px; stroke-linejoin: round; }
 .ves-map-tiny { fill: #9fb8ab; font: 8.5px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0c1713; stroke-width: 2.5px; stroke-linejoin: round; }
 .ves-map-label { fill: #e3ece6; font: 600 14px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0c1713; stroke-width: 3px; stroke-linejoin: round; }
+.ves-map[data-ves-atlas='3d'] image { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); }
+.ves-map-caption-3d { font-size: 20px; stroke-width: 5px; }
+.ves-map-title-3d { font-size: 22px; }
 .ves-map-site { cursor: pointer; }
 .ves-map-site circle { fill: #1f3329; stroke: #cfe3d6; stroke-width: 1.8; }
 .ves-map-site .ves-map-halo { fill: transparent; stroke: none; }
@@ -92,6 +95,9 @@
 .ves-map-abl { fill: #d8b4fe; stroke: white; stroke-width: 1.5; }
 .ves-map-caption { fill: #a4bcb0; font: 11px system-ui, sans-serif; text-anchor: middle; }
 .ves-map-label { fill: #c9dacf; font: 14px system-ui, sans-serif; text-anchor: middle; }
+.ves-map[data-ves-atlas='3d'] image { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); }
+.ves-map-caption-3d { font-size: 20px; stroke-width: 5px; }
+.ves-map-title-3d { font-size: 22px; }
 .ves-map-site { cursor: pointer; }
 .ves-map-site circle { fill: #263b32; stroke: #96b4a3; stroke-width: 2; }
 .ves-map-site text { fill: #e3ece6; font: bold 12px system-ui, sans-serif; text-anchor: middle; pointer-events: none; }

@@ -57,7 +57,8 @@
     "test:qrs-vector": "node scripts/test-qrs-vector.mjs",
     "test:qrs-vector-browser": "node scripts/test-qrs-vector-browser.cjs",
     "test:ves": "node scripts/eps/test-ves-loc.mjs",
-    "test:ves-browser": "node scripts/eps/test-ves-browser.cjs"
+    "test:ves-browser": "node scripts/eps/test-ves-browser.cjs",
+    "render:ves-atlas": "node scripts/eps/render-ves-atlas.cjs"
   },
   "keywords": [],
   "author": "",
