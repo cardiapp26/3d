@@ -12,10 +12,10 @@ export const VES_REGIONS = Object.freeze([
   region('para-his', 5, 'base', [164, 185], 'septal', 'rs', 'inferior', 'v3', 'positive', 130, -25),
   region('tricuspid', 6, 'base', [60, 258], 'annular', 'lbbb', 'superior', 'late', 'positive', 165, -31),
   region('mitral', 7, 'base', [305, 176], 'annular', 'rbbb', 'inferior', 'positive', 'negative', 160, -29),
-  region('papillary-pm', 8, 'chambers', [660, 270], 'papillary', 'rbbb', 'superior', 'v3', 'positive', 165, -27),
-  region('papillary-al', 9, 'chambers', [704, 186], 'papillary', 'rbbb', 'inferior', 'v3', 'negative', 160, -26),
-  region('fascicle', 10, 'chambers', [618, 244], 'fascicular', 'rbbb', 'superior', 'early', 'positive', 115, -22, true),
-  region('moderator', 11, 'chambers', [469, 263], 'band', 'lbbb', 'superior', 'late', 'positive', 155, -26, true),
+  region('papillary-pm', 8, 'chambers', [636, 284], 'papillary', 'rbbb', 'superior', 'v3', 'positive', 165, -27),
+  region('papillary-al', 9, 'chambers', [702, 214], 'papillary', 'rbbb', 'inferior', 'v3', 'negative', 160, -26),
+  region('fascicle', 10, 'chambers', [606, 232], 'fascicular', 'rbbb', 'superior', 'early', 'positive', 115, -22, true),
+  region('moderator', 11, 'chambers', [540, 244], 'band', 'lbbb', 'superior', 'late', 'positive', 155, -26, true),
   region('crux', 12, 'base', [198, 292], 'inferior', 'lbbb', 'superior', 'early', 'positive', 180, -23)
 ]);
 export const VES_OPTIONS = Object.freeze({

@@ -105,37 +105,40 @@ function basalView(doc, g, uid, t) {
   label(doc, g, 22, 334, 'R', 'ves-map-axis'); label(doc, g, 346, 334, 'L', 'ves-map-axis'); label(doc, g, 183, 46, 'ANT', 'ves-map-axis'); label(doc, g, 110, 336, 'POST', 'ves-map-axis');
 }
 
-/** Long-axis cutaway: RV on the viewer's left, LV on the right, apex down. */
+/** Four-chamber-style long-axis cutaway: RV on the viewer's left, LV on the right, apex down. */
 function cutawayView(doc, g, uid, t) {
-  // Epicardium and the two cavities; the septum is the myocardium between them.
-  g.append(s(doc, 'path', { d: 'M440 96 Q412 190 470 282 Q530 348 616 336 Q738 314 748 188 Q754 70 660 54 Q588 44 548 60 Q490 66 440 96 Z', class: 'ves-map-myo', fill: `url(#${uid}-myo)` }));
-  g.append(s(doc, 'path', { d: 'M466 118 Q440 198 496 272 Q536 304 574 290 Q560 232 566 162 Q568 120 554 98 Q506 92 466 118 Z', class: 'ves-map-cavity', fill: `url(#${uid}-cavity)` }));
-  g.append(s(doc, 'ellipse', { cx: 656, cy: 198, rx: 62, ry: 106, class: 'ves-map-cavity', fill: `url(#${uid}-cavity)` }));
-  for (let i = 0; i < 7; i++) g.append(s(doc, 'path', { d: `M${580 + i} ${120 + i * 26} q6 6 0 12`, class: 'ves-map-fiber' }));
-  // RV trabeculae and the moderator band running from the septum to the anterior papillary muscle.
-  for (const d of ['M480 150 q10 8 0 16', 'M470 200 q12 6 0 14', 'M498 236 q10 6 0 12', 'M520 262 q10 6 0 12']) g.append(s(doc, 'path', { d, class: 'ves-map-trabecula' }));
-  g.append(s(doc, 'path', { d: 'M566 206 Q520 228 476 262', class: 'ves-map-muscle' }));
-  g.append(s(doc, 'path', { d: 'M460 250 Q470 238 484 250 Q486 270 470 276 Q456 270 460 250 Z', class: 'ves-map-papillary' }));
-  // Base: tricuspid and mitral annuli with leaflets, chordae to the two LV papillary muscles, outflow stubs.
-  g.append(s(doc, 'path', { d: 'M470 96 L556 96', class: 'ves-map-ring' }), s(doc, 'path', { d: 'M476 96 Q492 128 506 132 M550 96 Q538 126 520 130', class: 'ves-map-leaflet' }));
-  g.append(s(doc, 'path', { d: 'M606 96 L716 96', class: 'ves-map-ring' }), s(doc, 'path', { d: 'M608 96 Q626 150 646 160 M714 96 Q704 140 684 150', class: 'ves-map-leaflet' }));
-  g.append(s(doc, 'path', { d: 'M632 300 Q648 262 666 248 Q676 268 668 292 Q654 310 632 300 Z', class: 'ves-map-papillary' }));
-  g.append(s(doc, 'path', { d: 'M716 228 Q702 196 690 180 Q676 198 684 222 Q700 236 716 228 Z', class: 'ves-map-papillary' }));
-  for (const d of ['M646 160 L660 248', 'M652 160 L666 248', 'M684 150 L690 180', 'M678 150 L688 180']) g.append(s(doc, 'path', { d, class: 'ves-map-chordae' }));
-  g.append(s(doc, 'path', { d: 'M578 96 Q584 70 582 46 Q594 36 610 44 Q608 70 608 96 Z', class: 'ves-map-outflow' }), s(doc, 'path', { d: 'M468 96 Q462 70 466 48 Q480 36 494 46 Q492 70 492 96 Z', class: 'ves-map-outflow' }));
-  // Conduction system: His at the membranous septum; RBB to the moderator band; LBB splitting into anterior and posterior fascicles.
-  g.append(s(doc, 'circle', { cx: 590, cy: 104, r: 5, class: 'ves-map-his' }));
-  g.append(s(doc, 'path', { d: 'M586 108 Q574 160 566 206', class: 'ves-map-purkinje' }));
-  g.append(s(doc, 'path', { d: 'M594 108 Q604 130 608 150', class: 'ves-map-purkinje' }));
-  g.append(s(doc, 'path', { d: 'M608 150 Q640 160 684 180', class: 'ves-map-purkinje' }), s(doc, 'path', { d: 'M608 150 Q612 210 636 262', class: 'ves-map-purkinje' }));
+  // Epicardium; RV and LV cavities; the myocardium between them is the septum.
+  g.append(s(doc, 'path', { d: 'M424 94 C406 170 438 256 516 308 C556 332 588 340 606 334 C652 318 722 272 740 192 C752 132 738 94 716 86 L640 90 L586 92 Z', class: 'ves-map-myo', fill: `url(#${uid}-myo)` }));
+  g.append(s(doc, 'path', { d: 'M454 100 C440 172 462 238 518 284 C546 302 568 298 570 280 C562 228 564 162 568 104 Z', class: 'ves-map-endo', fill: `url(#${uid}-cavity)` }));
+  g.append(s(doc, 'path', { d: 'M640 98 C694 98 716 146 712 196 C706 258 664 300 622 310 C598 300 588 268 588 222 C588 160 592 116 604 104 Z', class: 'ves-map-endo', fill: `url(#${uid}-cavity)` }));
+  // Base: aortic root over the septal crest, tricuspid and mitral annuli with leaflets.
+  g.append(s(doc, 'path', { d: 'M588 100 C582 76 590 54 602 48 L626 48 C638 54 646 76 640 100', class: 'ves-map-outflow' }));
+  for (const [x1, x2] of [[456, 566], [642, 714]]) g.append(s(doc, 'line', { x1, y1: 98, x2, y2: 98, class: 'ves-map-ring' }));
+  for (const d of ['M460 100 Q470 128 494 142', 'M564 102 Q560 128 546 140', 'M644 100 Q648 130 664 150', 'M712 100 Q708 128 696 146']) g.append(s(doc, 'path', { d, class: 'ves-map-valve-leaflet' }));
+  // Papillary muscles: RV anterior (moderator band insertion), LV anterolateral and posteromedial.
+  const pm = [
+    'M498 258 C502 248 514 246 520 254 C522 266 512 274 502 270 Z',
+    'M712 198 C700 198 690 212 688 228 C694 238 708 238 714 228 Z',
+    'M612 290 C618 272 634 262 650 266 C656 280 646 296 628 302 Z'
+  ];
+  for (const d of pm) g.append(s(doc, 'path', { d, class: 'ves-map-papillary' }));
+  for (const d of ['M509 250 L494 142', 'M664 150 L692 214', 'M696 146 L704 202', 'M664 150 L640 266', 'M696 146 L648 268']) g.append(s(doc, 'path', { d, class: 'ves-map-chordae' }));
+  g.append(s(doc, 'path', { d: 'M568 232 Q542 238 514 256', class: 'ves-map-muscle' }));
+  // Conduction: His at the membranous septum; RBB down the RV septal surface into the moderator band; LBB fanning into LAF and LPF.
+  g.append(s(doc, 'path', { d: 'M582 116 C572 158 570 198 566 230 Q540 238 514 254', class: 'ves-map-purkinje' }));
+  g.append(s(doc, 'path', { d: 'M592 118 C600 136 604 148 606 160', class: 'ves-map-purkinje' }));
+  g.append(s(doc, 'path', { d: 'M606 160 Q650 172 692 214', class: 'ves-map-purkinje' }), s(doc, 'path', { d: 'M606 160 C602 206 610 248 630 276', class: 'ves-map-purkinje' }));
+  g.append(s(doc, 'circle', { cx: 587, cy: 112, r: 4.5, class: 'ves-map-his' }));
   // Labels.
-  label(doc, g, 500, 170, 'RV', 'ves-map-label'); label(doc, g, 660, 128, 'LV', 'ves-map-label'); label(doc, g, 618, 330, 'Apex', 'ves-map-caption');
-  label(doc, g, 595, 66, 'Ao', 'ves-map-caption'); label(doc, g, 479, 66, 'PA', 'ves-map-caption');
-  label(doc, g, 513, 84, 'TV', 'ves-map-tiny'); label(doc, g, 661, 84, 'MV', 'ves-map-tiny');
-  label(doc, g, 586, 236, 'IVS', 'ves-map-tiny'); label(doc, g, 612, 122, 'His', 'ves-map-caption');
-  label(doc, g, 520, 300, 'RBB', 'ves-map-tiny', [560, 214]); label(doc, g, 730, 160, 'LAF', 'ves-map-tiny', [700, 172]); label(doc, g, 730, 290, 'LPF', 'ves-map-tiny', [630, 250]);
-  label(doc, g, 430, 300, 'Mod. band', 'ves-map-tiny', [478, 262]); label(doc, g, 700, 320, 'PM', 'ves-map-tiny', [660, 296]); label(doc, g, 740, 230, 'AL', 'ves-map-tiny', [714, 220]);
-  label(doc, g, 568, 28, t.chambers, 'ves-map-title');
+  label(doc, g, 510, 196, 'RV', 'ves-map-label'); label(doc, g, 660, 206, 'LV', 'ves-map-label');
+  label(doc, g, 614, 78, 'Ao', 'ves-map-caption'); label(doc, g, 511, 90, 'TV', 'ves-map-tiny'); label(doc, g, 678, 90, 'MV', 'ves-map-tiny');
+  label(doc, g, 579, 190, 'IVS', 'ves-map-tiny ves-map-vertical');
+  label(doc, g, 556, 124, 'His', 'ves-map-caption', [583, 114]);
+  label(doc, g, 470, 214, 'RBB', 'ves-map-tiny', [566, 206]); label(doc, g, 452, 304, 'Mod. band', 'ves-map-tiny', [520, 250]);
+  label(doc, g, 668, 160, 'LAF', 'ves-map-tiny'); label(doc, g, 666, 250, 'LPF', 'ves-map-tiny', [614, 248]);
+  label(doc, g, 738, 252, 'ALPM', 'ves-map-tiny', [712, 232]); label(doc, g, 692, 318, 'PMPM', 'ves-map-tiny', [644, 294]);
+  label(doc, g, 548, 336, 'Apex', 'ves-map-caption', [596, 332]);
+  label(doc, g, 568, 26, t.chambers, 'ves-map-title');
 }
 
 /** The 3D render as the basal background; markers follow BASAL_3D_SITES. */

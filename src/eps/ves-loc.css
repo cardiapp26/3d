@@ -3,7 +3,7 @@
 .ves > .amap-note { margin: 0; max-width: 900px; font-size: 14px; line-height: 1.6; }
 .ves-page { padding: 20px; border-radius: 12px; display: grid; gap: 16px; min-width: 0; }
 .ves h4 { margin: 0; font-size: 17px; }
-.ves-localize-layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 500px); gap: 20px; align-items: start; }
+.ves-localize-layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 440px); gap: 20px; align-items: start; }
 .ves-findings { display: grid; gap: 10px; min-width: 0; }
 .ves-finding { padding: 10px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 7px; display: grid; gap: 7px; }
 .ves-finding[data-next=true] { border-left-color: #fcd34d; }
@@ -14,7 +14,7 @@
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 /* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
-.ves-map { width: min(100%, 460px, 62vh); margin-inline: auto; }
+.ves-map { width: min(100%, 400px, 56vh); margin-inline: auto; }
 .ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
@@ -47,6 +47,9 @@
 .ves-map-muscle { fill: none; stroke: #b08a78; stroke-width: 9; stroke-linecap: round; }
 .ves-map-papillary { fill: #a98272; stroke: #d5b2a0; stroke-width: 1.2; }
 .ves-map-chordae { fill: none; stroke: #e9d8cf; stroke-width: .9; opacity: .8; }
+.ves-map-endo { stroke: #a9c8b6; stroke-width: 1.4; }
+.ves-map-valve-leaflet { fill: none; stroke: #d7e8dd; stroke-width: 2.4; stroke-linecap: round; }
+.ves-map-vertical { writing-mode: vertical-rl; }
 .ves-map-trabecula { fill: none; stroke: #4f6a5c; stroke-width: 2.5; stroke-linecap: round; }
 .ves-map-outflow { fill: #14241d; stroke: #b9d6c4; stroke-width: 2; }
 .ves-map-purkinje { fill: none; stroke: #f2b66e; stroke-width: 2.2; stroke-dasharray: 4 3; stroke-linecap: round; }
@@ -78,7 +81,7 @@
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 /* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
-.ves-map { width: min(100%, 460px, 62vh); margin-inline: auto; }
+.ves-map { width: min(100%, 400px, 56vh); margin-inline: auto; }
 .ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
@@ -150,7 +153,7 @@
 .ves-amplitudes .amap-field { text-transform: none; letter-spacing: normal; }
 .ves-amplitudes input { width: 100%; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
 .ves-scar { display: flex; gap: 8px; align-items: center; }
-.ves-record-layout { display: grid; grid-template-columns: minmax(320px, .9fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+.ves-record-layout { display: grid; grid-template-columns: minmax(300px, 440px) minmax(0, 1fr); gap: 20px; align-items: start; }
 .ves-anatomy { display: grid; gap: 5px; margin: 0; }
 .ves-anatomy dt { color: #9bcab4; font-size: 12px; font-weight: 600; }
 .ves-anatomy dd { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
