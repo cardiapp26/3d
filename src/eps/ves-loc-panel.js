@@ -1,7 +1,7 @@
 import { VES_REGIONS, VES_INPUTS, VES_OPTIONS, VES_SOURCES, VES_POSITIONS, vesRegion, vesEcg, vesFeatures, localizeVes, v2TransitionRatio, vesRecording } from './ves-loc-model.js';
 import { VES_TEXT } from './ves-loc-text.js';
 import { vesSvg, renderVesOption, renderVesEcg, renderVesRecording } from './ves-loc-visual.js';
-import { renderVesMap, ROOT_SITES } from './ves-loc-map.js';
+import { renderVesMap, renderV1Gradient, VIEW_SITES } from './ves-loc-map.js';
 
 export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const state = { active: false, page: 'loc', mapView: 'base', atlas3d: false, selected: 'rvot-septal', inputs: vesFeatures('rvot-septal'), position: 'near', scar: false, amplitudes: {} };
@@ -27,8 +27,8 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
   function select(id) {
     if (!vesRegion(id)) return;
     state.selected = id; state.inputs = vesFeatures(id); state.position = 'near'; state.amplitudes = {};
-    // Stay on the opened root when the example is drawn there; otherwise show its home view.
-    state.mapView = state.mapView === 'root' && ROOT_SITES[id] ? 'root' : vesRegion(id).view;
+    // Stay on an opened view (root, RVOT) when the example is drawn there; otherwise show its home view.
+    state.mapView = VIEW_SITES[state.mapView]?.[id] ? state.mapView : vesRegion(id).view;
     render();
   }
   const mapParts = [];
@@ -36,20 +36,21 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     const box = el('aside', 'ves-atlas');
     const h = el('h4');
     const viewRow = el('div', 'amap-toggles');
-    const viewButtons = new Map(['base', 'root', 'chambers'].map(view => {
+    const viewButtons = new Map(['base', 'root', 'rvot', 'chambers'].map(view => {
       const b = button({ 'data-ves-map-view': view }, () => { state.mapView = view; render(); });
       viewRow.append(b); return [view, b];
     }));
     const atlasToggle = button({ 'data-ves-atlas-3d': '', 'aria-pressed': 'false' }, () => { state.atlas3d = !state.atlas3d; render(); });
     atlasToggle.textContent = '3D'; viewRow.append(atlasToggle);
     const svg = vesSvg(doc, '0 0 760 350', 'ves-map');
+    const gradient = vesSvg(doc, '0 0 370 100', 'ves-v1-gradient');
     const n = note(), list = el('div', 'ves-site-list');
     const buttons = new Map(VES_REGIONS.map(r => {
       const b = button({ 'data-ves-example': r.id }, () => select(r.id));
       list.append(b); return [r.id, b];
     }));
-    box.append(h, viewRow, svg, n, list); parent.append(box);
-    mapParts.push({ h, svg, n, buttons, viewButtons, atlasToggle, recording });
+    box.append(h, viewRow, svg, gradient, n, list); parent.append(box);
+    mapParts.push({ h, svg, gradient, n, buttons, viewButtons, atlasToggle, recording });
   }
   const loc = pages.get('loc'), recordings = pages.get('recordings');
   const locLayout = el('div', 'ves-localize-layout');
@@ -151,6 +152,7 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
       parts.atlasToggle.setAttribute('aria-pressed', state.atlas3d); parts.atlasToggle.hidden = state.mapView !== 'base';
       renderVesMap(doc, parts.svg, { t, selected: state.selected, candidates: candidateIds, position: parts.recording && selected ? state.position : null, view: state.mapView, atlas3d: state.atlas3d,
         onSelect(id) { select(id); parts.svg.querySelector?.(`[data-ves-map-site="${id}"]`)?.focus(); } });
+      renderV1Gradient(doc, parts.gradient, { t, selected: state.selected });
       for (const [id, b] of parts.buttons) {
         b.textContent = `${vesRegion(id).number} · ${t.sites[id].name}`; b.setAttribute('aria-pressed', state.selected === id);
         b.setAttribute('data-candidate', candidateIds.includes(id));

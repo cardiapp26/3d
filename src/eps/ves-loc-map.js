@@ -198,6 +198,67 @@ function rootView(doc, g, uid, t) {
   label(doc, g, 185, 24, t.root, 'ves-map-title');
 }
 
+/**
+ * RVOT opened below the pulmonary valve and laid flat (original drawing after Dixit 2003 and
+ * Joshi 2005 as summarised in the user-supplied "Outflow VT" slides): four columns from anterior
+ * free wall to anterior septum, rows 1-4 cm below the valve, the supravalvular pulmonary artery above.
+ */
+const RVOT_TOP = [[80, 92], [185, 72], [290, 92]], RVOT_BOTTOM = [[34, 262], [185, 296], [336, 262]];
+const quad = ([a, c, b], f) => [0, 1].map(k => (1 - f) ** 2 * a[k] + 2 * f * (1 - f) * c[k] + f ** 2 * b[k]);
+/** Point at column fraction f (0 anterior free wall .. 1 anterior septum) and depth u (0 valve .. 1 at 4 cm). */
+const rvotAt = (f, u) => { const t = quad(RVOT_TOP, f), b = quad(RVOT_BOTTOM, f); return [t[0] + (b[0] - t[0]) * u, t[1] + (b[1] - t[1]) * u].map(v => Math.round(v)); };
+export const RVOT_SITES = Object.freeze({ 'rvot-free': rvotAt(.125, .14), 'rvot-septal': rvotAt(.625, .38), 'para-his': rvotAt(.68, .66) });
+function rvotView(doc, g, uid, t) {
+  const line = pts => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
+  const steps = n => Array.from({ length: n + 1 }, (_, i) => i / n);
+  // Supravalvular pulmonary artery and the pulmonary valve hinge.
+  g.append(s(doc, 'path', { d: 'M96 92 Q100 44 132 30 L238 30 Q270 44 274 92 Z', class: 'ves-map-pa' }));
+  // Myocardial fan and its grid (columns by wall, rows by depth below the valve).
+  g.append(s(doc, 'path', { d: `${line(steps(24).map(f => rvotAt(f, 0)))} ${line(steps(24).map(f => rvotAt(1 - f, 1))).replace('M', 'L')} Z`, class: 'ves-map-myo', fill: `url(#${uid}-rvot)` }));
+  for (const f of [.25, .5, .75]) g.append(s(doc, 'path', { d: line(steps(8).map(u => rvotAt(f, u))), class: f === .5 ? 'ves-map-rvot-divider' : 'ves-map-rvot-grid' }));
+  for (const u of [.25, .5, .75]) g.append(s(doc, 'path', { d: line(steps(24).map(f => rvotAt(f, u))), class: 'ves-map-rvot-grid' }));
+  g.append(s(doc, 'path', { d: line(steps(24).map(f => rvotAt(f, 0))), class: 'ves-map-hinge' }));
+  // Lead I polarity by column: positive posteriorly, negative anteriorly.
+  ['−', '+', '+', '−'].forEach((sign, i) => {
+    const [x, y] = rvotAt(i * .25 + .125, 1);
+    g.append(s(doc, 'rect', { x: x - 15, y: y + 6, width: 30, height: 14, rx: 7, class: sign === '+' ? 'ves-map-lead-pos' : 'ves-map-lead-neg' }));
+    label(doc, g, x, y + 16, `DI ${sign}`, 'ves-map-tiny ves-map-lead-tag');
+  });
+  t.rvotColumns.forEach((name, i) => { const [x, y] = rvotAt(i * .25 + .125, .9); label(doc, g, x, y + 3, name, 'ves-map-tiny'); });
+  ['1 cm', '2', '3', '4 cm'].forEach((text, i) => { const [x, y] = rvotAt(1, (i + 1) * .25); label(doc, g, x + 18, y + 3, text, 'ves-map-tiny'); });
+  // Labels and the reading cues of each zone.
+  label(doc, g, 185, 54, t.rvotPa, 'ves-map-caption'); label(doc, g, 185, 68, 'III > II', 'ves-map-tiny');
+  label(doc, g, 296, 72, 'PV', 'ves-map-caption');
+  label(doc, g, 108, 320, t.rvotFree, 'ves-map-title'); label(doc, g, 262, 320, t.rvotSeptum, 'ves-map-title');
+  label(doc, g, 108, 340, t.rvotFreeCue, 'ves-map-tiny'); label(doc, g, 108, 353, t.rvotFreeCue2, 'ves-map-tiny');
+  label(doc, g, 262, 340, t.rvotHisCue, 'ves-map-tiny'); label(doc, g, 262, 353, t.rvotHisCue2, 'ves-map-tiny');
+  label(doc, g, 185, 22, t.rvot, 'ves-map-title');
+}
+
+/** V1 R wave grows from anterior to posterior outflow sites (after Asirvatham 2009). */
+export const V1_GRADIENT = Object.freeze([
+  { d: 'M4 26 L16 26 L24 46 L32 26 L44 26', sites: ['rvot-free', 'para-his'] },
+  { d: 'M4 26 L14 26 L18 20 L26 46 L34 26 L44 26', sites: ['rvot-septal', 'lvot-cusp'] },
+  { d: 'M4 26 L13 26 L19 9 L27 42 L34 26 L44 26', sites: ['lv-summit'] },
+  { d: 'M4 26 L13 26 L20 4 L27 30 L32 18 L36 26 L44 26', sites: ['mitral'] }
+]);
+export function renderV1Gradient(doc, svg, { t, selected }) {
+  svg.replaceChildren(s(doc, 'title', {}, t.v1Gradient));
+  svg.setAttribute('aria-label', t.v1Gradient); svg.setAttribute('viewBox', '0 0 370 100');
+  svg.append(s(doc, 'text', { x: 185, y: 12, class: 'ves-map-tiny' }, t.v1Gradient));
+  svg.append(s(doc, 'path', { d: 'M48 92 L322 92', class: 'ves-v1-axis' }), s(doc, 'path', { d: 'M314 87 L322 92 L314 97', class: 'ves-v1-axis' }));
+  V1_GRADIENT.forEach((station, i) => {
+    const x0 = 22 + i * 88, on = station.sites.includes(selected);
+    const g = s(doc, 'g', { transform: `translate(${x0} 16)`, 'data-ves-v1-station': i, 'data-active': on });
+    g.append(s(doc, 'rect', { x: -6, y: -2, width: 82, height: 58, rx: 6, class: 'ves-v1-card' }));
+    g.append(s(doc, 'line', { x1: 0, y1: 26, x2: 70, y2: 26, class: 'ves-grid' }));
+    g.append(s(doc, 'path', { d: station.d, transform: 'translate(12 0)', class: 'ves-trace ves-v1-trace' }));
+    g.append(s(doc, 'text', { x: 35, y: 52, class: 'ves-map-tiny' }, t.v1Stations[i]));
+    svg.append(g);
+  });
+  svg.append(s(doc, 'text', { x: 30, y: 95, class: 'ves-map-axis' }, t.v1Ant), s(doc, 'text', { x: 342, y: 95, class: 'ves-map-axis' }, t.v1Post));
+}
+
 /** The 3D render as the basal background; markers follow BASAL_3D_SITES. */
 function basal3dView(doc, g, t) {
   const [w, h] = BASAL_3D_SIZE;
@@ -207,24 +268,28 @@ function basal3dView(doc, g, t) {
   label(doc, g, w / 2, 34, `${t.base} · 3D`, 'ves-map-title ves-map-title-3d');
 }
 
+/** Extra views drawn over the basal examples: region id -> marker position. */
+export const VIEW_SITES = Object.freeze({ root: ROOT_SITES, rvot: RVOT_SITES });
+
 export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base', atlas3d = false }) {
   const uid = `vesmap${++uidCounter}`;
   const photo = view === 'base' && atlas3d;
   svg.replaceChildren(s(doc, 'title', {}, t.map), defs(doc, uid));
   svg.setAttribute('aria-label', `${t.map}: ${t[view]}${photo ? ' · 3D' : ''}`); svg.setAttribute('role', 'group');
-  svg.setAttribute('viewBox', photo ? `0 0 ${BASAL_3D_SIZE[0]} ${BASAL_3D_SIZE[1]}` : view === 'chambers' ? '380 0 380 350' : '0 0 370 350');
+  svg.setAttribute('viewBox', photo ? `0 0 ${BASAL_3D_SIZE[0]} ${BASAL_3D_SIZE[1]}` : view === 'chambers' ? '380 0 380 350' : view === 'rvot' ? '0 0 370 372' : '0 0 370 350');
   svg.setAttribute('data-ves-atlas', photo ? '3d' : 'svg');
   const scene = s(doc, 'g', { 'aria-hidden': 'true' });
   if (photo) basal3dView(doc, scene, t);
   else {
-    scene.append(view === 'chambers' ? s(doc, 'rect', { x: 382, y: 5, width: 371, height: 339, rx: 16, class: 'ves-map-frame' }) : s(doc, 'rect', { x: 5, y: 5, width: 356, height: 339, rx: 16, class: 'ves-map-frame' }));
-    if (view === 'base') basalView(doc, scene, uid, t); else if (view === 'root') rootView(doc, scene, uid, t); else cutawayView(doc, scene, uid, t);
+    scene.append(view === 'chambers' ? s(doc, 'rect', { x: 382, y: 5, width: 371, height: 339, rx: 16, class: 'ves-map-frame' }) : s(doc, 'rect', { x: 5, y: 5, width: 356, height: view === 'rvot' ? 361 : 339, rx: 16, class: 'ves-map-frame' }));
+    if (view === 'base') basalView(doc, scene, uid, t); else if (view === 'root') rootView(doc, scene, uid, t); else if (view === 'rvot') rvotView(doc, scene, uid, t); else cutawayView(doc, scene, uid, t);
   }
   svg.append(scene);
   const scale = photo ? 2 : 1;   // the render's viewBox is about twice the schematic's
   for (const region of VES_REGIONS) {
-    // The opened root reuses the basal examples that sit at or next to the aortic sinuses.
-    const at = view === 'root' ? ROOT_SITES[region.id] : region.view !== view ? null : photo ? BASAL_3D_SITES[region.id] : region.xy;
+    // The opened root and RVOT reuse the basal examples that sit on them.
+    const alt = VIEW_SITES[view];
+    const at = alt ? alt[region.id] : region.view !== view ? null : photo ? BASAL_3D_SITES[region.id] : region.xy;
     if (!at) continue;
     const [x, y] = at;
     const group = s(doc, 'g', { tabindex: 0, role: 'button', class: 'ves-map-site', 'data-ves-map-site': region.id,

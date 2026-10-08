@@ -74,6 +74,15 @@ assert.equal(VES_TEXT.en.sites['lvot-cusp'].name, 'Aortic sinuses / ILT');
 panel.select('lv-summit'); assert.equal(panel.getState().mapView, 'root', 'selecting a root example keeps the opened root');
 panel.select('mitral'); assert.equal(panel.getState().mapView, 'base', 'an example not on the root opens its own view');
 by('data-ves-map-view', 'root').listeners.click();
+by('data-ves-map-view', 'rvot').listeners.click();
+const rvotSites = walk(panel.element).filter(n => n.attrs['data-ves-map-site']).map(n => n.attrs['data-ves-map-site']);
+for (const id of ['rvot-free', 'rvot-septal', 'para-his']) assert.ok(rvotSites.includes(id), `${id} on the opened RVOT`);
+panel.select('rvot-free'); assert.equal(panel.getState().mapView, 'rvot', 'selecting an RVOT example keeps the opened RVOT');
+assert.equal(walk(panel.element).find(n => n.attrs['data-ves-v1-station'] === '0').attrs['data-active'], 'true', 'anterior RVOT lights the QS station of the V1 gradient');
+// Slide-based corrections: posterior septal RVOT has a small V1 r and positive lead I; the anterior free wall a negative lead I with III > II.
+assert.equal(vesFeatures('rvot-septal').v1, 'rs'); assert.equal(vesFeatures('rvot-septal').leadI, 'positive');
+assert.equal(vesFeatures('rvot-free').leadI, 'negative');
+{ const e = vesEcg('rvot-free'), peak = l => Math.max(...e.leads[l].filter((_, i) => e.t[i] >= 0 && e.t[i] <= e.width)); assert.ok(peak('III') > peak('II'), 'anterior RVOT: III taller than II'); }
 by('data-ves-map-view', 'base').listeners.click();
 panel.select('fascicle');
 assert.equal(panel.getState().mapView, 'chambers');
@@ -93,4 +102,4 @@ assert.equal(by('data-ves-verdict').attrs['data-candidates'], '');
 by('data-ves-reset').listeners.click(); assert.deepEqual(panel.getState().inputs, {});
 assert.equal(panel.getState().scar, true, 'reset cannot silently remove clinical context');
 panel.setActive(false); assert.equal(panel.element.hidden, true);
-console.log('PASS ves-loc: opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
+console.log('PASS ves-loc: opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');

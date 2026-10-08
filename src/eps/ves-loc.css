@@ -78,6 +78,17 @@
 .ves-map-membranous { fill: #e3dcc2; stroke: #fff6d8; stroke-width: 1; opacity: .75; }
 .ves-map-fibrous-band { fill: #d9d2b8; opacity: .3; }
 .ves-map-rvot-band { fill: #2f4238; stroke: #8fb39d; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.ves-map-pa { fill: #2a4159; stroke: #8fb6d8; stroke-width: 1.4; }
+.ves-map-rvot-grid { fill: none; stroke: #0c1713; stroke-width: 1; opacity: .55; }
+.ves-map-rvot-divider { fill: none; stroke: #e7efe9; stroke-width: 1.6; stroke-dasharray: 5 3; }
+.ves-map-lead-pos { fill: #1f5a40; stroke: #6fd3a5; stroke-width: 1; }
+.ves-map-lead-neg { fill: #5a2a2a; stroke: #e39b9b; stroke-width: 1; }
+.ves-map-lead-tag { fill: #f1f7f3; stroke: none; font-weight: 600; }
+.ves-v1-gradient { display: block; width: min(100%, 400px, 56vh); margin-inline: auto; height: auto; }
+.ves-v1-card { fill: #13221c; stroke: #2f4a3e; }
+[data-active=true] .ves-v1-card { fill: #3a3416; stroke: #fcd34d; stroke-width: 2; }
+.ves-v1-trace { stroke-width: 2; }
+.ves-v1-axis { fill: none; stroke: #6f8a7c; stroke-width: 1.2; }
 .ves-map-site { cursor: pointer; }
 .ves-map-site circle { fill: #1f3329; stroke: #cfe3d6; stroke-width: 1.8; }
 .ves-map-site .ves-map-halo { fill: transparent; stroke: none; }
@@ -87,7 +98,8 @@
 .ves-map-site[aria-pressed=true] circle { fill: #fcd34d; stroke: #fff3c4; stroke-width: 2.5; }
 .ves-map-site[aria-pressed=true] .ves-map-halo { fill: #fcd34d; opacity: .6; }
 .ves-map-site[aria-pressed=true] text { fill: #1b241b; }
-.ves-map-site:focus-visible { outline: none; }
+/* Mouse focus leaves no box around the marker; keyboard focus is shown on the circle below. */
+.ves-map-site:focus, .ves-map-site:focus-visible { outline: none; }
 .ves-map-site:focus-visible circle { stroke: white; stroke-width: 4; }
 .ves-trace { stroke: #173e2a; }
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
@@ -127,7 +139,8 @@
 .ves-map-site[data-candidate=true] circle { stroke: #7fb2ff; stroke-width: 4; }
 .ves-map-site[aria-pressed=true] circle { fill: #fcd34d; stroke: #fcd34d; stroke-width: 4; }
 .ves-map-site[aria-pressed=true] text { fill: #1b241b; }
-.ves-map-site:focus-visible { outline: none; }
+/* Mouse focus leaves no box around the marker; keyboard focus is shown on the circle below. */
+.ves-map-site:focus, .ves-map-site:focus-visible { outline: none; }
 .ves-map-site:focus-visible circle { stroke: white; stroke-width: 5; }
 .ves-trace { fill: none; stroke: #96d8bd; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
 .ves-paper-bg { fill: #1a1416; }

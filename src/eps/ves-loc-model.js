@@ -5,8 +5,8 @@ import { LEADS, PRECORDIAL } from './ecg12.js';
 const region = (id, number, view, xy, group, v1, axis, transition, leadI, width, local, purkinje = false) =>
   Object.freeze({ id, number, view, xy: Object.freeze(xy), group, v1, axis, transition, leadI, width, local, purkinje });
 export const VES_REGIONS = Object.freeze([
-  region('rvot-septal', 1, 'base', [196, 66], 'outflow', 'lbbb', 'inferior', 'late', 'positive', 150, -32),
-  region('rvot-free', 2, 'base', [138, 58], 'outflow', 'lbbb', 'inferior', 'late', 'positive', 170, -28),
+  region('rvot-septal', 1, 'base', [196, 66], 'outflow', 'rs', 'inferior', 'late', 'positive', 150, -32),
+  region('rvot-free', 2, 'base', [138, 58], 'outflow', 'lbbb', 'inferior', 'late', 'negative', 170, -28),
   region('lvot-cusp', 3, 'base', [204, 130], 'outflow', 'rs', 'inferior', 'early', 'positive', 145, -30),
   region('lv-summit', 4, 'base', [314, 98], 'outflow', 'rbbb', 'inferior', 'early', 'negative', 170, -24),
   region('para-his', 5, 'base', [164, 185], 'septal', 'rs', 'inferior', 'v3', 'positive', 130, -25),
@@ -31,6 +31,9 @@ export const VES_SOURCES = Object.freeze([
   { id: 'abstract', title: 'Nageler et al. · EASY-PVC (ESC 2025 abstract)', url: 'https://doi.org/10.1093/eurheartj/ehaf784.621' },
   { id: 'consensus', title: 'HRS/EHRA/APHRS/LAHRS · Ventricular arrhythmias (2019)', url: 'https://doi.org/10.1002/joa3.12185' },
   { id: 'ratio', title: 'Betensky et al. · V2 transition ratio (2011)', url: 'https://doi.org/10.1016/j.jacc.2011.01.035' },
+  { id: 'asirvatham', title: 'Asirvatham · Outflow tract correlative anatomy (J Cardiovasc Electrophysiol 2009)', url: 'https://doi.org/10.1111/j.1540-8167.2009.01472.x' },
+  { id: 'dixit', title: 'Dixit et al. · Septal versus free-wall RVOT ECG patterns (J Cardiovasc Electrophysiol 2003)', url: 'https://doi.org/10.1046/j.1540-8167.2003.02404.x' },
+  { id: 'park', title: 'Park, Kim, Marchlinski · Surface ECG localization of idiopathic VT (PACE 2012)', url: 'https://doi.org/10.1111/j.1540-8159.2012.03488.x' },
   { id: 'aortic-root', title: 'John, Ghazizadeh, Ceresnak · Aortic root substrates (Heart Rhythm 2026)', url: 'https://doi.org/10.1016/j.hrthm.2026.01.055' },
   { id: 'egm', title: 'Focal PVC · Local activation annotation (2018)', url: 'https://academic.oup.com/europace/article/20/FI2/f171/4587592' }
 ]);
@@ -64,11 +67,16 @@ export function vesEcg(id) {
   const t = Array.from({ length: (VES_ECG_WINDOW.to - VES_ECG_WINDOW.from) / VES_ECG_STEP + 1 }, (_, i) => VES_ECG_WINDOW.from + i * VES_ECG_STEP);
   const leads = Object.fromEntries(LEADS.map(l => [l, []]));
   const notch = site.id === 'rvot-free';
-  const iAmp = site.leadI === 'negative' ? [0.1, 0.5] : [0.65, 0.1];
-  const iiAmp = site.axis === 'superior' ? [0.12, 1.15] : [1.4, 0.12];
+  // Limb leads project one frontal-plane vector (axis angle in degrees, hexaxial convention):
+  // inferior 75 or 100, superior -60 or -110 depending on lead I. Hence III = II - I exactly,
+  // and an inferior axis with a negative lead I has III taller than II (anterior/leftward outflow).
+  const theta = (site.axis === 'superior' ? (site.leadI === 'negative' ? -110 : -60) : (site.leadI === 'negative' ? 100 : 75)) * Math.PI / 180;
+  const LIMB_MV = 1.5;
+  const proj = { I: LIMB_MV * Math.cos(theta), II: LIMB_MV * Math.cos(theta - Math.PI / 3) };
   const transition = { early: 2, v3: 3, late: 5, positive: 1, negative: 7 }[site.transition];
   for (const ms of t) {
-    const I = beat(ms, site.width, iAmp[0], iAmp[1], notch), II = beat(ms, site.width, iiAmp[0], iiAmp[1], notch);
+    const frontal = beat(ms, site.width, 1, .12, notch);
+    const I = proj.I * frontal, II = proj.II * frontal;
     const limb = { I, II, III: II - I, aVR: -(I + II) / 2, aVL: I - II / 2, aVF: II - I / 2 };
     for (const l of Object.keys(limb)) leads[l].push(limb[l]);
     PRECORDIAL.forEach((l, i) => {
