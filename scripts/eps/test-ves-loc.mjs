@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { VES_REGIONS, VES_OPTIONS, VES_INPUTS, qrsWave, vesEcg, vesFeatures, localizeVes, vesRecording, recordingValue, v2TransitionRatio } from '../../src/eps/ves-loc-model.js';
+import { VES_REGIONS, VES_OPTIONS, VES_INPUTS, LIMB_LEAD_ANGLES, vesFrontalAxis, qrsWave, vesEcg, vesFeatures, localizeVes, vesRecording, recordingValue, v2TransitionRatio } from '../../src/eps/ves-loc-model.js';
 import { VES_TEXT } from '../../src/eps/ves-loc-text.js';
 import { createVesLocPanel } from '../../src/eps/ves-loc-panel.js';
+import { leadPolarity } from '../../src/eps/ves-loc-map.js';
 import { EP_VIEWS } from '../../src/eps/ep-panel.js';
 import { viewFromHash } from '../../src/eps/app-text.js';
 
@@ -29,6 +30,12 @@ assert.equal(v2TransitionRatio(v3, { pvcR: 1e308, pvcS: 1e308, sinusR: 1e308, si
 assert.ok(Math.abs(qrsWave(-40, 150, 1, .2)) < 1e-3 && Math.abs(qrsWave(190, 150, 1, .2)) < 1e-3, 'QRS energy inside its window');
 for (const r of VES_REGIONS) {
   const f = vesFeatures(r.id), ecg = vesEcg(r.id);
+  // Frontal vector widget: each limb-lead sign equals the dominant QRS deflection drawn in that lead.
+  for (const lead of Object.keys(LIMB_LEAD_ANGLES)) {
+    const q = ecg.leads[lead].filter((_, i) => ecg.t[i] >= 0 && ecg.t[i] <= ecg.width), R = Math.max(0, ...q), S = Math.max(0, ...q.map(v => -v));
+    const sign = leadPolarity(vesFrontalAxis(r.id), lead);
+    if (sign !== '±') assert.equal(sign, R > S ? '+' : '−', `${r.id} ${lead}: frontal vector sign matches the ECG`);
+  }
   const qrs = ecg.t.map((ms, i) => ms >= 0 && ms <= ecg.width ? ecg.leads.II[i] : 0), tail = ecg.t.map((ms, i) => ms > ecg.width + 120 ? ecg.leads.II[i] : 0);
   const netQrs = qrs.reduce((a, v) => a + v, 0), netT = tail.reduce((a, v) => a + v, 0);
   assert.ok(netQrs * netT < 0, `${r.id}: T wave discordant to the QRS in II`);
@@ -113,4 +120,4 @@ assert.equal(by('data-ves-verdict').attrs['data-candidates'], '');
 by('data-ves-reset').listeners.click(); assert.deepEqual(panel.getState().inputs, {});
 assert.equal(panel.getState().scar, true, 'reset cannot silently remove clinical context');
 panel.setActive(false); assert.equal(panel.element.hidden, true);
-console.log('PASS ves-loc: V1 principle overlay, opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
+console.log('PASS ves-loc: frontal vector signs match every limb lead, V1 principle overlay, opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');

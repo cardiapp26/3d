@@ -1,7 +1,7 @@
-import { VES_REGIONS, VES_INPUTS, VES_OPTIONS, VES_SOURCES, VES_POSITIONS, vesRegion, vesEcg, vesFeatures, localizeVes, v2TransitionRatio, vesRecording } from './ves-loc-model.js';
+import { VES_REGIONS, VES_INPUTS, VES_OPTIONS, VES_SOURCES, VES_POSITIONS, vesRegion, vesEcg, vesFrontalAxis, vesFeatures, localizeVes, v2TransitionRatio, vesRecording } from './ves-loc-model.js';
 import { VES_TEXT } from './ves-loc-text.js';
 import { vesSvg, renderVesOption, renderVesEcg, renderVesRecording } from './ves-loc-visual.js';
-import { renderVesMap, renderV1Gradient, VIEW_SITES } from './ves-loc-map.js';
+import { renderVesMap, renderV1Gradient, renderFrontalVector, VIEW_SITES } from './ves-loc-map.js';
 
 export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const state = { active: false, page: 'loc', mapView: 'base', atlas3d: false, v1Principle: false, selected: 'rvot-septal', inputs: vesFeatures('rvot-septal'), position: 'near', scar: false, amplitudes: {} };
@@ -46,13 +46,16 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     viewRow.append(principleToggle);
     const svg = vesSvg(doc, '0 0 760 350', 'ves-map');
     const gradient = vesSvg(doc, '0 0 370 100', 'ves-v1-gradient');
+    const frontal = vesSvg(doc, '0 0 370 214', 'ves-frontal');
+    // SVG elements have no `hidden` property; the wrapper div carries it.
+    const frontalBox = el('div', 'ves-frontal-box'); frontalBox.append(frontal);
     const n = note(), list = el('div', 'ves-site-list');
     const buttons = new Map(VES_REGIONS.map(r => {
       const b = button({ 'data-ves-example': r.id }, () => select(r.id));
       list.append(b); return [r.id, b];
     }));
-    box.append(h, viewRow, svg, gradient, n, list); parent.append(box);
-    mapParts.push({ h, svg, gradient, n, buttons, viewButtons, atlasToggle, principleToggle, recording });
+    box.append(h, viewRow, svg, gradient, frontalBox, n, list); parent.append(box);
+    mapParts.push({ h, svg, gradient, frontal, frontalBox, n, buttons, viewButtons, atlasToggle, principleToggle, recording });
   }
   const loc = pages.get('loc'), recordings = pages.get('recordings');
   const locLayout = el('div', 'ves-localize-layout');
@@ -156,6 +159,8 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
       renderVesMap(doc, parts.svg, { t, selected: state.selected, candidates: candidateIds, position: parts.recording && selected ? state.position : null, view: state.mapView, atlas3d: state.atlas3d, v1Principle: state.v1Principle,
         onSelect(id) { select(id); parts.svg.querySelector?.(`[data-ves-map-site="${id}"]`)?.focus(); } });
       renderV1Gradient(doc, parts.gradient, { t, selected: state.selected });
+      renderFrontalVector(doc, parts.frontal, { t, selected: state.selected, axis: selected ? vesFrontalAxis(selected.id) : null });
+      parts.frontalBox.hidden = !selected;
       for (const [id, b] of parts.buttons) {
         b.textContent = `${vesRegion(id).number} · ${t.sites[id].name}`; b.setAttribute('aria-pressed', state.selected === id);
         b.setAttribute('data-candidate', candidateIds.includes(id));

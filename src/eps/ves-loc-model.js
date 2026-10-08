@@ -63,6 +63,14 @@ const tWave = (t, width, r, s) => {
 const beat = (t, width, r, s, notch) => qrsWave(t, width, r, s, notch) + tWave(t, width, r, s);
 // Para-Hisian: frontal axis near 40 degrees, so lead III stays small (Park 2012: a negative III suggests the His region).
 const AXIS_OVERRIDE = Object.freeze({ 'para-his': 40 });
+/** Frontal-plane QRS axis of an example, degrees (hexaxial: 0 = lead I, +90 = aVF). */
+export function vesFrontalAxis(id) {
+  const site = vesRegion(id);
+  if (!site) return null;
+  return AXIS_OVERRIDE[site.id] ?? (site.axis === 'superior' ? (site.leadI === 'negative' ? -110 : -60) : (site.leadI === 'negative' ? 100 : 75));
+}
+/** Hexaxial angle of each limb lead's positive pole. */
+export const LIMB_LEAD_ANGLES = Object.freeze({ I: 0, II: 60, III: 120, aVR: -150, aVL: -30, aVF: 90 });
 export function vesEcg(id) {
   const site = vesRegion(id);
   if (!site) return null;
@@ -72,7 +80,7 @@ export function vesEcg(id) {
   // Limb leads project one frontal-plane vector (axis angle in degrees, hexaxial convention):
   // inferior 75 or 100, superior -60 or -110 depending on lead I. Hence III = II - I exactly,
   // and an inferior axis with a negative lead I has III taller than II (anterior/leftward outflow).
-  const theta = (AXIS_OVERRIDE[site.id] ?? (site.axis === 'superior' ? (site.leadI === 'negative' ? -110 : -60) : (site.leadI === 'negative' ? 100 : 75))) * Math.PI / 180;
+  const theta = vesFrontalAxis(site.id) * Math.PI / 180;
   const LIMB_MV = 1.5;
   const proj = { I: LIMB_MV * Math.cos(theta), II: LIMB_MV * Math.cos(theta - Math.PI / 3) };
   const transition = { early: 2, v3: 3, late: 5, positive: 1, negative: 7 }[site.transition];

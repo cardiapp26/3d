@@ -1,4 +1,4 @@
-import { VES_REGIONS } from './ves-loc-model.js';
+import { VES_REGIONS, LIMB_LEAD_ANGLES } from './ves-loc-model.js';
 
 // Two original anatomical schematics for the PVC workbook. Basal view: the
 // ventricular base seen from above with the atria removed, anterior up and
@@ -289,6 +289,59 @@ function v1PrincipleOverlay(doc, g, t) {
   t.v1PrincipleSites.forEach((name, i) => { const [x, y] = V1_PRINCIPLE[i].tag; label(doc, layer, x, y, name, 'ves-map-tiny ves-v1-tag'); });
   label(doc, layer, 568, 44, t.v1PrincipleLegend, 'ves-map-tiny');
   g.append(layer);
+}
+
+/**
+ * Frontal vector (original drawing after an M. Didenko teaching slide): Einthoven triangle over a
+ * frontal heart silhouette, the example's origin and its QRS axis. Limb-lead polarities are the
+ * projections of that axis, the same numbers that draw the 12-lead strip.
+ */
+const FRONTAL_SITES = Object.freeze({
+  'rvot-septal': [116, 58], 'rvot-free': [128, 52], 'lvot-cusp': [100, 70], 'lv-summit': [140, 66], 'para-his': [90, 92],
+  tricuspid: [70, 124], mitral: [152, 86], 'papillary-pm': [120, 144], 'papillary-al': [154, 122], fascicle: [110, 136], moderator: [88, 136], crux: [102, 156]
+});
+export const leadPolarity = (axis, lead) => { const c = Math.cos((axis - LIMB_LEAD_ANGLES[lead]) * Math.PI / 180); return c > .1 ? '+' : c < -.1 ? '−' : '±'; };
+export function renderFrontalVector(doc, svg, { t, selected, axis }) {
+  const headId = `ves-frontal-head-${++uidCounter}`;
+  const defsEl = s(doc, 'defs'), head = s(doc, 'marker', { id: headId, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 3, markerHeight: 3, orient: 'auto' });
+  head.append(s(doc, 'path', { d: 'M0 0 L10 5 L0 10 Z', class: 'ves-frontal-head' })); defsEl.append(head);
+  svg.replaceChildren(s(doc, 'title', {}, t.frontal), defsEl);
+  svg.setAttribute('viewBox', '0 0 370 214');
+  svg.setAttribute('aria-label', axis == null ? t.frontal : `${t.frontal}: ${axis}°`);
+  if (axis == null || !FRONTAL_SITES[selected]) return;
+  const RA = [26, 30], LA = [214, 30], LL = [120, 196], C = [120, 96];
+  svg.append(s(doc, 'path', { d: `M${RA} L${LA} L${LL} Z`, class: 'ves-frontal-triangle' }));
+  // Frontal heart: base up, apex to the patient's left (viewer's right) and down; RVOT at the top.
+  // The heart, origin and vector share one group scaled into the triangle.
+  const heart = s(doc, 'g', { transform: 'translate(23 21) scale(.8)' });
+  heart.append(s(doc, 'path', { d: 'M78 60 Q98 42 136 46 Q172 54 172 94 Q170 134 142 164 Q120 178 100 162 Q70 136 62 102 Q58 74 78 60 Z', class: 'ves-frontal-heart' }));
+  heart.append(s(doc, 'path', { d: 'M112 50 Q120 30 140 32 L146 46 Q130 44 124 54 Z', class: 'ves-frontal-rvot' }));
+  label(doc, heart, 92, 126, 'RV', 'ves-map-tiny'); label(doc, heart, 146, 120, 'LV', 'ves-map-tiny');
+  // Lead axes through the centre with their positive ends.
+  for (const lead of Object.keys(LIMB_LEAD_ANGLES)) {
+    const a = LIMB_LEAD_ANGLES[lead] * Math.PI / 180, [x, y] = [C[0] + 92 * Math.cos(a), C[1] + 92 * Math.sin(a)];
+    svg.append(s(doc, 'line', { x1: C[0], y1: C[1], x2: x.toFixed(1), y2: y.toFixed(1), class: 'ves-frontal-axis' }));
+    label(doc, svg, (C[0] + 84 * Math.cos(a)).toFixed(1), (C[1] + 84 * Math.sin(a) + 3).toFixed(1), lead, 'ves-map-tiny ves-frontal-lead-label');
+  }
+  label(doc, svg, RA[0] - 2, RA[1] - 8, 'RA', 'ves-map-axis'); label(doc, svg, LA[0] + 2, LA[1] - 8, 'LA', 'ves-map-axis'); label(doc, svg, LL[0], LL[1] + 14, 'LL', 'ves-map-axis');
+  // Origin and the QRS vector leaving it.
+  const [px, py] = FRONTAL_SITES[selected], a = axis * Math.PI / 180;
+  heart.append(s(doc, 'path', { d: `M${px} ${py} L${(px + 64 * Math.cos(a)).toFixed(1)} ${(py + 64 * Math.sin(a)).toFixed(1)}`, class: 'ves-frontal-vector', 'marker-end': `url(#${headId})`, 'data-ves-frontal-axis': axis }));
+  const star = Array.from({ length: 10 }, (_, i) => { const r = i % 2 ? 3.2 : 7.5, b = -Math.PI / 2 + i * Math.PI / 5; return `${i ? 'L' : 'M'}${(px + r * Math.cos(b)).toFixed(1)} ${(py + r * Math.sin(b)).toFixed(1)}`; }).join(' ') + ' Z';
+  heart.append(s(doc, 'path', { d: star, class: 'ves-frontal-star' }));
+  svg.append(heart);
+  // Polarity table: what the vector writes in each limb lead.
+  label(doc, svg, 306, 22, `${t.frontal} · ${axis}°`, 'ves-map-tiny');
+  Object.keys(LIMB_LEAD_ANGLES).forEach((lead, i) => {
+    const y = 44 + i * 27, sign = leadPolarity(axis, lead);
+    const g = s(doc, 'g', { 'data-ves-frontal-lead': lead, 'data-sign': sign });
+    g.append(s(doc, 'rect', { x: 250, y: y - 12, width: 112, height: 22, rx: 5, class: `ves-frontal-row ves-frontal-${sign === '+' ? 'pos' : sign === '−' ? 'neg' : 'iso'}` }));
+    g.append(s(doc, 'text', { x: 262, y: y + 3, class: 'ves-ecg-label', 'text-anchor': 'start' }, lead));
+    const d = sign === '+' ? `M296 ${y + 4} h8 l5 -13 l5 13 h8` : sign === '−' ? `M296 ${y - 6} h8 l5 13 l5 -13 h8` : `M296 ${y} h8 l3 -8 l4 14 l3 -6 h8`;
+    g.append(s(doc, 'path', { d, class: 'ves-trace ves-frontal-glyph' }), s(doc, 'text', { x: 346, y: y + 4, class: 'ves-frontal-sign' }, sign));
+    svg.append(g);
+  });
+  label(doc, svg, 185, 210, t.frontalNote, 'ves-map-tiny');
 }
 
 /** The 3D render as the basal background; markers follow BASAL_3D_SITES. */

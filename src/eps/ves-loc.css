@@ -99,6 +99,19 @@
 .ves-v1-star { fill: #f39ab6; stroke: #fff; stroke-width: 1; }
 .ves-v1-glyph-bg { fill: #0c1713; stroke: #2f4a3e; opacity: .92; }
 .ves-v1-glyph { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+.ves-frontal { display: block; width: min(100%, 400px, 56vh); margin-inline: auto; height: auto; }
+.ves-frontal-triangle { fill: none; stroke: #8fb39d; stroke-width: 1.2; }
+.ves-frontal-heart { fill: #4a3530; stroke: #c99a88; stroke-width: 1.2; opacity: .8; }
+.ves-frontal-rvot { fill: #5a4038; stroke: #c99a88; stroke-width: 1; }
+.ves-frontal-axis { stroke: #5d7a6c; stroke-width: .9; stroke-dasharray: 3 3; }
+.ves-frontal-vector { stroke: #ff5a5a; stroke-width: 4; stroke-linecap: round; }
+.ves-frontal-head { fill: #ff5a5a; }
+.ves-frontal-star { fill: #ff5a5a; stroke: #ffe066; stroke-width: 1.2; }
+.ves-frontal-row { stroke-width: 1; }
+.ves-frontal-pos { fill: #173b2b; stroke: #3f9e70; } .ves-frontal-neg { fill: #3b1a1a; stroke: #b25c5c; } .ves-frontal-iso { fill: #2b2b1a; stroke: #9e9a52; }
+.ves-frontal-glyph { stroke-width: 1.8; }
+.ves-frontal-lead-label { fill: #8fb39d; }
+.ves-frontal-sign { fill: #f1f7f3; font: bold 13px system-ui, sans-serif; text-anchor: middle; }
 .ves-map-site { cursor: pointer; }
 .ves-map-site circle { fill: #1f3329; stroke: #cfe3d6; stroke-width: 1.8; }
 .ves-map-site .ves-map-halo { fill: transparent; stroke: none; }
