@@ -179,7 +179,10 @@
 /* EGM basics tab (egm-basics-panel.js): a scrolling page of diagram cards. */
 .basics { display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%; overflow-y: auto; padding-right: 2px; }
 .basics > * { margin: 0; }
-.basics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 10px; align-items: start; }
+.basics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); grid-auto-flow: row dense; gap: 10px; align-items: start; }
+/* The catheter card (anatomy, strip and the triangle of Koch) is about twice as tall as the others:
+   it spans two rows so its neighbours do not leave a gap below them. One column: no span needed. */
+@media (min-width: 900px) { .basics-card[data-basics-card=catheters] { grid-row: span 2; } }
 .basics-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 .basics-card h4 { margin: 0; font-size: 13.5px; }
 .basics-card > * { margin: 0; }
