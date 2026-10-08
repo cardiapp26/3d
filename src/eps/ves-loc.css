@@ -3,19 +3,21 @@
 .ves > .amap-note { margin: 0; max-width: 900px; font-size: 14px; line-height: 1.6; }
 .ves-page { padding: 20px; border-radius: 12px; display: grid; gap: 16px; min-width: 0; }
 .ves h4 { margin: 0; font-size: 17px; }
-.ves-localize-layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 440px); gap: 20px; align-items: start; }
+/* Findings and atlas share the page; the atlas drawings share one size so map, V1 strip and frontal panel line up. */
+.ves { --ves-atlas-w: min(100%, 560px, 68vh); }
+.ves-localize-layout { display: grid; grid-template-columns: minmax(300px, 1.1fr) minmax(340px, .9fr); gap: 20px; align-items: start; }
 .ves-findings { display: grid; gap: 10px; min-width: 0; }
 .ves-finding { padding: 10px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 7px; display: grid; gap: 7px; }
 .ves-finding[data-next=true] { border-left-color: #fcd34d; }
 .ves-finding[data-required=false] { opacity: .55; }
-.ves-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); gap: 6px; }
-.ves-options button { display: flex; flex-direction: column; align-items: center; padding: 6px; min-height: 44px; line-height: 1.35; }
-.ves-option-wave { width: 100%; max-width: 95px; height: 50px; }
+.ves-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 136px)); gap: 6px; }
+.ves-options button { display: flex; flex-direction: column; align-items: center; padding: 4px 6px; min-height: 44px; line-height: 1.3; font-size: 12px; }
+.ves-option-wave { width: 100%; max-width: 72px; height: 32px; }
 .ves button[aria-pressed=true] .ves-trace { stroke: #173e2a; }
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 /* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
-.ves-map { width: min(100%, 400px, 56vh); margin-inline: auto; }
+.ves-map { width: var(--ves-atlas-w); margin-inline: auto; }
 .ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
@@ -85,7 +87,7 @@
 .ves-map-lead-pos { fill: #1f5a40; stroke: #6fd3a5; stroke-width: 1; }
 .ves-map-lead-neg { fill: #5a2a2a; stroke: #e39b9b; stroke-width: 1; }
 .ves-map-lead-tag { fill: #f1f7f3; stroke: none; font-weight: 600; }
-.ves-v1-gradient { display: block; width: min(100%, 400px, 56vh); margin-inline: auto; height: auto; }
+.ves-v1-gradient { display: block; width: var(--ves-atlas-w); margin-inline: auto; height: auto; }
 .ves-v1-card { fill: #13221c; stroke: #2f4a3e; }
 [data-active=true] .ves-v1-card { fill: #3a3416; stroke: #fcd34d; stroke-width: 2; }
 .ves-v1-trace { stroke-width: 2; }
@@ -104,7 +106,7 @@
 .ves-v1-star { fill: #f39ab6; stroke: #fff; stroke-width: 1; }
 .ves-v1-glyph-bg { fill: #0c1713; stroke: #2f4a3e; opacity: .92; }
 .ves-v1-glyph { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
-.ves-frontal { display: block; width: min(100%, 400px, 56vh); margin-inline: auto; height: auto; }
+.ves-frontal { display: block; width: var(--ves-atlas-w); margin-inline: auto; height: auto; }
 .ves-frontal-triangle { fill: none; stroke: #8fb39d; stroke-width: 1.2; }
 .ves-frontal-heart { fill: #4a3530; stroke: #c99a88; stroke-width: 1.2; opacity: .8; }
 .ves-frontal-rvot { fill: #5a4038; stroke: #c99a88; stroke-width: 1; }
@@ -138,7 +140,6 @@
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 /* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
-.ves-map { width: min(100%, 400px, 56vh); margin-inline: auto; }
 .ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
@@ -211,7 +212,7 @@
 .ves-amplitudes .amap-field { text-transform: none; letter-spacing: normal; }
 .ves-amplitudes input { width: 100%; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
 .ves-scar { display: flex; gap: 8px; align-items: center; }
-.ves-record-layout { display: grid; grid-template-columns: minmax(300px, 440px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.ves-record-layout { display: grid; grid-template-columns: minmax(320px, .85fr) minmax(0, 1.15fr); gap: 20px; align-items: start; }
 .ves-anatomy { display: grid; gap: 5px; margin: 0; }
 .ves-anatomy dt { color: #9bcab4; font-size: 12px; font-weight: 600; }
 .ves-anatomy dd { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
