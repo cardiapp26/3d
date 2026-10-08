@@ -12,6 +12,7 @@ const PACE_CHANNEL = { hra: 'hra', 'cs-prox': 'cs-910', 'cs-dist': 'cs-12', rv: 
 export const PPI_CUTOFF = 115;     // PPI - TCL from the RV: > 115 AVNRT, otherwise AVRT
 export const CPPI_CUTOFF = 110;    // Gonzalez-Torrecilla 2006, PMID 16731468: <110 supports ORT
 export const SA_VA_CUTOFF = 85;    // SA - VA: > 85 AVNRT, otherwise AVRT
+export const DELTA_HA_CUTOFF = 0;  // Ho 2019: Delta HA <= 0 AVNRT, > 0 ORT
 export const CSNRT_LIMIT = 550;    // corrected SNRT upper limit
 
 const of = (events, ch, type) => (events[ch] || []).filter((e) => e.type === type);
@@ -140,6 +141,14 @@ export function analyzeOverdrive(events, stims, { correctAh = true } = {}) {
     const vBefore = hisV.filter((v) => v < first).slice(-2)[0];
     const va = vBefore != null ? (after(hisA, vBefore) ?? NaN) - vBefore : NaN;
     if (Number.isFinite(sa) && Number.isFinite(va)) out.saVa = Math.round(sa - va);
+    // Ho 2019 criterion: Delta HA = HA(paced) - HA(tachycardia)
+    const hisH = of(events, 'his-d', 'H').map((e) => e.t);
+    const hTachy = before(hisH, first);
+    const aTachy = hTachy != null ? after(hisA, hTachy) : null;
+    const hPaced = hisH.find((h) => h > lastStim - (pacedCl || 0) && h <= lastStim + (pacedCl || 0) * 0.6);
+    const aPaced = hPaced != null ? after(hisA, hPaced) : hisLast;
+    out.deltaHa = (hTachy != null && aTachy != null && hPaced != null && aPaced != null)
+      ? Math.round((aPaced - hPaced) - (aTachy - hTachy)) : null;
     if (correctAh && captured && out.response === 'VAV' && ret != null && out.ppiTcl != null) {
       // aj explicitly ties a His to its own junctional A; do not guess from
       // neighbouring retrograde A or use sinus AH as the reference.
@@ -298,4 +307,32 @@ export function summarizeProtocol(kind, rows, { sinusCl = 800 } = {}) {
     return { snrt, csnrt: snrt != null ? snrt - sinusCl : null, abnormal: snrt != null && snrt - sinusCl > CSNRT_LIMIT };
   }
   return {};
+}
+
+/**
+ * VA Linking test during Atrial Overdrive Pacing (AOP) (Ho 2019 Ch 5, Ch 13):
+ * When atrial pacing ceases, evaluates whether the return atrial cycle length
+ * is linked to the preceding ventricular electrogram.
+ * In AT: Absence of VA linking (fixed A-A independent of V).
+ * In AVNRT/ORT: Presence of VA linking (return A is strictly dependent on prior V).
+ */
+export function analyzeVaLinking(events, stims) {
+  if (!stims || !stims.length) return null;
+  const lastStim = stims[stims.length - 1].t;
+  const hraA = tOf(events, 'hra', 'A');
+  const returnA = hraA.filter((a) => a > lastStim);
+  if (returnA.length < 2) return null;
+  const vs = tOf(events, 'rv', 'V');
+  const vBeforeReturnA = before(vs, returnA[0]);
+  const vaReturn = vBeforeReturnA != null ? returnA[0] - vBeforeReturnA : null;
+  const aaReturn = returnA[1] - returnA[0];
+  const tcl = tclBefore(events, stims[0].t) || aaReturn;
+  const linked = vaReturn != null && Math.abs(vaReturn - (tcl - 150)) <= 40;
+  return {
+    tcl,
+    vaReturn,
+    aaReturn,
+    linked,
+    verdict: linked ? 'linked' : 'unlinked'
+  };
 }

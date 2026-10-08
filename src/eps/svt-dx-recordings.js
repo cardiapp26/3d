@@ -9,12 +9,14 @@ import { ECTOR_EXAMPLE, ECTOR_SOURCE, ECTOR_TEXT, ectorRecording } from './avnrt
 import { AP_ABLATION_EXAMPLES, AP_ABLATION_SOURCE, AP_ABLATION_TEXT, apAblationRecording } from './ap-ablation-recordings.js';
 import { AT_EXAMPLES, AT_SOURCE, AT_RECORDING_TEXT, atRecording } from './at-markowitz-recordings.js';
 import { CONCEALED_EXAMPLE, CONCEALED_SOURCE, CONCEALED_TEXT, concealedRecording } from './ap-concealed-recording.js';
+import { WCT_EXAMPLES, WCT_SOURCE, WCT_TEXT, wctRecording, wctMeasurements } from './wct-entrain-recordings.js';
+import { ATYPICAL_PHENOMENA_EXAMPLES, ATYPICAL_PHENOMENA_SOURCE, ATYPICAL_PHENOMENA_TEXT, atypicalPhenomenaRecording, atypicalPhenomenaMeasurements } from './atypical-ap-phenomena.js';
 
-export const svtExampleRecording = (id) => epRecording(id) || avrtLocalizationRecording(id) || standardEpsRecording(id) || ectorRecording(id) || apAblationRecording(id) || atRecording(id) || concealedRecording(id);
+export const svtExampleRecording = (id) => epRecording(id) || avrtLocalizationRecording(id) || standardEpsRecording(id) || ectorRecording(id) || apAblationRecording(id) || atRecording(id) || concealedRecording(id) || wctRecording(id) || atypicalPhenomenaRecording(id);
 
 // Examples grouped for the side list; SVT_EXAMPLES is the same order, flat.
 export const SVT_EXAMPLE_GROUPS = Object.freeze([
-  { tr: 'Normal EPS', en: 'Normal EPS', items: [...STANDARD_EPS_EXAMPLES] },
+  { tr: 'Temel EPS ve İleti Blokları', en: 'Standard EPS and Conduction Blocks', items: [...STANDARD_EPS_EXAMPLES] },
   { tr: 'Aksesuar yol ablasyonu', en: 'Accessory pathway ablation', items: [...AP_ABLATION_EXAMPLES] },
   { tr: 'AVNRT', en: 'AVNRT', items: [
     ['avnrt-typ-svt', 'Tipik AVNRT', 'Typical AVNRT'],
@@ -41,7 +43,9 @@ export const SVT_EXAMPLE_GROUPS = Object.freeze([
     ['avnrt-typ-hispvc', 'AVNRT: His-refrakter PVC', 'AVNRT: His-refractory PVC'],
     ['ap-ll-hispvc', 'AVRT: His-refrakter PVC', 'AVRT: His-refractory PVC'],
     ['at-vop', 'AT: ventriküler overdrive', 'AT: ventricular overdrive']
-  ] }
+  ] },
+  { tr: 'Geniş QRS ve Skar VT', en: 'Wide QRS and Scar VT', items: [...WCT_EXAMPLES] },
+  { tr: 'Atipik Yollar ve Sıradışı Olgular', en: 'Atypical Pathways and Unusual Phenomena', items: [...ATYPICAL_PHENOMENA_EXAMPLES] }
 ].map((g) => Object.freeze({ ...g, items: Object.freeze(g.items.map(Object.freeze)) })));
 export const SVT_EXAMPLES = Object.freeze(SVT_EXAMPLE_GROUPS.flatMap((g) => g.items));
 
@@ -151,7 +155,9 @@ export function createSvtRecordings(doc, getLang) {
     root.setAttribute('data-recording', id);
     strip.setAttribute('aria-label', `${options[SVT_EXAMPLES.findIndex((e) => e[0] === id)].textContent}: ${channels.join(', ')}`);
     ladderCanvas.setAttribute('aria-label', en ? 'A, AV and V conduction ladder' : 'A, AV ve V iletim ladder diyagramı');
-    readout.textContent = `${en ? 'Channels' : 'Kanallar'}: ${channels.length} · ${Object.entries(standardEpsMeasurements(recording)).map(([label, value]) => `${label} ${value ?? (en ? 'n/a' : 'yok')} ms`).join(' · ')}`;
+    const wct = WCT_TEXT[id];
+    const atypical = ATYPICAL_PHENOMENA_TEXT[id];
+    readout.textContent = `${en ? 'Channels' : 'Kanallar'}: ${channels.length} · ${Object.entries({ ...standardEpsMeasurements(recording), ...wctMeasurements(recording), ...atypicalPhenomenaMeasurements(recording) }).map(([label, value]) => `${label} ${value ?? (en ? 'n/a' : 'yok')} ms`).join(' · ')}`;
     const text = EP_CLIP_TEXT[id]?.[en ? 'en' : 'tr'];
     const localization = AVRT_LOCALIZATIONS.find((s) => s.id === id);
     const standard = STANDARD_EPS_TEXT[id];
@@ -162,12 +168,12 @@ export function createSvtRecordings(doc, getLang) {
     legend.hidden = stages.hidden = !ector;
     legend.textContent = ector?.legend || '';
     stages.replaceChildren(...(ector?.stages || []).map((text) => { const li = el('li'); li.textContent = text; return li; }));
-    interpretation.textContent = concealed || at || ap || ector?.description || standard?.[en ? 'en' : 'tr'] || (localization
+    interpretation.textContent = concealed || at || ap || ector?.description || standard?.[en ? 'en' : 'tr'] || wct?.[en ? 'en' : 'tr'] || atypical?.[en ? 'en' : 'tr'] || (localization
       ? `${localization.notes[en ? 1 : 0]} ${en ? 'Illustrative catheter positions and timings; exact localization requires mapping and maneuvers.' : 'Kateter konumları ve süreler örnek amaçlıdır; kesin lokalizasyon haritalama ve manevra gerektirir.'}`
       : text?.evidence || text?.text || text?.neutral || '');
-    source.hidden = !localization && !standard && !ector && !ap && !at && !concealed;
-    source.setAttribute('href', concealed ? CONCEALED_SOURCE : at ? AT_SOURCE : ap ? AP_ABLATION_SOURCE : ector ? ECTOR_SOURCE : standard?.source || AVRT_LOCALIZATION_SOURCE);
-    source.textContent = concealed ? 'Brugada et al. 2019 ESC SVT guidelines, doi:10.1093/eurheartj/ehz467' : at ? 'Markowitz et al. 2019, doi:10.15420/aer.2019.17.2' : ap ? 'Prystowsky & Padanilam 2025, doi:10.1016/j.hrthm.2025.02.023' : ector ? 'Ector et al. 2020, Figure 3, p. 4 (doi:10.1093/ehjcr/ytaa129)' : standard ? (en ? 'Source: EPS measurement' : 'Kaynak: EPS ölçümü') : (en ? 'Source: retrograde atrial activation and pathway localization' : 'Kaynak: retrograd atriyal aktivasyon ve yol lokalizasyonu');
+    source.hidden = !localization && !standard && !ector && !ap && !at && !concealed && !wct && !atypical;
+    source.setAttribute('href', concealed ? CONCEALED_SOURCE : at ? AT_SOURCE : ap ? AP_ABLATION_SOURCE : ector ? ECTOR_SOURCE : standard ? standard.source : wct ? WCT_SOURCE : atypical ? ATYPICAL_PHENOMENA_SOURCE : AVRT_LOCALIZATION_SOURCE);
+    source.textContent = concealed ? 'Brugada et al. 2019 ESC SVT guidelines, doi:10.1093/eurheartj/ehz467' : at ? 'Markowitz et al. 2019, doi:10.15420/aer.2019.17.2' : ap ? 'Prystowsky & Padanilam 2025, doi:10.1016/j.hrthm.2025.02.023' : ector ? 'Ector et al. 2020, Figure 3, p. 4 (doi:10.1093/ehjcr/ytaa129)' : standard ? (en ? 'Source: EPS measurement' : 'Kaynak: EPS ölçümü') : wct ? 'Ho RT 2019 / Stevenson WG 1993, doi:10.1161/01.cir.88.4.1647' : atypical ? 'Sternick EB 2003 / Ho RT 2019, doi:10.1016/j.hrthm.2004.09.006' : (en ? 'Source: retrograde atrial activation and pathway localization' : 'Kaynak: retrograd atriyal aktivasyon ve yol lokalizasyonu');
     note.textContent = en
       ? 'Synthetic teaching recordings. Normal EPS examples are measurement controls; SVT findings below apply to tachycardia. SNRT here means sinus node recovery time, not sinus node reentrant tachycardia. Example selection does not set findings. Ladder routes illustrate the known example mechanism.'
       : 'Sentetik öğretim kayıtları. Normal EPS örnekleri ölçüm içindir; aşağıdaki SVT bulguları taşikardiye uygulanır. Burada SNRT, sinüs nodu toparlanma süresidir; sinüs nodu reentran taşikardisi değildir. Örnek seçimi bulguları değiştirmez. Ladder yolları örneğin bilinen mekanizmasını gösterir.';

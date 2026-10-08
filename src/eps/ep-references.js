@@ -34,7 +34,11 @@ export const EP_REFERENCES = Object.freeze({
   R28: { cite: 'Blanck Z et al. J Cardiovasc Electrophysiol 2009;20:1279', doi: '10.1111/j.1540-8167.2009.01459.x' },
   R29: { cite: 'Haïssaguerre M et al. N Engl J Med 1998;339:659-666', doi: '10.1056/NEJM199809033391003' },
   R30: { cite: 'Tzeis S et al. 2024 EHRA/HRS/APHRS/LAHRS AF ablation consensus. Europace 2024;26:euae043', doi: '10.1093/europace/euae043' },
-  R31: { cite: 'Haïssaguerre M et al. Circulation 2000;101:1409-1417', doi: '10.1161/01.cir.101.12.1409' }
+  R31: { cite: 'Haïssaguerre M et al. Circulation 2000;101:1409-1417', doi: '10.1161/01.cir.101.12.1409' },
+  R32: { cite: 'Ho RT. Electrophysiology of Arrhythmias: Practical Images for Diagnosis and Ablation. Wolters Kluwer, 2019', doi: '10.1016/j.hrthm.2019.06.015' },
+  R33: { cite: 'Narula OS et al. Significance of His bundle recordings in AV block. Circulation 1971;43:942-960', doi: '10.1161/01.cir.43.6.942' },
+  R34: { cite: 'Stevenson WG et al. Identification of reentrant ventricular tachycardia circuit by entrainment mapping. Circulation 1993;88:1647-1670', doi: '10.1161/01.cir.88.4.1647' },
+  R35: { cite: 'Sternick EB et al. Recommendations for mapping and ablation of Mahaim fibers. Heart Rhythm 2003;1:679-688', doi: '10.1016/j.hrthm.2004.09.006' }
 });
 
 /** Link target of a reference: its DOI, or the open full text when it has none. */
