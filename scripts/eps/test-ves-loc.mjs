@@ -118,6 +118,11 @@ const rvotSites = walk(panel.element).filter(n => n.attrs['data-ves-map-site']).
 for (const id of ['rvot-free', 'rvot-septal', 'para-his']) assert.ok(rvotSites.includes(id), `${id} on the opened RVOT`);
 panel.select('rvot-free'); assert.equal(panel.getState().mapView, 'rvot', 'selecting an RVOT example keeps the opened RVOT');
 assert.equal(walk(panel.element).find(n => n.attrs['data-ves-v1-station'] === '0').attrs['data-active'], 'true', 'anterior RVOT lights the QS station of the V1 gradient');
+assert.equal(walk(panel.element).filter(n => n.attrs['data-ves-v1-station'] && n.attrs.tabindex === '0').length / 2, 7, 'seven of eight V1 stations link to an example (AMC has none)');
+walk(panel.element).find(n => n.attrs['data-ves-v1-station'] === '6').listeners.click?.();
+walk(panel.element).find(n => n.attrs['data-ves-v1-station'] === '7').listeners.click();
+assert.equal(panel.getState().selected, 'lv-summit', 'the summit/MA station selects its example');
+panel.select('rvot-free');
 // Slide-based corrections: posterior septal RVOT has a small V1 r and positive lead I; the anterior free wall a negative lead I with III > II.
 assert.equal(vesFeatures('rvot-septal').v1, 'rs'); assert.equal(vesFeatures('rvot-septal').leadI, 'positive');
 assert.equal(vesFeatures('rvot-free').leadI, 'negative');

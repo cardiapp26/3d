@@ -40,6 +40,7 @@ export const VES_SOURCES = Object.freeze([
   { id: 'asirvatham', title: 'Asirvatham · Outflow tract correlative anatomy (J Cardiovasc Electrophysiol 2009)', url: 'https://doi.org/10.1111/j.1540-8167.2009.01472.x' },
   { id: 'dixit', title: 'Dixit et al. · Septal versus free-wall RVOT ECG patterns (J Cardiovasc Electrophysiol 2003)', url: 'https://doi.org/10.1046/j.1540-8167.2003.02404.x' },
   { id: 'park', title: 'Park, Kim, Marchlinski · Surface ECG localization of idiopathic VT (PACE 2012)', url: 'https://doi.org/10.1111/j.1540-8159.2012.03488.x' },
+  { id: 'qrs-notch', title: 'Outflow tract VAs with qrS or notched QS in V1: origins (BMC Cardiovasc Disord 2017)', url: 'https://doi.org/10.1186/s12872-017-0561-y' },
   { id: 'aortic-root', title: 'John, Ghazizadeh, Ceresnak · Aortic root substrates (Heart Rhythm 2026)', url: 'https://doi.org/10.1016/j.hrthm.2026.01.055' },
   { id: 'egm', title: 'Focal PVC · Local activation annotation (2018)', url: 'https://academic.oup.com/europace/article/20/FI2/f171/4587592' }
 ]);

@@ -89,6 +89,10 @@
 .ves-v1-card { fill: #13221c; stroke: #2f4a3e; }
 [data-active=true] .ves-v1-card { fill: #3a3416; stroke: #fcd34d; stroke-width: 2; }
 .ves-v1-trace { stroke-width: 2; }
+.ves-v1-label { font-size: 7.2px; }
+.ves-v1-link { cursor: pointer; }
+.ves-v1-link:focus { outline: none; }
+.ves-v1-link:focus-visible .ves-v1-card { stroke: #fff; stroke-width: 2; }
 .ves-v1-axis { fill: none; stroke: #6f8a7c; stroke-width: 1.2; }
 .ves-v1-electrode { fill: #f1f7f3; stroke: #0c1713; stroke-width: 2; }
 .ves-v1-electrode-label { fill: #0c1713; font: bold 8.5px system-ui, sans-serif; text-anchor: middle; }

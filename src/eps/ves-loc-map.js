@@ -243,25 +243,38 @@ function rvotView(doc, g, uid, t) {
   label(doc, g, 185, 22, t.rvot, 'ves-map-title');
 }
 
-/** V1 R wave grows from anterior to posterior outflow sites (after Asirvatham 2009). */
+/**
+ * V1 across the outflow tracts, anterior to posterior (sequence after a user-supplied review figure;
+ * morphologies from Asirvatham 2009, Park 2012, John 2026, Enriquez 2019 and a 2017 BMC series):
+ * the R wave grows as the origin moves posteriorly and leftward. Stations with a teaching example select it.
+ */
 export const V1_GRADIENT = Object.freeze([
-  { d: 'M4 26 L16 26 L24 46 L32 26 L44 26', sites: ['rvot-free', 'para-his'] },
-  { d: 'M4 26 L14 26 L18 20 L26 46 L34 26 L44 26', sites: ['rvot-septal', 'lvot-cusp'] },
-  { d: 'M4 26 L13 26 L19 9 L27 42 L34 26 L44 26', sites: ['lv-summit'] },
-  { d: 'M4 26 L13 26 L20 4 L27 30 L32 18 L36 26 L44 26', sites: ['mitral'] }
+  { key: 'fw', d: 'M2 24 L10 24 L16 44 L22 24 L36 24', sites: ['rvot-free'] },
+  { key: 'ps', d: 'M2 24 L9 24 L11 18 L17 44 L23 24 L36 24', sites: ['rvot-septal'] },
+  { key: 'his', d: 'M2 24 L12 24 L16 42 L20 24 L36 24', sites: ['para-his'] },
+  { key: 'rcc', d: 'M2 24 L8 24 L11 15 L15 17 L20 44 L25 24 L36 24', sites: ['lvot-cusp'] },
+  { key: 'rl', d: 'M2 24 L7 24 L9 28 L13 16 L16 30 L18 27 L21 42 L26 24 L36 24', sites: ['lvot-cusp'] },
+  { key: 'lcc', d: 'M2 24 L7 24 L10 10 L13 30 L16 15 L20 40 L25 24 L36 24', sites: ['lvot-cusp'] },
+  { key: 'amc', d: 'M2 24 L8 24 L10 30 L16 4 L22 26 L26 24 L36 24', sites: [] },
+  { key: 'mitral', d: 'M2 24 L9 24 L15 4 L21 28 L25 24 L36 24', sites: ['lv-summit', 'mitral'] }
 ]);
-export function renderV1Gradient(doc, svg, { t, selected }) {
+export function renderV1Gradient(doc, svg, { t, selected, onSelect = null }) {
   svg.replaceChildren(s(doc, 'title', {}, t.v1Gradient));
   svg.setAttribute('aria-label', t.v1Gradient); svg.setAttribute('viewBox', '0 0 370 100');
-  svg.append(s(doc, 'text', { x: 185, y: 12, class: 'ves-map-tiny' }, t.v1Gradient));
+  svg.append(s(doc, 'text', { x: 185, y: 10, class: 'ves-map-tiny' }, t.v1Gradient));
   svg.append(s(doc, 'path', { d: 'M48 92 L322 92', class: 'ves-v1-axis' }), s(doc, 'path', { d: 'M314 87 L322 92 L314 97', class: 'ves-v1-axis' }));
   V1_GRADIENT.forEach((station, i) => {
-    const x0 = 22 + i * 88, on = station.sites.includes(selected);
-    const g = s(doc, 'g', { transform: `translate(${x0} 16)`, 'data-ves-v1-station': i, 'data-active': on });
-    g.append(s(doc, 'rect', { x: -6, y: -2, width: 82, height: 58, rx: 6, class: 'ves-v1-card' }));
-    g.append(s(doc, 'line', { x1: 0, y1: 26, x2: 70, y2: 26, class: 'ves-grid' }));
-    g.append(s(doc, 'path', { d: station.d, transform: 'translate(12 0)', class: 'ves-trace ves-v1-trace' }));
-    g.append(s(doc, 'text', { x: 35, y: 52, class: 'ves-map-tiny' }, t.v1Stations[i]));
+    const x0 = 6 + i * 45, on = station.sites.includes(selected), link = onSelect && station.sites.length;
+    const g = s(doc, 'g', { transform: `translate(${x0} 16)`, 'data-ves-v1-station': i, 'data-active': on, ...(link ? { role: 'button', tabindex: 0, class: 'ves-v1-link', 'aria-label': `${t.v1Stations[i]}: ${t.sites[station.sites[0]].name}` } : {}) });
+    g.append(s(doc, 'rect', { x: 0, y: -2, width: 42, height: 60, rx: 5, class: 'ves-v1-card' }));
+    g.append(s(doc, 'line', { x1: 3, y1: 24, x2: 39, y2: 24, class: 'ves-grid' }));
+    g.append(s(doc, 'path', { d: station.d, transform: 'translate(2 0)', class: 'ves-trace ves-v1-trace' }));
+    g.append(s(doc, 'text', { x: 21, y: 53, class: 'ves-map-tiny ves-v1-label' }, t.v1Stations[i]));
+    if (link) {
+      const go = () => onSelect(station.sites[0]);
+      g.addEventListener('click', go);
+      g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    }
     svg.append(g);
   });
   svg.append(s(doc, 'text', { x: 30, y: 95, class: 'ves-map-axis' }, t.v1Ant), s(doc, 'text', { x: 342, y: 95, class: 'ves-map-axis' }, t.v1Post));

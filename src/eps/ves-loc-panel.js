@@ -162,7 +162,7 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
       parts.principleToggle.textContent = t.v1Principle; parts.principleToggle.setAttribute('aria-pressed', state.v1Principle); parts.principleToggle.hidden = state.mapView !== 'chambers';
       renderVesMap(doc, parts.svg, { t, selected: state.selected, candidates: candidateIds, position: parts.recording && selected ? state.position : null, view: state.mapView, atlas3d: state.atlas3d, v1Principle: state.v1Principle,
         onSelect(id) { select(id); parts.svg.querySelector?.(`[data-ves-map-site="${id}"]`)?.focus(); } });
-      renderV1Gradient(doc, parts.gradient, { t, selected: state.selected });
+      renderV1Gradient(doc, parts.gradient, { t, selected: state.selected, onSelect: select });
       renderFrontalVector(doc, parts.frontal, { t, selected: state.selected, axis: selected ? vesFrontalAxis(selected.id) : null });
       parts.frontalBox.hidden = !selected;
       for (const [id, b] of parts.buttons) {
