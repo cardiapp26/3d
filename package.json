@@ -36,7 +36,7 @@
     "echo:calibrate": "node scripts/echo-calibrate.cjs",
     "echo:audit": "node scripts/echo-audit.cjs",
     "test:eps": "node scripts/eps/run-tests.mjs",
-    "test:eps-browser": "node scripts/eps/test-ep-live-browser.cjs && node scripts/eps/test-ep-lessons-browser.cjs && node scripts/eps/test-amap-interactions-browser.cjs && node scripts/eps/test-ep-labs-browser.cjs && node scripts/eps/test-eps-link-browser.cjs",
+    "test:eps-browser": "node scripts/eps/test-ep-live-browser.cjs && node scripts/eps/test-ep-lessons-browser.cjs && node scripts/eps/test-amap-interactions-browser.cjs && node scripts/eps/test-ep-labs-browser.cjs && node scripts/eps/test-eps-link-browser.cjs && node scripts/eps/test-ves-browser.cjs",
     "test:eps-offline": "node scripts/eps/test-eps-offline-browser.cjs",
     "test:pharmacology": "node scripts/test-pharmacology.mjs",
     "test:pharmacology-browser": "node scripts/test-pharmacology-browser.cjs",
@@ -55,7 +55,9 @@
     "test:ecg-axis": "node scripts/test-ecg-axis.mjs",
     "test:ecg-axis-browser": "node scripts/test-ecg-axis-browser.cjs",
     "test:qrs-vector": "node scripts/test-qrs-vector.mjs",
-    "test:qrs-vector-browser": "node scripts/test-qrs-vector-browser.cjs"
+    "test:qrs-vector-browser": "node scripts/test-qrs-vector-browser.cjs",
+    "test:ves": "node scripts/eps/test-ves-loc.mjs",
+    "test:ves-browser": "node scripts/eps/test-ves-browser.cjs"
   },
   "keywords": [],
   "author": "",

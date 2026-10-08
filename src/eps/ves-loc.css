@@ -1,0 +1,81 @@
+.ves { padding: 16px 20px 30px; gap: 14px; }
+.ves > .amap-title { margin: 0; font-size: clamp(22px, 2.3vw, 34px); line-height: 1.2; }
+.ves > .amap-note { margin: 0; max-width: 900px; font-size: 14px; line-height: 1.6; }
+.ves-page { padding: 20px; border-radius: 12px; display: grid; gap: 16px; min-width: 0; }
+.ves h4 { margin: 0; font-size: 17px; }
+.ves-localize-layout { display: grid; grid-template-columns: minmax(300px, .8fr) minmax(0, 1.2fr); gap: 20px; align-items: start; }
+.ves-findings { display: grid; gap: 10px; min-width: 0; }
+.ves-finding { padding: 10px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 7px; display: grid; gap: 7px; }
+.ves-finding[data-next=true] { border-left-color: #fcd34d; }
+.ves-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); gap: 6px; }
+.ves-options button { display: flex; flex-direction: column; align-items: center; padding: 6px; min-height: 44px; line-height: 1.35; }
+.ves-option-wave { width: 100%; max-width: 95px; height: 50px; }
+.ves button[aria-pressed=true] .ves-trace { stroke: #173e2a; }
+.ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
+.ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
+.ves-strip-window { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 8px; }
+.ves-strip-window:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ves-ecg { min-width: 720px; }
+.ves-monitor { min-width: 720px; }
+.ves-scroll-hint { display: none; }
+@media (max-width: 1200px) { .ves-scroll-hint { display: block; } }
+.ves-site-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+.ves-site-list button { padding: 8px; text-align: left; font-size: 12px; min-height: 44px; overflow-wrap: anywhere; }
+.ves button[data-candidate=true]:not([aria-pressed=true]) { border-color: #7fb2ff; }
+.ves-map-frame { fill: #10211b; stroke: #375348; }
+.ves-map-chamber { fill: #283a30; stroke: #789d88; stroke-width: 3; }
+.ves-map-valve { fill: #172a24; stroke: #789d88; stroke-width: 3; }
+.ves-map-septum { fill: none; stroke: #a5b9ad; stroke-width: 10; opacity: .5; }
+.ves-map-muscle { fill: none; stroke: #ad9180; stroke-width: 11; stroke-linecap: round; }
+.ves-map-purkinje { fill: none; stroke: #efb57a; stroke-width: 3; stroke-dasharray: 5 3; }
+.ves-map-coronary { fill: none; stroke: #eaa09b; stroke-width: 4; }
+.ves-map-vein { fill: none; stroke: #7fb2ff; stroke-width: 5; opacity: .7; }
+.ves-map-his { fill: #e9a0fa; }
+.ves-map-abl { fill: #d8b4fe; stroke: white; stroke-width: 1.5; }
+.ves-map-caption { fill: #a4bcb0; font: 11px system-ui, sans-serif; text-anchor: middle; }
+.ves-map-label { fill: #c9dacf; font: 14px system-ui, sans-serif; text-anchor: middle; }
+.ves-map-site { cursor: pointer; }
+.ves-map-site circle { fill: #263b32; stroke: #96b4a3; stroke-width: 2; }
+.ves-map-site text { fill: #e3ece6; font: bold 12px system-ui, sans-serif; text-anchor: middle; pointer-events: none; }
+.ves-map-site[data-candidate=true] circle { stroke: #7fb2ff; stroke-width: 4; }
+.ves-map-site[aria-pressed=true] circle { fill: #fcd34d; stroke: #fcd34d; stroke-width: 4; }
+.ves-map-site[aria-pressed=true] text { fill: #1b241b; }
+.ves-map-site:focus-visible { outline: none; }
+.ves-map-site:focus-visible circle { stroke: white; stroke-width: 5; }
+.ves-trace { fill: none; stroke: #96d8bd; stroke-width: 1.8; stroke-linejoin: round; }
+.ves-local-trace { stroke: #d8b4fe; }
+.ves-grid { stroke: #294137; stroke-width: 1; }
+.ves-ecg-label { fill: #c8e0d3; font: 12px ui-monospace, monospace; }
+.ves-wave-label { fill: #f3cf92; font: 11px ui-monospace, monospace; text-anchor: middle; }
+.ves-qrs-onset { stroke: #f3b364; stroke-width: 1.5; stroke-dasharray: 5 3; }
+.ves-caliper { stroke: #f3b364; fill: none; stroke-width: 2; }
+.ves-path { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 24px; margin: 0; }
+.ves-path li { padding: 7px 12px; background: var(--panel-2); border-radius: 6px; font-size: 12px; }
+.ves-surface, .ves-ratio, .ves-detail { display: grid; gap: 10px; min-width: 0; }
+.ves-surface { border-top: 1px solid var(--line); padding-top: 16px; }
+.ves-surface > button { justify-self: start; padding: 10px 14px; min-height: 44px; }
+.ves-ratio { padding: 14px; border: 1px solid var(--line); border-radius: 8px; }
+.ves-formula { font: 13px var(--mono); color: #d4e9dd; margin: 0; overflow-wrap: anywhere; }
+.ves-amplitudes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ves-amplitudes .amap-field { text-transform: none; letter-spacing: normal; }
+.ves-amplitudes input { width: 100%; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
+.ves-scar { display: flex; gap: 8px; align-items: center; }
+.ves-record-layout { display: grid; grid-template-columns: minmax(320px, .9fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+.ves-anatomy { display: grid; gap: 5px; margin: 0; }
+.ves-anatomy dt { color: #9bcab4; font-size: 12px; font-weight: 600; }
+.ves-anatomy dd { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
+.ves-sources { padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.ves-sources summary { cursor: pointer; font-weight: 600; }
+.ves-sources li { margin: 6px 0; }
+@media (max-width: 1050px) { .ves-localize-layout, .ves-record-layout { grid-template-columns: 1fr; } .ves-localize-layout > .ves-atlas { grid-row: 1; } }
+@media (max-width: 560px) {
+  .ves { padding: 10px 3px 20px; }
+  .ves-page { padding: 10px; gap: 12px; }
+  .ves-atlas { padding: 7px; }
+  .ves-site-list button { font-size: 11px; }
+  .ves-amplitudes { grid-template-columns: 1fr 1fr; }
+  .ves-options { grid-template-columns: 1fr 1fr; }
+  .ves-map { min-height: 200px; }
+  .ves .amap-readout { grid-template-columns: 1fr 1fr; }
+}

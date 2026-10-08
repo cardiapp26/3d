@@ -1,12 +1,14 @@
 // EPS laboratory entry: header with the link back to the 3D simulator and
 // the language switch (shared with the 3D page), the EP panel
 // (Diagnosis / Maneuvers / Treatment lessons, the live recording
-// workstation, activation mapping, pace mapping, the electrogram basics, the SVT algorithm and the WPW localization, ep-panel.js) and the
+// workstation, activation mapping, pace mapping, the electrogram basics,
+// SVT, WPW and VES localization, ep-panel.js) and the
 // site notice. The open tab lives in the address (#/live, #/diagnosis,
-// #/maneuver, #/treatment, #/mapping, #/pacemap, #/basics, #/svt, #/wpw); #/clip/<id> opens
+// #/maneuver, #/treatment, #/mapping, #/pacemap, #/basics, #/svt, #/wpw, #/ves); #/clip/<id> opens
 // one recording (the 3D ablation lesson links to its clips this way).
 import './style.css';
 import './lesson.css';
+import './ves-loc.css';
 import { APP_TEXT, LANGS, CARDIA_URL, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
 import { createEpPanel, EP_VIEWS } from './ep-panel.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';

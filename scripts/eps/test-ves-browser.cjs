@@ -1,0 +1,91 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
+(async () => {
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  const shots = process.env.SHOT_DIR || '/private/tmp/cardia-ves-shots';
+  fs.mkdirSync(shots, { recursive: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
+    const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.goto(`${APP}/eps/?lang=tr#/ves`);
+    const module = page.locator('[data-ves]');
+    await module.waitFor({ state: 'visible' });
+    assert.equal(await page.locator('[data-ep-section=ves]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('[data-ves-card=loc] [data-ves-example]').count(), 12);
+    assert.equal(await page.locator('[data-ves-card=loc] [data-ves-ecg-lead]').count(), 12);
+    assert.equal(await page.locator('.ep-lesson').isVisible(), false);
+    const examples = ['rvot-septal', 'rvot-free', 'lvot-cusp', 'lv-summit', 'para-his', 'tricuspid', 'mitral', 'papillary-pm', 'papillary-al', 'fascicle', 'moderator', 'crux'];
+    for (const id of examples) {
+      await page.locator(`[data-ves-card=loc] [data-ves-example="${id}"]`).click();
+      assert.equal(await page.locator(`[data-ves-card=loc] [data-ves-map-site="${id}"]`).getAttribute('aria-pressed'), 'true');
+      assert.ok((await page.locator('[data-ves-verdict]').getAttribute('data-candidates')).split(',').includes(id));
+      await page.locator('[data-ves-open-recording]').click();
+      assert.equal(await page.locator('.ves-monitor').getAttribute('data-site'), id);
+      assert.equal(await page.locator('[data-ves-channel]').count(), 8);
+      assert.equal(await page.locator('[data-ves-readout]').getAttribute('data-unipolar'), 'QS');
+      assert.equal(await page.locator('[data-ves-purkinje]').count(), ['fascicle', 'moderator'].includes(id) ? 1 : 0);
+      await page.locator('[data-ves-position=remote]').click();
+      assert.equal(await page.locator('[data-ves-readout]').getAttribute('data-local'), '18');
+      assert.equal(await page.locator('[data-ves-readout]').getAttribute('data-unipolar'), 'rS');
+      await page.locator('[data-ves-page=loc]').click();
+    }
+    await page.locator('[data-ves-card=loc] [data-ves-map-site=rvot-septal]').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('[data-ves-card=loc] [data-ves-map-site=rvot-septal]').evaluate(el => el === document.activeElement), true);
+    await page.locator('[data-ves-reset]').click();
+    assert.equal(await page.locator('.ves-ecg').isVisible(), false);
+    for (const key of ['v1:lbbb', 'axis:inferior', 'transition:v3', 'leadI:positive', 'width:wide']) await page.locator(`[data-ves-option="${key}"]`).click();
+    for (const [key, value] of Object.entries({ pvcR: '.3', pvcS: '.7', sinusR: '.5', sinusS: '.5' })) await page.locator(`[data-ves-amplitude=${key}]`).fill(value);
+    assert.equal(await page.locator('[data-ves-ratio-result]').getAttribute('data-result'), 'lvot');
+    await page.locator('[data-ves-amplitude=pvcR]').fill('');
+    await page.locator('[data-ves-amplitude=pvcR]').pressSequentially('0.3');
+    assert.equal(await page.locator('[data-ves-amplitude=pvcR]').inputValue(), '0.3', 'decimal keyboard entry preserved');
+    await page.locator('[data-app-lang-option=en]').click();
+    assert.match(await page.locator('[data-ves-ratio-result]').textContent(), /0.600/);
+    assert.equal(await page.locator('[data-ves-amplitude=pvcR]').inputValue(), '0.3');
+    await page.locator('[data-ves-scar]').check();
+    assert.equal(await page.locator('[data-ves-verdict]').getAttribute('data-candidates'), '');
+    assert.equal(await page.locator('[data-ves-ratio-result]').getAttribute('data-result'), 'outside');
+    await page.locator('[data-ves-scar]').uncheck();
+    await page.locator('[data-app-lang-option=tr]').click();
+    await page.locator('[data-ves-card=loc] [data-ves-example=rvot-septal]').click();
+    await module.evaluate(el => { el.scrollTop = 0; });
+    await page.screenshot({ path: `${shots}/ves-localization-desktop.png` });
+    await page.locator('[data-ves-open-recording]').click();
+    await page.locator('[data-ves-card=recordings] [data-ves-example=fascicle]').click();
+    await page.locator('[data-ves-position=near]').click();
+    await module.evaluate(el => { el.scrollTop = 0; });
+    await page.screenshot({ path: `${shots}/ves-recordings-desktop.png` });
+    await page.locator('[data-ep-section=wpw]').click();
+    assert.equal(await module.isVisible(), false); assert.equal(await page.locator('[data-wpw]').isVisible(), true);
+    await page.locator('[data-ep-section=ves]').click();
+    assert.equal(await page.locator('[data-ves-card=recordings]').isVisible(), true);
+    assert.equal(await page.locator('[role=tab][aria-selected=true]').count(), 1);
+    assert.equal(await page.evaluate(() => location.hash), '#/ves');
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const view of ['loc', 'recordings']) {
+        await page.locator(`[data-ves-page=${view}]`).click();
+        const bounds = await module.evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
+        assert.ok(bounds.scroll <= bounds.width + 1, `${width}px ${view} overflow ${JSON.stringify(bounds)}`);
+        assert.ok(await page.locator(`[data-ves-card=${view}]`).isVisible());
+        const strip = page.locator(`[data-ves-card=${view}] .ves-strip-window`);
+        const svg = strip.locator('svg');
+        assert.ok((await svg.boundingBox()).width >= 720, 'mobile tracing keeps readable drawing width');
+        await strip.focus();
+        await page.keyboard.press('ArrowRight');
+        await page.waitForFunction(selector => document.querySelector(selector).scrollLeft > 0, `[data-ves-card=${view}] .ves-strip-window`);
+        await module.evaluate(el => { el.scrollTop = 0; });
+        await page.screenshot({ path: `${shots}/ves-${view}-${width}.png` });
+      }
+    }
+    await page.reload();
+    await module.waitFor({ state: 'visible' });
+    assert.equal(await page.locator('[data-ep-section=ves]').getAttribute('aria-selected'), 'true');
+    assert.deepEqual(errors, []);
+    console.log('PASS ves-browser: 12 anatomical examples and recordings, keyboard/focus, manual mode, ratio, language state, scar guard, WPW switching, direct route/reload, desktop and 320/390px overflow');
+    console.log(`Screenshots: ${shots}`);
+  } finally { await browser.close(); }
+})().catch(e => { console.error(e); process.exit(1); });
