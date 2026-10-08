@@ -8,8 +8,9 @@ import { STANDARD_EPS_EXAMPLES, STANDARD_EPS_TEXT, standardEpsRecording, standar
 import { ECTOR_EXAMPLE, ECTOR_SOURCE, ECTOR_TEXT, ectorRecording } from './avnrt-ector-recording.js';
 import { AP_ABLATION_EXAMPLES, AP_ABLATION_SOURCE, AP_ABLATION_TEXT, apAblationRecording } from './ap-ablation-recordings.js';
 import { AT_EXAMPLES, AT_SOURCE, AT_RECORDING_TEXT, atRecording } from './at-markowitz-recordings.js';
+import { CONCEALED_EXAMPLE, CONCEALED_SOURCE, CONCEALED_TEXT, concealedRecording } from './ap-concealed-recording.js';
 
-export const svtExampleRecording = (id) => epRecording(id) || avrtLocalizationRecording(id) || standardEpsRecording(id) || ectorRecording(id) || apAblationRecording(id) || atRecording(id);
+export const svtExampleRecording = (id) => epRecording(id) || avrtLocalizationRecording(id) || standardEpsRecording(id) || ectorRecording(id) || apAblationRecording(id) || atRecording(id) || concealedRecording(id);
 
 // Examples grouped for the side list; SVT_EXAMPLES is the same order, flat.
 export const SVT_EXAMPLE_GROUPS = Object.freeze([
@@ -21,11 +22,12 @@ export const SVT_EXAMPLE_GROUPS = Object.freeze([
     ['avnrt-atyp-svt', 'Atipik AVNRT', 'Atypical AVNRT']
   ] },
   { tr: 'AVRT', en: 'AVRT', items: [
-    ['ap-ll-svt', 'Ortodromik AVRT: sol lateral yol', 'Orthodromic AVRT: left lateral pathway'],
-    ['ap-ips-svt', 'Ortodromik AVRT: inferior paraseptal yol', 'Orthodromic AVRT: inferior paraseptal pathway'],
-    ['ph-svt', 'Ortodromik AVRT: para-Hisian yol', 'Orthodromic AVRT: para-Hisian pathway'],
+    CONCEALED_EXAMPLE,
+    ['ap-ll-svt', 'Ortodromik AVRT: gizli sol lateral yol', 'Orthodromic AVRT: concealed left lateral pathway'],
+    ['ap-ips-svt', 'Ortodromik AVRT: gizli inferior paraseptal yol', 'Orthodromic AVRT: concealed inferior paraseptal pathway'],
+    ['ph-svt', 'Ortodromik AVRT: gizli para-Hisian yol', 'Orthodromic AVRT: concealed para-Hisian pathway'],
     ...AVRT_LOCALIZATIONS.map((s) => [s.id, `Ortodromik AVRT: ${s.names[0]} yol`, `Orthodromic AVRT: ${s.names[1]} pathway`]),
-    ['pjrt-svt', 'PJRT: yavaş retrograd yol', 'PJRT: slow retrograde pathway'],
+    ['pjrt-svt', 'PJRT: gizli, yavaş retrograd yol', 'PJRT: concealed slow retrograde pathway'],
     ['ap-lm-antidromic', 'Antidromik AVRT: sol lateral manifest yol', 'Antidromic AVRT: manifest left lateral pathway']
   ] },
   { tr: 'Atriyal taşikardi ve flutter', en: 'Atrial tachycardia and flutter', items: [
@@ -156,15 +158,16 @@ export function createSvtRecordings(doc, getLang) {
     const ap = AP_ABLATION_TEXT[id]?.[en ? 'en' : 'tr'];
     const at = AT_RECORDING_TEXT[id]?.[en ? 'en' : 'tr'];
     const ector = id === ECTOR_EXAMPLE[0] ? ECTOR_TEXT[en ? 'en' : 'tr'] : null;
+    const concealed = id === CONCEALED_EXAMPLE[0] ? CONCEALED_TEXT[en ? 'en' : 'tr'] : null;
     legend.hidden = stages.hidden = !ector;
     legend.textContent = ector?.legend || '';
     stages.replaceChildren(...(ector?.stages || []).map((text) => { const li = el('li'); li.textContent = text; return li; }));
-    interpretation.textContent = at || ap || ector?.description || standard?.[en ? 'en' : 'tr'] || (localization
+    interpretation.textContent = concealed || at || ap || ector?.description || standard?.[en ? 'en' : 'tr'] || (localization
       ? `${localization.notes[en ? 1 : 0]} ${en ? 'Illustrative catheter positions and timings; exact localization requires mapping and maneuvers.' : 'Kateter konumları ve süreler örnek amaçlıdır; kesin lokalizasyon haritalama ve manevra gerektirir.'}`
       : text?.evidence || text?.text || text?.neutral || '');
-    source.hidden = !localization && !standard && !ector && !ap && !at;
-    source.setAttribute('href', at ? AT_SOURCE : ap ? AP_ABLATION_SOURCE : ector ? ECTOR_SOURCE : standard?.source || AVRT_LOCALIZATION_SOURCE);
-    source.textContent = at ? 'Markowitz et al. 2019, doi:10.15420/aer.2019.17.2' : ap ? 'Prystowsky & Padanilam 2025, doi:10.1016/j.hrthm.2025.02.023' : ector ? 'Ector et al. 2020, Figure 3, p. 4 (doi:10.1093/ehjcr/ytaa129)' : standard ? (en ? 'Source: EPS measurement' : 'Kaynak: EPS ölçümü') : (en ? 'Source: retrograde atrial activation and pathway localization' : 'Kaynak: retrograd atriyal aktivasyon ve yol lokalizasyonu');
+    source.hidden = !localization && !standard && !ector && !ap && !at && !concealed;
+    source.setAttribute('href', concealed ? CONCEALED_SOURCE : at ? AT_SOURCE : ap ? AP_ABLATION_SOURCE : ector ? ECTOR_SOURCE : standard?.source || AVRT_LOCALIZATION_SOURCE);
+    source.textContent = concealed ? 'Brugada et al. 2019 ESC SVT guidelines, doi:10.1093/eurheartj/ehz467' : at ? 'Markowitz et al. 2019, doi:10.15420/aer.2019.17.2' : ap ? 'Prystowsky & Padanilam 2025, doi:10.1016/j.hrthm.2025.02.023' : ector ? 'Ector et al. 2020, Figure 3, p. 4 (doi:10.1093/ehjcr/ytaa129)' : standard ? (en ? 'Source: EPS measurement' : 'Kaynak: EPS ölçümü') : (en ? 'Source: retrograde atrial activation and pathway localization' : 'Kaynak: retrograd atriyal aktivasyon ve yol lokalizasyonu');
     note.textContent = en
       ? 'Synthetic teaching recordings. Normal EPS examples are measurement controls; SVT findings below apply to tachycardia. SNRT here means sinus node recovery time, not sinus node reentrant tachycardia. Example selection does not set findings. Ladder routes illustrate the known example mechanism.'
       : 'Sentetik öğretim kayıtları. Normal EPS örnekleri ölçüm içindir; aşağıdaki SVT bulguları taşikardiye uygulanır. Burada SNRT, sinüs nodu toparlanma süresidir; sinüs nodu reentran taşikardisi değildir. Örnek seçimi bulguları değiştirmez. Ladder yolları örneğin bilinen mekanizmasını gösterir.';
