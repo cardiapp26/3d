@@ -14,6 +14,7 @@
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
+.ves-ecg { background: #1a1416; }
 .ves-strip-window { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 8px; }
 .ves-strip-window:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ves-ecg { min-width: 720px; }
@@ -74,6 +75,7 @@
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
+.ves-ecg { background: #1a1416; }
 .ves-strip-window { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 8px; }
 .ves-strip-window:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ves-ecg { min-width: 720px; }
@@ -106,7 +108,25 @@
 .ves-map-site[aria-pressed=true] text { fill: #1b241b; }
 .ves-map-site:focus-visible { outline: none; }
 .ves-map-site:focus-visible circle { stroke: white; stroke-width: 5; }
-.ves-trace { fill: none; stroke: #96d8bd; stroke-width: 1.8; stroke-linejoin: round; }
+.ves-trace { fill: none; stroke: #96d8bd; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.ves-paper-bg { fill: #1a1416; }
+.ves-paper-fine { stroke: rgba(255, 128, 128, .13); stroke-width: .6; }
+.ves-paper-bold { stroke: rgba(255, 128, 128, .36); stroke-width: 1; }
+.ves-ecg-trace { stroke: #f1f7f3; stroke-width: 1.6; }
+.ves-calibration { fill: none; stroke: #f1f7f3; stroke-width: 1.4; }
+.ves-monitor-bg { fill: #0b1412; }
+.ves-grid-fine { stroke: #1b2a25; stroke-width: 1; }
+.ves-grid-row { stroke: #1f2f29; stroke-width: 1; stroke-dasharray: 2 4; }
+.ves-channel-trace { stroke-width: 1.6; }
+[data-ves-channel=II] .ves-channel-trace, [data-ves-channel=II] .ves-channel-swatch { stroke: #d9e36b; fill: #d9e36b; }
+[data-ves-channel=V1] .ves-channel-trace, [data-ves-channel=V1] .ves-channel-swatch { stroke: #e9eef0; fill: #e9eef0; }
+[data-ves-channel=his] .ves-channel-trace, [data-ves-channel=his] .ves-channel-swatch { stroke: #f6d35b; fill: #f6d35b; }
+[data-ves-channel=rvot] .ves-channel-trace, [data-ves-channel=rvot] .ves-channel-swatch { stroke: #6fd3e8; fill: #6fd3e8; }
+[data-ves-channel=lvot] .ves-channel-trace, [data-ves-channel=lvot] .ves-channel-swatch { stroke: #74c9a8; fill: #74c9a8; }
+[data-ves-channel=cs] .ves-channel-trace, [data-ves-channel=cs] .ves-channel-swatch { stroke: #f0a35a; fill: #f0a35a; }
+[data-ves-channel=abl] .ves-channel-trace, [data-ves-channel=abl] .ves-channel-swatch { stroke: #e38bff; fill: #e38bff; }
+[data-ves-channel=uni] .ves-channel-trace, [data-ves-channel=uni] .ves-channel-swatch { stroke: #c4a6ff; fill: #c4a6ff; }
+.ves-channel-trace { fill: none !important; }
 .ves-local-trace { stroke: #d8b4fe; }
 .ves-grid { stroke: #294137; stroke-width: 1; }
 .ves-ecg-label { fill: #c8e0d3; font: 12px ui-monospace, monospace; }

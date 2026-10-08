@@ -35,27 +35,39 @@ export const VES_SOURCES = Object.freeze([
 ]);
 export const vesRegion = id => VES_REGIONS.find(r => r.id === id) || null;
 
-// Each QRS uses the same time knots. Limb leads obey Einthoven and Goldberger.
-const wave = (t, width, r, s) => {
-  const u = t / width;
-  const points = [[0, 0], [.30, r], [.62, -s], [1, 0]];
-  if (u < 0 || u > 1) return 0;
-  const i = points.findIndex(([x]) => x >= u);
-  if (i <= 0) return 0;
-  const [x0, y0] = points[i - 1], [x1, y1] = points[i];
-  return y0 + (y1 - y0) * (u - x0) / (x1 - x0);
+// One synthetic beat per region: a smooth QRS (q, R, S lobes; a mid-QRS notch
+// for the free-wall example), a short ST segment and a discordant T wave.
+// Limb leads obey Einthoven and Goldberger because II and III derive from I/II.
+const gauss = (t, center, sigma) => Math.exp(-0.5 * ((t - center) / sigma) ** 2);
+export const VES_ECG_STEP = 2;
+export const VES_ECG_WINDOW = Object.freeze({ from: -60, to: 460 });
+/** QRS of `width` ms starting at t = 0 with R and S amplitudes; `notch` splits the R upstroke. */
+export function qrsWave(t, width, r, s, notch = false) {
+  const q = 0.06 * Math.max(r, s) * gauss(t, 0.14 * width, 0.05 * width);
+  const rLobe = r * (notch ? 0.72 * gauss(t, 0.26 * width, 0.08 * width) + 0.58 * gauss(t, 0.42 * width, 0.08 * width) : gauss(t, 0.33 * width, 0.11 * width));
+  const sLobe = s * gauss(t, 0.66 * width, 0.12 * width);
+  return rLobe - sLobe - q;
+}
+/** Discordant T wave: opposite to the dominant QRS deflection, with a slight ST shift. */
+const tWave = (t, width, r, s) => {
+  const net = r - s;
+  const sign = net >= 0 ? -1 : 1;
+  const amplitude = 0.32 * Math.max(r, s, 0.3);
+  const st = sign * 0.05 * gauss(t, width + 70, 45);   // gentle ST shift into the T wave
+  return sign * amplitude * gauss(t, width + 190, 58) + st;
 };
+const beat = (t, width, r, s, notch) => qrsWave(t, width, r, s, notch) + tWave(t, width, r, s);
 export function vesEcg(id) {
   const site = vesRegion(id);
   if (!site) return null;
-  const t = Array.from({ length: 121 }, (_, i) => i * 2 - 20);
+  const t = Array.from({ length: (VES_ECG_WINDOW.to - VES_ECG_WINDOW.from) / VES_ECG_STEP + 1 }, (_, i) => VES_ECG_WINDOW.from + i * VES_ECG_STEP);
   const leads = Object.fromEntries(LEADS.map(l => [l, []]));
-  const iScale = site.leadI === 'negative' ? -.4 : .65;
-  const iiScale = site.axis === 'superior' ? -1.15 : 1.4;
+  const notch = site.id === 'rvot-free';
+  const iAmp = site.leadI === 'negative' ? [0.1, 0.5] : [0.65, 0.1];
+  const iiAmp = site.axis === 'superior' ? [0.12, 1.15] : [1.4, 0.12];
   const transition = { early: 2, v3: 3, late: 5, positive: 1, negative: 7 }[site.transition];
   for (const ms of t) {
-    const q = wave(ms, site.width, 1, .16);
-    const I = iScale * q, II = iiScale * q;
+    const I = beat(ms, site.width, iAmp[0], iAmp[1], notch), II = beat(ms, site.width, iiAmp[0], iiAmp[1], notch);
     const limb = { I, II, III: II - I, aVR: -(I + II) / 2, aVL: I - II / 2, aVF: II - I / 2 };
     for (const l of Object.keys(limb)) leads[l].push(limb[l]);
     PRECORDIAL.forEach((l, i) => {
@@ -65,24 +77,26 @@ export function vesEcg(id) {
         r = site.v1 === 'lbbb' ? 0 : site.v1 === 'rs' ? .4 : 1.25;
         s = site.v1 === 'rbbb' ? .25 : 1.15;
       }
-      leads[l].push(wave(ms, site.width, r, s));
+      leads[l].push(beat(ms, site.width, r, s, notch));
     });
   }
-  return { t, leads, width: site.width };
+  return { t, leads, width: site.width, step: VES_ECG_STEP, from: VES_ECG_WINDOW.from };
 }
 
-/** Features are measured from the displayed synthetic QRS, not its region label. */
+/** Features are measured from the displayed synthetic QRS (its 0..width window), not its region label. */
 export function vesFeatures(id) {
   const ecg = vesEcg(id);
   if (!ecg) return null;
-  const peaks = lead => ({ r: Math.max(0, ...ecg.leads[lead]), s: Math.max(0, ...ecg.leads[lead].map(v => -v)) });
+  const inQrs = ecg.t.map(ms => ms >= 0 && ms <= ecg.width);
+  const window = lead => ecg.leads[lead].filter((_, i) => inQrs[i]);
+  const peaks = lead => ({ r: Math.max(0, ...window(lead)), s: Math.max(0, ...window(lead).map(v => -v)) });
   const sign = lead => { const { r, s } = peaks(lead); return r > s ? 'positive' : s > r ? 'negative' : 'biphasic'; };
   const v = peaks('V1');
   const tr = PRECORDIAL.findIndex((_, i) => PRECORDIAL.slice(i).every(l => { const { r, s } = peaks(l); return r >= s; }));
   const axis = sign('II') === 'positive' && sign('III') === 'positive' ? 'inferior'
     : sign('II') === 'negative' && sign('III') === 'negative' ? 'superior' : 'mixed';
   return {
-    v1: v.r < .05 ? 'lbbb' : v.r < v.s ? 'rs' : 'rbbb', axis,
+    v1: v.r < .08 ? 'lbbb' : v.r < v.s ? 'rs' : 'rbbb', axis,
     transition: tr === -1 ? 'negative' : tr === 0 ? 'positive' : tr <= 1 ? 'early' : tr === 2 ? 'v3' : 'late',
     leadI: sign('I'), width: ecg.width < 130 ? 'narrow' : 'wide'
   };

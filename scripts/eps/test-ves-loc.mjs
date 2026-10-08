@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { VES_REGIONS, VES_OPTIONS, VES_INPUTS, vesEcg, vesFeatures, localizeVes, vesRecording, recordingValue, v2TransitionRatio } from '../../src/eps/ves-loc-model.js';
+import { VES_REGIONS, VES_OPTIONS, VES_INPUTS, qrsWave, vesEcg, vesFeatures, localizeVes, vesRecording, recordingValue, v2TransitionRatio } from '../../src/eps/ves-loc-model.js';
 import { VES_TEXT } from '../../src/eps/ves-loc-text.js';
 import { createVesLocPanel } from '../../src/eps/ves-loc-panel.js';
 import { EP_VIEWS } from '../../src/eps/ep-panel.js';
@@ -26,8 +26,12 @@ for (const value of ['', null, undefined, NaN, Infinity, -1]) assert.equal(v2Tra
 assert.equal(v2TransitionRatio({ ...v3, v1: 'rbbb' }, {}).status, 'outside');
 assert.equal(v2TransitionRatio({ ...v3, transition: 'early' }, {}).status, 'outside');
 assert.equal(v2TransitionRatio(v3, { pvcR: 1e308, pvcS: 1e308, sinusR: 1e308, sinusS: 1e308 }).value, 1, 'stable under large finite amplitudes');
+assert.ok(Math.abs(qrsWave(-40, 150, 1, .2)) < 1e-3 && Math.abs(qrsWave(190, 150, 1, .2)) < 1e-3, 'QRS energy inside its window');
 for (const r of VES_REGIONS) {
   const f = vesFeatures(r.id), ecg = vesEcg(r.id);
+  const qrs = ecg.t.map((ms, i) => ms >= 0 && ms <= ecg.width ? ecg.leads.II[i] : 0), tail = ecg.t.map((ms, i) => ms > ecg.width + 120 ? ecg.leads.II[i] : 0);
+  const netQrs = qrs.reduce((a, v) => a + v, 0), netT = tail.reduce((a, v) => a + v, 0);
+  assert.ok(netQrs * netT < 0, `${r.id}: T wave discordant to the QRS in II`);
   assert.ok(localizeVes(f).candidates.includes(r.id), `${r.id}: displayed ECG keeps its example region among candidates`);
   for (const key of VES_INPUTS) assert.ok(VES_OPTIONS[key].includes(f[key]));
   for (let i = 0; i < ecg.t.length; i++) {
@@ -79,4 +83,4 @@ assert.equal(by('data-ves-verdict').attrs['data-candidates'], '');
 by('data-ves-reset').listeners.click(); assert.deepEqual(panel.getState().inputs, {});
 assert.equal(panel.getState().scar, true, 'reset cannot silently remove clinical context');
 panel.setActive(false); assert.equal(panel.element.hidden, true);
-console.log('PASS ves-loc: 3D/SVG basal atlas, 12 region ECGs, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
+console.log('PASS ves-loc: 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
