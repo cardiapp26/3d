@@ -1,4 +1,4 @@
-import { N, FRAMES, FRAME_MS, CFAE_MS, RESOLUTIONS, ABLATIONS, SCENARIOS, simulate, ablationLesions, outcome, electrogram, deflections, cfeMean, dominantFrequency, truePs, mappedPs, mappedPhase, psStats, rotorCore, siteMaps, electrodes, inPatch } from './afmap-model.js';
+import { N, FRAMES, FRAME_MS, CFAE_MS, LEVEL, RESOLUTIONS, ABLATIONS, SCENARIOS, simulate, ablationLesions, outcome, electrogram, deflections, cfeMean, dominantFrequency, truePs, mappedPs, mappedPhase, psStats, rotorCore, siteMaps, electrodes, inPatch } from './afmap-model.js';
 import { COLORS } from './amap-model.js';
 import { AFMAP_TEXT } from './afmap-text.js';
 
@@ -143,7 +143,7 @@ export function createAfMappingPanel(doc, { getLang = () => 'tr' } = {}) {
         const k = y * N + x;
         if (sim.blocked[k]) ctx.fillStyle = sim.lesions.has(k) ? LESION : NO_DATA;
         else if (m) { const p = phaseAt(m, x, y, f); ctx.fillStyle = Number.isNaN(p) ? NO_DATA : phaseColor(p); }
-        else ctx.fillStyle = activationColor(sim.U[f * N * N + k] / 255);
+        else ctx.fillStyle = activationColor(sim.U[f * N * N + k] / LEVEL);
         ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs);
       }
       if (m) {
@@ -192,7 +192,9 @@ export function createAfMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     const x0 = 8, w = width - specW - 24, top = 24, bottom = height - 18;
     ctx.font = '11px ui-monospace, monospace'; ctx.fillStyle = MUTED;
     ctx.fillText(T().traceTitle, 6, 13);
-    const peak = Math.max(0.05, ...Array.from(egm, (v) => -v));
+    // One gain for the sheet (a typical site's deflection), so a small signal, as at the rotor core, looks small.
+    const reference = electrogram(c.sim, SCENARIOS[state.scenario].sites.periphery || SCENARIOS[state.scenario].sites.edge);
+    const peak = Math.max(0.02, ...Array.from(reference, (v) => -v), ...Array.from(egm, (v) => -v));
     const mid = top + (bottom - top) * 0.35, gain = ((bottom - top) * 0.55) / peak;
     const x = (ms) => x0 + (ms / (FRAMES * FRAME_MS)) * w;
     ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.beginPath(); ctx.moveTo(x0, mid); ctx.lineTo(x0 + w, mid); ctx.stroke();

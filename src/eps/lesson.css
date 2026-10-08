@@ -340,8 +340,8 @@
 .wpw-lead[data-next=true]{border-left-color:#fcd34d}
 .wpw-lead>strong{font-size:16px}
 .wpw-lead .amap-toggles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}
-.wpw-lead button{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;min-height:112px;line-height:1.4;font-size:11px}
-.wpw-option-wave{width:100%;max-width:125px;height:74px;flex:none}
+.wpw-lead button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 6px 8px;line-height:1.4;font-size:11px}
+.wpw-option-wave{width:100%;max-width:110px;height:60px;flex:none}
 .wpw-map-card{position:sticky;top:0;background:var(--panel-2);padding:16px;border:1px solid var(--line);border-radius:10px;display:grid;gap:10px;min-width:0}
 .wpw-annulus-map{width:100%;height:auto;min-width:0}
 .wpw-site-list{display:grid;grid-template-columns:1fr 1fr;gap:5px}

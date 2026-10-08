@@ -22,6 +22,7 @@
 export const N = 48;                     // pixels per side, 1 mm each
 export const FRAME_MS = 2;               // ms between stored frames
 export const RECORD_MS = 3000;
+export const LEVEL = 65535;               // stored u and v: 0..LEVEL over 0..1
 export const FRAMES = RECORD_MS / FRAME_MS;
 export const RESOLUTIONS = Object.freeze(['full', 'basket', 'basketPoor']);
 export const CFAE_MS = 120;
@@ -113,7 +114,8 @@ function initial(s) {
 
 /**
  * Three seconds of activity: u and v at every pixel every FRAME_MS (bytes,
- * 0..255 over 0..1), after a warm-up. lesions: pixel keys ablated at the
+ * 16-bit, 0..LEVEL over 0..1: an 8-bit step is coarse enough to show as
+ * noise in the derivative), after a warm-up. lesions: pixel keys ablated at the
  * start of the recording (the AF state before them is the same).
  */
 export function simulate(id, lesions = []) {
@@ -124,10 +126,10 @@ export function simulate(id, lesions = []) {
     const start = warm(id);
     const u = Float32Array.from(start.u), v = Float32Array.from(start.v);
     for (const k of lesions) { blocked[k] = 1; u[k] = 0; v[k] = 0; }
-    const U = new Uint8Array(FRAMES * N * N), V = new Uint8Array(FRAMES * N * N);
+    const U = new Uint16Array(FRAMES * N * N), V = new Uint16Array(FRAMES * N * N);
     let frame = 0;
     const store = () => {
-      for (let k = 0; k < N * N; k++) { U[frame * N * N + k] = Math.max(0, Math.min(255, Math.round(u[k] * 255))); V[frame * N * N + k] = Math.max(0, Math.min(255, Math.round(v[k] * 255))); }
+      for (let k = 0; k < N * N; k++) { U[frame * N * N + k] = Math.max(0, Math.min(LEVEL, Math.round(u[k] * LEVEL))); V[frame * N * N + k] = Math.max(0, Math.min(LEVEL, Math.round(v[k] * LEVEL))); }
       frame++;
     };
     store();
@@ -155,7 +157,7 @@ function warm(id) {
 /** u of one pixel over the recording (0..1). */
 export function trace(sim, k) {
   const out = new Float32Array(FRAMES);
-  for (let f = 0; f < FRAMES; f++) out[f] = sim.U[f * N * N + k] / 255;
+  for (let f = 0; f < FRAMES; f++) out[f] = sim.U[f * N * N + k] / LEVEL;
   return out;
 }
 
@@ -287,7 +289,7 @@ export function truePhase(sim, frame) {
   const out = new Float32Array(N * N);
   for (let k = 0; k < N * N; k++) {
     if (sim.blocked[k]) { out[k] = NaN; continue; }
-    out[k] = Math.atan2(sim.V[frame * N * N + k] / 255 - 0.25, sim.U[frame * N * N + k] / 255 - 0.4);
+    out[k] = Math.atan2(sim.V[frame * N * N + k] / LEVEL - 0.25, sim.U[frame * N * N + k] / LEVEL - 0.4);
   }
   return out;
 }
@@ -404,7 +406,7 @@ export function siteMaps(sim) {
 /** Whether the medium is still active at the end of the recording (AF persists). */
 export function persists(sim) {
   let active = 0;
-  for (let f = FRAMES - 100; f < FRAMES; f++) for (let k = 0; k < N * N; k++) if (sim.U[f * N * N + k] > 128) { active++; break; }
+  for (let f = FRAMES - 100; f < FRAMES; f++) for (let k = 0; k < N * N; k++) if (sim.U[f * N * N + k] > LEVEL / 2) { active++; break; }
   return active > 50;
 }
 
