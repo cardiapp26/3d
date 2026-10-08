@@ -79,13 +79,19 @@ function setLang(next) {
   panel.setLanguage(lang);
 }
 
-// Space freezes or resumes the live sweep unless a form control has the focus.
+// Space freezes or resumes the live sweep wherever the focus is, except in a
+// field that takes typing or a list. A focused button or slider (after a
+// click on Run, Calipers, the time slider ...) would otherwise take the key.
+const TYPING = 'textarea, select, [contenteditable=""], [contenteditable="true"], input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=button])';
+const spaceToggles = (event) => event.code === 'Space' && panel.getActiveView() === 'live' && !event.target.closest?.(TYPING);
 document.addEventListener('keydown', (event) => {
-  if (event.code !== 'Space' || event.repeat || panel.getActiveView() !== 'live') return;
-  if (event.target.closest?.('input, select, textarea, button')) return;
+  if (!spaceToggles(event)) return;
   event.preventDefault();
+  if (event.repeat) return;
   live.element.querySelector('[data-ep-live-run]')?.click();
-});
+}, true);
+// A focused button clicks itself on key release; stop that so Space only toggles the sweep.
+document.addEventListener('keyup', (event) => { if (spaceToggles(event)) event.preventDefault(); }, true);
 
 // Strips are redrawn when the window changes size (a frozen sweep included).
 window.addEventListener('resize', () => { if (panel.getActiveView() === 'live') live.render(); else panel.draw(); });

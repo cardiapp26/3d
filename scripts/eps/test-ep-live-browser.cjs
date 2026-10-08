@@ -40,6 +40,14 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), false, 'Space freezes');
     await page.keyboard.press('Space');
     assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), true, 'Space resumes');
+    // With a console button focused (after a click), Space still toggles the sweep and does not press the button.
+    await page.locator('[data-ep-live-waves]').focus();
+    const wavesBefore = await page.locator('[data-ep-live-waves]').getAttribute('aria-pressed');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), false, 'Space freezes with a button focused');
+    assert.equal(await page.locator('[data-ep-live-waves]').getAttribute('aria-pressed'), wavesBefore, 'the focused button is not pressed');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), true, 'Space resumes with a button focused');
     // Wave names: on in the running sweep, kept when frozen, shared with the lesson strips, off again.
     await page.locator('[data-ep-live-waves]').click();
     assert.equal(await page.locator('[data-ep-live-waves]').getAttribute('aria-pressed'), 'true');
