@@ -1,4 +1,4 @@
-import { GRID, CUTOFFS, RHYTHMS, STRATEGIES, SCENARIOS, cellOf, cellKey, tissueOf, voltageClass, beat, electrogram, egmTrace, unipolarTrace, egmMap, vt, entrain, lesions, outcome } from './smap-model.js';
+import { GRID, CUTOFFS, RHYTHMS, STRATEGIES, SCENARIOS, cellOf, cellKey, tissueOf, voltageClass, beat, electrogram, egmTrace, unipolarTrace, egmMap, vtElectrogram, vt, entrain, lesions, outcome } from './smap-model.js';
 import { SEGMENTS } from './pmap-model.js';
 import { COLORS } from './amap-model.js';
 import { SMAP_TEXT } from './smap-text.js';
@@ -115,8 +115,9 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
     const kinds = state.tags ? egmMap(state.scenario, egmRhythm, ablated) : null;
     const circuit = hasCircuit() ? vt(state.scenario, ablated) : null;
     const ent = state.rhythm === 'vt' ? entrain(state.scenario, state.site, ablated) : null;
+    const vte = state.rhythm === 'vt' ? vtElectrogram(state.scenario, state.site, ablated) : null;
     const result = state.strategy === 'none' ? null : outcome(state.scenario, state.strategy);
-    return { ablated, t, b, egm, kinds, circuit, ent, result };
+    return { ablated, t, b, egm, kinds, circuit, ent, vte, result };
   }
 
   function canvasContext(canvas) {
@@ -277,19 +278,54 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
     traceCanvas.setAttribute('aria-label', T().egmTitle(T().rhythms[state.rhythm]));
   }
 
+  /** Two VT cycles: lead II and the catheter's bipolar EGM, the QRS shaded, the local EGM named and timed to the QRS. */
+  function drawVtStrip(ctx, width, top, bottom, e) {
+    const tt = T();
+    ctx.fillStyle = GRID_TEXT; ctx.fillText(tt.vtStripTitle, 6, top + 13);
+    if (!e) return;
+    const x0 = 44, w = width - x0 - 10, y0 = top + 20, h = bottom - y0 - 6;
+    const x = (ms) => x0 + (ms / e.length) * w;
+    // QRS of each cycle.
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
+    for (let n = 0; n <= 2; n++) { const a = e.lead + n * e.tcl; if (a < e.length) ctx.fillRect(x(a), y0, x(Math.min(e.length, a + e.duration)) - x(a), h); }
+    const lanes = [{ name: 'II', y: y0 + h * 0.28, data: e.leadII, gain: h * 0.2, color: TEMPLATE_COLOR }, { name: 'ABL bi', y: y0 + h * 0.74, data: e.bipolar, gain: (h * 0.2) / Math.max(0.3, ...Array.from(e.bipolar, Math.abs)), color: '#f8fafc' }];   // scaled to the signal; its voltage is in the reading
+    for (const lane of lanes) {
+      ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x0, lane.y); ctx.lineTo(x0 + w, lane.y); ctx.stroke();
+      ctx.fillStyle = '#c8f0dc'; ctx.fillText(lane.name, 6, lane.y + 4);
+      ctx.strokeStyle = lane.color; ctx.lineWidth = 1.4; ctx.beginPath();
+      lane.data.forEach((v, ms) => { const yy = Math.max(y0, Math.min(y0 + h, lane.y - v * lane.gain)); if (ms === 0) ctx.moveTo(x(ms), yy); else ctx.lineTo(x(ms), yy); });
+      ctx.stroke();
+    }
+    if (e.local == null) { ctx.fillStyle = GRID_TEXT; ctx.fillText(tt.vtLocalNone, x0 + 4, lanes[1].y - 10); return; }
+    // The local EGM of the first full cycle and the QRS it precedes (or sits in): EGM-QRS caliper.
+    const local = e.lead + e.local, next = e.egmQrs >= 0 ? e.lead + e.tcl : e.lead;
+    ctx.strokeStyle = '#facc15'; ctx.fillStyle = '#facc15'; ctx.lineWidth = 1;
+    const cy = lanes[1].y - h * 0.16;
+    ctx.beginPath(); ctx.moveTo(x(local), cy - 6); ctx.lineTo(x(local), lanes[1].y + 6); ctx.moveTo(x(next), cy - 6); ctx.lineTo(x(next), lanes[0].y + 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x(local), cy); ctx.lineTo(x(next), cy); ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillText(`${tt.phases[e.phase]} · EGM-QRS ${e.egmQrs} ms`, (x(local) + x(next)) / 2, cy - 5);
+    ctx.textAlign = 'left';
+  }
+
   function drawEntrainment(c) {
     const cv = canvasContext(traceCanvas);
     if (!cv) return;
     const { ctx, width, height } = cv;
-    const { ent, circuit } = c;
+    const { ent, circuit, vte } = c;
     ctx.font = '11px ui-monospace, monospace'; ctx.fillStyle = GRID_TEXT;
-    ctx.fillText(T().ecgTitle, 6, 13);
-    traceCanvas.setAttribute('aria-label', T().ecgTitle);
-    if (!circuit) { ctx.fillText(T().classes.noVt, 6, 34); return; }
+    traceCanvas.setAttribute('aria-label', `${T().vtStripTitle}. ${T().ecgTitle}`);
+    if (!circuit) { ctx.fillText(T().classes.noVt, 6, 13); return; }
+    // Top: two VT cycles at the catheter; below: the twelve-lead comparison.
+    const stripBottom = 22 + Math.round((height - 22) * 0.45);
+    drawVtStrip(ctx, width, 0, stripBottom, vte);
+    ctx.font = '11px ui-monospace, monospace'; ctx.fillStyle = GRID_TEXT;
+    ctx.fillText(T().ecgTitle, 6, stripBottom + 14);
     const vtQ = circuit.qrs, paced = ent?.capture ? ent.paced : null;
     const pre = Math.max(60, (ent?.sqrs ?? 0) + 20), span = Math.max(vtQ.duration, paced?.duration || 0) + pre + 40;
     const cols = width < 520 ? 1 : 2, rows = Math.ceil(ECG_LEADS.length / cols);
-    const top = 22, cellW = (width - 8) / cols, cellH = (height - top - 4) / rows;
+    const top = stripBottom + 20, cellW = (width - 8) / cols, cellH = (height - top - 4) / rows;
     const peak = Math.max(...ECG_LEADS.flatMap((i) => vtQ.leads[i].map(Math.abs))) || 1;
     const gain = (cellH * 0.42) / peak;
     ECG_LEADS.forEach((li, n) => {
@@ -343,6 +379,7 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
       ...row(r.unipolar, `${egm.unipolar.toFixed(2)} mV`)
     ];
     if (state.rhythm === 'vt') {
+      if (c.vte) items.push(...row(tt.vtLocal, c.vte.local == null ? tt.vtLocalNone : `${tt.phases[c.vte.phase]} (${c.vte.egmQrs} ms)`));
       if (ent?.capture) {
         items.push(
           ...row(r.tcl, ms(ent.tcl)), ...row(r.pcl, ms(ent.pcl)), ...row(r.ppi, ms(ent.ppi)), ...row(r.ppiDiff, ms(ent.ppiMinusTcl)),

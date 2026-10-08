@@ -387,6 +387,83 @@ export function entrain(id, site, ablated = new Set()) {
   return { site, capture: true, where, tcl: v.tcl, pcl, ppi: v.tcl + ppiMinusTcl, ppiMinusTcl, match, concealed, sqrs, egmQrs, delta, ratio, inCircuit, cls, josephson, vtQrs: v.qrs, paced };
 }
 
+// ---- local electrogram during the VT ------------------------------------------------
+export const VT_PHASES = Object.freeze(['systolic', 'early-diastolic', 'mid-diastolic', 'presystolic']);
+
+/** Local activation of a pixel in the VT cycle (ms from the entrance), or null (dense scar, lesion, not reached). */
+function vtLocalTime(id, k, ablated) {
+  const v = vt(id, ablated), t = tissueOf(id, ablated), s = SCENARIOS[id];
+  if (!v || t.type[k] === 'scar' || ablated.has(k)) return null;
+  if (Number.isFinite(v.time[k])) return v.time[k];
+  if (t.type[k] !== 'channel') return null;
+  // Dead ends: the bystander from its junction on the isthmus, the separate strand from its mouth on the wall.
+  const ch = s.channels[t.group[k]];
+  const join = ch.joins ? key(...ch.joins) : (() => { const [x, y] = ch.cells[0]; return key(x - 1, y); })();
+  const start = ch.joins ? v.tIn[v.cells.indexOf(join)] : v.time[join];
+  const entry = ch.joins ? join : key(...ch.cells[0]);
+  const path = channelPath(t, entry, k);
+  if (!Number.isFinite(start) || !path) return null;
+  return start + sumDelay(t, ch.joins ? path.slice(1) : path);
+}
+
+/**
+ * The catheter's bipolar electrogram during the VT: local activation time,
+ * its place in the cycle against the QRS (systolic, early, mid diastolic or
+ * presystolic, by thirds of diastole), the interval from the local EGM to
+ * the QRS onset, and a two-cycle trace (bipolar EGM and lead II, mV, one
+ * value per ms) with the QRS onsets at lead + n * TCL. Null without a VT.
+ */
+export function vtElectrogram(id, site, ablated = new Set(), { lead = 60 } = {}) {
+  const v = vt(id, ablated);
+  if (!v) return null;
+  const t = tissueOf(id, ablated), k = key(...site);
+  const local = vtLocalTime(id, k, ablated);
+  const { tcl } = v, onset = v.qrs.onset, duration = v.qrs.end - v.qrs.onset;
+  // Far field: the muscle around the catheter, as in sinus rhythm.
+  let w = 0, sum = 0;
+  for (let m = 0; m < t.size; m++) {
+    if (!t.mass[m] || !Number.isFinite(v.time[m]) || m === k) continue;
+    const d = wrapDistance(...cellOf(m), ...site);
+    if (d > 4.5) continue;
+    const rel = ((v.time[m] - onset) % tcl + tcl) % tcl;
+    const wt = 1 / (1 + d * d);
+    w += wt; sum += wt * rel;
+  }
+  const farRel = w ? sum / w : null;                                   // ms after the QRS onset
+  const rel = local == null ? null : ((local - onset) % tcl + tcl) % tcl;  // local activation, ms after the QRS onset
+  let phase = null, egmQrs = null;
+  if (rel != null) {
+    egmQrs = Math.round(rel <= duration ? -rel : tcl - rel);           // > 0: before the next QRS onset
+    if (rel <= duration) phase = 'systolic';
+    else {
+      const p = (rel - duration) / (tcl - duration);
+      phase = p < 1 / 3 ? 'early-diastolic' : p < 2 / 3 ? 'mid-diastolic' : 'presystolic';
+    }
+  }
+  const length = Math.round(lead + 2 * tcl);
+  const isChannel = t.type[k] === 'channel';
+  const voltage = ablated.has(k) ? 0.05 : t.bipolar[k];
+  const pseudo = { kind: local == null ? 'none' : 'normal', voltage, type: t.type[k], isolated: isChannel, borderSplit: false, components: [] };
+  const bipolar = new Float64Array(length);
+  for (let n = -1; n <= 2; n++) {
+    const at = (x) => Math.round(lead + x + n * tcl);
+    const comps = [];
+    if (farRel != null) comps.push({ t: at(farRel), near: false });
+    if (rel != null) comps.push({ t: at(rel), near: true });
+    const one = egmTrace({ ...pseudo, components: comps, isolated: isChannel && rel != null }, length);
+    for (let i = 0; i < length; i++) bipolar[i] += one[i];
+  }
+  // Lead II: the VT QRS repeated every cycle.
+  const qrsII = v.qrs.leads[1];
+  const peak = Math.max(...qrsII.map(Math.abs)) || 1;
+  const leadII = new Float64Array(length);
+  for (let n = 0; n <= 2; n++) for (let i = 0; i < qrsII.length; i++) {
+    const at = Math.round(lead + n * tcl + i - onset);
+    if (at >= 0 && at < length) leadII[at] += qrsII[i] / peak;
+  }
+  return { tcl, duration, local: rel, far: farRel, phase, egmQrs, voltage, bipolar, leadII, lead, length, isChannel };
+}
+
 // ---- ablation strategies ----------------------------------------------------------
 const channelCells = (t) => [...Array(t.size).keys()].filter((k) => t.type[k] === 'channel');
 const neighbours4 = (k) => { const [x, y] = cellOf(k); return [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([, dy]) => y + dy >= 0 && y + dy < GRID.h).map(([dx, dy]) => key(x + dx, y + dy)); };

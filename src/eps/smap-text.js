@@ -34,6 +34,10 @@ export const SMAP_TEXT = {
     },
     egmTitle: (rhythm) => `DII (yeşil), lokal bipolar (beyaz) ve unipolar (mavi) EGM, ${rhythm}`,
     ecgTitle: 'VT QRS (yeşil) ve entrainment sırasında QRS (sarı); dikey çizgi: stimulus',
+    vtStripTitle: 'VT sırasında kateterde lokal bipolar EGM (beyaz) ve DII (yeşil); gölge: QRS',
+    phases: { systolic: 'QRS içinde', 'early-diastolic': 'erken diyastolik', 'mid-diastolic': 'diyastol ortası', presystolic: 'presistolik' },
+    vtLocal: 'Lokal EGM (VT)', vtLocalNone: 'lokal sinyal yok',
+    diastolicNote: 'Diyastolik potansiyel istmusu düşündürür ama kanıtlamaz: istmusa bağlı çıkmaz yollar (bystander) ve devreye katılmayan kanallar da diyastolde aktive olur. Ayırt eden entrainment\'dır (PPI - TCL, S-QRS ile EGM-QRS).',
     readout: {
       bipolar: 'Bipolar voltaj', unipolar: 'Unipolar voltaj', egm: 'EGM', duration: 'EGM süresi', far: 'Far-field', near: 'Near-field', qrsEnd: 'QRS sonu',
       tcl: 'VT siklusu (TCL)', pcl: 'Pacing siklusu', ppi: 'PPI', ppiDiff: 'PPI - TCL', match: 'QRS eşleşmesi', sqrs: 'S-QRS', egmQrs: 'EGM-QRS', delta: 'S-QRS - EGM-QRS', ratio: 'S-QRS / TCL',
@@ -109,6 +113,10 @@ export const SMAP_TEXT = {
     },
     egmTitle: (rhythm) => `Lead II (green), local bipolar (white) and unipolar (blue) EGM, ${rhythm}`,
     ecgTitle: 'VT QRS (green) and QRS during entrainment (yellow); vertical line: stimulus',
+    vtStripTitle: 'Local bipolar EGM at the catheter during VT (white) and lead II (green); shade: QRS',
+    phases: { systolic: 'within the QRS', 'early-diastolic': 'early diastolic', 'mid-diastolic': 'mid-diastolic', presystolic: 'presystolic' },
+    vtLocal: 'Local EGM (VT)', vtLocalNone: 'no local signal',
+    diastolicNote: 'A diastolic potential suggests the isthmus but does not prove it: dead ends attached to the isthmus (bystanders) and channels outside the circuit also activate in diastole. Entrainment tells them apart (PPI - TCL, S-QRS against EGM-QRS).',
     readout: {
       bipolar: 'Bipolar voltage', unipolar: 'Unipolar voltage', egm: 'EGM', duration: 'EGM duration', far: 'Far field', near: 'Near field', qrsEnd: 'QRS end',
       tcl: 'VT cycle length (TCL)', pcl: 'Pacing cycle', ppi: 'PPI', ppiDiff: 'PPI - TCL', match: 'QRS match', sqrs: 'S-QRS', egmQrs: 'EGM-QRS', delta: 'S-QRS - EGM-QRS', ratio: 'S-QRS / TCL',

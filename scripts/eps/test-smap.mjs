@@ -8,7 +8,7 @@
 // the clinical VT and differ in what they leave; in the non-ischaemic
 // scenario only the unipolar map shows the epicardial substrate.
 import assert from 'node:assert/strict';
-import { SCENARIOS, STRATEGIES, CUTOFFS, tissue, voltageClass, beat, electrogram, egmTrace, unipolarTrace, egmMap, vt, entrain, lesions, outcome, cellOf, cellKey } from '../../src/eps/smap-model.js';
+import { SCENARIOS, STRATEGIES, CUTOFFS, tissue, voltageClass, beat, electrogram, egmTrace, unipolarTrace, egmMap, vtElectrogram, vt, entrain, lesions, outcome, cellOf, cellKey } from '../../src/eps/smap-model.js';
 import { SMAP_TEXT } from '../../src/eps/smap-text.js';
 
 const s = SCENARIOS.ischemic;
@@ -72,6 +72,20 @@ assert.equal(entrain('ischemic', [24, 12]).capture, false, 'no capture in dense 
 // The S-QRS / TCL ratio grows from the exit to the entrance.
 const ratios = isthmus.map((k) => entrain('ischemic', cellOf(k)).ratio);
 assert.ok(ratios.every((r, i) => i === 0 || r < ratios[i - 1]), 'ratio falls toward the exit');
+
+// Local EGM during the VT: mid-diastolic in the central isthmus, presystolic at the exit, early diastolic near the
+// entrance, within the QRS on the outer loop; the bystander root and the separate channel are diastolic too
+// (a diastolic potential does not prove the isthmus); EGM-QRS as in entrainment.
+const phaseAt = (site) => vtElectrogram('ischemic', SCENARIOS.ischemic.sites[site] || site);
+assert.equal(phaseAt('central').phase, 'mid-diastolic');
+assert.equal(phaseAt('exit').phase, 'presystolic');
+assert.equal(phaseAt('proximal').phase, 'early-diastolic');
+assert.equal(phaseAt('outerLoop').phase, 'systolic');
+assert.notEqual(phaseAt([25, 12]).phase, 'systolic', 'bystander root: diastolic');
+assert.notEqual(phaseAt('strand').phase, 'systolic', 'separate channel: diastolic though outside the circuit');
+for (const site of ['exit', 'central', 'proximal', 'bystander']) assert.equal(phaseAt(site).egmQrs, entrain('ischemic', SCENARIOS.ischemic.sites[site]).egmQrs, `${site}: same EGM-QRS as entrainment`);
+assert.equal(phaseAt([24, 12]).local, null, 'dense scar: no local signal');
+assert.equal(vtElectrogram('ischemic', SCENARIOS.ischemic.sites.central, lesions('ischemic', 'clinical')), null, 'no VT after ablation');
 
 // Strategies.
 const res = Object.fromEntries(STRATEGIES.map((id) => [id, outcome('ischemic', id)]));
