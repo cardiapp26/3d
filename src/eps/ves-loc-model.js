@@ -9,7 +9,7 @@ export const VES_REGIONS = Object.freeze([
   region('rvot-free', 2, 'base', [138, 58], 'outflow', 'lbbb', 'inferior', 'late', 'negative', 170, -28),
   region('lvot-cusp', 3, 'base', [204, 130], 'outflow', 'rs', 'inferior', 'early', 'positive', 145, -30),
   region('lv-summit', 4, 'base', [314, 98], 'outflow', 'rbbb', 'inferior', 'early', 'negative', 170, -24),
-  region('para-his', 5, 'base', [164, 185], 'septal', 'rs', 'inferior', 'v3', 'positive', 130, -25),
+  region('para-his', 5, 'base', [164, 185], 'septal', 'lbbb', 'inferior', 'v3', 'positive', 130, -25),
   region('tricuspid', 6, 'base', [60, 258], 'annular', 'lbbb', 'superior', 'late', 'positive', 165, -31),
   region('mitral', 7, 'base', [305, 176], 'annular', 'rbbb', 'inferior', 'positive', 'negative', 160, -29),
   region('papillary-pm', 8, 'chambers', [636, 284], 'papillary', 'rbbb', 'superior', 'v3', 'positive', 165, -27),
@@ -61,6 +61,8 @@ const tWave = (t, width, r, s) => {
   return sign * amplitude * gauss(t, width + 190, 58) + st;
 };
 const beat = (t, width, r, s, notch) => qrsWave(t, width, r, s, notch) + tWave(t, width, r, s);
+// Para-Hisian: frontal axis near 40 degrees, so lead III stays small (Park 2012: a negative III suggests the His region).
+const AXIS_OVERRIDE = Object.freeze({ 'para-his': 40 });
 export function vesEcg(id) {
   const site = vesRegion(id);
   if (!site) return null;
@@ -70,7 +72,7 @@ export function vesEcg(id) {
   // Limb leads project one frontal-plane vector (axis angle in degrees, hexaxial convention):
   // inferior 75 or 100, superior -60 or -110 depending on lead I. Hence III = II - I exactly,
   // and an inferior axis with a negative lead I has III taller than II (anterior/leftward outflow).
-  const theta = (site.axis === 'superior' ? (site.leadI === 'negative' ? -110 : -60) : (site.leadI === 'negative' ? 100 : 75)) * Math.PI / 180;
+  const theta = (AXIS_OVERRIDE[site.id] ?? (site.axis === 'superior' ? (site.leadI === 'negative' ? -110 : -60) : (site.leadI === 'negative' ? 100 : 75))) * Math.PI / 180;
   const LIMB_MV = 1.5;
   const proj = { I: LIMB_MV * Math.cos(theta), II: LIMB_MV * Math.cos(theta - Math.PI / 3) };
   const transition = { early: 2, v3: 3, late: 5, positive: 1, negative: 7 }[site.transition];

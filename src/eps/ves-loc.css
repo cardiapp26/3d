@@ -89,6 +89,16 @@
 [data-active=true] .ves-v1-card { fill: #3a3416; stroke: #fcd34d; stroke-width: 2; }
 .ves-v1-trace { stroke-width: 2; }
 .ves-v1-axis { fill: none; stroke: #6f8a7c; stroke-width: 1.2; }
+.ves-v1-electrode { fill: #f1f7f3; stroke: #0c1713; stroke-width: 2; }
+.ves-v1-electrode-label { fill: #0c1713; font: bold 8.5px system-ui, sans-serif; text-anchor: middle; }
+.ves-v1-arrow { fill: none; stroke-width: 5.5; stroke-linecap: round; opacity: .7; }
+.ves-v1-tag { fill: #f6c3d3; }
+.ves-v1-head { stroke: none; }
+.ves-v1-toward { stroke: #f39ab6; } .ves-v1-head.ves-v1-toward { fill: #f39ab6; }
+.ves-v1-away { stroke: #7fc8f0; } .ves-v1-head.ves-v1-away { fill: #7fc8f0; }
+.ves-v1-star { fill: #f39ab6; stroke: #fff; stroke-width: 1; }
+.ves-v1-glyph-bg { fill: #0c1713; stroke: #2f4a3e; opacity: .92; }
+.ves-v1-glyph { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
 .ves-map-site { cursor: pointer; }
 .ves-map-site circle { fill: #1f3329; stroke: #cfe3d6; stroke-width: 1.8; }
 .ves-map-site .ves-map-halo { fill: transparent; stroke: none; }

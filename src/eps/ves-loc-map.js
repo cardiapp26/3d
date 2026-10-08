@@ -42,6 +42,11 @@ function defs(doc, uid) {
   const f = s(doc, 'filter', { id: `${uid}-shadow`, x: '-50%', y: '-50%', width: '200%', height: '200%' });
   f.append(s(doc, 'feDropShadow', { dx: 0, dy: 1.5, stdDeviation: 2, 'flood-color': '#000', 'flood-opacity': .55 }));
   d.append(f);
+  for (const [id, cls] of [['ves-v1-head-toward', 'ves-v1-toward'], ['ves-v1-head-away', 'ves-v1-away']]) {
+    const m = s(doc, 'marker', { id, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 2.6, markerHeight: 2.6, orient: 'auto-start-reverse' });
+    m.append(s(doc, 'path', { d: 'M0 0 L10 5 L0 10 Z', class: `ves-v1-head ${cls}` }));
+    d.append(m);
+  }
   const halo = s(doc, 'filter', { id: `${uid}-halo`, x: '-80%', y: '-80%', width: '260%', height: '260%' });
   halo.append(s(doc, 'feGaussianBlur', { stdDeviation: 4 }));
   d.append(halo);
@@ -259,6 +264,33 @@ export function renderV1Gradient(doc, svg, { t, selected }) {
   svg.append(s(doc, 'text', { x: 30, y: 95, class: 'ves-map-axis' }, t.v1Ant), s(doc, 'text', { x: 342, y: 95, class: 'ves-map-axis' }, t.v1Post));
 }
 
+/**
+ * V1 principle on the cutaway (original drawing after a Kagawa ECG teaching slide): activation
+ * spreading towards the right-anterior V1 electrode writes an R, away from it a QS. Three origins:
+ * lateral tricuspid annulus and basal septum on the RV side (away: QS), lateral mitral annulus (towards: R).
+ */
+export const V1_PRINCIPLE = Object.freeze([
+  { id: 'ta-lateral', star: [464, 110], arrow: 'M474 116 Q560 148 640 158', toward: false, glyph: [482, 158], tag: [462, 80] },
+  { id: 'septum-rv', star: [568, 136], arrow: 'M576 142 Q622 164 670 182', toward: false, glyph: [530, 172], tag: [530, 150] },
+  { id: 'ma-lateral', star: [712, 112], arrow: 'M702 118 Q604 152 492 176', toward: true, glyph: [728, 154], tag: [714, 80] }
+]);
+function v1PrincipleOverlay(doc, g, t) {
+  const layer = s(doc, 'g', { 'data-ves-v1-principle-overlay': '' });
+  layer.append(s(doc, 'circle', { cx: 396, cy: 150, r: 11, class: 'ves-v1-electrode' }), s(doc, 'text', { x: 396, y: 154, class: 'ves-v1-electrode-label' }, 'V1'));
+  const star = (x, y) => Array.from({ length: 10 }, (_, i) => { const r = i % 2 ? 3 : 7, a = -Math.PI / 2 + i * Math.PI / 5; return `${i ? 'L' : 'M'}${(x + r * Math.cos(a)).toFixed(1)} ${(y + r * Math.sin(a)).toFixed(1)}`; }).join(' ') + ' Z';
+  for (const origin of V1_PRINCIPLE) {
+    const cls = origin.toward ? 'ves-v1-toward' : 'ves-v1-away';
+    layer.append(s(doc, 'path', { d: origin.arrow, class: `ves-v1-arrow ${cls}`, 'marker-end': `url(#${origin.toward ? 'ves-v1-head-toward' : 'ves-v1-head-away'})`, 'data-direction': origin.toward ? 'toward' : 'away', 'data-origin': origin.id }));
+    layer.append(s(doc, 'path', { d: star(...origin.star), class: 'ves-v1-star' }));
+    const [gx, gy] = origin.glyph;
+    const d = origin.toward ? `M${gx - 12} ${gy} h6 l4 -12 l4 12 h6` : `M${gx - 12} ${gy - 8} h6 l4 14 l4 -14 h6`;
+    layer.append(s(doc, 'rect', { x: gx - 15, y: gy - 16, width: 30, height: 22, rx: 4, class: 'ves-v1-glyph-bg' }), s(doc, 'path', { d, class: `ves-v1-glyph ${cls}` }));
+  }
+  t.v1PrincipleSites.forEach((name, i) => { const [x, y] = V1_PRINCIPLE[i].tag; label(doc, layer, x, y, name, 'ves-map-tiny ves-v1-tag'); });
+  label(doc, layer, 568, 44, t.v1PrincipleLegend, 'ves-map-tiny');
+  g.append(layer);
+}
+
 /** The 3D render as the basal background; markers follow BASAL_3D_SITES. */
 function basal3dView(doc, g, t) {
   const [w, h] = BASAL_3D_SIZE;
@@ -271,7 +303,7 @@ function basal3dView(doc, g, t) {
 /** Extra views drawn over the basal examples: region id -> marker position. */
 export const VIEW_SITES = Object.freeze({ root: ROOT_SITES, rvot: RVOT_SITES });
 
-export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base', atlas3d = false }) {
+export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base', atlas3d = false, v1Principle = false }) {
   const uid = `vesmap${++uidCounter}`;
   const photo = view === 'base' && atlas3d;
   svg.replaceChildren(s(doc, 'title', {}, t.map), defs(doc, uid));
@@ -282,7 +314,7 @@ export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect,
   if (photo) basal3dView(doc, scene, t);
   else {
     scene.append(view === 'chambers' ? s(doc, 'rect', { x: 382, y: 5, width: 371, height: 339, rx: 16, class: 'ves-map-frame' }) : s(doc, 'rect', { x: 5, y: 5, width: 356, height: view === 'rvot' ? 361 : 339, rx: 16, class: 'ves-map-frame' }));
-    if (view === 'base') basalView(doc, scene, uid, t); else if (view === 'root') rootView(doc, scene, uid, t); else if (view === 'rvot') rvotView(doc, scene, uid, t); else cutawayView(doc, scene, uid, t);
+    if (view === 'base') basalView(doc, scene, uid, t); else if (view === 'root') rootView(doc, scene, uid, t); else if (view === 'rvot') rvotView(doc, scene, uid, t); else { cutawayView(doc, scene, uid, t); if (v1Principle) v1PrincipleOverlay(doc, scene, t); }
   }
   svg.append(scene);
   const scale = photo ? 2 : 1;   // the render's viewBox is about twice the schematic's

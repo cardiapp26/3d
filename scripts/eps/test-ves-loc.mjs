@@ -83,6 +83,17 @@ assert.equal(walk(panel.element).find(n => n.attrs['data-ves-v1-station'] === '0
 assert.equal(vesFeatures('rvot-septal').v1, 'rs'); assert.equal(vesFeatures('rvot-septal').leadI, 'positive');
 assert.equal(vesFeatures('rvot-free').leadI, 'negative');
 { const e = vesEcg('rvot-free'), peak = l => Math.max(...e.leads[l].filter((_, i) => e.t[i] >= 0 && e.t[i] <= e.width)); assert.ok(peak('III') > peak('II'), 'anterior RVOT: III taller than II'); }
+by('data-ves-map-view', 'chambers').listeners.click();
+assert.equal(by('data-ves-v1-principle').hidden, false, 'V1 principle toggle on the cutaway');
+by('data-ves-v1-principle').listeners.click();
+const arrows = walk(panel.element).filter(n => n.attrs['data-direction']);
+assert.equal(arrows.length, 6, 'drawn on both atlas copies (localization and recordings pages)');
+assert.deepEqual(arrows.slice(0, 3).map(n => `${n.attrs['data-origin']}:${n.attrs['data-direction']}`), ['ta-lateral:away', 'septum-rv:away', 'ma-lateral:toward'], 'lateral TA and RV basal septum move away from V1, lateral MA towards it');
+by('data-ves-v1-principle').listeners.click();
+assert.equal(walk(panel.element).some(n => n.attrs['data-ves-v1-principle-overlay'] === ''), false);
+// V1 follows the same rule in the examples: RV-side origins QS, LV free-wall annulus R.
+assert.equal(vesFeatures('tricuspid').v1, 'lbbb'); assert.equal(vesFeatures('para-his').v1, 'lbbb'); assert.equal(vesFeatures('mitral').v1, 'rbbb');
+{ const e = vesEcg('para-his'), peak = l => Math.max(...e.leads[l].filter((_, i) => e.t[i] >= 0 && e.t[i] <= e.width)); assert.ok(peak('III') < .5 * peak('II'), 'para-Hisian: low-amplitude III'); }
 by('data-ves-map-view', 'base').listeners.click();
 panel.select('fascicle');
 assert.equal(panel.getState().mapView, 'chambers');
@@ -102,4 +113,4 @@ assert.equal(by('data-ves-verdict').attrs['data-candidates'], '');
 by('data-ves-reset').listeners.click(); assert.deepEqual(panel.getState().inputs, {});
 assert.equal(panel.getState().scar, true, 'reset cannot silently remove clinical context');
 panel.setActive(false); assert.equal(panel.element.hidden, true);
-console.log('PASS ves-loc: opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
+console.log('PASS ves-loc: V1 principle overlay, opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
