@@ -87,8 +87,8 @@ function basalView(doc, g, uid, t) {
   g.append(s(doc, 'path', { d: 'M172 288 Q232 322 300 292 Q358 262 354 190 Q350 132 310 106 Q294 96 284 90', class: 'ves-map-vein' }));
   g.append(s(doc, 'path', { d: 'M196 300 Q192 318 198 336', class: 'ves-map-vein' }));
   g.append(s(doc, 'ellipse', { cx: 172, cy: 288, rx: 7, ry: 5, class: 'ves-map-os' }));
-  // Coronary arteries: RCA around the tricuspid annulus to the crux; left main from the LCC to the LAD (anterior) and LCx (mitral annulus).
-  for (const d of ['M60 152 Q18 214 40 272 Q78 322 150 316 Q174 312 188 302', 'M236 120 L280 100', 'M280 100 Q300 72 316 36', 'M280 100 Q328 126 334 188 Q336 232 310 266', 'M300 64 L324 90', 'M34 232 L24 244']) {
+  // Coronary arteries: RCA from the RCC ostium, in front of the RVOT base, around the tricuspid annulus to the crux; left main from the LCC to the LAD (anterior) and LCx (mitral annulus).
+  for (const d of ['M190 100 Q126 102 74 136 Q20 180 28 250 Q58 322 142 320 Q172 316 188 302', 'M236 120 L280 100', 'M280 100 Q300 72 316 36', 'M280 100 Q328 126 334 188 Q336 232 310 266', 'M300 64 L324 90', 'M24 214 L10 218']) {
     g.append(s(doc, 'path', { d, class: 'ves-map-artery-shadow' }), s(doc, 'path', { d, class: 'ves-map-artery', stroke: `url(#${uid}-vessel)` }));
   }
   g.append(s(doc, 'circle', { cx: 190, cy: 100, r: 3, class: 'ves-map-ostium' }), s(doc, 'circle', { cx: 236, cy: 120, r: 3, class: 'ves-map-ostium' }));
@@ -99,7 +99,7 @@ function basalView(doc, g, uid, t) {
   label(doc, g, 100, 216, 'TA', 'ves-map-label'); label(doc, g, 268, 216, 'MA', 'ves-map-label'); label(doc, g, 205, 136, 'Ao', 'ves-map-label');
   label(doc, g, 146, 158, 'His', 'ves-map-caption'); label(doc, g, 150, 306, 'CS os', 'ves-map-caption', [166, 292]);
   label(doc, g, 330, 30, 'LAD', 'ves-map-caption', [316, 38]); label(doc, g, 318, 290, 'LCx', 'ves-map-caption', [312, 268]);
-  label(doc, g, 28, 196, 'RCA', 'ves-map-caption', [30, 214]); label(doc, g, 334, 318, 'CS', 'ves-map-caption', [304, 292]);
+  label(doc, g, 26, 160, 'RCA', 'ves-map-caption', [58, 160]); label(doc, g, 334, 318, 'CS', 'ves-map-caption', [304, 292]);
   label(doc, g, 222, 336, 'MCV', 'ves-map-caption'); label(doc, g, 352, 150, 'GCV', 'ves-map-caption', [352, 170]);
   label(doc, g, 183, 28, t.base, 'ves-map-title');
   label(doc, g, 22, 334, 'R', 'ves-map-axis'); label(doc, g, 346, 334, 'L', 'ves-map-axis'); label(doc, g, 183, 46, 'ANT', 'ves-map-axis'); label(doc, g, 110, 336, 'POST', 'ves-map-axis');

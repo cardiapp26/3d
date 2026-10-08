@@ -3,7 +3,7 @@
 .ves > .amap-note { margin: 0; max-width: 900px; font-size: 14px; line-height: 1.6; }
 .ves-page { padding: 20px; border-radius: 12px; display: grid; gap: 16px; min-width: 0; }
 .ves h4 { margin: 0; font-size: 17px; }
-.ves-localize-layout { display: grid; grid-template-columns: minmax(300px, .8fr) minmax(0, 1.2fr); gap: 20px; align-items: start; }
+.ves-localize-layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 500px); gap: 20px; align-items: start; }
 .ves-findings { display: grid; gap: 10px; min-width: 0; }
 .ves-finding { padding: 10px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 7px; display: grid; gap: 7px; }
 .ves-finding[data-next=true] { border-left-color: #fcd34d; }
@@ -13,6 +13,9 @@
 .ves button[aria-pressed=true] .ves-trace { stroke: #173e2a; }
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
+/* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
+.ves-map { width: min(100%, 460px, 62vh); margin-inline: auto; }
+.ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
 .ves-strip-window { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 8px; }
@@ -74,6 +77,9 @@
 .ves-trace { stroke: #173e2a; }
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
+/* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
+.ves-map { width: min(100%, 460px, 62vh); margin-inline: auto; }
+.ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
 .ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
 .ves-strip-window { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 8px; }
@@ -151,7 +157,7 @@
 .ves-sources { padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 .ves-sources summary { cursor: pointer; font-weight: 600; }
 .ves-sources li { margin: 6px 0; }
-@media (max-width: 1050px) { .ves-localize-layout, .ves-record-layout { grid-template-columns: 1fr; } .ves-localize-layout > .ves-atlas { grid-row: 1; } }
+@media (max-width: 1050px) { .ves-localize-layout, .ves-record-layout { grid-template-columns: 1fr; } .ves-localize-layout > .ves-atlas { grid-row: 1; position: static; } }
 @media (max-width: 560px) {
   .ves { padding: 10px 3px 20px; }
   .ves-page { padding: 10px; gap: 12px; }
