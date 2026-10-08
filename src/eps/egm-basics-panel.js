@@ -18,11 +18,14 @@ import { functionalAt, vectorAt, ENTRANCE, LANDMARKS } from '../koch-sp-function
 
 const SVG = 'http://www.w3.org/2000/svg';
 const COLORS = { uni: '#e8f3ee', bip: '#facc15', far: '#93c5fd', raw: 'rgba(159, 199, 182, 0.45)', good: '#4ade80', bad: '#f87171', slow: '#fb923c' };
+// Frontal (AP) schematic, patient right on the viewer's left. `at` is the button on each catheter's
+// recording end; `shaft` is its course: HRA, His and RVA from the IVC, the CS from the SVC into the
+// CS ostium (posteroseptal RA, below the His) and along the posterior left AV groove.
 const CATHETERS = {
-  hra: { at: [196, 46], channels: ['ecg-ii', 'hra'] },
-  his: { at: [150, 112], channels: ['ecg-ii', 'his-d'] },
-  cs: { at: [178, 150], channels: ['ecg-ii', 'cs-910', 'cs-12'] },
-  rv: { at: [128, 206], channels: ['ecg-ii', 'rv'] }
+  hra: { at: [64, 54], shaft: 'M36 248 L36 116 Q34 74 64 54', poles: 0.18, channels: ['ecg-ii', 'hra'] },
+  his: { at: [142, 110], shaft: 'M41 248 L41 118 Q64 110 104 104 Q128 102 142 110', poles: 0.16, channels: ['ecg-ii', 'his-d'] },
+  cs: { at: [236, 128], shaft: 'M86 6 L86 44 Q92 96 120 118 Q170 138 220 131 Q254 125 264 106', poles: 0.55, channels: ['ecg-ii', 'cs-910', 'cs-12'] },
+  rv: { at: [154, 222], shaft: 'M46 248 L46 122 Q74 134 102 142 Q138 168 154 222', poles: 0.12, channels: ['ecg-ii', 'rv'] }
 };
 const SPEED = 3;   // px per ms of the wave in the tissue strip
 
@@ -205,14 +208,33 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
   const catheters = card('catheters');
   const heart = svg('svg', { viewBox: '0 0 300 250', class: 'basics-svg', role: 'img', 'data-basics-heart': '' });
   heart.append(
-    svg('ellipse', { cx: 108, cy: 76, rx: 64, ry: 52, class: 'basics-chamber' }),
-    svg('ellipse', { cx: 206, cy: 78, rx: 58, ry: 46, class: 'basics-chamber' }),
-    svg('path', { d: 'M60 128 Q 64 224 150 236 L 150 132 Z', class: 'basics-chamber' }),
-    svg('path', { d: 'M154 132 L 154 236 Q 244 222 252 124 Z', class: 'basics-chamber' }),
-    svg('path', { d: 'M150 100 Q 190 156 250 138', class: 'basics-cs' })
+    // Great veins, the left atrium behind, the right atrium, then the ventricles with the septum.
+    svg('path', { d: 'M28 250 L28 112 L54 112 L54 250', class: 'basics-vessel' }),
+    svg('path', { d: 'M74 0 L74 44 L98 44 L98 0', class: 'basics-vessel' }),
+    svg('path', { d: 'M150 46 Q196 28 248 40 Q278 56 272 92 Q266 118 236 122 L158 122 Q146 100 150 46 Z', class: 'basics-chamber basics-chamber-back' }),
+    svg('path', { d: 'M266 60 L292 52 M268 92 L292 100', class: 'basics-vessel-line' }),
+    svg('path', { d: 'M62 38 Q28 46 26 84 Q26 118 58 126 L138 126 Q152 104 146 70 Q138 40 104 34 Q84 32 62 38 Z', class: 'basics-chamber' }),
+    svg('path', { d: 'M34 132 L262 128 Q270 190 210 236 Q190 250 168 242 Q92 216 42 170 Q30 150 34 132 Z', class: 'basics-chamber' }),
+    svg('path', { d: 'M150 130 Q160 190 184 242', class: 'basics-septum' }),
+    svg('path', { d: 'M44 129 L146 129', class: 'basics-annulus' }),
+    svg('path', { d: 'M156 128 L258 126', class: 'basics-annulus' }),
+    // Coronary sinus: ostium in the posteroseptal right atrium, then the posterior left AV groove.
+    svg('path', { d: 'M120 118 Q170 138 220 131 Q254 125 264 106', class: 'basics-cs' }),
+    svg('ellipse', { cx: 120, cy: 118, rx: 6, ry: 4, class: 'basics-cs-os' })
   );
-  const labels = [['RA', 84, 72], ['LA', 220, 96], ['RV', 98, 190], ['LV', 206, 190]].map(([name, x, y]) => { const tx = svg('text', { x, y, class: 'basics-chamber-label' }); tx.textContent = name; return tx; });
-  heart.append(...labels);
+  const labels = [['RA', 92, 82], ['LA', 216, 74], ['RV', 98, 182], ['LV', 214, 182]].map(([name, x, y]) => { const tx = svg('text', { x, y, class: 'basics-chamber-label' }); tx.textContent = name; return tx; });
+  const small = [['SVC', 86, 16], ['IVC', 41, 244], ['TV', 72, 140], ['MV', 200, 140], ['CS os', 96, 123]].map(([name, x, y]) => { const tx = svg('text', { x, y, class: 'basics-small-label' }); tx.textContent = name; return tx; });
+  heart.append(...labels, ...small);
+  // Catheter shafts with electrode bands at the recording end.
+  for (const c of Object.values(CATHETERS)) {
+    const shaft = svg('path', { d: c.shaft, class: 'basics-shaft' });
+    heart.append(shaft);
+    const length = typeof shaft.getTotalLength === 'function' ? shaft.getTotalLength() : 0;
+    if (length) for (let i = 0; i < 5; i++) {
+      const at = shaft.getPointAtLength(length * (1 - c.poles * i / 4));
+      heart.append(svg('circle', { cx: at.x.toFixed(1), cy: at.y.toFixed(1), r: 2.2, class: 'basics-electrode' }));
+    }
+  }
   const catheterBtns = Object.entries(CATHETERS).map(([id, c]) => {
     const g = svg('g', { class: 'basics-catheter', tabindex: '0', role: 'button', 'data-basics-catheter': id });
     g.append(svg('circle', { cx: c.at[0], cy: c.at[1], r: 9 }));

@@ -191,10 +191,20 @@
 .basics-svg { display: block; width: 100%; height: auto; max-height: 260px; }
 .basics-chamber { fill: #1c2b26; stroke: #3a5248; stroke-width: 1.5; }
 .basics-chamber-label { fill: #7ea593; font: 600 11px var(--mono); text-anchor: middle; }
-.basics-cs { fill: none; stroke: #5b8cff; stroke-width: 3; stroke-linecap: round; opacity: .55; }
+.basics-cs { fill: none; stroke: #5b8cff; stroke-width: 5; stroke-linecap: round; opacity: .55; }
+.basics-cs-os { fill: #10203a; stroke: #7fa6ff; stroke-width: 1.5; }
+.basics-chamber-back { opacity: .7; }
+.basics-vessel { fill: #172420; stroke: #3a5248; stroke-width: 1.5; }
+.basics-vessel-line { fill: none; stroke: #3a5248; stroke-width: 7; stroke-linecap: round; }
+.basics-septum { fill: none; stroke: #3a5248; stroke-width: 6; stroke-linecap: round; }
+.basics-annulus { fill: none; stroke: #8fb39d; stroke-width: 1.5; stroke-dasharray: 4 3; }
+.basics-shaft { fill: none; stroke: #a8b5b0; stroke-width: 2.2; stroke-linecap: round; opacity: .75; }
+.basics-electrode { fill: #e8f3ee; }
+.basics-small-label { fill: #7ea593; font: 600 8.5px var(--mono); text-anchor: middle; }
 .basics-catheter { cursor: pointer; }
 .basics-catheter circle { fill: #2c3d36; stroke: #9fb8ac; stroke-width: 1.8; }
 .basics-catheter text { fill: #c8f0dc; font: 700 11px var(--mono); }
+.basics-catheter:focus { outline: none; }   /* no box after a mouse click; keyboard focus shows on the circle */
 .basics-catheter:hover circle, .basics-catheter:focus-visible circle { stroke: var(--accent); stroke-width: 3; outline: none; }
 .basics-catheter.is-on circle { fill: var(--accent); stroke: #ffffff; }
 .basics-koch{display:grid;gap:6px;justify-items:start}
