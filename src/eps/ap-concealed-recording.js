@@ -6,9 +6,9 @@ import { cal, ref } from './ep-caliper.js';
 // concealed case (retrograde A eccentric, earliest on distal CS). Two patients side by side;
 // all times are designed teaching values, not digitized recordings.
 export const CONCEALED_SOURCE = 'https://doi.org/10.1093/eurheartj/ehz467';
-export const CONCEALED_EXAMPLE = ['ap-concealed-compare', 'Gizli ve manifest yol: sinüs ve RV pacing', 'Concealed versus manifest pathway: sinus and RV pacing'];
+export const CONCEALED_EXAMPLE = ['ap-concealed-compare', 'Concealed ve manifest yol: sinüs ve RV pacing', 'Concealed versus manifest pathway: sinus and RV pacing'];
 export const CONCEALED_TEXT = {
-  tr: 'İlk atım manifest sol lateral yol: delta var, H deltadan 25 ms önce (kısa H-delta) ve ABL lokal V erken. İkinci atım gizli sol lateral yol: aynı ritimde delta yok; AH 80 ms, HV 45 ms normal, ventrikül yalnız AV düğüm ve His-Purkinje ile aktive olur. Yol antegrad iletmez, bu yüzden sinüs EKG’si normaldir. RV pacing’de yol retrograd iletir: en erken A distal CS’de (S-A 140 ms), His A’sı 52 ms sonra gelir; eksantrik retrograd dizilim sol taraflı yolu düşündürür. Konsantrik dizilim septal bir yolu dışlamaz; ayrım için His-refrakter PVC, para-Hisian pacing ve dekrement testi gerekir. Gizli yol ortodromik AVRT’ye katılabilir. Sentetik öğretim kaydı; iki farklı hasta yan yana gösterilmiştir.',
+  tr: 'İlk atım manifest sol lateral yol: delta var, H deltadan 25 ms önce (kısa H-delta) ve ABL lokal V erken. İkinci atım concealed sol lateral yol: aynı ritimde delta yok; AH 80 ms, HV 45 ms normal, ventrikül yalnız AV düğüm ve His-Purkinje ile aktive olur. Yol antegrad iletmez, bu yüzden sinüs EKG’si normaldir. RV pacing’de yol retrograd iletir: en erken A distal CS’de (S-A 140 ms), His A’sı 52 ms sonra gelir; eksantrik retrograd dizilim sol taraflı yolu düşündürür. Konsantrik dizilim septal bir yolu dışlamaz; ayrım için His-refrakter PVC, para-Hisian pacing ve dekrement testi gerekir. Concealed yol ortodromik AVRT’ye katılabilir. Sentetik öğretim kaydı; iki farklı hasta yan yana gösterilmiştir.',
   en: 'The first beat is a manifest left lateral pathway: a delta wave, H 25 ms before the delta (short H-delta) and an early local ABL V. The second beat is a concealed left lateral pathway: same rhythm, no delta; AH 80 ms and HV 45 ms are normal and the ventricles are activated over the AV node and His-Purkinje system only. The pathway does not conduct antegradely, so the sinus ECG is normal. During RV pacing it conducts retrogradely: the earliest A is on distal CS (S-A 140 ms) and the His A follows 52 ms later; an eccentric retrograde sequence suggests a left-sided pathway. A concentric sequence does not exclude a septal pathway; His-refractory PVCs, para-Hisian pacing and decremental testing separate them. A concealed pathway can sustain orthodromic AVRT. Synthetic teaching recording; two different patients are shown side by side.'
 };
 
@@ -37,8 +37,8 @@ const recording = Object.freeze({
   markers: [
     // Labels sit in the gaps between beats so they do not cover P, QRS or wave names.
     { t: 40, label: { tr: 'Manifest yol: sinüs', en: 'Manifest pathway: sinus' } },
-    { t: 700, label: { tr: 'Gizli yol: sinüs, delta yok', en: 'Concealed pathway: sinus, no delta' } },
-    { t: 1500, label: { tr: 'Gizli yol: RV pacing', en: 'Concealed pathway: RV pacing' } }
+    { t: 700, label: { tr: 'Concealed yol: sinüs, delta yok', en: 'Concealed pathway: sinus, no delta' } },
+    { t: 1500, label: { tr: 'Concealed yol: RV pacing', en: 'Concealed pathway: RV pacing' } }
   ],
   calipers: [
     cal('H-delta', ref('his-d', 'H', 0), ref('ecg-ii', 'delta', 0), 'his-d'),

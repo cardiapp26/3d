@@ -5,7 +5,7 @@ export const AP_ABLATION_SOURCE = 'https://doi.org/10.1016/j.hrthm.2025.02.023';
 export const AP_ABLATION_EXAMPLES = [
   ['ap-map-antegrade', 'AP ablasyonu: erken lokal V ve delta kaybı', 'AP ablation: early local V and loss of delta'],
   ['ap-map-potential', 'AP haritalama: ayrı yol potansiyeli', 'AP mapping: discrete pathway potential'],
-  ['ap-map-retrograde', 'AP ablasyonu: gizli yol, lokal VA ve RV pacing', 'AP ablation: concealed pathway, local VA and RV pacing']
+  ['ap-map-retrograde', 'AP ablasyonu: concealed yol, lokal VA ve RV pacing', 'AP ablation: concealed pathway, local VA and RV pacing']
 ];
 export const AP_ABLATION_TEXT = {
   'ap-map-antegrade': {

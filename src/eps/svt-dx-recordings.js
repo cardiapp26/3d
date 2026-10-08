@@ -23,11 +23,11 @@ export const SVT_EXAMPLE_GROUPS = Object.freeze([
   ] },
   { tr: 'AVRT', en: 'AVRT', items: [
     CONCEALED_EXAMPLE,
-    ['ap-ll-svt', 'Ortodromik AVRT: gizli sol lateral yol', 'Orthodromic AVRT: concealed left lateral pathway'],
-    ['ap-ips-svt', 'Ortodromik AVRT: gizli inferior paraseptal yol', 'Orthodromic AVRT: concealed inferior paraseptal pathway'],
-    ['ph-svt', 'Ortodromik AVRT: gizli para-Hisian yol', 'Orthodromic AVRT: concealed para-Hisian pathway'],
+    ['ap-ll-svt', 'Ortodromik AVRT: concealed sol lateral yol', 'Orthodromic AVRT: concealed left lateral pathway'],
+    ['ap-ips-svt', 'Ortodromik AVRT: concealed inferior paraseptal yol', 'Orthodromic AVRT: concealed inferior paraseptal pathway'],
+    ['ph-svt', 'Ortodromik AVRT: concealed para-Hisian yol', 'Orthodromic AVRT: concealed para-Hisian pathway'],
     ...AVRT_LOCALIZATIONS.map((s) => [s.id, `Ortodromik AVRT: ${s.names[0]} yol`, `Orthodromic AVRT: ${s.names[1]} pathway`]),
-    ['pjrt-svt', 'PJRT: gizli, yavaş retrograd yol', 'PJRT: concealed slow retrograde pathway'],
+    ['pjrt-svt', 'PJRT: concealed yavaş retrograd yol', 'PJRT: concealed slow retrograde pathway'],
     ['ap-lm-antidromic', 'Antidromik AVRT: sol lateral manifest yol', 'Antidromic AVRT: manifest left lateral pathway']
   ] },
   { tr: 'Atriyal taşikardi ve flutter', en: 'Atrial tachycardia and flutter', items: [

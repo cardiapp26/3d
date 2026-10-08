@@ -39,7 +39,8 @@ for (const lang of ['tr', 'en']) assert.match(CONCEALED_TEXT[lang], lang === 'tr
 const items = SVT_EXAMPLE_GROUPS.flatMap((g) => g.items);
 const name = (exampleId, lang) => items.find((x) => x[0] === exampleId)[lang === 'tr' ? 1 : 2];
 for (const exampleId of ['ap-ll-svt', 'ap-ips-svt', 'ph-svt', 'pjrt-svt', 'ap-map-retrograde']) {
-  assert.match(name(exampleId, 'tr'), /gizli/, exampleId);
+  assert.match(name(exampleId, 'tr'), /concealed/, exampleId);
+  assert.doesNotMatch(name(exampleId, 'tr'), /gizli/i, `${exampleId}: Turkish keeps the term concealed`);
   assert.match(name(exampleId, 'en'), /concealed/, exampleId);
 }
 assert.equal(SVT_EXAMPLE_GROUPS.find((g) => g.en === 'AVRT').items[0][0], id, 'comparison opens the AVRT group');

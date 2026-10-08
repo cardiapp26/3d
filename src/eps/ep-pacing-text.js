@@ -20,7 +20,7 @@ export const PACE_TEXT = Object.freeze({
       block: 'A yakalandı, H ve V yok: iletim AV düğüm düzeyinde bloke oldu (düğümün refrakter periyodu). Yol varsa o da refrakterdi.',
       wenckebach: 'AH atımdan atıma uzadı ve bir A\'dan sonra H gelmedi: AV düğüm Wenckebach periyodisitesi. Bu siklus modeldeki 1:1 iletim sınırının altında (P1, P2).',
       conducted: 'A, H ve V sırayla geldi; AH uyarının erkenliğiyle uzadı (decremental düğüm iletimi, P1).',
-      concealed: 'Delta yok: antegrad yol iletimi görülmedi. Bu, yalnız retrograd ileten (gizli) bir yolu dışlamaz.',
+      concealed: 'Delta yok: antegrad yol iletimi görülmedi. Bu, yalnız retrograd ileten (concealed) bir yolu dışlamaz.',
       slowPathway: 'AH belirgin uzun. Yavaş yola geçişin kanıtı, 10 ms daha uzun S2 ile karşılaştırmada ≥50 ms AH artışıdır (P7).',
       echoAvn: 'Uzun AH\'li atımdan sonra tek atriyal echo, His kanalında en erken (konsantrik): yavaş yoldan inip hızlı yoldan dönüşle uyumlu (P5, P6). Model yalnız tek echo çizer; taşikardi sürdürülmez.',
       echoAp: 'Uzun AH\'li atımdan sonra tek atriyal echo, en erken A yolun atriyal ucunda: retrograd yol iletimiyle uyumlu (ortodromik echo). Model tek echo çizer.',
@@ -49,7 +49,7 @@ export const PACE_TEXT = Object.freeze({
       ap: 'Tam preeksitasyonda düğümün iletip iletmediği yüzey EKG\'den görülmez; His kanalında H\'nin varlığına bak.',
       fusion: 'Füzyon derecesi düğüm gecikmesine ve uyarı yerinin yola uzaklığına bağlıdır; tek atımdan yolun refrakter periyodu çıkmaz.',
       none: 'Blokun düğümde mi His altında mı olduğu His kanalıyla ayrılır: burada A var, H yok (düğüm düzeyi).',
-      noDelta: 'Delta yokluğu yalnız retrograd ileten (gizli) bir yolu dışlamaz.',
+      noDelta: 'Delta yokluğu yalnız retrograd ileten (concealed) bir yolu dışlamaz.',
       echo: 'Tek echo sürekli taşikardi değildir; bu model taşikardiyi sürdürmez ve dizi içindeki echo\'ları çizmez.'
     },
     scene: 'Şemada: yeşil çizgi AV düğüm yolu, pembe çizgi aksesuar yol; ortodromik echo\'da mavi devre.',
