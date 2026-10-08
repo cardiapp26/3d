@@ -1,6 +1,7 @@
 import { VES_REGIONS, VES_INPUTS, VES_OPTIONS, VES_SOURCES, VES_POSITIONS, vesRegion, vesEcg, vesFeatures, localizeVes, v2TransitionRatio, vesRecording } from './ves-loc-model.js';
 import { VES_TEXT } from './ves-loc-text.js';
-import { vesSvg, renderVesMap, renderVesOption, renderVesEcg, renderVesRecording } from './ves-loc-visual.js';
+import { vesSvg, renderVesOption, renderVesEcg, renderVesRecording } from './ves-loc-visual.js';
+import { renderVesMap } from './ves-loc-map.js';
 
 export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const state = { active: false, page: 'loc', mapView: 'base', selected: 'rvot-septal', inputs: vesFeatures('rvot-septal'), position: 'near', scar: false, amplitudes: {} };

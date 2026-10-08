@@ -1,5 +1,5 @@
 import { LEADS } from './ecg12.js';
-import { VES_REGIONS, recordingValue } from './ves-loc-model.js';
+import { recordingValue } from './ves-loc-model.js';
 
 const s = (doc, tag, attrs = {}, text = '') => {
   const node = doc.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -8,65 +8,6 @@ const s = (doc, tag, attrs = {}, text = '') => {
   return node;
 };
 export const vesSvg = (doc, box, cls) => s(doc, 'svg', { viewBox: box, class: cls, role: 'img' });
-
-export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base' }) {
-  svg.replaceChildren(s(doc, 'title', {}, t.map));
-  svg.setAttribute('aria-label', `${t.map}: ${t[view]}`); svg.setAttribute('role', 'group');
-  svg.setAttribute('viewBox', view === 'base' ? '0 0 370 350' : '380 0 380 350');
-  svg.append(
-    s(doc, 'rect', { x: 5, y: 5, width: 356, height: 339, rx: 16, class: 'ves-map-frame' }),
-    s(doc, 'rect', { x: 382, y: 5, width: 371, height: 339, rx: 16, class: 'ves-map-frame' }),
-    s(doc, 'text', { x: 180, y: 30, class: 'ves-map-caption' }, t.base),
-    s(doc, 'text', { x: 568, y: 30, class: 'ves-map-caption' }, t.chambers),
-    // Anterior up, patient right on the left: the RV outflow wraps in front of
-    // the aortic root from the tricuspid side to the pulmonary valve, which sits
-    // anterior and to the left of the aortic valve.
-    s(doc, 'path', { d: 'M62 158 Q46 66 124 44 Q186 28 232 50 L236 70 Q200 76 176 96 Q152 118 150 146', class: 'ves-map-chamber' }),
-    s(doc, 'ellipse', { cx: 258, cy: 58, rx: 30, ry: 14, class: 'ves-map-valve' }),
-    s(doc, 'circle', { cx: 204, cy: 130, r: 34, class: 'ves-map-valve' }),
-    s(doc, 'ellipse', { cx: 100, cy: 214, rx: 57, ry: 62, class: 'ves-map-valve' }),
-    s(doc, 'ellipse', { cx: 266, cy: 217, rx: 55, ry: 58, class: 'ves-map-valve' }),
-    s(doc, 'text', { x: 110, y: 108, class: 'ves-map-caption' }, 'RVOT'),
-    s(doc, 'text', { x: 258, y: 62, class: 'ves-map-caption' }, 'PV'),
-    s(doc, 'text', { x: 203, y: 176, class: 'ves-map-caption' }, 'Ao / LVOT'),
-    s(doc, 'text', { x: 99, y: 213, class: 'ves-map-label' }, 'TA'),
-    s(doc, 'text', { x: 266, y: 212, class: 'ves-map-label' }, 'MA'),
-    // Left main from the left coronary sinus; LAD runs anteriorly, LCx along the mitral annulus.
-    s(doc, 'path', { d: 'M236 118 L282 98 L312 36 M282 98 L330 142', class: 'ves-map-coronary' }),
-    s(doc, 'text', { x: 326, y: 32, class: 'ves-map-caption' }, 'LAD'),
-    s(doc, 'text', { x: 344, y: 130, class: 'ves-map-caption' }, 'LCx'),
-    s(doc, 'path', { d: 'M161 273 Q219 313 288 271 Q341 245 326 173 M202 298 L199 326', class: 'ves-map-vein' }),
-    s(doc, 'text', { x: 302, y: 307, class: 'ves-map-caption' }, 'CS'),
-    s(doc, 'text', { x: 204, y: 335, class: 'ves-map-caption' }, 'MCV'),
-    s(doc, 'circle', { cx: 168, cy: 168, r: 5, class: 'ves-map-his' }),
-    s(doc, 'text', { x: 147, y: 162, class: 'ves-map-caption' }, 'His'),
-    s(doc, 'path', { d: 'M511 69 Q384 71 407 196 Q423 285 571 321 Q514 255 534 152 Z', class: 'ves-map-chamber' }),
-    s(doc, 'path', { d: 'M602 70 Q731 39 738 162 Q745 279 647 326 Q568 291 569 189 Q568 111 602 70 Z', class: 'ves-map-chamber' }),
-    s(doc, 'path', { d: 'M582 122 Q562 226 595 291', class: 'ves-map-septum' }),
-    s(doc, 'path', { d: 'M699 118 Q709 161 699 222 L682 251 M676 321 L657 275 L668 251', class: 'ves-map-muscle' }),
-    s(doc, 'path', { d: 'M529 221 L438 276', class: 'ves-map-muscle' }),
-    s(doc, 'path', { d: 'M583 126 Q599 225 626 289', class: 'ves-map-purkinje' }),
-    s(doc, 'text', { x: 455, y: 153, class: 'ves-map-label' }, 'RV'),
-    s(doc, 'text', { x: 654, y: 133, class: 'ves-map-label' }, 'LV')
-  );
-  for (const decoration of svg.children) decoration.setAttribute('aria-hidden', 'true');
-  for (const region of VES_REGIONS) {
-    if (region.view !== view) continue;
-    const [x, y] = region.xy;
-    const group = s(doc, 'g', { tabindex: 0, role: 'button', class: 'ves-map-site', 'data-ves-map-site': region.id,
-      'aria-label': `${t.example}: ${t.sites[region.id].name}`, 'aria-pressed': selected === region.id,
-      'data-candidate': candidates.includes(region.id) });
-    group.append(s(doc, 'title', {}, t.sites[region.id].name), s(doc, 'circle', { cx: x, cy: y, r: 14 }), s(doc, 'text', { x, y: y + 4 }, region.number));
-    group.addEventListener('click', () => onSelect(region.id));
-    group.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(region.id); } });
-    svg.append(group);
-    if (selected === region.id && position) {
-      const offset = { near: [17, 8], adjacent: [30, -18], remote: [30, 27] }[position];
-      svg.append(s(doc, 'circle', { cx: x + offset[0], cy: y + offset[1], r: 5, class: 'ves-map-abl', 'data-ves-electrode': position }),
-        s(doc, 'text', { x: x + offset[0], y: y + offset[1] + 17, class: 'ves-map-caption' }, 'ABL'));
-    }
-  }
-}
 
 export function renderVesOption(doc, svg, key, option) {
   const paths = {
