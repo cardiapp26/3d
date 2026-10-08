@@ -115,6 +115,11 @@
 .ves-frontal-row { stroke-width: 1; }
 .ves-frontal-pos { fill: #173b2b; stroke: #3f9e70; } .ves-frontal-neg { fill: #3b1a1a; stroke: #b25c5c; } .ves-frontal-iso { fill: #2b2b1a; stroke: #9e9a52; }
 .ves-frontal-glyph { stroke-width: 1.8; }
+.ves-frontal-cross { stroke: #f1f7f3; stroke-width: 1; stroke-dasharray: 4 3; opacity: .55; }
+.ves-frontal-quadrant { fill: #d9e6dd; font-size: 8px; }
+.ves-frontal-dot { fill: #1f3329; stroke: #cfe3d6; stroke-width: 1; opacity: .85; }
+.ves-frontal-dot-label { fill: #eef5f0; font: bold 5.5px system-ui, sans-serif; text-anchor: middle; }
+.ves-v1-transition { fill: #f3cf92; font-size: 7.2px; }
 .ves-frontal-lead-label { fill: #8fb39d; }
 .ves-frontal-sign { fill: #f1f7f3; font: bold 13px system-ui, sans-serif; text-anchor: middle; }
 .ves-map-site { cursor: pointer; }

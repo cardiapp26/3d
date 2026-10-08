@@ -45,7 +45,7 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     const principleToggle = button({ 'data-ves-v1-principle': '', 'aria-pressed': 'false' }, () => { state.v1Principle = !state.v1Principle; render(); });
     viewRow.append(principleToggle);
     const svg = vesSvg(doc, '0 0 760 350', 'ves-map');
-    const gradient = vesSvg(doc, '0 0 370 100', 'ves-v1-gradient');
+    const gradient = vesSvg(doc, '0 0 370 112', 'ves-v1-gradient');
     const frontal = vesSvg(doc, '0 0 370 214', 'ves-frontal');
     // SVG elements have no `hidden` property; the wrapper div carries it.
     const frontalBox = el('div', 'ves-frontal-box'); frontalBox.append(frontal);

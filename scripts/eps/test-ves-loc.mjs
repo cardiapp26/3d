@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { VES_REGIONS, VES_OPTIONS, VES_INPUTS, VES_STEPWISE, VES_SITE_EXAMPLES, LIMB_LEAD_ANGLES, vesFrontalAxis, qrsWave, vesEcg, vesFeatures, localizeVes, vesRecording, recordingValue, v2TransitionRatio } from '../../src/eps/ves-loc-model.js';
 import { VES_TEXT } from '../../src/eps/ves-loc-text.js';
 import { createVesLocPanel } from '../../src/eps/ves-loc-panel.js';
-import { leadPolarity } from '../../src/eps/ves-loc-map.js';
+import { leadPolarity, FRONTAL_SITES, FRONTAL_CROSS } from '../../src/eps/ves-loc-map.js';
 import { EP_VIEWS } from '../../src/eps/ep-panel.js';
 import { viewFromHash } from '../../src/eps/app-text.js';
 
@@ -62,6 +62,11 @@ assert.equal(v2TransitionRatio(v3, { pvcR: 1e308, pvcS: 1e308, sinusR: 1e308, si
 assert.ok(Math.abs(qrsWave(-40, 150, 1, .2)) < 1e-3 && Math.abs(qrsWave(190, 150, 1, .2)) < 1e-3, 'QRS energy inside its window');
 for (const r of VES_REGIONS) {
   const f = vesFeatures(r.id), ecg = vesEcg(r.id);
+  // Frontal quadrants (Enriquez 2019): basal origins give an inferior axis, right of the midline a positive
+  // lead I; inferior origins give a superior axis, right of the midline LBBB-like and left RBBB-like.
+  { const [x, y] = FRONTAL_SITES[r.id], right = x < FRONTAL_CROSS.x;   // patient right is on the viewer's left
+    if (f.axis === 'inferior') { assert.ok(y < FRONTAL_CROSS.y, `${r.id} basal`); assert.equal(right, f.leadI === 'positive', `${r.id} side of midline`); }
+    if (f.axis === 'superior') { assert.ok(y > FRONTAL_CROSS.y, `${r.id} inferior`); assert.equal(right, f.v1 === 'lbbb' || f.v1 === 'rs', `${r.id} LBBB right / RBBB left`); } }
   // Frontal vector widget: each limb-lead sign equals the dominant QRS deflection drawn in that lead.
   for (const lead of Object.keys(LIMB_LEAD_ANGLES)) {
     const q = ecg.leads[lead].filter((_, i) => ecg.t[i] >= 0 && ecg.t[i] <= ecg.width), R = Math.max(0, ...q), S = Math.max(0, ...q.map(v => -v));
@@ -157,4 +162,4 @@ assert.equal(by('data-ves-verdict').attrs['data-candidates'], '');
 by('data-ves-reset').listeners.click(); assert.deepEqual(panel.getState().inputs, {});
 assert.equal(panel.getState().scar, true, 'reset cannot silently remove clinical context');
 panel.setActive(false); assert.equal(panel.element.hidden, true);
-console.log('PASS ves-loc: Enriquez 2019 stepwise tree (every branch, every example a complete leaf), frontal vector signs match every limb lead, V1 principle overlay, opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
+console.log('PASS ves-loc: frontal quadrants, Enriquez 2019 stepwise tree (every branch, every example a complete leaf), frontal vector signs match every limb lead, V1 principle overlay, opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');

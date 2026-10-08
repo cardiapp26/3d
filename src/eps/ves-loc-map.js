@@ -249,27 +249,28 @@ function rvotView(doc, g, uid, t) {
  * the R wave grows as the origin moves posteriorly and leftward. Stations with a teaching example select it.
  */
 export const V1_GRADIENT = Object.freeze([
-  { key: 'fw', d: 'M2 24 L10 24 L16 44 L22 24 L36 24', sites: ['rvot-free'] },
-  { key: 'ps', d: 'M2 24 L9 24 L11 18 L17 44 L23 24 L36 24', sites: ['rvot-septal'] },
-  { key: 'his', d: 'M2 24 L12 24 L16 42 L20 24 L36 24', sites: ['para-his'] },
-  { key: 'rcc', d: 'M2 24 L8 24 L11 15 L15 17 L20 44 L25 24 L36 24', sites: ['lvot-cusp'] },
-  { key: 'rl', d: 'M2 24 L7 24 L9 28 L13 16 L16 30 L18 27 L21 42 L26 24 L36 24', sites: ['lvot-cusp'] },
-  { key: 'lcc', d: 'M2 24 L7 24 L10 10 L13 30 L16 15 L20 40 L25 24 L36 24', sites: ['lvot-cusp'] },
-  { key: 'amc', d: 'M2 24 L8 24 L10 30 L16 4 L22 26 L26 24 L36 24', sites: [] },
-  { key: 'mitral', d: 'M2 24 L9 24 L15 4 L21 28 L25 24 L36 24', sites: ['lv-summit', 'mitral'] }
+  { key: 'fw', d: 'M2 24 L10 24 L16 44 L22 24 L36 24', transition: 'V4-V5', sites: ['rvot-free'] },
+  { key: 'ps', d: 'M2 24 L9 24 L11 18 L17 44 L23 24 L36 24', transition: 'V3-V4', sites: ['rvot-septal'] },
+  { key: 'his', d: 'M2 24 L12 24 L16 42 L20 24 L36 24', transition: 'V2-V3', sites: ['para-his'] },
+  { key: 'rcc', d: 'M2 24 L8 24 L11 15 L15 17 L20 44 L25 24 L36 24', transition: 'V2-V3', sites: ['lvot-cusp'] },
+  { key: 'rl', d: 'M2 24 L7 24 L9 28 L13 16 L16 30 L18 27 L21 42 L26 24 L36 24', transition: '≤ V3', sites: ['lvot-cusp'] },
+  { key: 'lcc', d: 'M2 24 L7 24 L10 10 L13 30 L16 15 L20 40 L25 24 L36 24', transition: 'V1-V2', sites: ['lvot-cusp'] },
+  { key: 'amc', d: 'M2 24 L8 24 L10 30 L16 4 L22 26 L26 24 L36 24', transition: 'V1', sites: [] },
+  { key: 'mitral', d: 'M2 24 L9 24 L15 4 L21 28 L25 24 L36 24', transition: 'V1-V3', sites: ['lv-summit', 'mitral'] }
 ]);
 export function renderV1Gradient(doc, svg, { t, selected, onSelect = null }) {
   svg.replaceChildren(s(doc, 'title', {}, t.v1Gradient));
-  svg.setAttribute('aria-label', t.v1Gradient); svg.setAttribute('viewBox', '0 0 370 100');
+  svg.setAttribute('aria-label', t.v1Gradient); svg.setAttribute('viewBox', '0 0 370 112');
   svg.append(s(doc, 'text', { x: 185, y: 10, class: 'ves-map-tiny' }, t.v1Gradient));
-  svg.append(s(doc, 'path', { d: 'M48 92 L322 92', class: 'ves-v1-axis' }), s(doc, 'path', { d: 'M314 87 L322 92 L314 97', class: 'ves-v1-axis' }));
+  svg.append(s(doc, 'path', { d: 'M48 104 L322 104', class: 'ves-v1-axis' }), s(doc, 'path', { d: 'M314 99 L322 104 L314 109', class: 'ves-v1-axis' }));
   V1_GRADIENT.forEach((station, i) => {
     const x0 = 6 + i * 45, on = station.sites.includes(selected), link = onSelect && station.sites.length;
     const g = s(doc, 'g', { transform: `translate(${x0} 16)`, 'data-ves-v1-station': i, 'data-active': on, ...(link ? { role: 'button', tabindex: 0, class: 'ves-v1-link', 'aria-label': `${t.v1Stations[i]}: ${t.sites[station.sites[0]].name}` } : {}) });
-    g.append(s(doc, 'rect', { x: 0, y: -2, width: 42, height: 60, rx: 5, class: 'ves-v1-card' }));
+    g.append(s(doc, 'rect', { x: 0, y: -2, width: 42, height: 70, rx: 5, class: 'ves-v1-card' }));
     g.append(s(doc, 'line', { x1: 3, y1: 24, x2: 39, y2: 24, class: 'ves-grid' }));
     g.append(s(doc, 'path', { d: station.d, transform: 'translate(2 0)', class: 'ves-trace ves-v1-trace' }));
     g.append(s(doc, 'text', { x: 21, y: 53, class: 'ves-map-tiny ves-v1-label' }, t.v1Stations[i]));
+    g.append(s(doc, 'text', { x: 21, y: 63, class: 'ves-map-tiny ves-v1-transition', 'data-ves-v1-transition': station.transition }, station.transition));
     if (link) {
       const go = () => onSelect(station.sites[0]);
       g.addEventListener('click', go);
@@ -277,7 +278,7 @@ export function renderV1Gradient(doc, svg, { t, selected, onSelect = null }) {
     }
     svg.append(g);
   });
-  svg.append(s(doc, 'text', { x: 30, y: 95, class: 'ves-map-axis' }, t.v1Ant), s(doc, 'text', { x: 342, y: 95, class: 'ves-map-axis' }, t.v1Post));
+  svg.append(s(doc, 'text', { x: 30, y: 107, class: 'ves-map-axis' }, t.v1Ant), s(doc, 'text', { x: 342, y: 107, class: 'ves-map-axis' }, t.v1Post));
 }
 
 /**
@@ -312,9 +313,14 @@ function v1PrincipleOverlay(doc, g, t) {
  * frontal heart silhouette, the example's origin and its QRS axis. Limb-lead polarities are the
  * projections of that axis, the same numbers that draw the 12-lead strip.
  */
-const FRONTAL_SITES = Object.freeze({
+// Frontal positions in the heart group's coordinates. The midline (x = FRONTAL_CROSS.x) splits
+// right-of-midline origins (lead I positive) from left ones (negative); the horizontal line
+// (y = FRONTAL_CROSS.y) splits basal origins (inferior axis) from inferior ones (superior axis), whose
+// right side gives LBBB-like (RV, crux) and left side RBBB-like (LV) patterns (after Enriquez 2019).
+export const FRONTAL_CROSS = Object.freeze({ x: 122, y: 112 });
+export const FRONTAL_SITES = Object.freeze({
   'rvot-septal': [116, 58], 'rvot-free': [128, 52], 'lvot-cusp': [100, 70], 'lv-summit': [140, 66], 'para-his': [90, 92],
-  tricuspid: [70, 124], mitral: [152, 86], 'papillary-pm': [120, 144], 'papillary-al': [154, 122], fascicle: [110, 136], moderator: [88, 136], crux: [102, 156]
+  tricuspid: [70, 124], mitral: [152, 86], 'papillary-pm': [134, 146], 'papillary-al': [156, 102], fascicle: [128, 134], moderator: [88, 136], crux: [104, 156]
 });
 export const leadPolarity = (axis, lead) => { const c = Math.cos((axis - LIMB_LEAD_ANGLES[lead]) * Math.PI / 180); return c > .1 ? '+' : c < -.1 ? '−' : '±'; };
 export function renderFrontalVector(doc, svg, { t, selected, axis }) {
@@ -333,6 +339,14 @@ export function renderFrontalVector(doc, svg, { t, selected, axis }) {
   heart.append(s(doc, 'path', { d: 'M78 60 Q98 42 136 46 Q172 54 172 94 Q170 134 142 164 Q120 178 100 162 Q70 136 62 102 Q58 74 78 60 Z', class: 'ves-frontal-heart' }));
   heart.append(s(doc, 'path', { d: 'M112 50 Q120 30 140 32 L146 46 Q130 44 124 54 Z', class: 'ves-frontal-rvot' }));
   label(doc, heart, 92, 126, 'RV', 'ves-map-tiny'); label(doc, heart, 146, 120, 'LV', 'ves-map-tiny');
+  // Midline and the inferior/superior axis line, with the four reading quadrants.
+  heart.append(s(doc, 'line', { x1: FRONTAL_CROSS.x, y1: 30, x2: FRONTAL_CROSS.x, y2: 180, class: 'ves-frontal-cross' }), s(doc, 'line', { x1: 54, y1: FRONTAL_CROSS.y, x2: 182, y2: FRONTAL_CROSS.y, class: 'ves-frontal-cross' }));
+  t.frontalQuadrants.forEach((text, i) => label(doc, heart, [72, 172, 70, 174][i], [40, 40, 176, 176][i], text, 'ves-map-tiny ves-frontal-quadrant'));
+  // Every example as a faint numbered dot; the selected one gets the star and vector below.
+  for (const region of VES_REGIONS) {
+    const [x, y] = FRONTAL_SITES[region.id];
+    heart.append(s(doc, 'circle', { cx: x, cy: y, r: 4.5, class: 'ves-frontal-dot', 'data-ves-frontal-site': region.id }), s(doc, 'text', { x, y: y + 2.2, class: 'ves-frontal-dot-label' }, region.number));
+  }
   // Lead axes through the centre with their positive ends.
   for (const lead of Object.keys(LIMB_LEAD_ANGLES)) {
     const a = LIMB_LEAD_ANGLES[lead] * Math.PI / 180, [x, y] = [C[0] + 92 * Math.cos(a), C[1] + 92 * Math.sin(a)];
