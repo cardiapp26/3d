@@ -354,23 +354,27 @@ define({
   });
 }
 {
-  // Antidromic AVRT: fully preexcited wide QRS, retrograde A concentric over the node.
+  // Antidromic AVRT over a left lateral pathway: fully preexcited wide QRS; ventricular activation
+  // starts at the mitral insertion (ABL, then CS distal to proximal from the delta onset); the His
+  // is reached retrogradely after the QRS onset (negative HV) and the A comes back over the node,
+  // concentric, earliest near the His.
   const vs = [150, 470, 790, 1110];
   define({
     id: 'ap-lm-antidromic', caseId: 'ap-left-manifest', section: 'diagnosis', windowMs: 1350, channels: CH_CS_FULL,
-    events: merge(...vs.map((v) => merge(surfaceBeat(v, { delta: v - 30, wide: true }), {
-      'abl-d': [ev('V', v - 40, 0.8)],
-      rv: [ev('V', v - 5, 0.9)],
-      'his-p': [far('V', v + 16, 0.5, 12)],
-      'his-d': [far('V', v + 18, 0.6, 12)],
-      ...Object.fromEntries(['cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12'].map((ch, i) => [ch, [far('V', v + 20 + i * 2, 0.4, 10)]])),
-      ...Object.fromEntries(Object.entries(A_NODAL_PACED).map(([ch, dt]) => [ch, [ev('A', v + dt, 0.7)]]))
-    }))),
+    // Ventricular, His and retrograde atrial events are merged per channel (an object spread would let
+    // the atrial entries overwrite the His and CS ventricular ones).
+    events: merge(...vs.map((v) => merge(
+      surfaceBeat(v, { delta: v - 30, wide: true }),
+      { 'abl-d': [ev('V', v - 40, 0.8)], rv: [ev('V', v - 5, 0.9)], 'his-p': [far('V', v + 16, 0.5, 12)], 'his-d': [far('V', v + 18, 0.6, 12), ev('H', v + 32, 0.45)] },
+      Object.fromEntries(['cs-12', 'cs-34', 'cs-56', 'cs-78', 'cs-910'].map((ch, i) => [ch, [far('V', v - 26 + i * 8, 0.45, 10)]])),
+      Object.fromEntries(Object.entries(A_NODAL_PACED).map(([ch, dt]) => [ch, [ev('A', v + dt, 0.7)]]))
+    ))),
     calipers: [
       cal('TCL', ref('rv', 'V', 1), ref('rv', 'V', 2), 'rv'),
-      cal('VA', ref('rv', 'V', 1), ref('his-d', 'A', 1), 'his-d')
+      cal('VA', ref('rv', 'V', 1), ref('his-d', 'A', 1), 'his-d'),
+      cal('HA', ref('his-d', 'H', 1), ref('his-d', 'A', 1), 'his-d')
     ],
-    teachingNumbers: { TCL: 320, VA: 145 },
+    teachingNumbers: { TCL: 320, VA: 145, HA: 108 },
     circuit: 'antidromic'
   });
 }

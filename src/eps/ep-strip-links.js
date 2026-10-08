@@ -5,7 +5,8 @@
  * ventricular ones, the His potentials are kept, and the ladder's
  * conduction lines (ep-ladder.js buildLadder) are tied to the deflections
  * they join: A on the His catheter to its H (fast / slow pathway, block),
- * H to the RV V, A to V over an accessory pathway, and back up. Pure;
+ * H to the RV V, A to V over an accessory pathway (between its two insertions),
+ * and back up. Pure;
  * drawEgm draws the result on the strip.
  */
 import { EP_CHANNELS } from './ep-cases.js';
@@ -65,8 +66,27 @@ export function stripLinks(events, ladder) {
     if (row === 'AV') return closest(hisD, t, 2) || { ch: 'his-d', t };
     return anchor(closest(row === 'A' ? atria : ventricles, t, SPAN_MS[row]), row, kind);
   };
+  // An antegrade pathway line joins the pathway's two insertions: the ventricular end is the earliest
+  // intracardiac V; the atrial end is the A on the channel nearest that insertion, found by walking the
+  // channels in their order of ventricular activation (far-field V included, as on the CS).
+  const intracardiacV = (t) => Object.entries(events)
+    .flatMap(([ch, list]) => (SURFACE.has(ch) ? [] : list.filter((e) => e.type === 'V' && Math.abs(e.t - t) <= SPAN_MS.V).map((e) => ({ ch, t: e.t }))))
+    .sort((a, b) => a.t - b.t);
+  const pathwayEnds = (link) => {
+    const aGroup = closest(atria, link.from[1], SPAN_MS.A), vGroup = closest(ventricles, link.to[1], SPAN_MS.V);
+    if (!aGroup || !vGroup) return null;
+    const order = intracardiacV(vGroup.t);
+    const from = order.map((v) => aGroup.points.find((p) => p.ch === v.ch)).find(Boolean) || anchor(aGroup, 'A', link.kind);
+    const to = vGroup.points.find((p) => !SURFACE.has(p.ch)) || anchor(vGroup, 'V', link.kind);
+    return { from, to };
+  };
   const conduction = [];
   for (const link of ladder?.links || []) {
+    if (link.kind === 'ap') {
+      const ends = pathwayEnds(link);
+      if (ends) conduction.push({ kind: link.kind, ...ends, block: false });
+      continue;
+    }
     const from = end(link.from[0], link.from[1], link.kind);
     // A block ends on the His catheter where the H would have been.
     const to = link.kind === 'block' ? { ch: 'his-d', t: link.to[1] } : end(link.to[0], link.to[1], link.kind);

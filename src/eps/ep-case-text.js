@@ -427,12 +427,12 @@ export const EP_CLIP_TEXT = Object.freeze({
     tr: {
       title: 'Antidromik AVRT (geniş QRS)',
       neutral: `Geniş QRS taşikardi, TCL 320 ms. QRS morfolojisini sinüs kaydıyla karşılaştırın; retrograd A dizisini ölçün. VT ayırıcı tanıda durur.`,
-      evidence: 'QRS tam preeksite ve sinüsteki delta ile aynı yöndedir: antegrad kol aksesuar yol. Retrograd A konsantrik (en erken His komşuluğu): retrograd kol AV düğüm. Antidromik AVRT ile uyumludur; VT ile ayrım tek kayıtla yapılmaz, katılım manevraları gerekir (R3).'
+      evidence: 'QRS tam preeksite ve sinüsteki delta ile aynı yöndedir: antegrad kol aksesuar yol. Ventrikül aktivasyonu mitral girişte başlar (ABL, ardından CS distalden proksimale). His retrograd aktive olur: H, QRS başlangıcından sonra gelir (HV negatif), ardından A (HA 108 ms). Retrograd A konsantrik (en erken His komşuluğu): retrograd kol AV düğüm. Antidromik AVRT ile uyumludur; VT ile ayrım tek kayıtla yapılmaz, katılım manevraları gerekir (R3).'
     },
     en: {
       title: 'Antidromic AVRT (wide QRS)',
       neutral: `Wide QRS tachycardia, TCL 320 ms. Compare the QRS morphology with the sinus recording; measure the retrograde A sequence. VT stays in the differential.`,
-      evidence: 'The QRS is fully preexcited, in the same direction as the sinus delta: the antegrade limb is the accessory pathway. Retrograde A is concentric (earliest near the His): the retrograde limb is the AV node. Consistent with antidromic AVRT; VT is not separated on one recording, participation maneuvers are needed (R3).'
+      evidence: 'The QRS is fully preexcited, in the same direction as the sinus delta: the antegrade limb is the accessory pathway. Ventricular activation starts at the mitral insertion (ABL, then CS distal to proximal). The His is activated retrogradely: H follows the QRS onset (negative HV), then the A (HA 108 ms). Retrograde A is concentric (earliest near the His): the retrograde limb is the AV node. Consistent with antidromic AVRT; VT is not separated on one recording, participation maneuvers are needed (R3).'
     }
   },
   'at-svt': {

@@ -25,7 +25,8 @@ export const SVT_EXAMPLE_GROUPS = Object.freeze([
     ['ap-ips-svt', 'Ortodromik AVRT: inferior paraseptal yol', 'Orthodromic AVRT: inferior paraseptal pathway'],
     ['ph-svt', 'Ortodromik AVRT: para-Hisian yol', 'Orthodromic AVRT: para-Hisian pathway'],
     ...AVRT_LOCALIZATIONS.map((s) => [s.id, `Ortodromik AVRT: ${s.names[0]} yol`, `Orthodromic AVRT: ${s.names[1]} pathway`]),
-    ['pjrt-svt', 'PJRT: yavaş retrograd yol', 'PJRT: slow retrograde pathway']
+    ['pjrt-svt', 'PJRT: yavaş retrograd yol', 'PJRT: slow retrograde pathway'],
+    ['ap-lm-antidromic', 'Antidromik AVRT: sol lateral manifest yol', 'Antidromic AVRT: manifest left lateral pathway']
   ] },
   { tr: 'Atriyal taşikardi ve flutter', en: 'Atrial tachycardia and flutter', items: [
     ['at-svt', 'Atriyal taşikardi', 'Atrial tachycardia'],

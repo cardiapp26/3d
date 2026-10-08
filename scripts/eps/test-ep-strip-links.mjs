@@ -60,4 +60,13 @@ const live = stripLinks(raw, buildLadder(raw, { until: 4000 }));
 assert.ok(live.groups.some((g) => g.kind === 'A' && g.points.length > 3), 'live: atrial activations joined');
 const shifted = shiftLinks(live, -1000);
 assert.equal(shifted.groups[0].points[0].t, live.groups[0].points[0].t - 1000);
+// Antidromic AVRT over a left lateral pathway: the antegrade pathway line joins CS 1-2 A to ABL V (its insertions),
+// not the nodal A on the His catheter to the RV.
+{
+  const anti = epRecording('ap-lm-antidromic');
+  const L = stripLinks(anti.events, buildLadder(inferLadderEvents(anti.events, { mechanism: EP_CASES.find((c) => c.id === anti.caseId)?.mechanism }), { until: anti.windowMs }));
+  const ap = L.conduction.filter((c) => c.kind === 'ap');
+  assert.ok(ap.length >= 2, 'antegrade pathway lines drawn');
+  for (const c of ap) { assert.equal(c.from.ch, 'cs-12', 'atrial insertion on distal CS'); assert.equal(c.to.ch, 'abl-d', 'ventricular insertion on ABL'); }
+}
 console.log('PASS ep-strip-links: one point per channel, every ladder line on a recorded channel (all clips), sinus HRA first and His A to H, ORT CS 1-2 to HRA with RV to CS distal, AVNRT slow AH on the His, live model, shift');

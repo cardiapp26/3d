@@ -258,6 +258,10 @@ const antiV = anti.events['ecg-ii'].filter((e) => e.type === 'V').length;
 assert.equal(anti.events['ecg-ii'].filter((e) => e.type === 'delta').length, antiV, 'every beat preexcited');
 assert.ok(first(anti, 'his-d', 'A').t < first(anti, 'cs-12', 'A').t, 'retrograde A concentric (nodal limb)');
 assert.ok(first(anti, 'abl-d', 'V').t < first(anti, 'ecg-ii', 'delta').t + 15, 'annular V leads the wide QRS');
+// Left lateral insertion: CS ventricular activation runs distal to proximal from the delta onset;
+// the His is reached retrogradely after the QRS onset and before the nodal A (an object spread once dropped these).
+assert.ok(first(anti, 'cs-12', 'V').t < first(anti, 'cs-56', 'V').t && first(anti, 'cs-56', 'V').t < first(anti, 'cs-910', 'V').t, 'CS V distal to proximal');
+assert.ok(first(anti, 'his-d', 'H').t > first(anti, 'ecg-ii', 'delta').t && first(anti, 'his-d', 'H').t < first(anti, 'his-d', 'A').t, 'retrograde H after the QRS onset, before the A');
 
 // Focal AT: earliest A on HRA; overdrive gives A-A-V (two A events before the next V).
 const at = epRecording('at-svt');

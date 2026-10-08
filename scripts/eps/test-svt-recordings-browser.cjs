@@ -13,7 +13,8 @@ const assert = require('node:assert/strict');
     assert.deepEqual(await page.locator('[data-svt-example-item]').evaluateAll((nodes) => nodes.map((n) => n.dataset.svtExampleItem)), examples);
     assert.equal(await page.locator('[data-svt-example]').isVisible(), false);
     assert.equal(await page.locator('[data-svt-example-item][aria-pressed=true]').count(), 1);
-    assert.equal(examples.length, 32);
+    assert.equal(examples.length, 33);
+    assert.ok(examples.includes('ap-lm-antidromic'), 'antidromic AVRT in the worked recordings');
     for (const id of examples) {
       await page.locator(`[data-svt-example-item="${id}"]`).click();
       assert.equal(await page.locator('[data-svt-recordings]').getAttribute('data-recording'), id);
@@ -98,6 +99,6 @@ const assert = require('node:assert/strict');
     assert.match(await page.locator('[data-ep-pvi-energy]').textContent(), /geri dönüşümsüz elektroporasyon/);
     await page.locator('[data-ep-section=svt]').click();
     assert.deepEqual(errors, []);
-    console.log('PASS EPS recordings browser: 32 examples, Ector induction and signal definitions, PA/AH/HV, SNRT/cSNRT, PPI/cPPI, localization channels, rendering, findings preservation, toggles, translation, mobile resize, infra-His warning, PFA text');
+    console.log('PASS EPS recordings browser: 33 examples (antidromic AVRT included), Ector induction and signal definitions, PA/AH/HV, SNRT/cSNRT, PPI/cPPI, localization channels, rendering, findings preservation, toggles, translation, mobile resize, infra-His warning, PFA text');
   } finally { await browser.close(); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });
