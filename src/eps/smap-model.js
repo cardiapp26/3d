@@ -227,6 +227,29 @@ export function egmTrace(e, length) {
   return out;
 }
 
+/**
+ * Unipolar EGM waveform at the same site (mV): the far field of the
+ * surrounding muscle is kept (it is not subtracted as in the bipole). Over
+ * muscle an RS whose steepest downstroke is the local activation; over scar
+ * or a channel a broad, lower far field with the channel's near field as a
+ * small sharp notch.
+ */
+export function unipolarTrace(e, length) {
+  const out = new Float64Array(length);
+  const add = (t0, amp, width) => {
+    for (let ms = Math.max(0, Math.floor(t0 - 4 * width)); ms < Math.min(length, t0 + 4 * width); ms++) {
+      const u = (ms - t0) / width;
+      out[ms] += amp * -u * Math.exp(-u * u / 2) * 1.65;
+    }
+  };
+  const muscle = (e.type === 'wall' || e.type === 'border') && e.local != null;
+  if (muscle) { add(e.local, e.unipolar / 2, e.type === 'border' ? 8 : 6); return out; }
+  const farAt = e.farTime ?? Math.round((e.qrsOnset + e.qrsEnd) / 2);
+  add(farAt, e.unipolar * 0.42, 14);
+  if (e.local != null && e.type === 'channel') { add(e.local, e.unipolar * 0.1, 2.4); add(e.local + 9, -e.unipolar * 0.07, 2.2); }
+  return out;
+}
+
 /** Every pixel's EGM kind in one beat (the late potential / LAVA tags). */
 export function egmMap(id, rhythm = 'sinus', ablated = new Set()) {
   return cached(`e|${id}|${rhythm}|${lesionKey(ablated)}`, () => {

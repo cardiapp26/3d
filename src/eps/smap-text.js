@@ -32,7 +32,7 @@ export const SMAP_TEXT = {
       latVt: 'QRS başlangıcına göre; kırmızı erken, mor geç (devre: erken-geç buluşması)',
       tagLp: 'LP', tagLava: 'LAVA', lesion: 'lezyon'
     },
-    egmTitle: (rhythm) => `Lokal bipolar EGM (beyaz) ve DII (yeşil), ${rhythm}`,
+    egmTitle: (rhythm) => `DII (yeşil), lokal bipolar (beyaz) ve unipolar (mavi) EGM, ${rhythm}`,
     ecgTitle: 'VT QRS (yeşil) ve entrainment sırasında QRS (sarı); dikey çizgi: stimulus',
     readout: {
       bipolar: 'Bipolar voltaj', unipolar: 'Unipolar voltaj', egm: 'EGM', duration: 'EGM süresi', far: 'Far-field', near: 'Near-field', qrsEnd: 'QRS sonu',
@@ -107,7 +107,7 @@ export const SMAP_TEXT = {
       latVt: 'From QRS onset; red early, purple late (the circuit: early meets late)',
       tagLp: 'LP', tagLava: 'LAVA', lesion: 'lesion'
     },
-    egmTitle: (rhythm) => `Local bipolar EGM (white) and lead II (green), ${rhythm}`,
+    egmTitle: (rhythm) => `Lead II (green), local bipolar (white) and unipolar (blue) EGM, ${rhythm}`,
     ecgTitle: 'VT QRS (green) and QRS during entrainment (yellow); vertical line: stimulus',
     readout: {
       bipolar: 'Bipolar voltage', unipolar: 'Unipolar voltage', egm: 'EGM', duration: 'EGM duration', far: 'Far field', near: 'Near field', qrsEnd: 'QRS end',

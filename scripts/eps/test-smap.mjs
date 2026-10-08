@@ -8,7 +8,7 @@
 // the clinical VT and differ in what they leave; in the non-ischaemic
 // scenario only the unipolar map shows the epicardial substrate.
 import assert from 'node:assert/strict';
-import { SCENARIOS, STRATEGIES, CUTOFFS, tissue, voltageClass, beat, electrogram, egmMap, vt, entrain, lesions, outcome, cellOf, cellKey } from '../../src/eps/smap-model.js';
+import { SCENARIOS, STRATEGIES, CUTOFFS, tissue, voltageClass, beat, electrogram, egmTrace, unipolarTrace, egmMap, vt, entrain, lesions, outcome, cellOf, cellKey } from '../../src/eps/smap-model.js';
 import { SMAP_TEXT } from '../../src/eps/smap-text.js';
 
 const s = SCENARIOS.ischemic;
@@ -38,6 +38,16 @@ assert.equal(electrogram('ischemic', s.sites.exit).kind, 'lava', 'the exit end: 
 assert.equal(electrogram('ischemic', s.sites.remote).kind, 'normal', 'remote septum: normal EGM');
 assert.equal(electrogram('ischemic', [24, 12]).kind, 'none', 'dense scar: noise level');
 assert.ok(beat('ischemic', 'rv').end > b.end + 40, 'RV apical pacing: a wider QRS');
+// Unipolar beside the bipole: steepest downstroke at the local activation over muscle; the far field stays over scar.
+const p2p = (a) => Math.max(...a) - Math.min(...a);
+const wallEgm = electrogram('ischemic', s.sites.remote), wallUni = unipolarTrace(wallEgm, 400);
+const drops = Array.from(wallUni, (v, i) => (i ? wallUni[i - 1] - v : -Infinity));
+const steepest = drops.indexOf(Math.max(...drops));
+assert.ok(Math.abs(steepest - wallEgm.local) <= 1, 'wall: unipolar -dV/dt at the local activation');
+for (const site of [s.sites.central, [24, 12]]) {
+  const e = electrogram('ischemic', site);
+  assert.ok(p2p(unipolarTrace(e, 400)) > 3 * p2p(egmTrace(e, 400)), 'scar / channel: unipolar keeps the far field');
+}
 
 // The VT: through the isthmus and around the scar.
 const circuit = vt('ischemic');

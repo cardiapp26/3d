@@ -1,4 +1,4 @@
-import { GRID, CUTOFFS, RHYTHMS, STRATEGIES, SCENARIOS, cellOf, cellKey, tissueOf, voltageClass, beat, electrogram, egmTrace, egmMap, vt, entrain, lesions, outcome } from './smap-model.js';
+import { GRID, CUTOFFS, RHYTHMS, STRATEGIES, SCENARIOS, cellOf, cellKey, tissueOf, voltageClass, beat, electrogram, egmTrace, unipolarTrace, egmMap, vt, entrain, lesions, outcome } from './smap-model.js';
 import { SEGMENTS } from './pmap-model.js';
 import { COLORS } from './amap-model.js';
 import { SMAP_TEXT } from './smap-text.js';
@@ -17,7 +17,7 @@ import { PMAP_TEXT } from './pmap-text.js';
  */
 
 const BG = '#0e1815', GRID_TEXT = '#9fc7b6', SCAR_GREY = '#55534d';
-const TEMPLATE_COLOR = '#22c55e', PACED_COLOR = '#facc15';
+const TEMPLATE_COLOR = '#22c55e', PACED_COLOR = '#facc15', UNIPOLAR_COLOR = '#60a5fa';
 const ECG_LEADS = [0, 1, 2, 6, 8, 11];   // I, II, III, V1, V3, V6
 const LEAD_NAMES = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 const LEVEL = { exit: 'good', central: 'good', proximal: 'good', inner: 'close', outer: 'close', adjacent: 'poor', remote: 'poor' };
@@ -244,7 +244,7 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
     ctx.strokeStyle = 'rgba(34, 197, 94, 0.5)'; ctx.setLineDash([3, 3]);
     for (const ms of [b.onset, b.end]) { ctx.beginPath(); ctx.moveTo(x(ms), 20); ctx.lineTo(x(ms), height - 20); ctx.stroke(); }
     ctx.setLineDash([]);
-    const lanes = [{ name: 'II', y: 20 + (height - 40) * 0.28 }, { name: 'ABL', y: 20 + (height - 40) * 0.72 }];
+    const lanes = [{ name: 'II', y: 20 + (height - 40) * 0.2 }, { name: 'ABL bi', y: 20 + (height - 40) * 0.55 }, { name: 'ABL uni', y: 20 + (height - 40) * 0.86 }];
     for (const lane of lanes) {
       ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x0, lane.y); ctx.lineTo(x0 + w, lane.y); ctx.stroke();
@@ -260,11 +260,17 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
     lane(lead, lanes[0].y, ((height - 40) * 0.22) / peak, TEMPLATE_COLOR, 1.6);
     // The EGM at a fixed gain (mV), so low voltage looks low.
     const trace = egmTrace(egm, span);
-    lane(Array.from(trace), lanes[1].y, (height - 40) * 0.07, '#f8fafc', 1.4);
+    lane(Array.from(trace), lanes[1].y, (height - 40) * 0.065, '#f8fafc', 1.4);
+    // Unipolar from the distal electrode: its own gain (about 13 mV fits), the far field stays in it.
+    lane(Array.from(unipolarTrace(egm, span)), lanes[2].y, ((height - 40) * 0.11) / 7, UNIPOLAR_COLOR, 1.4);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#f8fafc'; ctx.fillText(`${egm.voltage.toFixed(2)} mV`, width - 8, lanes[1].y - 6);
+    ctx.fillStyle = UNIPOLAR_COLOR; ctx.fillText(`${egm.unipolar.toFixed(2)} mV`, width - 8, lanes[2].y - 6);
+    ctx.textAlign = 'left';
     // Late potential: mark the isolated near field.
     if (egm.kind === 'lp' || egm.kind === 'lava') {
       ctx.fillStyle = egm.kind === 'lp' ? '#ffffff' : '#f9a8d4';
-      ctx.fillText(T().legend[egm.kind === 'lp' ? 'tagLp' : 'tagLava'], x(egm.local) - 6, lanes[1].y - (height - 40) * 0.2);
+      ctx.fillText(T().legend[egm.kind === 'lp' ? 'tagLp' : 'tagLava'], x(egm.local) - 6, lanes[1].y - (height - 40) * 0.13);
     }
     ctx.fillStyle = GRID_TEXT;
     for (let ms = 0; ms <= span; ms += 100) ctx.fillText(String(ms), x(ms) - 8, height - 6);

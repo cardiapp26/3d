@@ -24,6 +24,8 @@ import { createPaceMapPanel } from './pmap-panel.js';
 import { PMAP_TEXT } from './pmap-text.js';
 import { createSubstratePanel } from './smap-panel.js';
 import { SMAP_TEXT } from './smap-text.js';
+import { createMappingBasicsPanel } from './emap-panel.js';
+import { EMAP_TEXT } from './emap-text.js';
 import { createEgmBasicsPanel } from './egm-basics-panel.js';
 import { BASICS_TEXT } from './egm-basics-text.js';
 import { createSvtDxPanel } from './svt-dx-panel.js';
@@ -119,7 +121,7 @@ const ZOOMS = [1, 2, 4];
 
 const pick = (obj, lang) => (lang === 'en' ? obj.en : obj.tr);
 
-export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'substrate', 'basics', 'svt', 'wpw', 'ves']);
+export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'substrate', 'mapbasics', 'basics', 'svt', 'wpw', 'ves']);
 
 /**
  * @param {HTMLElement} mount
@@ -131,7 +133,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
-  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, substrate: false, basics: false, svt: false, wpw: false, ves: false };
+  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, substrate: false, mapbasics: false, basics: false, svt: false, wpw: false, ves: false };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
   const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links') };
@@ -184,6 +186,14 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   substrateTab.addEventListener('click', () => { showView('substrate'); notifySection(); });
   tabs.appendChild(substrateTab);
   const substratePanel = createSubstratePanel(doc, { getLang: () => lang });
+  // Mapping basics: how catheter, contact, wavefront, point density and annotation shape a map.
+  const mapBasicsTab = el('button');
+  mapBasicsTab.type = 'button';
+  mapBasicsTab.setAttribute('role', 'tab');
+  mapBasicsTab.setAttribute('data-ep-section', 'mapbasics');
+  mapBasicsTab.addEventListener('click', () => { showView('mapbasics'); notifySection(); });
+  tabs.appendChild(mapBasicsTab);
+  const mapBasicsPanel = createMappingBasicsPanel(doc, { getLang: () => lang });
   // Electrogram basics: the last tab, an interactive page.
   const basicsTab = el('button');
   basicsTab.type = 'button';
@@ -382,7 +392,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   sideCol.append(taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
-  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element);
+  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, mapBasicsPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -568,7 +578,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const recording = current();
     sectionButtons.forEach((button, i) => {
       button.textContent = t.sections[EP_SECTIONS[i]];
-      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.substrate && !state.basics && !state.svt && !state.wpw && !state.ves && EP_SECTIONS[i] === state.section));
+      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.substrate && !state.mapbasics && !state.basics && !state.svt && !state.wpw && !state.ves && EP_SECTIONS[i] === state.section));
     });
     liveTab.textContent = lang === 'en' ? 'Live recording' : 'Canlı kayıt';
     liveTab.setAttribute('aria-selected', String(state.live));
@@ -578,6 +588,8 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     paceTab.setAttribute('aria-selected', String(state.pacemap));
     substrateTab.textContent = SMAP_TEXT[lang].tab;
     substrateTab.setAttribute('aria-selected', String(state.substrate));
+    mapBasicsTab.textContent = EMAP_TEXT[lang].tab;
+    mapBasicsTab.setAttribute('aria-selected', String(state.mapbasics));
     basicsTab.textContent = BASICS_TEXT[lang].tab;
     basicsTab.setAttribute('aria-selected', String(state.basics));
     svtTab.textContent = SVT_DX_TEXT[lang].tab;
@@ -586,11 +598,12 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     wpwTab.setAttribute('aria-selected', String(state.wpw));
     vesTab.textContent = VES_TEXT[lang].tab;
     vesTab.setAttribute('aria-selected', String(state.ves));
-    lessonBox.hidden = state.live || state.mapping || state.pacemap || state.substrate || state.basics || state.svt || state.wpw || state.ves;
+    lessonBox.hidden = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.basics || state.svt || state.wpw || state.ves;
     livePanel.setActive(state.live);
     mappingPanel.setActive(state.mapping);
     paceMapPanel.setActive(state.pacemap);
     substratePanel.setActive(state.substrate);
+    mapBasicsPanel.setActive(state.mapbasics);
     basicsPanel.setActive(state.basics);
     svtPanel.setActive(state.svt);
     wpwPanel.setActive(state.wpw);
@@ -746,20 +759,21 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     view.waves = readFlag('waves');   // the live monitor may have changed the shared choices
     view.ladder = readFlag('ladder');
     view.links = readFlag('links');
-    const wasLab = state.live || state.mapping || state.pacemap || state.substrate || state.basics || state.svt || state.wpw || state.ves;
+    const wasLab = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.basics || state.svt || state.wpw || state.ves;
     state.live = id === 'live';
     state.mapping = id === 'mapping';
     state.pacemap = id === 'pacemap';
     state.substrate = id === 'substrate';
+    state.mapbasics = id === 'mapbasics';
     state.basics = id === 'basics';
     state.svt = id === 'svt';
     state.wpw = id === 'wpw';
     state.ves = id === 'ves';
-    const lab = state.live || state.mapping || state.pacemap || state.substrate || state.basics || state.svt || state.wpw || state.ves;
+    const lab = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.basics || state.svt || state.wpw || state.ves;
     if (!lab) setSection(id);
     if (lab || wasLab) render();
   }
-  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.substrate ? 'substrate' : state.basics ? 'basics' : state.svt ? 'svt' : state.wpw ? 'wpw' : state.ves ? 'ves' : state.section);
+  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.substrate ? 'substrate' : state.mapbasics ? 'mapbasics' : state.basics ? 'basics' : state.svt ? 'svt' : state.wpw ? 'wpw' : state.ves ? 'ves' : state.section);
   const notifySection = () => { if (typeof onSection === 'function') onSection(currentView()); };
 
   if (EP_SECTIONS.includes(initial) && initial !== state.section) setSection(initial);
@@ -767,6 +781,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   state.mapping = initial === 'mapping';
   state.pacemap = initial === 'pacemap';
   state.substrate = initial === 'substrate';
+  state.mapbasics = initial === 'mapbasics';
   state.basics = initial === 'basics';
   state.svt = initial === 'svt';
   state.wpw = initial === 'wpw';
@@ -786,6 +801,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     mapping: mappingPanel,
     pacemap: paceMapPanel,
     substrate: substratePanel,
+    mapbasics: mapBasicsPanel,
     basics: basicsPanel,
     svt: svtPanel,
     wpw: wpwPanel,
