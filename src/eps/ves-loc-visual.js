@@ -21,6 +21,8 @@ export function renderVesOption(doc, svg, key, option) {
   };
   let d = paths[option];
   if (key === 'axis') d = paths[option === 'inferior' ? 'positive' : option === 'superior' ? 'negative' : 'biphasic'];
+  if (key === 'avl') d = paths[option === 'r' ? 'rs' : 'negative'];
+  if (key === 'v6') d = paths[option === 'gt' ? 'positive' : 'rs'];
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('style', d ? '' : 'display:none');
   if (!d) return;

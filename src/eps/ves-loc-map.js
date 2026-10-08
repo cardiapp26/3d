@@ -81,18 +81,21 @@ function basalView(doc, g, uid, t) {
   // Aortic root: right, left and non-coronary sinuses with their commissures; coronary ostia in the R and L sinuses.
   g.append(s(doc, 'circle', { cx: AO[0], cy: AO[1], r: AOR + 8, class: 'ves-map-myo', fill: `url(#${uid}-myo)` }));
   g.append(s(doc, 'circle', { cx: AO[0], cy: AO[1], r: AOR, class: 'ves-map-root', fill: `url(#${uid}-root)` }));
-  for (const [from, to] of [[-150, -30], [-30, 90], [90, 210]]) g.append(s(doc, 'path', { d: arc(AO[0], AO[1], AOR - 7, from + 6, to - 6), class: 'ves-map-cusp' }));
-  for (const deg of [-30, 90, 210]) { const [x, y] = polar(AO[0], AO[1], AOR, deg); g.append(s(doc, 'line', { x1: AO[0], y1: AO[1], x2: x, y2: y, class: 'ves-map-commissure' })); }
+  // Commissures: R-L faces the pulmonary valve/RVOT, L-N the aorto-mitral curtain, N-R the membranous
+  // septum and His. Hence R is anterior-right, L leftward and N posterior-right (short-axis 'Mercedes' sign).
+  const COMMISSURE = { rl: -55, ln: 55, nr: 165 };
+  for (const [from, to] of [[COMMISSURE.nr, COMMISSURE.rl + 360], [COMMISSURE.rl, COMMISSURE.ln], [COMMISSURE.ln, COMMISSURE.nr]]) g.append(s(doc, 'path', { d: arc(AO[0], AO[1], AOR - 7, from + 6, to - 6), class: 'ves-map-cusp' }));
+  for (const deg of Object.values(COMMISSURE)) { const [x, y] = polar(AO[0], AO[1], AOR, deg); g.append(s(doc, 'line', { x1: AO[0], y1: AO[1], x2: x, y2: y, class: 'ves-map-commissure' })); }
   // Interleaflet triangles below each commissure: muscular between R and L, fibrous towards the
   // membranous septum (N-R) and the aorto-mitral curtain (L-N) (John et al., Heart Rhythm 2026).
-  for (const [deg, cls] of [[-30, 'ves-map-ilt-muscle'], [90, 'ves-map-ilt-fibrous'], [210, 'ves-map-ilt-fibrous']]) {
+  for (const [deg, cls] of [[COMMISSURE.rl, 'ves-map-ilt-muscle'], [COMMISSURE.ln, 'ves-map-ilt-fibrous'], [COMMISSURE.nr, 'ves-map-ilt-fibrous']]) {
     const [x0, y0] = polar(AO[0], AO[1], AOR - 2, deg), [x1, y1] = polar(AO[0], AO[1], AOR + 9, deg - 9), [x2, y2] = polar(AO[0], AO[1], AOR + 9, deg + 9);
     g.append(s(doc, 'path', { d: `M${x0.toFixed(1)} ${y0.toFixed(1)} L${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)} Z`, class: cls }));
   }
   // Ventriculo-infundibular fold between the posterior septal RVOT and the right sinus.
   g.append(s(doc, 'path', { d: arc(AO[0], AO[1], AOR + 13, -160, -70), class: 'ves-map-vif' }));
-  label(doc, g, 205, 112, 'R', 'ves-map-tiny'); label(doc, g, 226, 154, 'L', 'ves-map-tiny'); label(doc, g, 184, 154, 'N', 'ves-map-tiny');
-  label(doc, g, 254, 104, 'ILT', 'ves-map-tiny', [240, 113]); label(doc, g, 150, 90, 'VIF', 'ves-map-tiny', [166, 100]);
+  label(doc, g, 191, 116, 'R', 'ves-map-tiny'); label(doc, g, 231, 139, 'L', 'ves-map-tiny'); label(doc, g, 196, 160, 'N', 'ves-map-tiny');
+  label(doc, g, 264, 86, 'ILT', 'ves-map-tiny', [241, 96]); label(doc, g, 150, 90, 'VIF', 'ves-map-tiny', [166, 100]);
   // Pulmonary valve, anterior and to the left of the aorta.
   g.append(s(doc, 'circle', { cx: PV[0], cy: PV[1], r: PVR + 6, class: 'ves-map-myo', fill: `url(#${uid}-myo)` }));
   g.append(s(doc, 'circle', { cx: PV[0], cy: PV[1], r: PVR, class: 'ves-map-root', fill: `url(#${uid}-root)` }));

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { VES_REGIONS, VES_OPTIONS, VES_INPUTS, LIMB_LEAD_ANGLES, vesFrontalAxis, qrsWave, vesEcg, vesFeatures, localizeVes, vesRecording, recordingValue, v2TransitionRatio } from '../../src/eps/ves-loc-model.js';
+import { VES_REGIONS, VES_OPTIONS, VES_INPUTS, VES_STEPWISE, VES_SITE_EXAMPLES, LIMB_LEAD_ANGLES, vesFrontalAxis, qrsWave, vesEcg, vesFeatures, localizeVes, vesRecording, recordingValue, v2TransitionRatio } from '../../src/eps/ves-loc-model.js';
 import { VES_TEXT } from '../../src/eps/ves-loc-text.js';
 import { createVesLocPanel } from '../../src/eps/ves-loc-panel.js';
 import { leadPolarity } from '../../src/eps/ves-loc-map.js';
@@ -8,7 +8,7 @@ import { viewFromHash } from '../../src/eps/app-text.js';
 
 assert.equal(VES_REGIONS.length, 12);
 assert.equal(viewFromHash('#/ves', EP_VIEWS), 'ves');
-assert.equal(localizeVes({}).next, 'v1');
+assert.equal(localizeVes({}).next, 'axis', 'the stepwise approach starts with II and III');
 assert.equal(localizeVes({ v1: 'unknown', axis: 'inferior' }).status, 'incomplete');
 assert.equal(localizeVes({ v1: 'rbbb', axis: 'mixed' }).candidates.length, 0);
 assert.equal(localizeVes({ v1: 'lbbb', axis: 'inferior', transition: 'negative' }).status, 'unresolved');
@@ -16,7 +16,39 @@ for (const inputs of [{ v1: 'rbbb', axis: 'superior', transition: 'negative', le
   { v1: 'lbbb', axis: 'inferior', transition: 'positive', leadI: 'positive', width: 'wide' }]) {
   assert.equal(localizeVes(inputs).status, 'unresolved'); assert.deepEqual(localizeVes(inputs).candidates, []);
 }
-assert.deepEqual(localizeVes({ v1: 'lbbb', axis: 'inferior', transition: 'late' }).candidates, ['rvot-septal', 'rvot-free']);
+assert.deepEqual(localizeVes({ v1: 'lbbb', axis: 'inferior', transition: 'late' }).candidates, ['rvot-septal', 'tricuspid', 'rvot-free'], 'lead I unknown: both lead I branches stay open');
+// Enriquez 2019 stepwise approach, branch by branch.
+const sites = inputs => localizeVes(inputs).sites;
+assert.deepEqual(localizeVes({ axis: 'inferior' }).next, 'leadI');
+assert.deepEqual(localizeVes({ axis: 'inferior', leadI: 'positive' }).next, 'avl');
+assert.deepEqual(localizeVes({ axis: 'inferior', leadI: 'negative' }).next, 'transition', 'aVL is not asked on the negative lead I branch');
+assert.deepEqual(localizeVes({ axis: 'inferior', leadI: 'positive', avl: 'negative', transition: 'late' }).required, ['axis', 'leadI', 'avl', 'transition']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'negative', transition: 'late' }), ['posteriorRvot']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'negative', transition: 'v3' }), ['posteriorRvot', 'rcc']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'negative', transition: 'early' }), ['rcc']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'r', transition: 'late' }), ['tvFree']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'r', transition: 'v3' }), ['tvSeptum', 'parahis']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'negative', transition: 'v3' }), ['anteriorRvot']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'negative', transition: 'early' }), ['lcc', 'summit']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'negative', transition: 'positive' }), ['lcc', 'summit', 'amc', 'topMv', 'apm', 'laf']);
+assert.deepEqual(sites({ axis: 'superior', v1: 'lbbb', transition: 'late' }), ['tvFree', 'mb']);
+assert.deepEqual(sites({ axis: 'superior', v1: 'lbbb', transition: 'early' }), ['tvSeptum', 'crux']);
+assert.deepEqual(sites({ axis: 'superior', v1: 'rbbb', v6: 'gt' }), ['inferiorMv']);
+assert.deepEqual(sites({ axis: 'superior', v1: 'rbbb', v6: 'lt' }), ['ppm', 'lpf']);
+assert.deepEqual(sites({ axis: 'disc-ii', transition: 'v3' }), ['parahis']);
+assert.deepEqual(sites({ axis: 'disc-ii', transition: 'late' }), ['lateralTv', 'mb']);
+assert.deepEqual(sites({ axis: 'disc-iii', v6: 'gt' }), ['lateralMv']);
+assert.deepEqual(sites({ axis: 'disc-iii', v6: 'lt' }), ['apm']);
+assert.ok(sites({ axis: 'inferior', leadI: 'biphasic', avl: 'negative', transition: 'late' }).includes('anteriorRvot'), 'a biphasic lead I keeps both sides of the midline');
+// Every leaf names a site with TR/EN text; sites with an example point to real regions.
+const leaves = t => Array.isArray(t) ? t : t.branches.flatMap(([, sub]) => leaves(sub));
+for (const site of leaves(VES_STEPWISE)) {
+  assert.ok(site in VES_SITE_EXAMPLES, site);
+  for (const lang of ['tr', 'en']) assert.ok(VES_TEXT[lang].stepSites[site], `${lang} ${site}`);
+  for (const id of VES_SITE_EXAMPLES[site]) assert.ok(VES_REGIONS.some(r => r.id === id), id);
+}
+// Each example's own ECG walks the tree to a single complete leaf that includes it.
+for (const r of VES_REGIONS) { const L = localizeVes(vesFeatures(r.id)); assert.equal(L.status, 'regions', r.id); assert.equal(L.next, null, r.id); }
 const v3 = { v1: 'lbbb', axis: 'inferior', transition: 'v3' };
 assert.ok(localizeVes(v3).candidates.includes('rvot-septal') && localizeVes(v3).candidates.includes('lvot-cusp'), 'V3 overlap is explicit');
 assert.equal(v2TransitionRatio(v3, { pvcR: .3, pvcS: .7, sinusR: .5, sinusS: .5 }).status, 'lvot', 'inclusive 0.60 boundary');
@@ -120,4 +152,4 @@ assert.equal(by('data-ves-verdict').attrs['data-candidates'], '');
 by('data-ves-reset').listeners.click(); assert.deepEqual(panel.getState().inputs, {});
 assert.equal(panel.getState().scar, true, 'reset cannot silently remove clinical context');
 panel.setActive(false); assert.equal(panel.element.hidden, true);
-console.log('PASS ves-loc: frontal vector signs match every limb lead, V1 principle overlay, opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');
+console.log('PASS ves-loc: Enriquez 2019 stepwise tree (every branch, every example a complete leaf), frontal vector signs match every limb lead, V1 principle overlay, opened RVOT and V1 gradient, opened aortic root with ILTs, 3D/SVG basal atlas, 12 region ECGs with discordant T, limb-lead identities, overlap, V2 ratio boundaries/invalid inputs, anatomically linked recordings, local/Purkinje timing, QS/rS, manual/scar separation, TR/EN, route');

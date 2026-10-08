@@ -140,6 +140,8 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     for (const [key, parts] of inputParts) {
       parts.name.textContent = t.inputNames[key]; parts.hint.textContent = t.hints[key];
       parts.block.setAttribute('data-next', result.next === key);
+      // Findings the stepwise branch does not ask for stay available but recede.
+      parts.block.setAttribute('data-required', !VES_OPTIONS.axis.includes(state.inputs.axis) || result.required.includes(key));
       for (const [option, part] of parts.buttons) {
         part.caption.textContent = optionText(t, key, option); part.b.setAttribute('aria-pressed', state.inputs[key] === option);
         part.b.setAttribute('aria-label', `${t.inputNames[key]}: ${optionText(t, key, option)}`);
@@ -148,7 +150,9 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     }
     reset.textContent = t.reset; scarText.textContent = t.scar; scarInput.checked = state.scar;
     verdict.setAttribute('data-candidates', candidateIds.join(',')); verdict.setAttribute('data-state', state.scar ? 'scar' : result.status);
-    verdict.textContent = state.scar ? t.scarNote : result.conflict ? t.conflict : candidateIds.length ? `${t.result}: ${candidateIds.map(id => t.sites[id].name).join(' · ')}` : t[result.status === 'unresolved' ? 'unresolved' : 'pending'];
+    const siteNames = state.scar ? [] : result.sites.map(key => t.stepSites[key]);
+    verdict.textContent = state.scar ? t.scarNote : result.conflict ? t.conflict : siteNames.length ? `${t.result}: ${siteNames.join(' · ')}` : t[result.status === 'unresolved' ? 'unresolved' : 'pending'];
+    verdict.setAttribute('data-sites', state.scar ? '' : result.sites.join(','));
     overlap.textContent = t.overlap; pathHeading.textContent = t.decision;
     path.replaceChildren(...result.path.map(p => { const li = el('li'); li.textContent = `${t.inputNames[p.key]}: ${optionText(t, p.key, p.value)}`; return li; }));
     for (const parts of mapParts) {

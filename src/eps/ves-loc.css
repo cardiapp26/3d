@@ -7,6 +7,7 @@
 .ves-findings { display: grid; gap: 10px; min-width: 0; }
 .ves-finding { padding: 10px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 7px; display: grid; gap: 7px; }
 .ves-finding[data-next=true] { border-left-color: #fcd34d; }
+.ves-finding[data-required=false] { opacity: .55; }
 .ves-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); gap: 6px; }
 .ves-options button { display: flex; flex-direction: column; align-items: center; padding: 6px; min-height: 44px; line-height: 1.35; }
 .ves-option-wave { width: 100%; max-width: 95px; height: 50px; }
