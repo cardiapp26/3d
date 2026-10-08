@@ -20,21 +20,32 @@ for (const [id] of WCT_EXAMPLES) {
   for (const lang of ['tr', 'en']) assert.ok(WCT_TEXT[id][lang].length > 100, `${id} ${lang} text`);
 }
 
-// 1. Check WCT vs SVT measurements (HV interval)
+// 1. WCT: sinus HV as reference, VT with retrograde His, AV dissociation and an early narrow capture beat (Ho figs 17-10, 17-17).
 const wct = wctRecording('wct-vt-vs-svt');
 const wctM = wctMeasurements(wct);
-assert.equal(wctM['HV (Aberrans)'], 50, 'Aberrant SVT HV is normal (50 ms)');
-assert.equal(wctM['TCL (VT)'], 380, 'VT cycle length is 380 ms');
-assert.equal(wctM['V-H (VT retrograd)'], 40, 'Retrograde His occurs after ventricular onset');
+assert.equal(wct.mechanism, 'vt-scar');
+assert.equal(wctM['HV (sinüs)'], 50, 'conducted sinus beat: HV 50 ms');
+assert.equal(wctM['TCL (VT)'], 380, 'VT cycle length 380 ms');
+assert.equal(wctM['V-H (VT retrograd)'], 40, 'VT: His after the V onset');
+assert.equal(wctM['P-P (sinüs)'], 640, 'sinus P waves at their own rate');
+assert.equal(wctM['HV (capture)'], 50, 'capture beat: normal HV');
+const qrs = wct.events['ecg-ii'].filter((e) => e.type === 'V');
+const capture = qrs.at(-1), lastVt = qrs.at(-2);
+assert.ok(capture.t - lastVt.t < wctM['TCL (VT)'], 'capture beat comes early');
+assert.ok(capture.sigma < lastVt.sigma, 'capture beat is narrower than the VT');
+const sinusA = wct.events.hra.filter((e) => e.type === 'A').map((e) => e.t);
+assert.ok(sinusA.every((t, i) => i === 0 || t - sinusA[i - 1] === wctM['P-P (sinüs)']), 'sinus A at a constant rate (the capture A included)');
 
-// 2. Check Scar VT entrainment measurements (Ho Ch 20 / Stevenson 1993)
+// 2. Scar VT: a central isthmus site (Ho fig 20-11; Stevenson 1993).
 const scar = wctRecording('scar-vt-entrain');
 const scarM = wctMeasurements(scar);
-assert.equal(scarM.TCL, 400, 'VT TCL is 400 ms');
-assert.equal(scarM.PCL, 370, 'Overdrive pacing PCL is 370 ms');
-assert.equal(scarM.PPI, 410, 'PPI from ABL is 410 ms');
-assert.equal(scarM['PPI−TCL'], 10, 'PPI - TCL is 10 ms (<= 30 ms proves isthmus site)');
-assert.equal(scarM['S-QRS'], 110, 'Stimulus to QRS is 110 ms');
-assert.equal(scarM['MDP-QRS'], 110, 'Mid-diastolic potential to QRS is 110 ms (S-QRS == MDP-QRS)');
+assert.equal(scar.mechanism, 'vt-scar');
+assert.equal(scarM.TCL, 400);
+assert.equal(scarM.PCL, 370);
+assert.equal(scarM['PPI−TCL'], 10, 'PPI - TCL <= 30 ms: in the circuit');
+assert.ok(Math.abs(scarM['S-QRS − MDP-QRS']) <= 20, 'S-QRS matches EGM-QRS: not a bystander');
+const ratio = scarM['S-QRS'] / scarM.TCL;
+assert.ok(ratio >= 0.3 && ratio <= 0.5, `S-QRS / TCL ${ratio}: central isthmus`);
+for (const id of ['wct-vt-vs-svt', 'scar-vt-entrain']) for (const lang of ['tr', 'en']) assert.ok(!/gizli/i.test(WCT_TEXT[id][lang]), `${id} ${lang}: "concealed", not "gizli"`);
 
 console.log(`PASS wct-entrain: ${WCT_EXAMPLES.length} recordings verified with event-derived calipers and ladder`);

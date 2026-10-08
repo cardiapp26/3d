@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { createLiveHeart, planTrain } from '../../src/eps/ep-live-model.js';
 import {
   tclBefore, hisPvcTime, analyzeHisPvc, overdriveStart, planOverdrive, atriumEntrained, analyzeOverdrive, interpretOverdrive,
-  interpretSite, planProtocol, analyzeStep, summarizeProtocol, atrialCycle, AVBCL_PLAN
+  interpretSite, planProtocol, analyzeStep, summarizeProtocol, atrialCycle, AVBCL_PLAN, analyzeVaLinking
 } from '../../src/eps/ep-live-maneuvers.js';
 
 const tr = (site, extras, s1 = 600, n = 8) => planTrain({ site, start: 1000, s1, n, extras });
@@ -70,6 +70,20 @@ assert.ok(overdrive('avnrt-atypical').saVa > 85);
   assert.equal(interpretOverdrive({ ...r, cppiTcl: 110 }), 'indeterminate');
   assert.equal(interpretOverdrive({ ...r, cppiTcl: 109 }), 'avrt');
 }
+
+// VA linking after atrial overdrive (Ho 2019 ch 5): AVNRT and ORT return with the SVT VA (delta VA < 10 ms) from
+// any atrial site; in AT the first VA differs by site and from the SVT VA; a terminated tachycardia is not read.
+const vaLink = (c, site, offset = 20) => {
+  const h = running(c);
+  const acl = atrialCycle(h.events(0, 9000), site, 9000);
+  const st = planOverdrive({ site, start: overdriveStart(h.events(0, 9000), 9000, site, acl, offset), tcl: acl, offset, n: 12 });
+  h.stimulate(st); const end = st[st.length - 1].t + 2500; h.advanceTo(end);
+  return analyzeVaLinking(h.events(0, end), st);
+};
+for (const c of ['avnrt-typical', 'avnrt-atypical', 'ort-left']) for (const site of ['hra', 'cs-prox']) assert.equal(vaLink(c, site).verdict, 'linked', `${c} ${site}: VA linked`);
+for (const site of ['hra', 'cs-prox']) assert.ok(vaLink('at-focal', site).deltaVa > 10, `AT ${site}: VA not linked`);
+assert.notEqual(vaLink('at-focal', 'hra').vaReturn, vaLink('at-focal', 'cs-prox').vaReturn, 'AT: the first VA depends on the pacing site');
+assert.equal(vaLink('pjrt', 'hra').verdict, 'terminated', 'PJRT terminated by atrial overdrive: not read');
 
 // Flutter entrainment by site: CS proximal and HRA in the circuit, CS distal outside.
 const flutterPpi = (site) => {

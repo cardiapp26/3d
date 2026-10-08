@@ -1,17 +1,20 @@
 /*
- * Atypical Accessory Pathways & Unusual Electrophysiologic Phenomena
- * based on Reginald T. Ho MD (2019, Chapters 11 & 22) and Sternick EB (2003).
+ * Atypical accessory pathways and unusual electrophysiologic phenomena,
+ * after Ho RT, Electrophysiology of Arrhythmias, 2nd ed. 2019 (fig 11-20
+ * antidromic atriofascicular reentry, fig 12-22 Mahaim potential and
+ * ablation, figs 22-1 and 22-2 supernormality in the right bundle) and
+ * Sternick EB et al. (Mahaim fibres).
  * Synthetic teaching timelines on a millisecond scale; fiducial events stand
  * for measured onsets and electrograms.
  */
 import { surfaceBeat, merge, ev, far, mono, CH_SVT } from './ep-beats.js';
 import { cal, ref, measure } from './ep-caliper.js';
 
-export const ATYPICAL_PHENOMENA_SOURCE = 'https://pubmed.ncbi.nlm.nih.gov/15851159/'; // Sternick 2003 / Ho 2019
+export const ATYPICAL_PHENOMENA_SOURCE = 'https://doi.org/10.15420/aer.2022.12'; // Sternick, Mahaim revisited 2022; Ho 2019 (book, ISBN 9781975101107)
 
 export const ATYPICAL_PHENOMENA_EXAMPLES = Object.freeze([
-  ['ap-mahaim', 'Atipik AP: Mahaim (Atriyofasiküler) Lifi ve M Potansiyeli', 'Atypical AP: Mahaim (Atriofascicular) Fiber and M Potential'],
-  ['ep-supernormality', 'Sıradışı Fenomen: Süpernormal İleti (Paradoksal QRS)', 'Unusual Phenomenon: Supernormal Conduction (Paradoxical QRS)']
+  ['ap-mahaim', 'Atipik AP: Mahaim (atriyofasiküler) yol ve M potansiyeli', 'Atypical AP: Mahaim (atriofascicular) pathway and M potential'],
+  ['ep-supernormality', 'Sıradışı fenomen: süpernormal iletim', 'Unusual phenomenon: supernormal conduction']
 ].map(Object.freeze));
 
 const CH_MAHAIM = ['ecg-ii', 'ecg-v1', 'hra', 'his-d', 'abl-d', 'cs-910', 'cs-12', 'rv'];
@@ -19,20 +22,22 @@ const CH_MAHAIM = ['ecg-ii', 'ecg-v1', 'hra', 'his-d', 'abl-d', 'cs-910', 'cs-12
 // ---------------------------------------------------------------------------
 // 1. Mahaim Fiber (Atriofascicular pathway) during antidromic tachycardia (TCL = 340 ms)
 // Antegrade over the Mahaim pathway to the distal right bundle branch (LBBB pattern).
-// Retrograde up the AV node/His bundle (concentric retrograde atrial sequence).
-// ABL at the lateral tricuspid annulus records an M-potential (M) 40 ms before V.
-// HV interval is short/zero (HV = 0 to -5 ms) because ventricular activation precedes
-// or coincides with retrograde His penetration.
+// Retrograde up the right bundle, His and AV node (concentric retrograde atrial sequence):
+// the His follows the V onset (V-H 15 ms).
+// ABL at the lateral tricuspid annulus (the atrial insertion) records, in order, the local A of
+// the retrograde atrial activation (the latest atrial site, 150 ms after the V), the Mahaim
+// potential (M) and the local V (M-V 40 ms).
 // ---------------------------------------------------------------------------
+const MAHAIM_TCL = 340;
 const mahaimBeat = (v) => {
-  const m = v - 40;  // Mahaim potential on lateral annulus 40 ms prior to V
-  const hRetro = v + 15; // His retrogradely penetrated
-  const aRetro = hRetro + 105; // Concentric retrograde A
+  const m = v - 40;  // Mahaim potential on the lateral annulus, 40 ms before V
+  const hRetro = v + 15; // His retrogradely activated
+  const aRetro = hRetro + 105; // Concentric retrograde A (His catheter)
   return merge(surfaceBeat(v, { wide: true }), {
     'abl-d': [
-      ev('A', m - 35, 0.4, 5),   // Local atrial potential
-      ev('M', m, 0.75, 3),       // Sharp Mahaim potential (ablation target)
-      ev('V', v, 0.8, 6)         // Local ventricular potential (M-V = 40 ms)
+      ev('A', v + 150 - MAHAIM_TCL, 0.4, 5),   // local lateral annulus A of the previous cycle's retrograde activation
+      ev('M', m, 0.75, 3),                     // sharp Mahaim potential (ablation target)
+      ev('V', v, 0.8, 6)                       // local ventricular potential (M-V = 40 ms)
     ],
     hra: [ev('A', aRetro + 25, 0.8), far('V', v + 25, 0.3)],
     'his-d': [ev('V', v, 0.85), ev('H', hRetro, 0.45, 4), ev('A', aRetro, 0.6)],
@@ -43,13 +48,13 @@ const mahaimBeat = (v) => {
 };
 
 // ---------------------------------------------------------------------------
-// 2. Supernormal Conduction (Ho 2019 Chapter 22 Figs 22-1 & 22-2)
+// 2. Supernormal conduction (Ho 2019 figs 22-1 and 22-2)
 // Baseline rhythm: sinus with Right Bundle Branch Block (RBBB, wide QRS = 140 ms).
 // P-P = 800 ms.
 // At t = 1180 ms, a critically timed PAC (coupling interval = 380 ms) arrives
 // exactly during the supernormal period of the right bundle branch.
-// Conduction accelerates through the recovering right bundle -> QRS PARADOXICALLY
-// NARROWS to normal duration (90 ms)!
+// The right bundle, blocked at the sinus rate, conducts this one impulse: the QRS
+// narrows, with the same HV (no equal bilateral bundle delay).
 // ---------------------------------------------------------------------------
 const supernormalSinusRbbb = (t) => {
   const aHis = t + 35;
@@ -70,7 +75,7 @@ const supernormalNarrowBeat = (t) => {
   const aHis = t + 40;
   const h = aHis + 105; // Decremental AH on premature beat
   const v = h + 45;     // Normal HV
-  return merge(surfaceBeat(v, { p: t, wide: false }), { // PARADOXICAL NARROW QRS!
+  return merge(surfaceBeat(v, { p: t, wide: false }), { // narrow QRS: the right bundle conducts
     hra: [ev('A', t, 0.9), far('V', v + 10, 0.25)],
     'his-p': [ev('A', aHis - 3, 0.6), ev('H', h, 0.35, 4), ev('V', v, 0.7)],
     'his-d': [ev('A', aHis, 0.35), ev('H', h, 0.75, 4), ev('V', v, 0.9)],
@@ -84,7 +89,7 @@ const supernormalNarrowBeat = (t) => {
 const recordings = {};
 
 recordings['ap-mahaim'] = {
-  id: 'ap-mahaim', mechanism: 'ap-left-manifest', windowMs: 2200, channels: CH_MAHAIM,
+  id: 'ap-mahaim', mechanism: 'mahaim-antidromic', windowMs: 2200, channels: CH_MAHAIM,
   events: merge(
     mahaimBeat(200),
     mahaimBeat(540),
@@ -115,7 +120,7 @@ recordings['ep-supernormality'] = {
   ),
   markers: [
     { t: 900, label: { tr: 'Temel ritim: Sinüs + Sağ Dal Bloğu (Geniş QRS)', en: 'Baseline: Sinus + Right Bundle Branch Block (Wide QRS)' } },
-    { t: 1280, label: { tr: 'Erken PAC: Süpernormal periyotta paradoksal daralma!', en: 'Premature PAC: Paradoxical narrowing in supernormal period!' } }
+    { t: 1280, label: { tr: 'Erken atriyal atım süpernormal pencerede: QRS daralır, HV aynı', en: 'Premature atrial beat in the supernormal window: narrow QRS, same HV' } }
   ],
   calipers: [
     cal('P-P (Sinüs)', ref('ecg-ii', 'P', 0), ref('ecg-ii', 'P', 1), 'ecg-ii'),
@@ -141,13 +146,13 @@ export function atypicalPhenomenaMeasurements(recording) {
 
 export const ATYPICAL_PHENOMENA_TEXT = Object.freeze({
   'ap-mahaim': {
-    tr: 'Mahaim (Atriyofasiküler) Lifi ve M Potansiyeli (Ho 2019 Bölüm 11, Şekil 11-30/11-34, Sternick 2003): Mahaim yolları sağ atriyum serbest duvarı ile sağ dal arborizasyonu arasında yer alır; sadece antegrad ve dekremental iletim özelliğine sahiptir (retrograd iletmez). Antidromik reentran taşikardi sırasında antegrad kol Mahaim lifi üzerinden sağ ventriküle indiği için yüzey EKG\'de sol dal bloğu (LBBB) morfolojisi görülür; retrograd kol ise AV düğüm-His eksenini kullanır (konsantrik atriyal aktivasyon). Ablasyon kateteri lateral triküspit anulusunda yerel atriyal ve ventriküler sinyaller arasında keskin bir Mahaim potansiyeli (M potansiyeli, burada M-V = 40 ms) kaydeder. M potansiyelinin hedeflenmesi yolu başarıyla ablate eder.',
-    en: 'Mahaim (Atriofascicular) Fiber and M Potential (Ho 2019 Chapter 11, Figs 11-30/11-34, Sternick 2003): Mahaim fibers originate along the right atrial free wall/tricuspid annulus and insert distally into the right bundle branch system; they exhibit exclusively antegrade, decremental conduction without retrograde conduction. During antidromic reciprocating tachycardia, antegrade conduction down the Mahaim pathway produces a classic left bundle branch block (LBBB) pattern, while retrograde conduction ascends the normal His-Purkinje and AV nodal trunk. The ablation catheter at the lateral tricuspid annulus records a distinct, sharp Mahaim potential (M potential, here M-V = 40 ms) preceding local ventricular activation. Eliminating this M potential achieves curative ablation.',
-    source: 'https://pubmed.ncbi.nlm.nih.gov/15851159/'
+    tr: 'Mahaim (atriyofasiküler) yol ve M potansiyeli (Ho 2019, Şekil 11-20 ve 12-22; Sternick): Atriyofasiküler yol çoğunlukla lateral triküspit anulustan çıkar, sağ dalın distaline ya da yakınına girer; yalnız antegrad ve dekremental iletir. Sinüs ritminde preeksitasyon çok az ya da hiç olmayabilir, atriyal pacing ile ortaya çıkar. Antidromik taşikardide uyarı yoldan sağ dala iner (LBBB morfolojisi), sağ dal, His ve AV düğümden geri çıkar: His V başlangıcından sonra gelir (burada V-H 15 ms), atriyal aktivasyon konsantriktir. Ablasyon kateteri lateral triküspit anulusta, atriyal giriş yerinde, A ile V arasında keskin bir Mahaim potansiyeli (M, His benzeri potansiyel) kaydeder (burada M-V 40 ms). Ablasyon genellikle bu atriyal giriş yerinde yapılır.',
+    en: 'Mahaim (atriofascicular) pathway and M potential (Ho 2019, figs 11-20 and 12-22; Sternick): an atriofascicular pathway usually arises from the lateral tricuspid annulus and inserts into or near the distal right bundle; it conducts only antegradely and decrementally. Pre-excitation in sinus rhythm may be minimal or absent and appears with atrial pacing. In antidromic tachycardia the impulse descends the pathway into the right bundle (LBBB morphology) and returns up the right bundle, His and AV node: the His follows the V onset (here V-H 15 ms) and atrial activation is concentric. At the lateral tricuspid annulus, the atrial insertion, the ablation catheter records a sharp Mahaim potential (M, a His-like potential) between the A and the V (here M-V 40 ms). Ablation usually targets this atrial insertion.',
+    source: ATYPICAL_PHENOMENA_SOURCE
   },
   'ep-supernormality': {
-    tr: 'Sıradışı Elektrofizyolojik Fenomen: Süpernormal İleti (Ho 2019 Bölüm 22, Şekil 22-1 ve 22-2): Dal bloğu (burada sağ dal bloğu, RBBB) zemininde, repolarizasyonun tam sonundaki kısa ve kritik bir zaman penceresinde gelen prematüre bir uyarının paradoksal olarak daha iyi iletilmesi ve QRS\'in tamamen daralarak normale dönmesidir. Aksiyon potansiyelinin 3. fazının hemen sonunda hücrelerin uyarılma eşiği geçici olarak dinlenim membran potansiyelinden daha negatiftir (süpernormal periyot). Bu kritik pencereye denk gelen atriyal erken vuru (burada P1-P2 = 380 ms) bloke daldan hızla iletilerek QRS\'i normale döndürür.',
-    en: 'Unusual Electrophysiologic Phenomenon: Supernormal Conduction (Ho 2019 Chapter 22, Figs 22-1 & 22-2): In a patient with baseline bundle branch block (here RBBB), a critically timed premature impulse falling into a brief, narrow window at the end of phase 3 repolarization conducts paradoxically faster and restores a completely normal, narrow QRS complex. During this supernormal excitability phase, the membrane potential is close to threshold, allowing an otherwise blocked bundle branch to conduct unexpectedly.',
-    source: 'https://pubmed.ncbi.nlm.nih.gov/15851159/'
+    tr: 'Süpernormal iletim (Ho 2019, Şekil 22-1 ve 22-2): Süpernormalite, toparlanmanın sonundaki kısa bir pencerede, normalde eşik altında kalacak bir uyarının beklenmedik biçimde iletilmesi ya da uyarım yapmasıdır. Bu pencerede membran potansiyeli dinlenim düzeyine henüz tam inmemiştir, eşiğe daha yakındır; bu yüzden daha zayıf bir uyarı yeter. Temel ritim sağ dal bloklu sinüs ritmidir (P-P 800 ms). Repolarizasyonun sonuna denk gelen erken bir atriyal atım (P1-P2 380 ms) sağ dalın süpernormal penceresine düşer ve sağ dal bu atımı iletir: QRS daralır. HV uzamaz (45 ms); bu, daralmanın sol dalda eşit gecikmeden kaynaklanmadığını gösterir. Daha erken ya da daha geç gelen atımlar sağ dal bloğuyla iletilir.',
+    en: 'Supernormal conduction (Ho 2019, figs 22-1 and 22-2): supernormality is a brief period at the end of recovery during which an otherwise subthreshold impulse unexpectedly conducts or excites. In that window the membrane has not yet returned fully to its resting level and lies closer to threshold, so a weaker stimulus suffices. The underlying rhythm is sinus with right bundle branch block (P-P 800 ms). A premature atrial beat at the end of repolarization (P1-P2 380 ms) falls into the supernormal window of the right bundle and the right bundle conducts it: the QRS narrows. The HV does not lengthen (45 ms), which shows the narrowing is not due to an equal delay in the left bundle. Earlier or later beats conduct with right bundle branch block.',
+    source: ATYPICAL_PHENOMENA_SOURCE
   }
 });

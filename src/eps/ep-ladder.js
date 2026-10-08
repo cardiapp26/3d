@@ -85,7 +85,9 @@ export function buildLadder(events, { until = Infinity } = {}) {
 // ---- Lesson clips: the case catalogue records carry no origins; infer them ----
 
 const ATRIAL_MECHANISMS = new Set(['focal-at', 'at-localized-reentry', 'at-macroreentry', 'flutter-ccw', 'af-pv-triggers']);
-const VENTRICULAR_MECHANISMS = new Set(['fascicular-reentry']);
+const VENTRICULAR_MECHANISMS = new Set(['fascicular-reentry', 'vt-scar']);
+// Antidromic tachycardia over a decremental right-sided pathway (atriofascicular / Mahaim): no delta wave at sinus, the V comes down the pathway.
+const ANTIDROMIC_PATHWAY_MECHANISMS = new Set(['mahaim-antidromic']);
 // Tachycardias whose His comes from a ventricular circuit: a His pairs with an atrial activation only at a normal AH.
 const HIS_CIRCUIT_MECHANISMS = new Set(['fascicular-reentry', 'bundle-branch-reentry']);
 // Only the AV nodal reentry cases have a slow pathway to read.
@@ -121,6 +123,7 @@ export function inferLadderEvents(events, { mechanism = null } = {}) {
   for (const v of ventricles) {
     if (stims.some((s) => s.ch === 'rv' && v.t - s.t >= -5 && v.t - s.t <= 40)) v.origin = 'rv';
     else if (delta.some((d) => v.t - d.t >= -20 && v.t - d.t <= 80)) v.origin = 'ap';
+    else if (ANTIDROMIC_PATHWAY_MECHANISMS.has(mechanism)) v.origin = 'ap';
     else if (VENTRICULAR_MECHANISMS.has(mechanism) && !hisList.some((h) => v.t - h.t > 20 && v.t - h.t < 120)) v.origin = 'vt';
     else v.origin = 'his';
   }

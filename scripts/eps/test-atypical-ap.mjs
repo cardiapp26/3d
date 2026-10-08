@@ -20,18 +20,31 @@ for (const [id] of ATYPICAL_PHENOMENA_EXAMPLES) {
   for (const lang of ['tr', 'en']) assert.ok(ATYPICAL_PHENOMENA_TEXT[id][lang].length > 100, `${id} ${lang} text`);
 }
 
-// 1. Verify Mahaim fiber measurements (Ho Ch 11 / Sternick 2003)
+// 1. Mahaim (atriofascicular) antidromic tachycardia (Ho figs 11-20, 12-22).
 const mahaim = atypicalPhenomenaRecording('ap-mahaim');
 const mM = atypicalPhenomenaMeasurements(mahaim);
-assert.equal(mM.TCL, 340, 'Mahaim antidromic TCL is 340 ms');
-assert.equal(mM['M-V'], 40, 'M-potential precedes local V by 40 ms on lateral tricuspid annulus');
-assert.equal(mM['V-A (retrograd)'], 120, 'Retrograde nodal V-A interval is 120 ms');
+assert.equal(mahaim.mechanism, 'mahaim-antidromic');
+assert.equal(mM.TCL, 340);
+assert.equal(mM['M-V'], 40, 'M potential 40 ms before the local V');
+assert.equal(mM['V-A (retrograd)'], 120, 'retrograde nodal V-A 120 ms');
+// The local A on the annulus belongs to the retrograde atrial activation (not between the HRA A and the M at random).
+const abl = mahaim.events['abl-d'], hraA = mahaim.events.hra.filter((e) => e.type === 'A').map((e) => e.t);
+for (const m of abl.filter((e) => e.type === 'M')) {
+  const a = abl.filter((e) => e.type === 'A' && e.t < m.t).at(-1);
+  if (a && a.t >= hraA[0] - 30) assert.ok(hraA.some((t) => Math.abs(t - a.t) <= 30), `annulus A at ${a.t} is part of an atrial activation`);
+}
+const ladder = buildLadder(inferLadderEvents(mahaim.events, { mechanism: mahaim.mechanism }), { until: mahaim.windowMs });
+assert.ok(ladder.links.some((l) => (l.kind || l.type) === 'ap'), 'ladder: down the pathway');
+assert.ok(!ladder.links.some((l) => (l.kind || l.type) === 'ap-retro'), 'ladder: not up a pathway (antegrade only)');
 
-// 2. Verify Supernormal conduction measurements (Ho Ch 22)
+// 2. Supernormal conduction (Ho figs 22-1, 22-2): the premature beat conducts narrow, HV unchanged.
 const sn = atypicalPhenomenaRecording('ep-supernormality');
 const snM = atypicalPhenomenaMeasurements(sn);
-assert.equal(snM['P-P (Sinüs)'], 800, 'Baseline sinus cycle length is 800 ms');
-assert.equal(snM['P1-P2 (PAC)'], 380, 'Premature coupling interval is 380 ms');
-assert.equal(snM.HV, 45, 'HV interval remains normal (45 ms)');
+assert.equal(snM['P-P (Sinüs)'], 800);
+assert.equal(snM['P1-P2 (PAC)'], 380);
+assert.equal(snM.HV, 45, 'HV unchanged in the narrow beat');
+const widths = sn.events['ecg-ii'].filter((e) => e.type === 'V').map((e) => e.sigma);
+assert.ok(widths[2] < widths[1] && widths[2] < widths[3], 'only the premature beat is narrow');
+assert.ok(!/daha negatif/.test(ATYPICAL_PHENOMENA_TEXT['ep-supernormality'].tr), 'supernormal period: closer to threshold, not a threshold below rest');
 
 console.log(`PASS atypical-ap: ${ATYPICAL_PHENOMENA_EXAMPLES.length} recordings verified with event-derived calipers and ladder`);

@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
     assert.deepEqual(await page.locator('[data-svt-example-item]').evaluateAll((nodes) => nodes.map((n) => n.dataset.svtExampleItem)), examples);
     assert.equal(await page.locator('[data-svt-example]').isVisible(), false);
     assert.equal(await page.locator('[data-svt-example-item][aria-pressed=true]').count(), 1);
-    assert.equal(examples.length, 34);
+    assert.equal(examples.length, 41);
     assert.ok(examples.includes('ap-concealed-compare'), 'concealed versus manifest pathway in the worked recordings');
     assert.ok(examples.includes('ap-lm-antidromic'), 'antidromic AVRT in the worked recordings');
     for (const id of examples) {
@@ -100,6 +100,6 @@ const assert = require('node:assert/strict');
     assert.match(await page.locator('[data-ep-pvi-energy]').textContent(), /geri dönüşümsüz elektroporasyon/);
     await page.locator('[data-ep-section=svt]').click();
     assert.deepEqual(errors, []);
-    console.log('PASS EPS recordings browser: 34 examples (antidromic AVRT, concealed versus manifest pathway), Ector induction and signal definitions, PA/AH/HV, SNRT/cSNRT, PPI/cPPI, localization channels, rendering, findings preservation, toggles, translation, mobile resize, infra-His warning, PFA text');
+    console.log('PASS EPS recordings browser: 41 examples (antidromic AVRT, concealed versus manifest pathway, AV block levels, WCT and scar VT, Mahaim, supernormality), Ector induction and signal definitions, PA/AH/HV, SNRT/cSNRT, PPI/cPPI, localization channels, rendering, findings preservation, toggles, translation, mobile resize, infra-His warning, PFA text');
   } finally { await browser.close(); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });

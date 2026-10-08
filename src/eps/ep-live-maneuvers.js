@@ -12,7 +12,8 @@ const PACE_CHANNEL = { hra: 'hra', 'cs-prox': 'cs-910', 'cs-dist': 'cs-12', rv: 
 export const PPI_CUTOFF = 115;     // PPI - TCL from the RV: > 115 AVNRT, otherwise AVRT
 export const CPPI_CUTOFF = 110;    // Gonzalez-Torrecilla 2006, PMID 16731468: <110 supports ORT
 export const SA_VA_CUTOFF = 85;    // SA - VA: > 85 AVNRT, otherwise AVRT
-export const DELTA_HA_CUTOFF = 0;  // Ho 2019: Delta HA <= 0 AVNRT, > 0 ORT
+export const DELTA_HA_CUTOFF = 0;  // Ho 2019 ch 5: Delta HA = HA(entrainment) - HA(SVT); > 0 AVNRT, < 0 ORT
+export const VA_LINK_MS = 10;      // Ho 2019 ch 5: first VA after atrial overdrive within 10 ms of the SVT VA: linked (AVNRT / ORT); more: AT
 export const CSNRT_LIMIT = 550;    // corrected SNRT upper limit
 
 const of = (events, ch, type) => (events[ch] || []).filter((e) => e.type === type);
@@ -141,7 +142,8 @@ export function analyzeOverdrive(events, stims, { correctAh = true } = {}) {
     const vBefore = hisV.filter((v) => v < first).slice(-2)[0];
     const va = vBefore != null ? (after(hisA, vBefore) ?? NaN) - vBefore : NaN;
     if (Number.isFinite(sa) && Number.isFinite(va)) out.saVa = Math.round(sa - va);
-    // Ho 2019 criterion: Delta HA = HA(paced) - HA(tachycardia)
+    // Ho 2019 criterion: Delta HA = HA(entrainment) - HA(tachycardia); > 0 AVNRT (His and A in sequence
+    // when paced, in parallel in AVNRT), < 0 ORT (in parallel when paced, in sequence in ORT).
     const hisH = of(events, 'his-d', 'H').map((e) => e.t);
     const hTachy = before(hisH, first);
     const aTachy = hTachy != null ? after(hisA, hTachy) : null;
@@ -310,29 +312,32 @@ export function summarizeProtocol(kind, rows, { sinusCl = 800 } = {}) {
 }
 
 /**
- * VA Linking test during Atrial Overdrive Pacing (AOP) (Ho 2019 Ch 5, Ch 13):
- * When atrial pacing ceases, evaluates whether the return atrial cycle length
- * is linked to the preceding ventricular electrogram.
- * In AT: Absence of VA linking (fixed A-A independent of V).
- * In AVNRT/ORT: Presence of VA linking (return A is strictly dependent on prior V).
+ * VA linking after atrial overdrive pacing (Ho 2019 ch 5, figs 5-26 and
+ * 5-27). AVNRT and ORT return through a fixed retrograde structure (the AV
+ * node or the pathway), so the VA interval of the first beat after pacing
+ * matches the VA during the tachycardia: delta VA < 10 ms (linked). In AT
+ * the VA is not a conduction interval but follows the atrial return at the
+ * pacing site: delta VA > 10 ms (not linked).
+ * VA is read from the RV ventricular electrogram to the HRA atrial one; the
+ * first returned A is the first HRA A not captured by a stimulus. A return
+ * later than one tachycardia cycle after its V means pacing ended the
+ * tachycardia: verdict 'terminated'.
  */
-export function analyzeVaLinking(events, stims) {
+export function analyzeVaLinking(events, stims, { tolerance = VA_LINK_MS } = {}) {
   if (!stims || !stims.length) return null;
-  const lastStim = stims[stims.length - 1].t;
-  const hraA = tOf(events, 'hra', 'A');
-  const returnA = hraA.filter((a) => a > lastStim);
-  if (returnA.length < 2) return null;
-  const vs = tOf(events, 'rv', 'V');
-  const vBeforeReturnA = before(vs, returnA[0]);
-  const vaReturn = vBeforeReturnA != null ? returnA[0] - vBeforeReturnA : null;
-  const aaReturn = returnA[1] - returnA[0];
-  const tcl = tclBefore(events, stims[0].t) || aaReturn;
-  const linked = vaReturn != null && Math.abs(vaReturn - (tcl - 150)) <= 40;
-  return {
-    tcl,
-    vaReturn,
-    aaReturn,
-    linked,
-    verdict: linked ? 'linked' : 'unlinked'
-  };
+  const firstStim = stims[0].t, lastStim = stims[stims.length - 1].t;
+  const as = tOf(events, 'hra', 'A'), vs = tOf(events, 'rv', 'V');
+  const aTachy = before(as, firstStim);
+  const vTachy = aTachy != null ? before(vs, aTachy) : null;
+  const captured = (a) => stims.some((s) => a - s.t >= 0 && a - s.t <= 60);
+  const aReturn = as.find((a) => a > lastStim && !captured(a));
+  const vReturn = aReturn != null ? before(vs, aReturn) : null;
+  if (vTachy == null || vReturn == null || vReturn < lastStim) return null;
+  const vaTachy = aTachy - vTachy, vaReturn = aReturn - vReturn;
+  // A return later than one tachycardia cycle after its V is not the tachycardia: pacing ended it.
+  const aaTachy = aTachy - (before(as, aTachy) ?? -Infinity);
+  if (vaReturn >= aaTachy) return { vaTachy, vaReturn, deltaVa: null, linked: null, verdict: 'terminated' };
+  const deltaVa = Math.abs(vaReturn - vaTachy);
+  const linked = deltaVa < tolerance;
+  return { vaTachy, vaReturn, deltaVa, linked, verdict: linked ? 'linked' : 'unlinked' };
 }

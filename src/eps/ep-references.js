@@ -35,10 +35,9 @@ export const EP_REFERENCES = Object.freeze({
   R29: { cite: 'Haïssaguerre M et al. N Engl J Med 1998;339:659-666', doi: '10.1056/NEJM199809033391003' },
   R30: { cite: 'Tzeis S et al. 2024 EHRA/HRS/APHRS/LAHRS AF ablation consensus. Europace 2024;26:euae043', doi: '10.1093/europace/euae043' },
   R31: { cite: 'Haïssaguerre M et al. Circulation 2000;101:1409-1417', doi: '10.1161/01.cir.101.12.1409' },
-  R32: { cite: 'Ho RT. Electrophysiology of Arrhythmias: Practical Images for Diagnosis and Ablation. Wolters Kluwer, 2019', doi: '10.1016/j.hrthm.2019.06.015' },
-  R33: { cite: 'Narula OS et al. Significance of His bundle recordings in AV block. Circulation 1971;43:942-960', doi: '10.1161/01.cir.43.6.942' },
-  R34: { cite: 'Stevenson WG et al. Identification of reentrant ventricular tachycardia circuit by entrainment mapping. Circulation 1993;88:1647-1670', doi: '10.1161/01.cir.88.4.1647' },
-  R35: { cite: 'Sternick EB et al. Recommendations for mapping and ablation of Mahaim fibers. Heart Rhythm 2003;1:679-688', doi: '10.1016/j.hrthm.2004.09.006' }
+  R33: { cite: 'Narula OS et al. Atrioventricular block. Localization and classification by His bundle recordings. Am J Med 1971;50:146-165', doi: '10.1016/0002-9343(71)90144-6' },
+  R34: { cite: 'Stevenson WG et al. Identification of reentry circuit sites during catheter mapping and radiofrequency ablation of ventricular tachycardia late after myocardial infarction. Circulation 1993;88:1647-1670', doi: '10.1161/01.cir.88.4.1647' },
+  R35: { cite: 'Sternick EB, Sanchez-Quintana D et al. Mahaim revisited. Arrhythm Electrophysiol Rev 2022', doi: '10.15420/aer.2022.12' }
 });
 
 /** Link target of a reference: its DOI, or the open full text when it has none. */
