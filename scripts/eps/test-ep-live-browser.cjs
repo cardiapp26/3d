@@ -197,8 +197,22 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.ok((await page.locator('[data-ep-live-protocol-rows] li').allTextContents()).some((t) => /^S1 350: 1:1, AH \d+, PR \d+ > PP$/.test(t)), 'row marks PR > PP');
     assert.ok(await page.locator('[data-ep-live-protocol-rows] li').count() >= 10, 'protocol rows listed');
 
+    // AF mapping: Space plays and pauses the activation / phase map (a focused button is not pressed); no playback on the DF map.
+    await page.locator('[data-ep-section=afmap]').click();
+    await page.waitForFunction(() => window.epsLab.panel.afmap.getState().active);
+    await page.locator('[data-afmap-truth]').focus();
+    const truthBefore = await page.evaluate(() => window.epsLab.panel.afmap.getState().truth);
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().playing), true, 'Space plays the AF map');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().playing), false, 'Space pauses the AF map');
+    assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().truth), truthBefore, 'the focused button is not pressed');
+    await page.evaluate(() => window.epsLab.panel.afmap.set({ map: 'df' }));
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().playing), false, 'DF map: nothing to play');
+
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, Space play / pause on the AF map');
   } finally {
     await browser.close();
   }
