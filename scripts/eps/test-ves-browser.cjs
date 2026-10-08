@@ -31,6 +31,12 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
       assert.equal(await page.locator('[data-ves-readout]').getAttribute('data-unipolar'), 'rS');
       await page.locator('[data-ves-page=loc]').click();
     }
+    await page.locator('[data-ves-card=loc] [data-ves-map-view=root]').click();
+    assert.equal(await page.locator('[data-ves-card=loc] [data-ves-ilt]').count(), 2, 'opened root shows the R-L and R-N interleaflet triangles');
+    await page.locator('[data-ves-card=loc] [data-ves-map-site=lvot-cusp]').click();
+    assert.ok((await page.locator('[data-ves-verdict]').getAttribute('data-candidates')).split(',').includes('lvot-cusp'), 'ILT example selectable on the opened root');
+    assert.equal(await page.locator('[data-ves-card=loc] [data-ves-atlas-3d]').isVisible(), false, '3D toggle hidden on the opened root');
+    await page.locator('[data-ves-card=loc] [data-ves-map-view=base]').click();
     await page.locator('[data-ves-card=loc] [data-ves-atlas-3d]').click();
     assert.equal(await page.locator('[data-ves-card=loc] .ves-map').getAttribute('data-ves-atlas'), '3d');
     await page.waitForFunction(() => { const i = document.querySelector('[data-ves-card=loc] .ves-map image'); return i && i.getBoundingClientRect().width > 300; });
@@ -95,7 +101,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     await module.waitFor({ state: 'visible' });
     assert.equal(await page.locator('[data-ep-section=ves]').getAttribute('aria-selected'), 'true');
     assert.deepEqual(errors, []);
-    console.log('PASS ves-browser: 3D basal atlas, 12 anatomical examples and recordings, keyboard/focus, manual mode, ratio, language state, scar guard, WPW switching, direct route/reload, desktop and 320/390px overflow');
+    console.log('PASS ves-browser: opened aortic root, 3D basal atlas, 12 anatomical examples and recordings, keyboard/focus, manual mode, ratio, language state, scar guard, WPW switching, direct route/reload, desktop and 320/390px overflow');
     console.log(`Screenshots: ${shots}`);
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

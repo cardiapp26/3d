@@ -31,6 +31,7 @@ export const VES_SOURCES = Object.freeze([
   { id: 'abstract', title: 'Nageler et al. · EASY-PVC (ESC 2025 abstract)', url: 'https://doi.org/10.1093/eurheartj/ehaf784.621' },
   { id: 'consensus', title: 'HRS/EHRA/APHRS/LAHRS · Ventricular arrhythmias (2019)', url: 'https://doi.org/10.1002/joa3.12185' },
   { id: 'ratio', title: 'Betensky et al. · V2 transition ratio (2011)', url: 'https://doi.org/10.1016/j.jacc.2011.01.035' },
+  { id: 'aortic-root', title: 'John, Ghazizadeh, Ceresnak · Aortic root substrates (Heart Rhythm 2026)', url: 'https://doi.org/10.1016/j.hrthm.2026.01.055' },
   { id: 'egm', title: 'Focal PVC · Local activation annotation (2018)', url: 'https://academic.oup.com/europace/article/20/FI2/f171/4587592' }
 ]);
 export const vesRegion = id => VES_REGIONS.find(r => r.id === id) || null;

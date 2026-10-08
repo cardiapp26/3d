@@ -1,7 +1,7 @@
 import { VES_REGIONS, VES_INPUTS, VES_OPTIONS, VES_SOURCES, VES_POSITIONS, vesRegion, vesEcg, vesFeatures, localizeVes, v2TransitionRatio, vesRecording } from './ves-loc-model.js';
 import { VES_TEXT } from './ves-loc-text.js';
 import { vesSvg, renderVesOption, renderVesEcg, renderVesRecording } from './ves-loc-visual.js';
-import { renderVesMap } from './ves-loc-map.js';
+import { renderVesMap, ROOT_SITES } from './ves-loc-map.js';
 
 export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
   const state = { active: false, page: 'loc', mapView: 'base', atlas3d: false, selected: 'rvot-septal', inputs: vesFeatures('rvot-septal'), position: 'near', scar: false, amplitudes: {} };
@@ -27,7 +27,8 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
   function select(id) {
     if (!vesRegion(id)) return;
     state.selected = id; state.inputs = vesFeatures(id); state.position = 'near'; state.amplitudes = {};
-    state.mapView = vesRegion(id).view;
+    // Stay on the opened root when the example is drawn there; otherwise show its home view.
+    state.mapView = state.mapView === 'root' && ROOT_SITES[id] ? 'root' : vesRegion(id).view;
     render();
   }
   const mapParts = [];
@@ -35,7 +36,7 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     const box = el('aside', 'ves-atlas');
     const h = el('h4');
     const viewRow = el('div', 'amap-toggles');
-    const viewButtons = new Map(['base', 'chambers'].map(view => {
+    const viewButtons = new Map(['base', 'root', 'chambers'].map(view => {
       const b = button({ 'data-ves-map-view': view }, () => { state.mapView = view; render(); });
       viewRow.append(b); return [view, b];
     }));
