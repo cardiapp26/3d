@@ -3,7 +3,7 @@ import { VES_TEXT } from './ves-loc-text.js';
 import { vesSvg, renderVesOption, renderVesEcg, renderVesRecording } from './ves-loc-visual.js';
 import { renderVesMap, renderV1Gradient, renderFrontalVector, VIEW_SITES } from './ves-loc-map.js';
 
-export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
+export function createVesLocPanel(doc, { getLang = () => 'tr', onPractice = null } = {}) {
   const state = { active: false, page: 'loc', mapView: 'base', atlas3d: false, v1Principle: false, selected: 'rvot-septal', inputs: vesFeatures('rvot-septal'), position: 'near', scar: false, amplitudes: {} };
   const L = () => getLang() === 'en' ? 'en' : 'tr';
   const el = (tag, cls = '', attrs = {}) => {
@@ -20,6 +20,10 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     const b = button({ 'data-ves-page': id }, () => { state.page = id; root.scrollTop = 0; render(); });
     nav.append(b); return [id, b];
   }));
+  // The PAC / PVC source-region exercise (Diagnosis strip) is this tab's practice page.
+  const practice = button({ 'data-ves-practice': '' }, () => onPractice?.());
+  practice.hidden = typeof onPractice !== 'function';
+  nav.append(practice);
   const pages = new Map();
   for (const id of ['loc', 'recordings']) pages.set(id, el('section', 'basics-card ves-page', { 'data-ves-card': id }));
   root.append(heading, intro, nav, ...pages.values());
@@ -135,6 +139,7 @@ export function createVesLocPanel(doc, { getLang = () => 'tr' } = {}) {
     const t = VES_TEXT[L()], result = localizeVes(state.inputs, { scar: state.scar });
     const selected = vesRegion(state.selected), candidateIds = state.scar ? [] : result.candidates;
     heading.textContent = t.heading; intro.textContent = t.intro; nav.setAttribute('aria-label', t.nav);
+    practice.textContent = t.practice;
     for (const [id, b] of navButtons) { b.textContent = t.pages[id]; b.setAttribute('aria-pressed', state.page === id); pages.get(id).hidden = state.page !== id; }
     progress.textContent = result.next ? `${t.next}: ${t.inputNames[result.next]}` : t.decision;
     for (const [key, parts] of inputParts) {

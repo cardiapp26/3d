@@ -12,7 +12,7 @@ import { createAtGuide } from './at-markowitz-guide.js';
 
 const STEPS = ['ecg', 'drug', 'ep'];
 
-export function createSvtDxPanel(doc, { getLang = () => 'tr' } = {}) {
+export function createSvtDxPanel(doc, { getLang = () => 'tr', onPractice = null } = {}) {
   const el = (tag, cls, attrs = {}) => {
     const n = doc.createElement(tag);
     if (cls) n.className = cls;
@@ -34,7 +34,11 @@ export function createSvtDxPanel(doc, { getLang = () => 'tr' } = {}) {
   layout.append(findings, aside);
   const recordings = createSvtRecordings(doc, L);
   const atGuide = createAtGuide(doc, L);
-  root.append(heading, intro, recordings.element, atGuide.element, layout, source);
+  // The hidden-case exercise (Diagnosis strip) is this algorithm's practice: one click away.
+  const practice = el('button', 'amap-toggle svt-practice', { type: 'button', 'data-svt-practice': '' });
+  practice.hidden = typeof onPractice !== 'function';
+  practice.addEventListener('click', () => onPractice?.());
+  root.append(heading, intro, practice, recordings.element, atGuide.element, layout, source);
 
   // Findings: one card per group, grouped under their step.
   const stepHeads = new Map();
@@ -87,7 +91,7 @@ export function createSvtDxPanel(doc, { getLang = () => 'tr' } = {}) {
   function render() {
     recordings.render();
     const t = T();
-    heading.textContent = t.heading; intro.textContent = t.intro; source.textContent = t.source;
+    heading.textContent = t.heading; intro.textContent = t.intro; source.textContent = t.source; practice.textContent = t.practice;
     candTitle.textContent = t.candidates; reasonsTitle.textContent = t.reasons; reset.textContent = t.reset;
     atGuide.render();
     for (const [step, head] of stepHeads) head.textContent = t.steps[step];

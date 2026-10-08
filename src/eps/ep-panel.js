@@ -123,7 +123,7 @@ const ZOOMS = [1, 2, 4];
 
 const pick = (obj, lang) => (lang === 'en' ? obj.en : obj.tr);
 
-export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'substrate', 'mapbasics', 'afmap', 'basics', 'svt', 'wpw', 'ves']);
+export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'substrate', 'mapbasics', 'afmap', 'basics', 'svt', 'wpw', 'ves', 'svt-practice', 'ves-practice']);
 
 /**
  * @param {HTMLElement} mount
@@ -135,7 +135,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
-  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, substrate: false, mapbasics: false, afmap: false, basics: false, svt: false, wpw: false, ves: false };
+  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, substrate: false, mapbasics: false, afmap: false, basics: false, svt: false, wpw: false, ves: false, practice: null };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
   const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links') };
@@ -219,7 +219,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   svtTab.setAttribute('data-ep-section', 'svt');
   svtTab.addEventListener('click', () => { showView('svt'); notifySection(); });
   tabs.appendChild(svtTab);
-  const svtPanel = createSvtDxPanel(doc, { getLang: () => lang });
+  const svtPanel = createSvtDxPanel(doc, { getLang: () => lang, onPractice: () => { showView('svt-practice'); notifySection(); } });
   // WPW localization: delta wave algorithm, coronary sinus sequence, ablation.
   const wpwTab = el('button');
   wpwTab.type = 'button';
@@ -234,7 +234,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   vesTab.setAttribute('data-ep-section', 'ves');
   vesTab.addEventListener('click', () => { showView('ves'); notifySection(); });
   tabs.appendChild(vesTab);
-  const vesPanel = createVesLocPanel(doc, { getLang: () => lang });
+  const vesPanel = createVesLocPanel(doc, { getLang: () => lang, onPractice: () => { showView('ves-practice'); notifySection(); } });
   const livePanel = createLivePanel(doc, { getLang: () => lang });
   const caseRow = el('label', 'ep-case');
   const caseName = el('span');
@@ -399,7 +399,15 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const stripCol = el('div', 'ep-strip');
   stripCol.append(caseRow, title, row, viewBar, canvas, ladderCanvas, inspect, measures);
   const sideCol = el('div', 'ep-side');
-  sideCol.append(taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
+  // Practice of the SVT and PAC / PVC tabs on this strip: a bar names it and leads back to its tab.
+  const practiceBar = el('div', 'ep-practice');
+  practiceBar.setAttribute('data-ep-practice', '');
+  const practiceBack = el('button', 'amap-toggle');
+  practiceBack.type = 'button';
+  practiceBack.setAttribute('data-ep-practice-back', '');
+  practiceBack.addEventListener('click', () => { showView(state.practice === 'ves' ? 'ves' : 'svt'); notifySection(); });
+  practiceBar.append(practiceBack);
+  sideCol.append(practiceBar, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
   root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, mapBasicsPanel.element, afMapPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element);
@@ -415,7 +423,8 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     describe: () => title.textContent
   }));
   const clipsOf = (caseId, section) => epClips(caseId, section);
-  const current = () => state.sim || (state.clipId && epRecording(state.clipId)) || null;
+  // A practice view shows only its own exercise's recording, never the Diagnosis clip underneath.
+  const current = () => state.sim || (!state.practice && state.clipId && epRecording(state.clipId)) || null;
   const visibleChannels = (recording) => selectableChannels(recording)
     .filter((ch) => (view.overrides.has(ch) ? view.overrides.get(ch) : recording.channels.includes(ch)));
   const currentCase = () => EP_CASES.find((c) => c.id === state.caseId);
@@ -588,7 +597,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const recording = current();
     sectionButtons.forEach((button, i) => {
       button.textContent = t.sections[EP_SECTIONS[i]];
-      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.substrate && !state.mapbasics && !state.afmap && !state.basics && !state.svt && !state.wpw && !state.ves && EP_SECTIONS[i] === state.section));
+      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.substrate && !state.mapbasics && !state.afmap && !state.basics && !state.svt && !state.wpw && !state.ves && !state.practice && EP_SECTIONS[i] === state.section));
     });
     liveTab.textContent = lang === 'en' ? 'Live recording' : 'Canlı kayıt';
     liveTab.setAttribute('aria-selected', String(state.live));
@@ -605,11 +614,11 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     basicsTab.textContent = BASICS_TEXT[lang].tab;
     basicsTab.setAttribute('aria-selected', String(state.basics));
     svtTab.textContent = SVT_DX_TEXT[lang].tab;
-    svtTab.setAttribute('aria-selected', String(state.svt));
+    svtTab.setAttribute('aria-selected', String(state.svt || state.practice === 'svt'));
     wpwTab.textContent = WPW_LOC_TEXT[lang].tab;
     wpwTab.setAttribute('aria-selected', String(state.wpw));
     vesTab.textContent = VES_TEXT[lang].tab;
-    vesTab.setAttribute('aria-selected', String(state.ves));
+    vesTab.setAttribute('aria-selected', String(state.ves || state.practice === 'ves'));
     lessonBox.hidden = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.svt || state.wpw || state.ves;
     livePanel.setActive(state.live);
     mappingPanel.setActive(state.mapping);
@@ -671,7 +680,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const clipTitle = clipText?.title || '';
     // Do not repeat the case name when the clip title already starts with it.
     // A task recording keeps the case hidden: task number and evidence kind only.
-    title.textContent = ap ? apTitle() : task ? taskPanel.title(lang) : origin ? originPanel.stripTitle(lang) : pvi ? pviPanel.stripTitle(lang) : pharma ? pharmaPanel.stripTitle(lang) : state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t[recording?.maneuver === 'a-extra' ? 'extrastimulusTitle' : 'neutralTitle'];
+    title.textContent = state.practice && !state.sim ? (lang === 'en' ? 'Catheter recording: for an atrial focus it appears here after your answer.' : 'Kateter kaydı: atriyal odakta, yanıttan sonra burada görünür.') : ap ? apTitle() : task ? taskPanel.title(lang) : origin ? originPanel.stripTitle(lang) : pvi ? pviPanel.stripTitle(lang) : pharma ? pharmaPanel.stripTitle(lang) : state.sim ? `${caseText.name}: ${simName}` : revealed ? (!clipTitle || clipTitle.startsWith(caseText.name) ? clipTitle || caseText.name : `${caseText.name}: ${clipTitle}`) : t[recording?.maneuver === 'a-extra' ? 'extrastimulusTitle' : 'neutralTitle'];
     simPanel.setCase(state.caseId);
     simPanel.element.hidden = state.section !== 'maneuver' || !simPanel.supports(state.caseId);
     pacingPanel.setCase(state.caseId);
@@ -689,11 +698,22 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     apPanel.render();
     atGuide.element.hidden = !['focal-at', 'at-parahisian'].includes(state.caseId);
     atGuide.render();
-    taskPanel.element.hidden = state.section !== 'diagnosis';
-    originPanel.element.hidden = state.section !== 'diagnosis';
+    // The two exercises live in the SVT and PAC / PVC tabs (practice views), not in the Diagnosis case list.
+    taskPanel.element.hidden = state.practice !== 'svt';
+    originPanel.element.hidden = state.practice !== 'ves';
+    if (state.practice === 'svt') taskPanel.element.open = true;
+    if (state.practice === 'ves') originPanel.element.open = true;
+    practiceBar.hidden = !state.practice;
+    practiceBack.textContent = state.practice === 'ves' ? `← ${VES_TEXT[lang].tab}` : `← ${SVT_DX_TEXT[lang].tab}`;
+    caseRow.hidden = Boolean(state.practice);
+    row.hidden = Boolean(state.practice);
+    // No recording yet in a practice view (a PVC question): the exercise takes the whole width.
+    const noStrip = Boolean(state.practice) && !state.sim;
+    stripCol.hidden = noStrip;
+    lessonBox.setAttribute('data-side-only', String(noStrip));
     if (!originPanel.element.hidden) originPanel.draw();
     taskPanel.setActive(task && taskPanel.owns(state.sim));
-    evidenceBtn.hidden = !diagnosis || task || origin;
+    evidenceBtn.hidden = !diagnosis || task || origin || Boolean(state.practice);
     evidenceBtn.textContent = state.evidence ? t.evidenceHide : t.evidenceShow;
     text.textContent = state.sim ? '' : clipText ? (diagnosis ? (state.evidence ? clipText.evidence : clipText.neutral) : clipText.text) : '';
     text.textContent += !state.sim && diagnosis && !state.evidence ? ` ${t[recording?.maneuver === 'a-extra' ? 'extrastimulusPrompt' : 'neutralPrompt']}` : '';
@@ -767,8 +787,16 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   }
 
   /** Show a lesson section or an independent laboratory/workbook tab. */
+  // Strip of each practice view, kept while the learner visits other tabs.
+  const practiceSims = { svt: null, ves: null };
   function showView(id) {
     if (!EP_VIEWS.includes(id)) return;
+    const practice = id === 'svt-practice' ? 'svt' : id === 'ves-practice' ? 'ves' : null;
+    const wasPractice = state.practice;
+    if (wasPractice && wasPractice !== practice) {
+      practiceSims[wasPractice] = state.sim;
+      Object.assign(state, { practice: null, sim: null, origin: false });
+    }
     view.waves = readFlag('waves');   // the live monitor may have changed the shared choices
     view.ladder = readFlag('ladder');
     view.links = readFlag('links');
@@ -784,10 +812,22 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     state.wpw = id === 'wpw';
     state.ves = id === 'ves';
     const lab = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.svt || state.wpw || state.ves;
+    if (practice) {
+      // A practice view is the Diagnosis strip with one exercise: resume it, or start one.
+      setSection('diagnosis');
+      if (state.practice !== practice) {
+        state.practice = practice;
+        const saved = practiceSims[practice];
+        Object.assign(state, { sim: saved, origin: practice === 'ves' && Boolean(saved), evidence: false });
+        if (!saved) { if (practice === 'svt') taskPanel.start(); else originPanel.show(); }
+      }
+      render();
+      return;
+    }
     if (!lab) setSection(id);
-    if (lab || wasLab) render();
+    if (lab || wasLab || wasPractice) render();
   }
-  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.substrate ? 'substrate' : state.mapbasics ? 'mapbasics' : state.afmap ? 'afmap' : state.basics ? 'basics' : state.svt ? 'svt' : state.wpw ? 'wpw' : state.ves ? 'ves' : state.section);
+  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.substrate ? 'substrate' : state.mapbasics ? 'mapbasics' : state.afmap ? 'afmap' : state.basics ? 'basics' : state.svt ? 'svt' : state.wpw ? 'wpw' : state.ves ? 'ves' : state.practice ? `${state.practice}-practice` : state.section);
   const notifySection = () => { if (typeof onSection === 'function') onSection(currentView()); };
 
   if (EP_SECTIONS.includes(initial) && initial !== state.section) setSection(initial);
@@ -801,7 +841,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   state.svt = initial === 'svt';
   state.wpw = initial === 'wpw';
   state.ves = initial === 'ves';
-  render();
+  if (String(initial).endsWith('-practice')) showView(initial); else render();
   return {
     element: root,
     /** Open a clip by id (lesson steps use the legacy scenario ids). */

@@ -118,7 +118,18 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
 
     // Narrow QRS task (EasyECG report phase B): hidden case, neutral title and zone until the answer,
     // each delivered maneuver classified in the ledger from its events.
+    // The exercises live in their topic tabs: none in the Diagnosis case list.
     await page.locator('[data-ep-section=diagnosis]').click();
+    assert.equal(await page.locator('[data-ep-task]').isHidden(), true, 'no narrow QRS task in Diagnosis');
+    assert.equal(await page.locator('[data-ep-origin]').isHidden(), true, 'no source-region exercise in Diagnosis');
+    // Entered from the SVT algorithm tab: same strip, the SVT tab stays selected, no case list.
+    await page.locator('[data-ep-section=svt]').click();
+    await page.locator('[data-svt-practice]').click();
+    assert.match(page.url(), /#\/svt-practice$/, 'practice address');
+    assert.equal(await page.locator('[data-ep-section=svt]').getAttribute('aria-selected'), 'true', 'SVT tab selected while practising');
+    assert.equal(await page.locator('[data-ep-section=diagnosis]').getAttribute('aria-selected'), 'false');
+    assert.equal(await page.locator('[data-ep-case]').isHidden(), true, 'no case list in the practice view');
+    assert.equal(await page.locator('[data-ep-task]').isVisible(), true, 'task panel shown');
     await page.evaluate(() => window.epsLab.panel.task.start('pjrt'));
     assert.match(await page.locator('.egm-title').textContent(), /^Görev \d+: Taşikardi kaydı$/, 'neutral task title');
     assert.equal(await page.evaluate(() => window.epsLab.panel.schematic.getOptions().zone), null, 'zone hidden during the task');
@@ -139,6 +150,12 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
 
     // Source region (phase C): the 12 leads are drawn, an overlapping pattern grades as compatible,
     // the schematic marker appears after the answer; an atrial focus puts its catheter activation on the strip.
+    // PAC / PVC source region: the practice page of the PAC / VES localization tab.
+    await page.locator('[data-ep-section=ves]').click();
+    await page.locator('[data-ves-practice]').click();
+    assert.match(page.url(), /#\/ves-practice$/);
+    assert.equal(await page.locator('[data-ep-section=ves]').getAttribute('aria-selected'), 'true', 'VES tab selected while practising');
+    assert.equal(await page.locator('[data-ep-task]').isHidden(), true, 'only the source-region exercise');
     await page.evaluate(() => window.epsLab.panel.origin.show('pvc-rvot-v3'));
     assert.equal(await page.locator('[data-ep-origin] .ecg12-canvas').isVisible(), true, '12-lead canvas');
     assert.ok(await page.locator('[data-ep-origin] .ecg12-canvas').evaluate((c) => c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 1 && v > 200)), '12-lead traces drawn');
@@ -152,8 +169,15 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     await page.locator('[data-ep-origin-answer="rspv"]').click();
     assert.equal(await page.evaluate(() => window.epsLab.panel.getRecording().lab), 'origin', 'catheter activation on the strip after the answer');
     assert.match(await page.locator('[data-ep-origin]').textContent(), /örnekleme sınırı/, 'sampling limit explained');
-    await page.locator('[data-ep-case]').selectOption({ index: 1 });
-    assert.equal(await page.evaluate(() => window.epsLab.panel.schematic.getOptions().origin), null, 'marker cleared by a case change');
+    await page.locator('[data-ep-practice-back]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.panel.getActiveView()), 'ves', 'back to the localization tab');
+    await page.locator('[data-ep-section=diagnosis]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.panel.schematic.getOptions().origin), null, 'marker cleared on leaving the practice');
+    // Coming back resumes the same task where it was left.
+    await page.locator('[data-ep-section=svt]').click();
+    await page.locator('[data-svt-practice]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.panel.task.getCase()), 'pjrt', 'task resumed');
+    assert.equal(await page.evaluate(() => window.epsLab.panel.task.isAnswered()), true);
     await page.evaluate(() => window.epsLab.setLang('en'));
     assert.match(await page.locator('[data-ep-task] summary').textContent(), /narrow QRS/i, 'task panel follows the language');
     await page.evaluate(() => window.epsLab.setLang('tr'));

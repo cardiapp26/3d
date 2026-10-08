@@ -394,3 +394,9 @@
 .wpw-cs-layout{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(0,1.2fr);gap:22px;align-items:start}
 .wpw-cs-detail{display:flex;flex-direction:column;gap:14px;min-width:0}
 @media(max-width:900px){.wpw-cs-layout{grid-template-columns:1fr}}
+
+/* Entry to the practice view of a topic tab, and its back bar on the strip (ep-panel.js). */
+.svt-practice { align-self: flex-start; }
+.ep-practice { display: flex; gap: 6px; }
+.ep-lesson[data-side-only=true] { grid-template-columns: minmax(0, 1fr); }
+.ep-lesson[data-side-only=true] .ep-side { max-width: 880px; }

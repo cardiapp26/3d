@@ -6,6 +6,7 @@
 export const SVT_DX_TEXT = {
   tr: {
     tab: 'SVT algoritması',
+    practice: 'Alıştırma: gizli olguda tanı koy (manevralarla) →',
     heading: 'Dar QRS taşikardi: bulgu aday listesini daraltır',
     intro: 'Bir bulgu seçin: kapıyı kapattığı mekanizmalar elenir, destekledikleri öne çıkar. Seçmediğiniz bulgu hiçbir şeyi değiştirmez.',
     reset: 'Sıfırla',
@@ -121,6 +122,7 @@ export const SVT_DX_TEXT = {
   },
   en: {
     tab: 'SVT algorithm',
+    practice: 'Practice: diagnose a hidden case (with maneuvers) →',
     heading: 'Narrow QRS tachycardia: each finding narrows the candidate list',
     intro: 'Pick a finding: the mechanisms it rules out are crossed off and the ones it supports come forward. A finding you do not pick changes nothing.',
     reset: 'Reset',

@@ -1,7 +1,7 @@
 const site = (name, anatomy, ecg, recording, caution) => ({ name, anatomy, ecg, recording, caution });
 export const VES_TEXT = {
   tr: {
-    tab: 'VES lokalizasyonu', heading: 'VES · EKG’den anatomiye',
+    tab: 'PAC / VES lokalizasyonu', practice: 'Alıştırma: PAC / VES kaynağı →', heading: 'VES · EKG’den anatomiye',
     intro: 'Ventriküler ekstrasistolün olası kaynak bölgesini oku; anatomik haritayı ve aynı bölgenin lokal kayıtlarını birlikte incele.',
     pages: { loc: 'Görsel lokalizasyon', recordings: 'Anatomi ve kayıtlar' },
     nav: 'VES çalışma sayfaları', map: 'Bölge atlası', base: 'BAZAL / KAPAK DÜZLEMİ', root: 'AORT KÖKÜ (AÇIK)', rvot: 'RVOT (AÇIK)', chambers: 'VENTRİKÜLER KESİT',
@@ -63,7 +63,7 @@ export const VES_TEXT = {
     }
   },
   en: {
-    tab: 'PVC localization', heading: 'PVC · From ECG to anatomy',
+    tab: 'PAC / PVC localization', practice: 'Practice: PAC / PVC source →', heading: 'PVC · From ECG to anatomy',
     intro: 'Read likely ventricular ectopic source regions; explore their anatomy and local recordings together.',
     pages: { loc: 'Visual localization', recordings: 'Anatomy and recordings' },
     nav: 'PVC workbook pages', map: 'Region atlas', base: 'BASAL / VALVE PLANE', root: 'AORTIC ROOT (OPENED)', rvot: 'RVOT (OPENED)', chambers: 'VENTRICULAR CUTAWAY',
