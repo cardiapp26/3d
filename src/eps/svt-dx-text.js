@@ -33,8 +33,8 @@ export const SVT_DX_TEXT = {
         hint: 'AVRT için her atriyal vurunun ventrikülü izlemesi gerekir.',
         options: {
           oneToOne: { label: 'Birebir (1:1)', why: 'Hepsine izin verir.' },
-          aMoreV: { label: 'A > V (AV blok, taşikardi sürüyor)', why: 'AVRT olamaz: ventrikül devrenin zorunlu parçası, atriyuma iletilemeyen vuru devreyi keser.' },
-          vMoreA: { label: 'V > A', why: 'AVRT ve atriyal ritimler olamaz; geriye AVNRT (çift antegrat yol) ya da nodoventriküler devreler kalır.' }
+          aMoreV: { label: 'A > V (AV blok, taşikardi sürüyor)', why: 'AVRT olamaz: ventrikül devrenin zorunlu parçasıdır, ventriküle iletilemeyen atriyal vuru devreyi kırar.' },
+          vMoreA: { label: 'V > A', why: 'AVRT ve atriyal ritimler olamaz; olağan mekanizma AVNRT\'de üst ortak yol blokudur (seyrek olarak çift antegrat yol ile 1:2 iletim ya da nodoventriküler devreler kalabilir).' }
         }
       },
       pseudo: {
@@ -75,7 +75,7 @@ export const SVT_DX_TEXT = {
         hint: 'Yalnızca blok olup taşikardi sürdüğünde sorulur.',
         options: {
           sawtooth: { label: 'Testere dişi dalgalar', why: 'Atriyal flutter tanısı.' },
-          isoelectric: { label: 'İzoelektrik hatlı P dalgaları', why: 'Flutter olmaz; AT (bazen SNRT) devam eder. AVNRT\'nin bloklu sürmesi çok nadirdir.' }
+          isoelectric: { label: 'İzoelektrik hatlı P dalgaları', why: 'Flutter elenir; AT veya SNRT devam eder. AVNRT\'nin 2:1 blokla sürmesi çok seyrektir.' }
         }
       },
       pwave: {
@@ -83,7 +83,7 @@ export const SVT_DX_TEXT = {
         hint: 'Hastanın sinüs P\'si bilinmeli.',
         options: {
           negInferior: { label: 'İnferiorda (II, III, aVF) negatif, retrograd', why: 'SNRT elenir. AVNRT, AVRT ya da alt atriyum kökenli AT kalır.' },
-          differs: { label: 'Sinüs P\'sinden farklı', why: 'Atriyal taşikardi tanısı.' },
+          differs: { label: 'Sinüs P\'sinden farklı', why: 'SNRT elenir; retrograd P (AVNRT/AVRT) veya ektopik atriyal odak (AT) kalır.' },
           sinusLike: { label: 'Sinüs P\'siyle aynı, hız genelde ~180', why: 'SNRT düşündürür; retrograd P olsaydı inferiorda negatif olurdu.' }
         }
       },
@@ -91,21 +91,21 @@ export const SVT_DX_TEXT = {
         title: 'Atriyal aktivasyon yönü (EFÇ)',
         hint: 'AVNRT ve AVRT atriyumu aşağıdan yukarı, retrograd aktive eder.',
         options: {
-          superiorInferior: { label: 'Yukarıdan aşağıya', why: 'Kesin atriyal taşikardi: AVNRT ve AVRT\'de aktivasyon retrograttır.' }
+          superiorInferior: { label: 'Yukarıdan aşağıya', why: 'AVNRT ve AVRT\'de aktivasyon retrograttır (aşağıdan yukarı); bunlar elenir. AT veya SNRT kalır.' }
         }
       },
       aaPr: {
         title: 'AA sabit, RP/PR değişken (EFÇ)',
         hint: 'Atriyal siklus uzunluğu sabit kalırken sürelerin döngüden döngüye değişmesi.',
         options: {
-          aaConstRpVariable: { label: 'AA sabit, RP değişken', why: 'Atriyal taşikardi tanısı, diğerleri elenir.' }
+          aaConstRpVariable: { label: 'AA sabit, RP değişken', why: 'Zorunlu VA ilişkisi kalkar: AVNRT ve AVRT elenir. Değişken bloklu AT, flutter veya SNRT kalabilir.' }
         }
       },
       bbb: {
         title: 'Dal bloğunda VA süresi (EFÇ)',
         hint: 'Taşikardi sırasında gelişen dal bloğunda VA ve siklus uzunluğuna bakın.',
         options: {
-          vaPlus30: { label: 'VA 30 ms veya daha çok uzadı', why: 'Blokaj olan tarafta serbest duvar aksesuar yol vardır (Coumel): AVNRT ve atriyal ritimler elenir.' },
+          vaPlus30: { label: 'VA ≥ 35 ms uzadı', why: 'Blokaj olan tarafta serbest duvar aksesuar yol vardır (Coumel; Kerr eşiği ≥ 35 ms): AVNRT ve atriyal ritimler elenir.' },
           noChange: { label: 'VA değişmedi', why: 'Elemez: AVNRT, septal ya da karşı taraf yolu olabilir.' }
         }
       },
@@ -149,8 +149,8 @@ export const SVT_DX_TEXT = {
         hint: 'AVRT needs every atrial beat to be followed by a ventricular one.',
         options: {
           oneToOne: { label: 'One to one (1:1)', why: 'Allows all of them.' },
-          aMoreV: { label: 'A > V (AV block, tachycardia goes on)', why: 'Not AVRT: the ventricle is part of the circuit, and a beat that does not reach the atrium breaks it.' },
-          vMoreA: { label: 'V > A', why: 'Not AVRT and not an atrial rhythm; AVNRT (dual antegrade pathways) or nodoventricular circuits remain.' }
+          aMoreV: { label: 'A > V (AV block, tachycardia goes on)', why: 'Not AVRT: the ventricle is an obligatory part of the circuit; an atrial beat failing to reach the ventricle breaks the circuit.' },
+          vMoreA: { label: 'V > A', why: 'Not AVRT and not an atrial rhythm; typical AVNRT mechanism is block in the upper common pathway (rarely dual antegrade with 1:2 conduction or nodoventricular circuits remain).' }
         }
       },
       pseudo: {
@@ -191,7 +191,7 @@ export const SVT_DX_TEXT = {
         hint: 'Asked only when the block occurred and the tachycardia continued.',
         options: {
           sawtooth: { label: 'Saw-tooth waves', why: 'Atrial flutter.' },
-          isoelectric: { label: 'P waves with an isoelectric baseline', why: 'Not flutter; AT (sometimes SNRT) goes on. AVNRT carrying on with block is very rare.' }
+          isoelectric: { label: 'P waves with an isoelectric baseline', why: 'Not flutter; AT or SNRT goes on. AVNRT carrying on with 2:1 block is very rare.' }
         }
       },
       pwave: {
@@ -199,7 +199,7 @@ export const SVT_DX_TEXT = {
         hint: 'The sinus P of the patient has to be known.',
         options: {
           negInferior: { label: 'Negative in the inferior leads (II, III, aVF), retrograde', why: 'SNRT goes. AVNRT, AVRT or low atrial AT remain.' },
-          differs: { label: 'Different from the sinus P', why: 'Atrial tachycardia.' },
+          differs: { label: 'Different from the sinus P', why: 'SNRT goes; could be retrograde P (AVNRT/AVRT) or an ectopic atrial focus (AT).' },
           sinusLike: { label: 'Same as the sinus P, rate usually ~180', why: 'Suggests SNRT; a retrograde P would be negative inferiorly.' }
         }
       },
@@ -207,21 +207,21 @@ export const SVT_DX_TEXT = {
         title: 'Direction of atrial activation (EP study)',
         hint: 'AVNRT and AVRT activate the atrium retrogradely, from below upward.',
         options: {
-          superiorInferior: { label: 'From above downward', why: 'Atrial tachycardia for certain: activation is retrograde in AVNRT and AVRT.' }
+          superiorInferior: { label: 'From above downward', why: 'Atrial activation is retrograde in AVNRT and AVRT, so they are excluded; AT or SNRT remain.' }
         }
       },
       aaPr: {
         title: 'AA constant, RP/PR variable (EP study)',
         hint: 'The atrial cycle length holds while the intervals change from cycle to cycle.',
         options: {
-          aaConstRpVariable: { label: 'AA constant, RP variable', why: 'Atrial tachycardia; the others go.' }
+          aaConstRpVariable: { label: 'AA constant, RP variable', why: 'Fixed VA relationship is absent: AVNRT and AVRT are excluded. AT, flutter with variable block, or SNRT remain.' }
         }
       },
       bbb: {
         title: 'VA during bundle branch block (EP study)',
         hint: 'Watch VA and the cycle length when a bundle branch block appears in tachycardia.',
         options: {
-          vaPlus30: { label: 'VA lengthens by 30 ms or more', why: 'A free-wall accessory pathway on the blocked side (Coumel): AVNRT and atrial rhythms go.' },
+          vaPlus30: { label: 'VA lengthens by ≥ 35 ms with BBB', why: 'A free-wall accessory pathway on the blocked side (Coumel; Kerr threshold ≥ 35 ms): AVNRT and atrial rhythms go.' },
           noChange: { label: 'VA unchanged', why: 'Excludes nothing: AVNRT, a septal or a contralateral pathway.' }
         }
       },

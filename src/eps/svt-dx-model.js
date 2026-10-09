@@ -42,18 +42,18 @@ export const GROUPS = Object.freeze([
   } },
   { id: 'waves', step: 'drug', requires: { adeno: 'blockPersists' }, options: {
     sawtooth: { excludes: without(MECHANISMS, ['flutter']) },
-    isoelectric: { excludes: ['flutter', ...AVNRT] }
+    isoelectric: { excludes: ['flutter'] }
   } },
   { id: 'pwave', step: 'drug', options: {
     negInferior: { excludes: ['snrt'] },
-    differs: { excludes: [...AVNRT, ...AVRT, 'snrt'], favors: ['at'] },
+    differs: { excludes: ['snrt'], favors: ['at'] },
     sinusLike: { excludes: [...AVNRT, ...AVRT], favors: ['snrt'] }
   } },
   { id: 'activation', step: 'ep', options: {
-    superiorInferior: { excludes: without(MECHANISMS, ['at']) }
+    superiorInferior: { excludes: [...AVNRT, ...AVRT] }
   } },
   { id: 'aaPr', step: 'ep', options: {
-    aaConstRpVariable: { excludes: without(MECHANISMS, ['at']) }
+    aaConstRpVariable: { excludes: [...AVNRT, ...AVRT] }
   } },
   { id: 'bbb', step: 'ep', options: {
     vaPlus30: { excludes: [...AVNRT, ...ATRIAL], favors: AVRT },

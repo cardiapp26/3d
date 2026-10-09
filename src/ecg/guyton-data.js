@@ -143,9 +143,9 @@ export const GUYTON_TOPICS = [
         magnitude: 0.40,
         details: {
           tr: 'Ventriküllerin en son aktive olan bazal bölgeleri (sol ventrikül tabanı ve pulmoner konus) depolarize olur. Terminal vektör bazal yönelime döner; her derivasyondaki son defleksiyon izdüşüme bağlıdır. Bu frontal −45° örneğinde I pozitif, II/III negatiftir.',
-          en: 'Last parts to depolarize are basal posterolateral LV and pulmonary conus. Vector turns superiorly and posteriorly, writing the terminal S wave in leads I, II, III.'
+          en: 'Last parts to depolarize are basal posterolateral LV and pulmonary conus. Vector turns superiorly and posteriorly; in this frontal −45° example, Lead I is positive while terminal S waves are written in leads II and III.'
         },
-        waves: { lead1: -0.15, lead2: -0.25, lead3: -0.15, v1: -0.30, v6: -0.20 }
+        waves: { lead1: 0.28, lead2: -0.25, lead3: -0.15, v1: -0.30, v6: -0.20 }
       },
       {
         step: 5,
@@ -307,7 +307,7 @@ export const GUYTON_TOPICS = [
         title: { tr: 'Azalmış İletim Hızı (İskemi / Hiperkalemi / Purkinje Bloğu)', en: 'Decreased Conduction Velocity (Ischemia)' },
         desc: {
           tr: 'İletim hızı yarıya indiğinde uyarının yolu tamamlama süresi iki katına çıkar. Doku dinlenme fazına geçmiş olur ve re-entry halkası kesintisiz döner.',
-          en: 'If conduction velocity slows, impulse travel time doubles, allowing previously stimulated muscle time to recover excitability.'
+          en: 'If conduction velocity is halved, impulse travel time doubles, allowing previously stimulated muscle time to recover excitability.'
         }
       },
       {

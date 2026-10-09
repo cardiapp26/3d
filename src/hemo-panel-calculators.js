@@ -285,7 +285,9 @@ export function createCalculators({ lang: initialLang = 'tr', signal } = {}) {
     const sc = hemo.getScenario();
     lastMetrics = m;
     const [fick, output, thermo, gorlin, shunt, res] = ['fick', 'output', 'thermo', 'gorlin', 'shunt', 'res'].map(id => blocks.find(b => b.def.id === id));
-    setValues(fick, { sao2: sats.ao, svo2: sats.pa });
+    const hasShunt = Boolean(m.stepUp || (m.qpQs && m.qpQs > 1.05));
+    const svo2 = hasShunt ? m.mixedVenous : sats.pa;
+    setValues(fick, { sao2: sats.ao, svo2 });
     // Doppler block: the VTI that gives the scenario's stroke volume through the shown LVOT.
     const lvotD = parseFloat(output.inputs.lvotD.value);
     setValues(output, { hr: sc.hr, vti: (sc.co * 1000 / sc.hr) / lvotArea(lvotD) });

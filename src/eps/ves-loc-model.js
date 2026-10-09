@@ -148,7 +148,7 @@ export const VES_STEPWISE = node('axis', [
       [['negative'], node('transition', [[['late'], ['posteriorRvot']], [['v3'], ['posteriorRvot', 'rcc']], [['early', 'positive'], ['rcc']]])],
       [['r'], node('transition', [[['late'], ['tvFree']], [['v3', 'early', 'positive'], ['tvSeptum', 'parahis']]])]
     ])],
-    [['negative', 'biphasic'], node('transition', [[['late', 'v3'], ['anteriorRvot']], [['early'], ['lcc', 'summit']], [['positive'], ['lcc', 'summit', 'amc', 'topMv', 'apm', 'laf']]])]
+    [['negative', 'biphasic'], node('transition', [[['late'], ['anteriorRvot']], [['v3'], ['anteriorRvot', 'lcc', 'summit']], [['early'], ['lcc', 'summit']], [['positive'], ['lcc', 'summit', 'amc', 'topMv', 'apm', 'laf']]])]
   ])],
   [['superior'], node('v1', [
     [['lbbb', 'rs'], node('transition', [[['late'], ['tvFree', 'mb']], [['v3', 'early', 'positive'], ['tvSeptum', 'crux']]])],

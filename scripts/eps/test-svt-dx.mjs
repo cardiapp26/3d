@@ -47,10 +47,10 @@ assert.deepEqual(left({}), [...MECHANISMS].sort());
 assert.equal(evaluate({}).conflict, false);
 
 // The five excluding and diagnosing EP findings.
-assert.deepEqual(left({ activation: 'superiorInferior' }), ['at'], 'superior to inferior: atrial tachycardia');
+assert.deepEqual(left({ activation: 'superiorInferior' }), ['at', 'flutter', 'snrt'].sort(), 'superior to inferior: excludes AVNRT and AVRT');
 assert.ok(!left({ av: 'aMoreV' }).includes('avrt') && !left({ av: 'aMoreV' }).includes('avrtSlow'), 'A > V excludes AVRT');
 assert.ok(left({ av: 'aMoreV' }).includes('avnrtTyp'), 'blocked AVNRT stays possible');
-assert.deepEqual(left({ aaPr: 'aaConstRpVariable' }), ['at'], 'AA constant with variable RP: atrial tachycardia');
+assert.deepEqual(left({ aaPr: 'aaConstRpVariable' }), ['at', 'flutter', 'snrt'].sort(), 'AA constant with variable RP: excludes AVNRT and AVRT');
 assert.deepEqual(left({ bbb: 'vaPlus30' }), ['avrt', 'avrtSlow'], 'VA +30 ms with bundle branch block: accessory pathway');
 assert.equal(status({ bbb: 'vaPlus30' }, 'avrt'), 'favored');
 assert.deepEqual(left({ bbb: 'noChange' }), [...MECHANISMS].sort(), 'no change excludes nothing');
@@ -77,7 +77,7 @@ const waves = GROUPS.find((g) => g.id === 'waves');
 assert.equal(groupEnabled(waves, {}), false, 'waves wait for a persisting block');
 assert.deepEqual(left({ waves: 'sawtooth' }), [...MECHANISMS].sort(), 'a locked group is ignored');
 assert.deepEqual(left({ adeno: 'blockPersists', waves: 'sawtooth' }), ['flutter'], 'saw-tooth: flutter');
-assert.deepEqual(left({ adeno: 'blockPersists', waves: 'isoelectric' }), ['at', 'snrt'], 'isoelectric P waves: AT or SNRT');
+assert.ok(!left({ adeno: 'blockPersists', waves: 'isoelectric' }).includes('flutter') && !left({ adeno: 'blockPersists', waves: 'isoelectric' }).includes('avrt'), 'isoelectric P waves: flutter and AVRT excluded');
 
 // P wave morphology.
 assert.ok(!left({ pwave: 'negInferior' }).includes('snrt'), 'negative inferior P excludes SNRT');
@@ -89,7 +89,7 @@ assert.ok(!left({ pwave: 'sinusLike' }).includes('avnrtTyp'));
 const conflict = evaluate({ activation: 'superiorInferior', bbb: 'vaPlus30' });
 assert.equal(conflict.conflict, true);
 assert.deepEqual(conflict.remaining, []);
-assert.equal(evaluate({ activation: 'superiorInferior' }).single, 'at');
+assert.equal(evaluate({ activation: 'superiorInferior', pwave: 'differs', adeno: 'blockPersists', waves: 'isoelectric' }).single, 'at');
 
 // Every group and option is described in both languages, and no em dash.
 for (const lang of ['tr', 'en']) {
@@ -126,8 +126,9 @@ assert.equal(nodes().find((n) => n.attributes['data-svt-mechanism'] === 'avrt').
 assert.equal(button('av:aMoreV').attributes['aria-pressed'], 'true');
 button('av:aMoreV').listeners.click();
 assert.equal(nodes().find((n) => n.attributes['data-svt-mechanism'] === 'avrt').attributes['data-status'], 'possible', 'a second click clears the finding');
-button('activation:superiorInferior').listeners.click();
-assert.match(nodes().find((n) => n.attributes['data-svt-verdict'] !== undefined).textContent, /Atriyal taşikardi/, 'single candidate named');
+button('adeno:blockPersists').listeners.click();
+button('waves:sawtooth').listeners.click();
+assert.match(nodes().find((n) => n.attributes['data-svt-verdict'] !== undefined).textContent, /Atriyal flutter/, 'single candidate named');
 nodes().find((n) => n.attributes['data-svt-reset'] !== undefined).listeners.click();
 assert.deepEqual(panel.getState().selection, {});
 panel.setActive(false);

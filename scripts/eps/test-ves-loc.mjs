@@ -28,7 +28,7 @@ assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'negative', t
 assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'negative', transition: 'early' }), ['rcc']);
 assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'r', transition: 'late' }), ['tvFree']);
 assert.deepEqual(sites({ axis: 'inferior', leadI: 'positive', avl: 'r', transition: 'v3' }), ['tvSeptum', 'parahis']);
-assert.deepEqual(sites({ axis: 'inferior', leadI: 'negative', transition: 'v3' }), ['anteriorRvot']);
+assert.deepEqual(sites({ axis: 'inferior', leadI: 'negative', transition: 'v3' }), ['anteriorRvot', 'lcc', 'summit']);
 assert.deepEqual(sites({ axis: 'inferior', leadI: 'negative', transition: 'early' }), ['lcc', 'summit']);
 assert.deepEqual(sites({ axis: 'inferior', leadI: 'negative', transition: 'positive' }), ['lcc', 'summit', 'amc', 'topMv', 'apm', 'laf']);
 assert.deepEqual(sites({ axis: 'superior', v1: 'lbbb', transition: 'late' }), ['tvFree', 'mb']);

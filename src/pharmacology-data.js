@@ -866,8 +866,8 @@ export const PHARMA_TOPICS = [
           "en": "A1 receptor action produces brief AV-nodal block; half-life <10 seconds."
         },
         "use": {
-          "tr": "Düzenli AV nod bağımlı SVT. Erişkin periferik IV etiket örneği: 6 mg, 1–2 saniyede; yanıt yoksa 1–2 dakika sonra 12 mg. Hastaya yakın giriş ve hemen hızlı SF yıkama. Nakil/santral kateterde düşük başlangıç dozu uzman protokolüne göre; AHA 1 mg yeterli olabileceğini belirtir.",
-          "en": "Regular AV-node-dependent SVT. Adult peripheral IV label example: 6 mg over 1–2 seconds; if unsuccessful, 12 mg after 1–2 minutes. Use patient-proximal access and immediate rapid saline flush. Transplant/central-line patients need reduced initial dosing under specialist protocol; AHA notes 1 mg may suffice."
+          "tr": "Düzenli AV nod bağımlı SVT. Erişkin periferik IV etiket örneği: 6 mg, 1–2 saniyede; yanıt yoksa 1–2 dakika sonra 12 mg. Hastaya yakın giriş ve hemen hızlı SF yıkama. Nakil/santral kateter veya dipiridamol/karbamazepin varlığında AHA başlangıç dozunun 3 mg'a düşürülmesini önerir (nakil veya santral yolda 1 mg da yeterli olabilir).",
+          "en": "Regular AV-node-dependent SVT. Adult peripheral IV label example: 6 mg over 1–2 seconds; if unsuccessful, 12 mg after 1–2 minutes. Use patient-proximal access and immediate rapid saline flush. For transplant, central line access, dipyridamole or carbamazepine, AHA recommends a reduced initial dose of 3 mg (in transplant or central access 1 mg may suffice)."
         },
         "risk": {
           "tr": "Pre-eksite AF (WPW) ve düzensiz/polimorfik geniş QRS taşikardide verilmez: VF riski. WPW ile düzenli ortodromik AVRT aynı durum değildir. Astım/aktif bronkospazmda kontrendike. Geçici AV blok/asistoli, flushing ve göğüs sıkışması yapabilir.",

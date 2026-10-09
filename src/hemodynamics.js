@@ -147,13 +147,13 @@ function respirationAdjust(station, value, targets, flags, insp) {
   if (flags.has('kussmaul') && (station === 'ra' || station === 'rv')) out += RESP_SWING * insp;
   else out -= RESP_SWING * insp;
   if (flags.has('pulsus_paradoxus') && (station === 'ao' || station === 'lv')) {
-    const floor = station === 'ao' ? targets.ao.diastolic : targets.lv.edp;
+    const floor = station === 'ao' ? targets.ao.diastolic : (out > targets.ao.diastolic ? targets.ao.diastolic : targets.lv.edp);
     out = floor + (out - floor) * (1 - 0.4 * positive);   // systolic falls > 10 mmHg on inspiration
   }
   if (flags.has('ventricular_interdependence')) {
     if (station === 'lv' || station === 'ao') {
-      const floor = station === 'ao' ? targets.ao.diastolic : targets.lv.edp;
-      out = floor + (out - floor) * (1 - 0.1 * insp);
+      const floor = station === 'ao' ? targets.ao.diastolic : (out > targets.ao.diastolic ? targets.ao.diastolic : targets.lv.edp);
+      out = floor + (out - floor) * (1 - 0.05 * insp);
     }
     if (station === 'rv' || station === 'pa') {
       const floor = station === 'pa' ? targets.pa.diastolic : targets.rv.edp;
@@ -242,6 +242,7 @@ export function createHemodynamics(initialId = 'normal') {
     const sats = scenario.saturations;
     const mixedVenous = mixedVenousSaturation(sats.svc, sats.ivc);
     const shunt = qpQs({ arterial: sats.ao, mixedVenous, pulmonaryVein: sats.pv, pulmonaryArtery: sats.pa });
+    const qp = (shunt && Number.isFinite(shunt) && shunt > 1) ? scenario.co * shunt : scenario.co;
     return {
       hr,
       co: scenario.co,
@@ -263,8 +264,8 @@ export function createHemodynamics(initialId = 'normal') {
         aortic: flags.has('lv_ao_gradient') && !flags.has('spike_and_dome') && gradientLvAo > 5 ? gorlinArea({ flow: scenario.co, hr, period: sep, meanGradient: gradientLvAo, constant: GORLIN_AORTIC }) : null,
         mitral: flags.has('lv_pcwp_gradient') && gradientLvPcwp > 3 ? gorlinArea({ flow: scenario.co, hr, period: dfp, meanGradient: gradientLvPcwp, constant: GORLIN_MITRAL }) : null
       },
-      pvrWood: pvrWood(means.pa, means.pcwp, scenario.co),
-      pvrDyn: pvrDyn(means.pa, means.pcwp, scenario.co),
+      pvrWood: pvrWood(means.pa, means.pcwp, qp),
+      pvrDyn: pvrDyn(means.pa, means.pcwp, qp),
       svrDyn: svrDyn(means.ao, means.ra, scenario.co),
       tpg: transpulmonaryGradient(means.pa, means.pcwp),
       dpg: diastolicPulmonaryGradient(t.pa.diastolic, means.pcwp),
