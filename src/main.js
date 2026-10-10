@@ -1,5 +1,6 @@
 import { createSeptalDefectsPanel } from './septal-defects-panel.js';
 import { createPanelShell } from './panel-shell.js';
+import { createPersonalNotes } from './personal-notes.js';
 import { createHeaderTabs } from './header-tabs.js';
 import { pharmacologyLinkMarkup, syncPharmacologyLink } from './pharmacology-link.js';
 import { ecgLinkMarkup, syncEcgLink } from './ecg-link.js';
@@ -776,9 +777,17 @@ const defectPanel = createSeptalDefectsPanel({
   onSelect: id => inspect(id), onFocus: id => inspect(id)
 });
 panelShell = createPanelShell({ getLang: getContentLanguage });
+const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'İlerleme', en: 'Progress' }, onShow: () => practice?.refresh() });
+const personalNotes = createPersonalNotes({
+  shell: panelShell,
+  getLang: getContentLanguage,
+  getContext: () => ({ id: mode, title: getUiModes().find(([id]) => id === mode)?.[2] || mode }),
+  getSections: () => getUiModes().map(([id, , title]) => ({ id, title })),
+});
+const refreshPanelShell = panelShell.refresh;
+panelShell.refresh = () => { refreshPanelShell(); personalNotes.refresh(); };
 headerTabs = createHeaderTabs({ getLang: getContentLanguage });
 
-const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'İlerleme', en: 'Progress' }, onShow: () => practice?.refresh() });
 practice = createPractice({
   mount: document.querySelector('#panel-learn'),
   findings: findingsPanel,

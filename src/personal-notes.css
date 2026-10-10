@@ -1,0 +1,5 @@
+.personal-notes label{display:block;font-weight:600;margin-bottom:8px}
+.personal-notes textarea{box-sizing:border-box;width:100%;min-height:220px;resize:vertical;padding:12px;border:1px solid #9aaea3;border-radius:8px;background:#fff;color:#183b30;font:inherit;line-height:1.6}
+.personal-notes textarea:focus-visible{outline:2px solid #244f43;outline-offset:2px}
+.personal-notes p{font-size:12px;line-height:1.5;color:#53685d}
+.personal-notes button{min-height:44px}

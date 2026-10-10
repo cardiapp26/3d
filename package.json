@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "test:notes": "node --check src/personal-notes.js && node scripts/test-personal-notes.cjs",
+    "test:notes-transfer": "node --check src/notes-transfer.js && node scripts/test-notes-transfer.cjs",
+    "test:notes-transfer-production": "node scripts/test-notes-transfer-production.cjs",
     "dev": "vite --host 127.0.0.1",
     "pretest": "node scripts/test-service-worker.mjs && node scripts/test-asset-provenance.mjs",
     "precheck": "node --check public/sw.js && node --check scripts/test-service-worker.mjs && node --check scripts/verify-browser.mjs && node --check scripts/verify-asset-license.mjs && node --check scripts/test-deployment.mjs && node --check scripts/stamp-release.mjs && node --check scripts/test-resize-observer.cjs && node --check scripts/bachmann-check.cjs",

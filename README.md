@@ -95,6 +95,8 @@ These are approximate teaching regions along the measured commissural axis, not 
 
 ## Interactive Features & Ergonomics
 
+- **Personal notes**: The right panel's Personal notes tab opens a section-specific editor, initially hidden. Notes save automatically in this browser's local storage and survive reloads; TR/EN share the same note. Hide notes returns to Learn. On phones, open Learn from the bottom bar, then Personal notes. Notes do not sync across devices; clearing browser site data removes them. Run `APP_URL=http://127.0.0.1:5173 npm run test:notes` against a running development server.
+
 - **Bachmann bundle (06)**: Independently selectable, atlas-anchored schematic atrial roof band under the conduction layer, with its own visibility toggle. A separate bilingual lesson compares RAA pacing with a right-sided Bachmann-area lead in AP and LAO 40° views. The progress slider advances the lead. The endocardial teaching target is offset inward from the band anchor; this is not measured wall thickness or segmented conduction tissue. Fluoroscopy does not establish electrical capture. Run `npm run test:bachmann` for the dedicated browser checks.
 
 - **Catheterization and hemodynamics (07)**: One module for right-heart (Swan-Ganz) and left-heart catheterization and interactive hemodynamics. The 3D catheter route and measurement stations drive the tracing panel: lesson steps advance the catheters to the stations in view, picking a 3D station adds its channel, and toggling channels in the panel advances or withdraws the catheters. The former `#/mode/hemodynamics` link opens this mode. Right and left heart pressure tracings (RA, RV, PA, PCWP, LV, aorta) synthesized on the shared cardiac clock, so they stay in step with the ECG strip, the Wiggers diagram and the 3D valve motion. Fifteen scenarios (normal, aortic and mitral stenosis, mitral and aortic regurgitation, HOCM, constriction, restriction, tamponade, pre- and post-capillary pulmonary hypertension, RV infarction, ASD, VSD, acute LV failure) set per-station targets, saturations, output and waveform signs (giant v wave, square-root sign, spike-and-dome, Brockenbrough after a triggered PVC, pulsus paradoxus and Kussmaul with respiration on, ventricular interdependence). Overlaid channels shade the LV-aortic or LV-wedge gradient; Gorlin and Hakki areas, Fick output, SVR/PVR, TPG/DPG, mixed venous saturation, oximetry step-up and Qp/Qs are computed from the same curves and are editable in the calculators. Scenario values are textbook figures interpolated inside the ranges and worked examples cited in `research/HEMODYNAMICS_REFERENCE.md` (page-referenced) and `research/hemodynamics-scenarios.json`; they are teaching caricatures, not patient recordings, and no diagnostic use is intended. Run `node scripts/test-hemodynamics.mjs` for the model checks.
@@ -163,3 +165,16 @@ Farmakoloji Diüretikler: `/pharmacology/#/diuretics`, etkileşimli nefron, alt�
 Fizyoloji görselleri: Farmakoloji → Antiaritmikler altında ventriküler iyon akımları, kalsiyum döngüsü ve AV iletim; Hemodinami → Fizyoloji altında pompa eğrileri, P-V fazları/enerji ve Wiggers. Etkileşimli çizimler TR/EN destekler. Eğriler öğretim amaçlıdır; görsellerden ölçüm çıkarılmamıştır. [Görsel eşleştirmesi ve kaynaklar](research/PHYSIOLOGY_IMAGE_AUDIT.md). Doğrulama: `npm run test:physiology` ve çalışan Vite sunucusuna karşı `APP_URL=http://127.0.0.1:5189 npm run test:physiology-browser`.
 
 Vazopressör / İnotrop: `/pharmacology/?lang=tr#/vasoactive`, üç hemodinamik profil, 10 ilaç hedefi, beş şok senaryosu, kaynak doz kartları ve perfüzyon izlemi. [Kaynak doğrulaması ve görsel düzeltmeleri](research/VASOACTIVE_MODULE_AUDIT.md). Testler: `npm run test:vasoactive` ve `npm run test:vasoactive-browser`.
+
+### Cardi note transfer
+
+Personal notes → **Send all notes to Cardi** opens `https://cardi.drtr.uk/transfer.html`.
+Each nonempty section becomes a Cardi note; originals stay here. Success appears only
+after Cardi confirms its local database transaction. Drive sync runs through Cardi.
+Unchanged resends do not duplicate notes; changed content creates a new snapshot.
+Both sites must deploy this change; Cardi must configure `VITE_CARDIA_ORIGIN` with
+this site's exact origin and use the transfer page's nginx opener policy.
+Local end-to-end test: Cardia at `http://127.0.0.1:5199`, Cardi at
+`http://127.0.0.1:5205`, then `npm run test:notes-transfer`.
+Production fixture check: build both projects, then `npm run test:notes-transfer-production`.
+It serves both deployed origins from local build files and does not send live notes.
