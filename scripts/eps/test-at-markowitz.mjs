@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { AT_EXAMPLES, atRecording } from '../../src/eps/at-markowitz-recordings.js';
+import { AT_FOUR_STEPS } from '../../src/eps/at-markowitz-guide.js';
 import { standardEpsMeasurements } from '../../src/eps/eps-standard-recordings.js';
 import { inferLadderEvents, buildLadder } from '../../src/eps/ep-ladder.js';
 const times = (r, ch, type) => r.events[ch].filter((e) => e.type === type).map((e) => e.t);
@@ -28,4 +29,13 @@ for (const s of times(entrained, 'hra', 'S')) {
   assert.ok(times(entrained, 'hra', 'A').includes(s + 5), 'atrial capture after stimulus');
   assert.ok(entrained.events['abl-d'].some((e) => e.type === 'A' && e.t === s + 25), 'remote atrial activation after capture');
 }
-console.log('PASS AT Markowitz: focal timing, termination/suppression, continued A with 2:1 AV block, fractionation, atrial capture/PPI');
+for (const lang of ['tr', 'en']) {
+  const steps = AT_FOUR_STEPS[lang].steps;
+  assert.equal(steps.length, 4, `${lang}: 4 steps`);
+  assert.deepEqual(steps.map((s) => s.step), [1, 2, 3, 4]);
+  assert.match(steps[0].caption, /collision/);
+  assert.match(steps[1].caption, /OPAL.*CARTO/);
+  assert.ok(steps[3].note && steps[3].note.includes('※'), `${lang}: step 4 focal AT exclusion note`);
+}
+console.log('PASS AT Markowitz: 4-step AT mapping schematic, focal timing, termination/suppression, continued A with 2:1 AV block, fractionation, atrial capture/PPI');
+

@@ -400,3 +400,14 @@
 .ep-practice { display: flex; gap: 6px; }
 .ep-lesson[data-side-only=true] { grid-template-columns: minmax(0, 1fr); }
 .ep-lesson[data-side-only=true] .ep-side { max-width: 880px; }
+
+/* 4-step atrial tachycardia analysis schematic (at-markowitz-guide.js). */
+.at-steps { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.at-steps-heading { margin: 0; font-size: 13.5px; color: #c8f0dc; }
+.at-steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.at-step-card { margin: 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #0e1815; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.at-step-title { margin: 0; font-size: 12.5px; font-weight: 700; color: #e8f3ee; }
+.at-step-svg { display: block; width: 100%; height: auto; max-height: 155px; border-radius: 6px; background: #0b1411; border: 1px solid rgba(159, 199, 182, 0.16); }
+.at-step-caption { margin: 0; font-size: 11.5px; line-height: 1.45; color: #9fd8ff; }
+.at-step-exclusion { margin: 0; font-size: 11.5px; font-weight: 700; color: #fca5a5; }
+

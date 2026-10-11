@@ -3,6 +3,7 @@ import {
   colourIndex, cellOf, cellKey, sampledCells
 } from './amap-model.js';
 import { AMAP_TEXT } from './amap-text.js';
+import { createAtFourSteps } from './at-markowitz-guide.js';
 
 /*
  * Activation mapping panel (the Mapping tab): the colour map of the
@@ -51,7 +52,9 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   const point = el('p', 'amap-point', { 'aria-live': 'polite', 'data-amap-point': '' });
   const anatomy = el('p', 'amap-note');
   const playbackNote = el('p', 'amap-note');
-  view.append(guide, transport, liveStatus, mapCanvas, legend, point, anatomy, playbackNote, timeCanvas);
+  const fourSteps = createAtFourSteps(doc, L);
+  fourSteps.element.className = 'basics-card at-steps';
+  view.append(guide, transport, liveStatus, mapCanvas, legend, point, anatomy, playbackNote, timeCanvas, fourSteps.element);
   let timer = null;
   let geometry = null;
   const stop = () => { if (timer != null) globalThis.clearInterval(timer); timer = null; state.playing = false; };
@@ -418,6 +421,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     truth.textContent = t.scenarios[state.scenario].truth;
     truth.hidden = !state.truth;
     source.textContent = t.source;
+    fourSteps.render();
     renderReading(c);
     renderLegend(c);
     drawMap(c);

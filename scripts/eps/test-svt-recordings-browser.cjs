@@ -31,7 +31,8 @@ const assert = require('node:assert/strict');
     assert.match(await page.locator('[data-svt-measures]').textContent(), /TCL 300 ms.*PCL 240 ms.*PPI 320 ms.*PPI−TCL 20 ms/);
     const atGuide = page.locator('[data-svt] [data-at-markowitz]');
     await atGuide.locator('summary').click();
-    assert.match(await atGuide.textContent(), /NCC.*pseudo-blok/s);
+    assert.equal(await atGuide.locator('[data-at-step]').count(), 4);
+    assert.match(await atGuide.textContent(), /OPAL.*CARTO.*※.*NCC.*pseudo-blok/s);
     for (const id of ['avrt-left-anterolateral', 'avrt-left-posterolateral']) {
       await page.locator(`[data-svt-example-item="${id}"]`).click();
       assert.match(await page.locator('[data-svt-measures]').textContent(), /TCL 400 ms.*VA local 85 ms/);

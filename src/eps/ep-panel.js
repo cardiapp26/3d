@@ -696,7 +696,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     pviPanel.setVisible(!pviPanel.element.hidden);
     apPanel.element.hidden = state.section !== 'treatment' || !state.caseId.startsWith('ap-');
     apPanel.render();
-    atGuide.element.hidden = !['focal-at', 'at-parahisian'].includes(state.caseId);
+    atGuide.element.hidden = !['focal-at', 'at-parahisian', 'flutter-cti'].includes(state.caseId);
     atGuide.render();
     // The two exercises live in the SVT and PAC / PVC tabs (practice views), not in the Diagnosis case list.
     taskPanel.element.hidden = state.practice !== 'svt';
