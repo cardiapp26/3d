@@ -18,7 +18,8 @@ const MS_PER_MM = 10;                         // 100 mm/s: the QRS is stretched 
 const STRIP_MM = 26;
 const TILT = -38;                                 // long axis: base upper left, apex lower right
 const ORIGIN = [168, 118];
-const VEC_SCALE = 70;
+const VEC_SCALE = 52;
+const LOOP_SCALE = 34;                            // hodogram inset scale (px per mV)
 const PLAY_MS = 4200;                             // one QRS played over ~4 s
 
 const T = {
@@ -29,7 +30,7 @@ const T = {
     legend: [['rest', 'Dinlenimde'], ['front', 'Dalga cephesi'], ['done', 'Depolarize'], ['vector', 'Anlık vektör'], ['loop', 'QRS halkası']],
     labels: { ra: 'RA', la: 'LA', rv: 'RV', lv: 'LV', septum: 'Septum', his: 'His', apex: 'Apeks' },
     leads: 'Derivasyonlar · aynı vektörün izdüşümleri · 100 mm/s (QRS büyütülmüş) · 10 mm/mV',
-    now: 'şimdi', mean: 'Ortalama QRS aksı',
+    now: 'şimdi', mean: 'Ortalama QRS aksı', loopBox: 'QRS halkası · frontal',
     note: 'Şematik öğretim modeli. Frontal derivasyonlar (I, II, III, aVF) tek bir anlık vektörün izdüşümüdür; her an I + III = II. V1/V6 aynı adımların yatay düzlem öğretim değerlerinden çizilir. Aktivasyon zamanları klasik sırayı gösterir (sol septum → apeks/endokard → serbest duvarlar → bazal bölgeler); ölçülmüş harita değildir.'
   },
   en: {
@@ -39,7 +40,7 @@ const T = {
     legend: [['rest', 'Resting'], ['front', 'Wavefront'], ['done', 'Depolarized'], ['vector', 'Instantaneous vector'], ['loop', 'QRS loop']],
     labels: { ra: 'RA', la: 'LA', rv: 'RV', lv: 'LV', septum: 'Septum', his: 'His', apex: 'Apex' },
     leads: 'Leads · projections of the same vector · 100 mm/s (QRS stretched) · 10 mm/mV',
-    now: 'now', mean: 'Mean QRS axis',
+    now: 'now', mean: 'Mean QRS axis', loopBox: 'QRS loop · frontal',
     note: 'Schematic teaching model. The frontal leads (I, II, III, aVF) are projections of one instantaneous vector; I + III = II at every instant. V1/V6 come from the horizontal-plane teaching values of the same steps. Activation times show the classic order (left septum → apex/endocardium → free walls → basal regions); not a measured map.'
   }
 };
@@ -93,18 +94,28 @@ function buildHeart() {
   // Activation cells are clipped to the ventricular walls for smooth edges.
   const wallClip = svg('clipPath', { id: 'vql-wall-clip' });
   wallClip.append(svg('path', { d: halfEllipse(RV_OUT) }), svg('path', { d: halfEllipse(LV_OUT) }));
-  defs.append(clip, wallClip);
+  // Blur merges the activation dots into a continuous wave (clip keeps edges crisp).
+  const blur = svg('filter', { id: 'vql-cell-blur', x: '-20%', y: '-20%', width: '140%', height: '140%' });
+  blur.append(svg('feGaussianBlur', { stdDeviation: 1.3 }));
+  const myoGrad = svg('linearGradient', { id: 'vql-myo-grad', x1: 0, y1: 0, x2: 0.9, y2: 1 });
+  myoGrad.append(svg('stop', { offset: '0%', 'stop-color': '#79475a' }), svg('stop', { offset: '100%', 'stop-color': '#4e2f3c' }));
+  const atriumGrad = svg('linearGradient', { id: 'vql-atrium-grad', x1: 0, y1: 0, x2: 0.6, y2: 1 });
+  atriumGrad.append(svg('stop', { offset: '0%', 'stop-color': '#543b48' }), svg('stop', { offset: '100%', 'stop-color': '#3a2832' }));
+  defs.append(clip, wallClip, blur, myoGrad, atriumGrad);
   root.append(title, defs);
   const body = svg('g', { transform: `translate(${ORIGIN}) rotate(${TILT})` });
-  // Atria and great vessels above the base (not activated in this model).
-  body.append(svg('ellipse', { cx: -38, cy: -30, rx: 46, ry: 34, class: 'vql-atrium' }),
-    svg('ellipse', { cx: 58, cy: -36, rx: 40, ry: 28, class: 'vql-atrium' }),
-    svg('path', { d: 'M8,-26 C10,-70 30,-92 58,-96', class: 'vql-vessel' }));
+  // Great vessel first (behind the atria), then atria overlapping the base.
+  const aorta = 'M6,-16 C8,-62 28,-86 58,-98';
+  body.append(svg('path', { d: aorta, class: 'vql-aorta-outer' }),
+    svg('path', { d: aorta, class: 'vql-aorta-inner' }),
+    svg('path', { d: aorta, class: 'vql-aorta-sheen' }),
+    svg('ellipse', { cx: -38, cy: -24, rx: 46, ry: 34, class: 'vql-atrium' }),
+    svg('ellipse', { cx: 58, cy: -30, rx: 40, ry: 28, class: 'vql-atrium' }));
   const ventricles = svg('g', { 'clip-path': 'url(#vql-base-clip)' });
   ventricles.append(svg('path', { d: halfEllipse(RV_OUT), class: 'vql-myo' }), svg('path', { d: halfEllipse(LV_OUT), class: 'vql-myo' }));
-  const cells = svg('g', { class: 'vql-cells', 'clip-path': 'url(#vql-wall-clip)' });
+  const cells = svg('g', { class: 'vql-cells', 'clip-path': 'url(#vql-wall-clip)', filter: 'url(#vql-cell-blur)' });
   const sites = myocardialSites(4.4).map(s => {
-    const c = svg('circle', { cx: s.x, cy: s.y, r: 3.4 });
+    const c = svg('circle', { cx: s.x, cy: s.y, r: 4 });
     cells.append(c);
     return { ...s, node: c };
   });
@@ -122,25 +133,37 @@ function buildHeart() {
     svg('path', { d: 'M2,-10 L4,22' }),
     svg('path', { d: 'M4,22 C10,60 22,100 40,128 M18,64 C30,72 52,70 70,60' }),
     svg('path', { d: 'M4,22 C-6,60 -14,92 -22,104' }));
-  body.append(ventricles, cells, cavities, conduction);
+  // AV groove hint where the atria meet the ventricular base.
+  const groove = svg('path', { d: 'M-84,0 H102', class: 'vql-groove', 'clip-path': 'url(#vql-wall-clip)' });
+  body.append(ventricles, cells, cavities, groove, conduction);
   const labels = {};
-  for (const [id, x, y] of [['ra', -38, -26], ['la', 58, -32], ['rv', -50, 52], ['lv', 46, 70], ['septum', -4, 60], ['his', 14, 8], ['apex', 44, 176]]) {
+  for (const [id, x, y] of [['ra', -38, -22], ['la', 58, -26], ['rv', -50, 52], ['lv', 46, 70], ['septum', -16, 70], ['his', 16, 6], ['apex', 44, 176]]) {
     labels[id] = svg('text', { x, y, class: `vql-label vql-label-${id}`, 'text-anchor': 'middle', transform: `rotate(${-TILT} ${x} ${y})` });
     body.append(labels[id]);
   }
   root.append(body);
-  // Vector overlay in screen orientation, centred on the ventricles.
+  // Instantaneous vector in screen orientation, centred on the ventricles.
   const tilt = (TILT * Math.PI) / 180, [lx, ly] = [24, 78];
   const cx = ORIGIN[0] + lx * Math.cos(tilt) - ly * Math.sin(tilt), cy = ORIGIN[1] + lx * Math.sin(tilt) + ly * Math.cos(tilt);
   const centre = svg('g', { transform: `translate(${cx.toFixed(1)},${cy.toFixed(1)})` });
-  const loop = svg('path', { class: 'vql-loop' });
-  const ghostLoop = svg('path', { class: 'vql-loop-ghost' });
   const arrow = svg('line', { x1: 0, y1: 0, class: 'vql-vector' });
   const head = svg('path', { class: 'vql-vector-head' });
-  const meanArrow = svg('line', { x1: 0, y1: 0, class: 'vql-mean' });
-  centre.append(ghostLoop, meanArrow, loop, arrow, head, svg('circle', { r: 3, class: 'vql-origin' }));
+  centre.append(arrow, head, svg('circle', { r: 3, class: 'vql-origin' }));
   root.append(centre);
-  return { root, title, sites, labels, loop, ghostLoop, arrow, head, meanArrow };
+  // Hodogram inset: the loop the vector tip traces, with I/aVF reference axes.
+  const inset = svg('g', { transform: 'translate(72,254)', class: 'vql-inset' });
+  const loop = svg('path', { class: 'vql-loop' });
+  const ghostLoop = svg('path', { class: 'vql-loop-ghost' });
+  const meanArrow = svg('line', { x1: 0, y1: 0, class: 'vql-mean' });
+  const tip = svg('circle', { r: 2.8, class: 'vql-loop-tip' });
+  const insetTitle = svg('text', { x: 8, y: -44, class: 'vql-inset-title', 'text-anchor': 'middle' });
+  inset.append(svg('rect', { x: -36, y: -36, width: 112, height: 112, rx: 10, class: 'vql-inset-bg' }),
+    svg('path', { d: 'M-28,0 H58 M0,-28 V58', class: 'vql-inset-axis' }),
+    svg('text', { x: 62, y: 3.5, class: 'vql-inset-label' }, 'I+'),
+    svg('text', { x: 4, y: 68, class: 'vql-inset-label' }, 'aVF+'),
+    ghostLoop, meanArrow, loop, tip, insetTitle);
+  root.append(inset);
+  return { root, title, sites, labels, loop, ghostLoop, arrow, head, meanArrow, tip, insetTitle };
 }
 
 function buildStrip(lead) {
@@ -211,12 +234,12 @@ export function createQrsVectorLab({ mount, getLang = () => 'tr', steps, state =
   // Static parts: the full loop (ghost), mean axis and the complete traces.
   const loopPath = upTo => {
     const pts = [];
-    for (let ms = 0; ms <= upTo; ms += 1) { const f = model.frontal(ms); pts.push(`${pts.length ? 'L' : 'M'}${(f.x * VEC_SCALE).toFixed(1)},${(f.y * VEC_SCALE).toFixed(1)}`); }
+    for (let ms = 0; ms <= upTo; ms += 1) { const f = model.frontal(ms); pts.push(`${pts.length ? 'L' : 'M'}${(f.x * LOOP_SCALE).toFixed(1)},${(f.y * LOOP_SCALE).toFixed(1)}`); }
     return pts.join('');
   };
   heart.ghostLoop.setAttribute('d', loopPath(QRS_MS));
   const meanAxis = model.meanAxis();
-  const [mx, my] = [Math.cos((meanAxis * Math.PI) / 180) * VEC_SCALE * 1.15, Math.sin((meanAxis * Math.PI) / 180) * VEC_SCALE * 1.15];
+  const [mx, my] = [Math.cos((meanAxis * Math.PI) / 180) * LOOP_SCALE * 1.2, Math.sin((meanAxis * Math.PI) / 180) * LOOP_SCALE * 1.2];
   heart.meanArrow.setAttribute('x2', mx.toFixed(1)); heart.meanArrow.setAttribute('y2', my.toFixed(1));
   const xAt = ms => (ms / MS_PER_MM) * MM;
   const beat = (id, ms) => {
@@ -276,6 +299,9 @@ export function createQrsVectorLab({ mount, getLang = () => 'tr', steps, state =
       heart.head.setAttribute('d', `M${vx},${vy} L${bx - uy * 5},${by + ux * 5} L${bx + uy * 5},${by - ux * 5} Z`);
     } else heart.head.setAttribute('d', '');
     heart.loop.setAttribute('d', loopPath(time));
+    heart.tip.setAttribute('cx', (f.x * LOOP_SCALE).toFixed(1));
+    heart.tip.setAttribute('cy', (f.y * LOOP_SCALE).toFixed(1));
+    heart.insetTitle.textContent = text.loopBox;
     legend.replaceChildren(...text.legend.map(([k, v]) => { const li = el('li', '', v); li.dataset.legend = k; return li; }));
     leadsTitle.textContent = text.leads;
     for (const l of LEADS) {

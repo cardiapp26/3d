@@ -16,29 +16,37 @@
 .vql-main{display:grid;gap:14px;align-items:start}
 .vql-figure{margin:0;display:grid;gap:6px;justify-items:center}
 .vql-heart{width:100%;max-width:420px;height:auto;font:11px system-ui,sans-serif}
-.vql-atrium{fill:#3a2a33;stroke:#7a5560;stroke-width:1.2}
-.vql-vessel{fill:none;stroke:#7a5560;stroke-width:14;stroke-linecap:round;opacity:.7}
-.vql-myo{fill:#5b3a44;stroke:#9a6b75;stroke-width:1.2}
-.vql-cavity{fill:#1a0f17;stroke:#9a6b75;stroke-width:1}
-.vql-outline{fill:none;stroke:#9a6b75;stroke-width:1.2}
-.vql-cell{transition:fill .12s linear}
-.vql-cell.is-rest{fill:#d9a3a3;fill-opacity:.35}
-.vql-cell.is-front{fill:#ffd166}
-.vql-cell.is-done{fill:#e0445a;fill-opacity:.9}
+.vql-atrium{fill:url(#vql-atrium-grad);stroke:#86606e;stroke-width:1.1}
+.vql-aorta-outer{fill:none;stroke:#5e4050;stroke-width:14;stroke-linecap:round}
+.vql-aorta-inner{fill:none;stroke:#7c5565;stroke-width:10;stroke-linecap:round}
+.vql-aorta-sheen{fill:none;stroke:#a57e8d;stroke-width:3;stroke-linecap:round;opacity:.45}
+.vql-myo{fill:url(#vql-myo-grad);stroke:#a5717f;stroke-width:1.1}
+.vql-cavity{fill:#160d14;stroke:#a5717f;stroke-width:1}
+.vql-outline{fill:none;stroke:#a5717f;stroke-width:1.2}
+.vql-groove{fill:none;stroke:#2a1a22;stroke-width:2;opacity:.65}
+.vql-cell{transition:fill .12s linear,fill-opacity .18s linear}
+.vql-cell.is-rest{fill:#79475a;fill-opacity:0}
+.vql-cell.is-front{fill:#ffd166;fill-opacity:1}
+.vql-cell.is-done{fill:#e23e57;fill-opacity:.92}
 .vql-conduction{fill:none;stroke:#fde68a;stroke-width:1.6;stroke-linecap:round;opacity:.85}
 .vql-conduction circle{fill:#fde68a;stroke:none}
 .vql-label{fill:#f1e4e6;font-size:10.5px;font-weight:700;paint-order:stroke;stroke:#0d1726;stroke-width:3px;pointer-events:none}
 .vql-label-his{fill:#fde68a}
 .vql-loop-ghost{fill:none;stroke:#94a3b8;stroke-width:1;stroke-dasharray:3 3;opacity:.55}
-.vql-loop{fill:none;stroke:#7dd3fc;stroke-width:2.2;stroke-linejoin:round}
-.vql-vector{stroke:#f8fafc;stroke-width:3.4;stroke-linecap:round}
-.vql-vector-head{fill:#f8fafc}
+.vql-loop{fill:none;stroke:#7dd3fc;stroke-width:2;stroke-linejoin:round}
+.vql-loop-tip{fill:#7dd3fc;filter:drop-shadow(0 0 2px #7dd3fc)}
+.vql-vector{stroke:#f8fafc;stroke-width:3.4;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(125,211,252,.55))}
+.vql-vector-head{fill:#f8fafc;filter:drop-shadow(0 0 3px rgba(125,211,252,.55))}
 .vql-mean{stroke:#e7b968;stroke-width:1.6;stroke-dasharray:6 4}
 .vql-origin{fill:#f8fafc}
+.vql-inset-bg{fill:#0c1a2abf;stroke:#2b3d52}
+.vql-inset-axis{fill:none;stroke:#64748b;stroke-width:1;opacity:.55}
+.vql-inset-label{fill:#94a3b8;font-size:8.5px;font-weight:700}
+.vql-inset-title{fill:#8ea3b8;font-size:9px;font-weight:700;letter-spacing:.3px}
 .vql-legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin:0;padding:0;list-style:none;font-size:11px;color:#b8c7d6}
 .vql-legend li{display:flex;align-items:center;gap:5px}
 .vql-legend li::before{content:"";width:12px;height:8px;border-radius:2px}
-.vql-legend [data-legend=rest]::before{background:#d9a3a3;opacity:.5}
+.vql-legend [data-legend=rest]::before{background:#5f3a48;border:1px solid #a5717f}
 .vql-legend [data-legend=front]::before{background:#ffd166}
 .vql-legend [data-legend=done]::before{background:#e0445a}
 .vql-legend [data-legend=vector]::before{height:3px;background:#f8fafc}
