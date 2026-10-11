@@ -797,26 +797,59 @@ export const PHARMA_TOPICS = [
           "en": "Amiodarone, sotalol, dofetilide, dronedarone"
         },
         "mechanism": {
-          "tr": "K akımı blokajı refrakterliği uzatır; amiodaron çok kanallı, sotalol ayrıca beta blokerdir.",
-          "en": "K-current blockade prolongs refractoriness; amiodarone is multichannel, sotalol also beta-blocks."
+          "tr": "K akımı blokajı refrakterliği ve QT’yi uzatır; amiodaron çok kanallı etkiyle dal demetleri distalinde Purkinje iletimini geciktirip/bloke edip (IVCD) QRS’i genişletebilir; sotalol ayrıca beta blokerdir.",
+          "en": "K-current blockade prolongs refractoriness and QT; multichannel amiodarone can also delay/block Purkinje conduction distal to the bundle branches (IVCD) and widen QRS; sotalol also beta-blocks."
         },
         "use": {
           "tr": "Seçilmiş atriyal ve ventriküler ritim sorunları.",
           "en": "Selected atrial and ventricular rhythm disorders."
         },
         "risk": {
-          "tr": "QT/proaritmi; amiodaronda akciğer, karaciğer ve tiroit toksisitesi.",
-          "en": "QT/proarrhythmia; pulmonary, hepatic and thyroid toxicity with amiodarone."
+          "tr": "QT/proaritmi; amiodaronda QRS’in bazale göre >%25 genişlemesi ilaç toksisitesi göstergesidir (diğer EKG etkileri: ST çökmesi, T düzleşmesi/negatifliği, QT uzaması, belirgin U dalgası); akciğer, karaciğer ve tiroit toksisitesi.",
+          "en": "QT/proarrhythmia; QRS widening >25% above baseline indicates drug toxicity with amiodarone (other ECG effects: ST depression, T flattening/inversion, QT prolongation, prominent U wave); pulmonary, hepatic and thyroid toxicity."
         },
         "monitor": {
-          "tr": "QTc, K, Mg, böbrek işlevi; amiodaronda tiroit/karaciğer ve akciğer belirtileri.",
-          "en": "QTc, K, Mg, renal function; thyroid/liver and pulmonary symptoms with amiodarone."
+          "tr": "QTc, QRS süresi, K, Mg, böbrek işlevi; amiodaronda tiroit/karaciğer ve akciğer belirtileri.",
+          "en": "QTc, QRS duration, K, Mg, renal function; thyroid/liver and pulmonary symptoms with amiodarone."
         },
         "target": "lv",
         "sources": [
           "review",
           "sotalol-label",
           "antiarrhythmic-slides"
+        ]
+      },
+      {
+        "id": "amiodarone",
+        "name": {
+          "tr": "Amiodaron · III (çok kanallı)",
+          "en": "Amiodarone · III (multichannel)"
+        },
+        "examples": {
+          "tr": "Amiodaron · Sınıf III (I, II, III, IV etkileri)",
+          "en": "Amiodarone · Class III (Class I, II, III, IV actions)"
+        },
+        "mechanism": {
+          "tr": "K⁺ akımı blokajıyla repolarizasyonu ve QT aralığını uzatır; ek olarak Na⁺, Ca²⁺ ve beta-adrenerjik blokaj yapar. Dal demetlerinin distalindeki Purkinje sisteminde iletim gecikmesi veya bloğu (intraventriküler iletim defekti, IVCD) oluşturarak ventrikül kasının özelleşmiş ileti dokusu yerine sıradan miyokard üzerinden aktive olmasına ve QRS kompleksinin genişlemesine yol açar (IVCD antiaritmik ilaçlar, elektrolit dengesizliği veya primer miyokard hastalığına bağlı gelişebilir).",
+          "en": "Prolongs repolarization and the QT interval via K⁺ blockade, with additional Na⁺, Ca²⁺ and beta-adrenergic blockade. Delay or block in the Purkinje system distal to the bundle branches (intraventricular conduction defect, IVCD) activates ventricular muscle through ordinary myocardium instead of specialized conduction tissue, widening the QRS complex (IVCD may occur due to antiarrhythmic drugs, electrolyte imbalance or primary myocardial disease)."
+        },
+        "use": {
+          "tr": "Yaşamı tehdit eden ventriküler aritmiler ve seçilmiş supraventriküler/AF ritim kontrolü. EKG etkileri: QRS genişlemesi (> QRS), QT aralığı uzaması (> Q-T), ST segment çökmesi, T dalgası düzleşmesi/negatifliği (Flat T) ve belirgin/yüksek U dalgası (Tall U).",
+          "en": "Life-threatening ventricular arrhythmias and selected supraventricular/AF rhythm control. ECG effects: QRS widening (> QRS), QT interval prolongation (> Q-T), ST-segment depression, T-wave flattening/inversion (Flat T) and prominent/tall U wave (Tall U)."
+        },
+        "risk": {
+          "tr": "QRS kompleksinin bazal değerin %25’inden fazla genişlemesi ilaç toksisitesi göstergesidir. QT uzaması/proaritmi, bradikardi/AV blok; akciğer, karaciğer ve tiroit toksisitesi.",
+          "en": "Widening of the QRS complex beyond 25% of the baseline value is an indication of drug toxicity. QT prolongation/proarrhythmia, bradycardia/AV block; pulmonary, hepatic and thyroid toxicity."
+        },
+        "monitor": {
+          "tr": "Bazal ve izlem EKG (QRS genişlemesi >%25 toksisite sınırı, QT/QTc, ST çökmesi, T düzleşmesi/negatifliği ve belirgin U dalgası), K/Mg, tiroit, karaciğer ve akciğer izlemi; digoksin ve warfarin etkileşimleri.",
+          "en": "Baseline and follow-up ECG (QRS widening >25% toxicity threshold, QT/QTc, ST depression, T flattening/inversion and prominent U wave), K/Mg, thyroid, liver and pulmonary monitoring; digoxin and warfarin interactions."
+        },
+        "target": "lv",
+        "sources": [
+          "review",
+          "antiarrhythmic-slides",
+          "va-guideline"
         ]
       },
       {

@@ -12,7 +12,7 @@ const escape = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp
 
 export function createPharmacologyPanel({ mount, getLang = () => 'tr', onTopic, onFocus, canFocus = () => true, showTopicNav = true }) {
   let topicIndex = 0, view = 'classes', query = '', halfLife = 6, questionIndex = 0;
-  const selected = new Set(), answers = new Map(), openEffects = new Set(), effectStates = new Map();
+  const selected = new Set(), answers = new Map(), openEffects = new Set(['amiodarone']), effectStates = new Map();
   const lang = () => getLang() === 'en' ? 'en' : 'tr';
   const t = value => pharmaText(value, lang());
   const w = () => WORDS[lang()];

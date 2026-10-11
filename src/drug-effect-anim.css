@@ -30,11 +30,15 @@
 .fx-rbc{fill:#c0392b;opacity:.85}
 .fx-clot[data-fx-card=fibrinolytic].is-base .fx-fibrin path{animation:none;stroke-dashoffset:0}.fx-clot[data-fx-card=fibrinolytic].is-drug .fx-fibrin path{opacity:1;animation:fx-lyse 2.6s ease-in infinite}
 @keyframes fx-draw{from{stroke-dashoffset:100}60%,to{stroke-dashoffset:0}}@keyframes fx-lyse{from{stroke-dashoffset:0;opacity:1}to{stroke-dashoffset:-100;opacity:.1}}
-/* window + ap */
+/* window + ap + ecg */
 .fx-axis{fill:none;stroke:#9eae95;stroke-width:2}.fx-band{fill:#cfe6cf}.fx-toxic{fill:#f3d3cc}
 .fx-curve{fill:none;stroke-width:3.5;stroke-linejoin:round;stroke-dasharray:100}.fx-curve-base{stroke:#527354;stroke-dashoffset:0}.fx-curve-drug{stroke:#b5452f;stroke-dashoffset:100}
 .is-drug .fx-curve-drug{animation:fx-draw 2.2s ease-out forwards}.is-drug .fx-curve-base{stroke:#b9c4b4}
-.fx-ap .fx-curve-drug{stroke-dasharray:100}
+.fx-ap .fx-curve-drug,.fx-ecg .fx-curve-drug{stroke-dasharray:100}
+.fx-curve-amio{stroke:#b8256f;stroke-width:3}
+.fx-ecg-notes{opacity:0;transition:opacity .45s}.is-drug .fx-ecg-notes{opacity:1}
+.fx-ecg-span{fill:none;stroke:#78532a;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fx-ecg-tox{fill:#9e2a2b}
 /* receptor */
 .fx-liver{fill:#dcb2a9}.fx-ldlr{fill:none;stroke:#2f7d62;stroke-width:3;stroke-linecap:round;transition:opacity .5s}.is-base .fx-extra{opacity:.15}
 .fx-ldl{fill:#e2741e}.is-drug .fx-cleared{animation:fx-uptake 2.4s ease-in infinite;animation-delay:calc(var(--i) * -.3s)}

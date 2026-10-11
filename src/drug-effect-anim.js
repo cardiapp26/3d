@@ -28,6 +28,7 @@ const EFFECTS = {
   'interaction-model': ['window', 'interaction', text('Tek ilaç: düzey pencerede.', 'Single drug: level within the window.'), text('Metabolizma inhibitörü eklenir → düzey ↑, toksisite riski.', 'Metabolic inhibitor added → level ↑, toxicity risk.'), text('Tek ilaç', 'Single drug'), text('İnhibitör eklendi', 'Inhibitor added')],
   'class-i': ['ap', 'na', text('Hızlı Na⁺ girişi: dik faz 0.', 'Fast Na⁺ entry: steep phase 0.'), text('Na⁺ kanal blokajı → faz 0 eğimi ↓, iletim yavaşlar (QRS ↑).', 'Na⁺ channel blockade → phase 0 slope ↓, slower conduction (QRS ↑).')],
   'class-iii': ['ap', 'k', text('K⁺ akımları repolarize eder.', 'K⁺ currents repolarize.'), text('K⁺ kanal blokajı → AP süresi ↑, refrakterlik ↑ (QT ↑).', 'K⁺ channel blockade → AP duration ↑, refractoriness ↑ (QT ↑).')],
+  amiodarone: ['ecg', 'amiodarone', text('Bazal EKG: Purkinje iletimi hızlı (dar QRS), ST izoelektrik, normal T dalgası ve QT aralığı.', 'Baseline ECG: fast Purkinje conduction (narrow QRS), isoelectric ST, normal T wave and QT interval.'), text('Amiodaron EKG etkileri (IVCD): > QRS (>%25 artış ilaç toksisitesi göstergesi), ST çökmesi ve T düzleşmesi/negatifliği (Flat T), > Q-T uzaması ve belirgin U dalgası (Tall U).', 'Amiodarone ECG effects (IVCD): > QRS (>25% widening indicates drug toxicity), ST depression and T flattening/inversion (Flat T), > Q-T prolongation and prominent U wave (Tall U).')],
   ranolazine: ['ap', 'late', text('Geç Na⁺ akımı platoyu uzatır, Na⁺/Ca²⁺ yükü ↑.', 'Late Na⁺ current prolongs the plateau, Na⁺/Ca²⁺ load ↑.'), text('Geç Na⁺ ⊣ → Ca²⁺ yükü ve diyastolik gerilim ↓.', 'Late Na⁺ blocked → Ca²⁺ load and diastolic tension ↓.')],
   'action-potential': ['ap', 'na', text('Ventriküler AP: faz 0 Na⁺.', 'Ventricular AP: phase 0 Na⁺.'), text('Na⁺ blokajında faz 0 yavaşlar.', 'Phase 0 slows with Na⁺ blockade.')],
   antiplatelet: ['clot', 'platelet', text('Aktive trombositler kümelenir.', 'Activated platelets aggregate.'), text('P2Y12/COX ⊣ → trombosit kümelenmesi ↓.', 'P2Y12/COX blocked → platelet aggregation ↓.')],
@@ -85,6 +86,28 @@ const SCENES = {
       <path pathLength="100" class="fx-curve fx-curve-base" d="${base}"/><path pathLength="100" class="fx-curve fx-curve-drug" d="${drug}"/>
       <text x="160" y="124" class="fx-tag" text-anchor="middle"></text></svg>`;
   },
+  ecg: () => {
+    const base = 'M16 80H30Q42 66 54 80H70L74 88L80 22L86 92L90 80H122Q140 54 158 80H304';
+    const drug = 'M16 80H30Q42 66 54 80H68L73 95L92 12L112 82Q142 96 168 86Q184 78 198 79Q216 68 234 80Q246 84 262 84H304';
+    return `<svg viewBox="0 0 320 136"><rect width="320" height="136" rx="12" class="fx-bg"/>
+      <path d="M16 80H304" class="fx-axis" stroke-dasharray="4 4"/>
+      <path pathLength="100" class="fx-curve fx-curve-base" d="${base}"/>
+      <path pathLength="100" class="fx-curve fx-curve-drug fx-curve-amio" d="${drug}"/>
+      <g class="fx-ecg-notes">
+        <text x="92" y="64" text-anchor="middle" class="fx-small">&gt;</text>
+        <text x="92" y="76" text-anchor="middle" class="fx-small">QRS</text>
+        <path d="M72 82H112M72 82l5 -3m-5 3l5 3M112 82l-5 -3m5 3l-5 3" class="fx-ecg-span"/>
+        <text x="142" y="103" text-anchor="middle" class="fx-small">ST ↓</text>
+        <text x="172" y="74" text-anchor="middle" class="fx-small">Flat</text>
+        <text x="192" y="70" text-anchor="middle" class="fx-small">T</text>
+        <text x="218" y="64" text-anchor="middle" class="fx-small">U</text>
+        <text x="242" y="73" text-anchor="middle" class="fx-small">Tall</text>
+        <path d="M70 100H204M70 100l5 -3m-5 3l5 3M204 100l-5 -3m5 3l-5 3" class="fx-ecg-span"/>
+        <text x="137" y="114" text-anchor="middle" class="fx-small">&gt; Q-T</text>
+        <text x="304" y="20" text-anchor="end" class="fx-small fx-ecg-tox"></text>
+      </g>
+      <text x="160" y="129" class="fx-tag" text-anchor="middle"></text></svg>`;
+  },
   receptor: () => `<svg viewBox="0 0 320 130"><rect width="320" height="130" rx="12" class="fx-bg"/><rect x="10" y="10" width="300" height="40" rx="10" class="fx-liver"/>
     ${[40, 80, 120, 160, 200, 240, 280].map((x, i) => `<path class="fx-ldlr ${i % 2 ? 'fx-extra' : ''}" d="M${x} 50v10m0 0l-6 8m6 -8l6 8"/>`).join('')}
     <rect x="10" y="74" width="300" height="44" rx="18" class="fx-lumen"/>
@@ -109,11 +132,12 @@ export function effectMarkup(cardId, lang, state = 'drug') {
 export function activateEffect(node, lang, onState) {
   if (!node) return;
   const t = value => value[lang === 'en' ? 'en' : 'tr'];
-  const tags = { vessel: text('kan akışı →', 'blood flow →'), rate: text('şematik ritim', 'schematic rhythm'), tubule: text('tübül lümeni → idrar', 'tubular lumen → urine'), clot: text('damar lümeni', 'vessel lumen'), window: text('plazma düzeyi (zaman →)', 'plasma level (time →)'), ap: text('aksiyon potansiyeli (gri: başlangıç)', 'action potential (grey: baseline)'), receptor: text('karaciğer LDL-R / dolaşımdaki LDL', 'liver LDL-R / circulating LDL') };
+  const tags = { vessel: text('kan akışı →', 'blood flow →'), rate: text('şematik ritim', 'schematic rhythm'), tubule: text('tübül lümeni → idrar', 'tubular lumen → urine'), clot: text('damar lümeni', 'vessel lumen'), window: text('plazma düzeyi (zaman →)', 'plasma level (time →)'), ap: text('aksiyon potansiyeli (gri: başlangıç)', 'action potential (grey: baseline)'), ecg: text('amiodaron EKG etkileri (gri: bazal)', 'effects of amiodarone on ECG (grey: baseline)'), receptor: text('karaciğer LDL-R / dolaşımdaki LDL', 'liver LDL-R / circulating LDL') };
   node.querySelector('.fx-tag').textContent = t(tags[node.dataset.fxScene]);
   node.querySelector('.fx-urine-label')?.replaceChildren(t(text('idrar →', 'urine →')));
   node.querySelector('.fx-toxic-label')?.replaceChildren(t(text('toksik', 'toxic')));
   node.querySelector('.fx-band-label')?.replaceChildren(t(text('terapötik', 'therapeutic')));
+  node.querySelector('.fx-ecg-tox')?.replaceChildren(t(text('QRS > +%25 → toksisite', 'QRS > +25% → toxicity')));
   node.addEventListener('click', event => {
     const button = event.target.closest('[data-fx-state]');
     if (!button) return;

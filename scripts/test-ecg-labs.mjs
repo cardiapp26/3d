@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {ecgTiming,ecgSample,generateEcgPoints} from '../src/ecg/guyton-render.js';
 import {CHEST_LEADS,projectLead,axisCategory,reentryMetrics,ringSnapshot,stepProjections,RHYTHM_EXAMPLES,rhythmEvents,rhythmSample} from '../src/ecg/ecg-lab-model.js';
+import {LIMB_CAMERAS,cameraWaveSample,cameraWavePath,nearestLimbCamera} from '../src/ecg/lead-camera-lab.js';
 import {GUYTON_TOPICS} from '../src/ecg/guyton-data.js';
 for(const qrs of [.08,.12,.16])for(const pxPerSec of [100,200]){
  const opts={qrs,qt:.38,pxPerSec},t=ecgTiming(opts);
@@ -21,4 +22,15 @@ for(const r of RHYTHM_EXAMPLES)for(let i=0;i<1200;i++)assert.ok(Number.isFinite(
 const w=rhythmEvents('wenckebach');assert.equal(w.p.length,8);assert.equal(w.q.length,6);assert.deepEqual(w.q.slice(0,3).map((b,i)=>Math.round((b.at-w.p[i])*1000)),[160,200,240]);
 assert.equal(rhythmEvents('af').p.length,0);const af=rhythmEvents('af').q.map(b=>b.at);assert.ok(new Set(af.slice(1).map((at,i)=>(at-af[i]).toFixed(2))).size>3);
 const pvc=rhythmEvents('pvc').q;assert.ok(Math.abs(pvc[4].at-pvc[2].at-1.6)<1e-12);assert.ok(pvc[3].width>pvc[2].width);
-console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples and AV/PVC/AF patterns');
+assert.equal(LIMB_CAMERAS.length,6,'six limb cameras');
+for(let i=0;i<=100;i++){
+ const u=i/100;
+ assert.ok(Math.abs(cameraWaveSample(u,0)+cameraWaveSample(u,120)-cameraWaveSample(u,60))<1e-12,'Einthoven I + III = II holds across camera wave');
+ assert.ok(Math.abs(cameraWaveSample(u,-150)+cameraWaveSample(u,-30)+cameraWaveSample(u,90))<1e-12,'Goldberger aVR + aVL + aVF = 0 holds across camera wave');
+}
+assert.ok(cameraWaveSample(0.42,60)>1.2,'Lead II shows tall upright R');
+assert.ok(cameraWaveSample(0.42,-150)<-1.0,'Lead aVR shows deep negative QRS');
+assert.ok(Math.abs(cameraWaveSample(0.42,-30))<0.15,'Lead aVL is nearly perpendicular/low amplitude');
+assert.equal(nearestLimbCamera(62)?.id,'II');assert.equal(nearestLimbCamera(-148)?.id,'aVR');assert.equal(nearestLimbCamera(-90),null);
+assert.ok(cameraWavePath(60,0,100,200).startsWith('M0.0,'));
+console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples, AV/PVC/AF patterns and 6-lead camera viewpoint studio');

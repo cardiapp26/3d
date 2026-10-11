@@ -44,13 +44,17 @@ assert.ok(findPharmaCards('antiarrhythmics', 'AMIODARONE', 'en').length > 0, 'En
 assert.ok(findPharmaCards('antiarrhythmics', 'amiodaron', 'tr').length > 0, 'Turkish search');
 assert.equal(findPharmaCards('antiarrhythmics', 'unknown-nonsense').length, 0);
 assert.equal(findPharmaCards('missing').length, 0);
-for (const id of ['quinidine', 'mexiletine', 'dofetilide', 'dronedarone']) {
+for (const id of ['amiodarone', 'quinidine', 'mexiletine', 'dofetilide', 'dronedarone']) {
   assert.ok(all.some(card => card.id === id), `individual antiarrhythmic card: ${id}`);
   for (const lang of ['tr', 'en']) {
     const card = all.find(item => item.id === id);
     assert.ok(findPharmaCards('antiarrhythmics', card.name[lang], lang).some(item => item.id === id));
   }
 }
+const amiodarone = all.find(card => card.id === 'amiodarone');
+assert.match(amiodarone.mechanism.en, /Purkinje.*distal to the bundle branches.*IVCD/i);
+assert.match(amiodarone.risk.en, /25%.*baseline.*toxicity/i);
+assert.match(amiodarone.use.en, /ST-segment depression.*Flat T.*Tall U/i);
 const dofetilide = all.find(card => card.id === 'dofetilide');
 assert.match(dofetilide.risk.en, />440 ms.*>500 ms.*CrCl <20/);
 assert.match(dofetilide.risk.en, /HCTZ.*verapamil/);

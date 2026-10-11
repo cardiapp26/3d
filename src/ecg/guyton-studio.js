@@ -2,6 +2,8 @@
 import { createEcgLab } from './ecg-labs.js';
 import { createAxisLab } from './axis-lab.js';
 import { createQrsVectorLab } from './qrs-vector-lab.js';
+import { createLeadCameraLab } from './lead-camera-lab.js';
+import './lead-camera-lab.css';
 import { GUYTON_TOPICS } from './guyton-data.js';
 import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial } from './guyton-render.js';
 
@@ -11,6 +13,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let vectorMag = 1.0;
   let activeInjuryCase = 'anterior_mi';
   let lab = null;
+  let cameraLab = null;
   const labStates = {};
   const container = document.createElement('div');
   container.className = 'guyton-studio';
@@ -18,6 +21,8 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   function render() {
     lab?.destroy();
     lab = null;
+    cameraLab?.destroy();
+    cameraLab = null;
     const lang = getLang();
     const isTr = lang === 'tr';
     const topic = GUYTON_TOPICS[activeTopicIdx];
@@ -65,13 +70,16 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
 
   function renderActiveTopic(mountNode, lang) {
     lab?.destroy(); lab = null;
+    cameraLab?.destroy(); cameraLab = null;
     const isTr = lang === 'tr';
     const topic = GUYTON_TOPICS[activeTopicIdx];
 
     if (topic.id === 'ch11_basics') {
       mountNode.replaceChildren();
+      cameraLab = createLeadCameraLab({ mount: mountNode, getLang, state: labStates.leadCamera ||= {} });
     } else if (topic.id === 'ch11_leads') {
       renderChapter11Leads(mountNode, isTr);
+      cameraLab = createLeadCameraLab({ mount: mountNode, getLang, state: labStates.leadCamera ||= {} });
     } else if (topic.id === 'ch12_vectors') {
       // Continuous QRS genesis: activation map, vector loop and six leads (qrs-vector-lab.js).
       mountNode.replaceChildren();
