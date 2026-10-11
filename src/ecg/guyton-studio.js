@@ -4,6 +4,8 @@ import { createAxisLab } from './axis-lab.js';
 import { createQrsVectorLab } from './qrs-vector-lab.js';
 import { createLeadCameraLab } from './lead-camera-lab.js';
 import './lead-camera-lab.css';
+import { createStemiCameraLab } from './stemi-camera-lab.js';
+import './stemi-camera-lab.css';
 import { GUYTON_TOPICS } from './guyton-data.js';
 import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial } from './guyton-render.js';
 
@@ -14,6 +16,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let activeInjuryCase = 'anterior_mi';
   let lab = null;
   let cameraLab = null;
+  let stemiLab = null;
   const labStates = {};
   const container = document.createElement('div');
   container.className = 'guyton-studio';
@@ -23,6 +26,8 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     lab = null;
     cameraLab?.destroy();
     cameraLab = null;
+    stemiLab?.destroy();
+    stemiLab = null;
     const lang = getLang();
     const isTr = lang === 'tr';
     const topic = GUYTON_TOPICS[activeTopicIdx];
@@ -71,6 +76,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   function renderActiveTopic(mountNode, lang) {
     lab?.destroy(); lab = null;
     cameraLab?.destroy(); cameraLab = null;
+    stemiLab?.destroy(); stemiLab = null;
     const isTr = lang === 'tr';
     const topic = GUYTON_TOPICS[activeTopicIdx];
 
@@ -192,6 +198,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     const topic = GUYTON_TOPICS[4];
 
     mountNode.innerHTML = `
+      <div id="stemi-camera-mount"></div>
       <div class="guyton-grid-2col">
         <div class="guyton-card">
           <h3>${isTr ? 'Hasar Akımı ve J Noktası Referansı' : 'Current of Injury & The J Point'}</h3>
@@ -216,12 +223,16 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       </div>
     `;
 
+    const stemiMount = mountNode.querySelector('#stemi-camera-mount');
     const canvas = mountNode.querySelector('#injury-canvas');
     const detailsNode = mountNode.querySelector('#injury-case-details');
 
-    function updateCase(caseId) {
+    function updateCase(caseId, syncStemi = true) {
       activeInjuryCase = caseId;
       lab?.sync();
+      if (syncStemi && stemiLab) {
+        stemiLab.selectTerritory(caseId === 'posterior_mi' ? 'posterior_mi' : 'anterior_lad');
+      }
       mountNode.querySelectorAll('[data-case]').forEach(b => { b.classList.toggle('active', b.dataset.case === caseId); b.setAttribute('aria-pressed', String(b.dataset.case === caseId)); });
       const c = topic.cases.find(x => x.id === caseId) || topic.cases[0];
 
@@ -253,13 +264,23 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       `;
     }
 
+    stemiLab = createStemiCameraLab({
+      mount: stemiMount,
+      getLang,
+      state: labStates.stemiCamera ||= {},
+      onTerritoryChange: (terrId) => {
+        if (terrId === 'posterior_mi') updateCase('posterior_mi', false);
+        else if (terrId === 'anterior_lad') updateCase('anterior_mi', false);
+      }
+    });
+
     mountNode.querySelectorAll('[data-case]').forEach(btn => {
       btn.addEventListener('click', () => {
-        updateCase(btn.dataset.case);
+        updateCase(btn.dataset.case, true);
       });
     });
 
-    updateCase(activeInjuryCase);
+    updateCase(activeInjuryCase, false);
   }
 
   // Initial render
@@ -270,6 +291,8 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     render,
     destroy() {
       lab?.destroy();
+      cameraLab?.destroy();
+      stemiLab?.destroy();
       container.remove();
     }
   };
