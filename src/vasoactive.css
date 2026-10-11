@@ -1,1 +1,864 @@
-.vasolab{display:grid;gap:20px;color:#304c40;min-width:0;margin-bottom:24px;font-size:13px;line-height:1.65}.vasolab h2,.vasolab h3,.vasolab h4,.vasolab p{margin:0}.vasolab h2{font:600 clamp(25px,3vw,39px)/1.15 Georgia,serif;max-width:700px}.vaso-eyebrow{letter-spacing:.15em;font-size:10px;color:#7d906f}.vaso-intro{max-width:760px;margin-top:10px!important}.vasolab button{font:inherit;color:#315f50;border:1px solid #bfcebc;background:#f9fbf3;border-radius:7px;padding:10px 13px;cursor:pointer;min-height:42px;max-width:100%}.vasolab button[aria-pressed=true]{background:#315f50;color:white;border-color:#315f50}.vasolab button:focus-visible,.vasolab input:focus-visible,.vasolab summary:focus-visible{outline:3px solid #b1833d;outline-offset:3px}.vaso-views,.vaso-drugs,.vaso-scenarios,.vaso-agents,.vaso-flags{display:flex;flex-wrap:wrap;gap:8px}.vasolab [hidden]{display:none!important}.vasolab [data-vaso-page]{display:grid;gap:16px;min-width:0}.vaso-entry,.vaso-assess,.vaso-result,.vaso-scenario,.vaso-drug,.vaso-monitor{border:1px solid #cfdcc7;border-radius:13px;padding:20px;background:#fafbf5;min-width:0}.vaso-entry{border-left:5px solid #b96c61;background:#fff3ee}.vaso-assess{border-left:5px solid #70899f;background:#f0f5f8}.vaso-entry p,.vaso-assess p{margin-top:7px}.vaso-assess:after{content:'↓';display:block;text-align:center;font-size:24px;color:#6b8574}.vaso-profiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.vaso-profiles button{padding:22px 15px;position:relative;font-weight:700;border-top:4px solid #ad8b54}.vaso-flags label{display:flex;align-items:center;gap:6px;border:1px solid #d4ddce;border-radius:6px;padding:8px 10px}.vaso-flags input{accent-color:#315f50}.vaso-result{border-left:5px solid #7b935f}.vaso-result>p{margin:10px 0}.vaso-agents button{background:#edf2d9;font-weight:700}.vaso-context{font-size:12px;color:#806847}.vaso-drug-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}.vaso-map{width:100%;height:auto;align-self:start;position:sticky;top:24px;font:13px sans-serif;fill:#365747}.vaso-heart{fill:#d1dec7;stroke:#77936c;stroke-width:3}.vaso-heart.is-active{fill:#e7bca8;stroke:#b97461}.vaso-vessel{fill:none;stroke:#96ac98;stroke-width:13;stroke-linecap:round}.vaso-vessel.is-active{stroke:#b98f49;stroke-width:16}.vaso-flow{fill:none;stroke:#547965;stroke-width:3}.vaso-target{color:#8b6e3e;letter-spacing:.05em;margin-top:6px!important}.vaso-effects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:16px 0}.vaso-effects div{display:grid;background:#edf2e5;padding:10px 5px;border-radius:7px;text-align:center}.vaso-effects strong{font-size:17px;overflow-wrap:anywhere}.vaso-effects span{font-size:11px;color:#7c8d6e}.vaso-drug h4{margin-top:15px;font-size:12px;text-transform:uppercase;color:#7d8d71}.vaso-dose{margin-top:18px;border-top:1px solid #d1dcc9;padding-top:12px}.vasolab summary{cursor:pointer;color:#607b56;font-weight:600}.vaso-dose p{padding-top:10px;font-weight:600}.vaso-dose small{display:block;margin-top:8px;color:#8c7963}.vaso-drug-sources{display:grid;gap:5px;margin-top:14px}.vasolab a{color:#43745c;font-size:11px;overflow-wrap:anywhere}.vaso-legend{font-size:11px;color:#7e8d72}.vaso-scenario strong{display:block;margin:13px 0;color:#886d40}.vaso-monitor>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.vaso-monitor p{background:#eef3e6;padding:11px;border-radius:6px}.vaso-corrections,.vaso-sources{padding:15px;background:#f2f5ec;border-radius:8px;font-size:12px}.vaso-sources ul,.vaso-corrections ul{padding-left:18px}.vaso-corrections li{margin:8px 0}@media(max-width:750px){.vaso-drug-layout{grid-template-columns:1fr}.vaso-map{position:static;max-width:560px}.vaso-profiles{grid-template-columns:1fr}.vaso-profiles button{padding:14px}.vaso-monitor>div{grid-template-columns:1fr}.vaso-entry,.vaso-assess,.vaso-result,.vaso-scenario,.vaso-drug,.vaso-monitor{padding:14px}}
+.vasolab {
+  display: grid;
+  gap: 18px;
+  color: #254035;
+  min-width: 0;
+  margin-bottom: 24px;
+  font-size: 13px;
+  line-height: 1.62;
+  box-sizing: border-box;
+}
+
+.vasolab *,
+.vasolab *::before,
+.vasolab *::after {
+  box-sizing: border-box;
+}
+
+.vasolab h2,
+.vasolab h3,
+.vasolab h4,
+.vasolab p {
+  margin: 0;
+}
+
+.vaso-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.vaso-hero-copy {
+  flex: 1 1 460px;
+  min-width: 0;
+}
+
+.vasolab h2 {
+  font: 700 clamp(24px, 3vw, 37px)/1.14 Georgia, serif;
+  max-width: 700px;
+  color: #1f3c30;
+}
+
+.vaso-eyebrow {
+  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6b8060;
+  margin-bottom: 4px !important;
+}
+
+.vaso-intro {
+  max-width: 760px;
+  margin-top: 8px !important;
+  color: #425c50;
+}
+
+.vaso-formula-pill {
+  background: linear-gradient(135deg, #275243, #1d3e32);
+  color: #f4f9f1;
+  padding: 10px 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 6px 18px rgba(31, 60, 48, 0.14);
+  max-width: 100%;
+}
+
+.vaso-formula-eq {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #d9f3e4;
+}
+
+.vaso-formula-sub {
+  font-size: 11px;
+  color: #b7d6c5;
+}
+
+.vasolab button {
+  font: inherit;
+  color: #2c5849;
+  border: 1px solid #bfcebc;
+  background: #f9fbf3;
+  border-radius: 8px;
+  padding: 9px 13px;
+  cursor: pointer;
+  min-height: 40px;
+  max-width: 100%;
+  transition: all 0.15s ease;
+}
+
+.vasolab button:hover {
+  border-color: #6c8e79;
+  background: #f1f6e9;
+}
+
+.vasolab button[aria-pressed="true"] {
+  background: #2c5849;
+  color: #ffffff;
+  border-color: #2c5849;
+  box-shadow: 0 4px 12px rgba(44, 88, 73, 0.2);
+}
+
+.vasolab button:focus-visible,
+.vasolab input:focus-visible,
+.vasolab summary:focus-visible,
+.vaso-sim-hotspot:focus-visible {
+  outline: 3px solid #b1833d;
+  outline-offset: 3px;
+}
+
+.vaso-views,
+.vaso-drugs,
+.vaso-scenarios,
+.vaso-agents,
+.vaso-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vasolab [hidden] {
+  display: none !important;
+}
+
+.vasolab [data-vaso-page] {
+  display: grid;
+  gap: 15px;
+  min-width: 0;
+}
+
+.vaso-step-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.vaso-entry,
+.vaso-assess,
+.vaso-result,
+.vaso-scenario,
+.vaso-drug,
+.vaso-monitor {
+  border: 1px solid #cfdcc7;
+  border-radius: 13px;
+  padding: 18px;
+  background: #fafbf5;
+  min-width: 0;
+}
+
+.vaso-entry {
+  border-left: 5px solid #b96c61;
+  background: linear-gradient(145deg, #fff5f0, #fcfaf5);
+}
+
+.vaso-assess {
+  border-left: 5px solid #5d7e96;
+  background: linear-gradient(145deg, #f0f6fa, #fafcf9);
+}
+
+.vaso-step-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vaso-step-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.vaso-entry p,
+.vaso-assess p {
+  margin-top: 7px;
+  font-size: 12.5px;
+}
+
+.vaso-target-chips,
+.vaso-pocus-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.vaso-mini-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(185, 108, 97, 0.14);
+  color: #843d33;
+  border: 1px solid rgba(185, 108, 97, 0.28);
+}
+
+.vaso-mini-chip-blue {
+  background: rgba(93, 126, 150, 0.14);
+  color: #2f526b;
+  border-color: rgba(93, 126, 150, 0.28);
+}
+
+/* Interactive Hemodynamic Bench */
+.vaso-interactive-bench {
+  border: 1px solid #c6d6be;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f4f8ee;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vaso-bench-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vaso-bench-kicker {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #5f7a56;
+}
+
+.vaso-bench-title h4 {
+  font-size: 15px;
+  color: #1f3c30;
+}
+
+.vaso-quick-scenarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vaso-quick-scen-btn {
+  padding: 5px 10px !important;
+  min-height: 31px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+}
+
+.vaso-quick-scen-btn.is-active {
+  background: #2c5849 !important;
+  color: #ffffff !important;
+  border-color: #2c5849 !important;
+}
+
+.vaso-bench-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.vaso-sim-stage {
+  background: #ffffff;
+  border: 1px solid #d1dec9;
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.vaso-sim-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.vaso-sim-hotspot {
+  cursor: pointer;
+}
+
+.vaso-gauges-card {
+  background: #ffffff;
+  border: 1px solid #d1dec9;
+  border-radius: 12px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.vaso-gauge-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vaso-scen-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.vaso-gauge-rows {
+  display: grid;
+  gap: 9px;
+}
+
+.vaso-gauge-row {
+  display: grid;
+  gap: 4px;
+}
+
+.vaso-gauge-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  flex-wrap: wrap;
+}
+
+.vaso-gauge-meta strong {
+  color: #1f3c30;
+}
+
+.vaso-bar-track {
+  width: 100%;
+  height: 8px;
+  background: #e6eee0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.vaso-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.vaso-pocus-note {
+  font-size: 11.5px;
+  background: #f2f7f4;
+  border-left: 3px solid #315f50;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #2c4a3e;
+}
+
+.vaso-receptor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.vaso-rec-caption {
+  font-size: 11px;
+  font-weight: 700;
+  color: #607764;
+}
+
+.vaso-rec-chip {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #e6f0e6;
+  color: #254d3c;
+  border: 1px solid #b8d0bd;
+}
+
+.vaso-rec-adjunct {
+  background: #e0f2fe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.vaso-profiles-header {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5b725e;
+}
+
+.vaso-profiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vaso-profiles button {
+  padding: 18px 14px;
+  position: relative;
+  font-weight: 700;
+  border-top: 4px solid #ad8b54;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.vaso-flags label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #cdd9c6;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vaso-flags input {
+  accent-color: #2c5849;
+}
+
+.vaso-result {
+  border-left: 5px solid #4d7c5d;
+  background: linear-gradient(145deg, #f5faf2, #fafbf5);
+}
+
+.vaso-result-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.vaso-result-kicker {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: #4d7c5d;
+  margin-bottom: 4px;
+}
+
+.vaso-result-lead {
+  margin: 8px 0 12px !important;
+}
+
+.vaso-agents-wrap {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.vaso-agents-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #5a705d;
+}
+
+.vaso-agents button {
+  background: #eaf3e0;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-width: 1.5px;
+}
+
+.vaso-agent-rec {
+  background: rgba(44, 88, 73, 0.12);
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #214539;
+}
+
+.vaso-context {
+  font-size: 12px;
+  color: #7b6240;
+  background: rgba(245, 158, 11, 0.09);
+  border-left: 3px solid #d69e2e;
+  padding: 7px 10px;
+  border-radius: 6px;
+}
+
+.vaso-result-preview {
+  background: #ffffff;
+  border: 1px solid #cfe0c8;
+  border-radius: 11px;
+  padding: 13px;
+  display: grid;
+  gap: 10px;
+}
+
+.vaso-preview-top {
+  display: grid;
+  gap: 2px;
+}
+
+.vaso-preview-role {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #6b8060;
+  text-transform: uppercase;
+}
+
+.vaso-preview-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vaso-preview-metrics div {
+  background: #eef4e8;
+  border-radius: 7px;
+  padding: 7px 5px;
+  text-align: center;
+  display: grid;
+}
+
+.vaso-preview-metrics span {
+  font-size: 10.5px;
+  color: #697d65;
+}
+
+.vaso-preview-metrics strong {
+  font-size: 14px;
+  color: #1f3c30;
+}
+
+.vaso-preview-dose {
+  font-size: 11.5px;
+  color: #4a6355;
+  border-top: 1px solid #e2ecdc;
+  padding-top: 8px;
+}
+
+/* Page 02: Drug Targets & Spectrum */
+.vaso-spectrum-bar {
+  background: #f4f8ee;
+  border: 1px solid #cddbc4;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.vaso-spec-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #4f6b58;
+  flex-wrap: wrap;
+}
+
+.vaso-spec-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 6px;
+}
+
+.vaso-spec-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 6px !important;
+  min-height: 44px !important;
+  font-size: 11.5px !important;
+  background: #ffffff !important;
+}
+
+.vaso-spec-node small {
+  font-size: 10px;
+  color: #718470;
+}
+
+.vaso-spec-node.is-active {
+  background: #2c5849 !important;
+  color: #ffffff !important;
+  border-color: #2c5849 !important;
+}
+
+.vaso-spec-node.is-active small {
+  color: #d1fae5;
+}
+
+.vaso-drug-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.vaso-map-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vaso-map {
+  width: 100%;
+  height: auto;
+  font: 13px sans-serif;
+  fill: #365747;
+  display: block;
+}
+
+.vaso-heart {
+  fill: #d1dec7;
+  stroke: #77936c;
+  stroke-width: 3;
+  transition: all 0.2s ease;
+}
+
+.vaso-heart.is-active {
+  fill: #e7bca8;
+  stroke: #b97461;
+}
+
+.vaso-vessel {
+  fill: none;
+  stroke: #96ac98;
+  stroke-width: 13;
+  stroke-linecap: round;
+  transition: all 0.2s ease;
+}
+
+.vaso-vessel.is-active {
+  stroke: #b98f49;
+  stroke-width: 16;
+}
+
+.vaso-flow {
+  fill: none;
+  stroke: #315f50;
+  stroke-width: 3;
+}
+
+.vaso-bars-card {
+  background: #fafbf5;
+  border: 1px solid #cfdcc7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.vaso-dbar-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vaso-drug-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vaso-drug-role {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #6b8060;
+  text-transform: uppercase;
+}
+
+.vaso-target {
+  color: #8b6e3e;
+  font-weight: 800;
+  background: #f5efe0;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.vaso-effects {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 14px 0;
+}
+
+.vaso-effects div {
+  display: grid;
+  background: #edf2e5;
+  padding: 10px 5px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.vaso-effects strong {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.vaso-effects span {
+  font-size: 11px;
+  color: #6e8062;
+  font-weight: 700;
+}
+
+.vaso-drug h4 {
+  margin-top: 14px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  color: #6e8064;
+}
+
+.vaso-dose {
+  margin-top: 16px;
+  border-top: 1px solid #d1dcc9;
+  padding-top: 12px;
+}
+
+.vasolab summary {
+  cursor: pointer;
+  color: #4f6c47;
+  font-weight: 700;
+}
+
+.vaso-dose p {
+  padding-top: 10px;
+  font-weight: 700;
+}
+
+.vaso-dose small {
+  display: block;
+  margin-top: 8px;
+  color: #8c7963;
+}
+
+.vaso-drug-sources {
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+}
+
+.vasolab a {
+  color: #36664e;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.vaso-legend {
+  font-size: 11.5px;
+  color: #6d7d63;
+}
+
+/* Page 03: Scenarios */
+.vaso-scenario-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.vaso-scenario-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #7c5836;
+  background: #f5efe2;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+
+.vaso-scenario strong {
+  display: block;
+  margin: 11px 0;
+  color: #886d40;
+}
+
+.vaso-scenario-pocus {
+  font-size: 12px;
+  background: #eef4f0;
+  border-left: 3px solid #315f50;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.vaso-scenario-visual {
+  border: 1px solid #cfdcc7;
+  border-radius: 13px;
+  padding: 18px;
+  background: #fafbf5;
+  display: grid;
+  gap: 12px;
+}
+
+.vaso-monitor > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.vaso-monitor p {
+  background: #eef3e6;
+  padding: 11px;
+  border-radius: 7px;
+}
+
+.vaso-corrections,
+.vaso-sources {
+  padding: 15px;
+  background: #f2f5ec;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.vaso-sources ul,
+.vaso-corrections ul {
+  padding-left: 18px;
+}
+
+.vaso-corrections li {
+  margin: 8px 0;
+}
+
+@media (max-width: 900px) {
+  .vaso-step-grid,
+  .vaso-bench-grid,
+  .vaso-result-main,
+  .vaso-drug-layout,
+  .vaso-scenario-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 750px) {
+  .vaso-profiles {
+    grid-template-columns: 1fr;
+  }
+  .vaso-profiles button {
+    padding: 14px;
+  }
+  .vaso-monitor > div {
+    grid-template-columns: 1fr;
+  }
+  .vaso-entry,
+  .vaso-assess,
+  .vaso-result,
+  .vaso-scenario,
+  .vaso-drug,
+  .vaso-monitor,
+  .vaso-interactive-bench {
+    padding: 13px;
+  }
+  .vaso-dbar-row {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+}
