@@ -325,6 +325,10 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .view-tools { border-left: 1px solid #d9e0d6; padding-left: 3px; }
   .view-controls .view-long { display: none; }
   .view-controls .view-short { display: inline; }
+  /* Icon-only on phones so the first four view presets still fit; the name stays for screen readers. */
+  .view-controls .seg-btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .view-controls .segmentation-btn { position: relative; }
+  .view-controls .seg-btn-icon { margin-right: 0; width: 12px; height: 12px; }
   .ecg-strip { height: 44px; }
 }
 .cycle-disclaimer {
@@ -1056,12 +1060,28 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .flow-speed-bar { width: 72px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000); border: 1px solid rgba(14, 24, 21, 0.25); }
 .flow-speed-text { font: 600 10px/1 'Inter', system-ui, sans-serif; color: #2e4a3f; background: rgba(252, 253, 251, 0.8); padding: 2px 6px; border-radius: 999px; }
 
+/* Segmentation-style view: dock button and label-map legend (segmentation-view.js) */
+.view-controls .segmentation-btn { color: #1a4d3f; font-weight: 600; }
+.view-controls .segmentation-btn[aria-pressed=true] { background: #1d4237; color: #ffd966; }
+.view-controls .segmentation-btn[aria-pressed=true] kbd { background: #122d25; color: #ffe48f; border-color: #275748; }
+.seg-btn-icon { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 2px; vertical-align: -1px; background: conic-gradient(#d32f2f 0 25%, #f29e0b 0 50%, #0072b2 0 75%, #56b4e9 0); }
+.seg-legend { position: absolute; left: 10px; top: 92px; z-index: 30; pointer-events: none; max-width: 210px; padding: 7px 9px; border: 1px solid rgba(14, 24, 21, 0.14); border-radius: 8px; background: rgba(252, 253, 251, 0.9); color: #263e3b; font: 500 10.5px/1.25 'Inter', system-ui, sans-serif; }
+.seg-legend[hidden] { display: none; }
+.seg-legend-title { font-weight: 700; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #4a655c; margin-bottom: 4px; }
+.seg-legend-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.seg-legend-list li { display: flex; align-items: center; gap: 6px; }
+.seg-swatch { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 2px; border: 1px solid rgba(14, 24, 21, 0.3); }
+.seg-legend-note { margin-top: 5px; padding-top: 4px; border-top: 1px solid rgba(14, 24, 21, 0.12); font-size: 9.5px; color: #5a6f68; }
+
 /* Phones: viewport overlays keep clear of the floating annotation button
    (bottom right) and the view dock; the legend shrinks to the bar and a short label. */
 @media (max-width:640px){
   .xr-buttons { top: 10px; bottom: auto; right: 10px; }
   .xr-button { padding: 5px 10px; font-size: 11px; }
   .flow-speed-legend { left: 8px; bottom: 6px; gap: 4px; }
+  .seg-legend { left: 8px; right: 8px; top: 70px; max-width: none; padding: 5px 7px; font-size: 9.5px; background: rgba(252, 253, 251, 0.82); }
+  .seg-legend-list { grid-template-columns: 1fr 1fr; gap: 1px 8px; }
+  .seg-legend-title, .seg-legend-note { display: none; }
   .flow-speed-bar { width: 48px; height: 6px; }
   .flow-speed-text { font-size: 9px; padding: 2px 5px; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }

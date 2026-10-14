@@ -36,6 +36,7 @@ import { measuredFlowRoutes } from './flow-routes.js';
 import { vesselTrimPlane, sharedRim, septalPairs, hisBundleEnd, coronarySinusOstium, seatVesselEnd, inferiorCavalOstium, surfaceExit } from './mesh-utils.js';
 import { measureLeftBundle, measureRightBundle } from './conduction-paths.js';
 import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN_VISIBILITY_IDS } from './layer-defaults.js';
+import { segmentationLabelFor, visibleSegmentationLabels, createSegmentationLegend } from './segmentation-view.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
 export function createHeart(container, onSelect = () => {}, onHover = () => {}, onAngleChange = () => {}) {
@@ -76,8 +77,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const meshes = [], meshMap = new Map();
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
   const cardiacCycle = createCardiacCycle({ bpm: 72, phase: 0.0, playing: false, rhythm: 'sinus' });
-  let channels = null, bloodFlow = null, overlayFollow = null, flowLegend = null;
-  let fluoroscopy=false, lastEmittedKey='', ablationStep=0;
+  let channels = null, bloodFlow = null, overlayFollow = null, flowLegend = null, segLegend = null;
+  let fluoroscopy=false, segmentation=false, lastEmittedKey='', ablationStep=0;
   // Ablation lesson steps that frame Koch's triangle (labels, close-up views).
   const KOCH_LABEL_STEPS=[1,4];
   // Koch close-up: C-arm style obliquity (RAO 30 en face to the septum, LAO 45 along it), close distance.
@@ -273,6 +274,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
     }
     heart.visible=mode!=='micro';micro.visible=mode==='micro';
+    updateSegmentationLegend();
     paintSelection();
     requestRender();
   }
@@ -949,46 +951,90 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const xrSupport=createXrSupport({renderer,subject:heart,container,getLang:()=>((globalThis.localStorage?.getItem?.('cardia_lang'))==='en'?'en':'tr'),
     onSessionStart(){cancelAnimationFrame(frame);controls.enabled=false;renderer.setAnimationLoop(animate);},
     onSessionEnd(){renderer.setAnimationLoop(null);controls.enabled=true;lastTime=performance.now();frame=requestAnimationFrame(animate);requestRender();}});
+  // Both alternative views swap materials only while a frame is drawn, so selection,
+  // lesson updates and resets keep working on the original materials.
+  function renderSwapped(replacement){
+    const originals=[];
+    try{
+      heart.traverseVisible(object=>{
+        if(!object.isMesh || Array.isArray(object.material))return;
+        const swapped=replacement(object);
+        if(!swapped)return;
+        originals.push([object,object.material]);
+        object.material=swapped;
+      });
+      renderer.render(scene,camera);
+    }finally{for(const [object,original] of originals)object.material=original;}
+  }
   // Educational projection: layer attenuation, not a simulated diagnostic radiograph.
-  // Swap only during rendering so selection, lesson updates and resets retain originals.
   const projectionMaterials = new Map();
+  function projectionMaterial(object){
+    const original=object.material;
+    const layer=object.userData.layer;
+    const atlas=object.userData.provenance==='atlas';
+    const contrast=atlas && layer==='coronaries' && mode==='angiography';
+    let device=false;
+    let schematicTissue=false;
+    let deviceTint=null;
+    for(let parent=object.parent;parent;parent=parent.parent){
+      if(parent.userData.projectionTissue)schematicTissue=true;
+      if(deviceTint===null && parent.userData.fluoroTint!=null)deviceTint=parent.userData.fluoroTint;
+      if(parent.userData.fluoroDevice || parent===pacemakerLeads.group || parent===transseptal.group || parent===cathLab.group){device=true;break;}
+    }
+    device=device && !schematicTissue && !original.isMeshBasicMaterial;
+    let projected=projectionMaterials.get(object);
+    if(!projected){
+      projected=new THREE.MeshBasicMaterial({transparent:true,premultipliedAlpha:true,depthWrite:false,depthTest:false,side:THREE.FrontSide,toneMapped:false,blending:THREE.MultiplyBlending});
+      projectionMaterials.set(object,projected);
+    }
+    projected.color.setHex(device?(deviceTint??0x202020):contrast?0x303030:0x6a6a6a);
+    projected.opacity=device?(original.transparent?Math.min(.85,original.opacity+.15):.95):contrast?.8:atlas?(layer==='chambers'?.2:layer==='valves'?.12:.11):.16;
+    projected.clippingPlanes=original.clippingPlanes;
+    return projected;
+  }
+  // Segmentation-style view: atlas meshes in their label colour (segmentation-view.js).
+  // Schematic overlays and devices are not part of the label map and keep their material.
+  const labelMaterials = new Map();
+  function labelMaterial(object){
+    if(object.userData.provenance!=='atlas')return null;
+    const label=segmentationLabelFor(object.userData.id);
+    if(!label)return null;
+    const original=object.material;
+    let flat=labelMaterials.get(object);
+    if(!flat){
+      flat=new THREE.MeshStandardMaterial({color:label.color,roughness:1,metalness:0,side:THREE.DoubleSide});
+      labelMaterials.set(object,flat);
+    }
+    flat.emissive.copy(original.emissive);
+    flat.emissiveIntensity=original.emissiveIntensity;
+    flat.opacity=original.opacity;
+    flat.transparent=original.transparent;
+    flat.depthWrite=original.depthWrite;
+    flat.clippingPlanes=original.clippingPlanes;
+    return flat;
+  }
+  const segmentationShown=()=>segmentation&&!fluoroscopy&&mode!=='micro';
+  const drawn=mesh=>{for(let o=mesh;o;o=o.parent)if(!o.visible)return false;return true;};
+  function updateSegmentationLegend(){
+    if(!segLegend)return;
+    segLegend.update(segmentationShown()?visibleSegmentationLabels(meshes.filter(m=>m.userData.provenance==='atlas'&&drawn(m)).map(m=>m.userData.id)):[]);
+  }
+  segLegend=createSegmentationLegend(container);
   function renderScene(){
     overlayFollow?.sync();
     septalDefects.updateLabels(camera);
     mitralScallops.update(camera,mitralFocus&&!fluoroscopy&&mode==='anatomy');
     sceneLabels.update(camera);
-    if(!fluoroscopy || mode==='micro'){renderer.render(scene,camera);updateContours();return;}
-    const originals=[];
-    heart.traverseVisible(object=>{
-      if(!object.isMesh || Array.isArray(object.material))return;
-      const original=object.material;
-      const layer=object.userData.layer;
-      const atlas=object.userData.provenance==='atlas';
-      const contrast=atlas && layer==='coronaries' && mode==='angiography';
-      let device=false;
-      let schematicTissue=false;
-      let deviceTint=null;
-      for(let parent=object.parent;parent;parent=parent.parent){
-        if(parent.userData.projectionTissue)schematicTissue=true;
-        if(deviceTint===null && parent.userData.fluoroTint!=null)deviceTint=parent.userData.fluoroTint;
-        if(parent.userData.fluoroDevice || parent===pacemakerLeads.group || parent===transseptal.group || parent===cathLab.group){device=true;break;}
-      }
-      device=device && !schematicTissue && !original.isMeshBasicMaterial;
-      let projected=projectionMaterials.get(object);
-      if(!projected){
-        projected=new THREE.MeshBasicMaterial({transparent:true,premultipliedAlpha:true,depthWrite:false,depthTest:false,side:THREE.FrontSide,toneMapped:false,blending:THREE.MultiplyBlending});
-        projectionMaterials.set(object,projected);
-      }
-      projected.color.setHex(device?(deviceTint??0x202020):contrast?0x303030:0x6a6a6a);
-      projected.opacity=device?(original.transparent?Math.min(.85,original.opacity+.15):.95):contrast?.8:atlas?(layer==='chambers'?.2:layer==='valves'?.12:.11):.16;
-      projected.clippingPlanes=original.clippingPlanes;
-      originals.push([object,original]);
-      object.material=projected;
-    });
-    try{renderer.render(scene,camera);}finally{for(const [object,original] of originals)object.material=original;}
+    if(fluoroscopy && mode!=='micro')renderSwapped(projectionMaterial);
+    else if(segmentationShown())renderSwapped(labelMaterial);
+    else renderer.render(scene,camera);
     updateContours();
   }
   function disposeScene(root){const materials=new Set(),geometries=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>materials.add(m));});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
+  function setSegmentation(value){
+    segmentation=Boolean(value);
+    applyState();
+  }
   function setFluoroscopy(value){
     fluoroscopy=Boolean(value);
     renderer.setClearColor(fluoroscopy?0xc9c9c9:0xffffff,fluoroscopy?1:0);
@@ -1065,6 +1111,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     },
     setWallCut,
     setView,setAngioProjection,getAngioAngles,setFluoroscopy,
+    /** Segmentation-style label colours on the atlas meshes; fluoroscopy takes precedence while it is on. */
+    setSegmentation,
+    getSegmentation(){return {on:segmentation,shown:segmentationShown(),labels:segLegend.keys()};},
     /** Fluoroscopic anatomy contours over the image (on by default while fluoroscopy is on). */
     setFluoroContours(on){fluoroContours=Boolean(on);contourKey='';requestRender();},
     getFluoroContours(){return {on:fluoroContours,visible:!contourCanvas.hidden,contours:lastContours.map(c=>({id:c.id,points:c.points.length,centroid:c.centroid}))};},selectStructure,clearSelection(){selectStructure(null,false);},
@@ -1181,6 +1230,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       rootWindow=false;
       system='all';
       fluoroscopy=false;
+      segmentation=false;
       applyLayerDefaults(visibility);
       for(const id in wallCuts){
         wallCuts[id]=0;
@@ -1192,7 +1242,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {defects:septalDefects.getState(),mitralFocus,kochFocus,mode,system,rootWindow,fluoroscopy,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
-    dispose(){septalDefects.dispose();mitralScallops.dispose();sceneLabels.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
+    getState(){return {defects:septalDefects.getState(),mitralFocus,kochFocus,mode,system,rootWindow,fluoroscopy,segmentation,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    dispose(){septalDefects.dispose();mitralScallops.dispose();sceneLabels.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();for(const mat of labelMaterials.values())mat.dispose();labelMaterials.clear();segLegend.dispose();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

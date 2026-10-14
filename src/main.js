@@ -210,6 +210,7 @@ app.innerHTML = `
       <button id="carm-toggle-dock" class="carm-dock-btn" type="button" aria-controls="carm-panel" aria-expanded="false" title="C-Arm & Joystick Paneli">📐 C-Arm <kbd>C</kbd></button>
       <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
       <button id="fluoro-contours-toggle" class="fluoro-contours-btn" title="${getTranslation('fluoroContoursTitle')}" aria-pressed="true" hidden><span data-i18n="fluoroContours">${getTranslation('fluoroContours')}</span></button>
+      <button id="segmentation-toggle" class="segmentation-btn" type="button" title="${getTranslation('segmentationTitle')}" aria-pressed="false"><span class="seg-btn-icon" aria-hidden="true"></span><span class="seg-btn-label" data-i18n="segmentationBtn">${getTranslation('segmentationBtn')}</span> <kbd>G</kbd></button>
       <button id="reset" title="Reset camera (0)">↺</button>
       </div>
     </div>
@@ -466,6 +467,7 @@ app.innerHTML = `
     <div class="shortcut-row"><kbd>S</kbd><span>Spider View (LAO 45° / CAU 30° LMCA Angiography)</span></div>
     <div class="shortcut-row"><kbd>C</kbd><span>Toggle C-Arm Angiography & Joystick</span></div>
     <div class="shortcut-row"><kbd>X</kbd><span data-i18n="fluoroShortcut">${getTranslation('fluoroShortcut')}</span></div>
+    <div class="shortcut-row"><kbd>G</kbd><span data-i18n="segmentationShortcut">${getTranslation('segmentationShortcut')}</span></div>
     <div class="shortcut-row"><kbd>O</kbd><span>Aortic Root & Cusps View</span></div>
     <div class="shortcut-row"><kbd>0</kbd><span>Reset Camera View</span></div>
     <div class="shortcut-row"><kbd>Space</kbd><span>Toggle Heartbeat Animation</span></div>
@@ -1447,6 +1449,7 @@ document.querySelectorAll('[data-angio]').forEach(btn => {
 });
 
 let fluoroActive = false;
+let segmentationActive = false;
 const fluoroBtn = document.querySelector('#fluoroscopy-toggle');
 const fluoroDockBtn = document.querySelector('#fluoro-toggle-dock');
 // Anatomy contours over the fluoroscopy image (fluoro-contours.js), on by default.
@@ -1459,6 +1462,7 @@ fluoroContoursBtn?.addEventListener('click', () => {
 
 function setFluoroscopyActive(active) {
   fluoroActive = Boolean(active);
+  if (fluoroActive && segmentationActive) setSegmentationActive(false);
   heart?.setFluoroscopy(fluoroActive);
   if (fluoroBtn) {
     fluoroBtn.setAttribute('aria-pressed', String(fluoroActive));
@@ -1479,6 +1483,17 @@ function toggleFluoroscopy() {
 
 fluoroBtn?.addEventListener('click', toggleFluoroscopy);
 fluoroDockBtn?.addEventListener('click', toggleFluoroscopy);
+
+// Segmentation-style label colours (segmentation-view.js). Fluoroscopy is a different
+// rendering of the same scene, so turning one on turns the other off.
+const segmentationBtn = document.querySelector('#segmentation-toggle');
+function setSegmentationActive(active) {
+  segmentationActive = Boolean(active);
+  if (segmentationActive && fluoroActive) setFluoroscopyActive(false);
+  heart?.setSegmentation(segmentationActive);
+  segmentationBtn?.setAttribute('aria-pressed', String(segmentationActive));
+}
+segmentationBtn?.addEventListener('click', () => setSegmentationActive(!segmentationActive));
 
 function updateJoystickFromCamera(angles) {
   const { laoRao, craCau, laoRaoStr, craCauStr, label } = angles;
@@ -1710,6 +1725,7 @@ function resetAll() {
   syncLayerCheckboxesFromHeart();
 
   setFluoroscopyActive(false);
+  setSegmentationActive(false);
 
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('selected', b.dataset.view === 'anterior'));
   document.querySelectorAll('[data-angio]').forEach(b => b.classList.remove('active'));
@@ -1827,6 +1843,7 @@ function updateLanguageUI() {
   if (fluoroDock) {
     fluoroDock.title = getTranslation('fluoroDockTitle');
   }
+  if (segmentationBtn) segmentationBtn.title = getTranslation('segmentationTitle');
 
   const selectEl = document.querySelector('#structure-select');
   if (selectEl) {
@@ -2013,6 +2030,8 @@ window.addEventListener('keydown', e => {
     toggleCarmPanel();
   } else if (key === 'x' || key === 'X') {
     toggleFluoroscopy();
+  } else if (key === 'g' || key === 'G') {
+    setSegmentationActive(!segmentationActive);
   } else if (key === 'o' || key === 'O') {
     setCameraPreset('root');
   } else if (key === '0') {
