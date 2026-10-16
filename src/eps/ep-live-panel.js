@@ -12,7 +12,7 @@ import { LIVE_CASES, LIVE_CHANNELS, LIVE_SITES, ABLATION_TARGETS, createLiveHear
 import { LIVE_TEXT, LIVE_CASE_TEXT } from './ep-live-text.js';
 import {
   tclBefore, atrialCycle, hisPvcTime, analyzeHisPvc, overdriveStart, planOverdrive, atriumEntrained, analyzeOverdrive,
-  interpretOverdrive, interpretSite, planProtocol, analyzeStep, summarizeProtocol
+  interpretOverdrive, interpretSite, planProtocol, analyzeStep, summarizeProtocol, analyzeVaLinking
 } from './ep-live-maneuvers.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, caliperText } from './ep-user-caliper.js';
 import { readFlag, writeFlag } from './view-prefs.js';
@@ -203,13 +203,19 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     } else {
       const delivered = m.stims.filter((x) => x.t <= (m.cut ?? Infinity));
       const r = analyzeOverdrive(ev, delivered);
+      const va = m.kind === 'a-od' && r && r.captured && !r.terminated && !heart.status().flutterActive ? analyzeVaLinking(ev, delivered) : null;
       let verdict;
       if (!r || !r.captured) verdict = t.verdict.notCaptured;
       else if (r.terminated) verdict = t.verdict.terminated;
       else if (m.kind === 'v-od' && r.entrained) verdict = t.verdict[interpretOverdrive(r) || 'indeterminate'];
       else if (m.kind === 'v-od') verdict = `${t.verdict.notEntrained} ${t.verdict[interpretSite(r)] || ''}`;
-      else verdict = t.verdict[interpretSite(r)] || '';
-      state.maneuverText = r ? `${t.overdrive(r)}. ${verdict}` : verdict;
+      else {
+        const siteVerdict = t.verdict[interpretSite(r)] || '';
+        const vaVerdict = va?.verdict === 'linked' ? t.verdict.vaLinked : va?.verdict === 'unlinked' ? t.verdict.vaUnlinked : '';
+        verdict = [siteVerdict, vaVerdict].filter(Boolean).join(' ');
+      }
+      const line = r ? `${t.overdrive(r)}${va && va.deltaVa != null ? ` · ${t.vaLink(va)}` : ''}` : '';
+      state.maneuverText = line ? `${line}. ${verdict}` : verdict;
     }
     state.maneuver = null;
     renderManeuver();

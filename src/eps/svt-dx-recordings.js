@@ -1,5 +1,6 @@
-import { EP_CASES, epRecording } from './ep-cases.js';
-import { drawEgm, selectableChannels } from './ep-egm.js';
+import { EP_CASES, EP_CHANNELS, epRecording } from './ep-cases.js';
+import { drawEgm, selectableChannels, timeAtX, channelAtY, eventsNear } from './ep-egm.js';
+import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, caliperText } from './ep-user-caliper.js';
 import { buildLadder, inferLadderEvents, drawLadder, LADDER_STYLE } from './ep-ladder.js';
 import { stripLinks } from './ep-strip-links.js';
 import { EP_CLIP_TEXT } from './ep-case-text.js';
@@ -66,16 +67,26 @@ export function createSvtRecordings(doc, getLang) {
   });
   const controls = el('div', 'amap-toggles');
   const flags = { waves: true, links: true, ladder: true };
+  let id = SVT_EXAMPLES[0][0], active = false, lastAxis = null, caliperOn = false, caliper = noCaliper(), cursorMs = null;
   const buttons = Object.keys(flags).map((key) => {
     const b = el('button', 'amap-toggle');
     b.type = 'button'; b.setAttribute('data-svt-display', key);
     b.addEventListener('click', () => { flags[key] = !flags[key]; render(); });
     controls.append(b); return b;
   });
+  const caliperBtn = el('button', 'amap-toggle', 'data-svt-caliper');
+  caliperBtn.type = 'button';
+  caliperBtn.addEventListener('click', () => {
+    caliperOn = !caliperOn;
+    caliper = noCaliper();
+    render();
+  });
+  controls.append(caliperBtn);
   const scroll = el('div', 'svt-recording-scroll');
   const strip = el('canvas', 'svt-recording-strip', 'data-svt-strip');
   const ladderCanvas = el('canvas', 'egm-ladder', 'data-svt-ladder');
   strip.setAttribute('role', 'img'); ladderCanvas.setAttribute('role', 'img');
+  const inspect = el('p', 'ep-inspect', 'data-svt-inspect');
   const readout = el('p', 'amap-verdict', 'data-svt-measures');
   const note = el('p', 'amap-note');
   const interpretation = el('p', 'amap-note', 'data-svt-interpretation');
@@ -101,14 +112,13 @@ export function createSvtRecordings(doc, getLang) {
   const main = el('div', 'svt-recording-main');
   const layout = el('div', 'svt-recording-layout');
   label.append(labelText, select); scroll.append(strip, ladderCanvas);
-  main.append(label, controls, scroll, readout, interpretation, stages, legend, source, note);
+  main.append(label, controls, scroll, inspect, readout, interpretation, stages, legend, source, note);
   layout.append(list, main);
   root.append(title, layout);
-  let id = SVT_EXAMPLES[0][0], active = false;
   select.value = id;
   function choose(next) {
     if (!SVT_EXAMPLES.some((example) => example[0] === next)) return;
-    id = next; select.value = next; render();
+    id = next; select.value = next; caliper = noCaliper(); cursorMs = null; render();
   }
   select.addEventListener('change', () => choose(select.value));
   const cache = new Map();
@@ -124,13 +134,54 @@ export function createSvtRecordings(doc, getLang) {
     }
     return cache.get(id);
   }
+  const stripTime = (event) => {
+    const rect = strip.getBoundingClientRect?.();
+    if (!rect || !lastAxis) return null;
+    return timeAtX(event.clientX - rect.left, lastAxis);
+  };
+  const snapped = (t, event) => {
+    const rect = strip.getBoundingClientRect();
+    const ch = channelAtY(event.clientY - rect.top, lastAxis);
+    const { recording, channels } = data();
+    const radius = Math.max(CALIPER_SNAP_MS, (6 * (lastAxis.to - lastAxis.from)) / lastAxis.plotW);
+    return snapTime(recording, t, ch ? [ch] : channels, radius);
+  };
+  let dragEnd = null, dragged = false;
+  strip.addEventListener('pointerdown', (event) => {
+    if (!caliperOn || !lastAxis) return;
+    const rect = strip.getBoundingClientRect();
+    const msPerPx = (lastAxis.to - lastAxis.from) / lastAxis.plotW;
+    const t = timeAtX(event.clientX - rect.left, lastAxis);
+    dragEnd = t == null ? null : ['a', 'b'].find((end) => caliper[end] != null && Math.abs(caliper[end] - t) <= 6 * msPerPx) || null;
+    dragged = false;
+    if (dragEnd) strip.setPointerCapture?.(event.pointerId);
+  });
+  strip.addEventListener('pointermove', (event) => {
+    if (!dragEnd) return;
+    const t = stripTime(event);
+    if (t == null) return;
+    dragged = true;
+    caliper = moveCaliper(caliper, dragEnd, snapped(t, event));
+    render();
+  });
+  strip.addEventListener('pointerup', () => { dragEnd = null; });
+  strip.addEventListener('click', (event) => {
+    if (dragged) { dragged = false; return; }
+    const t = stripTime(event);
+    if (caliperOn) {
+      if (t != null) caliper = placeCaliper(caliper, snapped(t, event));
+    } else cursorMs = t == null ? null : Math.round(t);
+    render();
+  });
   function draw() {
     if (!active) return;
     const { recording, ladder, links, channels } = data();
     strip.style && (strip.style.height = `${Math.max(480, channels.length * 48 + 34)}px`);
     const axis = drawEgm(strip, recording, { lang: getLang(), channels, waves: flags.waves,
+      cursorMs: caliperOn ? null : cursorMs, caliper: caliperOn ? caliper : null,
       title: options[SVT_EXAMPLES.findIndex((e) => e[0] === id)].textContent,
       links: flags.links ? links : null, linkStyles: LADDER_STYLE });
+    lastAxis = axis || lastAxis;
     ladderCanvas.hidden = !flags.ladder;
     if (flags.ladder && axis) drawLadder(ladderCanvas, ladder, axis, { lang: getLang() });
   }
@@ -151,7 +202,16 @@ export function createSvtRecordings(doc, getLang) {
       b.textContent = (en ? ['Wave names', 'Ladder on channels', 'Ladder diagram'] : ['Dalga adları', 'Kanalda ladder', 'Ladder diyagram'])[i];
       b.setAttribute('aria-pressed', String(flags[key]));
     });
+    caliperBtn.textContent = en ? 'Calipers' : 'Kaliper';
+    caliperBtn.setAttribute('aria-pressed', String(caliperOn));
     const { recording, channels } = data();
+    if (caliperOn) inspect.textContent = caliperText(caliper, en ? 'en' : 'tr');
+    else if (cursorMs == null) inspect.textContent = en ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
+    else {
+      const near = eventsNear(recording, cursorMs, channels);
+      const chLabel = (ch) => EP_CHANNELS.find((c) => c.id === ch)?.label || ch;
+      inspect.textContent = `t = ${cursorMs} ms${near.length ? `: ${near.slice(0, 6).map((e) => `${chLabel(e.ch)} ${e.type} ${Math.round(e.t)}`).join(' · ')}` : ''}`;
+    }
     root.setAttribute('data-recording', id);
     strip.setAttribute('aria-label', `${options[SVT_EXAMPLES.findIndex((e) => e[0] === id)].textContent}: ${channels.join(', ')}`);
     ladderCanvas.setAttribute('aria-label', en ? 'A, AV and V conduction ladder' : 'A, AV ve V iletim ladder diyagramı');

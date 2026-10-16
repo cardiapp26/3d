@@ -63,6 +63,9 @@ assert.ok(overdrive('avnrt-atypical').saVa > 85);
   const r = analyzeOverdrive(events, stims);
   assert.deepEqual([r.ppiTcl, r.ahTachy, r.ahReturn, r.ahProlongation, r.cppiTcl], [150, 225, 305, 80, 70]);
   assert.equal(interpretOverdrive(r), 'avrt');
+  // Ho 2019 ch 5 Delta HA = HA(entrainment) - HA(SVT): < 0 in ORT (parallel during V pacing, sequential in SVT).
+  const ortWithRetroH = { ...events, 'his-d': [...events['his-d'], { type: 'H', t: 2450 }].sort((a, b) => a.t - b.t) };
+  assert.ok(analyzeOverdrive(ortWithRetroH, stims).deltaHa < 0, 'ORT: Delta HA < 0');
   assert.equal(analyzeOverdrive(events, stims, { correctAh: false }).cppiTcl, null);
   const missing = { ...events, 'his-d': events['his-d'].map(({ aj, ...e }) => e) };
   assert.equal(analyzeOverdrive(missing, stims).cppiTcl, null, 'no guessed A-H association');
