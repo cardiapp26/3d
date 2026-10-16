@@ -329,6 +329,7 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
   .view-controls .seg-btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .view-controls .segmentation-btn { position: relative; }
   .view-controls .seg-btn-icon { margin-right: 0; width: 12px; height: 12px; }
+  .view-tools .zoom-btn, .view-tools .fullscreen-btn { display: none; }
   .ecg-strip { height: 44px; }
 }
 .cycle-disclaimer {
@@ -380,6 +381,111 @@ main.fluoroscopy-active{background:#c9c9c9 !important}
 .myo-control input[type=range]{width:96px}
 .myo-control output{font-size:10px;color:#6d8177;min-width:30px;text-align:right}
 @media(max-width:640px){.myo-control{top:8px;left:8px;padding:4px 6px}.myo-control input[type=range]{width:70px}}
+
+/* Viewport HUD Navigation Controls (Fullscreen, Zoom In, Zoom Out, Reset) */
+.viewport-hud-controls {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #ffffffd9;
+  backdrop-filter: blur(8px);
+  border: 1px solid #d9e0d6;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 3px 10px #0000000d;
+  user-select: none;
+}
+.hud-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d0dcd4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #244f43;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+.hud-btn:hover {
+  background: #eef4ed;
+  border-color: #3d7966;
+  color: #1a3c33;
+}
+.hud-btn:active {
+  background: #244f43;
+  color: #ffffff;
+}
+.hud-btn svg {
+  display: block;
+  pointer-events: none;
+}
+.hud-btn[aria-pressed="true"] {
+  background: #244f43;
+  color: #ffffff;
+  border-color: #1a3c33;
+}
+.view-tools .zoom-btn,
+.view-tools .fullscreen-btn {
+  font-weight: 700;
+  font-size: 11px;
+}
+.view-tools .fullscreen-btn[aria-pressed="true"] {
+  background: #244f43;
+  color: #ffffff;
+}
+
+@media(max-width:640px){
+  .viewport-hud-controls {
+    top: 8px;
+    right: 8px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .hud-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+}
+
+/* Fullscreen mode and fallback */
+main:fullscreen,
+main:-webkit-full-screen,
+main.is-fullscreen-fallback {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  max-height: 100vh !important;
+  z-index: 9999 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: radial-gradient(ellipse at 50% 46%, #e7eee6 0, #f1f4ee 50%, #f6f7f3 85%);
+  overflow: hidden !important;
+}
+main:fullscreen #viewport,
+main:-webkit-full-screen #viewport,
+main.is-fullscreen-fallback #viewport {
+  inset: 0 0 calc(var(--cycle-h, 128px) + 40px) !important;
+}
+@media (max-width: 768px) {
+  main:fullscreen #viewport,
+  main:-webkit-full-screen #viewport,
+  main.is-fullscreen-fallback #viewport {
+    inset: 0 0 calc(var(--cycle-h, 128px) + 32px) !important;
+  }
+}
 
 /* Catheterization pressure tracing */
 

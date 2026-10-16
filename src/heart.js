@@ -59,7 +59,24 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   controls.maxDistance = 16;
   let needsRender = true;
   function requestRender() { needsRender = true; }
-  controls.addEventListener('change', () => { needsRender = true; });
+  controls.addEventListener('change', () => {
+    needsRender = true;
+    if (!transition) {
+      const dist = camera.position.distanceTo(controls.target);
+      if (dist < 0.42 && controls.target.distanceTo(fitCenter) < 2.0) {
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        const push = 0.42 - dist;
+        controls.target.addScaledVector(forward, push);
+        camera.position.addScaledVector(forward, push);
+        cameraTarget.copy(camera.position);
+        lookTarget.copy(controls.target);
+      } else if (dist > 1.4 && controls.target.distanceTo(fitCenter) > 0.05) {
+        controls.target.lerp(fitCenter, 0.05);
+        lookTarget.copy(controls.target);
+      }
+    }
+  });
   scene.add(new THREE.HemisphereLight(0xffffff, 0x65524c, 2.1));
   for (const [position, color, intensity] of [[[3,5,6],0xfff3e6,2.6],[[-5,2,1],0xdaeaf4,.9],[[1,4,-4],0xffffff,1.3]]) {
     const light = new THREE.DirectionalLight(color,intensity); light.position.set(...position); scene.add(light);
@@ -868,6 +885,73 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     transition=smooth;container.dataset.cameraSettled=String(!smooth);if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
     emitAngleChange();
   }
+
+  function zoomIn(factor = 0.22) {
+    transition = false;
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    const dist = camera.position.distanceTo(controls.target);
+
+    if (dist > 0.55) {
+      // Approach phase: move camera closer to target
+      const step = Math.min(dist * factor, dist - 0.4);
+      camera.position.addScaledVector(forward, Math.max(step, 0.06));
+    } else {
+      // Inside/penetration phase: advance both camera and target forward along sightline.
+      // This allows the camera to smoothly enter into the heart chambers, valves,
+      // aortic root and explore the interior without getting stuck on minDistance.
+      const advance = 0.16;
+      const nextTarget = controls.target.clone().addScaledVector(forward, advance);
+      if (nextTarget.distanceTo(fitCenter) < 2.2) {
+        controls.target.copy(nextTarget);
+        camera.position.addScaledVector(forward, advance);
+      } else {
+        const step = Math.min(advance, Math.max(0, dist - 0.04));
+        if (step > 0.005) camera.position.addScaledVector(forward, step);
+      }
+    }
+    cameraTarget.copy(camera.position);
+    lookTarget.copy(controls.target);
+    controls.update();
+    emitAngleChange();
+    requestRender();
+  }
+
+  function zoomOut(factor = 0.22) {
+    transition = false;
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+
+    // If target drifted away from heart center, gently return it towards fitCenter
+    const targetOffset = controls.target.clone().sub(fitCenter);
+    const targetDist = targetOffset.length();
+    if (targetDist > 0.03) {
+      const pull = Math.min(targetDist, 0.14);
+      controls.target.addScaledVector(targetOffset.normalize(), -pull);
+    }
+
+    const dist = camera.position.distanceTo(controls.target);
+    const step = Math.max(0.12, dist * factor);
+    const newPos = camera.position.clone().addScaledVector(forward, -step);
+    if (newPos.distanceTo(controls.target) <= controls.maxDistance) {
+      camera.position.copy(newPos);
+    }
+    cameraTarget.copy(camera.position);
+    lookTarget.copy(controls.target);
+    controls.update();
+    emitAngleChange();
+    requestRender();
+  }
+
+  function getZoomInfo() {
+    return {
+      distance: camera.position.distanceTo(controls.target),
+      target: controls.target.toArray(),
+      position: camera.position.toArray(),
+      insideHeart: controls.target.distanceTo(fitCenter) > 0.2 || camera.position.distanceTo(fitCenter) < 1.2
+    };
+  }
+
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let catheterPickables=null;
   function pickTargets(){
@@ -1111,6 +1195,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     },
     setWallCut,
     setView,setAngioProjection,getAngioAngles,setFluoroscopy,
+    zoomIn,zoomOut,getZoomInfo,
     /** Segmentation-style label colours on the atlas meshes; fluoroscopy takes precedence while it is on. */
     setSegmentation,
     getSegmentation(){return {on:segmentation,shown:segmentationShown(),labels:segLegend.keys()};},

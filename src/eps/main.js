@@ -80,25 +80,32 @@ function setLang(next) {
 }
 
 // Space freezes or resumes the live sweep, and plays or pauses the AF map,
-// wherever the focus is, except in a field that takes typing or a list. A
-// focused button or slider (after a click on Run, Calipers, the time slider
-// ...) would otherwise take the key.
-const TYPING = 'textarea, select, [contenteditable=""], [contenteditable="true"], input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=button])';
+// wherever the focus is, except in a field that takes text typing. A
+// focused button, select dropdown (speed, rate, case, site) or slider
+// (after a click on Run, Calipers, the time slider ...) would otherwise take the key.
+const TEXT_INPUT = 'textarea, input:is([type=text], [type=search], [type=password], [type=email], [type=url], :not([type])), [contenteditable=""], [contenteditable="true"]';
+const isSpaceKey = (event) => event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar';
+
 /** The play / freeze control Space presses in the open view, or null. */
 function spaceTarget() {
   const view = panel.getActiveView();
-  if (view === 'live') return live.element.querySelector('[data-ep-live-run]');
-  if (view === 'afmap') { const play = panel.afmap.element.querySelector('[data-afmap-play]'); return play && !play.parentElement?.hidden ? play : null; }
+  if (view === 'live' || (!live.element.hidden && live.element.offsetParent !== null)) {
+    return live.element.querySelector('[data-ep-live-run]');
+  }
+  if (view === 'afmap') {
+    const play = panel.afmap.element.querySelector('[data-afmap-play]');
+    return play && !play.parentElement?.hidden ? play : null;
+  }
   return null;
 }
-const spaceTargetFor = (event) => (event.code === 'Space' && !event.target.closest?.(TYPING) ? spaceTarget() : null);
+const spaceTargetFor = (event) => (isSpaceKey(event) && !event.target.closest?.(TEXT_INPUT) ? spaceTarget() : null);
 document.addEventListener('keydown', (event) => {
   const target = spaceTargetFor(event);
   if (!target) return;
   event.preventDefault();
   if (!event.repeat) target.click();
 }, true);
-// A focused button clicks itself on key release; stop that so Space only plays or freezes.
+// A focused button or select clicks itself on key release; stop that so Space only plays or freezes.
 document.addEventListener('keyup', (event) => { if (spaceTargetFor(event)) event.preventDefault(); }, true);
 
 // Strips are redrawn when the window changes size (a frozen sweep included).

@@ -201,6 +201,20 @@ app.innerHTML = `
     </div>
     <div id="viewport" aria-label="Interactive 3D heart. Drag to rotate, scroll to zoom."></div>
 
+    <div class="viewport-hud-controls" aria-label="${getTranslation('viewportControlsLabel')}">
+      <button id="viewport-fullscreen" class="hud-btn btn-fullscreen-toggle" type="button" title="${getTranslation('fullscreenBtn')}" aria-label="${getTranslation('fullscreenBtn')}" aria-pressed="false">
+        <svg class="icon-expand" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        <svg class="icon-compress" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+      </button>
+      <button id="viewport-zoom-in" class="hud-btn btn-zoom-in" type="button" title="${getTranslation('zoomInBtn')}" aria-label="${getTranslation('zoomInBtn')}">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+      <button id="viewport-zoom-out" class="hud-btn btn-zoom-out" type="button" title="${getTranslation('zoomOutBtn')}" aria-label="${getTranslation('zoomOutBtn')}">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+      <button id="viewport-reset" class="hud-btn btn-view-reset" type="button" title="${getTranslation('resetBtn')} (0)" aria-label="${getTranslation('resetBtn')}">↺</button>
+    </div>
+
     <div class="view-controls" aria-label="Camera presets">
       <div class="view-presets">
       ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}" title="${id==='root'?'Root & Cusps':t} (${k})">${VIEW_SHORT[id]?`<span class="view-long">${t}</span><span class="view-short">${VIEW_SHORT[id]}</span>`:t} <kbd>${k}</kbd></button>`).join('')}
@@ -211,7 +225,10 @@ app.innerHTML = `
       <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
       <button id="fluoro-contours-toggle" class="fluoro-contours-btn" title="${getTranslation('fluoroContoursTitle')}" aria-pressed="true" hidden><span data-i18n="fluoroContours">${getTranslation('fluoroContours')}</span></button>
       <button id="segmentation-toggle" class="segmentation-btn" type="button" title="${getTranslation('segmentationTitle')}" aria-pressed="false"><span class="seg-btn-icon" aria-hidden="true"></span><span class="seg-btn-label" data-i18n="segmentationBtn">${getTranslation('segmentationBtn')}</span> <kbd>G</kbd></button>
-      <button id="reset" title="Reset camera (0)">↺</button>
+      <button id="zoom-in" class="zoom-btn btn-zoom-in" type="button" title="${getTranslation('zoomInBtn')}" aria-label="${getTranslation('zoomInBtn')}">＋</button>
+      <button id="zoom-out" class="zoom-btn btn-zoom-out" type="button" title="${getTranslation('zoomOutBtn')}" aria-label="${getTranslation('zoomOutBtn')}">－</button>
+      <button id="fullscreen-toggle" class="fullscreen-btn btn-fullscreen-toggle" type="button" title="${getTranslation('fullscreenBtn')}" aria-label="${getTranslation('fullscreenBtn')}" aria-pressed="false">⛶</button>
+      <button id="reset" class="btn-view-reset" title="${getTranslation('resetBtn')} (0)">↺</button>
       </div>
     </div>
     <div id="cycle-panel" class="cycle-panel">
@@ -473,6 +490,8 @@ app.innerHTML = `
     <div class="shortcut-row"><kbd>Space</kbd><span>Toggle Heartbeat Animation</span></div>
     <div class="shortcut-row"><kbd>F</kbd><span data-i18n="flowShortcut">${getTranslation('flowShortcut')}</span></div>
     <div class="shortcut-row"><kbd>N</kbd> / <kbd>→</kbd><span>Next Landmark (Guided Lesson)</span></div>
+    <div class="shortcut-row"><kbd>+</kbd> / <kbd>=</kbd><span data-i18n="zoomInBtn">${getTranslation('zoomInBtn')}</span></div>
+    <div class="shortcut-row"><kbd>-</kbd> / <kbd>_</kbd><span data-i18n="zoomOutBtn">${getTranslation('zoomOutBtn')}</span></div>
     <div class="shortcut-row"><kbd>?</kbd><span>Show / Hide Shortcuts Dialog</span></div>
   </div>
 </dialog>
@@ -1769,7 +1788,114 @@ function syncLayerCheckboxesFromHeart() {
   updateLayerGroupCounts();
 }
 
-document.querySelector('#reset')?.addEventListener('click', resetAll);
+function isFullscreenActive() {
+  return Boolean(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    document.querySelector('main')?.classList.contains('is-fullscreen-fallback')
+  );
+}
+
+async function toggleFullscreen() {
+  const mainEl = document.querySelector('main');
+  const target = mainEl || document.documentElement;
+
+  if (isFullscreenActive()) {
+    if (document.exitFullscreen) {
+      try { await document.exitFullscreen(); } catch (_) {}
+    } else if (document.webkitExitFullscreen) {
+      try { await document.webkitExitFullscreen(); } catch (_) {}
+    }
+    mainEl?.classList.remove('is-fullscreen-fallback');
+    updateFullscreenUI(false);
+  } else {
+    let success = false;
+    if (target.requestFullscreen) {
+      try {
+        await target.requestFullscreen();
+        success = true;
+      } catch (_) {}
+    } else if (target.webkitRequestFullscreen) {
+      try {
+        await target.webkitRequestFullscreen();
+        success = true;
+      } catch (_) {}
+    }
+    if (!success) {
+      mainEl?.classList.add('is-fullscreen-fallback');
+      updateFullscreenUI(true);
+    }
+  }
+}
+
+function updateFullscreenUI(active = isFullscreenActive()) {
+  document.querySelectorAll('.btn-fullscreen-toggle').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(active));
+    const title = active ? getTranslation('fullscreenExitBtn') : getTranslation('fullscreenBtn');
+    btn.setAttribute('title', title);
+    btn.setAttribute('aria-label', title);
+    const expandIcon = btn.querySelector('.icon-expand');
+    const compressIcon = btn.querySelector('.icon-compress');
+    if (expandIcon && compressIcon) {
+      expandIcon.style.display = active ? 'none' : 'block';
+      compressIcon.style.display = active ? 'block' : 'none';
+    }
+  });
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, 100);
+}
+
+['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(evt => {
+  document.addEventListener(evt, () => updateFullscreenUI(isFullscreenActive()));
+});
+
+function zoomIn() {
+  heart?.zoomIn();
+}
+
+function zoomOut() {
+  heart?.zoomOut();
+}
+
+function setupHoldAction(button, actionFn) {
+  if (!button) return;
+  let timer = null;
+  let interval = null;
+  const start = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    actionFn();
+    timer = setTimeout(() => {
+      interval = setInterval(actionFn, 60);
+    }, 280);
+  };
+  const stop = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (interval) { clearInterval(interval); interval = null; }
+  };
+  button.addEventListener('pointerdown', start);
+  button.addEventListener('pointerup', stop);
+  button.addEventListener('pointercancel', stop);
+  button.addEventListener('pointerleave', stop);
+  button.addEventListener('click', (e) => {
+    if (e.detail === 0) actionFn();
+  });
+}
+
+document.querySelectorAll('.btn-fullscreen-toggle').forEach(btn => {
+  btn.addEventListener('click', toggleFullscreen);
+});
+document.querySelectorAll('.btn-zoom-in').forEach(btn => {
+  setupHoldAction(btn, zoomIn);
+});
+document.querySelectorAll('.btn-zoom-out').forEach(btn => {
+  setupHoldAction(btn, zoomOut);
+});
+document.querySelectorAll('.btn-view-reset, #reset').forEach(btn => {
+  btn.addEventListener('click', resetAll);
+});
 
 function applyChromeTranslations() {
   document.documentElement.lang = getContentLanguage();
@@ -1810,6 +1936,17 @@ function applyChromeTranslations() {
     resizer.title = getTranslation('resizerTitle');
     resizer.setAttribute('aria-label', getTranslation('resizerAria'));
   }
+  document.querySelectorAll('.btn-zoom-in').forEach(btn => {
+    btn.title = getTranslation('zoomInBtn');
+    btn.setAttribute('aria-label', getTranslation('zoomInBtn'));
+  });
+  document.querySelectorAll('.btn-zoom-out').forEach(btn => {
+    btn.title = getTranslation('zoomOutBtn');
+    btn.setAttribute('aria-label', getTranslation('zoomOutBtn'));
+  });
+  const hudWrap = document.querySelector('.viewport-hud-controls');
+  if (hudWrap) hudWrap.setAttribute('aria-label', getTranslation('viewportControlsLabel'));
+  updateFullscreenUI(isFullscreenActive());
 }
 
 function updateLanguageUI() {
@@ -2044,6 +2181,14 @@ window.addEventListener('keydown', e => {
   } else if (key === '?' || key === '/') {
     if (shortcutsModal.open) shortcutsModal.close();
     else shortcutsModal.showModal();
+  } else if (key === '+' || key === '=') {
+    zoomIn();
+  } else if (key === '-' || key === '_') {
+    zoomOut();
+  } else if (key === 'Escape') {
+    if (document.querySelector('main')?.classList.contains('is-fullscreen-fallback')) {
+      toggleFullscreen();
+    }
   } else if (key === 'n' || key === 'N' || key === 'ArrowRight') {
     if (lessons[mode]) nextLandmark();
   }

@@ -7,6 +7,18 @@ const visibleAside = page => page.evaluate(() => getComputedStyle(document.query
 const visibleArticle = page => page.evaluate(() => getComputedStyle(document.querySelector('.workspace > article')).visibility === 'visible');
 
 (async () => {
+  let viteServer;
+  let APP = process.env.APP_URL;
+  if (!APP) {
+    const { createServer } = await import('vite');
+    viteServer = await createServer({
+      server: { port: 5175, host: '127.0.0.1' },
+      logLevel: 'error'
+    });
+    await viteServer.listen();
+    APP = 'http://127.0.0.1:5175';
+  }
+
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -139,5 +151,8 @@ const visibleArticle = page => page.evaluate(() => getComputedStyle(document.que
 
     assert.deepEqual(errors, []);
     console.log('PASS: phone sheets (one at a time, focus, sizes, Escape), shared selection, mode tools, TR/EN, C-Arm drawer, dock tools on screen, 320 px, desktop Learn/Sources tabs');
-  } finally { await browser.close(); }
+  } finally {
+    await browser.close();
+    if (viteServer) await viteServer.close();
+  }
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1922,7 +1922,12 @@ export const uiTranslations = {
     upReloading: 'Yenileniyor…',
     upOfflineReady: 'Çevrimdışı kullanıma hazır ✓',
     resizerTitle: 'Sağ paneli genişletmek için sürükleyin · Sıfırlamak için çift tıklayın',
-    resizerAria: 'Sağ paneli genişlet veya daralt'
+    resizerAria: 'Sağ paneli genişlet veya daralt',
+    fullscreenBtn: 'Tam Ekran',
+    fullscreenExitBtn: 'Tam Ekrandan Çık',
+    zoomInBtn: 'Yakınlaştır (+)',
+    zoomOutBtn: 'Uzaklaştır (−)',
+    viewportControlsLabel: 'Görünüm ve yakınlaştırma kontrolleri'
   },
   en: {
     brandSubtitle: 'ANATOMY STUDIO',
@@ -2105,7 +2110,12 @@ export const uiTranslations = {
     upReloading: 'Reloading…',
     upOfflineReady: 'Ready for offline use ✓',
     resizerTitle: 'Drag to resize right panel · Double-click to reset',
-    resizerAria: 'Resize right panel'
+    resizerAria: 'Resize right panel',
+    fullscreenBtn: 'Fullscreen',
+    fullscreenExitBtn: 'Exit Fullscreen',
+    zoomInBtn: 'Zoom in (+)',
+    zoomOutBtn: 'Zoom out (−)',
+    viewportControlsLabel: 'View and zoom controls'
   }
 };
 

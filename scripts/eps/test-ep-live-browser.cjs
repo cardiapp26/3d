@@ -48,6 +48,17 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('[data-ep-live-waves]').getAttribute('aria-pressed'), wavesBefore, 'the focused button is not pressed');
     await page.keyboard.press('Space');
     assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), true, 'Space resumes with a button focused');
+    // With a select or number input focused, Space still toggles the sweep.
+    await page.locator('[data-ep-live-speed]').focus();
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), false, 'Space freezes with speed select focused');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), true, 'Space resumes with speed select focused');
+    await page.locator('[data-ep-live-stim=s1]').focus();
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), false, 'Space freezes with S1 number input focused');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().running), true, 'Space resumes with S1 number input focused');
     // Wave names: on in the running sweep, kept when frozen, shared with the lesson strips, off again.
     await page.locator('[data-ep-live-waves]').click();
     assert.equal(await page.locator('[data-ep-live-waves]').getAttribute('aria-pressed'), 'true');
