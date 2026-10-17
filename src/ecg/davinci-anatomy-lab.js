@@ -321,6 +321,27 @@ export function createDaVinciAnatomyLab({ mount, getLang = () => 'tr', state = {
         </div>
       </div>
 
+      <!-- Interactive HFS vs Post-CNA ECG Response Simulator -->
+      <div class="davinci-control-group" style="margin-top:12px;">
+        <label class="davinci-group-label">
+          ${isTr ? 'C. Canlı HFS (20 Hz Vagal Stimülasyon) ve Kardiyonöroablasyon (CNA) EKG Yanıt Simülatörü:' : 'C. Live HFS (20 Hz Vagal Stimulation) & Post-CNA ECG Response Simulator:'}
+        </label>
+        <div class="davinci-btn-row">
+          <button type="button" class="davinci-chip-btn ${(st.cnaPhase || 'baseline') === 'baseline' ? 'active' : ''}" data-cna-phase="baseline">
+            💚 ${isTr ? '1. Bazal Sinüs Ritmi (~72/dk)' : '1. Baseline Sinus (~72 bpm)'}
+          </button>
+          <button type="button" class="davinci-chip-btn ${(st.cnaPhase || 'baseline') === 'hfs' ? 'active' : ''}" data-cna-phase="hfs">
+            ⚡ ${isTr ? '2. Pre-CNA HFS Uyarısı (Vagal Pause / AV Blok)' : '2. Pre-CNA HFS Delivery (Vagal Pause / AVB)'}
+          </button>
+          <button type="button" class="davinci-chip-btn ${(st.cnaPhase || 'baseline') === 'post_cna' ? 'active' : ''}" data-cna-phase="post_cna">
+            🔥 ${isTr ? '3. Post-CNA Ablasyon Sonrası (Pause Kaybolur!)' : '3. Post-CNA Endpoint (Vagal Pause Abolished!)'}
+          </button>
+        </div>
+        <div class="davinci-svg-stage" style="margin-top:8px;">
+          <canvas id="icns-cna-ecg-canvas" width="680" height="130" style="width:100%;height:auto;display:block;border-radius:8px;background:#fff9f5;"></canvas>
+        </div>
+      </div>
+
       <!-- 3D Heart Model Action Banner -->
       <div class="davinci-lead-banner">
         <div class="davinci-banner-content">
@@ -336,6 +357,74 @@ export function createDaVinciAnatomyLab({ mount, getLang = () => 'tr', state = {
       </div>
     `;
 
+    // Draw HFS / CNA ECG Response Canvas
+    const cnaCanvas = card.querySelector('#icns-cna-ecg-canvas');
+    if (cnaCanvas) {
+      const ctx = cnaCanvas.getContext('2d');
+      const W = cnaCanvas.width;
+      const H = cnaCanvas.height;
+      const phaseMode = st.cnaPhase || 'baseline';
+      ctx.fillStyle = '#fff9f5';
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(225, 29, 72, 0.25)';
+      ctx.lineWidth = 0.8;
+      for (let x = 0; x <= W; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 0; y <= H; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+      if (phaseMode === 'hfs') {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+        ctx.fillRect(190, 0, 310, H);
+        ctx.fillStyle = '#dc2626';
+        ctx.font = '800 11px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillText(
+          st.cnaTarget === 'sa_node'
+            ? (isTr ? '⚡ HFS (20 Hz): RSGP Vagal Sinüs Arresti / Asistoli Pause!' : '⚡ HFS (20 Hz): RSGP Vagal Sinus Arrest Pause!')
+            : st.cnaTarget === 'av_node'
+            ? (isTr ? '⚡ HFS (20 Hz): P-IS GP Tam AV Blok (P dalgaları sürer, QRS düşer!)' : '⚡ HFS (20 Hz): P-IS GP Complete AV Block (P waves only!)')
+            : (isTr ? '⚡ HFS (20 Hz): Marshall LSGP Kolinerjik ERP Kısalması & AF İndüksiyonu!' : '⚡ HFS (20 Hz): Marshall LSGP AF Induction!'),
+          198, 18
+        );
+      } else if (phaseMode === 'post_cna') {
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+        ctx.fillRect(190, 0, 310, H);
+        ctx.fillStyle = '#059669';
+        ctx.font = '800 11px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillText(isTr ? '🔥 POST-CNA + HFS: Vagal Pause Tamamen Ortadan Kalktı (Başarılı Denervasyon · ~86/dk)' : '🔥 POST-CNA + HFS: Vagal Response Completely Abolished (~86 bpm)', 198, 18);
+      }
+
+      const yMid = H * 0.64;
+      const gauss = (x, mu, s, a) => a * Math.exp(-0.5 * Math.pow((x - mu) / s, 2));
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const beatSpacing = phaseMode === 'post_cna' ? 82 : 98;
+      for (let x = 0; x < W; x++) {
+        let mv = 0;
+        const inWindow = x >= 190 && x <= 500;
+        if (phaseMode === 'hfs' && inWindow) {
+          if (st.cnaTarget === 'sa_node') {
+            // Sinus arrest flatline with tiny HFS artifact
+            mv = 0.02 * Math.sin(x * 1.4);
+          } else if (st.cnaTarget === 'av_node') {
+            // P waves continue marching, QRS dropped
+            const b = (x % beatSpacing) / beatSpacing;
+            mv = gauss(b, 0.18, 0.03, 0.16) + 0.015 * Math.sin(x * 1.4);
+          } else {
+            // Marshall AF induction
+            const b = (x % 52) / 52;
+            mv = 0.08 * Math.sin(x * 0.45) + gauss(b, 0.3, 0.025, 0.78);
+          }
+        } else {
+          const b = (x % beatSpacing) / beatSpacing;
+          mv = gauss(b, 0.16, 0.025, 0.14) - gauss(b, 0.28, 0.009, 0.08) + gauss(b, 0.30, 0.013, 0.92) - gauss(b, 0.32, 0.01, 0.18) + gauss(b, 0.48, 0.04, 0.26);
+        }
+        const y = yMid - mv * 38;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
     // Event listeners for sGP buttons
     card.querySelectorAll('[data-sgp]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -348,6 +437,14 @@ export function createDaVinciAnatomyLab({ mount, getLang = () => 'tr', state = {
     card.querySelectorAll('[data-cna]').forEach(btn => {
       btn.addEventListener('click', () => {
         st.cnaTarget = btn.dataset.cna;
+        preserveFocus(render);
+      });
+    });
+
+    // Event listeners for CNA HFS Phase buttons
+    card.querySelectorAll('[data-cna-phase]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        st.cnaPhase = btn.dataset.cnaPhase;
         preserveFocus(render);
       });
     });

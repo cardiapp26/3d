@@ -87,4 +87,55 @@ const CNA_SELECTIVE_TARGETS = {
 assert.equal(CNA_SELECTIVE_TARGETS.sa_node.avAffected, false, 'RSGP ablation increases sinus rate without altering AV conduction');
 assert.equal(CNA_SELECTIVE_TARGETS.av_node.sinusAffected, false, 'P-IS GP ablation abolishes AV block without altering sinus rate');
 
-console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples, AV/PVC/AF patterns, 6-lead camera studio, STEMI studio, Da Vinci 12-lead ECG anatomy, and Da Vinci ICNS autonomic nervous system');
+import {
+  CONDUCTION_STAGES,
+  CLINICAL_CATEGORIES,
+  CLINICAL_CONDITIONS,
+  PREMIUM_STUDY_QUESTIONS,
+  sampleConditionLeadMv,
+  SKILLSTAT_COLUMNS,
+  SKILLSTAT_27_RHYTHMS,
+  sampleSkillStatLeadIIMv,
+  COMPASS_9_STEPS,
+  COMPASS_SAMPLE_CASES,
+  evaluateCompassInterpretation,
+  sampleElectrolyteLeadIIMv,
+  evaluateRhythmTuner5Step
+} from '../src/ecg/clinical-ecg-simulator.js';
+
+assert.equal(CONDUCTION_STAGES.length, 7, '7 cardiac conduction timeline stages (0..860 ms)');
+assert.equal(CLINICAL_CATEGORIES.length, 6, '6 clinical & pharmacology ECG categories');
+assert.ok(CLINICAL_CONDITIONS.length >= 30, '30+ clinical, channelopathy, structural & pharmacology ECG patterns');
+assert.ok(PREMIUM_STUDY_QUESTIONS.length >= 6, 'unlocked ECGLens premium lead-selection & MCQ study questions');
+assert.equal(SKILLSTAT_COLUMNS.length, 5, 'SkillStat classic 5-column matrix');
+assert.equal(SKILLSTAT_27_RHYTHMS.length, 27, 'SkillStat classic 27 rhythms (R1..R28)');
+assert.equal(sampleSkillStatLeadIIMv('R5', 2.0), 0, 'SkillStat Sinus Exit Block (R5) has exact flat pause on dropped beat');
+assert.ok(sampleSkillStatLeadIIMv('R26', 0.24) > 0.8, 'SkillStat Paced Ventricular (R26) produces wide QRS peak');
+
+// EKG Compass (ekgcompass.com) 9-Step Interpreter + Electrolyte/Rhythm Tuner tests
+assert.equal(COMPASS_9_STEPS.length, 9, 'EKG Compass defines 9 systematic interpretation steps');
+assert.ok(COMPASS_SAMPLE_CASES.length >= 6, 'EKG Compass includes sample clinical cases');
+const laraEval = evaluateCompassInterpretation({ avrPositive: 'yes', precordialProg: 'normal' }, false);
+assert.equal(laraEval.blockingAlerts[0]?.code, 'LARA_REVERSAL', 'Positive aVR + normal precordial R progression triggers LA/RA reversal blocker');
+const dextroEval = evaluateCompassInterpretation({ avrPositive: 'yes', precordialProg: 'reversed' }, false);
+assert.equal(dextroEval.blockingAlerts[0]?.code, 'DEXTROCARDIA', 'Positive aVR + reversed precordial R progression triggers Dextrocardia alert');
+const physioLeftEval = evaluateCompassInterpretation({ leadI: 'pos', avf: 'neg', leadII: 'pos' }, false);
+assert.equal(physioLeftEval.axisInfo.code, 'PHYSIOLOGIC_LEFT', 'Lead II (+) tie-breaker classifies I(+)/aVF(-) as physiologic 0..-30 deg');
+const trueLadEval = evaluateCompassInterpretation({ leadI: 'pos', avf: 'neg', leadII: 'neg', bundleMorph: 'rbbb', prMs: 230 }, false);
+assert.equal(trueLadEval.axisInfo.code, 'TRUE_LAD', 'Lead II (-) tie-breaker classifies I(+)/aVF(-) as true LAD < -30 deg');
+assert.equal(trueLadEval.lvhInfo.isTrifascicular, true, 'RBBB + true LAD + PR > 200ms flags Trifascicular Block');
+const wpwAfibEval = evaluateCompassInterpretation({ regularity: 'irreg_irreg', pWave: 'absent_fib', deltaWave: 'yes', ventRateBpm: 185 }, false);
+assert.equal(wpwAfibEval.differentials[0]?.urgency, 'CRITICAL', 'Pre-excited AFib (WPW + AFib) ranks as CRITICAL differential');
+assert.ok(Number.isFinite(sampleElectrolyteLeadIIMv(2.5, 9.4, 0.45)), 'Hypokalemia electrolyte trace is finite');
+assert.ok(Number.isFinite(sampleElectrolyteLeadIIMv(8.2, 6.8, 0.25)), 'Severe hyperkalemia sine-wave electrolyte trace is finite');
+const tunerMat = evaluateRhythmTuner5Step({ reg: 'irreg_irreg', pwave: 'multimorph', qrs: 'narrow', rate: 'tachy_100_150' }, false);
+assert.ok(tunerMat.established[0].includes('MAT'), '5-step rhythm tuner identifies MAT when irregularly irregular with >=3 P shapes');
+
+const antStemi = CLINICAL_CONDITIONS.find(c => c.id === 'anterior_stemi');
+const deWinter = CLINICAL_CONDITIONS.find(c => c.id === 'de_winter');
+assert.ok(sampleConditionLeadMv(antStemi, 'V2', 0.39) > 0.15, 'Anterior STEMI shows positive ST elevation in V2');
+assert.ok(sampleConditionLeadMv(antStemi, 'III', 0.39) < -0.05, 'Anterior STEMI shows reciprocal ST depression in III');
+assert.ok(sampleConditionLeadMv(deWinter, 'V3', 0.48) > 0.40, 'de Winter pattern shows tall hyperacute T wave in V3');
+
+console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples, AV/PVC/AF patterns, 6-lead camera studio, STEMI studio, Da Vinci 12-lead ECG anatomy, Da Vinci ICNS, Clinical ECG Simulator, ECGLens Premium Suite, SkillStat 27-Rhythm Classic Simulator, and EKG Compass 9-Step Interpreter');
+

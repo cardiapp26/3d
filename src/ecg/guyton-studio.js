@@ -8,6 +8,8 @@ import './lead-camera-lab.css';
 import { createStemiCameraLab } from './stemi-camera-lab.js';
 import './stemi-camera-lab.css';
 import { createDaVinciAnatomyLab } from './davinci-anatomy-lab.js';
+import { createClinicalEcgSimulator } from './clinical-ecg-simulator.js';
+import './clinical-ecg-simulator.css';
 import { GUYTON_TOPICS } from './guyton-data.js';
 import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial } from './guyton-render.js';
 
@@ -21,6 +23,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let cameraLab = null;
   let stemiLab = null;
   let daVinciLab = null;
+  let clinicalSim = null;
   const labStates = {};
   const container = document.createElement('div');
   container.className = 'guyton-studio';
@@ -34,6 +37,8 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     stemiLab = null;
     daVinciLab?.destroy();
     daVinciLab = null;
+    clinicalSim?.destroy();
+    clinicalSim = null;
     const lang = getLang();
     const isTr = lang === 'tr';
     const topic = GUYTON_TOPICS[activeTopicIdx];
@@ -63,6 +68,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       </div>
 
       <div class="guyton-content-area">
+        <div id="clinical-sim-mount"></div>
         <header class="guyton-header-block">
           <span class="guyton-badge">${currentBadge}</span>
           <h2 class="guyton-title">${currentTitle}</h2>
@@ -72,6 +78,17 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
         <div class="guyton-dynamic-view" id="guyton-view"></div>
       </div>
     `;
+
+    const simMount = container.querySelector('#clinical-sim-mount');
+    if (simMount) {
+      clinicalSim = createClinicalEcgSimulator({ mount: simMount, getLang });
+      if (!isDaVinci) {
+        if (topic.id === 'ch12_injury') clinicalSim.selectCategory('ischemia', 'anterior_stemi');
+        else if (topic.id === 'ch13_arrhythmias') clinicalSim.selectCategory('arrhythmia', 'afib');
+        else if (topic.id === 'ch12_axis') clinicalSim.selectCategory('conduction', 'lafb_ashman');
+        else if (topic.id === 'ch12_vectors') clinicalSim.selectCategory('conduction', 'rbbb');
+      }
+    }
 
     // Bind topic tabs
     container.querySelectorAll('[data-topic]').forEach(btn => {
@@ -245,6 +262,28 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       update();
     });
 
+    // Direct pointer-drag on #einthoven-canvas to rotate electrical vector
+    let draggingVec = false;
+    function setAngleFromPointer(e) {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const cx = rect.left + rect.width * 0.5;
+      const cy = rect.top + rect.height * 0.5;
+      const deg = Math.round((Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI);
+      vectorAngle = Math.max(-180, Math.min(180, deg));
+      if (slider) slider.value = String(vectorAngle);
+      update();
+    }
+    canvas?.addEventListener('pointerdown', (e) => {
+      draggingVec = true;
+      canvas.setPointerCapture?.(e.pointerId);
+      setAngleFromPointer(e);
+    });
+    canvas?.addEventListener('pointermove', (e) => {
+      if (draggingVec) setAngleFromPointer(e);
+    });
+    canvas?.addEventListener('pointerup', () => { draggingVec = false; });
+
     update();
   }
 
@@ -349,6 +388,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       cameraLab?.destroy();
       stemiLab?.destroy();
       daVinciLab?.destroy();
+      clinicalSim?.destroy();
       container.remove();
     }
   };

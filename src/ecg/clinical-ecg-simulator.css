@@ -1,0 +1,1061 @@
+/* ============================================================================
+   CLINICAL ECG SIMULATOR & UNLOCKED ECGLENS PREMIUM SUITE STYLES
+   Combines ECGSweep live-tracing telemetry monitor + ECGLens 3D-Heart/Coronary
+   Conduction Scrubber, 42-Condition & Pharmacology Library, and Premium Study Hub
+   ============================================================================ */
+
+.clin-sim-shell {
+  margin: 0 0 22px 0;
+  border-radius: 14px;
+  border: 1px solid rgba(30, 41, 59, 0.14);
+  background: linear-gradient(180deg, #0b1120 0%, #0f172a 100%);
+  color: #f8fafc;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.clin-sim-shell *,
+.clin-sim-shell *::before,
+.clin-sim-shell *::after {
+  box-sizing: border-box;
+}
+
+/* Top Bar: Mode Switcher & Premium Unlocked Badge */
+.clin-sim-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  flex-wrap: wrap;
+}
+
+.clin-sim-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.clin-sim-pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: clinPulse 1.5s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes clinPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.clin-sim-brand-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.clin-sim-premium-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(16, 185, 129, 0.22));
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  white-space: nowrap;
+}
+
+.clin-sim-mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.clin-sim-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(30, 41, 59, 0.65);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.clin-sim-mode-btn:hover {
+  background: rgba(51, 65, 85, 0.85);
+  color: #ffffff;
+}
+
+.clin-sim-mode-btn.active {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(2, 132, 199, 0.35);
+}
+
+.clin-sim-collapse-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.6);
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clin-sim-collapse-btn:hover {
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+/* Body Container */
+.clin-sim-body {
+  padding: 14px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.clin-sim-body.is-collapsed {
+  display: none;
+}
+
+/* Category & Condition Selector Bar */
+.clin-sim-cat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.clin-sim-cat-btn {
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(30, 41, 59, 0.6);
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clin-sim-cat-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.clin-sim-cond-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.clin-sim-cond-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.75);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clin-sim-cond-pill:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.clin-sim-cond-pill.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 182, 212, 0.24));
+  border-color: #10b981;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.clin-sim-cond-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Telemetry Readout Strip (ECGSweep Style) */
+.clin-telemetry-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  background: rgba(2, 6, 23, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.clin-tele-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.clin-tele-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.clin-tele-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 800;
+  color: #10b981;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clin-tele-cell.warn .clin-tele-val {
+  color: #fbbf24;
+}
+
+.clin-tele-cell.danger .clin-tele-val {
+  color: #f87171;
+}
+
+/* Main Interactive Split Stage: Left = Live Monitor / 12-Lead, Right = 3D Heart + Conduction Scrubber */
+.clin-stage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.clin-monitor-card,
+.clin-heart-card {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 0;
+}
+
+.clin-monitor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.clin-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.clin-tool-btn {
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(30, 41, 59, 0.75);
+  color: #e2e8f0;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.clin-tool-btn:hover {
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.clin-tool-btn.active {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10b981;
+  color: #34d399;
+}
+
+.clin-tool-btn.blind-active {
+  background: rgba(245, 158, 11, 0.24);
+  border-color: #f59e0b;
+  color: #fcd34d;
+}
+
+.clin-canvas-box {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: #fff9f5;
+}
+
+.clin-canvas-box canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: pan-y;
+}
+
+/* Controls Below Canvas: HR Slider, Noise Slider, Lead Selector */
+.clin-controls-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.clin-ctrl-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.clin-ctrl-item label {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.clin-ctrl-item input[type="range"] {
+  width: 100%;
+  accent-color: #38bdf8;
+}
+
+.clin-lead-pills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.clin-lead-pill {
+  padding: 3px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.7);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.clin-lead-pill.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+/* 7-Stage Conduction Pathway Timeline Scrubber (ECGLens Style) */
+.clin-scrubber-box {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 9px;
+  background: rgba(2, 6, 23, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.clin-scrubber-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.clin-scrubber-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clin-stage-pills {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.clin-stage-pill {
+  padding: 4px 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.8);
+  color: #cbd5e1;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clin-stage-pill.active {
+  color: #0f172a;
+  font-weight: 800;
+  border-color: transparent;
+}
+
+/* Right Column: 3D-Styled Heart + Coronary Territory SVG & Clinical Criteria */
+.clin-heart-svg-wrap {
+  width: 100%;
+  background: radial-gradient(circle at 50% 45%, rgba(30, 41, 59, 0.95), rgba(2, 6, 23, 0.95));
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 8px;
+  text-align: center;
+}
+
+.clin-heart-svg {
+  width: 100%;
+  max-height: 250px;
+  display: block;
+  margin: 0 auto;
+}
+
+.clin-clinical-pearl-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: rgba(2, 6, 23, 0.65);
+  border-left: 3px solid #38bdf8;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+
+.clin-clinical-pearl-box h4 {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #38bdf8;
+}
+
+.clin-criteria-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.clin-crit-item {
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  font-size: 11px;
+}
+
+.clin-crit-item strong {
+  display: block;
+  color: #94a3b8;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+/* Unlocked ECGLens Premium Study Hub (Lead-Selection Drills + MCQ + Flagged/Missed Review) */
+.clin-study-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.clin-lead-drill-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.clin-drill-lead-btn {
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(148, 163, 184, 0.28);
+  background: rgba(30, 41, 59, 0.7);
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.clin-drill-lead-btn.selected {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.clin-drill-lead-btn.correct {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #10b981;
+  color: #34d399;
+}
+
+.clin-drill-lead-btn.wrong {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.clin-drill-lead-btn.missed {
+  background: rgba(245, 158, 11, 0.28);
+  border-color: #f59e0b;
+  color: #fcd34d;
+}
+
+.clin-mcq-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.clin-mcq-btn {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.65);
+  color: #f1f5f9;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clin-mcq-btn.correct {
+  background: rgba(16, 185, 129, 0.24);
+  border-color: #10b981;
+  color: #6ee7b7;
+}
+
+.clin-mcq-btn.wrong {
+  background: rgba(239, 68, 68, 0.24);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.clin-tag-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.clin-tag-chip {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.7);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clin-tag-chip.active {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  color: #fcd34d;
+}
+
+/* SkillStat Classic Six-Second ECG Simulator (27-Rhythm 5-Column Matrix & Timed Game) */
+.skillstat-head-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  flex-wrap: wrap;
+}
+
+.skillstat-stat-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.skillstat-hr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #34d399;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.skillstat-timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fcd34d;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.skillstat-score-pill {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.75);
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.skillstat-feedback-banner {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: rgba(30, 41, 59, 0.85);
+  border-left: 4px solid #38bdf8;
+  color: #f8fafc;
+}
+
+.skillstat-feedback-banner.ok {
+  background: rgba(16, 185, 129, 0.18);
+  border-left-color: #10b981;
+  color: #6ee7b7;
+}
+
+.skillstat-feedback-banner.err {
+  background: rgba(239, 68, 68, 0.18);
+  border-left-color: #ef4444;
+  color: #fca5a5;
+}
+
+.skillstat-matrix-5col {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.skillstat-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 9px;
+  padding: 8px;
+  min-width: 0;
+}
+
+.skillstat-col-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #38bdf8;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skillstat-rhy-btn {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(30, 41, 59, 0.78);
+  color: #e2e8f0;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.skillstat-rhy-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.skillstat-rhy-btn.active {
+  background: linear-gradient(135deg, #059669, #0284c7);
+  border-color: #34d399;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.skillstat-rhy-btn.game-wrong {
+  background: rgba(239, 68, 68, 0.26);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.skillstat-rhy-btn.game-correct {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: #10b981;
+  color: #6ee7b7;
+}
+
+/* =========================================================================
+   EKG COMPASS (ekgcompass.com) 9-STEP SYSTEMATIC ECG INTERPRETER STYLES
+   ========================================================================= */
+
+.compass-blocking-banner {
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: rgba(239, 68, 68, 0.22);
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  border-left: 4px solid #ef4444;
+  color: #fecaca;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
+.compass-stepper-row {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.compass-step-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 7px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 0;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.compass-step-pill span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compass-step-pill.active {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+}
+
+.compass-step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.compass-step-card {
+  background: rgba(2, 6, 23, 0.62);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.compass-step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.compass-step-header h4 {
+  margin: 0 0 3px 0;
+  font-size: 13.5px;
+  color: #38bdf8;
+}
+
+.compass-step-header p {
+  margin: 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.compass-field-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compass-field-box {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.compass-field-box label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 6px;
+}
+
+.compass-calc-banner {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.15);
+  border-left: 4px solid #10b981;
+  color: #a7f3d0;
+  font-size: 12px;
+}
+
+.compass-calc-banner.warn {
+  background: rgba(245, 158, 11, 0.18);
+  border-left-color: #f59e0b;
+  color: #fde68a;
+}
+
+.compass-calc-banner.danger {
+  background: rgba(239, 68, 68, 0.22);
+  border-left-color: #ef4444;
+  color: #fecaca;
+}
+
+.compass-diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.compass-diff-card {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-left: 4px solid #38bdf8;
+}
+
+.compass-diff-card.urgency-critical {
+  border-left-color: #ef4444;
+  background: rgba(127, 29, 29, 0.28);
+}
+
+.compass-diff-card.urgency-high {
+  border-left-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.24);
+}
+
+.compass-diff-card.urgency-low {
+  border-left-color: #10b981;
+}
+
+.compass-diff-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #f8fafc;
+  margin-bottom: 4px;
+}
+
+.compass-diff-card p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.compass-urgency-badge {
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: rgba(56, 189, 248, 0.22);
+  color: #7dd3fc;
+}
+
+.compass-urgency-badge.critical {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.compass-urgency-badge.high {
+  background: #f59e0b;
+  color: #0f172a;
+}
+
+.compass-urgency-badge.low {
+  background: #10b981;
+  color: #022c22;
+}
+
+.compass-report-box {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.compass-report-pre {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #a7f3d0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: hidden;
+}
+
+/* Responsive Mobile Rules (Zero Horizontal Overflow at 390x844) */
+@media (max-width: 920px) {
+  .clin-stage-grid,
+  .clin-study-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .clin-telemetry-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .clin-controls-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .skillstat-matrix-5col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compass-stepper-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .clin-sim-topbar {
+    padding: 10px 12px;
+  }
+
+  .clin-sim-body {
+    padding: 10px 12px 14px;
+  }
+
+  .clin-telemetry-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .clin-tele-val {
+    font-size: 13px;
+  }
+
+  .clin-stage-pills {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .clin-lead-drill-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .clin-criteria-grid,
+  .skillstat-matrix-5col {
+    grid-template-columns: 1fr;
+  }
+
+  .compass-stepper-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
