@@ -161,6 +161,7 @@ app.innerHTML = `
       ${layerGroup('veins', '#5187a0', [['cs','layerCs','#5187a0'],['gcv','layerGcv','#679db2'],['mcv','layerMcv','#679db2'],['piv','layerPiv','#679db2'],['pv','layerPv','#b9827a'],['svc','layerSvc','#62889c'],['ivc','layerIvc','#62889c']])}
       ${layerRow('conduction', 'conduction', '#f5df76')}
       ${layerRow('bachmann', 'layerBachmann', '#f6b64b')}
+      ${layerGroup('icns', '#38bdf8', [['vrasgp','layerVrasgp','#3b82f6'],['vlasgp','layerVlasgp','#22c55e'],['ldsgp','layerLdsgp','#ef4444'],['mdsgp','layerMdsgp','#f97316'],['drasgp','layerDrasgp','#ec4899'],['rcsgp','layerRcsgp','#d946ef'],['lcsgp','layerLcsgp','#b45309'],['rsgp','layerRsgp','#eab308'],['pisgp','layerPisgp','#06b6d4']])}
       ${layerGroup('valves', '#d6c7bc', [['aortic-valve','layerAorticValve','#d9c5a8'],['mitral','layerMitral','#e2d5c4'],['mitral-posterior','layerMitralPost','#efe6d8'],['mitral-anterior','layerMitralAnt','#f4efe4'],['tricuspid','layerTricuspid','#e2d5c4'],['tricuspid-septal','layerTvSeptal','#efe6d8'],['tricuspid-inferior','layerTvInferior','#efe6d8'],['tricuspid-anterior','layerTvAnterior','#f4efe4'],['mitral-annulus','layerMitralAnnulus','#f5f3ea'],['tricuspid-annulus','layerTricuspidAnnulus','#f5f3ea'],['pulmonary-valve','layerPulmonaryValve','#e2d5c4'],['papillary','layerPapillary','#b57368']])}
       ${layerRow('flow', 'layerFlow', '#e74c3c', false)}
       <details class="layer-advanced"><summary data-i18n="advancedLayers">${getTranslation('advancedLayers')}</summary>
@@ -1280,8 +1281,33 @@ subBoxes.forEach(b => {
   });
 });
 
-document.querySelectorAll('[data-layer]:not([data-layer="chambers"]):not([data-layer="lv"]):not([data-layer="rv"]):not([data-layer="la"]):not([data-layer="ra"]):not([data-layer="veins"]):not([data-layer="conduction"]):not([data-layer="valves"]):not([data-layer="aortic-valve"]):not([data-layer="mitral"]):not([data-layer="tricuspid"]):not([data-layer="pulmonary-valve"]):not([data-layer="papillary"]):not([data-layer="flow"])').forEach(el => {
+document.querySelectorAll('[data-layer]:not([data-layer="chambers"]):not([data-layer="lv"]):not([data-layer="rv"]):not([data-layer="la"]):not([data-layer="ra"]):not([data-layer="veins"]):not([data-layer="conduction"]):not([data-layer="icns"]):not([data-layer="vrasgp"]):not([data-layer="vlasgp"]):not([data-layer="ldsgp"]):not([data-layer="mdsgp"]):not([data-layer="drasgp"]):not([data-layer="rcsgp"]):not([data-layer="lcsgp"]):not([data-layer="rsgp"]):not([data-layer="pisgp"]):not([data-layer="valves"]):not([data-layer="aortic-valve"]):not([data-layer="mitral"]):not([data-layer="tricuspid"]):not([data-layer="pulmonary-valve"]):not([data-layer="papillary"]):not([data-layer="flow"])').forEach(el => {
   el.addEventListener('change', () => heart?.setLayer(el.dataset.layer, el.checked));
+});
+
+const icnsBox = document.querySelector('input[data-layer="icns"]');
+const icnsSubBoxes = ['vrasgp', 'vlasgp', 'ldsgp', 'mdsgp', 'drasgp', 'rcsgp', 'lcsgp', 'rsgp', 'pisgp'].map(id => document.querySelector(`input[data-layer="${id}"]`)).filter(Boolean);
+
+icnsBox?.addEventListener('change', () => {
+  const isChecked = icnsBox.checked;
+  icnsSubBoxes.forEach(b => {
+    b.checked = isChecked;
+    heart?.setLayer(b.dataset.layer, isChecked);
+  });
+  heart?.setLayer('icns', isChecked);
+});
+
+icnsSubBoxes.forEach(b => {
+  b.addEventListener('change', () => {
+    heart?.setLayer(b.dataset.layer, b.checked);
+    if (icnsBox) {
+      const anyChecked = icnsSubBoxes.some(x => x.checked);
+      const allChecked = icnsSubBoxes.every(x => x.checked);
+      icnsBox.checked = anyChecked;
+      icnsBox.indeterminate = anyChecked && !allChecked;
+      heart?.setLayer('icns', anyChecked);
+    }
+  });
 });
 
 // C-Arm panel is docked in the Structure Spotlight column; header click toggles collapse.

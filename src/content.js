@@ -952,6 +952,136 @@ export const rawStructures = {
       clinical: 'This enlarged diagram is not histology or a measured fiber field. Designed as an educational conceptual visualization.'
     },
     source: 'Ho et al., 2003, PDF pp. 4–5; Ho et al., 2012, PDF p. 6'
+  },
+  icns: {
+    tr: {
+      title: 'İntrinsik kardiyak otonom sinir sistemi • ICNS',
+      description: 'Kalbin epikardiyal yağ yastıkçıkları içine gömülü ganglionlu pleksuslar (GP) ve subpleksuslardan (sGP) oluşan lokal nöral ağdır. Sempatik ve parasempatik otonomik lifler kalbi regüle eder.',
+      clinical: 'Pauza ve ark. insan kalbinde 7 epikardiyal ganglionlu subpleksus (sGP) tanımlamıştır. Elektrofizyolojide kardiyonöroablasyon (CNA) ile SA düğüm (RSGP / SVC-Ao) ve AV düğüm (P-IS GP / IVC-LA / crux cordis) seçici olarak vagal denervasyona uğratılarak vazovagal senkop ve fonksiyonel bradiaritmiler tedavi edilir.'
+    },
+    en: {
+      title: 'Intrinsic cardiac autonomic nervous system • ICNS',
+      description: 'A local neural network of ganglionated plexuses (GPs) and subplexuses (sGPs) embedded within epicardial fat pads. Both sympathetic and parasympathetic autonomic inputs regulate cardiac electrophysiology.',
+      clinical: 'Pauza et al. delineated 7 human epicardiac ganglionated subplexuses (sGPs). In clinical electrophysiology, cardioneuroablation (CNA) selectively targets the SA node (RSGP / SVC-Ao fat pad) or AV node (P-IS GP / crux cordis fat pad) to treat vasovagal syncope and functional bradyarrhythmias without permanent pacemaker implantation.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. Anatomy and Physiology of Intrinsic Cardiac Autonomic Nervous System. JACC: Case Reports 2021;3(4):625–629 (Da Vinci Anatomy Card #2); Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  vrasgp: {
+    tr: {
+      title: 'Ventral sağ atriyal subpleksus • VRAsGP',
+      description: 'Sağ atriyumun ön (ventral) yüzünde yer alır; SVC-RA bileşkesinden sinüs düğümüne lifler verir ve ventral interatriyal krest üzerinden sol atriyuma uzanarak VLAsGP ile birleşir.',
+      clinical: 'Sinüs düğümünün ön innervasyonunu sağlar. Ventral yağ yastıkçığı ablasyonunda sinüs hızı artışı (kronotropik yanıt) gözlenir.'
+    },
+    en: {
+      title: 'Ventral right atrial subplexus • VRAsGP',
+      description: 'Located on the ventral (anterior) surface of the right atrium; sends fibers to the SA node and extends across the ventral interatrial crest toward the left atrium to merge with VLAsGP.',
+      clinical: 'Innervates the anterior aspect of the sinus node and ventral RA. Ablation or high-frequency stimulation triggers marked positive/negative chronotropic changes.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629; Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  vlasgp: {
+    tr: {
+      title: 'Ventral sol atriyal subpleksus • VLAsGP',
+      description: 'Sol atriyumun ön (ventral) yüzeyinde, süperior ve inferior kısımlarda yayılır; interatriyal oluk üzerinde VRAsGP ile anastomozlaşır.',
+      clinical: 'Sol atriyum ön duvarı ve Bachmann demeti bölgesini innerve eder. Atriyal fibrilasyon ve organize atriyal aritmilerde otonomik modülasyon sağlar.'
+    },
+    en: {
+      title: 'Ventral left atrial subplexus • VLAsGP',
+      description: 'Distributed across the ventral (anterior) surface of the left atrium, communicating with the VRAsGP across the ventral interatrial crest.',
+      clinical: 'Innervates the anterior left atrial wall and Bachmann bundle region, contributing to local autonomic modulation in atrial fibrillation.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629; Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  ldsgp: {
+    tr: {
+      title: 'Sol dorsal subpleksus • LDsGP',
+      description: 'Sol atriyumun arka (dorsal) yüzünde, sol pulmoner venler (LSPV/LIPV) ile sol atriyoventriküler oluk (koroner sulkus) arasında ve sol ventrikül arka yüzeyine doğru uzanır.',
+      clinical: 'Marshall ligamenti / veni ve sol pulmoner ven antrumu ile yakın komşudur. Kardiyonöroablasyonda sol süperior GP (LSGP) hedefi ile çakışır; AF tetikleyicilerinde kritik rol oynar.'
+    },
+    en: {
+      title: 'Left dorsal subplexus • LDsGP',
+      description: 'Located on the dorsal (posterior) surface of the left atrium, coursing between the left pulmonary veins and the left AV groove toward the dorsal LV.',
+      clinical: 'Closely associated with the ligament of Marshall and the LSPV antrum (superior left GP / LSGP). Key target during cardioneuroablation and AF trigger elimination.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629; Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  mdsgp: {
+    tr: {
+      title: 'Orta dorsal subpleksus • MDsGP',
+      description: 'Sol atriyumun arka-üst yüzeyinde başlar, interatriyal oluk (Waterston oluğu) boyunca crux cordise ve ventriküllerin arka yüzüne uzanır.',
+      clinical: 'Crux cordis bölgesinde AV düğüm innervasyonunun ana ileticisidir. İnferior interatriyal GP (P-IS GP) ile birlikte AV düğüm iletiminin (dromotropi) kontrolünde birincil role sahiptir.'
+    },
+    en: {
+      title: 'Middle dorsal subplexus • MDsGP',
+      description: 'Extends from the posterosuperior left atrium along the dorsal interatrial groove (Waterston groove) to the crux cordis and the dorsal ventricular surface.',
+      clinical: 'Major conduit to the crux cordis and AV nodal region. Together with the inferior interatrial septal GP (P-IS GP), it exerts potent negative dromotropic control.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629; Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  drasgp: {
+    tr: {
+      title: 'Dorsal sağ atriyal subpleksus • DRAsGP',
+      description: 'SVC arka kökü, sağ atriyum arka-üst yüzeyi ve interatriyal septum üzerinde yer alır; sinüs düğümü bölgesinin arka tarafına ve sağ aurikulaya dallar verir.',
+      clinical: 'Klinik elektrofizyolojideki RSGP (SVC-Ao yağ yastıkçığı / süperior sağ atriyal GP) ile doğrudan ilişkilidir; sinüs düğümünün en güçlü parasempatik kontrol noktasıdır.'
+    },
+    en: {
+      title: 'Dorsal right atrial subplexus • DRAsGP',
+      description: 'Situated at the dorsal root of the SVC, dorsal posterosuperior RA, and interatrial septum; sends branches to the posterior SA node region and RAA.',
+      clinical: 'Directly corresponds to the clinical RSGP (SVC-Ao fat pad / superior right atrial GP); serves as the primary gateway for vagal cardioinhibitory input to the sinus node.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629; Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  rcsgp: {
+    tr: {
+      title: 'Sağ koroner subpleksus • RCsGP',
+      description: 'Sağ atriyoventriküler olukta, sağ koroner arter (RCA) boyunca seyreder; sağ atriyum alt duvarı, triküspit anülüsü ve RV inferior miyokardını innerve eder.',
+      clinical: 'İnferior duvar miyokard enfarktüslerinde vagal hiperaktivite (Bezold–Jarisch refleksi) ve bradikardi/hipotansiyona aracılık eden lifleri taşır.'
+    },
+    en: {
+      title: 'Right coronary subplexus • RCsGP',
+      description: 'Courses along the right atrioventricular sulcus alongside the right coronary artery (RCA); innervates the right AV junction and inferior RV myocardium.',
+      clinical: 'Carries afferent and efferent vagal fibers involved in the Bezold–Jarisch reflex during inferior myocardial infarction.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629; Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  lcsgp: {
+    tr: {
+      title: 'Sol koroner subpleksus • LCsGP',
+      description: 'Sol atriyoventriküler olukta, sirkumfleks arter (LCx) ve koroner sinüs boyunca uzanır; sol atriyum lateral duvarı ve mitral anülüsü çevreler.',
+      clinical: 'Koroner sinüs ve mitral istmus içinden yapılan ablasyonlarda etkilenir; pulmoner venler ve sol atriyal miyokardın otonom tonusunu modüle eder.'
+    },
+    en: {
+      title: 'Left coronary subplexus • LCsGP',
+      description: 'Courses along the left atrioventricular sulcus alongside the circumflex branch (LCx) and coronary sinus; encircles the lateral LA and mitral annulus.',
+      clinical: 'Crossed during coronary sinus and mitral isthmus catheter ablation; modulates autonomic tone to the pulmonary veins and lateral left atrium.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629; Pauza DH et al., Anat Rec 2000;259:353–382.'
+  },
+  rsgp: {
+    tr: {
+      title: 'Süperior sağ atriyal GP • RSGP (SVC-Ao yağ yastıkçığı)',
+      description: 'SVC medial yüzü ile aort kökü arasında, sağ atriyum tavanındaki epikardiyal yağ yastıkçığı içinde yer alan ganglion kümesidir.',
+      clinical: 'Kardiyonöroablasyon (CNA) için sinüs düğümünün primer vagal frenidir. HFS ile uyarılması sinüs arresti veya derin bradikardi yapar; ablasyonu sinüs hızını seçici olarak artırır (AV iletimi etkilenmez).'
+    },
+    en: {
+      title: 'Superior right atrial GP • RSGP (SVC-Ao fat pad)',
+      description: 'Ganglionated cluster embedded in the epicardial fat pad situated between the medial SVC and aortic root on the right atrial roof.',
+      clinical: 'Primary vagal target for sinus node regulation during cardioneuroablation (CNA). HFS causes profound sinus arrest; ablation selectively increases sinus rate without affecting AV nodal conduction.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629 (Da Vinci Anatomy Card #2).'
+  },
+  pisgp: {
+    tr: {
+      title: 'İnferior sağ atriyal / Crux cordis GP • P-IS GP (IVC-LA yağ yastıkçığı)',
+      description: 'IVC, koroner sinüs (CS) ostiyumu ve sol atriyum arka-alt duvarının crux cordiste birleştiği bölgedeki yağ yastıkçığı içinde yer alır.',
+      clinical: 'AV düğümün primer vagal frenidir. HFS uyarısı yüksek dereceli AV blok oluşturur; ablasyonu fonksiyonel AV blokları ve kardiyoinhibituvar vazovagal senkopu önler.'
+    },
+    en: {
+      title: 'Posterior interatrial septal / Crux cordis GP • P-IS GP (IVC-LA fat pad)',
+      description: 'Ganglionated cluster located in the epicardial fat pad at the crux cordis, near the junction of the IVC, CS ostium, and inferoposterior interatrial groove.',
+      clinical: 'Primary vagal brake on the AV node. HFS triggers high-grade AV block; catheter ablation abolishes vagally mediated AV block and shortens Wenckebach cycle length.'
+    },
+    source: 'Aksu T, Gupta D, Pauza DH. JACC: Case Reports 2021;3(4):625–629 (Da Vinci Anatomy Card #2).'
   }
 };
 
@@ -1804,6 +1934,7 @@ export const uiTranslations = {
     valves: 'Kapak yapıları',
     veins: 'Venler',
     conduction: 'İleti sistemi',
+    icns: 'İntrinsik otonom sistem',
     veinsBtn: 'Venler',
     veinsHiddenBtn: 'Venler (Gizli)',
     conductionBtn: 'İleti',
@@ -1879,6 +2010,16 @@ export const uiTranslations = {
     layerCs: 'Koroner sinüs (CS)', layerGcv: 'Büyük kardiyak ven (GCV)', layerMcv: 'Orta kardiyak ven (MCV)', layerPiv: 'Sol ventrikül posterior veni (PVLV)',
     layerPv: 'Pulmoner venler (LSPV/LIPV/RSPV/RIPV)', layerSvc: 'Vena kava süperior (SVC)', layerIvc: 'Vena kava inferior (IVC)',
     layerBachmann: 'Bachmann demeti', layerPaFaint: 'Pulmoner arteri silikleştir', layerDiaphragm: 'Diyafram', layerPhrenic: 'Frenik sinirler',
+    layerIcns: 'İntrinsik kardiyak otonom sistem (ICNS)',
+    layerVrasgp: 'VRAsGP · Ventral sağ atriyal sGP',
+    layerVlasgp: 'VLAsGP · Ventral sol atriyal sGP',
+    layerLdsgp: 'LDsGP · Sol dorsal sGP (LSGP)',
+    layerMdsgp: 'MDsGP · Orta dorsal sGP (Crux cordis)',
+    layerDrasgp: 'DRAsGP · Dorsal sağ atriyal sGP (RSGP)',
+    layerRcsgp: 'RCsGP · Sağ koroner sGP (RCA)',
+    layerLcsgp: 'LCsGP · Sol koroner sGP (LCx)',
+    layerRsgp: 'RSGP · Süperior sağ atriyal GP (SVC-Ao)',
+    layerPisgp: 'P-IS GP · Crux cordis GP (IVC-LA)',
     layerVertebrae: 'Vertebra kolonu (silik)', layerFlow: 'Kan akışı (yollar ve partiküller)', flowLegend: 'Akış hızı (göreli): yavaştan hızlıya',
     layerAorticValve: 'Aort kapağı (LCC, RCC, NCC)', layerMitral: 'Mitral kapak', layerMitralPost: 'PML · atlas yaprakçığı', layerMitralAnt: 'AML · şematik',
     layerTricuspid: 'Triküspit kapak', layerTvSeptal: 'TV septal yaprakçık', layerTvInferior: 'TV posterior yaprakçık', layerTvAnterior: 'TV anterior · şematik',
@@ -1992,6 +2133,7 @@ export const uiTranslations = {
     valves: 'Valves and leaflets',
     veins: 'Veins',
     conduction: 'Conduction system',
+    icns: 'Intrinsic autonomic system',
     veinsBtn: 'Veins',
     veinsHiddenBtn: 'Veins (Hidden)',
     conductionBtn: 'Conduction',
@@ -2067,6 +2209,16 @@ export const uiTranslations = {
     layerCs: 'Coronary sinus (CS)', layerGcv: 'Great cardiac vein (GCV)', layerMcv: 'Middle cardiac vein (MCV)', layerPiv: 'Posterior vein of the LV (PVLV)',
     layerPv: 'Pulmonary veins (LSPV/LIPV/RSPV/RIPV)', layerSvc: 'Superior vena cava (SVC)', layerIvc: 'Inferior vena cava (IVC)',
     layerBachmann: 'Bachmann bundle', layerPaFaint: 'Fade pulmonary artery', layerDiaphragm: 'Diaphragm', layerPhrenic: 'Phrenic nerves',
+    layerIcns: 'Intrinsic cardiac autonomic system (ICNS)',
+    layerVrasgp: 'VRAsGP · Ventral right atrial sGP',
+    layerVlasgp: 'VLAsGP · Ventral left atrial sGP',
+    layerLdsgp: 'LDsGP · Left dorsal sGP (LSGP)',
+    layerMdsgp: 'MDsGP · Middle dorsal sGP (Crux cordis)',
+    layerDrasgp: 'DRAsGP · Dorsal right atrial sGP (RSGP)',
+    layerRcsgp: 'RCsGP · Right coronary sGP (RCA)',
+    layerLcsgp: 'LCsGP · Left coronary sGP (LCx)',
+    layerRsgp: 'RSGP · Superior right atrial GP (SVC-Ao)',
+    layerPisgp: 'P-IS GP · Crux cordis GP (IVC-LA)',
     layerVertebrae: 'Vertebral column (faint)', layerFlow: 'Blood flow (routes and particles)', flowLegend: 'Flow speed (relative): slow to fast',
     layerAorticValve: 'Aortic valve (LCC, RCC, NCC)', layerMitral: 'Mitral valve', layerMitralPost: 'PML · atlas leaflet', layerMitralAnt: 'AML · schematic',
     layerTricuspid: 'Tricuspid valve', layerTvSeptal: 'TV septal leaflet', layerTvInferior: 'TV posterior leaflet', layerTvAnterior: 'TV anterior · schematic',

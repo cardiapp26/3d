@@ -6,17 +6,20 @@ import { createLeadCameraLab } from './lead-camera-lab.js';
 import './lead-camera-lab.css';
 import { createStemiCameraLab } from './stemi-camera-lab.js';
 import './stemi-camera-lab.css';
+import { createDaVinciAnatomyLab } from './davinci-anatomy-lab.js';
 import { GUYTON_TOPICS } from './guyton-data.js';
 import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial } from './guyton-render.js';
 
 export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let activeTopicIdx = 0;
+  let isDaVinci = false;
   let vectorAngle = 59; // Normal axis
   let vectorMag = 1.0;
   let activeInjuryCase = 'anterior_mi';
   let lab = null;
   let cameraLab = null;
   let stemiLab = null;
+  let daVinciLab = null;
   const labStates = {};
   const container = document.createElement('div');
   container.className = 'guyton-studio';
@@ -28,25 +31,41 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     cameraLab = null;
     stemiLab?.destroy();
     stemiLab = null;
+    daVinciLab?.destroy();
+    daVinciLab = null;
     const lang = getLang();
     const isTr = lang === 'tr';
     const topic = GUYTON_TOPICS[activeTopicIdx];
 
+    const currentTitle = isDaVinci
+      ? (isTr ? '12 Derivasyonlu EKG Anatomisi (Da Vinci Köşesi)' : '12-Lead Electrocardiographic Anatomy (Da Vinci Corner)')
+      : topic.title[lang];
+    const currentSubtitle = isDaVinci
+      ? (isTr ? 'Bradfield, Shivkumar ve Mori (JACC 2025): Cabrera panoramik sıralaması, prekordiyal 3D düzlem farkları ve anatomik terminoloji' : 'Bradfield, Shivkumar, and Mori (JACC 2025): Cabrera panoramic sequence, 3D precordial height levels, and anatomical nomenclature')
+      : topic.subtitle[lang];
+    const currentBadge = isDaVinci
+      ? (isTr ? 'JACC 2025 · DA VINCI KÖŞESİ' : 'JACC 2025 · DA VINCI CORNER')
+      : (isTr ? 'EKG Fizyolojisi · Etkileşimli çalışma alanı' : 'ECG Physiology · Interactive workspace');
+
     container.innerHTML = `
       <div class="guyton-tabs" role="tablist">
         ${GUYTON_TOPICS.map((t, idx) => `
-          <button type="button" role="tab" tabindex="${idx === activeTopicIdx ? 0 : -1}" aria-selected="${idx === activeTopicIdx}" class="guyton-tab-btn ${idx === activeTopicIdx ? 'active' : ''}" data-topic="${idx}">
+          <button type="button" role="tab" tabindex="${idx === activeTopicIdx && !isDaVinci ? 0 : -1}" aria-selected="${idx === activeTopicIdx && !isDaVinci}" class="guyton-tab-btn ${idx === activeTopicIdx && !isDaVinci ? 'active' : ''}" data-topic="${idx}">
             <span class="guyton-tab-ch">CH ${t.chapter}</span>
             <span class="guyton-tab-name">${t.title[lang]}</span>
           </button>
         `).join('')}
+        <button type="button" role="tab" tabindex="${isDaVinci ? 0 : -1}" aria-selected="${isDaVinci}" class="guyton-tab-btn davinci-tab-pill ${isDaVinci ? 'active' : ''}" data-davinci-tab="true">
+          <span class="guyton-tab-ch" style="color:${isDaVinci ? '#ffffff' : '#38bdf8'};font-weight:800;">DA VINCI · JACC 2025</span>
+          <span class="guyton-tab-name">${isTr ? '12 Derivasyon EKG Anatomisi' : '12-Lead ECG Anatomy'}</span>
+        </button>
       </div>
 
       <div class="guyton-content-area">
         <header class="guyton-header-block">
-          <span class="guyton-badge">${isTr ? 'EKG Fizyolojisi · Etkileşimli çalışma alanı' : 'ECG Physiology · Interactive workspace'}</span>
-          <h2 class="guyton-title">${topic.title[lang]}</h2>
-          <p class="guyton-subtitle">${topic.subtitle[lang]}</p>
+          <span class="guyton-badge">${currentBadge}</span>
+          <h2 class="guyton-title">${currentTitle}</h2>
+          <p class="guyton-subtitle">${currentSubtitle}</p>
         </header>
 
         <div class="guyton-dynamic-view" id="guyton-view"></div>
@@ -58,19 +77,37 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       btn.addEventListener('keydown', e => {
         if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
         e.preventDefault();
+        isDaVinci = false;
         activeTopicIdx = e.key === 'Home' ? 0 : e.key === 'End' ? GUYTON_TOPICS.length - 1 : (activeTopicIdx + (e.key === 'ArrowRight' ? 1 : -1) + GUYTON_TOPICS.length) % GUYTON_TOPICS.length;
         render(); container.querySelector(`[data-topic="${activeTopicIdx}"]`)?.focus();
       });
       btn.addEventListener('click', () => {
+        isDaVinci = false;
         activeTopicIdx = Number(btn.dataset.topic);
         render();
         container.querySelector(`[data-topic="${activeTopicIdx}"]`)?.focus();
       });
     });
 
+    const davinciBtn = container.querySelector('[data-davinci-tab]');
+    if (davinciBtn) {
+      davinciBtn.addEventListener('click', () => {
+        isDaVinci = true;
+        render();
+      });
+    }
+
     const viewArea = container.querySelector('#guyton-view');
-    renderActiveTopic(viewArea, lang);
-    container.querySelectorAll('canvas').forEach(c => { c.setAttribute('role','img'); c.setAttribute('aria-label', c.closest('.guyton-card')?.querySelector('h3')?.textContent || topic.title[lang]); });
+    if (isDaVinci) {
+      daVinciLab = createDaVinciAnatomyLab({
+        mount: viewArea,
+        getLang,
+        state: labStates.davinci ||= {}
+      });
+    } else {
+      renderActiveTopic(viewArea, lang);
+    }
+    container.querySelectorAll('canvas').forEach(c => { c.setAttribute('role','img'); c.setAttribute('aria-label', c.closest('.guyton-card')?.querySelector('h3')?.textContent || (isDaVinci ? 'Da Vinci Anatomy' : topic.title[lang])); });
   }
 
   function renderActiveTopic(mountNode, lang) {
@@ -152,7 +189,23 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
           </div>
         </div>
       </div>
+
+      <div class="davinci-lead-banner">
+        <div class="davinci-banner-content">
+          <span class="davinci-badge">JACC 2025 · DA VINCI KÖŞESİ</span>
+          <h4>${isTr ? 'Cabrera Panoramik Sıralaması (aVL → I → −aVR → II → aVF → III)' : 'Cabrera Panoramic Sequence (aVL → I → −aVR → II → aVF → III)'}</h4>
+          <p>${isTr ? 'Geleneksel kopuk ekstremite sırası yerine 30° kesintisiz anatomik dizilimi ve V1–V6 dikey 3D seviye farklarını etkileşimli inceleyin.' : 'Explore continuous 30° panoramic display and vertical 3D height levels.'}</p>
+        </div>
+        <button type="button" class="davinci-banner-btn" data-go-davinci="true">
+          ${isTr ? 'Cabrera ve 3D Düzlem Stüdyosu →' : 'Open Cabrera & 3D Planes Studio →'}
+        </button>
+      </div>
     `;
+
+    mountNode.querySelector('[data-go-davinci]')?.addEventListener('click', () => {
+      isDaVinci = true;
+      render();
+    });
 
     const canvas = mountNode.querySelector('#einthoven-canvas');
     const lawBox = mountNode.querySelector('#einthoven-law-box');

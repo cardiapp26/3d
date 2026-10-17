@@ -26,7 +26,7 @@ export const FOLLOWER_OWNERS = {
 /** Which meshes follow the chamber walls. Leaflets keep their own opening motion. */
 export function isSurfaceFollower(userData = {}) {
   if (userData.micro || OWNER_IDS.includes(userData.id) || userData.id === 'laa') return false;
-  return FOLLOWER_IDS.has(userData.id) || ['coronaries', 'vessels', 'conduction'].includes(userData.layer);
+  return FOLLOWER_IDS.has(userData.id) || ['coronaries', 'vessels', 'conduction', 'icns'].includes(userData.layer);
 }
 
 /** Full weight in contact, smooth fade to zero at FOLLOW_FADE. */

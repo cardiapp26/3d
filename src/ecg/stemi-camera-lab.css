@@ -468,18 +468,52 @@
 
 @media (max-width: 560px) {
   .scam-studio {
-    padding: 13px;
+    padding: 12px;
     border-radius: 12px;
   }
   .scam-title {
     font-size: 1.05rem;
   }
+  .scam-header-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .scam-action-btn {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+    padding: 7px 10px;
+    font-size: 0.75rem;
+    min-height: 36px;
+  }
   .scam-territory-btn {
-    flex: 1 1 calc(50% - 6px);
+    flex: 1 1 calc(50% - 4px);
     font-size: 0.75rem;
     padding: 6px 9px;
+    min-height: 38px;
+  }
+  .scam-phase-bar {
+    gap: 6px;
+  }
+  .scam-phase-btn {
+    flex: 1 1 100%;
+    font-size: 0.75rem;
+    padding: 7px 10px;
   }
   .scam-dual-monitors {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .scam-range {
+    height: 32px;
+  }
+  .scam-lead-pills-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .scam-pails-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 }

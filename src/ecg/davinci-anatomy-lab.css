@@ -1,0 +1,650 @@
+/* Da Vinci Anatomy Corner Interactive Studio Styles */
+
+.davinci-lab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  color: #f1f5f9;
+}
+
+.davinci-lead-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(14, 116, 144, 0.25));
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.davinci-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 300px;
+}
+
+.davinci-banner-content h4 {
+  margin: 0;
+  font-size: 14.5px;
+  color: #f8fafc;
+}
+
+.davinci-banner-content p {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.davinci-banner-btn {
+  padding: 8px 16px;
+  background: #0284c7;
+  color: #ffffff;
+  border: 1px solid #38bdf8;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.davinci-banner-btn:hover {
+  background: #0369a1;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.davinci-tab-pill {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
+.davinci-tab-pill.active {
+  background: linear-gradient(135deg, #0284c7, #0f766e) !important;
+  border-color: #38bdf8 !important;
+}
+
+.davinci-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 12px;
+}
+
+.davinci-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.davinci-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.davinci-ref-tag {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.davinci-title {
+  margin: 4px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.35;
+}
+
+.davinci-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* Sub-Navigation Buttons */
+.davinci-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.davinci-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.davinci-nav-btn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 14px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #cbd5e1;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  transition: all 0.15s ease;
+}
+
+.davinci-nav-btn:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.davinci-nav-btn.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.davinci-nav-btn .nav-ch {
+  font-size: 10px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.davinci-nav-btn.active .nav-ch {
+  color: #e0f2fe;
+}
+
+.davinci-nav-btn .nav-label {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* Cards & Containers */
+.davinci-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+}
+
+.davinci-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.davinci-card-head h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.davinci-card-desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+  max-width: 90ch;
+}
+
+.davinci-toggle-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.davinci-chip-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #cbd5e1;
+  cursor: pointer;
+  min-height: 36px;
+  transition: all 0.15s ease;
+}
+
+.davinci-chip-btn:hover {
+  background: #334155;
+}
+
+.davinci-chip-btn.active {
+  background: #0369a1;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.davinci-scenario-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: #162436;
+  border-radius: 8px;
+}
+
+.davinci-bar-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-right: 4px;
+}
+
+.davinci-action-btn {
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #cbd5e1;
+  cursor: pointer;
+  min-height: 34px;
+  transition: all 0.15s ease;
+}
+
+.davinci-action-btn:hover {
+  border-color: #38bdf8;
+  color: #f8fafc;
+}
+
+.davinci-action-btn.active {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #e0f2fe;
+}
+
+.davinci-scenario-controls {
+  margin: 10px 0;
+}
+
+.davinci-slider-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.davinci-slider-label strong {
+  color: #facc15;
+}
+
+.davinci-slider-label input[type="range"] {
+  width: 100%;
+  height: 32px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+/* Strips Grid */
+.davinci-strips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.davinci-strip-card {
+  display: flex;
+  flex-direction: column;
+  background: #090e17;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.davinci-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #141f2d;
+  font-size: 11.5px;
+}
+
+.davinci-strip-head .lead-pill {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+.davinci-strip-head .lead-deg {
+  font-weight: 600;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.davinci-strip-head .lead-region {
+  font-size: 10px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.davinci-strip-head .lead-metric {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.davinci-strip-head .lead-metric.pos { color: #4ade80; }
+.davinci-strip-head .lead-metric.neg { color: #f87171; }
+
+.davinci-strip-canvas-wrap {
+  width: 100%;
+}
+
+.davinci-strip-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Callouts & Explanations */
+.davinci-callout {
+  padding: 12px 14px;
+  background: #162436;
+  border-left: 4px solid #38bdf8;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+
+.davinci-callout strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #f8fafc;
+}
+
+.davinci-callout p {
+  margin: 0;
+}
+
+/* Precordial Planes Selector */
+.davinci-plane-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.davinci-plane-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  background: #1e293b;
+  border: 1.5px solid #334155;
+  border-radius: 8px;
+  color: #e2e8f0;
+  cursor: pointer;
+  text-align: left;
+  min-height: 60px;
+  transition: all 0.15s ease;
+}
+
+.davinci-plane-btn:hover {
+  background: #27384f;
+}
+
+.davinci-plane-btn.active {
+  background: #0f2742;
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.davinci-plane-btn .plane-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+}
+
+.davinci-plane-btn strong {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.davinci-plane-btn small {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.davinci-grid-2col {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.davinci-subcard {
+  padding: 14px;
+  background: #141f2d;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.davinci-subcard h5 {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.davinci-svg-wrap {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.davinci-plane-svg,
+.davinci-pv-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.davinci-badge-green {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.davinci-metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: #1b2b3d;
+  border-radius: 6px;
+  border-left: 3px solid #4ade80;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.davinci-metric-box strong {
+  color: #94a3b8;
+}
+
+.davinci-metric-box span {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+/* Nomenclature Comparison */
+.davinci-nomenclature-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.davinci-comp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.davinci-comp-box {
+  padding: 12px 14px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.davinci-comp-box.valentine {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.davinci-comp-box.anatomical {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.davinci-comp-box .comp-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.davinci-comp-box .comp-badge.bad { color: #f87171; }
+.davinci-comp-box .comp-badge.good { color: #4ade80; }
+
+.davinci-comp-box h6 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.davinci-comp-box p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+/* PV Selector */
+.davinci-pv-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.davinci-metrics-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Mobile Media Queries */
+@media (max-width: 768px) {
+  .davinci-grid-2col {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .davinci-plane-selector {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .davinci-plane-btn {
+    min-height: 48px;
+  }
+
+  .davinci-comp-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .davinci-strips-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 560px) {
+  .davinci-header {
+    padding: 12px;
+  }
+
+  .davinci-title {
+    font-size: 17px;
+  }
+
+  .davinci-subtitle {
+    font-size: 12px;
+  }
+
+  .davinci-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .davinci-scenario-bar {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .davinci-bar-label {
+    width: 100%;
+  }
+
+  .davinci-action-btn {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+    padding: 6px 8px;
+  }
+
+  .davinci-strips-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .davinci-strip-head {
+    font-size: 10.5px;
+    padding: 4px 6px;
+  }
+
+  .davinci-callout {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}

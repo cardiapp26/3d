@@ -70,5 +70,16 @@
 .vql-result{padding:8px 12px;border-radius:7px;background:#172a3e;border-left:4px solid #e7b968;font-weight:600;font-size:12.5px}
 .vql-note{font-size:11px;color:#8ea3b8;line-height:1.5}
 @container (min-width:760px){.vql-main{grid-template-columns:minmax(300px,400px) minmax(0,1fr)}}
-@media (max-width:520px){.vql{padding:12px}.vql-strips{grid-template-columns:minmax(0,1fr)}.vql-controls{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){
+  .vql{padding:12px;border-radius:12px}
+  .vql-controls{grid-template-columns:minmax(0,1fr);gap:8px}
+  .vql-play{width:100%;min-height:38px}
+  .vql-steps{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px;padding-bottom:4px}
+  .vql-steps::-webkit-scrollbar{display:none}
+  .vql-steps button{flex:0 0 auto;white-space:nowrap;min-height:34px}
+  .vql-slider input{height:32px}
+  .vql-strips{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .vql-strip-name{font-size:11px}
+  .vql-strip-value{font-size:10px}
+}
 @media (prefers-reduced-motion:reduce){.vql-cell{transition:none}}

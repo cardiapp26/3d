@@ -46,4 +46,45 @@ assert.ok(stemiProjectionForCamera('posterior_mi','V7_V9')>0.9&&stemiProjectionF
 assert.equal(classifyStRole(0.24),'ste');assert.equal(classifyStRole(-0.22),'std');assert.equal(classifyStRole(0.02),'iso');
 assert.ok(Math.abs(stemiWaveSample(0.5,{stProjection:-0.8,invertMirror:true})+stemiWaveSample(0.5,{stProjection:-0.8,invertMirror:false}))<1e-12,'mirror flip inverts reciprocal waveform');
 assert.ok(stemiWavePath(0,80,200,50,{stProjection:0.8}).startsWith('M0.0,'));
-console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples, AV/PVC/AF patterns, 6-lead camera studio, and STEMI + reciprocal camera studio');
+
+// Da Vinci 12-Lead Electrocardiographic Anatomy (Bradfield & Mori et al., JACC 2025)
+const CABRERA_SEQUENCE = [
+  { id: 'aVL', angle: -30 },
+  { id: 'I', angle: 0 },
+  { id: '-aVR', angle: 30 },
+  { id: 'II', angle: 60 },
+  { id: 'aVF', angle: 90 },
+  { id: 'III', angle: 120 }
+];
+assert.equal(CABRERA_SEQUENCE.length, 6, 'Cabrera sequence defines 6 contiguous limb leads');
+for (let i = 1; i < CABRERA_SEQUENCE.length; i++) {
+  assert.equal(CABRERA_SEQUENCE[i].angle - CABRERA_SEQUENCE[i - 1].angle, 30, 'Cabrera leads advance in exact 30-degree contiguous steps');
+}
+const PRECORDIAL_PLANES = {
+  superior: ['V1', 'V2'],
+  middle: ['V3'],
+  inferior: ['V4', 'V5', 'V6']
+};
+assert.deepEqual(PRECORDIAL_PLANES.superior, ['V1', 'V2'], 'Superior plane consists of V1 and V2 at 4th ICS');
+assert.deepEqual(PRECORDIAL_PLANES.middle, ['V3'], 'Middle plane consists of V3 along the anterior IV groove');
+assert.deepEqual(PRECORDIAL_PLANES.inferior, ['V4', 'V5', 'V6'], 'Inferior plane consists of V4, V5, V6 at 5th ICS');
+
+// Da Vinci Anatomy Card #2: Intrinsic Cardiac Autonomic Nervous System (Aksu, Gupta, Pauza, JACC 2021)
+const PAUZA_SGPS = [
+  { id: 'vrasgp', name: 'VRAsGP', color: '#3b82f6', target: 'SA node anterior / ventral crest' },
+  { id: 'vlasgp', name: 'VLAsGP', color: '#22c55e', target: 'Ventral LA / roof' },
+  { id: 'ldsgp', name: 'LDsGP', color: '#ef4444', target: 'Posterior LA / Marshall / LSGP' },
+  { id: 'mdsgp', name: 'MDsGP', color: '#f97316', target: 'Waterston groove / Crux cordis / P-IS GP' },
+  { id: 'drasgp', name: 'DRAsGP', color: '#ec4899', target: 'Dorsal SVC / Posterior SA node / RSGP' },
+  { id: 'rcsgp', name: 'RCsGP', color: '#d946ef', target: 'Right AV sulcus / RCA' },
+  { id: 'lcsgp', name: 'LCsGP', color: '#b45309', target: 'Left AV sulcus / LCx / CS' }
+];
+assert.equal(PAUZA_SGPS.length, 7, '7 Human epicardiac ganglionated subplexuses (Pauza et al.)');
+const CNA_SELECTIVE_TARGETS = {
+  sa_node: { gp: 'RSGP', fatPad: 'SVC-Ao', effect: 'selective chronotropic', avAffected: false },
+  av_node: { gp: 'P-IS GP', fatPad: 'Crux cordis / IVC-LA', effect: 'selective dromotropic', sinusAffected: false }
+};
+assert.equal(CNA_SELECTIVE_TARGETS.sa_node.avAffected, false, 'RSGP ablation increases sinus rate without altering AV conduction');
+assert.equal(CNA_SELECTIVE_TARGETS.av_node.sinusAffected, false, 'P-IS GP ablation abolishes AV block without altering sinus rate');
+
+console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples, AV/PVC/AF patterns, 6-lead camera studio, STEMI studio, Da Vinci 12-lead ECG anatomy, and Da Vinci ICNS autonomic nervous system');

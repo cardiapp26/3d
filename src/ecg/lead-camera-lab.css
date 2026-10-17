@@ -303,3 +303,47 @@
     font-size: 16px;
   }
 }
+
+@media (max-width: 600px) {
+  .lcam {
+    padding: 12px;
+    border-radius: 12px;
+  }
+  .lcam-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .lcam-btn {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    min-height: 38px;
+  }
+  .lcam-btn-tour {
+    flex: 1 1 100%;
+  }
+  .lcam-lead-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .lcam-lead-pill {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+  .lcam-slider-wrap {
+    font-size: 11.5px;
+  }
+  .lcam-slider-wrap input[type="range"] {
+    height: 32px;
+  }
+  .lcam-readout {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}
+

@@ -13,6 +13,7 @@ import { addSchematicAvLeaflets } from './schematic-leaflets.js';
 import { addLaaMarker, smoothLaNormals, laaOrificeOf } from './la-landmarks.js';
 import { createAuscultationMarkers } from './auscultation-points.js';
 import { createThorax } from './thorax.js';
+import { createIcns } from './icns.js';
 import { createTransseptal } from './transseptal.js';
 import { createCathLab } from './cath-lab.js';
 import { createBachmannGeometry } from './bachmann.js';
@@ -82,7 +83,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const light = new THREE.DirectionalLight(color,intensity); light.position.set(...position); scene.add(light);
   }
   const heart = new THREE.Group(); scene.add(heart);
-  const layers = Object.fromEntries(['chambers','vessels','coronaries','valves','conduction','flow'].map(id=>{const g=new THREE.Group();heart.add(g);return [id,g];}));
+  const layers = Object.fromEntries(['chambers','vessels','coronaries','valves','conduction','flow','icns'].map(id=>{const g=new THREE.Group();heart.add(g);return [id,g];}));
   const valveIds = ['lcc', 'rcc', 'ncc', 'pulmonary-valve', 'mitral', 'tricuspid', 'mitral-annulus', 'tricuspid-annulus', 'rv-papillary', 'lv-papillary'];
   const visibility = applyLayerDefaults({});
   function setValveFamily(boolVal) {
@@ -223,9 +224,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });
   heart.add(thorax.group);
+  const icns = createIcns({ sourceCenter, register, isReady });
+  layers.icns.add(icns.group);
   layers.valves.add(annuli.group);
   function applyState(){
     layers.conduction.visible = visibility.conduction !== false;
+    layers.icns.visible = visibility.icns !== false;
     const chamber = chamberMode(mode);
     layers.flow.visible = Boolean(visibility.flow) && mode !== 'micro' && !mitralFocus && !chamber && mode !== 'defects';
     if(bloodFlow) bloodFlow.setVisible(layers.flow.visible);
@@ -257,6 +261,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       if (layer === 'conduction') {
         m.visible = visibility.conduction !== false && visibility[id] !== false;
+        continue;
+      }
+      if (layer === 'icns') {
+        m.visible = visibility.icns !== false && visibility[id] !== false && (!m.userData.sublayer || visibility[m.userData.sublayer] !== false);
         continue;
       }
       if (layer === 'thorax') {
@@ -300,8 +308,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     for(const m of meshes){
       const shown=m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id;
       const isSelected=shown===selected||m.userData.id===selected,isHovered=shown===hovered;
-      if(m.userData.layer==='conduction'){
-        m.material.emissiveIntensity=isSelected?1.2:isHovered?1.0:0.75;
+      if(m.userData.layer==='conduction'||m.userData.layer==='icns'){
+        m.material.emissiveIntensity=isSelected?1.3:isHovered?1.05:0.7;
         continue;
       }
       m.material.emissive.setHex(isSelected?0x27634f:isHovered?0x2a5664:0x000000);
@@ -1141,9 +1149,16 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         ['rv-papillary','lv-papillary'].forEach(id=>visibility[id]=boolVal);
         visibility.valves=true;
       }
-      if(valveIds.includes(name))visibility.valves=true;
       if(name==='veins')visibility.veins=boolVal;
       if(name==='conduction')visibility.conduction=boolVal;
+      if(name==='icns'){
+        visibility.icns=boolVal;
+        ['vrasgp','vlasgp','ldsgp','mdsgp','drasgp','rcsgp','lcsgp','rsgp','pisgp'].forEach(id=>{visibility[id]=boolVal;});
+      }
+      if(['vrasgp','vlasgp','ldsgp','mdsgp','drasgp','rcsgp','lcsgp','rsgp','pisgp'].includes(name)){
+        visibility[name]=boolVal;
+        if(boolVal)visibility.icns=true;
+      }
       applyState();
     },
     setValvesVisible(value){
