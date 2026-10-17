@@ -1,0 +1,79 @@
+import { createDavinciAtlas } from './davinci-atlas.js';
+import { CABRERA, CHEST, SITES, PV_SITES, DAVINCI_DOI, limbValues, rvotAngle, wavePath } from './davinci-model.js';
+import './davinci-workbench.css';
+
+export function createDavinciWorkbench({getLang,state:st}) {
+ Object.assign(st,{focusSite:st.focusSite||'summit',opacity:st.opacity??.8,selectedLead:st.selectedLead||'II',bodyShift:st.bodyShift||0});
+ const root=document.createElement('div');root.className='davinci-card da-workbench';
+ const tr=(a,b)=>getLang()==='en'?b:a,lang=()=>getLang()==='en'?1:0;
+ let tab='cabrera',lastCamera;
+ const atlas=createDavinciAtlas({getLang,onSelect:({site,lead})=>{
+  if(lead&&signals().some(s=>s.id===lead)){st.selectedLead=lead;update();}
+  if(site){if(tab==='atrial')st.pvSite=site;else st.focusSite=site;render(tab);}
+ }});
+ const label=id=>id==='-aVR'?'−aVR':id;
+ const button=(attr,value,text,active)=>`<button type="button" ${attr}="${value}" aria-pressed="${active}">${text}</button>`;
+ function signals(){
+  if(tab==='atrial'){
+   const d=PV_SITES[st.pvSite];return [{id:'II',net:d.ii,color:'#f4c66e'},{id:'V1',net:d.v1,color:'#fb7185'},{id:'aVL',net:d.avl,color:'#c4a3ff'}].map(x=>({...x,kind:'p',width:d.width}));
+  }
+  if(tab==='heights'||tab==='nomenclature'&&st.nomenclatureTopic==='papillary'){
+   const d=SITES[st.focusSite];return CHEST.map((l,i)=>({...l,net:d.chest[i],kind:'qrs',q:!!d.qChest&&i>=2}));
+  }
+  if(tab==='nomenclature'&&st.nomenclatureTopic==='bundles')return [{id:'V1',net:st.bundleSide==='left'?-.9:.85,color:'#fb7185',kind:st.bundleSide==='left'?'lbbb':'rbbb'}];
+  const angle=tab==='nomenclature'?-60:st.cabreraScenario==='rvot_shift'?rvotAngle(st.rvotFocus):st.cabreraScenario==='sinus_p'?58:90;
+  return limbValues(angle,st.cabreraMode).map(x=>({...x,kind:st.cabreraScenario==='sinus_p'&&tab==='cabrera'?'p':st.cabreraScenario==='mi_contiguous'&&tab==='cabrera'?'st':'qrs',q:tab==='cabrera'&&st.cabreraScenario==='rvot_shift'&&x.net<0}));
+ }
+ function sourceInfo(){
+  if(tab==='atrial')return {figure:9,title:st.pvSite,message:PV_SITES[st.pvSite].message[lang()],axis:90};
+  if(tab==='heights'||tab==='nomenclature'&&st.nomenclatureTopic==='papillary'){
+   const d=SITES[st.focusSite];return {figure:d.figure,title:d.label[lang()],message:d.message[lang()],axis:d.axis};
+  }
+  if(tab==='nomenclature')return st.nomenclatureTopic==='bundles'?{figure:8,title:tr('Sağ = anterior · sol = posterior','Right = anterior · left = posterior'),message:tr('Şekil 8D: sağ ve sol dalın anatomik hizalanması anterior–posterior yöndedir. V1’deki terminal kuvvetleri bu yönde düşün.','Figure 8D: the right and left branches align anterior–posterior. Consider terminal V1 forces in this direction.'),axis:st.bundleSide==='left'?180:0}:{figure:8,title:tr('“Anterior” fasikül → süperior fasikül','“Anterior” fascicle → superior fascicle'),message:tr('Şekil 8A–B: anatomik süperior fasikül bloğu, süperior aks sapmasını anlaşılır kılar. Etiket değişir; hastanın koordinat sistemi değişmez.','Figures 8A–B: anatomical superior fascicular block makes superior-axis deviation intuitive. The label changes; the patient coordinate system does not.'),axis:-60};
+  if(st.cabreraScenario==='rvot_shift')return {figure:2,title:st.rvotFocus<.35?tr('Posterolateral RVOT','Posterolateral RVOT'):st.rvotFocus>.65?tr('Mediyal RVOT','Medial RVOT'):tr('RVOT üzerinde geçiş','Transition across RVOT'),message:tr('Odağı sola taşı: I ve aVL’de Q artar; II’de R azalır; III’te R artar; aVR’de Q azalır. Tüm ekstremite derivasyonları aynı değişimin parçalarıdır.','Move the focus leftward: Q increases in I and aVL; R falls in II; R rises in III; Q falls in aVR. All limb leads belong to the same correlative change.'),axis:rvotAngle(st.rvotFocus)};
+  return st.cabreraScenario==='sinus_p'?{figure:11,title:tr('Sinüs P vektörü','Sinus P vector'),message:tr('Şekil 11C: inferior ve sola yönelen P vektörü, II’de pozitif; aVL’de küçük, izoelektriğe yakın görünüm verir.','Figure 11C: an inferior-leftward P vector gives an upright P in II and a small, near-isoelectric appearance in aVL.'),axis:58}:{figure:11,title:tr('İnferior ST örneği','Inferior ST example'),message:tr('Şekil 11D: inferior ST değişimini II, aVF ve III boyunca birlikte oku. Panoramik sıra komşuluğu gösterir; bu çizim koroner tanı algoritması değildir.','Figure 11D: read inferior ST changes together across II, aVF and III. Panoramic order reveals adjacency; this drawing is not a coronary diagnostic algorithm.'),axis:90};
+ }
+ function render(nextTab=tab){
+  tab=nextTab;
+  if(tab==='nomenclature'&&st.nomenclatureTopic==='papillary'&&!['superolateral','inferomedial'].includes(st.focusSite))st.focusSite='superolateral';
+  if(!signals().some(s=>s.id===st.selectedLead))st.selectedLead=signals()[0].id;
+  const focus=root.contains(document.activeElement)?[...document.activeElement.attributes].find(a=>a.name.startsWith('data-')):null;
+  const titles={cabrera:tr('Odağı taşı. Altı bakışı birlikte oku.','Move the focus. Read six views together.'),heights:tr('Aynı “bazal” konum, farklı yükseklik.','Same “basal” region, different heights.'),nomenclature:tr('İsimleri hastanın yönleriyle eşleştir.','Match the names to patient directions.'),atrial:tr('Bir ven seç. P dalgasını atriyal kitleyle düşün.','Pick a vein. Read P waves within the atrial mass.')};
+  let controls='';
+  if(tab==='cabrera')controls=`<div class="da-control-group"><span>${tr('GÖSTERİM','DISPLAY')}</span><div class="da-pills">${button('data-cab-mode','cabrera','Cabrera',st.cabreraMode==='cabrera')}${button('data-cab-mode','standard',tr('Standart','Standard'),st.cabreraMode==='standard')}</div></div><div class="da-pills da-scenarios">${[['rvot_shift','RVOT PVC'],['sinus_p',tr('Sinüs P','Sinus P')],['mi_contiguous',tr('İnferior ST','Inferior ST')]].map(([id,t])=>button('data-scenario',id,t,st.cabreraScenario===id)).join('')}</div>${st.cabreraScenario==='rvot_shift'?`<label class="da-range"><span>${tr('Posterolateral → mediyal RVOT','Posterolateral → medial RVOT')}</span><input id="rvot-focus-slider" data-da-slider="rvotFocus" type="range" min="0" max="1" step=".01" value="${st.rvotFocus}"/><span class="da-range-ends"><span>${tr('Posterolateral','Posterolateral')}</span><span>${tr('Mediyal','Medial')}</span></span></label>`:''}`;
+  if(tab==='heights')controls=`<div class="da-control-group"><span>${tr('ELEKTROT DÜZLEMİ','ELECTRODE PLANE')}</span><div class="da-pills">${[['superior','V1–V2'],['middle','V3'],['inferior','V4–V6']].map(([id,t])=>button('data-plane',id,t,st.heightPlane===id)).join('')}</div></div><div class="da-sites">${Object.entries(SITES).map(([id,d])=>button('data-da-site',id,d.label[lang()],st.focusSite===id)).join('')}</div><label class="da-range"><span>${tr('Kalp–elektrot yükseklik ilişkisi · Şekil 6','Heart–electrode height relation · Figure 6')}</span><input type="range" data-da-slider="bodyShift" min="-.6" max=".6" step=".05" value="${st.bodyShift}"/></label><p class="da-micro">${tr('Elektrotlar sabit, kalp hareket eder. Bu sürgü yalnız geometriyi değiştirir; şeritler seçilen kaynak örneğini göstermeye devam eder.','Electrodes stay fixed while the heart moves. This slider changes geometry only; strips retain the selected source example.')}</p>`;
+  if(tab==='nomenclature')controls=`<div class="da-pills">${[['fascicles',tr('Fasiküller','Fascicles')],['papillary',tr('Papiller kaslar','Papillary muscles')],['bundles',tr('Dal hizalanması','Branch alignment')]].map(([id,t])=>button('data-nom',id,t,st.nomenclatureTopic===id)).join('')}</div>${st.nomenclatureTopic==='papillary'?`<div class="da-sites">${['superolateral','inferomedial'].map(id=>button('data-da-site',id,SITES[id].label[lang()],st.focusSite===id)).join('')}</div>`:st.nomenclatureTopic==='bundles'?`<div class="da-pills">${button('data-da-bundle','right',tr('Sağ dal / RBBB','Right branch / RBBB'),st.bundleSide!=='left')}${button('data-da-bundle','left',tr('Sol dal / LBBB','Left branch / LBBB'),st.bundleSide==='left')}</div>`:''}<div class="da-translation">${st.nomenclatureTopic==='papillary'?tr('Anterolateral → süperolateral<br>Posteromediyal → inferomediyal','Anterolateral → superolateral<br>Posteromedial → inferomedial'):st.nomenclatureTopic==='bundles'?tr('Sağ dal → anterior<br>Sol dal → posterior','Right branch → anterior<br>Left branch → posterior'):tr('Anterior fasikül → süperior<br>Posterior fasikül → inferior','Anterior fascicle → superior<br>Posterior fascicle → inferior')}</div>`;
+  if(tab==='atrial')controls=`<div class="da-control-group"><span>${tr('PACEMAP ODAĞI','PACEMAP SITE')}</span><div class="da-pills">${Object.keys(PV_SITES).map(id=>button('data-pv',id,id,st.pvSite===id)).join('')}</div></div><div class="da-translation">${tr('İnferior pulmoner ven ≠ atriyal kitlenin alt sınırı','Inferior pulmonary vein ≠ inferior border of atrial mass')}</div>`;
+  root.innerHTML=`<header class="da-intro"><div><span class="da-eyebrow">${tr('ANATOMİ → YAYILIM → EKG','ANATOMY → PROPAGATION → ECG')}</span><h3>${titles[tab]}</h3></div><span class="da-source-chip">Bradfield et al. · 2025</span></header><div class="da-layout"><div class="da-stage"><div class="da-camera-bar">${[['anterior',tr('Önden','Anterior')],['superior',tr('Üstten','Superior')],['left',tr('Soldan','Left')],['posterior',tr('Arkadan','Posterior')]].map(([id,t])=>button('data-da-view',id,t,(st.cameraView||'anterior')===id)).join('')}</div><div class="da-atlas-slot"></div><div class="da-stage-footer"><span>${tr('Sürükle: döndür · Tekerlek: yakınlaş · Nokta: seç','Drag: rotate · Wheel: zoom · Point: select')}</span><label>${tr('Doku','Tissue')} <input data-da-slider="opacity" aria-label="${tr('Doku opaklığı','Tissue opacity')}" type="range" min=".15" max="1" step=".05" value="${st.opacity}"/></label></div></div><aside class="da-panel">${controls}<div class="da-reading" role="status"></div><div class="da-compare-bar"><button type="button" data-da-save>${tr('A’yı kaydet · karşılaştır','Save A · compare')}</button><button type="button" data-da-clear ${st.daBaseline?'':'hidden'}>${tr('Temizle','Clear')}</button></div><div class="da-strips" aria-label="${tr('Şematik derivasyonlar','Schematic leads')}"></div><p class="da-wave-note"></p></aside></div><footer class="da-evidence"><div class="da-evidence-main"></div><details><summary>${tr('Kaynak ve model kapsamı','Source and model scope')}</summary><p>${tr('Anatomik ilişkiler, verilen PDF’nin şekillerinden. Kalp, projedeki yerel anatomik atlas; makaledeki CT/STL modeli değil. Odaklar, elektrotlar ve düzlemler şematik işaretlerdir. Eğriler kaynakta tarif edilen nitel farkları gösterir; hasta kaydı, ölçülmüş genlik, doğrulanmış pacemap veya kişiye özgü EKG tahmini değildir.','Anatomical relations follow figures in the supplied PDF. The heart uses the project’s local anatomical atlas, not the paper’s CT/STL. Sites, electrodes and planes are schematic markers. Curves illustrate qualitative differences described by the source; they are not patient recordings, measured amplitudes, validated pacemaps or patient-specific ECG predictions.')}</p><a href="${DAVINCI_DOI}" target="_blank" rel="noopener noreferrer">Bradfield et al. · 12-Lead Electrocardiographic Anatomy · JACC: Case Reports · 105998</a></details></footer>`;
+  root.querySelector('.da-atlas-slot').append(atlas.element);
+  bind();update();const view=st.cameraView||'anterior';if(lastCamera!==view){atlas.view(view);lastCamera=view;}
+  if(focus)root.querySelector(`[${focus.name}="${focus.value}"]`)?.focus({preventScroll:true});
+  return root;
+ }
+ function update(){
+  const info=sourceInfo(),list=signals();
+  const active=tab==='atrial'?st.pvSite:st.focusSite;
+  root.querySelectorAll('[data-da-site]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.daSite===active)));
+  const reading=root.querySelector('.da-reading');reading.innerHTML=`<span>${tr('SEÇİLİ ODAK / ÖRNEK','SELECTED SITE / EXAMPLE')}</span><strong>${info.title}</strong>`;
+  const baseline=st.daBaseline?.tab===tab?st.daBaseline:null;
+  root.querySelector('.da-strips').dataset.layout=tab==='cabrera'?'panoramic':'grid';
+  root.querySelector('.da-strips').innerHTML=list.map(l=>{
+   const a=baseline?.signals.find(x=>x.id===l.id);const name=label(l.id);
+   return `<button type="button" class="da-strip" data-da-lead="${l.id}" aria-pressed="${st.selectedLead===l.id}" aria-label="${name}"><span class="da-strip-name" style="color:${l.color}">${name}${Number.isFinite(l.angle)?`<small>${l.angle>0?'+':''}${l.angle}°</small>`:''}</span><svg viewBox="0 0 160 92" preserveAspectRatio="none" role="img" aria-label="${name} · ${tr('şematik eğri','schematic curve')}"><path class="da-paper" d="M0 23H160M0 46H160M0 69H160M32 0V92M64 0V92M96 0V92M128 0V92"/>${a?`<path class="da-trace-a" d="${wavePath(a)}"/>`:''}<path class="da-trace" d="${wavePath(l)}" style="stroke:${l.color}"/></svg><span class="da-strip-sign">${l.kind==='p'?Math.abs(l.net)<.1?tr('Küçük P','Small P'):l.net>0?tr('P pozitif','P positive'):tr('P negatif','P negative'):l.kind==='rbbb'?tr('Terminal R′','Terminal R′'):l.kind==='lbbb'?tr('Negatif QRS','Negative QRS'):l.kind==='st'?tr('ST örneği','ST example'):l.q?tr('Başlangıç Q','Initial Q'):Math.abs(l.net)<.25?'RS':l.net>0?tr('R baskın','R dominant'):tr('S / Q baskın','S / Q dominant')}</span></button>`;
+  }).join('');
+  root.querySelectorAll('[data-da-lead]').forEach(b=>b.addEventListener('click',()=>{st.selectedLead=b.dataset.daLead;update();root.querySelector(`[data-da-lead="${st.selectedLead}"]`)?.focus({preventScroll:true});}));
+  root.querySelector('.da-wave-note').textContent=(baseline?tr('Kesik gri: kaydedilen A · Renkli: güncel B. ','Dashed grey: saved A · Colour: current B. '):'')+tr('Nitel örüntü; genlik ve süre ölçekli değil.','Qualitative pattern; amplitude and duration are not calibrated.');
+  root.querySelector('[data-da-clear]').hidden=!st.daBaseline;
+  root.querySelector('[data-da-save]').textContent=baseline?tr('A’yı güncelle','Update A'):tr('A’yı kaydet · karşılaştır','Save A · compare');
+  root.querySelector('.da-evidence-main').innerHTML=`<span class="da-figure">${tr('ŞEKİL','FIGURE')} ${info.figure}</span><p>${info.message}</p><a href="${DAVINCI_DOI}" target="_blank" rel="noopener noreferrer">${tr('Kaynak makale ↗','Source paper ↗')}</a>`;
+  atlas.update({...st,tab,angle:info.axis,visibleLeads:list.map(s=>s.id)});
+ }
+ function bind(){
+  for(const [attr,key] of [['data-cab-mode','cabreraMode'],['data-scenario','cabreraScenario'],['data-plane','heightPlane'],['data-nom','nomenclatureTopic'],['data-pv','pvSite'],['data-da-site','focusSite'],['data-da-bundle','bundleSide']])root.querySelectorAll(`[${attr}]`).forEach(b=>b.addEventListener('click',()=>{st[key]=b.getAttribute(attr);if(key==='cabreraMode'&&['aVR','-aVR'].includes(st.selectedLead))st.selectedLead=st.cabreraMode==='standard'?'aVR':'-aVR';if(key==='nomenclatureTopic')st.cameraView=st.nomenclatureTopic==='bundles'?'superior':'anterior';if(key==='focusSite')st.heightPlane=SITES[st.focusSite].plane;render();}));
+  root.querySelectorAll('[data-da-slider]').forEach(input=>input.addEventListener('input',()=>{st[input.dataset.daSlider]=Number(input.value);update();}));
+  root.querySelectorAll('[data-da-view]').forEach(b=>b.addEventListener('click',()=>{st.cameraView=b.dataset.daView;atlas.view(st.cameraView);lastCamera=st.cameraView;root.querySelectorAll('[data-da-view]').forEach(n=>n.setAttribute('aria-pressed',String(n===b)));}));
+  root.querySelector('[data-da-save]').addEventListener('click',()=>{st.daBaseline={tab,signals:signals().map(x=>({...x}))};update();});
+  root.querySelector('[data-da-clear]').addEventListener('click',()=>{st.daBaseline=null;update();});
+ }
+ return {render,destroy(){atlas.destroy();root.remove();}};
+}

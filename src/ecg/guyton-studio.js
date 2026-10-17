@@ -1,5 +1,6 @@
 // Interactive Guyton ECG Studio UI Panel Component
 import { createEcgLab } from './ecg-labs.js';
+import { createLessonExperiments } from './lesson-experiments.js';
 import { createAxisLab } from './axis-lab.js';
 import { createQrsVectorLab } from './qrs-vector-lab.js';
 import { createLeadCameraLab } from './lead-camera-lab.js';
@@ -12,7 +13,7 @@ import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial 
 
 export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let activeTopicIdx = 0;
-  let isDaVinci = false;
+  let isDaVinci = new URLSearchParams(location.search).get('lesson') === 'davinci';
   let vectorAngle = 59; // Normal axis
   let vectorMag = 1.0;
   let activeInjuryCase = 'anterior_mi';
@@ -107,6 +108,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     } else {
       renderActiveTopic(viewArea, lang);
     }
+    if (!isDaVinci) createLessonExperiments({ mount: viewArea, topic: topic.id, getLang });
     container.querySelectorAll('canvas').forEach(c => { c.setAttribute('role','img'); c.setAttribute('aria-label', c.closest('.guyton-card')?.querySelector('h3')?.textContent || (isDaVinci ? 'Da Vinci Anatomy' : topic.title[lang])); });
   }
 
@@ -346,6 +348,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       lab?.destroy();
       cameraLab?.destroy();
       stemiLab?.destroy();
+      daVinciLab?.destroy();
       container.remove();
     }
   };

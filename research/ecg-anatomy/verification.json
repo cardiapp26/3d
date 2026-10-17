@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-17",
+  "source": {
+    "title": "12-Lead Electrocardiographic Anatomy",
+    "doi": "10.1016/j.jaccas.2025.105998",
+    "pdfPages": 14,
+    "sha256": "797e38e50835118e8672215782422c0195a7f76fb8cc87c0e9ff72c06bbe4787"
+  },
+  "environment": {
+    "node": "v22.14.0",
+    "platform": "darwin",
+    "three": "0.186.0",
+    "vite": "8.3.0"
+  },
+  "codeHashes": {
+    "src/ecg/davinci-model.js": "715eefad16c0dcd72e6fd1ba849e00bea0466dcbfc6308bb9461b03e68dcb4fb",
+    "src/ecg/davinci-atlas.js": "6c9ab6046db3e50cfc853ccb62dd81066dbc32b4bfdbf7ad095c45b58ba2fb90",
+    "src/ecg/davinci-workbench.js": "029e1f6487b8403834f2735ee913bb2e26e8ec1ca29670f0a3ffeaff8ac7c8eb",
+    "src/ecg/davinci-workbench.css": "9c98b11761872c0bb530335803794c24db83be233868607c036c5078efda1a20",
+    "src/ecg/davinci-anatomy-lab.js": "0cf445fc6f183e799674eafa520a468e85429f4a86b6917e551cfdd1628af42f"
+  },
+  "checks": {
+    "npm run check": "PASS",
+    "npm test": "PASS",
+    "npm run build": "PASS",
+    "APP_URL=http://127.0.0.1:5192 npm run test:davinci-browser": "PASS",
+    "APP_URL=http://127.0.0.1:5192 npm run test:ecg-lessons-browser": "PASS",
+    "APP_URL=http://127.0.0.1:5192 node scripts/test-ecg-labs-browser.cjs": "PASS",
+    "git diff --check": "PASS"
+  },
+  "limits": [
+    "Qualitative source-informed diagrams; no clinical or patient-specific validation",
+    "Existing local atlas, not article CT/STL",
+    "Full non-ECG browser release suite not run for this isolated ECG change",
+    "DOI web tool access failed; supplied full PDF used for source verification"
+  ]
+}

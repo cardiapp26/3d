@@ -20,11 +20,21 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
  function button(key,value,label){const b=document.createElement('button');b.type='button';b.dataset.labControl=`${key}-${value}`;b.textContent=label;b.addEventListener('click',()=>{state[key]=value;if(topic==='ch13_arrhythmias')state.time=0;draw();});controls.append(b);return b;}
  function slider(key,label,min,max,step=1){const row=document.createElement('label'),span=document.createElement('span'),input=document.createElement('input'),out=document.createElement('output');span.textContent=label;Object.assign(input,{type:'range',min:String(min),max:String(max),step:String(step),value:String(state[key])});input.dataset.labParam=key;input.setAttribute('aria-label',label);row.append(span,out,input);controls.append(row);input.addEventListener('input',()=>{state[key]=Number(input.value);if(topic==='ch13_arrhythmias')state.time=0;draw();});return {input,out};}
  const sliders={};
+ if(topic==='ch11_basics')svg.addEventListener('pointerdown',event=>{
+  const matrix=svg.getScreenCTM();if(!matrix)return;
+  const point=new DOMPoint(event.clientX,event.clientY).matrixTransform(matrix.inverse());
+  if(point.x<40||point.x>560)return;
+  const rrMs=ecgTiming({rate:state.rate}).rr*1000;
+  if(point.y>=38&&point.y<=170)state.cursor=Math.round((point.x-40)/520*rrMs);
+  else if(point.y>=225&&point.y<=345)state.cursor=Math.round(((point.x-40)/(state.speed*4)*1000)%rrMs);
+  else return;
+  state.cursor=Math.max(0,Math.min(Math.ceil(rrMs)-1,state.cursor));draw();
+ });
  const names={ch11_basics:tr('Dalga ve ölçüm laboratuvarı','Wave and measurement lab'),ch11_leads:tr('Göğüs elektrotları ve R progresyonu','Chest electrodes and R progression'),ch12_vectors:tr('Aktivasyon haritası ve eşzamanlı QRS izleri','Activation map and synchronized QRS traces'),ch12_axis:tr('Aksı I–aVF–II ile test et','Test axis with I–aVF–II'),ch12_injury:tr('Bölgesel ST haritası ve referans çizgisi','Regional ST map and reference line'),ch13_arrhythmias:tr('Uyarılabilir boşluğu oluştur','Create an excitable gap')};h.textContent=names[topic];svg.setAttribute('aria-label',h.textContent);
  if(topic==='ch11_basics'){
   sliders.rate=slider('rate',tr('Kalp hızı (dk⁻¹)','Heart rate (min⁻¹)'),60,100);
   for(const v of [25,50])button('speed',v,`${v} mm/s`);for(const v of [5,10,20])button('gain',v,`${v} mm/mV`);
-  for(const v of ['P','PR','QRS','QT','T'])button('interval',v,v);sliders.cursor=slider('cursor',tr('Atım içi zaman (ms)','Time within beat (ms)'),0,799);
+  for(const v of ['P','PR','QRS','QT','T'])button('interval',v,v);sliders.cursor=slider('cursor',tr('Atım içi zaman (ms) · grafiğe tıkla veya kaydır','Time within beat (ms) · click the plot or slide'),0,799);
  }
  if(topic==='ch11_leads')for(const id of ['I','II','III','aVR','aVL','aVF',...CHEST_LEADS.map(l=>l.id)])button('lead',id,id);
  if(topic==='ch12_injury'){sliders.shift=slider('shift',tr('ST değişimi (mV, örnek)','ST shift (mV, example)'),0,.5,.05);for(const r of ['TP','J'])button('reference',r,r);}
