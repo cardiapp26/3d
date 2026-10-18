@@ -18,6 +18,7 @@ for (const topic of PHARMA_TOPICS) {
   bilingual(topic.title); bilingual(topic.intro);
   for (const card of topic.cards) {
     for (const key of ['name', 'examples', 'mechanism', 'use', 'risk', 'monitor']) bilingual(card[key]);
+    if (card.pearl) bilingual(card.pearl);
     sourced(card);
   }
 }
@@ -63,6 +64,10 @@ const adenosine = all.find(card => card.id === 'adenosine');
 assert.match(adenosine.risk.en, /pre-excited AF.*irregular\/polymorphic/);
 assert.match(adenosine.risk.en, /orthodromic AVRT/);
 assert.match(adenosine.use.en, /1 mg may suffice/);
+assert.match(adenosine.use.en, /reveals the mechanism/i);
+assert.match(adenosine.use.en, /Focal AT[\s\S]*AVNRT/i);
+assert.match(adenosine.pearl.en, /diagnostic tool/i);
+assert.match(adenosine.pearl.tr, /tanısal bir araç/i);
 for (const id of ['adenosine-methylxanthines', 'adenosine-dipyridamole', 'adenosine-carbamazepine']) {
   assert.ok(PHARMA_INTERACTIONS.some(item => item.id === id));
 }

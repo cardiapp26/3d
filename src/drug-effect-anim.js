@@ -17,7 +17,20 @@ const EFFECTS = {
   'non-dhp': ['rate', 'av', text('Nodal Ca²⁺ akımı AV iletimini taşır.', 'Nodal Ca²⁺ current carries AV conduction.'), text('Verapamil/diltiazem → AV iletim yavaşlar, hız ↓.', 'Verapamil/diltiazem → slower AV conduction, rate ↓.')],
   'class-iv': ['rate', 'av', text('Nodal Ca²⁺ akımı AV iletimini taşır.', 'Nodal Ca²⁺ current carries AV conduction.'), text('Ca²⁺ kanal blokajı → AV iletim yavaşlar (PR ↑).', 'Ca²⁺ channel blockade → slower AV conduction (PR ↑).')],
   digoxin: ['rate', 'av', text('Normal AV iletim.', 'Normal AV conduction.'), text('Vagal etki → AV iletim yavaşlar; kontraktilite ↑ (Na⁺/K⁺-ATPaz ⊣).', 'Vagal effect → slower AV conduction; contractility ↑ (Na⁺/K⁺-ATPase ⊣).')],
-  adenosine: ['rate', 'block', text('Her P dalgasını QRS izler.', 'Every P wave is followed by QRS.'), text('Adenozin AV düğümü kısa süre bloke eder → geçici AV blok.', 'Adenosine transiently blocks the AV node → brief AV block.')],
+  adenosine: [
+    'rate',
+    'block',
+    text(
+      'Adenozin öncesi: Düzenli dar QRS taşikardi (SVT). Anormal P dalgası morfolojisi sinüs dışı atriyal kökene işaret eder.',
+      'Before adenosine: Regular narrow-complex tachycardia (SVT). Abnormal P-wave morphology suggests non-sinus atrial origin.'
+    ),
+    text(
+      'Adenozin 12 mg sonrası: Geçici AV blok oluşur; ventrikül yanıtı durur ancak atriyal taşikardi (P dalgaları) sürmeye devam eder → Fokal AT lehine tanısal ipucu (AVNRT/AVRT sonlanırdı).',
+      'After adenosine 12 mg: Transient AV block; ventricles stop responding, but atrial tachycardia (P waves) continues marching → diagnostic clue for focal AT (AVNRT/AVRT would terminate).'
+    ),
+    text('Taşikardi (Öncesi)', 'Tachycardia (Before)'),
+    text('Adenozin 12 mg (Geçici AV blok)', 'Adenosine 12 mg (AV block)')
+  ],
   loop: ['tubule', 'NKCC2', text('NKCC2 Na⁺, K⁺, 2Cl⁻ geri emer.', 'NKCC2 reabsorbs Na⁺, K⁺, 2Cl⁻.'), text('NKCC2 ⊣ → Na⁺ lümende kalır → idrar ↑ (güçlü natriürez).', 'NKCC2 blocked → Na⁺ stays in lumen → urine ↑ (strong natriuresis).')],
   thiazide: ['tubule', 'NCC', text('NCC Na⁺ ve Cl⁻ geri emer.', 'NCC reabsorbs Na⁺ and Cl⁻.'), text('NCC ⊣ → Na⁺ idrara gider (orta natriürez).', 'NCC blocked → Na⁺ goes to urine (moderate natriuresis).')],
   enac: ['tubule', 'ENaC', text('ENaC Na⁺ geri emer, K⁺ atılımını sürer.', 'ENaC reabsorbs Na⁺ and drives K⁺ secretion.'), text('ENaC ⊣ → Na⁺ atılır, K⁺ korunur.', 'ENaC blocked → Na⁺ excreted, K⁺ spared.')],
@@ -48,9 +61,10 @@ const SCENES = {
     <text x="160" y="126" class="fx-tag" text-anchor="middle"></text></svg>`,
   rate: mode => {
     const beat = (x, pr) => `M${x} 60h10q6 -8 12 0h${pr}l4 6l6 -40l6 48l4 -14h14q10 -14 20 0`;
-    const strip = (gap, pr, drop) => Array.from({ length: 8 }, (_, i) => drop && i % 3 === 2 ? `M${i * gap} 60h10q6 -8 12 0h${gap - 22}` : beat(i * gap, pr)).join(' ');
-    const slowGap = mode === 'block' ? 80 : mode === 'av' ? 105 : 100;
-    const fast = strip(70, 10, false), slow = mode === 'block' ? strip(80, 10, true) : strip(slowGap, mode === 'slow' ? 10 : 30, false);
+    const isDropped = (i, drop) => drop && (mode === 'block' ? (i >= 2 && i <= 4) : i % 3 === 2);
+    const strip = (gap, pr, drop) => Array.from({ length: 8 }, (_, i) => isDropped(i, drop) ? `M${i * gap} 60h10q6 -8 12 0h${gap - 22}` : beat(i * gap, pr)).join(' ');
+    const slowGap = mode === 'block' ? 70 : mode === 'av' ? 105 : 100;
+    const fast = strip(70, 10, false), slow = mode === 'block' ? strip(70, 10, true) : strip(slowGap, mode === 'slow' ? 10 : 30, false);
     return `<svg viewBox="0 0 320 130"><rect width="320" height="130" rx="12" class="fx-bg"/>
       <path class="fx-heart" d="M50 48c-10-16-34-10-30 10 3 14 30 32 30 32s27-18 30-32c4-20-20-26-30-10z"/>
       <svg x="100" y="20" width="210" height="80" viewBox="0 0 210 80"><g class="fx-strip fx-strip-base" style="--shift:-210px"><path d="${fast}"/></g><g class="fx-strip fx-strip-drug" style="--shift:-${slowGap * 3}px"><path d="${slow}"/></g></svg>
@@ -133,7 +147,9 @@ export function activateEffect(node, lang, onState) {
   if (!node) return;
   const t = value => value[lang === 'en' ? 'en' : 'tr'];
   const tags = { vessel: text('kan akışı →', 'blood flow →'), rate: text('şematik ritim', 'schematic rhythm'), tubule: text('tübül lümeni → idrar', 'tubular lumen → urine'), clot: text('damar lümeni', 'vessel lumen'), window: text('plazma düzeyi (zaman →)', 'plasma level (time →)'), ap: text('aksiyon potansiyeli (gri: başlangıç)', 'action potential (grey: baseline)'), ecg: text('amiodaron EKG etkileri (gri: bazal)', 'effects of amiodarone on ECG (grey: baseline)'), receptor: text('karaciğer LDL-R / dolaşımdaki LDL', 'liver LDL-R / circulating LDL') };
-  node.querySelector('.fx-tag').textContent = t(tags[node.dataset.fxScene]);
+  node.querySelector('.fx-tag').textContent = node.dataset.fxCard === 'adenosine'
+    ? t(text('Geçici AV blokta süren P dalgaları (Fokal AT ipucu)', 'Persistent P waves during AV block (Focal AT clue)'))
+    : t(tags[node.dataset.fxScene]);
   node.querySelector('.fx-urine-label')?.replaceChildren(t(text('idrar →', 'urine →')));
   node.querySelector('.fx-toxic-label')?.replaceChildren(t(text('toksik', 'toxic')));
   node.querySelector('.fx-band-label')?.replaceChildren(t(text('terapötik', 'therapeutic')));
