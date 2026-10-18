@@ -1,5 +1,6 @@
 // Coronary Angiography Module Entry Point (angio/index.html)
 import { createAngioStudio } from './angio-studio.js';
+import { syncModuleNav } from '../module-nav.js';
 import './angio-studio.css';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { linkToLastRoute } from '../entry-route.js';
@@ -49,6 +50,7 @@ if (workspace) {
 
 function renderShell() {
   const t = TEXTS[lang];
+  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
 

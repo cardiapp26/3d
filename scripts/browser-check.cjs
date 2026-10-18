@@ -1,4 +1,5 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { openMode } = require('./lib/open-mode.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -128,7 +129,7 @@ const openDrawer = async (page, id) => {
     const amcMesh = await page.evaluate(() => window.heart.getState().structures.filter(item => item.id === 'amc'));
     assert.deepEqual(amcMesh, [], 'AMC stays a reference note, not a mesh');
 
-    await page.locator('[data-mode="transseptal"]').dispatchEvent('click');
+    await openMode(page, url, 'transseptal');
     const valveAndSeptumState = await page.evaluate(async () => {
       const { boundaryLoops, contactPatch } = await import('/src/mesh-utils.js');
       const structures = window.heart.getState().structures;
@@ -315,7 +316,7 @@ const openDrawer = async (page, id) => {
     await page.evaluate(() => window.heart.setView('anterior', false));
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     await page.screenshot({ path: path.join(shotDir, 'fossa-ovalis.png') });
-    await page.locator('[data-mode="anatomy"]').dispatchEvent('click');
+    await openMode(page, url, 'anatomy');
 
     // 6. C-Arm panel collapsible ergonomics, quick actions & mobile sheet layout
     assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm starts collapsed in anatomy mode');
@@ -323,7 +324,7 @@ const openDrawer = async (page, id) => {
 
     const cardiacVeinIds = ['cs', 'gcv', 'mcv', 'piv'];
     const cardiacVeinsBeforeAngio = await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).map(s => s.visible), cardiacVeinIds);
-    await page.locator('[data-mode="angiography"]').dispatchEvent('click');
+    await openMode(page, url, 'angiography');
     const angioVeins = await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)), cardiacVeinIds);
     assert.ok(angioVeins.length >= 4 && angioVeins.every(s => !s.visible), 'cardiac veins are excluded from angiography');
     await page.evaluate(() => window.heart.setLayer('cardiac-veins', true));
@@ -387,13 +388,15 @@ const openDrawer = async (page, id) => {
     assert.ok(coronaryMats.length > 0, 'found coronary meshes');
     assert.ok(coronaryMats.every(m => Math.abs(m.roughness - 0.65) < 0.001 && m.metalness === 0), 'coronary roughness (0.65) and metalness (0) restored');
 
-    await page.locator('[data-mode="anatomy"]').dispatchEvent('click');
+    await openMode(page, url, 'anatomy');
     assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm collapses when returning to anatomy mode');
     assert.deepEqual(await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).map(s => s.visible), cardiacVeinIds), cardiacVeinsBeforeAngio, 'cardiac vein visibility returns after leaving angiography');
 
     // 8. Reset equality (Key '0' vs #reset button)
     const alterState = async () => {
       await openDrawer(page, 'layers');
+      // Returning from the angiography page reloads the anatomy page: the cutaway group starts collapsed again.
+      await page.evaluate(() => { document.querySelector('.wall-tools').open = true; });
       await page.locator('[data-wall="rv"]').fill('55');
       await page.locator('input[data-layer="conduction"]').uncheck();
       await page.locator('input[data-layer="veins"]').uncheck();
@@ -529,7 +532,7 @@ const openDrawer = async (page, id) => {
     assert.ok(resetArticleWidth < widenedArticleWidth, `Article panel reset to default width via double-click (${resetArticleWidth})`);
 
     // CRT lead: CS ostium, then the posterior LV vein, not the anterior great cardiac vein.
-    await page.locator('[data-mode=pacemaker]').dispatchEvent('click');
+    await openMode(page, url, 'pacemaker');
     await page.locator('#steps [data-step="3"]').click();
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     const crtLead = await page.evaluate(() => {
@@ -580,11 +583,11 @@ const openDrawer = async (page, id) => {
     assert.ok(crtLead.nearCs < 0.2, `CRT shaft passes through the coronary sinus (${crtLead.nearCs})`);
     assert.ok(crtLead.tipGapPiv < 0.25, `CRT tip lies in the posterior LV vein (${crtLead.tipGapPiv})`);
     assert.ok(crtLead.tipToPiv < crtLead.tipToGcv, 'CRT tip is closer to the posterior LV vein than to the great cardiac vein');
-    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
+    await openMode(page, url, 'anatomy');
 
     // 10. Dialogs and modes
     // The EP menu also lists lesson-step entries with the same data-mode: pick the mode button itself.
-    for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await page.locator(`[data-mode=${mode}]:not([data-mode-step])`).dispatchEvent('click');
+    for (const mode of ['angiography','ablation','pacemaker','transseptal','bachmann','anatomy']) await openMode(page, url, mode);
     await page.locator('#sources').click();
     assert.ok(await page.locator('dialog#references').isVisible());
     assert.match(await page.locator('#sources').textContent(), /Hakkında ve kaynaklar/);
@@ -625,7 +628,7 @@ const openDrawer = async (page, id) => {
 
     // 12. Educational modes: Coronary angiography (07), EP anatomy (09), Pacemaker leads (10)
     // Coronary angiography
-    await page.locator('[data-mode="angiography"]').dispatchEvent('click');
+    await openMode(page, url, 'angiography');
     assert.equal(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), true, 'C-Arm is hidden at the right edge when a mode opens (also angiography)');
     await page.locator('#steps button[data-step="1"]').click(); // Spider view step
     await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
@@ -634,7 +637,7 @@ const openDrawer = async (page, id) => {
     assert.match(angioText, /Spider|bifurkasyon/i, 'Angiography step 2 shows Spider projection clinical guide');
 
     // Mode 04 Ablation anatomy
-    await page.locator('[data-mode="ablation"]:not([data-mode-step])').dispatchEvent('click');
+    await openMode(page, url, 'ablation');
     await page.locator('#steps button[data-step="1"]').click(); // Triangle of Koch
     await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
     await page.screenshot({ path: path.join(shotDir, 'mode-04-ablation-koch.png') });
@@ -644,7 +647,7 @@ const openDrawer = async (page, id) => {
     assert.match(kochText, /Koch|Yavaş Yol|Slow Pathway/i, 'Ablation step 2 features Triangle of Koch');
 
     // Mode 05 Pacemaker leads
-    await page.locator('[data-mode="pacemaker"]').dispatchEvent('click');
+    await openMode(page, url, 'pacemaker');
     const progressHidden = await page.locator('#progress').evaluate(el => el.hidden);
     assert.equal(progressHidden, false, 'Progress slider is visible in pacemaker mode');
     assert.equal(await page.locator('#progress-value').textContent(), '100%');

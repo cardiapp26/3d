@@ -6,6 +6,7 @@
  * names its forward and regurgitant volumes.
  */
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { openMode } = require('./lib/open-mode.cjs');
 const assert = require('node:assert/strict');
 const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '');
 
@@ -17,7 +18,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(`${APP}/`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
-    await page.locator('[data-mode=cath]:not([data-mode-step])').dispatchEvent('click');
+    await openMode(page, APP, 'cath');
     await page.waitForSelector('.hemo-panel');
     const click = (sel) => page.locator(sel).first().dispatchEvent('click');
     const metrics = async () => Object.fromEntries(await page.locator('.hemo-metric').evaluateAll((cells) => cells.map((c) => [c.querySelector('.hemo-metric-label').textContent, c.querySelector('.hemo-metric-value').textContent])));

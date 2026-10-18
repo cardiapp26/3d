@@ -1,4 +1,5 @@
 import { initialLanguage, rememberLanguage } from './entry-language.js';
+import { syncModuleNav } from './module-nav.js';
 import { linkToLastRoute } from './entry-route.js';
 import { PHARMA_TOPICS } from './pharmacology-data.js';
 import { pharmaText } from './pharmacology-model.js';
@@ -46,6 +47,7 @@ const panel = createPharmacologyPanel({
 
 function renderShell() {
   const w = WORDS[lang];
+  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = `Cardia · ${w.title}`;
   text('[data-pharma-title]', w.title);

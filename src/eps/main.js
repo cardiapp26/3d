@@ -7,6 +7,7 @@
 // #/maneuver, #/treatment, #/mapping, #/pacemap, #/basics, #/svt, #/wpw, #/ves); #/clip/<id> opens
 // one recording (the 3D ablation lesson links to its clips this way).
 import './style.css';
+import { syncModuleNav } from '../module-nav.js';
 import './lesson.css';
 import './ves-loc.css';
 import { APP_TEXT, LANGS, CARDIA_URL, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
@@ -55,6 +56,7 @@ const langButtons = LANGS.map((id) => {
 
 function renderShell() {
   const t = APP_TEXT[lang];
+  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
   title.textContent = t.title;

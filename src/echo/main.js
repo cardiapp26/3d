@@ -1,5 +1,6 @@
 // Standalone Echocardiography Module (TTE, TEE, ICE) Entry Point
 import { createHeart } from '../heart.js';
+import { syncModuleNav } from '../module-nav.js';
 import { createEchoMode } from '../echo-mode.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { linkToLastRoute } from '../entry-route.js';
@@ -89,6 +90,7 @@ if (heart && echoMount) {
 // 3. UI Synchronization & Shell Texts
 function renderShell() {
   const t = TEXTS[lang];
+  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
 

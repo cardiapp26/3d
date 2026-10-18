@@ -1,4 +1,5 @@
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
+import { syncModuleNav } from '../module-nav.js';
 import { linkToLastRoute } from '../entry-route.js';
 import { createGuytonEcgStudio } from './guyton-studio.js';
 import './guyton-studio.css';
@@ -44,6 +45,7 @@ const studio = createGuytonEcgStudio({
 
 function renderShell() {
   const t = TEXTS[lang];
+  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
 

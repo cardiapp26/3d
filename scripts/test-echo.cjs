@@ -92,7 +92,8 @@ const SHOTS = process.env.SHOT_DIR || null;
     const diastole = await lengthAt(0.05);
     const systole = await lengthAt(0.6);
     assert.ok(Math.abs(diastole - systole) > 0.05, `LV section changes with the phase (${diastole.toFixed(2)} vs ${systole.toFixed(2)})`);
-    await page.locator('#beat').click();
+    // The echo studio opens beating; make sure the heart plays before freezing it.
+    await page.evaluate(() => window.heart.setBeating(true));
     await page.waitForTimeout(300);
     await page.locator('[data-echo-action="freeze"]').click();
     const frozen = await page.evaluate(() => ({ playing: window.heart.getCycleState().playing, state: window.cardiaEcho.getState().frozen, phase: window.heart.getCycleState().phase }));
@@ -103,7 +104,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     // 3D overlay: fan and TEE probe visible; look-at-plane moves the camera.
     const overlay = await page.evaluate(() => ({ fan: window.heart.scene.getObjectByName('Echo imaging plane (sector)').visible, tee: window.heart.scene.getObjectByName('TEE probe (schematic)').visible, group: window.heart.scene.getObjectByName('Echo probe and imaging plane').visible }));
     assert.ok(overlay.fan && overlay.tee && overlay.group);
-    await page.locator('[data-echo-action="look"]').click();
+    await page.locator('.echo-look[data-echo-action="look"]').click();
     await page.waitForTimeout(100);
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/echo-look.png` });
@@ -127,9 +128,9 @@ const SHOTS = process.env.SHOT_DIR || null;
     assert.equal(await page.locator('[data-echo-view]:disabled').count(), 0, 'views unlocked once the task is solved');
     await page.locator('[data-echo-action="task"]').click();
     const running = await page.evaluate(() => JSON.stringify({ task: window.cardiaEcho.getState().task?.target, tte: window.cardiaEcho.getState().tte }));
-    await page.locator('#lang-btn').click();
+    await page.locator('[data-echo-lang="en"]').click();
     assert.equal(await page.evaluate(() => JSON.stringify({ task: window.cardiaEcho.getState().task?.target, tte: window.cardiaEcho.getState().tte })), running, 'language switch keeps the task');
-    await page.locator('#lang-btn').click();
+    await page.locator('[data-echo-lang="tr"]').click();
     await page.locator('.echo-controls summary').nth(1).click();
     await page.locator('[data-echo-control="labels"]').uncheck();
     assert.equal(await page.evaluate(() => window.cardiaEcho.getState().labels), false);
@@ -177,7 +178,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     // Enlarge while frozen: the sector redraws at the new size, the frozen phase stays.
     const before = await page.evaluate(() => ({ h: document.querySelector('.echo-canvas').height, phase: window.heart.getCycleState().phase, playing: window.heart.getCycleState().playing }));
     await page.locator('[data-echo-action="size"]').click();
-    const after = await page.evaluate(() => ({ h: document.querySelector('.echo-canvas').height, css: document.querySelector('.echo-canvas').clientHeight, phase: window.heart.getCycleState().phase }));
+    const after = await page.evaluate(() => ({ h: document.querySelector('.echo-canvas').height, css: Math.round(parseFloat(getComputedStyle(document.querySelector('.echo-canvas')).height)), phase: window.heart.getCycleState().phase }));
     assert.ok(after.css === 440 && after.h > before.h, 'enlarged sector redrawn');
     assert.equal(after.phase, before.phase, 'frozen phase unchanged by the resize');
     await page.locator('[data-echo-action="size"]').click();
@@ -206,10 +207,10 @@ const SHOTS = process.env.SHOT_DIR || null;
     });
     assert.ok(ms < 30, `section time ${ms.toFixed(1)} ms`);
 
-    // English, and leaving the mode hides the overlay and panel.
-    await page.locator('#lang-btn').click();
+    // English, and leaving the echo module hides the overlay and panel.
+    await page.locator('[data-echo-lang="en"]').click();
     assert.match(await page.locator('.echo-panel .eyebrow').first().textContent(), /ECHOCARDIOGRAPHY/);
-    await page.locator('[data-mode="anatomy"]').dispatchEvent('click');
+    await page.evaluate(() => window.cardiaEcho.exit());
     assert.equal(await page.locator('#echo-panel').isHidden(), true);
     assert.equal(await page.evaluate(() => window.heart.scene.getObjectByName('Echo probe and imaging plane').visible), false);
 

@@ -24,19 +24,20 @@ import { createEchoMode } from './echo-mode.js';
 import { createKochSpPanel } from './koch-sp-panel.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
-import { rememberRoute } from './entry-route.js';
+import { rememberRoute as rememberAnyRoute } from './entry-route.js';
+import { CARDIA_PAGES, currentPageId, fromRoot, modeHref } from './cardia-pages.js';
+import { pageLinksMarkup, syncPageLinks, rebaseModuleLinks } from './page-links.js';
 
 document.documentElement.lang = getContentLanguage();
 
-// Mode list grouped by learning domain. Mode numbers follow this displayed
-// order (content.js carries the same numbers); keys 1-9 open modes 01-09.
-const MODE_GROUPS = [
-  ['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'rv', 'lv', 'defects']],
-  ['modeGroupExam', ['exam']],
-  ['modeGroupIntervention', ['angiography']],
-  ['modeGroupHemodynamics', ['cath']],
-  ['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']]
-];
+// Mode list grouped by learning domain: each page hosts its own groups
+// (cardia-pages.js); a mode hosted on another page opens that page. Mode
+// numbers follow this page's displayed order; keys 1-9 open modes 01-09.
+const MODE_GROUPS = CARDIA_PAGES[currentPageId()].groups;
+const HOME_MODE = MODE_GROUPS[0][1][0];
+const hostsMode = id => MODE_GROUPS.some(([, ids]) => ids.includes(id));
+// Other modules' "3D Anatomy" links reopen the last anatomy route; lesson pages keep their own.
+const rememberRoute = hash => { if (currentPageId() === 'anatomy') rememberAnyRoute(hash); };
 // Title with the named side branch under the pointer (coronary branches).
 const withBranch = (title, branch) => (branch ? `${title} · ${branch[getContentLanguage()] || branch.en}` : title);
 
@@ -76,11 +77,10 @@ function resetChamberWalls() {
 }
 
 function renderModeNav() {
-  const byId = new Map(getUiModes().map(entry => [entry[0], entry]));
+  const localNumber = new Map(modes);
+  const byId = new Map(getUiModes().map(([id, , t]) => [id, [id, localNumber.get(id), t]]));
   // Only modes 01-09 have a single-key shortcut.
-  const button = ([id, n, t]) => `<button class="mode ${id === 'anatomy' ? 'active' : ''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> ${Number(n) <= MODE_KEYS ? `<kbd class="mode-kbd">${Number(n)}</kbd>` : ''}<b>↗</b></button>`;
-  const grouped = new Set(MODE_GROUPS.flatMap(([, ids]) => ids));
-  const rest = getUiModes().filter(([id]) => !grouped.has(id));
+  const button = ([id, n, t]) => `<button class="mode ${id === HOME_MODE ? 'active' : ''}" data-mode="${id}"><span>${n}</span><span class="mode-label">${t}</span> ${Number(n) <= MODE_KEYS ? `<kbd class="mode-kbd">${Number(n)}</kbd>` : ''}<b>↗</b></button>`;
   // Each group is a header tab with a drop-down menu; on phones the tab hides
   // and the label heads the list in the Modes sheet.
   // Lesson steps listed directly in the menu, under their mode (the EP
@@ -96,7 +96,7 @@ function renderModeNav() {
       <div class="mode-group-label" data-i18n="${key}">${getTranslation(key)}</div>
       <div class="mode-group-menu" id="menu-${key}">${ids.filter(id => byId.has(id)).map(id => button(byId.get(id)) + subSteps(id)).join('')}</div>
     </div>`;
-  return MODE_GROUPS.map(group).join('') + rest.map(button).join('');
+  return MODE_GROUPS.map(group).join('');
 }
 function layerRow(id, key, color, checked = true) {
   return `<label class="layer"><i style="background:${color}"></i><span data-i18n="${key}">${getTranslation(key)}</span><input type="checkbox" data-layer="${id}"${checked ? ' checked' : ''}></label>`;
@@ -117,8 +117,8 @@ const app = document.querySelector('#app');
 app.innerHTML = `
 <header>
   <div class="brand-block">
-    <a class="brand" href="#/">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
-    <div class="header-module-links">${epsLinkMarkup(getContentLanguage())}${pharmacologyLinkMarkup(getContentLanguage())}${ecgLinkMarkup(getContentLanguage())}${angioLinkMarkup(getContentLanguage())}${echoLinkMarkup(getContentLanguage())}</div>
+    <a class="brand" href="${currentPageId() === 'anatomy' ? '#/' : fromRoot('./')}">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
+    <div class="header-module-links">${epsLinkMarkup(getContentLanguage())}${pharmacologyLinkMarkup(getContentLanguage())}${ecgLinkMarkup(getContentLanguage())}${angioLinkMarkup(getContentLanguage())}${echoLinkMarkup(getContentLanguage())}${pageLinksMarkup(getContentLanguage())}</div>
   </div>
   <div id="header-search" class="header-search"></div>
   <div class="header-right">
@@ -524,6 +524,7 @@ app.innerHTML = `
 
 <div id="toast" class="app-toast" hidden></div>
 `;
+rebaseModuleLinks(app.querySelector('.header-module-links'));
 
 const select = document.querySelector('#structure-select');
 for (const [id, s] of Object.entries(structures)) {
@@ -535,7 +536,10 @@ for (const [id, s] of Object.entries(structures)) {
 
 const hoverBadge = document.querySelector('#hover-badge');
 let currentSelectedId = 'lv';
-let mode = 'anatomy', step = 0, beating = false;
+let mode = HOME_MODE, step = 0, beating = false;
+// A lesson page starts in its first mode but enters it (panels, lesson) only through setMode.
+let modeEntered = HOME_MODE === 'anatomy';
+if (modeEntered) document.documentElement.dataset.appMode = mode;
 let isUpdatingRoute = false;
 
 function resolveStructureId(id) {
@@ -774,12 +778,14 @@ function openLessonStep(target, index) {
   if (panelShell?.isMobile()) panelShell.open('learn');
 }
 function openCathCase(hemoScenario) {
+  if (!hostsMode('cath')) { window.location.href = modeHref('cath', `scenario=${encodeURIComponent(hemoScenario)}`); return; }
   const steps = lessons.cath?.steps || [];
   const withRa = steps.findIndex(st => st.scenario === hemoScenario && st.channels?.includes('ra'));
   openLessonStep('cath', withRa >= 0 ? withRa : steps.findIndex(st => st.scenario === hemoScenario));
   hemoMode?.focusStation('cath-ra');   // the RA tracing joins the step's channels
 }
 function openJvpCase(jvpScenario) {
+  if (!hostsMode('exam')) { window.location.href = modeHref('exam', `jvp=${encodeURIComponent(jvpScenario)}`); return; }
   const steps = lessons.exam?.steps || [];
   const match = steps.findIndex(st => st.jvp?.scenario === jvpScenario);
   // No step of its own (tamponade): the y-descent step, with the scenario applied on top.
@@ -863,6 +869,7 @@ function searchModeGroups() {
 // it, switch its layer and checkbox on, open its group, then inspect.
 function pickStructure(id) {
   const option = [...select.options].find(o => o.value === id);
+  if (option?.disabled && !hostsMode('anatomy')) { window.location.href = modeHref('anatomy', `structure=${encodeURIComponent(id)}`); return; }
   if (option?.disabled) setMode('anatomy');
   const turnOn = box => { if (box && !box.checked) { box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); } };
   const layer = heart?.getState().structures.find(item => item.id === id || item.valveId === id)?.layer;
@@ -1137,9 +1144,16 @@ function updateContextNote() {
 }
 
 function setMode(newMode, updateUrl = true) {
+  // A mode of another page (quick search, an old link) opens that page.
+  if (!hostsMode(newMode)) {
+    const href = modeHref(newMode);
+    if (href) window.location.href = href;
+    return;
+  }
   // The example lesson runs in general anatomy; leaving it ends the task.
   if (newMode !== 'anatomy' && practice?.isActive()) practice.setStyle('explore');
   mode = newMode;
+  modeEntered = true;
   rememberMode(newMode);
   step = 0;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode && b.dataset.modeStep === undefined));
@@ -1225,22 +1239,30 @@ function handleHashChange() {
     // The former hemodynamics mode is part of catheterization now.
     const targetMode = match ? (match[1] === 'hemodynamics' ? 'cath' : match[1]) : null;
 
-    if (['echo', 'tee', 'ice'].includes(targetMode)) {
-      const modality = targetMode === 'tee' ? 'tee' : targetMode === 'ice' ? 'ice' : 'tte';
-      window.location.replace(`./echo/?modality=${modality}`);
-      return;
+    const query = hash.split('?')[1] || '';
+    // Old links and bookmarks of modes that moved to their own page.
+    if (targetMode && !hostsMode(targetMode)) {
+      const href = modeHref(targetMode, query);
+      if (href) { window.location.replace(href); return; }
     }
 
-    const urlParams = new URLSearchParams(hash.split('?')[1] || '');
+    const urlParams = new URLSearchParams(query);
+    // Cross-page case links: the JVP opens the catheter case and back.
+    if (targetMode === 'cath' && urlParams.get('scenario')) { openCathCase(urlParams.get('scenario')); return; }
+    if (targetMode === 'exam' && urlParams.get('jvp')) { openJvpCase(urlParams.get('jvp')); return; }
     const targetStructure = urlParams.get('structure') || (hash.match(/#\/structure\/([a-z0-9_-]+)/i)?.[1]);
 
     if (targetMode && modes.some(([id]) => id === targetMode)) {
-      if (targetMode !== mode) setMode(targetMode, false);
+      if (targetMode !== mode || !modeEntered) setMode(targetMode, false);
     }
 
     if (targetStructure && structures[targetStructure]) {
       inspect(targetStructure, true, false);
     }
+    // A camera preset carried over from another page (the mitral view of the angiography page),
+    // applied once the atlas loads: the ready handler re-inspects the selection first.
+    const targetView = urlParams.get('view');
+    if (targetView && document.querySelector(`[data-view="${CSS.escape(targetView)}"]`)) heart?.ready.then(() => setCameraPreset(targetView)).catch(() => {});
     rememberRoute(window.location.hash);   // a deep link is a visit too (syncUrl is skipped here)
   } finally {
     isUpdatingRoute = false;
@@ -1252,6 +1274,9 @@ if (window.location.hash && window.location.hash !== '#/') {
   // Deferred: a lesson-mode deep link triggers setView -> joystick sync,
   // which reads consts (pad, puck) declared later in this module (TDZ crash).
   queueMicrotask(handleHashChange);
+} else if (HOME_MODE !== 'anatomy') {
+  // A lesson page without a route opens its first lesson (deferred for the same reason).
+  queueMicrotask(() => setMode(HOME_MODE));
 } else {
   inspect('lv', false, true);
 }
@@ -1594,6 +1619,7 @@ function updateJoystickFromCamera(angles) {
 
 function setCameraPreset(viewName) {
   if (viewName === 'mitral') {
+    if (!hostsMode('anatomy')) { window.location.href = modeHref('anatomy', 'structure=mitral&view=mitral'); return; }
     if (mode !== 'anatomy') setMode('anatomy');
     inspect('mitral', false);
   }
@@ -1755,7 +1781,7 @@ document.querySelector('#cycle-rhythm')?.addEventListener('change', e => {
 });
 
 function resetAll() {
-  setMode('anatomy');
+  setMode(HOME_MODE);
   heart?.reset();
   const rw = document.querySelector('#root-window');
   if (rw) rw.checked = false;
@@ -1988,6 +2014,7 @@ function updateLanguageUI() {
   syncEcgLink(getContentLanguage());
   syncAngioLink(getContentLanguage());
   syncEchoLink(getContentLanguage());
+  syncPageLinks(getContentLanguage());
   defectPanel.refresh();
   panelShell?.refresh();
   quickSearches.forEach(search => search.refresh());

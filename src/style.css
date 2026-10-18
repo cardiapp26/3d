@@ -1267,3 +1267,8 @@ main.is-fullscreen-fallback #viewport {
 #steps .steps-group:first-child{margin-top:0}
 #steps .steps-group-link{display:block;width:100%;text-align:left;border:1px solid #cbd5cf;border-radius:6px;background:#f1f5ef;padding:7px 10px;cursor:pointer}
 #steps .steps-group-link:hover{background:#e3ece2}
+
+/* Phones: the module links (EPS, pharmacology, ECG, angiography, echo and the
+   3D lesson pages) scroll inside the brand block so the header row keeps its
+   right-hand buttons on screen. */
+@media(max-width:640px){header .brand-block{flex:1 1 auto;min-width:0}header .header-module-links{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}header .header-module-links::-webkit-scrollbar{display:none}header .header-module-links .eps-link{flex:0 0 auto}}

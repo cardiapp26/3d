@@ -15,7 +15,11 @@ export default defineConfig({
         pharmacology: page('./pharmacology/index.html'),
         ecg: page('./ecg/index.html'),
         angio: page('./angio/index.html'),
-        echo: page('./echo/index.html')
+        echo: page('./echo/index.html'),
+        exam: page('./exam/index.html'),
+        hemo: page('./hemo/index.html'),
+        epAnatomy: page('./eps/anatomy/index.html'),
+        angio3d: page('./angio/3d/index.html')
       },
       output: {
         manualChunks(id) {

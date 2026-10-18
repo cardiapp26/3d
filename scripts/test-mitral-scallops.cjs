@@ -1,5 +1,7 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
+const { openMode } = require('./lib/open-mode.cjs');
+const APP = (process.env.APP_URL || 'http://127.0.0.1:5177').replace(/\/$/, '');
 // Layers and tools open as a drawer from the header tabs (tablet and desktop).
 const openDrawer = async (page, id) => {
   const tab = page.locator(`[data-drawer=${id}]`);
@@ -12,7 +14,7 @@ const openDrawer = async (page, id) => {
     await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(process.env.APP_URL || 'http://127.0.0.1:5177');
+    await page.goto(APP);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.locator('[data-view=mitral]').click();
     await page.waitForSelector('#viewport[data-camera-settled=true]');
@@ -39,8 +41,10 @@ const openDrawer = async (page, id) => {
     await page.locator('#reset').click();
     await page.waitForSelector('.mitral-scallops[hidden]', { state: 'attached' });
     assert.equal(await page.evaluate(() => window.heart.getState().mitralFocus), false);
-    await page.locator('[data-mode=angiography]').dispatchEvent('click');
-    await page.locator('[data-view=mitral]').click();
+    // The mitral view of the angiography page opens the anatomy page focused on the valve.
+    await openMode(page, APP, 'angiography');
+    await Promise.all([page.waitForURL(/#\/mode\/anatomy/), page.locator('[data-view=mitral]').click()]);
+    await page.waitForSelector('#viewport[data-model-ready=true]');
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
     await page.waitForSelector('.mitral-scallops:not([hidden])');
     await page.evaluate(() => window.heart.setAngioProjection(20, 10));

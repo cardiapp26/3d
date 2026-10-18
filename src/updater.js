@@ -6,6 +6,7 @@
 // - wiz3 style update prompt card with version info
 // - Hard cache-purging update trigger
 import { getTranslation } from './content.js';
+import { fromRoot } from './cardia-pages.js';
 import release from '../public/version.json' with { type: 'json' };
 
 let registration = null;
@@ -150,7 +151,7 @@ export async function checkBundleChange() {
 
 export async function checkVersionJsonFallback() {
   try {
-    const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(fromRoot('./version.json') + '?_t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) return false;
     const data = await res.json();
     const metaBuild = getMeta('app-build', release.build);
@@ -202,7 +203,7 @@ export async function checkAppUpdate(isManual = false) {
         if (registration && registration.waiting) {
           let info = null;
           try {
-            const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
+            const res = await fetch(fromRoot('./version.json') + '?_t=' + Date.now(), { cache: 'no-store' });
             if (res.ok) info = await res.json();
           } catch (_) {}
           finish(true, info);
@@ -227,7 +228,7 @@ function watchWorker(sw, hadController) {
     if (hadController) {
       let info = null;
       try {
-        const res = await fetch('./version.json?_t=' + Date.now(), { cache: 'no-store' });
+        const res = await fetch(fromRoot('./version.json') + '?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) info = await res.json();
       } catch (_) {}
       showUpdatePrompt(info);
@@ -312,7 +313,7 @@ export function initUpdater() {
   });
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+    navigator.serviceWorker.register(fromRoot('./sw.js'), { scope: fromRoot('./'), updateViaCache: 'none' })
       .then(reg => {
         watchRegistration(reg, hadController);
 

@@ -1,4 +1,5 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { openMode, modeUrl } = require('./lib/open-mode.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -23,7 +24,7 @@ const openDrawer = async (page, id) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && m.text().includes('THREE.')) errors.push(m.text()); });
-    await page.goto(`${url}/#/mode/bachmann?structure=bachmann`);
+    await page.goto(await modeUrl(url, 'bachmann', 'structure=bachmann'));
     await page.waitForSelector('#viewport[data-model-ready=true]');
     const settle = async () => {
       await page.waitForSelector('#viewport[data-camera-settled=true]');
@@ -53,7 +54,7 @@ const openDrawer = async (page, id) => {
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'bachmann').visible), false);
     await page.locator('#reset').click();
     assert.equal(await page.evaluate(() => window.heart.getState().visibility.bachmann), true);
-    await page.locator('[data-mode=bachmann]').dispatchEvent('click');
+    await openMode(page, url, 'bachmann');
     await page.locator('#steps [data-step="1"]').click();
     await settle();
     assert.match((await leads())[0].name, /Appendage/);
@@ -81,18 +82,19 @@ const openDrawer = async (page, id) => {
     assert.match((await leads())[0].name, /Bachmann/);
     await page.locator('#reset').click();
     assert.equal(await page.evaluate(() => window.heart.getState().fluoroscopy), false);
-    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
+    // Reset returns to the first lesson of this page (the EP anatomy page opens with transseptal).
+    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'transseptal');
     assert.deepEqual(await leads(), []);
-    await page.locator('[data-mode=bachmann]').dispatchEvent('click');
+    await openMode(page, url, 'bachmann');
     await page.locator('#steps [data-step="3"]').click();
     assert.match((await leads())[0].name, /Bachmann/, 'lesson can resume after reset');
-    await page.locator('[data-mode=pacemaker]').dispatchEvent('click');
+    await openMode(page, url, 'pacemaker');
     for (const [step, expected] of [[0,/Appendage/],[1,/RV/],[2,/CSP/],[3,/CRT/]]) {
       await page.locator(`#steps [data-step="${step}"]`).click();
       assert.equal((await leads()).length, 1);
       assert.match((await leads())[0].name, expected);
     }
-    await page.locator('[data-mode=anatomy]').dispatchEvent('click');
+    await openMode(page, url, 'anatomy');
     assert.deepEqual(await leads(), []);
     await page.locator('#structure-select').selectOption('bachmann');
     assert.match(await page.locator('#structure-title').textContent(), /Bachmann/);

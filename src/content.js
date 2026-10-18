@@ -1900,10 +1900,7 @@ export const uiTranslations = {
       ['transseptal', '10', 'Transseptal & septostomi'],
       ['ablation', '11', 'Elektrofizyolojik anatomi'],
       ['pacemaker', '12', 'Kalp pili elektrotları'],
-      ['bachmann', '13', 'Bachmann demeti & pacing'],
-      ['echo', '14', 'Transtorasik eko (TTE)'],
-      ['tee', '15', 'Transözofageal eko (TEE)'],
-      ['ice', '16', 'İntrakardiyak eko (ICE)']
+      ['bachmann', '13', 'Bachmann demeti & pacing']
     ],
     atriaNote: 'Yalnız sol atriyum (LA) ve LAA. LAA, sol atriyumun parçasıdır; turkuaz halka ostiyumu işaretler (Bachmann demeti değildir, bu modda gizlidir).',
     atriaFocusLa: 'Sol atriyum', atriaFocusLaa: 'LAA ostiyumu',
@@ -2099,10 +2096,7 @@ export const uiTranslations = {
       ['transseptal', '10', 'Transseptal & septostomy'],
       ['ablation', '11', 'Electrophysiological anatomy'],
       ['pacemaker', '12', 'Pacemaker leads'],
-      ['bachmann', '13', 'Bachmann bundle & pacing'],
-      ['echo', '14', 'Transthoracic echo (TTE)'],
-      ['tee', '15', 'Transoesophageal echo (TEE)'],
-      ['ice', '16', 'Intracardiac echo (ICE)']
+      ['bachmann', '13', 'Bachmann bundle & pacing']
     ],
     atriaNote: 'Only left atrium (LA) and LAA. The LAA is part of the left atrium; the teal ring marks its orifice (it is not Bachmann\'s bundle, which is hidden in this mode).',
     atriaFocusLa: 'Left atrium', atriaFocusLaa: 'LAA orifice',

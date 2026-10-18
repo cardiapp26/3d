@@ -2,8 +2,8 @@
 // Strategy:
 //   - Fixed names: revalidate online, same-build cache fallback offline
 //   - Vite content-hashed assets: cache-first
-//   - Three pages: simulator, EPS and pharmacology; an
-//     offline navigation falls back to the shell of its own page
+//   - Every page (3D lesson pages, EPS, pharmacology, ECG, angiography, echo):
+//     an offline navigation falls back to the shell of its own page
 const VERSION = 'v12';
 const CACHE = `cardia-${VERSION}`;
 
@@ -13,12 +13,19 @@ const CORE = [
   './eps/',
   './eps/index.html',
   './pharmacology/',
-  './pharmacology/index.html'
+  './pharmacology/index.html',
+  './exam/index.html',
+  './hemo/index.html',
+  './eps/anatomy/index.html',
+  './angio/3d/index.html'
 ];
 
-/** Keep navigation fallbacks inside the page that owns the requested path. */
-const shellFor = (pathname) => /^\/pharmacology(\/|$)/.test(pathname) ? './pharmacology/index.html'
-  : /^\/eps(\/|$)/.test(pathname) ? './eps/index.html' : './index.html';
+/** Keep navigation fallbacks inside the page that owns the requested path (deepest page first). */
+const PAGES = ['eps/anatomy', 'angio/3d', 'exam', 'hemo', 'eps', 'pharmacology', 'ecg', 'angio', 'echo'];
+const shellFor = (pathname) => {
+  const page = PAGES.find(prefix => new RegExp(`^/${prefix}(/|$)`).test(pathname));
+  return page ? `./${page}/index.html` : './index.html';
+};
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {

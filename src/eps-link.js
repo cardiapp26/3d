@@ -1,3 +1,5 @@
+import { fromRoot } from './cardia-pages.js';
+
 // Links from the 3D simulator to the EPS laboratory page (eps/index.html):
 // the header button, and the card of the ablation lesson steps that carry a
 // recording (`egm` in content.js), which opens that recording in the EPS page
@@ -74,7 +76,7 @@ export function createEpsHandoff(mount, { getLang }) {
     title.textContent = LESSON_CLIPS[clip].title[lang];
     text.textContent = w.text;
     link.textContent = w.open;
-    link.href = epsClipUrl(clip);
+    link.href = fromRoot(epsClipUrl(clip));
   }
 
   return {

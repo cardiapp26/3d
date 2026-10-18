@@ -14,8 +14,8 @@ for (const key of Object.keys(tr)) {
   if (typeof tr[key] === 'string') assert.ok(tr[key].trim() && en[key].trim(), `${key}: both filled`);
 }
 assert.deepEqual(tr.modes.map(([id, n]) => [id, n]), en.modes.map(([id, n]) => [id, n]), 'modes share ids and numbers');
-// Mode numbers follow the displayed order (anatomy, physiology, intervention, EP, imaging groups in main.js).
-assert.deepEqual(tr.modes.map(([id]) => id), ['anatomy', 'atria', 'ra', 'rv', 'lv', 'defects', 'exam', 'angiography', 'cath', 'transseptal', 'ablation', 'pacemaker', 'bachmann', 'echo', 'tee', 'ice'], 'modes listed in display order');
+// Catalogue order of the 3D lesson modes (cardia-pages.js splits them over the pages; echo imaging is its own studio).
+assert.deepEqual(tr.modes.map(([id]) => id), ['anatomy', 'atria', 'ra', 'rv', 'lv', 'defects', 'exam', 'angiography', 'cath', 'transseptal', 'ablation', 'pacemaker', 'bachmann'], 'modes listed in display order');
 assert.deepEqual(tr.modes.map(([, n]) => n), tr.modes.map((_, i) => String(i + 1).padStart(2, '0')), 'mode numbers run 01, 02, ... in display order');
 
 // 2. Lessons: same modes, steps, landmarks and views in both languages.

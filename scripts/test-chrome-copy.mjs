@@ -11,7 +11,8 @@ import {
 const previous = getContentLanguage();
 
 setContentLanguage('en');
-assert.equal(getUiModes().length, 16);
+// Echo imaging (TTE, TEE, ICE) lives in the echo studio, not in the 3D mode list.
+assert.equal(getUiModes().length, 13);
 // Listed (and numbered) in the order the grouped mode menu shows them.
 assert.deepEqual(getUiModes().map(([id]) => id), [
   'anatomy',
@@ -26,10 +27,7 @@ assert.deepEqual(getUiModes().map(([id]) => id), [
   'transseptal',
   'ablation',
   'pacemaker',
-  'bachmann',
-  'echo',
-  'tee',
-  'ice'
+  'bachmann'
 ]);
 assert.match(getViewerTitle('angiography'), /projection/i);
 assert.match(getAngioDescription('spider'), /spider/i);
@@ -42,7 +40,7 @@ assert.equal(getUiModes().find(([id]) => id === 'lv')[2], 'Left ventricle');
 const englishSpider = getAngioDescription('spider');
 
 setContentLanguage('tr');
-assert.equal(getUiModes().length, 16);
+assert.equal(getUiModes().length, 13);
 assert.equal(getTranslation('wallClosed'), 'Kapalı');
 assert.equal(getUiModes().find(([id]) => id === 'atria')[2], 'Sol atriyum & LAA');
 assert.equal(getUiModes().find(([id]) => id === 'ra')[2], 'Sağ atriyum');
