@@ -8,7 +8,12 @@ import './lead-camera-lab.css';
 import { createStemiCameraLab } from './stemi-camera-lab.js';
 import './stemi-camera-lab.css';
 import { createDaVinciAnatomyLab } from './davinci-anatomy-lab.js';
-import { createClinicalEcgSimulator } from './clinical-ecg-simulator.js';
+import {
+  createClinicalEcgSimulator,
+  CARDIAC_CHANNELOPATHY_NODES,
+  CHANNELOPATHY_ACRONYMS,
+  buildChannelopathyApSvg
+} from './clinical-ecg-simulator.js';
 import './clinical-ecg-simulator.css';
 import { GUYTON_TOPICS } from './guyton-data.js';
 import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial } from './guyton-render.js';
@@ -19,6 +24,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let vectorAngle = 59; // Normal axis
   let vectorMag = 1.0;
   let activeInjuryCase = 'anterior_mi';
+  let activeChanNodeId = 'phase0_ina';
   let lab = null;
   let cameraLab = null;
   let stemiLab = null;
@@ -81,7 +87,11 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
 
     const simMount = container.querySelector('#clinical-sim-mount');
     if (simMount) {
-      clinicalSim = createClinicalEcgSimulator({ mount: simMount, getLang });
+      clinicalSim = createClinicalEcgSimulator({
+        mount: simMount,
+        getLang,
+        initialCollapsed: activeTopicIdx !== 0 || isDaVinci
+      });
       if (!isDaVinci) {
         if (topic.id === 'ch12_injury') clinicalSim.selectCategory('ischemia', 'anterior_stemi');
         else if (topic.id === 'ch13_arrhythmias') clinicalSim.selectCategory('arrhythmia', 'afib');
@@ -141,7 +151,6 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       cameraLab = createLeadCameraLab({ mount: mountNode, getLang, state: labStates.leadCamera ||= {} });
     } else if (topic.id === 'ch11_leads') {
       renderChapter11Leads(mountNode, isTr);
-      cameraLab = createLeadCameraLab({ mount: mountNode, getLang, state: labStates.leadCamera ||= {} });
     } else if (topic.id === 'ch12_vectors') {
       // Continuous QRS genesis: activation map, vector loop and six leads (qrs-vector-lab.js).
       mountNode.replaceChildren();
@@ -171,53 +180,126 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       ? createQrsVectorLab({ mount: mountNode, getLang, steps: topic.vectors, state: labStates[topic.id] ||= {} })
       : createEcgLab({ mount: mountNode, topic: topic.id, getLang, state: labStates[topic.id] ||= {},
       getExternal: () => ({ caseId:activeInjuryCase, vectorAngle }) });
+    if (topic.id === 'ch11_basics') {
+      renderChannelopathyAtlasCard(mountNode, isTr);
+    }
     mountNode.append(source);
   }
 
-  // Chapter 11 Leads: Einthoven Triangle & Law
+  // Chapter 11 Basics: Interactive Cardiac Channelopathies (Phase 0-4 Ion Currents, Genes & Syndromes)
+  function renderChannelopathyAtlasCard(mountNode, isTr) {
+    const card = document.createElement('section');
+    card.className = 'guyton-card chan-atlas-card';
+    card.setAttribute('data-channelopathy-atlas', 'true');
+
+    function updateAtlasCard() {
+      const activeNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.id === activeChanNodeId) || CARDIAC_CHANNELOPATHY_NODES[0];
+      card.innerHTML = `
+        <div class="chan-atlas-header">
+          <div>
+            <span class="guyton-badge" style="margin-bottom:4px;display:inline-block;">
+              ${isTr ? 'FAZ 0–4 İYON KANALLARI · KALITSAL KANALOPATİ HARİTASI' : 'PHASE 0–4 ION CURRENTS · INHERITED CHANNELOPATHY ATLAS'}
+            </span>
+            <h3>${isTr ? 'Kardiyak Kanalopatiler: Ventriküler Aksiyon Potansiyeli, Genler ve Sendromlar' : 'Cardiac Channelopathies: Ventricular Action Potential, Genes & Syndromes'}</h3>
+          </div>
+          <button type="button" class="chan-sim-launch-btn" data-launch-chan-sim="${activeNode.id}">
+            ⚡ ${isTr ? 'Canlı EKG Monitöründe Simüle Et' : 'Simulate on Live ECG Monitor'} (${activeNode.current})
+          </button>
+        </div>
+
+        <div class="clin-chan-node-pills" role="group" aria-label="${isTr ? 'Faz 0–4 İyon Kanalı Seçimi' : 'Select Phase 0–4 Ion Channel'}">
+          ${CARDIAC_CHANNELOPATHY_NODES.map(n => `
+            <button type="button" class="clin-chan-pill ${n.id === activeNode.id ? 'active' : ''} ${n.direction}" data-atlas-chan-node="${n.id}">
+              <span class="clin-chan-pill-dot"></span>
+              <span>${n.phase}: <strong>${n.current}</strong> · ${n.genes.join(', ')}</span>
+            </button>
+          `).join('')}
+        </div>
+
+        <div class="chan-atlas-grid">
+          <div class="chan-atlas-svg-box">
+            ${buildChannelopathyApSvg(activeNode.id, isTr)}
+          </div>
+
+          <div class="chan-atlas-info-col">
+            <div class="clin-chan-detail-box">
+              <div class="clin-chan-detail-title">${isTr ? activeNode.titleTr : activeNode.titleEn}</div>
+              <p class="clin-chan-detail-desc">${isTr ? activeNode.mechTr : activeNode.mechEn}</p>
+              <div class="clin-chan-syndrome-tags">
+                ${activeNode.syndromes.map(s => `<span class="clin-chan-syn-tag">${s}</span>`).join('')}
+              </div>
+            </div>
+
+            <div class="chan-acronym-table" role="region" aria-label="${isTr ? 'Kardiyak Kanalopati Kısaltmaları' : 'Cardiac Channelopathy Acronyms'}">
+              <div class="chan-acronym-head">${isTr ? 'Klinik Sendrom & Gen Kısaltmaları' : 'Clinical Syndrome & Gene Legend'}</div>
+              <div class="chan-acronym-grid">
+                ${CHANNELOPATHY_ACRONYMS.map(a => `
+                  <div class="chan-acronym-item">
+                    <strong>${a.code}</strong>
+                    <span>${isTr ? a.tr : a.en}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      card.querySelectorAll('[data-atlas-chan-node], [data-chan-node]').forEach(el => {
+        el.addEventListener('click', () => {
+          const nid = el.getAttribute('data-atlas-chan-node') || el.getAttribute('data-chan-node');
+          const found = CARDIAC_CHANNELOPATHY_NODES.find(n => n.id === nid);
+          if (!found) return;
+          activeChanNodeId = found.id;
+          updateAtlasCard();
+          clinicalSim?.selectCategory('channelopathy', found.condId, found.id);
+        });
+      });
+
+      card.querySelector('[data-launch-chan-sim]')?.addEventListener('click', () => {
+        clinicalSim?.selectCategory('channelopathy', activeNode.condId, activeNode.id);
+        container.querySelector('#clinical-sim-mount')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+
+    updateAtlasCard();
+    mountNode.appendChild(card);
+  }
+
+  // Chapter 11 Leads: Unified Einthoven Hexaxial Vector Studio & Cabrera Link
   function renderChapter11Leads(mountNode, isTr) {
     mountNode.innerHTML = `
       <div class="guyton-grid-2col">
         <div class="guyton-card">
-          <h3>${isTr ? "Einthoven Kanunu ve Ekstremite Derivasyonları" : "Einthoven's Law & Limb Leads"}</h3>
-          <p class="guyton-card-desc">
-            ${isTr
-              ? 'Einthoven Kanunu: Herhangi bir anda Derivasyon I + Derivasyon III = Derivasyon II potansiyelini verir. Vektör açısını değiştirerek voltajları test edin:'
-              : "Einthoven's Law: At any instant, Lead I + Lead III = Lead II. Adjust the vector angle to verify the algebraic sum:"}
-          </p>
-
-          <div class="guyton-slider-row">
-            <label for="vec-slider">${isTr ? 'Elektriksel Vektör Açısı (°):' : 'Electrical Vector Angle (°):'} <strong id="vec-angle-val">${vectorAngle}°</strong></label>
-            <input type="range" id="vec-slider" min="-180" max="180" value="${vectorAngle}" />
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h3>${isTr ? "Einthoven Kanunu ve Heksaksiyel İzdüşüm" : "Einthoven's Law & Hexaxial Projection"}</h3>
+            <div class="guyton-slider-row" style="margin:0;flex:1;min-width:220px;">
+              <label for="vec-slider">${isTr ? 'Dipol Açısı:' : 'Dipole Angle:'} <strong id="vec-angle-val">${vectorAngle}°</strong></label>
+              <input type="range" id="vec-slider" min="-180" max="180" value="${vectorAngle}" />
+            </div>
           </div>
 
           <div class="guyton-canvas-wrap">
-            <canvas id="einthoven-canvas" width="560" height="340"></canvas>
+            <canvas id="einthoven-canvas" width="560" height="310"></canvas>
           </div>
         </div>
 
-        <div class="guyton-card">
-          <h3>${isTr ? 'Canlı Voltaj Ölçümü ve Doğrulama' : 'Live Voltage Readouts & Verification'}</h3>
-          <div class="guyton-law-box" id="einthoven-law-box"></div>
-          
-          <div class="guyton-callout" style="margin-top:16px;">
-            <h4>${isTr ? 'Prekordiyal Derivasyonlar (V1-V6) ve R Dalgası Gelişimi' : 'Precordial Leads (V1-V6) & R Progression'}</h4>
-            <p>${isTr
-              ? 'V1–V2 sağ/anterior septal göğüs yerleşimidir. V5–V6 lateral bakış sağlar. R progresyonu elektrot yerleşimi ve bireysel anatomiye bağlıdır; aşağıdaki göğüs haritasını deneyin.'
-              : 'V1–V2 have right/anterior septal chest positions; V5–V6 provide lateral views. R progression depends on electrode placement and individual anatomy; explore the chest map below.'}</p>
+        <div class="guyton-card" style="justify-content:space-between;">
+          <div>
+            <h3>${isTr ? 'Canlı Cebirsel Doğrulama (I + III = II)' : 'Live Algebraic Verification (I + III = II)'}</h3>
+            <div class="guyton-law-box" id="einthoven-law-box"></div>
+          </div>
+
+          <div class="davinci-lead-banner" style="margin-top:8px;">
+            <div class="davinci-banner-content">
+              <span class="davinci-badge">JACC 2025 · DA VINCI KÖŞESİ</span>
+              <h4>${isTr ? 'Cabrera Panoramik Dizilimi (aVL → I → −aVR → II → aVF → III)' : 'Cabrera Panoramic Sequence (aVL → I → −aVR → II → aVF → III)'}</h4>
+            </div>
+            <button type="button" class="davinci-banner-btn" data-go-davinci="true">
+              ${isTr ? '3B Cabrera & Düzlem Stüdyosu →' : '3D Cabrera & Planes Studio →'}
+            </button>
           </div>
         </div>
-      </div>
-
-      <div class="davinci-lead-banner">
-        <div class="davinci-banner-content">
-          <span class="davinci-badge">JACC 2025 · DA VINCI KÖŞESİ</span>
-          <h4>${isTr ? 'Cabrera Panoramik Sıralaması (aVL → I → −aVR → II → aVF → III)' : 'Cabrera Panoramic Sequence (aVL → I → −aVR → II → aVF → III)'}</h4>
-          <p>${isTr ? 'Geleneksel kopuk ekstremite sırası yerine 30° kesintisiz anatomik dizilimi ve V1–V6 dikey 3D seviye farklarını etkileşimli inceleyin.' : 'Explore continuous 30° panoramic display and vertical 3D height levels.'}</p>
-        </div>
-        <button type="button" class="davinci-banner-btn" data-go-davinci="true">
-          ${isTr ? 'Cabrera ve 3D Düzlem Stüdyosu →' : 'Open Cabrera & 3D Planes Studio →'}
-        </button>
       </div>
     `;
 
@@ -233,8 +315,16 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
 
     function update() {
       if (!canvas) return;
+      const logicalW = 560;
+      const logicalH = 310;
+      const dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+      if (canvas.width !== Math.round(logicalW * dpr) || canvas.height !== Math.round(logicalH * dpr)) {
+        canvas.width = Math.round(logicalW * dpr);
+        canvas.height = Math.round(logicalH * dpr);
+      }
       const ctx = canvas.getContext('2d');
-      const res = drawVectorHexaxial(ctx, canvas.width, canvas.height, vectorAngle, vectorMag);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const res = drawVectorHexaxial(ctx, logicalW, logicalH, vectorAngle, vectorMag);
       angleVal.textContent = `${vectorAngle}°`;
       lab?.sync();
 
@@ -287,38 +377,27 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     update();
   }
 
-  // Chapter 12 Injury: Current of Injury & J Point
+  // Chapter 12 Injury: Streamlined STEMI Camera Studio + Compact J-Point Case Bar
   function renderChapter12Injury(mountNode, isTr) {
     const topic = GUYTON_TOPICS[4];
 
     mountNode.innerHTML = `
       <div id="stemi-camera-mount"></div>
-      <div class="guyton-grid-2col">
-        <div class="guyton-card">
-          <h3>${isTr ? 'Hasar Akımı ve J Noktası Referansı' : 'Current of Injury & The J Point'}</h3>
-          <p class="guyton-card-desc">
-            ${topic.mechanism[isTr ? 'tr' : 'en']}
-          </p>
-
-          <div class="guyton-toggle-group">
+      <div class="guyton-card guyton-injury-toolbar">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div class="guyton-toggle-group" style="margin:0;">
             ${topic.cases.map(c => `
               <button type="button" class="guyton-tab-btn ${c.id === activeInjuryCase ? 'active' : ''}" data-case="${c.id}">
                 ${c.title[isTr ? 'tr' : 'en']}
               </button>
             `).join('')}
           </div>
-
-          <div class="guyton-canvas-wrap" style="margin-top:12px;">
-            <canvas id="injury-canvas" width="560" height="240"></canvas>
-          </div>
+          <div id="injury-case-details" class="guyton-injury-inline-summary"></div>
         </div>
-
-        <div class="guyton-card" id="injury-case-details"></div>
       </div>
     `;
 
     const stemiMount = mountNode.querySelector('#stemi-camera-mount');
-    const canvas = mountNode.querySelector('#injury-canvas');
     const detailsNode = mountNode.querySelector('#injury-case-details');
 
     function updateCase(caseId, syncStemi = true) {
@@ -330,32 +409,18 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       mountNode.querySelectorAll('[data-case]').forEach(b => { b.classList.toggle('active', b.dataset.case === caseId); b.setAttribute('aria-pressed', String(b.dataset.case === caseId)); });
       const c = topic.cases.find(x => x.id === caseId) || topic.cases[0];
 
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        drawEcgGrid(ctx, canvas.width, canvas.height);
-        const pts = generateEcgPoints(canvas.width, {
-          rate: 80,
-          stElev: caseId === 'anterior_mi' ? 0.25 : -0.25,
-          invertT: false
-        });
-        drawCalibratedWave(ctx, pts, canvas.width, canvas.height, { color: '#dc2626', lineWidth: 2.2 });
+      if (detailsNode) {
+        detailsNode.innerHTML = `
+          <span class="guyton-injury-pill">
+            <strong>${isTr ? 'J Noktası:' : 'J-Point:'}</strong>
+            ${isTr ? c.jPointShift : (caseId === 'anterior_mi' ? '+2.5 mm STE (V1–V4)' : 'V1–V3 Reciprocal STD · V7–V9 STE')}
+          </span>
+          <span class="guyton-injury-pill subtle">
+            <strong>${isTr ? 'ST Vektörü:' : 'ST Vector:'}</strong>
+            ${c.vectorDirection[isTr ? 'tr' : 'en']}
+          </span>
+        `;
       }
-
-      detailsNode.innerHTML = `
-        <h3>${c.title[isTr ? 'tr' : 'en']}</h3>
-        <div class="guyton-metric-large">
-          <span class="label">${isTr ? 'J Noktası ve ST Kayması' : 'J-Point & ST Shift'}</span>
-          <span class="val">${isTr ? c.jPointShift : (caseId === 'anterior_mi' ? '+2.5 mm ST elevation example (V1–V4)' : 'ST depression in V1–V3; posterior leads may show elevation')}</span>
-        </div>
-        <div class="guyton-callout" style="margin-top:12px;">
-          <strong>${isTr ? 'Vektör Yönü:' : 'Vector Direction:'}</strong>
-          <p>${c.vectorDirection[isTr ? 'tr' : 'en']}</p>
-        </div>
-        <div class="guyton-callout" style="margin-top:12px;">
-          <strong>${isTr ? 'Fizyopatoloji:' : 'Pathology:'}</strong>
-          <p>${c.pathology[isTr ? 'tr' : 'en']}</p>
-        </div>
-      `;
     }
 
     stemiLab = createStemiCameraLab({

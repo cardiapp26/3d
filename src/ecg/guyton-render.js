@@ -116,30 +116,81 @@ export function generateEcgPoints(width, opts = {}) {
 export function drawVectorHexaxial(ctx, width, height, vectorAngleDeg, vectorMagnitude, opts = {}) {
   const cx = width / 2;
   const cy = height / 2;
-  const radius = Math.min(width, height) * 0.38;
+  const radius = Math.min(width, height) * 0.37;
 
   ctx.save();
-  ctx.fillStyle = opts.bg || '#0f172a'; // dark medical lab background
+
+  // Deep radial studio backdrop
+  const bgGrad = ctx.createRadialGradient(cx, cy, radius * 0.1, cx, cy, Math.max(width, height) * 0.65);
+  bgGrad.addColorStop(0, '#0f1d32');
+  bgGrad.addColorStop(0.65, '#091220');
+  bgGrad.addColorStop(1, opts.bg || '#050b14');
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // Draw 360 degree circle
+  // Normal Axis Quadrant Highlight (-30° to +90°)
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.06)';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, radius, (-30 * Math.PI) / 180, (90 * Math.PI) / 180, false);
+  ctx.closePath();
+  ctx.fill();
+
+  // Subtle Einthoven Equilateral Triangle Watermark (RA, LA, LL)
+  const triR = radius * 0.88;
+  const raPt = [cx - triR * Math.cos(Math.PI / 6), cy - triR * Math.sin(Math.PI / 6)];
+  const laPt = [cx + triR * Math.cos(Math.PI / 6), cy - triR * Math.sin(Math.PI / 6)];
+  const llPt = [cx, cy + triR];
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.14)';
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(raPt[0], raPt[1]);
+  ctx.lineTo(laPt[0], laPt[1]);
+  ctx.lineTo(llPt[0], llPt[1]);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Subtle Central Cardiac Silhouette Watermark
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = 'rgba(244, 63, 94, 0.08)';
+  ctx.strokeStyle = 'rgba(244, 63, 94, 0.22)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(-6, -18);
+  ctx.bezierCurveTo(-24, -20, -28, 4, -14, 18);
+  ctx.bezierCurveTo(-4, 28, 8, 30, 14, 24);
+  ctx.bezierCurveTo(28, 12, 26, -14, 8, -18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // Concentric Reference Rings (0.5 mV and 1.0 mV)
   ctx.lineWidth = 1;
-  ctx.strokeStyle = '#334155';
+  ctx.strokeStyle = 'rgba(71, 85, 105, 0.35)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(100, 116, 139, 0.55)';
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Draw degree ticks
-  for (let deg = 0; deg < 360; deg += 30) {
+  // Draw degree ticks every 15° (major every 30°)
+  for (let deg = 0; deg < 360; deg += 15) {
     const rad = (deg * Math.PI) / 180;
-    const x1 = cx + (radius - 6) * Math.cos(rad);
-    const y1 = cy + (radius - 6) * Math.sin(rad);
-    const x2 = cx + radius * Math.cos(rad);
-    const y2 = cy + radius * Math.sin(rad);
-    ctx.strokeStyle = '#475569';
+    const isMajor = deg % 30 === 0;
+    const inner = radius - (isMajor ? 8 : 4);
+    ctx.strokeStyle = isMajor ? '#64748b' : 'rgba(71, 85, 105, 0.45)';
+    ctx.lineWidth = isMajor ? 1.4 : 0.8;
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
+    ctx.moveTo(cx + inner * Math.cos(rad), cy + inner * Math.sin(rad));
+    ctx.lineTo(cx + radius * Math.cos(rad), cy + radius * Math.sin(rad));
     ctx.stroke();
   }
 
@@ -148,12 +199,12 @@ export function drawVectorHexaxial(ctx, width, height, vectorAngleDeg, vectorMag
     { name: 'I (0°)', angle: 0, color: '#38bdf8' },
     { name: 'II (+60°)', angle: 60, color: '#4ade80' },
     { name: 'III (+120°)', angle: 120, color: '#a78bfa' },
-    { name: 'aVR (-150°)', angle: -150, color: '#f87171' },
-    { name: 'aVL (-30°)', angle: -30, color: '#fb923c' },
+    { name: 'aVR (−150°)', angle: -150, color: '#f87171' },
+    { name: 'aVL (−30°)', angle: -30, color: '#fb923c' },
     { name: 'aVF (+90°)', angle: 90, color: '#facc15' }
   ];
 
-  // Draw lead axes lines
+  // Draw lead axes lines & positive pole badges
   leads.forEach(lead => {
     const rad = (lead.angle * Math.PI) / 180;
     const x1 = cx - radius * Math.cos(rad);
@@ -161,8 +212,8 @@ export function drawVectorHexaxial(ctx, width, height, vectorAngleDeg, vectorMag
     const x2 = cx + radius * Math.cos(rad);
     const y2 = cy + radius * Math.sin(rad);
 
-    ctx.lineWidth = 1.2;
-    ctx.strokeStyle = 'rgba(100, 116, 139, 0.45)';
+    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = 'rgba(100, 116, 139, 0.38)';
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -170,28 +221,32 @@ export function drawVectorHexaxial(ctx, width, height, vectorAngleDeg, vectorMag
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Positive pole dot on rim
+    ctx.fillStyle = lead.color;
+    ctx.beginPath();
+    ctx.arc(x2, y2, 3, 0, Math.PI * 2);
+    ctx.fill();
+
     // Label at positive pole
-    const tx = cx + (radius + 22) * Math.cos(rad);
+    const tx = cx + (radius + 26) * Math.cos(rad);
     const ty = cy + (radius + 22) * Math.sin(rad);
     ctx.fillStyle = lead.color;
-    ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+    ctx.font = '700 11.5px ui-sans-serif, system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(lead.name, tx, ty);
   });
 
-  // Calculate Projections on Lead I and Lead III to illustrate Einthoven's Law
+  // Calculate Projections on Lead I, II, III to illustrate Einthoven's Law
   const vRad = (vectorAngleDeg * Math.PI) / 180;
   const vecLenPx = vectorMagnitude * radius;
   const vx = cx + vecLenPx * Math.cos(vRad);
   const vy = cy + vecLenPx * Math.sin(vRad);
 
-  // Projections on I, II, III
   const projI = vectorMagnitude * Math.cos(vRad - 0);
   const projII = vectorMagnitude * Math.cos(vRad - (60 * Math.PI) / 180);
   const projIII = vectorMagnitude * Math.cos(vRad - (120 * Math.PI) / 180);
 
-  // Draw projections dotted lines to Lead I and II
   function drawProj(leadAngleDeg, projVal, color) {
     const lRad = (leadAngleDeg * Math.PI) / 180;
     const px = cx + projVal * radius * Math.cos(lRad);
@@ -199,56 +254,78 @@ export function drawVectorHexaxial(ctx, width, height, vectorAngleDeg, vectorMag
 
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.2;
-    ctx.setLineDash([4, 4]);
+    ctx.setLineDash([3, 3]);
     ctx.beginPath();
     ctx.moveTo(vx, vy);
     ctx.lineTo(px, py);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw projected point on axis
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(px, py, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Line from center to projection
-    ctx.lineWidth = 3.5;
+    // Glowing projected vector segment from center to projection point
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3.8;
+    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(px, py);
     ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+    ctx.fill();
   }
 
-  drawProj(0, projI, '#38bdf8'); // Lead I
+  drawProj(0, projI, '#38bdf8');   // Lead I
   drawProj(60, projII, '#4ade80'); // Lead II
   drawProj(120, projIII, '#a78bfa'); // Lead III
 
-  // Draw Resultant Vector Arrow (Bold Golden)
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = '#f59e0b';
-  ctx.fillStyle = '#f59e0b';
+  // Draw Resultant Cardiac Dipole Vector Arrow (Luminous Gold)
+  ctx.save();
+  ctx.shadowColor = 'rgba(245, 158, 11, 0.55)';
+  ctx.shadowBlur = 10;
+  ctx.lineWidth = 4.2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#fbbf24';
+  ctx.fillStyle = '#fbbf24';
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.lineTo(vx, vy);
   ctx.stroke();
 
-  // Arrowhead
-  const arrowSize = 10;
-  const aAngle1 = vRad + Math.PI - 0.4;
-  const aAngle2 = vRad + Math.PI + 0.4;
+  const arrowSize = 11;
+  const aAngle1 = vRad + Math.PI - 0.38;
+  const aAngle2 = vRad + Math.PI + 0.38;
   ctx.beginPath();
   ctx.moveTo(vx, vy);
   ctx.lineTo(vx + arrowSize * Math.cos(aAngle1), vy + arrowSize * Math.sin(aAngle1));
   ctx.lineTo(vx + arrowSize * Math.cos(aAngle2), vy + arrowSize * Math.sin(aAngle2));
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
 
-  // Center hub
+  // Center Hub
   ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 4.8, 0, Math.PI * 2);
   ctx.fill();
+  ctx.stroke();
+
+  // Corner HUD Badge
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect?.(12, 12, 134, 26, 6);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#fde68a';
+  ctx.font = '700 11px ui-monospace, SFMono-Regular, monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`⚡ Dipole: ${vectorAngleDeg >= 0 ? '+' : ''}${vectorAngleDeg}°`, 20, 25);
 
   ctx.restore();
 

@@ -13,7 +13,8 @@ export default defineConfig({
         main: page('./index.html'),
         eps: page('./eps/index.html'),
         pharmacology: page('./pharmacology/index.html'),
-        ecg: page('./ecg/index.html')
+        ecg: page('./ecg/index.html'),
+        angio: page('./angio/index.html')
       },
       output: {
         manualChunks(id) {

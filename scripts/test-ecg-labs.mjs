@@ -100,17 +100,38 @@ import {
   COMPASS_SAMPLE_CASES,
   evaluateCompassInterpretation,
   sampleElectrolyteLeadIIMv,
-  evaluateRhythmTuner5Step
+  evaluateRhythmTuner5Step,
+  CHANNELOPATHY_ACRONYMS,
+  CARDIAC_CHANNELOPATHY_NODES,
+  buildChannelopathyApSvg
 } from '../src/ecg/clinical-ecg-simulator.js';
 
 assert.equal(CONDUCTION_STAGES.length, 7, '7 cardiac conduction timeline stages (0..860 ms)');
 assert.equal(CLINICAL_CATEGORIES.length, 6, '6 clinical & pharmacology ECG categories');
-assert.ok(CLINICAL_CONDITIONS.length >= 30, '30+ clinical, channelopathy, structural & pharmacology ECG patterns');
+assert.ok(CLINICAL_CONDITIONS.length >= 36, '36+ clinical, channelopathy, structural & pharmacology ECG patterns');
 assert.ok(PREMIUM_STUDY_QUESTIONS.length >= 6, 'unlocked ECGLens premium lead-selection & MCQ study questions');
 assert.equal(SKILLSTAT_COLUMNS.length, 5, 'SkillStat classic 5-column matrix');
 assert.equal(SKILLSTAT_27_RHYTHMS.length, 27, 'SkillStat classic 27 rhythms (R1..R28)');
 assert.equal(sampleSkillStatLeadIIMv('R5', 2.0), 0, 'SkillStat Sinus Exit Block (R5) has exact flat pause on dropped beat');
 assert.ok(sampleSkillStatLeadIIMv('R26', 0.24) > 0.8, 'SkillStat Paced Ventricular (R26) produces wide QRS peak');
+
+// Cardiac Channelopathies Atlas (Phase 0-4 Ion Currents, Genes & Syndromes) tests
+assert.equal(CARDIAC_CHANNELOPATHY_NODES.length, 7, '7 Phase 0-4 transmembrane ion currents in Cardiac Channelopathies Atlas');
+assert.equal(CHANNELOPATHY_ACRONYMS.length, 10, '10 syndrome & gene acronyms in Cardiac Channelopathies legend');
+const chanConds = CLINICAL_CONDITIONS.filter(c => c.cat === 'channelopathy');
+assert.equal(chanConds.length, 11, '11 inherited channelopathy & genetic syndromes in Clinical ECG Simulator');
+const apSvg = buildChannelopathyApSvg('phase3_ikr', true);
+assert.ok(apSvg.includes('SCN5A') && apSvg.includes('KCNH2') && apSvg.includes('KCNQ1') && apSvg.includes('KCNJ2') && apSvg.includes('-85 mV'), 'Phase 0-4 Channelopathy SVG renders all genes and -85 mV resting potential');
+const lqt2Cond = CLINICAL_CONDITIONS.find(c => c.id === 'lqt2_kcnh2');
+const ats1Cond = CLINICAL_CONDITIONS.find(c => c.id === 'ats1_lqt7_kcnj2');
+const timothyCond = CLINICAL_CONDITIONS.find(c => c.id === 'lqts8_timothy');
+assert.ok(Number.isFinite(sampleConditionLeadMv(lqt2Cond, 'V5', 0.48)), 'LQT2 bifid T-wave sample is finite');
+assert.ok(sampleConditionLeadMv(ats1Cond, 'V3', 0.63) > 0.15, 'Andersen-Tawil (LQTS7 / KCNJ2) produces prominent giant U wave at phase 0.63');
+assert.notEqual(
+  sampleConditionLeadMv(timothyCond, 'V5', 0.56, 0).toFixed(3),
+  sampleConditionLeadMv(timothyCond, 'V5', 0.56, 1).toFixed(3),
+  'Timothy Syndrome (LQTS8 / CACNA1C) produces macroscopic beat-to-beat T-wave alternans'
+);
 
 // EKG Compass (ekgcompass.com) 9-Step Interpreter + Electrolyte/Rhythm Tuner tests
 assert.equal(COMPASS_9_STEPS.length, 9, 'EKG Compass defines 9 systematic interpretation steps');
@@ -137,5 +158,6 @@ assert.ok(sampleConditionLeadMv(antStemi, 'V2', 0.39) > 0.15, 'Anterior STEMI sh
 assert.ok(sampleConditionLeadMv(antStemi, 'III', 0.39) < -0.05, 'Anterior STEMI shows reciprocal ST depression in III');
 assert.ok(sampleConditionLeadMv(deWinter, 'V3', 0.48) > 0.40, 'de Winter pattern shows tall hyperacute T wave in V3');
 
-console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples, AV/PVC/AF patterns, 6-lead camera studio, STEMI studio, Da Vinci 12-lead ECG anatomy, Da Vinci ICNS, Clinical ECG Simulator, ECGLens Premium Suite, SkillStat 27-Rhythm Classic Simulator, and EKG Compass 9-Step Interpreter');
+console.log('PASS ECG labs: physical QRS/QT timing, sorted strips, projection identity, axis boundaries, chest placement, reentry units/gap/block, seven finite rhythm examples, AV/PVC/AF patterns, 6-lead camera studio, STEMI studio, Da Vinci 12-lead ECG anatomy, Da Vinci ICNS, Clinical ECG Simulator, Cardiac Channelopathies Phase 0-4 Atlas, ECGLens Premium Suite, SkillStat 27-Rhythm Classic Simulator, and EKG Compass 9-Step Interpreter');
+
 

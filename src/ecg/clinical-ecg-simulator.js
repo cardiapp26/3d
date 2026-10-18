@@ -226,15 +226,87 @@ export const CLINICAL_CONDITIONS = [
     pearlEn: 'LAFB produces left axis deviation (−45° to −90°) with qR in I/aVL and rS in II/III/aVF. Ashman phenomenon produces RBBB aberrancy following a long-short RR cycle.'
   },
 
-  // 4. CHANNELOPATHIES & GENETIC
+  // 4. CHANNELOPATHIES & GENETIC (Phase 0–4 Cardiac Ion Channelopathies Atlas)
   {
     id: 'brugada_1', cat: 'channelopathy', color: '#f43f5e',
-    tr: 'Brugada Sendromu Tip 1 (V1–V2 Coved STE)', en: 'Brugada Syndrome Type 1 (Coved STE V1–V2)',
-    hr: 70, pr: 175, qrs: 112, qt: 390, axis: 60, culprit: 'None',
+    tr: 'Brugada Sendromu (BrS1: SCN5A ↓INa · BrS5: KCNE3/KCND3 ↑Ito)', en: 'Brugada Syndrome (BrS1: SCN5A ↓INa · BrS5: KCNE3/KCND3 ↑Ito)',
+    hr: 70, pr: 185, qrs: 114, qt: 390, axis: 60, culprit: 'None',
     affectedLeads: ['V1', 'V2'], reciprocalLeads: [],
     morph: { brugada: true },
-    pearlTr: 'SCN5A (Na+ kanalı) kaybı / RVOT epikardiyal faz-1 çentiği: V1–V2’de ≥2 mm kubbe/köpekbalığı yüzgeci (coved-type) ST elevasyonu ve simetrik negatif T dalgası. Ateş ve Sınıf IC ilaçlar (flekainid/ajmalin) paterni açığa çıkarır ve VF tetikler!',
-    pearlEn: 'Coved-type ST elevation ≥2 mm in V1–V2 descending directly into a negative T wave (RVOT sodium channelopathy). Fever must be treated aggressively to prevent VF!'
+    pearlTr: 'Faz 0 INa kaybı (SCN5A: BrS1, SIDS) veya Faz 1 Ito artışı (KCNE3: BrS5, KCND3: BrS) / Faz 2 ICa kaybı: RVOT epikardiyal Faz 1 çentiği derinleşir → V1–V2’de ≥2 mm Coved (köpekbalığı yüzgeci) ST elevasyonu ve negatif T. Ateş derhal düşürülmeli; Sınıf IC ilaçlar kontrendikedir!',
+    pearlEn: 'Loss of Phase 0 INa (SCN5A: BrS1) or gain of Phase 1 Ito (KCNE3: BrS5, KCND3: BrS) deepens the RVOT epicardial notch, producing ≥2 mm coved STE and negative T in V1–V2.'
+  },
+  {
+    id: 'lqts', cat: 'channelopathy', color: '#a855f7',
+    tr: 'LQT1 (KCNQ1) / LQT5 (KCNE1) & JLN1/JLN2 (Faz 3 ↓IKs · Geniş T)', en: 'LQT1 (KCNQ1) / LQT5 (KCNE1) & JLN1/2 (Phase 3 ↓IKs · Broad T)',
+    hr: 64, pr: 160, qrs: 88, qt: 520, axis: 55, culprit: 'None',
+    affectedLeads: ['II', 'V2', 'V3', 'V4', 'V5'], reciprocalLeads: [],
+    morph: { lqts: true },
+    pearlTr: 'Faz 3 yavaş gecikmiş doğrultucu potasyum akımı (IKs) kaybı (KCNQ1: LQTS1, JLN1, SIDS; KCNE1: LQTS5, JLN2): Geniş tabanlı (broad-based) uzun T dalgası ve QTc > 480–520 ms. Yüzme ve egzersiz (adrenerjik deşarj) Torsades tetikler; Jervell ve Lange-Nielsen (JLN1/2) sendromunda konjenital bilateral sağırlık eşlik eder (Beta-bloker: Nadolol/Propranolol 1. tercih!).',
+    pearlEn: 'Phase 3 slow K+ current (IKs) loss-of-function (KCNQ1: LQTS1, JLN1, SIDS; KCNE1: LQTS5, JLN2) produces broad-based prolonged T waves and exercise/swimming-triggered Torsades (JLN includes congenital deafness).'
+  },
+  {
+    id: 'lqt2_kcnh2', cat: 'channelopathy', color: '#c084fc',
+    tr: 'LQT2 (KCNH2 / hERG) & LQT6 (KCNE2 · Faz 3 ↓IKr · Çentikli Bifid T)', en: 'LQT2 (KCNH2) & LQT6 (KCNE2 · Phase 3 ↓IKr · Notched Bifid T)',
+    hr: 62, pr: 162, qrs: 88, qt: 530, axis: 52, culprit: 'None',
+    affectedLeads: ['II', 'V2', 'V3', 'V4'], reciprocalLeads: [],
+    morph: { lqts: true, lqt2Bifid: true },
+    pearlTr: 'Faz 3 hızlı gecikmiş doğrultucu potasyum akımı (IKr) kaybı (KCNH2: LQTS2, SIDS; KCNE2: LQTS6, SIDS): Düşük genlikli, çentikli/iki hörgüçlü (bifid/notched) T dalgaları ve QTc > 500 ms. Ani işitsel uyaran (çalar saat/telefon zili) ve postpartum dönemde erken ard-depolarizasyon (EAD) ile Torsades de Pointes tetiklenir!',
+    pearlEn: 'Phase 3 rapid K+ current (IKr) loss-of-function (KCNH2: LQTS2, SIDS; KCNE2: LQTS6, SIDS) causes low-amplitude notched/bifid T waves and auditory/alarm-triggered Torsades de Pointes.'
+  },
+  {
+    id: 'lqt3_scn5a', cat: 'channelopathy', color: '#f97316',
+    tr: 'LQT3 (SCN5A Geç ↑INa,L) & SIDS (Uzun İzoelektrik ST + Geç Sivri T)', en: 'LQT3 (SCN5A Late ↑INa,L) & SIDS (Long Flat ST + Late Peaked T)',
+    hr: 54, pr: 168, qrs: 92, qt: 540, axis: 58, culprit: 'None',
+    affectedLeads: ['II', 'V2', 'V3', 'V5'], reciprocalLeads: [],
+    morph: { lqts: true, lqt3Late: true },
+    pearlTr: 'SCN5A (Faz 0/2 sodyum kanalı) inaktivasyon kusuru sonucu kalıcı geç sodyum akımı (↑INa,L): Çok uzun, düz izoelektrik ST segmenti ve oldukça geç başlayan dar/sivri T dalgası. Uykuda ve bradikardide ölümcül aritmi / Ani Bebek Ölümü Sendromu (SIDS) yapar; Meksiletin / Flekainid geç Na+ akımını bloke ederek QTc’yi kısaltır!',
+    pearlEn: 'Gain-of-function persistent late Na+ current (SCN5A: LQT3, SIDS) prolongs Phase 2 plateau, creating a long flat isoelectric ST segment with a late-appearing peaked T wave (bradycardia/sleep-triggered; responsive to Mexiletine).'
+  },
+  {
+    id: 'lqts8_timothy', cat: 'channelopathy', color: '#e11d48',
+    tr: 'Timothy Sendromu (LQTS8: CACNA1C ↑ICa,L · Faz 2 & T Alternansı)', en: 'Timothy Syndrome (LQTS8: CACNA1C ↑ICa,L · Macroscopic T Alternans)',
+    hr: 58, pr: 174, qrs: 92, qt: 575, axis: 50, culprit: 'None',
+    affectedLeads: ['V2', 'V3', 'V4', 'V5', 'II'], reciprocalLeads: [],
+    morph: { lqts: true, timothyAlternans: true },
+    pearlTr: 'Faz 2 L-tipi kalsiyum kanalı (CACNA1C: Cav1.2) kapanma kusuru (↑ICa,L): Aksiyon potansiyeli Faz 2 platosu aşırı uzar (QTc > 560–600 ms), vurudan vuruya makroskopik T-dalgası alternansı, 2:1 fonksiyonel AV blok, sindaktili ve otizm spektrumu ile seyreden en ağır LQTS alt tipidir (LQTS8).',
+    pearlEn: 'Phase 2 L-type Ca2+ channel gain-of-function (CACNA1C: LQTS8) causes extreme QT prolongation, beat-to-beat macroscopic T-wave alternans, functional 2:1 AV block, and syndactyly.'
+  },
+  {
+    id: 'ats1_lqt7_kcnj2', cat: 'channelopathy', color: '#10b981',
+    tr: 'Andersen-Tawil (LQTS7/ATS1: KCNJ2 ↓IK1) & CPVT3 (Dev U + Bidireksiyonel VT)', en: 'Andersen-Tawil (LQTS7/ATS1: KCNJ2 ↓IK1) & CPVT3 (Giant U + Bi-VT)',
+    hr: 68, pr: 162, qrs: 92, qt: 480, axis: 55, culprit: 'None',
+    affectedLeads: ['V2', 'V3', 'V4', 'II'], reciprocalLeads: [],
+    morph: { ats1UWave: true },
+    pearlTr: 'Faz 3 sonu ve Faz 4 içe doğrultucu K+ kanalı (IK1 — KCNJ2: LQTS7, ATS1, CPVT3, DAVD1; KCNJ3: LQTS13) fonksiyon kaybı: V2–V3’te dev U dalgası (uzamış QU / QTu), hipo/hiperkalemik periyodik paralizi, dismorfik yüz ve DAD kaynaklı Bidireksiyonel VT (CPVT3)!',
+    pearlEn: 'Phase 3/4 inward rectifier IK1 loss-of-function (KCNJ2: LQTS7, ATS1, CPVT3, DAVD1; KCNJ3: LQTS13) causes prominent giant U waves (long QTu), periodic paralysis, and bidirectional VT.'
+  },
+  {
+    id: 'sqts', cat: 'channelopathy', color: '#06b6d4',
+    tr: 'Kısa QT Sendromu (SQTS1: KCNH2 ↑IKr · SQT2: KCNQ1 ↑IKs · SQT3: KCNJ2 ↑IK1)', en: 'Short QT Syndrome (SQTS1: KCNH2 ↑IKr · SQT2: KCNQ1 · SQT3: KCNJ2)',
+    hr: 68, pr: 150, qrs: 84, qt: 280, axis: 58, culprit: 'None',
+    affectedLeads: ['V2', 'V3', 'V4'], reciprocalLeads: [],
+    morph: { sqts: true },
+    pearlTr: 'Faz 3 potasyum kanallarında fonksiyon artışı (KCNH2: SQTS1/AF2, KCNQ1: SQT2/AF1, KCNJ2: SQT3/AF4): Aksiyon potansiyeli süresi aşırı kısalır (QTc < 340 ms), ST segmenti kaybolur ve QRS bitiminden hemen sonra dar tabanlı, uzun sivri T dalgaları yükselir. Kinidin QTc’yi uzatarak VF’den korur!',
+    pearlEn: 'Gain-of-function K+ channelopathy (KCNH2: SQTS1, KCNQ1: SQT2, KCNJ2: SQT3) with QTc <340 ms, absent ST segment, tall narrow peaked T waves, and high risk of AFib and VF (treated with Quinidine).'
+  },
+  {
+    id: 'ers_jwave', cat: 'channelopathy', color: '#38bdf8',
+    tr: 'Erken Repolarizasyon Sendromu (ERS: KCNJ8 ↑IK,ATP / CACNA1C ↓ICa,L · J Dalgası)', en: 'Early Repolarization Syndrome (ERS: KCNJ8 / CACNA1C · J-Wave Notch)',
+    hr: 58, pr: 158, qrs: 88, qt: 370, axis: 62, culprit: 'None',
+    affectedLeads: ['II', 'III', 'aVF', 'V4', 'V5', 'V6'], reciprocalLeads: [],
+    morph: { ersJWave: true },
+    pearlTr: 'Faz 1/2 transmural repolarizasyon gradyenti (KCNJ8: ERS & AF10 ATP-duyarlı K+ akımı artışı; CACNA1C Faz 2 ↓ICa,L): İnferior (II, III, aVF) ve lateral (V4–V6) derivasyonlarda QRS sonunda belirgin çentikli J dalgası (≥0.1 mV, "balık oltası / fish-hook") ve konkav ST yüksekliği.',
+    pearlEn: 'KCNJ8 (IK,ATP gain-of-function: ERS, AF10) or Phase 2 ↓ICa,L produces prominent notched/slurred J waves (fish-hook pattern ≥1 mm) in inferior/lateral leads.'
+  },
+  {
+    id: 'sss_pccd_af_scn5a', cat: 'channelopathy', color: '#fbbf24',
+    tr: 'Hasta Sinüs (SSS), İletim Hastalığı (PCCD: SCN5A) & Ailesel AF (KCNA5: AF7 ↑IKur)', en: 'Sick Sinus (SSS), PCCD (SCN5A ↓INa) & Familial AF (KCNA5: AF7 ↑IKur)',
+    hr: 48, pr: 235, qrs: 134, qt: 410, axis: -35, culprit: 'None',
+    affectedLeads: ['II', 'V1', 'V6'], reciprocalLeads: [],
+    morph: { sssPccd: true, prMs: 235 },
+    pearlTr: 'SCN5A (↓INa) mutasyonları SA düğüm çıkışını ve His-Purkinje iletimini yavaşlatarak Hasta Sinüs Sendromu (SSS), İlerleyici Kardiyak İletim Hastalığı (PCCD / Lenègre-Lev: PR uzaması + geniş QRS) ve Ailesel AF (FA3) yapar. Atriyal spesifik IKur kanalı (KCNA5: AF7) mutasyonları ise erken Faz 3’ü bozarak ailesel AFib tetikler.',
+    pearlEn: 'Loss-of-function SCN5A (↓INa) causes Sick Sinus Syndrome (SSS), Progressive Cardiac Conduction Disease (PCCD: prolonged PR + wide QRS), and FA3, while atrial IKur (KCNA5) causes Familial AF7.'
   },
   {
     id: 'wpw', cat: 'channelopathy', color: '#f59e0b',
@@ -244,24 +316,6 @@ export const CLINICAL_CONDITIONS = [
     morph: { wpw: true, prMs: 95 },
     pearlTr: 'Aksesuar AV yol (Kent demeti) ventrikülü erken uyarır: Kısa PR (<120 ms), QRS başlangıcında yavaş yükselen "Delta dalgası" ve geniş QRS (>110 ms). Pre-eksite AFib’de AV düğüm blokerleri (Adenozin, Verapamil, Digoksin, Beta-bloker) KONTRENDİKEDİR (VF riski; Prokainamid veya Kardiyoversiyon seçilir)!',
     pearlEn: 'Short PR (<120 ms), slurred initial QRS upstroke (delta wave), and widened QRS. In pre-excited AFib, AV nodal blockers (adenosine, CCBs, digoxin) are contraindicated!'
-  },
-  {
-    id: 'lqts', cat: 'channelopathy', color: '#a855f7',
-    tr: 'Uzun QT Sendromu (LQTS · QTc > 480 ms)', en: 'Congenital / Acquired Long QT Syndrome (LQTS)',
-    hr: 64, pr: 160, qrs: 88, qt: 520, axis: 55, culprit: 'None',
-    affectedLeads: ['II', 'V2', 'V3', 'V5'], reciprocalLeads: [],
-    morph: { lqts: true },
-    pearlTr: 'Erkekte QTc ≥ 450 ms, kadında ≥ 460 ms (QTc > 500 ms yüksek Torsades riski). LQT1: geniş tabanlı T (egzersiz/yüzme), LQT2: düşük genlikli çentikli/bifid T (işitsel uyaran), LQT3: uzun izoelektrik ST + geç sivri T (uyku).',
-    pearlEn: 'Prolonged ventricular repolarization (QTc >480–500 ms) predisposing to Early Afterdepolarizations (EADs) and Torsades de Pointes.'
-  },
-  {
-    id: 'sqts', cat: 'channelopathy', color: '#06b6d4',
-    tr: 'Kısa QT Sendromu (SQTS · QTc < 340 ms)', en: 'Short QT Syndrome (SQTS · QTc < 340 ms)',
-    hr: 68, pr: 150, qrs: 84, qt: 280, axis: 58, culprit: 'None',
-    affectedLeads: ['V2', 'V3', 'V4'], reciprocalLeads: [],
-    morph: { sqts: true },
-    pearlTr: 'Potasyum kanalı (KCNH2/KCNQ1) fonksiyon artışı: QTc < 340 ms, ST segmenti neredeyse tamamen kaybolmuştur ve QRS bitiminden hemen sonra dar tabanlı, uzun, sivri T dalgaları yükselir. AFib ve ani kardiyak ölüm riski taşır.',
-    pearlEn: 'Gain-of-function potassium channelopathy with QTc <340 ms, virtually absent ST segment, and tall, narrow-based peaked T waves.'
   },
   {
     id: 'arvc_hcm', cat: 'channelopathy', color: '#ec4899',
@@ -776,9 +830,10 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
   const pCenter = Math.max(0.08, 0.16 - prShift * 0.45);
 
   if (m.afib) {
-    const fPhase = (beatIndex + phase) * 38;
-    const fAmp = lead === 'V1' || lead === 'II' ? 0.07 : 0.04;
-    v += fAmp * (Math.sin(fPhase) + 0.6 * Math.cos(fPhase * 1.7));
+    // Integer harmonics (5 and 8 cycles per beat) ensure C-infinity phase continuity across every beat boundary
+    const fTheta = (beatIndex + phase) * 6.283185307179586;
+    const fAmp = lead === 'V1' || lead === 'II' ? 0.062 : 0.036;
+    v += fAmp * (Math.sin(fTheta * 5) + 0.55 * Math.cos(fTheta * 8));
   } else if (m.flutter) {
     const saw = ((phase * 4) % 1);
     const fSign = ['II', 'III', 'aVF'].includes(lead) ? -1 : lead === 'V1' ? 1 : -0.4;
@@ -826,12 +881,12 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
   if (m.rbbb) {
     if (lead === 'V1' || lead === 'V2') {
       // rsR' rabbit ears in V1-V2
-      v += gauss(phase, qrsCenter - 0.018, 0.010, 0.28);
-      v += gauss(phase, qrsCenter, 0.011, -0.22);
+      v += gauss(phase, qrsCenter - 0.018, 0.011, 0.28);
+      v += gauss(phase, qrsCenter, 0.012, -0.22);
       v += gauss(phase, qrsCenter + 0.028, 0.018, 0.78);
     } else if (['I', 'aVL', 'V5', 'V6'].includes(lead)) {
       // Wide slurred S in lateral leads
-      v += gauss(phase, qrsCenter - 0.01, 0.012, 0.75);
+      v += gauss(phase, qrsCenter - 0.01, 0.013, 0.75);
       v += gauss(phase, qrsCenter + 0.028, 0.022, -0.38);
     } else {
       v += gauss(phase, qrsCenter, 0.016, 0.75 * proj);
@@ -858,30 +913,30 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     // Standard narrow QRS with optional pathological Q or tall R in V1-V2
     if (m.qAnt && ['V1', 'V2', 'V3', 'V4'].includes(lead)) {
       v += gauss(phase, qrsCenter - 0.014, 0.014, -0.55);
-      v += gauss(phase, qrsCenter + 0.006, 0.012, 0.35);
+      v += gauss(phase, qrsCenter + 0.006, 0.013, 0.35);
     } else if (m.aneurysm && ['V1', 'V2', 'V3', 'V4'].includes(lead)) {
       v += gauss(phase, qrsCenter, 0.020, -0.95);
     } else if (m.postMi && ['V1', 'V2', 'V3'].includes(lead)) {
       // Tall broad R wave in V1-V3 (mirror of posterior Q)
       v += gauss(phase, qrsCenter - 0.004, 0.015, 0.82);
-      v += gauss(phase, qrsCenter + 0.018, 0.012, -0.22);
+      v += gauss(phase, qrsCenter + 0.018, 0.013, -0.22);
     } else if (m.pe && (lead === 'I' || lead === 'III')) {
       // S1Q3T3 pattern
       if (lead === 'I') {
-        v += gauss(phase, qrsCenter - 0.008, 0.011, 0.55);
-        v += gauss(phase, qrsCenter + 0.014, 0.013, -0.48);
+        v += gauss(phase, qrsCenter - 0.008, 0.012, 0.55);
+        v += gauss(phase, qrsCenter + 0.014, 0.014, -0.48);
       } else {
-        v += gauss(phase, qrsCenter - 0.015, 0.012, -0.38);
-        v += gauss(phase, qrsCenter + 0.004, 0.012, 0.62);
+        v += gauss(phase, qrsCenter - 0.015, 0.013, -0.38);
+        v += gauss(phase, qrsCenter + 0.004, 0.013, 0.62);
       }
     } else if (m.arvcHcm && ['I', 'aVL', 'V5', 'V6'].includes(lead)) {
       // Deep narrow "dagger Q" in lateral leads
-      v += gauss(phase, qrsCenter - 0.016, 0.007, -0.52);
-      v += gauss(phase, qrsCenter + 0.002, 0.012, 1.15);
+      v += gauss(phase, qrsCenter - 0.016, 0.009, -0.52);
+      v += gauss(phase, qrsCenter + 0.002, 0.014, 1.15);
     } else {
-      v += gauss(phase, qrsCenter - 0.014, 0.008, -0.09 * Math.sign(proj || 1));
-      v += gauss(phase, qrsCenter, 0.012, 0.92 * proj * qrsScale);
-      v += gauss(phase, qrsCenter + 0.015, 0.009, -0.18 * Math.sign(proj || 1));
+      v += gauss(phase, qrsCenter - 0.015, 0.010, -0.09 * Math.sign(proj || 1));
+      v += gauss(phase, qrsCenter, 0.015, 0.92 * proj * qrsScale);
+      v += gauss(phase, qrsCenter + 0.016, 0.011, -0.18 * Math.sign(proj || 1));
     }
 
     // AVNRT pseudo-r' in V1 / pseudo-S in II/III/aVF
@@ -898,6 +953,17 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     // TCA / Na+ block terminal R wave in aVR
     if (m.naBlock && lead === 'aVR') {
       v += gauss(phase, qrsCenter + 0.024, 0.016, 0.46);
+    }
+
+    // SSS / PCCD (SCN5A loss-of-function): broadened notched QRS conduction delay
+    if (m.sssPccd) {
+      v += gauss(phase, qrsCenter + 0.022, 0.016, -0.26 * Math.sign(proj || 1));
+    }
+
+    // Early Repolarization Syndrome (ERS: KCNJ8 / CACNA1C): fish-hook J-wave notch at QRS-ST junction
+    if (m.ersJWave && ['II', 'III', 'aVF', 'V4', 'V5', 'V6'].includes(lead)) {
+      v += gauss(phase, qrsCenter + 0.024, 0.0085, 0.26);
+      v += gauss(phase, 0.38, 0.048, 0.12);
     }
   }
 
@@ -936,13 +1002,41 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
   let tAmp = 0.28 * Math.sign(proj || 1);
   if (lead === 'aVR') tAmp = -0.24;
 
-  if (m.lqts) {
-    tCenter = 0.58;
-    tWidth = 0.062;
+  // Channelopathy-specific repolarization (LQT1/JLN, LQT2 bifid, LQT3 late, LQTS8 Timothy alternans, ATS1/LQT7 U wave, SQTS)
+  if (m.lqt2Bifid) {
+    // LQT2 (KCNH2 / KCNE2 ↓IKr): notched / bifid double-humped T wave
+    const pol = lead === 'aVR' ? -1 : Math.sign(proj || 1);
+    v += gauss(phase, 0.51, 0.032, 0.19 * pol);
+    v += gauss(phase, 0.60, 0.034, 0.24 * pol);
+    return v;
+  }
+  if (m.lqt3Late) {
+    // LQT3 (SCN5A late ↑INa,L): long flat isoelectric ST segment + late narrow peaked T wave
+    tCenter = 0.64;
+    tWidth = 0.032;
+    tAmp = (lead === 'aVR' ? -0.34 : 0.38 * Math.sign(proj || 1));
+  } else if (m.timothyAlternans) {
+    // LQTS8 Timothy syndrome (CACNA1C ↑ICa,L): extreme QT prolongation + beat-to-beat macroscopic T-wave alternans
+    tCenter = 0.63;
+    tWidth = 0.054;
+    const altPol = (beatIndex % 2 === 0) ? 1 : -0.65;
+    tAmp = 0.44 * altPol * (lead === 'aVR' ? -1 : Math.sign(proj || 1));
+  } else if (m.ats1UWave) {
+    // Andersen-Tawil (LQTS7 / ATS1 / CPVT3: KCNJ2 ↓IK1): normal-width T wave + prominent giant U wave at 0.64
+    tCenter = 0.47;
+    tWidth = 0.038;
+    const uPol = lead === 'aVR' ? -1 : 1;
+    v += gauss(phase, 0.63, 0.042, 0.28 * uPol);
+  } else if (m.lqts) {
+    // LQT1 / JLN1-2 (KCNQ1 / KCNE1 ↓IKs): broad-based prolonged T wave
+    tCenter = 0.57;
+    tWidth = 0.068;
+    tAmp = (lead === 'aVR' ? -0.30 : 0.34 * Math.sign(proj || 1));
   } else if (m.sqts) {
-    tCenter = 0.38;
-    tWidth = 0.022;
-    tAmp = 0.52 * Math.sign(proj || 1);
+    // SQTS1-3 (KCNH2 / KCNQ1 / KCNJ2 ↑IK): virtually absent ST segment + tall narrow peaked T wave
+    tCenter = 0.375;
+    tWidth = 0.021;
+    tAmp = 0.54 * Math.sign(proj || 1);
   }
 
   if (m.hyperT && ['V1', 'V2', 'V3', 'V4'].includes(lead)) {
@@ -979,6 +1073,335 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
 
   v += gauss(phase, tCenter, tWidth, tAmp);
   return v;
+}
+
+// ============================================================================
+// CARDIAC CHANNELOPATHIES ATLAS — PHASE 0–4 ION CURRENTS, GENES & SYNDROMES
+// ============================================================================
+
+export const CHANNELOPATHY_ACRONYMS = [
+  { code: 'AF', en: 'Atrial fibrillation (AF1, AF2, FA3, AF4, AF5, AF7, AF10)', tr: 'Ailesel Atriyal Fibrilasyon (AF1–AF10)' },
+  { code: 'BrS', en: 'Brugada syndrome (BrS1: SCN5A, BrS5: KCNE3, KCND3)', tr: 'Brugada Sendromu (BrS1, BrS5)' },
+  { code: 'ERS', en: 'Early repolarization syndrome (KCNJ8, CACNA1C)', tr: 'Erken Repolarizasyon Sendromu (J Dalgası)' },
+  { code: 'JLN', en: 'Jervell and Lange-Nielsen syndrome (JLN1: KCNQ1, JLN2: KCNE1)', tr: 'Jervell ve Lange-Nielsen Sendromu (Uzun QT + Sağırlık)' },
+  { code: 'LQT', en: 'Long QT syndrome (LQTS1–3, LQTS5–8, LQTS13)', tr: 'Uzun QT Sendromu (LQTS1–13)' },
+  { code: 'SQT', en: 'Short QT syndrome (SQTS1: KCNH2, SQT2: KCNQ1, SQT3: KCNJ2)', tr: 'Kısa QT Sendromu (SQTS1–3)' },
+  { code: 'SIDS', en: 'Sudden Infant Death Syndrome (SCN5A, KCNH2, KCNE2, KCNQ1)', tr: 'Ani Bebek Ölümü Sendromu (SIDS)' },
+  { code: 'SSS', en: 'Sick Sinus Syndrome (SCN5A)', tr: 'Hasta Sinüs Sendromu (SSS)' },
+  { code: 'PCCD', en: 'Progressive cardiac conduction Disease (SCN5A / Lenègre-Lev)', tr: 'İlerleyici Kardiyak İletim Hastalığı (PCCD)' },
+  { code: 'ATS1 / CPVT3', en: 'Andersen-Tawil Syndrome 1 & Catecholaminergic Polymorphic VT 3 (KCNJ2)', tr: 'Andersen-Tawil (ATS1) & Bidireksiyonel VT (CPVT3)' }
+];
+
+export const CARDIAC_CHANNELOPATHY_NODES = [
+  {
+    id: 'phase0_ina',
+    phase: 'Phase 0',
+    current: 'INa',
+    direction: 'inward', // Red channel: Na+ influx
+    genes: ['SCN5A'],
+    boxLines: ['SCN5A: LQTS (LQT3),', 'BrS1, SIDS, FA3,', 'SSS, PCCD'],
+    syndromes: ['LQT3', 'BrS1', 'SIDS', 'FA3 (AF3)', 'SSS', 'PCCD'],
+    condId: 'lqt3_scn5a',
+    altCondIds: ['brugada_1', 'sss_pccd_af_scn5a'],
+    titleTr: 'Faz 0 Hızlı Sodyum Akımı (INa · SCN5A — Nav1.5)',
+    titleEn: 'Phase 0 Fast Inward Sodium Current (INa · SCN5A — Nav1.5)',
+    mechTr: 'Fonksiyon kaybı (↓INa) Faz 0 çıkış eğimini (dV/dtmax) düşürerek Brugada Tip 1 (BrS1), Hasta Sinüs Sendromu (SSS), İlerleyici İletim Hastalığı (PCCD) ve Ailesel AF (FA3) yapar. İnaktivasyon kusuru (kalıcı geç ↑INa,L) ise Faz 2 platosunu uzatarak LQT3 ve SIDS oluşturur.',
+    mechEn: 'Loss-of-function (↓INa) reduces Phase 0 upstroke velocity causing BrS1, SSS, PCCD, and FA3. Gain-of-function persistent late Na+ current (↑INa,L) prolongs the plateau causing LQT3 and SIDS.',
+    apOverlayPath: 'M 38 232 L 74 232 L 78 62 L 92 98 C 145 96, 205 98, 250 112 C 276 138, 294 188, 312 232 L 350 232'
+  },
+  {
+    id: 'phase1_ito',
+    phase: 'Phase 1',
+    current: 'Ito',
+    direction: 'outward', // Green channel: K+ efflux
+    genes: ['KCNE3', 'KCND3'],
+    boxLines: ['KCNE3: BrS5', 'KCND3: BrS'],
+    syndromes: ['BrS5', 'BrS (BrS9)'],
+    condId: 'brugada_1',
+    altCondIds: ['ers_jwave'],
+    titleTr: 'Faz 1 Geçici Dışa Potasyum Akımı (Ito · KCNE3 / KCND3 — Kv4.3)',
+    titleEn: 'Phase 1 Transient Outward K+ Current (Ito · KCNE3 / KCND3 — Kv4.3)',
+    mechTr: 'KCNE3 (BrS5) ve KCND3 (BrS) fonksiyon artışı mutasyonları sağ ventrikül çıkım yolu (RVOT) epikardında Faz 1 Ito çentiğini ("spike-and-dome") derinleştirir; V1–V2’de Coved ST elevasyonu ve Faz-2 reentrisi (VF) yaratır.',
+    mechEn: 'Gain-of-function in KCNE3 (BrS5) or KCND3 (BrS) accentuates the epicardial Phase 1 Ito notch in RVOT, creating transmural dispersion and Brugada Type 1 ST elevation in V1–V2.',
+    apOverlayPath: 'M 38 232 L 74 232 L 78 58 L 94 136 C 118 98, 152 104, 182 118 C 208 148, 224 195, 244 232 L 350 232'
+  },
+  {
+    id: 'phase2_ica',
+    phase: 'Phase 2',
+    current: 'INa / ICa,L',
+    direction: 'inward', // Red channels: Ca2+ & late Na+ influx
+    genes: ['CACNA1C', 'CACNB2b'],
+    boxLines: ['Phase 2: LQTS8, BrS, ERS'],
+    syndromes: ['LQTS8 (Timothy)', 'BrS3/4', 'ERS'],
+    condId: 'lqts8_timothy',
+    altCondIds: ['ers_jwave', 'brugada_1'],
+    titleTr: 'Faz 2 Plato İçeri Kalsiyum & Geç Sodyum Akımı (ICa,L / INa · CACNA1C)',
+    titleEn: 'Phase 2 Plateau Inward Ca2+ & Late Na+ Currents (ICa,L / INa · CACNA1C)',
+    mechTr: 'L-tipi Ca2+ kanalı (CACNA1C) fonksiyon artışı (↑ICa,L) Faz 2 platosunu aşırı uzatarak Timothy Sendromu (LQTS8: ekstrem QTc + T alternansı + sindaktili) yapar; fonksiyon kaybı (↓ICa,L) ise platosu çökertip Brugada (BrS) ve Erken Repolarizasyon Sendromu (ERS) oluşturur.',
+    mechEn: 'Gain-of-function in L-type Ca2+ current (↑ICa,L) causes Timothy Syndrome (LQTS8) with extreme Phase 2 prolongation and T-wave alternans; loss-of-function (↓ICa,L) causes Brugada (BrS) and Early Repolarization Syndrome (ERS).',
+    apOverlayPath: 'M 38 232 L 74 232 L 78 58 L 92 94 C 155 88, 220 92, 265 110 C 292 142, 310 192, 328 232 L 350 232'
+  },
+  {
+    id: 'phase3_ikur',
+    phase: 'Early Phase 3',
+    current: 'IKur',
+    direction: 'outward', // Green channel: K+ efflux
+    genes: ['KCNA5'],
+    boxLines: ['KCNA5: AF7'],
+    syndromes: ['AF7'],
+    condId: 'sss_pccd_af_scn5a',
+    altCondIds: ['afib'],
+    titleTr: 'Erken Faz 3 Ultra-Hızlı Gecikmiş Doğrultucu K+ Akımı (IKur · KCNA5 — Kv1.5)',
+    titleEn: 'Early Phase 3 Ultra-Rapid Delayed Rectifier K+ Current (IKur · KCNA5 — Kv1.5)',
+    mechTr: 'Atriyal miyokarda özgü Kv1.5 (KCNA5) kanalını kodlar. Mutasyonları atriyal aksiyon potansiyeli süresini ve efektif refrakter periyodu (ERP) bozarak genç yaşta izole Ailesel Atriyal Fibrilasyon Tip 7 (AF7) gelişimine yol açar.',
+    mechEn: 'Encodes the atrial-selective Kv1.5 channel. Mutations alter atrial repolarization and effective refractory period (ERP), causing Familial Atrial Fibrillation Type 7 (AF7).',
+    apOverlayPath: 'M 38 232 L 74 232 L 78 58 L 92 96 C 118 102, 145 122, 172 156 C 194 188, 210 212, 226 232 L 350 232'
+  },
+  {
+    id: 'phase3_ikr',
+    phase: 'Phase 3 (IKr)',
+    current: 'IKr',
+    direction: 'outward', // Green channel: K+ efflux
+    genes: ['KCNH2', 'KCNE2'],
+    boxLines: ['KCNH2: LQTS2, SIDS, SQTS1, AF2', 'KCNE2: LQTS6, SIDS, AF5'],
+    syndromes: ['LQTS2', 'LQTS6', 'SIDS', 'SQTS1', 'AF2', 'AF5'],
+    condId: 'lqt2_kcnh2',
+    altCondIds: ['sqts'],
+    titleTr: 'Faz 3 Hızlı Gecikmiş Doğrultucu K+ Akımı (IKr · KCNH2 / KCNE2 — hERG)',
+    titleEn: 'Phase 3 Rapid Delayed Rectifier K+ Current (IKr · KCNH2 / KCNE2 — hERG)',
+    mechTr: 'KCNH2 (hERG alfa alt birimi) ve KCNE2 (MiRP1 beta alt birimi) fonksiyon kaybı (↓IKr) Faz 3 repolarizasyonu yavaşlatarak çentikli (bifid) T dalgalı LQTS2, LQTS6 ve SIDS yapar (ayrıca ilaç ilişkili Uzun QT hedefidir). Fonksiyon artışı (↑IKr) ise SQTS1 ve AF2/AF5 oluşturur.',
+    mechEn: 'Loss-of-function in KCNH2 (LQTS2, SIDS) or KCNE2 (LQTS6, SIDS) slows Phase 3 repolarization producing bifid/notched T waves and auditory-triggered TdP. Gain-of-function (↑IKr) causes Short QT (SQTS1) and AF2/AF5.',
+    apOverlayPath: 'M 38 232 L 74 232 L 78 58 L 92 96 C 132 98, 174 108, 212 134 C 244 158, 272 196, 302 232 L 350 232'
+  },
+  {
+    id: 'phase3_iks',
+    phase: 'Phase 3 (IKs)',
+    current: 'IKs',
+    direction: 'outward', // Green channel: K+ efflux
+    genes: ['KCNQ1', 'KCNE1'],
+    boxLines: ['KCNQ1: LQTS1, JLN1, SIDS, SQT2, AF1', 'KCNE1: LQTS5, JLN2'],
+    syndromes: ['LQTS1', 'LQTS5', 'JLN1', 'JLN2', 'SIDS', 'SQT2', 'AF1'],
+    condId: 'lqts',
+    altCondIds: ['sqts'],
+    titleTr: 'Faz 3 Yavaş Gecikmiş Doğrultucu K+ Akımı (IKs · KCNQ1 / KCNE1 — Kv7.1)',
+    titleEn: 'Phase 3 Slow Delayed Rectifier K+ Current (IKs · KCNQ1 / KCNE1 — Kv7.1)',
+    mechTr: 'KCNQ1 ve KCNE1 normalde sempatik (beta-adrenerjik) uyarı sırasında kalp hızlandığında QT’yi kısaltır. Kaybı (↓IKs) egzersiz/yüzme ile tetiklenen geniş tabanlı T dalgalı LQTS1, LQTS5, SIDS ve sağırlıkla giden Jervell ve Lange-Nielsen (JLN1/JLN2) yapar; artışı (↑IKs) SQT2 ve AF1 yapar.',
+    mechEn: 'KCNQ1 (Kv7.1) and KCNE1 (minK) mediate adrenergic QT shortening. Loss-of-function causes broad-based T waves in LQTS1, LQTS5, SIDS, and Jervell and Lange-Nielsen (JLN1/JLN2 with deafness); gain-of-function causes SQT2 and AF1.',
+    apOverlayPath: 'M 38 232 L 74 232 L 78 58 L 92 96 C 136 98, 182 112, 224 146 C 258 176, 284 206, 310 232 L 350 232'
+  },
+  {
+    id: 'phase4_ik1',
+    phase: 'Phase 3/4',
+    current: 'IK1 / IK,ATP',
+    direction: 'outward', // Green channel: K+ efflux stabilizing -85 mV
+    genes: ['KCNJ2', 'KCNJ3', 'KCNJ8'],
+    boxLines: ['KCNJ2: LQTS7, SQT3, AF4, CPVT3, ATS1, DAVD1', 'KCNJ3: LQTS13   KCNJ8: ERS   KCNJ8: AF10'],
+    syndromes: ['LQTS7 (ATS1)', 'SQT3', 'AF4', 'CPVT3', 'DAVD1', 'LQTS13', 'ERS', 'AF10'],
+    condId: 'ats1_lqt7_kcnj2',
+    altCondIds: ['ers_jwave', 'sqts'],
+    titleTr: 'Faz 3 Sonu & Faz 4 İçe Doğrultucu K+ Akımı (IK1 · KCNJ2 / KCNJ3 / KCNJ8 — Kir2.1)',
+    titleEn: 'Late Phase 3 & Phase 4 Inward Rectifier K+ Current (IK1 · KCNJ2 / KCNJ3 / KCNJ8)',
+    mechTr: 'KCNJ2 (Kir2.1) −85 mV dinlenim membran potansiyelini korur ve Faz 3’ü sonlandırır: Kaybı (↓IK1) Andersen-Tawil Sendromu (ATS1 / LQTS7: dev U dalgası, periyodik paralizi), CPVT3 (Bidireksiyonel VT) ve DAVD1 yapar; artışı (↑IK1) SQT3 ve AF4 yapar. KCNJ3 LQTS13; KCNJ8 (Kir6.1 IK,ATP) ise ERS ve AF10 yapar.',
+    mechEn: 'KCNJ2 (Kir2.1) stabilizes the −85 mV resting potential and terminal Phase 3: loss-of-function causes Andersen-Tawil Syndrome (ATS1/LQTS7 with giant U waves), CPVT3 (bidirectional VT), and DAVD1; gain-of-function causes SQT3 and AF4. KCNJ3 causes LQTS13; KCNJ8 causes ERS and AF10.',
+    apOverlayPath: 'M 38 232 L 74 232 L 78 58 L 92 96 C 122 98, 158 108, 186 142 C 206 172, 222 204, 240 220 C 262 208, 286 218, 314 232 L 350 232'
+  }
+];
+
+export function buildChannelopathyApSvg(activeNodeId = 'phase0_ina', isTr = true) {
+  const activeNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.id === activeNodeId) || CARDIAC_CHANNELOPATHY_NODES[0];
+  const isAct = id => activeNode.id === id;
+
+  // Helper to draw a double-barrel transmembrane ion channel icon (red for inward Na+/Ca2+, green for outward K+)
+  const drawChannelGate = (cx, cy, angleDeg, isOutward, active, arrowDx, arrowDy) => {
+    const fillCol = isOutward ? (active ? '#34d399' : '#10b981') : (active ? '#f87171' : '#ef4444');
+    const strokeCol = active ? '#ffffff' : (isOutward ? '#059669' : '#b91c1c');
+    const arrowCol = isOutward ? '#6ee7b7' : '#fca5a5';
+    return `
+      <g transform="translate(${cx},${cy})" ${active ? 'filter="url(#chanGlow)"' : ''}>
+        <g transform="rotate(${angleDeg})">
+          <rect x="-11" y="-12" width="8" height="24" rx="2.5" fill="${fillCol}" stroke="${strokeCol}" stroke-width="${active ? '1.8' : '1.1'}" opacity="${active ? '1' : '0.88'}"/>
+          <rect x="3" y="-12" width="8" height="24" rx="2.5" fill="${fillCol}" stroke="${strokeCol}" stroke-width="${active ? '1.8' : '1.1'}" opacity="${active ? '1' : '0.88'}"/>
+        </g>
+        <line x1="${-arrowDx * 0.7}" y1="${-arrowDy * 0.7}" x2="${arrowDx}" y2="${arrowDy}" stroke="${arrowCol}" stroke-width="${active ? '2.4' : '1.7'}" marker-end="url(#${isOutward ? 'arrowGreen' : 'arrowRed'})"/>
+      </g>
+    `;
+  };
+
+  return `
+    <svg viewBox="0 0 680 410" class="chan-ap-svg" role="img" aria-label="${isTr ? 'Kardiyak Kanalopatiler: Faz 0-4 Aksiyon Potansiyeli, İyon Kanalları ve Genetik Sendromlar' : 'Cardiac Channelopathies: Phase 0-4 Action Potential, Ion Channels & Genetic Syndromes'}">
+      <defs>
+        <radialGradient id="chanBgGrad" cx="45%" cy="50%" r="65%">
+          <stop offset="0%" stop-color="#0f1d32"/>
+          <stop offset="100%" stop-color="#060c17"/>
+        </radialGradient>
+        <filter id="chanGlow" x="-35%" y="-35%" width="170%" height="170%">
+          <feGaussianBlur stdDeviation="3.5" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <marker id="arrowRed" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#fca5a5"/>
+        </marker>
+        <marker id="arrowGreen" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#6ee7b7"/>
+        </marker>
+      </defs>
+
+      <!-- Dark Studio Background -->
+      <rect x="0" y="0" width="680" height="410" rx="12" fill="url(#chanBgGrad)"/>
+
+      <!-- Title Banner -->
+      <text x="20" y="28" fill="#34d399" font-size="16" font-weight="800" letter-spacing="0.03em">
+        ${isTr ? 'Kardiyak Kanalopatiler (Faz 0–4 Aksiyon Potansiyeli & Gen Haritası)' : 'Cardiac Channelopathies (Phase 0–4 Action Potential & Gene Atlas)'}
+      </text>
+
+      <!-- Top-Right Syndrome Legend Box (Exact Match to Reference Diagram) -->
+      <g transform="translate(382, 38)">
+        <rect x="0" y="0" width="284" height="122" rx="6" fill="rgba(15, 23, 42, 0.92)" stroke="rgba(148, 163, 184, 0.35)" stroke-width="1.2"/>
+        <text x="10" y="16" fill="#38bdf8" font-size="9.5" font-weight="800">AF</text>
+        <text x="48" y="16" fill="#e2e8f0" font-size="9.5">${isTr ? 'Atrial fibrillation (Ailesel AF1–AF10)' : 'Atrial fibrillation'}</text>
+        <text x="10" y="29" fill="#f43f5e" font-size="9.5" font-weight="800">BrS</text>
+        <text x="48" y="29" fill="#e2e8f0" font-size="9.5">${isTr ? 'Brugada syndrome (BrS1, BrS5)' : 'Brugada syndrome'}</text>
+        <text x="10" y="42" fill="#38bdf8" font-size="9.5" font-weight="800">ERS</text>
+        <text x="48" y="42" fill="#e2e8f0" font-size="9.5">${isTr ? 'Early repolarization syndrome (J dalgası)' : 'Early repolarization syndrome'}</text>
+        <text x="10" y="55" fill="#a855f7" font-size="9.5" font-weight="800">JLN</text>
+        <text x="48" y="55" fill="#e2e8f0" font-size="9.5">${isTr ? 'Jervell & Lange-Nielsen (Uzun QT + Sağırlık)' : 'Jervell and Lange-Nielsen syndrome'}</text>
+        <text x="10" y="68" fill="#c084fc" font-size="9.5" font-weight="800">LQT</text>
+        <text x="48" y="68" fill="#e2e8f0" font-size="9.5">${isTr ? 'Long QT syndrome (LQTS1–13)' : 'Long QT syndrome'}</text>
+        <text x="10" y="81" fill="#06b6d4" font-size="9.5" font-weight="800">SQT</text>
+        <text x="48" y="81" fill="#e2e8f0" font-size="9.5">${isTr ? 'Short QT syndrome (SQTS1–3)' : 'Short QT syndrome'}</text>
+        <text x="10" y="94" fill="#fb923c" font-size="9.5" font-weight="800">SIDS</text>
+        <text x="48" y="94" fill="#e2e8f0" font-size="9.5">${isTr ? 'Sudden Infant Death Syndrome' : 'Sudden Infant Death Syndrome'}</text>
+        <text x="10" y="106" fill="#fbbf24" font-size="9.5" font-weight="800">SSS</text>
+        <text x="48" y="106" fill="#e2e8f0" font-size="9.5">${isTr ? 'Sick Sinus Syndrome (Hasta Sinüs)' : 'Sick Sinus Syndrome'}</text>
+        <text x="10" y="118" fill="#f59e0b" font-size="9.5" font-weight="800">PCCD</text>
+        <text x="48" y="118" fill="#e2e8f0" font-size="9.5">${isTr ? 'Progressive cardiac conduction Disease' : 'Progressive cardiac conduction Disease'}</text>
+      </g>
+
+      <!-- Resting Potential -85 mV Baseline -->
+      <line x1="38" y1="352" x2="365" y2="352" stroke="rgba(148, 163, 184, 0.35)" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <text x="10" y="355" fill="#94a3b8" font-size="11" font-weight="800">−85 mV</text>
+
+      <!-- Normal Ventricular Action Potential Trajectory (Phase 0 -> 1 -> 2 -> 3 -> 4) -->
+      <path d="M 38 352 L 74 352 L 78 148 L 94 184 C 132 182, 166 194, 198 228 C 224 262, 238 308, 250 352 L 355 352"
+            fill="none" stroke="#10b981" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Active Channelopathy Mutated AP Trajectory Overlay (Dashed Gold/Rose) -->
+      <path d="${activeNode.apOverlayPath}" transform="translate(0, 120)"
+            fill="none" stroke="#fbbf24" stroke-width="2.6" stroke-dasharray="6,4" opacity="0.92" filter="url(#chanGlow)"/>
+
+      <!-- Phase Labels Along the Action Potential Curve -->
+      <text x="24" y="256" fill="#f8fafc" font-size="11" font-weight="800">Phase 0</text>
+      <text x="36" y="142" fill="#f8fafc" font-size="11" font-weight="800">Phase 1</text>
+      <text x="122" y="132" fill="#f8fafc" font-size="11" font-weight="800">Phase 2</text>
+      <text x="252" y="218" fill="#f8fafc" font-size="11" font-weight="800">Phase 3</text>
+      <text x="298" y="372" fill="#f8fafc" font-size="11" font-weight="800">Phase 4</text>
+
+      <!-- Transmembrane Ion Channels on the AP Curve -->
+      <!-- 1. Phase 0 INa (Red, Horizontal Inward) -->
+      ${drawChannelGate(78, 302, 90, false, isAct('phase0_ina'), 28, 0)}
+      <text x="112" y="306" fill="#fca5a5" font-size="11" font-weight="800">I<tspan dy="3" font-size="8.5">Na</tspan></text>
+
+      <!-- 2. Phase 1 Ito (Green, Vertical Outward Up) -->
+      ${drawChannelGate(92, 174, 0, true, isAct('phase1_ito'), 0, -48)}
+      <text x="78" y="118" fill="#6ee7b7" font-size="11" font-weight="800">I<tspan dy="3" font-size="8.5">to</tspan></text>
+      <text x="86" y="202" fill="#6ee7b7" font-size="10.5" font-weight="700">K⁺</text>
+
+      <!-- 3. Phase 2 INa & ICa,L (Red, Vertical Inward Down) -->
+      ${drawChannelGate(126, 184, 0, false, isAct('phase2_ica'), 0, 32)}
+      <text x="115" y="156" fill="#fca5a5" font-size="10.5" font-weight="800">I<tspan dy="3" font-size="8">Na</tspan></text>
+      ${drawChannelGate(164, 192, 0, false, isAct('phase2_ica'), 0, 34)}
+      <text x="155" y="156" fill="#fca5a5" font-size="10.5" font-weight="800">I<tspan dy="3" font-size="8">Ca</tspan></text>
+
+      <!-- 4. Early Phase 3 IKur (Green, Diagonal Outward) -->
+      ${drawChannelGate(204, 218, -38, true, isAct('phase3_ikur'), 28, -24)}
+      <text x="238" y="188" fill="#6ee7b7" font-size="11" font-weight="800">I<tspan dy="3" font-size="8.5">Kur</tspan></text>
+
+      <!-- 5. Mid Phase 3 IKr (Green, Horizontal Outward Right) -->
+      ${drawChannelGate(230, 260, 90, true, isAct('phase3_ikr'), 34, 0)}
+      <text x="272" y="255" fill="#6ee7b7" font-size="11" font-weight="800">I<tspan dy="3" font-size="8.5">Kr</tspan></text>
+      <text x="176" y="258" fill="#6ee7b7" font-size="10.5" font-weight="700">K⁺</text>
+
+      <!-- 6. Late Phase 3 IKs (Green, Horizontal Outward Right) -->
+      ${drawChannelGate(242, 308, 90, true, isAct('phase3_iks'), 34, 0)}
+      <text x="282" y="302" fill="#6ee7b7" font-size="11" font-weight="800">I<tspan dy="3" font-size="8.5">Ks</tspan></text>
+
+      <!-- 7. Phase 4 IK1 (Green, Vertical Outward Up at Resting Potential) -->
+      ${drawChannelGate(274, 352, 0, true, isAct('phase4_ik1'), 0, -34)}
+      <text x="284" y="328" fill="#6ee7b7" font-size="11" font-weight="800">I<tspan dy="3" font-size="8.5">K1</tspan></text>
+
+      <!-- CLICKABLE GENE & SYNDROME CALLOUT BOXES (7 Nodes) -->
+      <!-- Box 1: KCNE3 / KCND3 (Ito) -->
+      <g class="chan-svg-node" data-chan-node="phase1_ito" style="cursor:pointer">
+        <rect x="96" y="42" width="112" height="40" rx="5"
+              fill="${isAct('phase1_ito') ? 'rgba(16, 185, 129, 0.28)' : 'rgba(30, 41, 59, 0.9)'}"
+              stroke="${isAct('phase1_ito') ? '#34d399' : '#64748b'}" stroke-width="${isAct('phase1_ito') ? '2' : '1.2'}"/>
+        <text x="104" y="59" fill="#f8fafc" font-size="10.5" font-weight="800">KCNE3: BrS5</text>
+        <text x="104" y="74" fill="#cbd5e1" font-size="10.5" font-weight="700">KCND3: BrS</text>
+      </g>
+
+      <!-- Box 2: Phase 2 LQTS8, BrS, ERS -->
+      <g class="chan-svg-node" data-chan-node="phase2_ica" style="cursor:pointer">
+        <rect x="174" y="102" width="136" height="28" rx="5"
+              fill="${isAct('phase2_ica') ? 'rgba(244, 63, 94, 0.28)' : 'rgba(30, 41, 59, 0.9)'}"
+              stroke="${isAct('phase2_ica') ? '#fb7185' : '#64748b'}" stroke-width="${isAct('phase2_ica') ? '2' : '1.2'}"/>
+        <text x="182" y="120" fill="#f8fafc" font-size="10.5" font-weight="800">LQTS8, BrS, ERS</text>
+      </g>
+
+      <!-- Box 3: KCNA5: AF7 (IKur) -->
+      <g class="chan-svg-node" data-chan-node="phase3_ikur" style="cursor:pointer">
+        <rect x="268" y="170" width="96" height="26" rx="5"
+              fill="${isAct('phase3_ikur') ? 'rgba(16, 185, 129, 0.28)' : 'rgba(30, 41, 59, 0.9)'}"
+              stroke="${isAct('phase3_ikur') ? '#34d399' : '#64748b'}" stroke-width="${isAct('phase3_ikur') ? '2' : '1.2'}"/>
+        <text x="276" y="187" fill="#f8fafc" font-size="10.5" font-weight="800">KCNA5: AF7</text>
+      </g>
+
+      <!-- Box 4: KCNH2 & KCNE2 (IKr) -->
+      <g class="chan-svg-node" data-chan-node="phase3_ikr" style="cursor:pointer">
+        <rect x="308" y="232" width="246" height="40" rx="5"
+              fill="${isAct('phase3_ikr') ? 'rgba(168, 85, 247, 0.28)' : 'rgba(30, 41, 59, 0.9)'}"
+              stroke="${isAct('phase3_ikr') ? '#c084fc' : '#64748b'}" stroke-width="${isAct('phase3_ikr') ? '2' : '1.2'}"/>
+        <text x="316" y="248" fill="#f8fafc" font-size="10.5" font-weight="800">KCNH2: LQTS2, SIDS, SQTS1, AF2</text>
+        <text x="316" y="264" fill="#cbd5e1" font-size="10.5" font-weight="700">KCNE2: LQTS6, SIDS, AF5</text>
+      </g>
+
+      <!-- Box 5: KCNQ1 & KCNE1 (IKs) -->
+      <g class="chan-svg-node" data-chan-node="phase3_iks" style="cursor:pointer">
+        <rect x="308" y="282" width="268" height="40" rx="5"
+              fill="${isAct('phase3_iks') ? 'rgba(168, 85, 247, 0.28)' : 'rgba(30, 41, 59, 0.9)'}"
+              stroke="${isAct('phase3_iks') ? '#c084fc' : '#64748b'}" stroke-width="${isAct('phase3_iks') ? '2' : '1.2'}"/>
+        <text x="316" y="298" fill="#f8fafc" font-size="10.5" font-weight="800">KCNQ1: LQTS1, JLN1, SIDS, SQT2, AF1</text>
+        <text x="316" y="314" fill="#cbd5e1" font-size="10.5" font-weight="700">KCNE1: LQTS5, JLN2</text>
+      </g>
+
+      <!-- Box 6: KCNJ2, KCNJ3, KCNJ8 (IK1 / IK,ATP) -->
+      <g class="chan-svg-node" data-chan-node="phase4_ik1" style="cursor:pointer">
+        <rect x="308" y="332" width="356" height="42" rx="5"
+              fill="${isAct('phase4_ik1') ? 'rgba(16, 185, 129, 0.28)' : 'rgba(30, 41, 59, 0.9)'}"
+              stroke="${isAct('phase4_ik1') ? '#34d399' : '#64748b'}" stroke-width="${isAct('phase4_ik1') ? '2' : '1.2'}"/>
+        <text x="316" y="348" fill="#f8fafc" font-size="10.5" font-weight="800">KCNJ2: LQTS7, SQT3, AF4, CPVT3, ATS1, DAVD1</text>
+        <text x="316" y="365" fill="#cbd5e1" font-size="10" font-weight="700">KCNJ3: LQTS13 · KCNJ8: ERS · KCNJ8: AF10</text>
+      </g>
+
+      <!-- Box 7: SCN5A (Phase 0 INa) -->
+      <g class="chan-svg-node" data-chan-node="phase0_ina" style="cursor:pointer">
+        <rect x="96" y="346" width="138" height="52" rx="5"
+              fill="${isAct('phase0_ina') ? 'rgba(244, 63, 94, 0.28)' : 'rgba(30, 41, 59, 0.9)'}"
+              stroke="${isAct('phase0_ina') ? '#fb7185' : '#64748b'}" stroke-width="${isAct('phase0_ina') ? '2' : '1.2'}"/>
+        <text x="104" y="362" fill="#f8fafc" font-size="10.5" font-weight="800">SCN5A: LQTS (LQT3),</text>
+        <text x="104" y="377" fill="#cbd5e1" font-size="10" font-weight="700">BrS1, SIDS, FA3,</text>
+        <text x="104" y="391" fill="#cbd5e1" font-size="10" font-weight="700">SSS, PCCD</text>
+      </g>
+
+      <!-- Legend for Solid vs Dashed AP Curve -->
+      <line x1="382" y1="176" x2="408" y2="176" stroke="#10b981" stroke-width="3.5"/>
+      <text x="415" y="179" fill="#cbd5e1" font-size="10" font-weight="700">${isTr ? 'Normal Ventrikül AP Eğrisi' : 'Normal Ventricular AP'}</text>
+      <line x1="382" y1="194" x2="408" y2="194" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="5,3"/>
+      <text x="415" y="197" fill="#fde68a" font-size="10" font-weight="700">${isTr ? `Seçili Kanalopati AP (${activeNode.current})` : `Channelopathy AP (${activeNode.current})`}</text>
+    </svg>
+  `;
 }
 
 // ============================================================================
@@ -1718,11 +2141,11 @@ export function evaluateRhythmTuner5Step(tunerState, isTr = true) {
   return { originChamber, established, ruledOut };
 }
 
-export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
+export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initialCollapsed = false }) {
   const studyState = loadStudyState();
   const st = {
     mode: 'simulator', // 'simulator' | '12lead' | 'study' | 'skillstat' | 'compass'
-    collapsed: false,
+    collapsed: Boolean(initialCollapsed),
     catId: 'ischemia',
     condId: 'anterior_stemi',
     activeLead: 'II',
@@ -1734,6 +2157,8 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
     noiseLevel: 0.0,
     conductionMs: 265, // 0..860 ms scrubber
     scrubberSpeed: 1,
+    chanNodeId: 'phase0_ina', // Active node in Cardiac Channelopathies Phase 0-4 AP diagram
+    rightPanelMode: 'auto', // 'auto' | 'heart' | 'channelopathy'
     // Study Hub state
     studyFilter: 'all', // 'all' | 'missed' | 'flagged'
     questionIdx: 0,
@@ -1782,7 +2207,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
   mount.prepend(root);
 
   let rafId = null;
-  let sweepSec = 0;
+  let sweepSec = 12.0;
   let lastTs = 0;
   let gameTickAccum = 0;
   let audioCtx = null;
@@ -1829,10 +2254,10 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
   }
 
   function buildHeartCoronarySvg(cond, stage, isTr) {
-    const culprit = st.blindMode ? 'None' : cond.culprit;
-    const ladActive = culprit === 'LAD';
-    const lcxActive = culprit === 'LCx';
-    const rcaActive = culprit === 'RCA';
+    const culprit = st.blindMode ? 'None' : (cond.culprit || 'None');
+    const ladActive = culprit.includes('LAD') || culprit.includes('LMCA');
+    const lcxActive = culprit.includes('LCx') || culprit.includes('LMCA');
+    const rcaActive = culprit.includes('RCA');
 
     const saActive = stage.id === 'sa';
     const atriaActive = stage.id === 'atria';
@@ -1845,12 +2270,37 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
     return `
       <svg viewBox="0 0 360 250" class="clin-heart-svg" role="img" aria-label="${isTr ? '3B Kalp İletim Yolu ve Koroner Arter Haritası' : '3D Heart Conduction & Coronary Artery Map'}">
         <defs>
-          <radialGradient id="heartGlow" cx="50%" cy="48%" r="52%">
-            <stop offset="0%" stop-color="#1e293b"/>
-            <stop offset="100%" stop-color="#020617"/>
+          <radialGradient id="heartStudioBg" cx="50%" cy="52%" r="60%">
+            <stop offset="0%" stop-color="#0f1d32"/>
+            <stop offset="65%" stop-color="#080f1d"/>
+            <stop offset="100%" stop-color="#030712"/>
           </radialGradient>
-          <filter id="nodeGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="3.5" result="blur"/>
+          <linearGradient id="myoLvGrad" x1="20%" y1="15%" x2="85%" y2="90%">
+            <stop offset="0%" stop-color="${ladActive || lcxActive ? '#7f1d1d' : '#334155'}"/>
+            <stop offset="55%" stop-color="${ladActive || lcxActive ? '#450a0a' : '#1e293b'}"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+          <linearGradient id="myoRvGrad" x1="15%" y1="20%" x2="80%" y2="90%">
+            <stop offset="0%" stop-color="${rcaActive ? '#7f1d1d' : '#293548'}"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+          <linearGradient id="aortaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f87171"/>
+            <stop offset="100%" stop-color="#991b1b"/>
+          </linearGradient>
+          <linearGradient id="svcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#60a5fa"/>
+            <stop offset="100%" stop-color="#1e3a8a"/>
+          </linearGradient>
+          <filter id="nodeGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3.2" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="ischemiaGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="7" result="blur"/>
             <feMerge>
               <feMergeNode in="blur"/>
               <feMergeNode in="SourceGraphic"/>
@@ -1858,85 +2308,201 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
           </filter>
         </defs>
 
-        <!-- Background Aura -->
-        <rect x="0" y="0" width="360" height="250" rx="10" fill="url(#heartGlow)"/>
+        <!-- Studio Backdrop + Subtle Polar Coordinate Grid -->
+        <rect x="0" y="0" width="360" height="250" rx="10" fill="url(#heartStudioBg)"/>
+        <circle cx="176" cy="142" r="92" fill="none" stroke="rgba(56, 189, 248, 0.07)" stroke-dasharray="3,4"/>
+        <circle cx="176" cy="142" r="64" fill="none" stroke="rgba(56, 189, 248, 0.06)"/>
 
-        <!-- Stylized 4-Chamber Cardiac Silhouette -->
-        <path d="M 135 58 C 95 58, 82 95, 95 128 C 105 142, 130 140, 148 128 Z"
-              fill="${atriaActive ? 'rgba(245, 158, 11, 0.28)' : 'rgba(30, 41, 59, 0.75)'}"
-              stroke="${atriaActive ? '#f59e0b' : '#475569'}" stroke-width="1.8"/>
-        <path d="M 192 55 C 232 52, 252 82, 242 115 C 232 128, 205 128, 185 118 Z"
-              fill="${atriaActive ? 'rgba(245, 158, 11, 0.28)' : 'rgba(30, 41, 59, 0.75)'}"
-              stroke="${atriaActive ? '#f59e0b' : '#475569'}" stroke-width="1.8"/>
-        <path d="M 102 132 C 92 175, 118 218, 175 228 C 175 185, 168 150, 152 128 Z"
-              fill="${rcaActive ? 'rgba(239, 68, 68, 0.28)' : purkActive ? 'rgba(52, 211, 153, 0.22)' : 'rgba(15, 23, 42, 0.85)'}"
-              stroke="${rcaActive ? '#ef4444' : '#64748b'}" stroke-width="2"/>
-        <path d="M 155 126 C 170 155, 175 190, 178 230 C 235 222, 268 172, 245 118 Z"
-              fill="${ladActive || lcxActive ? 'rgba(239, 68, 68, 0.32)' : repolActive ? 'rgba(56, 189, 248, 0.22)' : purkActive ? 'rgba(52, 211, 153, 0.25)' : 'rgba(15, 23, 42, 0.9)'}"
-              stroke="${ladActive || lcxActive ? '#ef4444' : '#94a3b8'}" stroke-width="2.4"/>
+        <!-- Great Vessels: SVC (Blue), Aortic Arch (Red), Pulmonary Trunk (Slate-Blue) -->
+        <path d="M 118 36 L 118 68 C 118 74, 134 74, 134 68 L 134 36 Z" fill="url(#svcGrad)" opacity="0.72" stroke="#60a5fa" stroke-width="1"/>
+        <path d="M 156 66 C 154 28, 204 24, 210 56 C 212 64, 196 68, 192 58 C 190 42, 170 42, 170 64 Z" fill="url(#aortaGrad)" opacity="0.85" stroke="#fca5a5" stroke-width="1.2"/>
+        <path d="M 146 68 C 146 48, 182 46, 206 58" fill="none" stroke="#64748b" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
 
-        <!-- Aortic Root -->
-        <path d="M 158 58 C 158 28, 188 28, 188 58" fill="none" stroke="#cbd5e1" stroke-width="3"/>
+        <!-- Epicardial Silhouette Outer Shadow -->
+        <path d="M 122 58 C 84 64, 72 104, 86 144 C 98 188, 136 226, 184 236 C 234 228, 272 182, 262 128 C 256 90, 236 60, 196 56 Z"
+              fill="rgba(15, 23, 42, 0.92)" stroke="rgba(148, 163, 184, 0.28)" stroke-width="1.5"/>
 
-        <!-- CORONARY ARTERIES (RCA, LAD, LCx) -->
-        <path d="M 158 55 C 122 65, 92 105, 106 165 C 115 198, 148 218, 174 222"
-              fill="none" stroke="${rcaActive ? '#ef4444' : 'rgba(248, 113, 113, 0.35)'}"
-              stroke-width="${rcaActive ? '3.6' : '1.6'}" ${rcaActive ? 'filter="url(#nodeGlow)"' : ''}/>
-        <text x="68" y="168" fill="${rcaActive ? '#fca5a5' : '#64748b'}" font-size="10" font-weight="800">RCA</text>
+        <!-- Right Atrium (RA) & Left Atrium (LA) with Atrial Depolarization Glow -->
+        <path d="M 134 58 C 94 60, 78 96, 92 128 C 104 140, 132 138, 150 124 C 152 98, 146 74, 134 58 Z"
+              fill="${atriaActive ? 'rgba(245, 158, 11, 0.34)' : 'rgba(30, 41, 59, 0.82)'}"
+              stroke="${atriaActive ? '#fbbf24' : '#475569'}" stroke-width="${atriaActive ? '2.2' : '1.4'}"/>
+        <path d="M 192 56 C 232 52, 256 80, 248 114 C 236 128, 208 126, 184 116 C 182 94, 186 72, 192 56 Z"
+              fill="${atriaActive ? 'rgba(245, 158, 11, 0.34)' : 'rgba(30, 41, 59, 0.82)'}"
+              stroke="${atriaActive ? '#fbbf24' : '#475569'}" stroke-width="${atriaActive ? '2.2' : '1.4'}"/>
 
-        <path d="M 185 56 C 178 92, 172 145, 176 224"
-              fill="none" stroke="${ladActive ? '#ef4444' : 'rgba(248, 113, 113, 0.38)'}"
-              stroke-width="${ladActive ? '4.0' : '1.8'}" ${ladActive ? 'filter="url(#nodeGlow)"' : ''}/>
-        <text x="184" y="196" fill="${ladActive ? '#fca5a5' : '#64748b'}" font-size="10" font-weight="800">LAD</text>
+        <!-- Right Ventricle (RV) & Inferior Territory -->
+        <path d="M 96 130 C 88 174, 118 220, 180 232 C 178 190, 170 152, 154 126 Z"
+              fill="${purkActive ? 'rgba(16, 185, 129, 0.25)' : 'url(#myoRvGrad)'}"
+              stroke="${rcaActive ? '#ef4444' : purkActive ? '#34d399' : '#64748b'}" stroke-width="1.8"/>
 
-        <path d="M 185 56 C 222 72, 255 112, 246 168"
-              fill="none" stroke="${lcxActive ? '#ef4444' : 'rgba(248, 113, 113, 0.35)'}"
-              stroke-width="${lcxActive ? '3.6' : '1.6'}" ${lcxActive ? 'filter="url(#nodeGlow)"' : ''}/>
-        <text x="256" y="146" fill="${lcxActive ? '#fca5a5' : '#64748b'}" font-size="10" font-weight="800">LCx</text>
+        <!-- Left Ventricle (LV) Thick Myocardial Wall & Apex -->
+        <path d="M 156 124 C 172 154, 178 190, 182 232 C 238 224, 270 172, 250 116 C 226 126, 190 124, 156 124 Z"
+              fill="${repolActive ? 'rgba(56, 189, 248, 0.24)' : purkActive ? 'rgba(16, 185, 129, 0.28)' : 'url(#myoLvGrad)'}"
+              stroke="${ladActive || lcxActive ? '#ef4444' : repolActive ? '#38bdf8' : purkActive ? '#34d399' : '#94a3b8'}" stroke-width="2.2"/>
 
-        <!-- CARDIAC CONDUCTION SYSTEM OVERLAY (7 STAGES) -->
-        <path d="M 112 76 C 125 95, 138 110, 154 118 M 112 76 C 152 62, 195 64, 222 82"
-              fill="none" stroke="${atriaActive ? '#fbbf24' : 'rgba(251, 191, 36, 0.4)'}"
-              stroke-width="${atriaActive ? '3' : '1.5'}" stroke-dasharray="3,2"/>
+        <!-- Interventricular Septum (IVS) Muscular Band -->
+        <path d="M 154 124 C 166 156, 174 192, 180 230"
+              fill="none" stroke="${branchActive ? '#818cf8' : 'rgba(148, 163, 184, 0.35)'}" stroke-width="5" stroke-linecap="round"/>
 
+        <!-- Regional Myocardial Ischemia / Infarct Territory Highlight Overlay -->
+        ${ladActive ? `
+          <ellipse cx="188" cy="186" rx="34" ry="40" transform="rotate(-14 188 186)"
+                   fill="rgba(239, 68, 68, 0.26)" stroke="rgba(248, 113, 113, 0.55)" stroke-dasharray="4,3" filter="url(#ischemiaGlow)"/>
+        ` : ''}
+        ${lcxActive ? `
+          <ellipse cx="234" cy="154" rx="22" ry="34" transform="rotate(18 234 154)"
+                   fill="rgba(239, 68, 68, 0.26)" stroke="rgba(248, 113, 113, 0.55)" stroke-dasharray="4,3" filter="url(#ischemiaGlow)"/>
+        ` : ''}
+        ${rcaActive ? `
+          <ellipse cx="144" cy="198" rx="34" ry="24" transform="rotate(24 144 198)"
+                   fill="rgba(239, 68, 68, 0.26)" stroke="rgba(248, 113, 113, 0.55)" stroke-dasharray="4,3" filter="url(#ischemiaGlow)"/>
+        ` : ''}
+
+        <!-- EPICARDIAL CORONARY ARTERY TREE (RCA + AM + PDA, LMCA + LAD + D1/D2 + Septals, LCx + OM1/OM2) -->
+        <!-- 1. Right Coronary Artery (RCA) + Acute Marginal (AM) + Posterior Descending (PDA) -->
+        <g stroke="${rcaActive ? '#ef4444' : 'rgba(248, 113, 113, 0.42)'}" fill="none" stroke-linecap="round" ${rcaActive ? 'filter="url(#nodeGlow)"' : ''}>
+          <path d="M 158 58 C 120 66, 90 104, 102 162 C 110 198, 144 220, 176 226" stroke-width="${rcaActive ? '3.5' : '1.8'}"/>
+          <path d="M 100 138 C 114 152, 126 168, 132 184" stroke-width="${rcaActive ? '2.2' : '1.2'}"/>
+          <path d="M 136 212 C 150 202, 160 194, 168 186" stroke-width="${rcaActive ? '2.0' : '1.1'}"/>
+        </g>
+        <text x="58" y="164" fill="${rcaActive ? '#fca5a5' : '#64748b'}" font-size="9.5" font-weight="800">RCA</text>
+
+        <!-- 2. Left Main (LMCA) + LAD + Diagonal (D1, D2) + Septal Perforators -->
+        <g stroke="${ladActive ? '#ef4444' : 'rgba(248, 113, 113, 0.48)'}" fill="none" stroke-linecap="round" ${ladActive ? 'filter="url(#nodeGlow)"' : ''}>
+          <path d="M 184 56 L 180 72" stroke-width="${ladActive || lcxActive ? '4.2' : '2.4'}"/>
+          <path d="M 180 72 C 176 106, 172 156, 180 228" stroke-width="${ladActive ? '3.8' : '2.0'}"/>
+          <!-- D1 & D2 Diagonal Branches across Anterior-Lateral LV -->
+          <path d="M 176 112 C 194 126, 210 144, 220 166" stroke-width="${ladActive ? '2.4' : '1.3'}"/>
+          <path d="M 175 148 C 192 162, 206 178, 214 196" stroke-width="${ladActive ? '2.1' : '1.2'}"/>
+          <!-- Septal Perforators into IVS -->
+          <path d="M 176 104 L 164 114 M 175 132 L 163 142 M 176 162 L 165 170" stroke-width="${ladActive ? '1.8' : '1.0'}" opacity="0.85"/>
+        </g>
+        <text x="186" y="206" fill="${ladActive ? '#fca5a5' : '#64748b'}" font-size="9.5" font-weight="800">LAD · D1</text>
+
+        <!-- 3. Left Circumflex (LCx) + Obtuse Marginal (OM1, OM2) -->
+        <g stroke="${lcxActive ? '#ef4444' : 'rgba(248, 113, 113, 0.42)'}" fill="none" stroke-linecap="round" ${lcxActive ? 'filter="url(#nodeGlow)"' : ''}>
+          <path d="M 180 72 C 218 82, 254 114, 248 172" stroke-width="${lcxActive ? '3.5' : '1.8'}"/>
+          <path d="M 226 100 C 232 126, 232 152, 226 178" stroke-width="${lcxActive ? '2.3' : '1.2'}"/>
+          <path d="M 244 128 C 246 150, 242 172, 234 190" stroke-width="${lcxActive ? '2.0' : '1.1'}"/>
+        </g>
+        <text x="256" y="144" fill="${lcxActive ? '#fca5a5' : '#64748b'}" font-size="9.5" font-weight="800">LCx · OM</text>
+
+        <!-- Culprit Thrombus / Plaque Occlusion Marker -->
+        ${ladActive ? `
+          <circle cx="177" cy="102" r="6.5" fill="rgba(239, 68, 68, 0.35)" stroke="#fef08a" stroke-width="1.8"/>
+          <circle cx="177" cy="102" r="2.8" fill="#fef08a"/>
+        ` : rcaActive ? `
+          <circle cx="104" cy="126" r="6.5" fill="rgba(239, 68, 68, 0.35)" stroke="#fef08a" stroke-width="1.8"/>
+          <circle cx="104" cy="126" r="2.8" fill="#fef08a"/>
+        ` : lcxActive ? `
+          <circle cx="222" cy="96" r="6.5" fill="rgba(239, 68, 68, 0.35)" stroke="#fef08a" stroke-width="1.8"/>
+          <circle cx="222" cy="96" r="2.8" fill="#fef08a"/>
+        ` : ''}
+
+        <!-- CARDIAC CONDUCTION SYSTEM OVERLAY (7 STAGES: SA -> Internodal/Bachmann -> AVN -> His -> RBBB/LAFB/LPFB -> Purkinje) -->
+        <!-- Internodal Pathways & Bachmann's Bundle -->
+        <path d="M 112 76 C 126 94, 140 108, 154 118 M 112 76 C 118 98, 134 114, 154 118 M 112 76 C 152 60, 196 62, 226 82"
+              fill="none" stroke="${atriaActive ? '#fbbf24' : 'rgba(251, 191, 36, 0.45)'}"
+              stroke-width="${atriaActive ? '2.8' : '1.5'}" stroke-dasharray="3,2" ${atriaActive ? 'filter="url(#nodeGlow)"' : ''}/>
+
+        <!-- Penetrating Bundle of His -->
         <line x1="154" y1="118" x2="162" y2="136"
-              stroke="${hisActive ? '#a78bfa' : '#818cf8'}"
-              stroke-width="${hisActive ? '4' : '2.2'}" ${hisActive ? 'filter="url(#nodeGlow)"' : ''}/>
+              stroke="${hisActive ? '#c4b5fd' : '#818cf8'}"
+              stroke-width="${hisActive ? '4.2' : '2.4'}" stroke-linecap="round" ${hisActive ? 'filter="url(#nodeGlow)"' : ''}/>
 
-        <path d="M 162 136 C 148 165, 135 192, 122 205 M 162 136 C 185 162, 208 188, 225 202 M 174 156 C 192 148, 212 148, 228 158"
-              fill="none" stroke="${branchActive ? '#818cf8' : 'rgba(129, 140, 248, 0.5)'}"
-              stroke-width="${branchActive ? '3.2' : '1.8'}"/>
+        <!-- Right Bundle Branch (RBBB) + Left Bundle Branch (LAFB & LPFB Fascicles) -->
+        <path d="M 162 136 C 150 166, 138 192, 124 206 M 162 136 C 186 162, 210 188, 226 202 M 172 152 C 192 144, 214 146, 232 158"
+              fill="none" stroke="${branchActive ? '#a5b4fc' : 'rgba(129, 140, 248, 0.55)'}"
+              stroke-width="${branchActive ? '3.2' : '1.8'}" stroke-linecap="round" ${branchActive ? 'filter="url(#nodeGlow)"' : ''}/>
 
-        <path d="M 122 205 C 108 195, 104 175, 110 158 M 225 202 C 242 188, 246 164, 238 142"
-              fill="none" stroke="${purkActive ? '#34d399' : 'rgba(52, 211, 153, 0.45)'}"
-              stroke-width="${purkActive ? '3.2' : '1.6'}" stroke-dasharray="2,2"/>
+        <!-- Subendocardial Purkinje Fiber Arborization -->
+        <path d="M 124 206 C 108 196, 102 174, 108 154 M 116 196 L 126 182 M 226 202 C 244 188, 248 162, 240 138 M 234 188 L 218 176"
+              fill="none" stroke="${purkActive ? '#34d399' : 'rgba(52, 211, 153, 0.5)'}"
+              stroke-width="${purkActive ? '3.0' : '1.6'}" stroke-dasharray="2,2" ${purkActive ? 'filter="url(#nodeGlow)"' : ''}/>
 
-        <circle cx="112" cy="76" r="${saActive ? '7.5' : '5.5'}"
-                fill="${saActive ? '#fbbf24' : '#f59e0b'}" stroke="#ffffff" stroke-width="1.5"
+        <!-- SA Node (Sinoatrial Pacemaker) -->
+        <circle cx="112" cy="76" r="${saActive ? '7.5' : '5.2'}"
+                fill="${saActive ? '#fde047' : '#f59e0b'}" stroke="#ffffff" stroke-width="1.6"
                 ${saActive ? 'filter="url(#nodeGlow)"' : ''}/>
-        <text x="74" y="72" fill="#fde68a" font-size="10" font-weight="800">SA</text>
+        <text x="68" y="74" fill="#fde68a" font-size="9.5" font-weight="800">SA</text>
 
-        <circle cx="154" cy="118" r="${avnActive ? '7' : '5'}"
-                fill="${avnActive ? '#fb7185' : '#f43f5e'}" stroke="#ffffff" stroke-width="1.5"
+        <!-- AV Node (Atrioventricular Delay Gate) -->
+        <circle cx="154" cy="118" r="${avnActive ? '7.0' : '4.8'}"
+                fill="${avnActive ? '#fda4af' : '#f43f5e'}" stroke="#ffffff" stroke-width="1.6"
                 ${avnActive ? 'filter="url(#nodeGlow)"' : ''}/>
-        <text x="124" y="122" fill="#fda4af" font-size="10" font-weight="800">AVN</text>
+        <text x="122" y="122" fill="#fda4af" font-size="9.5" font-weight="800">AVN</text>
 
-        <rect x="10" y="10" width="340" height="24" rx="6" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.25)"/>
-        <circle cx="24" cy="22" r="5" fill="${stage.color}"/>
-        <text x="36" y="26" fill="#f8fafc" font-size="11" font-weight="800">
+        <!-- Top Telemetry HUD Bar -->
+        <rect x="8" y="8" width="344" height="24" rx="6" fill="rgba(9, 14, 23, 0.88)" stroke="rgba(56, 189, 248, 0.28)"/>
+        <circle cx="22" cy="20" r="4.8" fill="${stage.color}"/>
+        <text x="34" y="24" fill="#f8fafc" font-size="10.5" font-weight="800">
           ${isTr ? stage.tr : stage.en} (${stage.startMs}–${stage.endMs} ms · ${stage.wave})
         </text>
-        <text x="340" y="26" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="end">${stage.vel}</text>
+        <text x="342" y="24" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="end">${stage.vel}</text>
       </svg>
     `;
+  }
+
+  let smoothedDt = 1 / 60;
+
+  // Smooth C-infinity monotonic beat-phase mapper for regular & irregular (AFib/MAT) rhythms
+  function mapContinuousBeatPhase(tSec, rrSec, isIrregular) {
+    const safeT = Math.max(0, tSec);
+    const baseU = safeT / rrSec;
+    // Strictly positive derivative du/d(baseU) = 1 + 0.238*cos(1.7*baseU) - 0.261*sin(2.9*baseU - 0.5) > 0.50
+    const u = isIrregular
+      ? baseU + 0.14 * Math.sin(baseU * 1.7) + 0.09 * Math.cos(baseU * 2.9 - 0.5)
+      : baseU;
+    const beatIdx = Math.floor(u);
+    const phase = u - beatIdx;
+    return { beatIdx, phase };
+  }
+
+  // Peak-preserving sub-pixel supersampler (prevents R-wave vertical bobbing & baseline shimmer)
+  function sampleSmoothLeadMv(cond, lead, centerSec, pixelWindowSec, rrSec, hr) {
+    const isIrreg = Boolean(cond.morph?.irregular);
+    const evalAt = t => {
+      const { beatIdx, phase } = mapContinuousBeatPhase(t, rrSec, isIrreg);
+      return { mv: sampleConditionLeadMv(cond, lead, phase, beatIdx, hr), phase };
+    };
+    const c = evalAt(centerSec);
+    const l = evalAt(centerSec - pixelWindowSec * 0.36);
+    const r = evalAt(centerSec + pixelWindowSec * 0.36);
+    // Inside QRS complex window, preserve exact extremum (R peak or S nadir)
+    if (c.phase > 0.23 && c.phase < 0.37) {
+      let best = c.mv;
+      if (Math.abs(l.mv) > Math.abs(best)) best = l.mv;
+      if (Math.abs(r.mv) > Math.abs(best)) best = r.mv;
+      return best;
+    }
+    // Outside QRS complex, apply 3-tap Gaussian anti-aliasing filter
+    return 0.25 * l.mv + 0.50 * c.mv + 0.25 * r.mv;
   }
 
   function renderCanvasFrame() {
     const canvas = root.querySelector('#clin-sim-canvas');
     if (!canvas) return;
+
+    // HiDPI Retina backing store setup (once per canvas element)
+    const logicalW = Number(canvas.dataset.logicalW || canvas.getAttribute('width') || 760);
+    const logicalH = Number(canvas.dataset.logicalH || canvas.getAttribute('height') || 310);
+    const dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+    if (!canvas.dataset.logicalW) {
+      canvas.dataset.logicalW = String(logicalW);
+      canvas.dataset.logicalH = String(logicalH);
+    }
+    if (canvas.width !== Math.round(logicalW * dpr) || canvas.height !== Math.round(logicalH * dpr)) {
+      canvas.width = Math.round(logicalW * dpr);
+      canvas.height = Math.round(logicalH * dpr);
+    }
+
     const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    const W = logicalW;
+    const H = logicalH;
     const cond = getActiveCondition();
     const hr = st.hrOverride || cond.hr || 72;
     const isTr = getLang() === 'tr';
@@ -1982,22 +2548,51 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
         ctx.fillText(isTr ? '1 Büyük Kare = 0.20 sn · 5 Büyük Kare = 1.0 sn · 6 Sn Şerit (R Sayısı × 10 = HR)' : '1 Large Box = 0.20s · 5 Large Boxes = 1.0s · 6-Second Strip (R Count × 10 = HR)', 14, H - 10);
       }
 
-      // Draw 6-second Lead II waveform
+      // Draw 6-second Lead II waveform with stationary calibrated paper + smooth sweep bar (zero scroll jitter)
       const yMid = H * 0.54;
       const pxPerMv = 54;
-      const tOffset = (st.skillstatDynamic && !st.skillstatHoverFrozen) ? sweepSec * 0.85 : 0;
+      const spanSec = 6.0;
+      const dtPx = spanSec / W;
+      const activeSweepSec = st.skillstatHoverFrozen ? (st.skillstatFrozenAtSec ?? sweepSec) : sweepSec;
+      const sweepHeadX = ((activeSweepSec % spanSec) / spanSec) * W;
 
       ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 2.3;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      for (let x = 0; x < W; x += 1.5) {
-        const relSec = (x / W) * 6.0;
-        const mv = sampleSkillStatLeadIIMv(rhy.id, tOffset + relSec);
+      let penDown = false;
+      for (let x = 0; x < W; x += 0.75) {
+        if (st.skillstatDynamic && !st.skillstatHoverFrozen && x > sweepHeadX && x < sweepHeadX + 18) {
+          penDown = false;
+          continue;
+        }
+        const relSec = (x / W) * spanSec;
+        const tC = st.skillstatDynamic
+          ? Math.max(0, Math.floor(activeSweepSec / spanSec) * spanSec + relSec - (x > sweepHeadX ? spanSec : 0))
+          : relSec;
+        const mC = sampleSkillStatLeadIIMv(rhy.id, tC);
+        const mL = sampleSkillStatLeadIIMv(rhy.id, Math.max(0, tC - dtPx * 0.35));
+        const mR = sampleSkillStatLeadIIMv(rhy.id, tC + dtPx * 0.35);
+        let mv = 0.25 * mL + 0.50 * mC + 0.25 * mR;
+        if (Math.abs(mC) > 0.35 || Math.abs(mL) > 0.35 || Math.abs(mR) > 0.35) {
+          mv = Math.abs(mL) > Math.abs(mC) ? mL : mC;
+          if (Math.abs(mR) > Math.abs(mv)) mv = mR;
+        }
         const y = yMid - mv * pxPerMv;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (!penDown) {
+          ctx.moveTo(x, y);
+          penDown = true;
+        } else {
+          ctx.lineTo(x, y);
+        }
       }
       ctx.stroke();
+
+      if (st.skillstatDynamic && !st.skillstatHoverFrozen) {
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.arc(sweepHeadX, yMid, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       if (st.skillstatHoverFrozen) {
         ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
@@ -2028,10 +2623,13 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
     for (let y = 0; y <= H; y += 20) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
     ctx.stroke();
 
-    // EKG COMPASS LIVE ELECTROLYTE (K+ / Ca2+) WAVEFORM RENDERER
+    // EKG COMPASS LIVE ELECTROLYTE (K+ / Ca2+) WAVEFORM RENDERER (Stationary Grid + Smooth Sweep Head)
     if (st.mode === 'compass' && st.compassSubMode === 'electrolyte_tuner') {
       const yMid = H * 0.56;
       const pxPerMv = 54;
+      const spanSec = 4.8;
+      const sweepHeadX = 14 + ((sweepSec % spanSec) / spanSec) * (W - 28);
+
       ctx.fillStyle = '#0f172a';
       ctx.font = '800 12px ui-sans-serif, system-ui, sans-serif';
       ctx.fillText(
@@ -2043,21 +2641,39 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
       );
 
       ctx.strokeStyle = st.compassKMeq >= 7.5 ? '#dc2626' : st.compassKMeq >= 6.0 || st.compassKMeq <= 3.0 ? '#d97706' : '#0f172a';
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = 2.35;
       ctx.beginPath();
-      for (let x = 14; x < W - 14; x += 1.5) {
-        const tSec = sweepSec * 0.8 + ((x - 14) / (W - 28)) * 4.5;
-        const mv = sampleElectrolyteLeadIIMv(st.compassKMeq, st.compassCaMgDl, tSec);
+      let penDown = false;
+      for (let x = 14; x < W - 14; x += 0.75) {
+        if (st.running && x > sweepHeadX && x < sweepHeadX + 20) {
+          penDown = false;
+          continue;
+        }
+        const relSec = ((x - 14) / (W - 28)) * spanSec;
+        const sampleSec = Math.floor(sweepSec / spanSec) * spanSec + relSec - (x > sweepHeadX ? spanSec : 0);
+        const mv = sampleElectrolyteLeadIIMv(st.compassKMeq, st.compassCaMgDl, Math.max(0, sampleSec));
         const y = yMid - mv * pxPerMv;
-        if (x === 14) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (!penDown) {
+          ctx.moveTo(x, y);
+          penDown = true;
+        } else {
+          ctx.lineTo(x, y);
+        }
       }
       ctx.stroke();
+
+      if (st.running) {
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.arc(sweepHeadX, yMid, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
       return;
     }
 
     if (st.mode === '12lead' || st.mode === 'study' || (st.mode === 'compass' && st.compassSubMode === 'interpret')) {
       // 12-Lead Standard 4x3 Grid + Rhythm Strip II at Bottom
+      // Uses stationary calibrated ECG paper + synchronized sweep head so waveforms never shimmer/jitter!
       const cols = 4;
       const rows = 3;
       const cellW = W / cols;
@@ -2078,6 +2694,11 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
       }
 
       const rrSec = 60 / Math.max(30, hr);
+      const cellSpanSec = st.paperSpeed === 50 ? 1.25 : 2.5;
+      const stripSpanSec = st.paperSpeed === 50 ? 5.0 : 10.0;
+      const sweepFrac = (sweepSec % stripSpanSec) / stripSpanSec;
+      const stripSweepX = 8 + sweepFrac * (W - 16);
+
       order.forEach((rowLeads, rIdx) => {
         rowLeads.forEach((ld, cIdx) => {
           const x0 = cIdx * cellW;
@@ -2097,25 +2718,34 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
           ctx.font = '800 12px ui-sans-serif, system-ui, sans-serif';
           ctx.fillText(ld, x0 + 8, rIdx * rowH + 16);
 
+          const usableW = cellW - 8;
+          const dtPx = cellSpanSec / usableW;
+          const colStartSec = cIdx * cellSpanSec;
+
           ctx.strokeStyle = isAffected ? '#b91c1c' : '#111827';
           ctx.lineWidth = 1.75;
           ctx.beginPath();
-          for (let px = 4; px < cellW - 4; px += 1.5) {
-            const tSec = sweepSec * 0.25 + (px / (cellW - 8)) * 2.1;
-            let beatIdx = Math.floor(tSec / rrSec);
-            let phase = (tSec % rrSec) / rrSec;
-            if (cond.morph?.irregular) {
-              const jitter = 0.82 + 0.32 * Math.abs(Math.sin(beatIdx * 3.1));
-              phase = Math.min(0.99, phase / jitter);
+          let penDown = false;
+          for (let px = 4; px < cellW - 4; px += 0.75) {
+            const screenX = x0 + px;
+            if (st.running && screenX > stripSweepX && screenX < stripSweepX + 14) {
+              penDown = false;
+              continue;
             }
-            let mv = sampleConditionLeadMv(cond, ld, phase, beatIdx, hr);
+            const relSec = colStartSec + ((px - 4) / usableW) * cellSpanSec;
+            const sampleSec = Math.floor(sweepSec / stripSpanSec) * stripSpanSec + relSec - (screenX > stripSweepX ? stripSpanSec : 0);
+            let mv = sampleSmoothLeadMv(cond, ld, Math.max(0, sampleSec), dtPx, rrSec, hr);
             // Simulate LA/RA limb reversal visually if active in Compass
             if (st.mode === 'compass' && st.compassState.avrPositive === 'yes' && st.compassState.precordialProg !== 'reversed') {
               if (ld === 'I' || ld === 'aVR' || ld === 'aVL') mv = -mv;
             }
             const y = yMid - mv * 30;
-            if (px === 4) ctx.moveTo(x0 + px, y);
-            else ctx.lineTo(x0 + px, y);
+            if (!penDown) {
+              ctx.moveTo(screenX, y);
+              penDown = true;
+            } else {
+              ctx.lineTo(screenX, y);
+            }
           }
           ctx.stroke();
         });
@@ -2124,21 +2754,40 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
       const ryMid = H - 32;
       ctx.fillStyle = '#0f172a';
       ctx.font = '800 11.5px ui-sans-serif, system-ui, sans-serif';
-      ctx.fillText(isTr ? 'RİTİM ŞERİDİ: II (25 mm/sn · 10 mm/mV)' : 'RHYTHM STRIP: II (25 mm/s · 10 mm/mV)', 8, H - 52);
+      ctx.fillText(isTr ? `RİTİM ŞERİDİ: II (${st.paperSpeed} mm/sn · 10 mm/mV)` : `RHYTHM STRIP: II (${st.paperSpeed} mm/s · 10 mm/mV)`, 8, H - 52);
 
+      const stripUsableW = W - 16;
+      const stripDtPx = stripSpanSec / stripUsableW;
       ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = 1.85;
       ctx.beginPath();
-      for (let x = 8; x < W - 8; x += 1.5) {
-        const tSec = sweepSec + (x / W) * 6.5;
-        const beatIdx = Math.floor(tSec / rrSec);
-        const phase = (tSec % rrSec) / rrSec;
-        const mv = sampleConditionLeadMv(cond, 'II', phase, beatIdx, hr);
+      let stripPen = false;
+      for (let x = 8; x < W - 8; x += 0.75) {
+        if (st.running && x > stripSweepX && x < stripSweepX + 16) {
+          stripPen = false;
+          continue;
+        }
+        const relSec = ((x - 8) / stripUsableW) * stripSpanSec;
+        const sampleSec = Math.floor(sweepSec / stripSpanSec) * stripSpanSec + relSec - (x > stripSweepX ? stripSpanSec : 0);
+        const mv = sampleSmoothLeadMv(cond, 'II', Math.max(0, sampleSec), stripDtPx, rrSec, hr);
         const y = ryMid - mv * 24;
-        if (x === 8) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (!stripPen) {
+          ctx.moveTo(x, y);
+          stripPen = true;
+        } else {
+          ctx.lineTo(x, y);
+        }
       }
       ctx.stroke();
+
+      if (st.running) {
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(stripSweepX, 2);
+        ctx.lineTo(stripSweepX, H - 4);
+        ctx.stroke();
+      }
       return;
     }
 
@@ -2170,30 +2819,26 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
     ctx.fillStyle = '#475569';
     ctx.fillText(`${st.paperSpeed} mm/s · 10 mm/mV`, W - 135, 20);
 
-    const sweepHeadX = 44 + ((sweepSec % speedFactor) / speedFactor) * (W - 56);
+    const usableW = W - 56;
+    const dtPx = speedFactor / usableW;
+    const sweepHeadX = 44 + ((sweepSec % speedFactor) / speedFactor) * usableW;
     ctx.strokeStyle = '#111827';
     ctx.lineWidth = 2.25;
     ctx.beginPath();
     let penDown = false;
 
-    for (let x = 44; x < W - 12; x += 1.5) {
-      if (st.running && x > sweepHeadX && x < sweepHeadX + 26) {
+    for (let x = 44; x < W - 12; x += 0.75) {
+      if (st.running && x > sweepHeadX && x < sweepHeadX + 24) {
         penDown = false;
         continue;
       }
-      const relSec = ((x - 44) / (W - 56)) * speedFactor;
+      const relSec = ((x - 44) / usableW) * speedFactor;
       const sampleSec = Math.floor(sweepSec / speedFactor) * speedFactor + relSec - (x > sweepHeadX ? speedFactor : 0);
       const safeSec = Math.max(0, sampleSec);
-      const beatIdx = Math.floor(safeSec / rrSec);
-      let phase = (safeSec % rrSec) / rrSec;
-      if (cond.morph?.irregular) {
-        const jitter = 0.82 + 0.32 * Math.abs(Math.sin(beatIdx * 3.1));
-        phase = Math.min(0.99, phase / jitter);
-      }
-
-      let mv = sampleConditionLeadMv(cond, st.activeLead, phase, beatIdx, hr);
+      let mv = sampleSmoothLeadMv(cond, st.activeLead, safeSec, dtPx, rrSec, hr);
       if (st.noiseLevel > 0) {
-        mv += st.noiseLevel * (Math.sin(x * 0.9 + sweepSec * 25) * 0.55);
+        // Spatially locked to sampleSec so already-drawn trace never vibrates on paper
+        mv += st.noiseLevel * (Math.sin(safeSec * 190 + x * 0.65) * 0.55);
       }
       const y = yMid - mv * pxPerMv;
       if (!penDown) {
@@ -2236,11 +2881,13 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
 
   function stepAnimation(ts) {
     if (!lastTs) lastTs = ts;
-    const dt = Math.min(0.05, (ts - lastTs) / 1000);
+    const rawDt = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
     lastTs = ts;
+    smoothedDt = smoothedDt * 0.85 + rawDt * 0.15;
+    const dt = smoothedDt;
 
     if (st.mode === 'skillstat' && st.skillstatSubMode === 'game' && st.skillstatGameActive) {
-      gameTickAccum += dt;
+      gameTickAccum += rawDt;
       if (gameTickAccum >= 1.0) {
         gameTickAccum -= 1.0;
         st.skillstatRemainingSec = Math.max(0, st.skillstatRemainingSec - 1);
@@ -3113,11 +3760,44 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
               </div>
             </div>
 
-            <!-- Right Column: Interactive 3D-Styled Heart + Coronary Territory Map + Clinical Pearls -->
+            <!-- Right Column: Interactive 3D-Styled Heart OR Phase 0-4 Cardiac Channelopathies AP Atlas + Clinical Pearls -->
             <div class="clin-heart-card">
-              <div class="clin-heart-svg-wrap" id="clin-heart-svg-mount">
-                ${buildHeartCoronarySvg(cond, activeStage, isTr)}
-              </div>
+              ${(() => {
+                const showChanAp = st.rightPanelMode === 'channelopathy' || (st.rightPanelMode === 'auto' && st.catId === 'channelopathy');
+                const activeChanNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.id === st.chanNodeId) || CARDIAC_CHANNELOPATHY_NODES[0];
+                return `
+                  <div class="clin-right-view-tabs" role="tablist" aria-label="${isTr ? 'Sağ Panel Görünümü' : 'Right Panel View'}">
+                    <button type="button" class="clin-right-tab-btn ${!showChanAp ? 'active' : ''}" data-right-panel="heart">
+                      🫀 ${isTr ? '3B Kalp & Koroner Harita' : '3D Heart & Coronary Map'}
+                    </button>
+                    <button type="button" class="clin-right-tab-btn ${showChanAp ? 'active' : ''}" data-right-panel="channelopathy">
+                      🧬 ${isTr ? 'Faz 0–4 Kanalopati Atlası' : 'Phase 0–4 Channelopathies'}
+                    </button>
+                  </div>
+
+                  <div class="clin-heart-svg-wrap" id="clin-heart-svg-mount">
+                    ${showChanAp ? buildChannelopathyApSvg(st.chanNodeId, isTr) : buildHeartCoronarySvg(cond, activeStage, isTr)}
+                  </div>
+
+                  ${showChanAp ? `
+                    <div class="clin-chan-node-pills" role="group" aria-label="${isTr ? 'Faz 0–4 İyon Kanalı Seçimi' : 'Select Phase 0–4 Ion Channel'}">
+                      ${CARDIAC_CHANNELOPATHY_NODES.map(n => `
+                        <button type="button" class="clin-chan-pill ${n.id === activeChanNode.id ? 'active' : ''} ${n.direction}" data-chan-node="${n.id}">
+                          <span class="clin-chan-pill-dot"></span>
+                          <span>${n.phase}: <strong>${n.current}</strong> (${n.genes.join('/')})</span>
+                        </button>
+                      `).join('')}
+                    </div>
+                    <div class="clin-chan-detail-box">
+                      <div class="clin-chan-detail-title">${isTr ? activeChanNode.titleTr : activeChanNode.titleEn}</div>
+                      <p class="clin-chan-detail-desc">${isTr ? activeChanNode.mechTr : activeChanNode.mechEn}</p>
+                      <div class="clin-chan-syndrome-tags">
+                        ${activeChanNode.syndromes.map(s => `<span class="clin-chan-syn-tag">${s}</span>`).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                `;
+              })()}
 
               <div class="clin-clinical-pearl-box">
                 <h4>
@@ -3547,10 +4227,16 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
     root.querySelectorAll('[data-sim-cat]').forEach(btn => {
       btn.addEventListener('click', () => {
         st.catId = btn.dataset.simCat;
+        if (st.catId === 'channelopathy' && st.rightPanelMode === 'heart') {
+          st.rightPanelMode = 'auto';
+        }
         const firstInCat = CLINICAL_CONDITIONS.find(c => c.cat === st.catId);
         if (firstInCat) {
           st.condId = firstInCat.id;
           st.hrOverride = null;
+          const matchNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.condId === st.condId) ||
+                            CARDIAC_CHANNELOPATHY_NODES.find(n => (n.altCondIds || []).includes(st.condId));
+          if (matchNode) st.chanNodeId = matchNode.id;
         }
         render();
       });
@@ -3561,6 +4247,33 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
       btn.addEventListener('click', () => {
         st.condId = btn.dataset.simCond;
         st.hrOverride = null;
+        const matchNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.condId === st.condId) ||
+                          CARDIAC_CHANNELOPATHY_NODES.find(n => (n.altCondIds || []).includes(st.condId));
+        if (matchNode) st.chanNodeId = matchNode.id;
+        render();
+      });
+    });
+
+    // Right panel view switcher (3D Heart vs Phase 0-4 Channelopathies AP)
+    root.querySelectorAll('[data-right-panel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        st.rightPanelMode = btn.dataset.rightPanel;
+        render();
+      });
+    });
+
+    // Phase 0-4 Channelopathy interactive SVG boxes & channel pills
+    root.querySelectorAll('[data-chan-node]').forEach(el => {
+      el.addEventListener('click', () => {
+        const nodeId = el.getAttribute('data-chan-node');
+        const node = CARDIAC_CHANNELOPATHY_NODES.find(n => n.id === nodeId);
+        if (!node) return;
+        st.chanNodeId = node.id;
+        st.catId = 'channelopathy';
+        if (node.condId) {
+          st.condId = node.condId;
+          st.hrOverride = null;
+        }
         render();
       });
     });
@@ -3727,9 +4440,18 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr' }) {
 
   return {
     render,
-    selectCategory(catId, condId) {
+    selectCategory(catId, condId, chanNodeId) {
+      st.collapsed = false;
+      st.mode = 'simulator';
       st.catId = catId;
       if (condId) st.condId = condId;
+      if (chanNodeId) {
+        st.chanNodeId = chanNodeId;
+      } else if (condId) {
+        const matchNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.condId === condId) ||
+                          CARDIAC_CHANNELOPATHY_NODES.find(n => (n.altCondIds || []).includes(condId));
+        if (matchNode) st.chanNodeId = matchNode.id;
+      }
       render();
     },
     destroy() {

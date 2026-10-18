@@ -221,26 +221,31 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 29, 50, 0.65));
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-left: 3px solid #38bdf8;
+  border-radius: 10px;
 }
 
 .guyton-badge {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 800;
   text-transform: uppercase;
   color: #38bdf8;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
 
 .guyton-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 19px;
+  font-weight: 800;
   color: #f8fafc;
 }
 
 .guyton-subtitle {
   margin: 0;
-  font-size: 13.5px;
+  font-size: 13px;
   color: #94a3b8;
   line-height: 1.45;
 }
@@ -262,15 +267,47 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
   flex-direction: column;
   gap: 10px;
   padding: 16px;
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 14, 23, 0.98) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.4);
+}
+
+.guyton-injury-toolbar {
+  padding: 12px 16px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.guyton-injury-inline-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.guyton-injury-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
   border-radius: 8px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fecaca;
+  font-size: 12px;
+}
+
+.guyton-injury-pill.subtle {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #cbd5e1;
 }
 
 .guyton-card h3 {
   margin: 0;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   color: #38bdf8;
 }
 
@@ -283,10 +320,11 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
 
 .guyton-canvas-wrap {
   width: 100%;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #334155;
+  border: 1px solid rgba(56, 189, 248, 0.24);
   background: #020617;
+  box-shadow: inset 0 0 18px rgba(2, 6, 23, 0.7);
 }
 
 .guyton-canvas-wrap canvas {

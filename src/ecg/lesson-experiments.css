@@ -1,35 +1,37 @@
-.lesson-experiments{padding:24px;margin-bottom:24px;border:1px solid #294957;border-radius:18px;background:radial-gradient(ellipse at 100% 0,#12455466,transparent 65%),#101c29;color:#e5eef5;min-width:0}
-.lesson-experiments-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}
-.lesson-eyebrow{font-size:10px;font-weight:800;letter-spacing:.16em;color:#5eead4}
-.lesson-experiments h3{font-size:clamp(18px,2vw,24px);line-height:1.3;margin:8px 0 0}
+.lesson-experiments{padding:14px 18px;margin-bottom:16px;border:1px solid rgba(56,189,248,.22);border-radius:14px;background:radial-gradient(ellipse at 100% 0,rgba(18,69,84,.42),transparent 65%),linear-gradient(180deg,#0f1c2b,#0b1521);color:#e5eef5;min-width:0;box-shadow:0 8px 24px rgba(2,6,23,.35)}
+.lesson-experiments-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
+.lesson-eyebrow{font-size:9.5px;font-weight:800;letter-spacing:.15em;color:#5eead4}
+.lesson-experiments h3{font-size:clamp(15px,1.6vw,18px);line-height:1.25;margin:3px 0 0;color:#f8fafc}
 .lesson-experiments button{font:inherit;cursor:pointer;color:inherit}
-.lesson-focus{border:1px solid #446478;background:#142b3a;border-radius:9px;padding:10px 14px;font-size:12px!important;flex-shrink:0}
-.lesson-focus[aria-pressed=true]{background:#115e59;border-color:#5eead4}
-.lesson-experiment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.lesson-experiment{position:relative;display:grid;grid-template-rows:84px auto 1fr auto;gap:8px;min-width:0;text-align:left;padding:16px 20px;border:1px solid #314657;border-radius:12px;background:linear-gradient(145deg,#1b3041,#111f2d);transition:border-color .18s,transform .18s}
-.lesson-experiment:hover{border-color:#5eead4;transform:translateY(-3px)}
-.lesson-experiment[aria-pressed=true]{border-color:#5eead4;background:linear-gradient(145deg,#17444b,#122936)}
+.lesson-focus{border:1px solid #38586e;background:#132838;border-radius:8px;padding:7px 12px;font-size:11.5px!important;flex-shrink:0;transition:all .15s}
+.lesson-focus:hover{border-color:#5eead4;color:#fff}
+.lesson-focus[aria-pressed=true]{background:#115e59;border-color:#5eead4;color:#fff}
+.lesson-experiment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lesson-experiment{position:relative;display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:12px;row-gap:3px;min-width:0;text-align:left;padding:10px 14px;border:1px solid rgba(56,189,248,.18);border-radius:10px;background:linear-gradient(145deg,#16293a,#0e1b28);transition:border-color .16s,transform .16s,box-shadow .16s}
+.lesson-experiment:hover{border-color:#5eead4;transform:translateY(-2px);box-shadow:0 6px 16px rgba(15,23,42,.45)}
+.lesson-experiment[aria-pressed=true]{border-color:#5eead4;background:linear-gradient(145deg,#153f47,#102532);box-shadow:0 0 14px rgba(94,234,212,.18)}
 .lesson-experiment:nth-child(2){--experiment-color:#c4a1f5}.lesson-experiment:nth-child(3){--experiment-color:#f7c878}
-.lesson-experiment svg{width:100%;height:84px;color:var(--experiment-color,#5eead4)}
-.lesson-step{position:absolute;top:14px;left:16px;font-size:11px;color:#a7bacb;font-variant-numeric:tabular-nums}
-.lesson-experiment strong{font-size:16px}.lesson-experiment>span:not(.lesson-step){font-size:12px;line-height:1.65;color:#bdcdd9}
-.lesson-launch{font-size:11px;font-weight:600;color:var(--experiment-color,#5eead4);margin-top:10px}
-.lesson-observation{font-size:12px;line-height:1.6;color:#c3d8e3;padding:12px 14px;background:#0b1723;border-left:3px solid #5eead4;border-radius:4px;margin:16px 0}
-.lesson-question{border-top:1px solid #304454;padding-top:14px;font-size:12px;line-height:1.6}.lesson-question summary{cursor:pointer;font-weight:700;color:#f4cf87}.lesson-question summary span{color:#d4e2eb;font-weight:400;margin-left:12px}
-.lesson-answers{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.lesson-answers button{padding:9px 14px;border:1px solid #456173;border-radius:8px;background:#172d3d}.lesson-answers button[aria-pressed=true]{border-color:#f4cf87}.lesson-feedback{color:#d1e5eb;margin-bottom:0}
-.lesson-experiments button:focus-visible,.lesson-question summary:focus-visible{outline:3px solid #7addf1;outline-offset:4px}
+.lesson-experiment svg{grid-column:1;grid-row:1/4;align-self:center;width:52px;height:44px;color:var(--experiment-color,#5eead4)}
+.lesson-step{position:static;display:none}
+.lesson-experiment strong{grid-column:2;font-size:13.5px;color:#f8fafc;line-height:1.25}
+.lesson-experiment>span:not(.lesson-step){grid-column:2;font-size:11.5px;line-height:1.45;color:#94a3b8}
+.lesson-launch{grid-column:2;font-size:10.5px;font-weight:700;color:var(--experiment-color,#5eead4);margin-top:2px}
+.lesson-observation{font-size:11.5px;line-height:1.45;color:#c3d8e3;padding:8px 12px;background:#09131e;border-left:3px solid #5eead4;border-radius:4px;margin:10px 0 8px}
+.lesson-question{border-top:1px solid rgba(48,68,84,.65);padding-top:8px;font-size:11.5px;line-height:1.5}.lesson-question summary{cursor:pointer;font-weight:700;color:#f4cf87}.lesson-question summary span{color:#d4e2eb;font-weight:400;margin-left:10px}
+.lesson-answers{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.lesson-answers button{padding:6px 12px;border:1px solid #456173;border-radius:7px;background:#172d3d;font-size:11.5px}.lesson-answers button[aria-pressed=true]{border-color:#f4cf87;background:#263e52}.lesson-feedback{color:#d1e5eb;margin:6px 0 0}
+.lesson-experiments button:focus-visible,.lesson-question summary:focus-visible{outline:3px solid #7addf1;outline-offset:3px}
 .lesson-target{outline:2px solid #5eead4;outline-offset:6px;scroll-margin-block:24px}
 /* Emphasize the actual working diagrams; controls stay next to their output. */
-.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql){grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr);align-items:start;padding:24px;border-radius:18px}
+.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql){grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr);align-items:start;padding:20px;border-radius:16px}
 .guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>h3{grid-column:1/-1}
 .guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>.ecg-lab-visual{grid-column:1;grid-row:2 / span 3;background:#0c1925;border:1px solid #2d4659;border-radius:12px;padding:12px;min-width:0}
-.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>.ecg-lab-controls{grid-column:2;gap:10px;padding:16px;background:#152838;border-radius:12px}
+.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>.ecg-lab-controls{grid-column:2;gap:10px;padding:14px;background:#152838;border-radius:12px}
 .guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>.ecg-lab-result,.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>.ecg-lab-note{grid-column:2}
-.ecg-rhythm-gallery{grid-column:1/-1;min-width:0}.ecg-lab-controls input[type=range]{min-height:30px}.ecg-lab-controls button{min-height:36px}
+.ecg-rhythm-gallery{grid-column:1/-1;min-width:0}.ecg-lab-controls input[type=range]{min-height:30px}.ecg-lab-controls button{min-height:34px}
 .lesson-visual-focus .guyton-card-desc,.lesson-visual-focus .davinci-card-desc,.lesson-visual-focus .lcam-sub,.lesson-visual-focus .scam-sub,.lesson-visual-focus .davinci-header{display:none}
-.lesson-visual-focus .guyton-card{gap:12px}
-@media(max-width:800px){.lesson-experiments{padding:16px}.lesson-experiments-heading{align-items:flex-start;flex-direction:column}.lesson-experiment-grid{gap:8px}.lesson-experiment{padding:12px;grid-template-rows:64px auto 1fr auto}.lesson-experiment svg{height:64px}.lesson-experiment strong{font-size:14px}.lesson-step{top:8px;left:10px}.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql){grid-template-columns:minmax(0,1fr);padding:14px}.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>.ecg-lab-visual{grid-row:auto}.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>*{grid-column:1!important}}
-@media(max-width:520px){.lesson-experiment-grid{grid-template-columns:minmax(0,1fr)}.lesson-experiment{grid-template-columns:80px minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:14px}.lesson-experiment svg{grid-row:1/4;align-self:center;height:72px}.lesson-experiment strong,.lesson-experiment>span:not(.lesson-step),.lesson-launch{grid-column:2}.lesson-launch{margin-top:2px}.lesson-question summary span{display:block;margin:6px 0}.lesson-focus{width:100%}}
+.lesson-visual-focus .guyton-card{gap:10px}
+@media(max-width:800px){.lesson-experiments{padding:12px}.lesson-experiments-heading{align-items:flex-start;flex-direction:column}.lesson-experiment-grid{grid-template-columns:minmax(0,1fr);gap:8px}.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql){grid-template-columns:minmax(0,1fr);padding:14px}.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>.ecg-lab-visual{grid-row:auto}.guyton-dynamic-view>.ecg-lab:not(.axl):not(.vql)>*{grid-column:1!important}}
+@media(max-width:520px){.lesson-question summary span{display:block;margin:4px 0}.lesson-focus{width:100%}}
 @media(prefers-reduced-motion:reduce){.lesson-experiment{transition:none}.lesson-experiment:hover{transform:none}}
 /* Constrain intrinsic grid tracks when lead chips scroll on small screens. */
 .guyton-dynamic-view>.axl,.guyton-dynamic-view>.vql{grid-template-columns:minmax(0,1fr)}
