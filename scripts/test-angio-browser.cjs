@@ -12,6 +12,8 @@ const fs = require('node:fs');
     // 1. Initial entry with user's exact requested hash: #a=-35&b=-45&sys=left
     const testUrl = `${process.env.APP_URL || 'http://127.0.0.1:5189'}/angio/#a=-35&b=-45&sys=left`;
     await page.goto(testUrl);
+    await page.waitForFunction(() => document.querySelector('[data-angio-atlas]')?.dataset.ready === 'true', undefined, { timeout: 60000 });
+    await page.locator('[data-angio-schematic] summary').click();
     await page.locator('#angio-fluo-canvas').waitFor({ state: 'visible' });
 
     assert.ok((await page.title()).includes('Anjiyografi') || (await page.title()).includes('Angiography'));

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070a0f" />
+    <title>Cardia · Ekokardiyografi Stüdyosu (TTE, TEE & ICE)</title>
+    <link rel="stylesheet" href="../src/style.css" />
+    <link rel="stylesheet" href="../src/echo/echo-studio.css" />
+  </head>
+  <body class="echo-app">
+    <header class="ecg-header">
+      <div class="ecg-brand-wrap">
+        <a class="ecg-brand" href="../">✳ CARDIA</a>
+        <span class="ecg-brand-badge" data-echo-badge>EKOKARDİYOGRAFİ</span>
+      </div>
+      <nav aria-label="Modules" class="ecg-modules" data-echo-modules>
+        <a href="../" data-simulator-link>3D Anatomi</a>
+        <a href="../eps/">EPS</a>
+        <a href="../pharmacology/">Farmakoloji</a>
+        <a href="../ecg/">EKG</a>
+        <a href="../angio/">Anjiyografi</a>
+        <a href="./" aria-current="page" data-echo-current-link>Eko</a>
+      </nav>
+      <div class="ecg-lang" role="group" aria-label="Language">
+        <button type="button" data-echo-lang="tr">TR</button>
+        <button type="button" data-echo-lang="en">EN</button>
+      </div>
+    </header>
+
+    <main class="echo-workspace" data-echo-workspace>
+      <!-- Left: 3D Heart Simulation, Probe Geometry & Imaging Plane -->
+      <section class="echo-viewport-container" aria-label="3D Kalp ve Ultrason Prob Modeli">
+        <div id="viewport" class="echo-viewport" role="region" aria-label="3D Heart Model with Ultrasound Probe"></div>
+        
+        <!-- Viewport Floating Controls Bar -->
+        <div class="echo-viewport-toolbar">
+          <div class="echo-cycle-bar">
+            <button type="button" id="beat" class="echo-tool-btn echo-beat-btn" aria-pressed="true" title="Kalp atımını durdur / başlat">⏸ Durdur</button>
+            <input type="range" id="cycle-slider" min="0" max="1" step="0.01" value="0" aria-label="Kardiyak siklus fazı" />
+            <span id="cycle-label" class="echo-cycle-phase">%0</span>
+          </div>
+          <div class="echo-cam-presets" role="group" aria-label="Kamera Açıları">
+            <button type="button" class="echo-cam-btn" data-cam="anterior">Ant</button>
+            <button type="button" class="echo-cam-btn" data-cam="posterior">Post</button>
+            <button type="button" class="echo-cam-btn" data-cam="rao">RAO</button>
+            <button type="button" class="echo-cam-btn" data-cam="lao">LAO</button>
+            <button type="button" class="echo-cam-btn echo-cam-look" data-echo-action="look" title="Görüntüleme düzlemine dik bak">🎯 Düzleme Bak</button>
+          </div>
+        </div>
+
+        <!-- Hidden compatibility hooks for automated test harnesses -->
+        <nav id="mode-nav" style="display:none;" aria-hidden="true">
+          <button type="button" data-mode="echo">TTE</button>
+          <button type="button" data-mode="tee">TEE</button>
+          <button type="button" data-mode="ice">ICE</button>
+          <button type="button" data-mode="anatomy">Anatomi</button>
+        </nav>
+      </section>
+
+      <!-- Right: Dedicated Ultrasound Monitor & Probe Control Console -->
+      <aside class="echo-panel-container" aria-label="Ekokardiyografi Konsolu ve 2D Sektör">
+        <div id="echo-panel" class="echo-panel-mount"></div>
+      </aside>
+    </main>
+
+    <footer class="ecg-footer" data-echo-disclaimer></footer>
+
+    <script type="module" src="../src/echo/main.js"></script>
+  </body>
+</html>

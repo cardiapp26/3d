@@ -55,6 +55,7 @@ function renderShell() {
   text('[data-pharma-back]', w.back);
   linkToLastRoute(document);
   text('[data-pharma-ecg]', lang === 'tr' ? 'EKG' : 'ECG');
+  text('[data-pharma-echo]', lang === 'tr' ? 'Eko' : 'Echo');
   text('[data-pharma-source-note]', w.sourceNote);
   text('[data-pharma-disclaimer]', w.disclaimer);
   const nav = document.querySelector('[data-pharma-chapters]');

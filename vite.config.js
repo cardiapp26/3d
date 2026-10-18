@@ -14,7 +14,8 @@ export default defineConfig({
         eps: page('./eps/index.html'),
         pharmacology: page('./pharmacology/index.html'),
         ecg: page('./ecg/index.html'),
-        angio: page('./angio/index.html')
+        angio: page('./angio/index.html'),
+        echo: page('./echo/index.html')
       },
       output: {
         manualChunks(id) {

@@ -68,6 +68,10 @@ function renderShell() {
   document.querySelector('[data-app-pharmacology]').textContent = lang === 'tr' ? 'Farmakoloji' : 'Pharmacology';
   const ecgLink = document.querySelector('[data-app-ecg]');
   if (ecgLink) ecgLink.textContent = lang === 'tr' ? 'EKG' : 'ECG';
+  const angioLink = document.querySelector('[data-app-angio]');
+  if (angioLink) angioLink.textContent = lang === 'tr' ? 'Anjiyografi' : 'Angiography';
+  const echoLink = document.querySelector('[data-app-echo]');
+  if (echoLink) echoLink.textContent = lang === 'tr' ? 'Eko' : 'Echo';
   disclaimer.textContent = t.disclaimer;
 }
 

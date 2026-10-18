@@ -40,7 +40,7 @@ import { applyLayerDefaults, LEAFLET_VISIBILITY_IDS, LESSON_TISSUE_OPACITY, VEIN
 import { segmentationLabelFor, visibleSegmentationLabels, createSegmentationLegend } from './segmentation-view.js';
 
 // All reference anatomy is loaded from one local atlas and shares one normalization.
-export function createHeart(container, onSelect = () => {}, onHover = () => {}, onAngleChange = () => {}) {
+export function createHeart(container, onSelect = () => {}, onHover = () => {}, onAngleChange = () => {}, options = {}) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(35, 1, .05, 100);
   camera.position.set(0, .5, 9.3);
@@ -48,7 +48,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   camera.add(headlight);
   scene.add(camera);
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, options.pixelRatioCap || 2));
   renderer.setClearColor(0xffffff, 0);
   renderer.localClippingEnabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -96,7 +96,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   let disposed=false, mode='anatomy', opacity=1, beating=false, selected=null, hovered=null, system='all', rootWindow=false;
   const cardiacCycle = createCardiacCycle({ bpm: 72, phase: 0.0, playing: false, rhythm: 'sinus' });
   let channels = null, bloodFlow = null, overlayFollow = null, flowLegend = null, segLegend = null;
-  let fluoroscopy=false, segmentation=false, lastEmittedKey='', ablationStep=0;
+  let fluoroscopy=false, segmentation=false, coronaryContrast=1, lastEmittedKey='', ablationStep=0;
   // Ablation lesson steps that frame Koch's triangle (labels, close-up views).
   const KOCH_LABEL_STEPS=[1,4];
   // Koch close-up: C-arm style obliquity (RAO 30 en face to the septum, LAO 45 along it), close distance.
@@ -1001,8 +1001,11 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();if(modelReady&&mode==='atria'&&['la','laa'].includes(selected))focusLeftAtrium(selected);requestRender();};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
   let lastTime = performance.now();
+  let lastFrameTime = -Infinity;
   function animate(now){
     frame=requestAnimationFrame(animate);
+    if (!renderer.xr.isPresenting && options.maxFps && now - lastFrameTime < 1000 / options.maxFps) return;
+    lastFrameTime = now;
     const dt = Math.min(100, Math.max(0, now - lastTime));
     lastTime = now;
     if(transition){
@@ -1080,7 +1083,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       projectionMaterials.set(object,projected);
     }
     projected.color.setHex(device?(deviceTint??0x202020):contrast?0x303030:0x6a6a6a);
-    projected.opacity=device?(original.transparent?Math.min(.85,original.opacity+.15):.95):contrast?.8:atlas?(layer==='chambers'?.2:layer==='valves'?.12:.11):.16;
+    projected.opacity=device?(original.transparent?Math.min(.85,original.opacity+.15):.95):contrast?.8*coronaryContrast:atlas?(layer==='chambers'?.2:layer==='valves'?.12:.11):.16;
     projected.clippingPlanes=original.clippingPlanes;
     return projected;
   }
@@ -1210,6 +1213,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     },
     setWallCut,
     setView,setAngioProjection,getAngioAngles,setFluoroscopy,
+    setCoronaryContrast(value){coronaryContrast=THREE.MathUtils.clamp(Number(value)||0,0,1);requestRender();},
     zoomIn,zoomOut,getZoomInfo,
     /** Segmentation-style label colours on the atlas meshes; fluoroscopy takes precedence while it is on. */
     setSegmentation,
@@ -1330,6 +1334,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       rootWindow=false;
       system='all';
       fluoroscopy=false;
+      coronaryContrast=1;
       segmentation=false;
       applyLayerDefaults(visibility);
       for(const id in wallCuts){

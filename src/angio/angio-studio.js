@@ -1,5 +1,5 @@
 // Coronary Angiography Studio & C-Arm Projection Simulator Component
-// Standalone Module recreating and expanding AngioView.com capabilities
+// Reuses the Cardia atlas and fluoroscopy engine with shared C-arm controls.
 
 import {
   CORONARY_SYSTEMS,
@@ -14,7 +14,8 @@ import {
   computeVesselForeshortening
 } from './fluoroscopy-sim.js';
 
-import { buildCarmSvg } from './carm-model.js';
+import { createAngioAtlas } from './angio-atlas.js';
+import { createAngioDevice } from './angio-device.js';
 
 /**
  * Parses URL hash parameters (#a=-35&b=-45&sys=left)
@@ -83,6 +84,39 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
   let rafId = null;
   let lastTs = 0;
   let isDraggingPad = false;
+  let atlas = null, device = null;
+  const atlasElement = document.createElement('div');
+  atlasElement.className = 'angio-atlas';
+  atlasElement.dataset.angioAtlas = '';
+  atlasElement.innerHTML = `
+    <div class="angio-atlas-pair">
+      <section><h3 data-atlas-title="anatomy"></h3><div data-atlas-slot="anatomy"></div></section>
+      <section><h3 data-atlas-title="fluoro"></h3><div data-atlas-slot="fluoro"></div></section>
+    </div>
+    <div class="angio-atlas-tools">
+      <label><span data-atlas-opacity-label></span><input data-atlas-opacity type="range" min="0.08" max="1" step="0.01" value="0.25"></label>
+      ${['veins', 'valves', 'conduction', 'thorax'].map(key => `<label><input type="checkbox" data-atlas-layer="${key}"><span data-atlas-layer-label="${key}"></span></label>`).join('')}
+    </div>
+    <p data-atlas-note></p><p data-atlas-selection role="status"></p>`;
+  const deviceElement = document.createElement('div');
+  deviceElement.className = 'angio-device-viewport';
+  deviceElement.dataset.angioDevice = '';
+  atlasElement.querySelector('[data-atlas-opacity]').addEventListener('input', e => atlas?.setOpacity(Number(e.target.value)));
+  atlasElement.querySelectorAll('[data-atlas-layer]').forEach(input => input.addEventListener('change', () => atlas?.setLayer(input.dataset.atlasLayer, input.checked)));
+
+  function syncAtlas() {
+    const isTr = getLang() === 'tr';
+    atlasElement.querySelector('[data-atlas-title=anatomy]').textContent = isTr ? '3B Anatomi · Cardia atlası' : '3D Anatomy · Cardia atlas';
+    atlasElement.querySelector('[data-atlas-title=fluoro]').textContent = isTr ? 'Floroskopi · Aynı projeksiyon' : 'Fluoroscopy · Same projection';
+    atlasElement.querySelector('[data-atlas-opacity-label]').textContent = isTr ? 'Doku opaklığı' : 'Tissue opacity';
+    const names = isTr ? { veins: 'Venler', valves: 'Kapaklar', conduction: 'İleti sistemi', thorax: 'Toraks' }
+      : { veins: 'Veins', valves: 'Valves', conduction: 'Conduction', thorax: 'Thorax' };
+    atlasElement.querySelectorAll('[data-atlas-layer-label]').forEach(label => { label.textContent = names[label.dataset.atlasLayerLabel]; });
+    atlas?.setAngles(state.alpha, state.beta);
+    atlas?.setSystem(state.system);
+    atlas?.setPlaying(state.cinePlaying);
+    device?.setAngles(state.alpha, state.beta);
+  }
 
   function getActiveLesion() {
     return CLINICAL_LESIONS.find(l => l.id === state.activeLesionId) || CLINICAL_LESIONS[0];
@@ -101,12 +135,15 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     state.beta = Math.max(-45, Math.min(45, beta));
     if (updateUrl) updateHashParams(state.alpha, state.beta, state.system);
     syncAngleControls();
+    atlas?.setAngles(state.alpha, state.beta);
+    device?.setAngles(state.alpha, state.beta);
     renderCanvases();
   }
 
   function setSystem(sysId) {
     if (!CORONARY_SYSTEMS.some(s => s.id === sysId)) return;
     state.system = sysId;
+    state.activeLesionId = 'none';
     state.selectedVesselId = null;
     state.hoveredVesselId = null;
 
@@ -123,6 +160,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
   function triggerContrastInjection() {
     state.contrastOpacity = 1.0;
     state.contrastInjecting = true;
+    syncContrastControl();
     if (state.contrastTimer) clearInterval(state.contrastTimer);
 
     let progress = 0;
@@ -138,19 +176,31 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
         if (progress < 0.25) state.contrastOpacity = 0.4 + (progress / 0.25) * 0.6;
         else state.contrastOpacity = Math.max(0.2, 1.0 - (progress - 0.25) * 0.85);
       }
+      syncContrastControl();
       renderCanvases();
     }, 40);
   }
 
+  function syncContrastControl() {
+    const button = container.querySelector('[data-inject-contrast]');
+    if (!button) return;
+    button.classList.toggle('injecting', state.contrastInjecting);
+    button.setAttribute('aria-busy', String(state.contrastInjecting));
+    button.textContent = state.contrastInjecting
+      ? (getLang() === 'tr' ? '💉 Kontrast veriliyor…' : '💉 Injecting…')
+      : (getLang() === 'tr' ? '💉 Kontrast Ver (Puff)' : '💉 Inject Contrast');
+  }
+
   function renderCanvases() {
     const fluoCanvas = container.querySelector('#angio-fluo-canvas');
-    if (fluoCanvas) {
+    if (fluoCanvas && container.querySelector('[data-angio-schematic]')?.open) {
       clickRegions = renderFluoroscopyCanvas(fluoCanvas, {
         alpha: state.alpha,
         beta: state.beta,
         system: state.system,
         activeLesion: getActiveLesion(),
         beatPhase: state.beatPhase,
+        cinePlaying: state.cinePlaying,
         contrastOpacity: state.contrastOpacity,
         showLabels: state.showLabels,
         showSpine: state.showSpine,
@@ -163,12 +213,9 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       });
     }
 
-    const carmMount = container.querySelector('#angio-carm-svg-mount');
-    if (carmMount) {
-      carmMount.innerHTML = buildCarmSvg(state.alpha, state.beta, getLang() === 'tr');
-    }
+    atlas?.setContrast(state.contrastOpacity);
 
-    updateTelemetryBadges();
+    if (container.querySelector('[data-angio-schematic]')?.open) updateTelemetryBadges();
   }
 
   function syncAngleControls() {
@@ -208,6 +255,26 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       btn.classList.toggle('active', on);
       btn.setAttribute('aria-pressed', String(on));
     });
+    const presetName = container.querySelector('.angio-preset-name');
+    if (presetName) presetName.textContent = activePreset
+      ? `${activePreset.name} (${activePreset.optimalFor.join(', ')})`
+      : (isTr ? 'Özel Projeksiyon' : 'Custom Angle');
+    syncVesselDetails();
+  }
+
+  function syncVesselDetails() {
+    const detail = container.querySelector('#angio-vessel-detail-card');
+    if (!detail) return;
+    const isTr = getLang() === 'tr';
+    const vessel = CORONARY_VESSEL_TREES[state.system]?.find(v => v.id === state.selectedVesselId);
+    const preset = getActivePreset();
+    detail.querySelector('h4').textContent = vessel
+      ? (isTr ? vessel.nameTr : vessel.nameEn)
+      : (preset?.name || (isTr ? 'Serbest Açılı İzdüşüm' : 'Free Angulation'));
+    detail.querySelector('p').textContent = vessel
+      ? `${vessel.id} · ${vessel.caliberMm} mm · AHA ${vessel.ahaSegment ?? '—'}`
+      : (preset ? (isTr ? preset.purposeTr : preset.purposeEn)
+        : (isTr ? 'Açı kumandalarını veya joystick alanını kullanarak projeksiyonu ayarlayın. Damar seçmek için görüntüye dokunun.' : 'Adjust the projection with the sliders or joystick. Select a vessel in the image.'));
   }
 
   function updateTelemetryBadges() {
@@ -260,6 +327,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
   }
 
   function renderFull() {
+    const schematicOpen = container.querySelector('[data-angio-schematic]')?.open || false;
     const isTr = getLang() === 'tr';
     const preset = getActivePreset();
     const lesion = getActiveLesion();
@@ -288,7 +356,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       <!-- SYSTEM SELECTION TABS -->
       <nav class="angio-sys-tabs" role="tablist" aria-label="${isTr ? 'Arteriyel Sistem Seçimi' : 'Select Arterial System'}">
         ${CORONARY_SYSTEMS.map(sys => `
-          <button type="button" class="angio-sys-btn ${sys.id === state.system ? 'active' : ''}" data-angio-sys="${sys.id}">
+          <button type="button" role="tab" aria-selected="${sys.id === state.system}" class="angio-sys-btn ${sys.id === state.system ? 'active' : ''}" data-angio-sys="${sys.id}">
             <span class="angio-sys-icon">${sys.icon}</span>
             <span>${isTr ? sys.nameTr : sys.nameEn}</span>
           </button>
@@ -301,11 +369,11 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
         <section class="angio-card angio-fluo-panel">
           <div class="angio-card-head">
             <div class="angio-head-left">
-              <span class="angio-live-tag">☢ ${isTr ? 'CANLI FLOROSKOPİ GÖRÜNTÜSÜ' : 'LIVE FLUOROSCOPIC ANGIOGRAM'}</span>
+              <span class="angio-live-tag">☢ ${isTr ? 'CANLI FLOROSKOPİ · 3B ATLAS' : 'LIVE FLUOROSCOPIC ANGIOGRAM · 3D ATLAS'}</span>
               <span class="angio-preset-name">${preset ? `${preset.name} (${isTr ? preset.optimalFor.join(', ') : preset.optimalFor.join(', ')})` : (isTr ? 'Özel Projeksiyon' : 'Custom Angle')}</span>
             </div>
             <div class="angio-head-controls">
-              <button type="button" class="angio-tool-btn ${state.cinePlaying ? 'active' : ''}" data-toggle-cine="true">
+              <button type="button" aria-pressed="${state.cinePlaying}" class="angio-tool-btn ${state.cinePlaying ? 'active' : ''}" data-toggle-cine="true">
                 ${state.cinePlaying ? (isTr ? '⏸ Durdur' : '⏸ Freeze') : (isTr ? '▶ Cine Akışı' : '▶ Play Cine')}
               </button>
               <button type="button" class="angio-inject-btn ${state.contrastInjecting ? 'injecting' : ''}" data-inject-contrast="true">
@@ -314,9 +382,12 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
             </div>
           </div>
 
+          <div data-atlas-mount></div>
+          <details data-angio-schematic ${schematicOpen ? 'open' : ''}>
+            <summary>${isTr ? 'Şematik koroner ve lezyon alıştırması' : 'Schematic coronary and lesion exercise'}</summary>
           <!-- Main Interactive Fluoroscopy Canvas -->
           <div class="angio-canvas-wrap">
-            <canvas id="angio-fluo-canvas" width="560" height="520"></canvas>
+            <canvas id="angio-fluo-canvas" width="560" height="520" aria-label="${isTr ? 'Etkileşimli koroner damar projeksiyonu' : 'Interactive coronary vessel projection'}"></canvas>
           </div>
 
           <!-- Canvas Display Toggles Strip -->
@@ -364,6 +435,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
             <h4>${preset ? preset.name : (isTr ? 'Serbest Açılı İzdüşüm' : 'Free Angulation')}</h4>
             <p>${preset ? (isTr ? preset.purposeTr : preset.purposeEn) : (isTr ? 'Açı kumandalarını veya joystick trackpad’i kullanarak C-arm gantry rotasyonunu ve kraniyal-kaudal eğimini serbestçe ayarlayabilirsiniz.' : 'Freely adjust the C-arm gantry rotation and cranial-caudal angulation.')}</p>
           </div>
+          </details>
         </section>
 
         <!-- RIGHT COLUMN: C-Arm Physical Gantry + Joystick Trackpad + Standard Presets + Lesions -->
@@ -374,9 +446,9 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
               <span class="angio-carm-title">📐 ${isTr ? '3B C-Arm Gantry & Anjiyografi Laboratuvarı' : '3D C-Arm Gantry & Cath Lab Room'}</span>
               <span class="angio-carm-sub">${isTr ? 'X-Işını Tüpü (Altta) ⟷ Detektör (Üstte)' : 'X-Ray Tube (Under) ⟷ FPD Detector (Over)'}</span>
             </div>
-            <div class="angio-carm-mount" id="angio-carm-svg-mount">
-              ${buildCarmSvg(state.alpha, state.beta, isTr)}
-            </div>
+            <div data-device-mount></div>
+            <div class="angio-device-legend"><span>🔵 ${isTr ? 'Detektör' : 'Detector'}</span><span>🟠 ${isTr ? 'X-ışını tüpü' : 'X-ray tube'}</span><label><input type="checkbox" data-device-beam checked> ${isTr ? 'Işın geometrisi' : 'Beam geometry'}</label></div>
+            <p class="angio-device-note">${isTr ? 'Şematik cihaz modeli. Cihazı çevirmek için sürükleyin; projeksiyonu aşağıdaki kumandalar değiştirir.' : 'Schematic device model. Drag to inspect the device; controls below drive the projection.'}</p>
           </div>
 
           <!-- 2D ANGLE JOYSTICK TRACKPAD & SLIDERS -->
@@ -490,12 +562,30 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       </div>
     `;
 
+    container.querySelector('[data-atlas-mount]').append(atlasElement);
+    container.querySelector('[data-device-mount]').append(deviceElement);
+    if (!atlas) {
+      try { atlas = createAngioAtlas({ mount: atlasElement, getLang, onAngles: setAngles }); }
+      catch (error) { console.warn('Angio atlas unavailable', error); }
+    }
+    if (!device && !deviceElement.dataset.failed) {
+      try { device = createAngioDevice(deviceElement); }
+      catch (error) { deviceElement.dataset.failed = 'true'; deviceElement.textContent = isTr ? '3B cihaz görüntüsü başlatılamadı.' : '3D device view unavailable.'; console.warn('Angio device unavailable', error); }
+    }
+    syncAtlas();
     bindEvents();
     syncAngleControls();
+    syncContrastControl();
     renderCanvases();
   }
 
   function bindEvents() {
+    container.querySelector('[data-angio-schematic]').addEventListener('toggle', renderCanvases);
+    const beam = container.querySelector('[data-device-beam]');
+    if (beam) {
+      beam.checked = device?.getState().beam ?? true;
+      beam.addEventListener('change', () => device?.setBeam(beam.checked));
+    }
     // System tabs
     container.querySelectorAll('[data-angio-sys]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -588,11 +678,16 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     // Fluoroscopy canvas interactive hover and clicks
     const fluoCanvas = container.querySelector('#angio-fluo-canvas');
     if (fluoCanvas) {
-      fluoCanvas.addEventListener('pointermove', e => {
+      const vesselAtPointer = e => {
         const rect = fluoCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const hit = hitTestVessel(clickRegions, x, y, 22);
+        const scaleX = Number(fluoCanvas.dataset.logicalW) / rect.width;
+        const scaleY = Number(fluoCanvas.dataset.logicalH) / rect.height;
+        return hitTestVessel(clickRegions, (e.clientX - rect.left) * scaleX,
+          (e.clientY - rect.top) * scaleY, 14 * Math.max(scaleX, scaleY));
+      };
+      fluoCanvas.addEventListener('pointermove', e => {
+        const hit = vesselAtPointer(e);
+        fluoCanvas.style.cursor = hit ? 'pointer' : 'crosshair';
         if (hit !== state.hoveredVesselId) {
           state.hoveredVesselId = hit;
           renderCanvases();
@@ -607,11 +702,9 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       });
 
       fluoCanvas.addEventListener('click', e => {
-        const rect = fluoCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const hit = hitTestVessel(clickRegions, x, y, 22);
+        const hit = vesselAtPointer(e);
         state.selectedVesselId = hit;
+        syncVesselDetails();
         renderCanvases();
       });
     }
@@ -657,6 +750,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     container.querySelector('#angio-lesion-select')?.addEventListener('change', e => {
       state.activeLesionId = e.target.value;
       renderFull();
+      container.querySelector('[data-angio-schematic]').open = true;
     });
 
     // Share URL button
@@ -683,9 +777,13 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     render: renderFull,
     setAngles,
     setSystem,
+    getAtlasState: () => ({ ...atlas?.getState(), device: device?.getState() }),
+    getSchematicRegions: () => clickRegions.map(({ id, points, midPoint }) => ({ id, points, midPoint })),
     destroy() {
       if (rafId) cancelAnimationFrame(rafId);
       if (state.contrastTimer) clearInterval(state.contrastTimer);
+      atlas?.dispose();
+      device?.dispose();
       container.remove();
     }
   };

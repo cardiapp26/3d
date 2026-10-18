@@ -5,6 +5,7 @@ import { createHeaderTabs } from './header-tabs.js';
 import { pharmacologyLinkMarkup, syncPharmacologyLink } from './pharmacology-link.js';
 import { ecgLinkMarkup, syncEcgLink } from './ecg-link.js';
 import { angioLinkMarkup, syncAngioLink } from './angio-link.js';
+import { echoLinkMarkup, syncEchoLink } from './echo-link.js';
 import { createQuickSearch, rememberMode, normalizeSearch } from './quick-search.js';
 import { createPractice } from './practice.js';
 import { DEFECT_TYPES } from './septal-defects-data.js';
@@ -34,8 +35,7 @@ const MODE_GROUPS = [
   ['modeGroupExam', ['exam']],
   ['modeGroupIntervention', ['angiography']],
   ['modeGroupHemodynamics', ['cath']],
-  ['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']],
-  ['modeGroupImaging', ['echo', 'tee', 'ice']]
+  ['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']]
 ];
 // Title with the named side branch under the pointer (coronary branches).
 const withBranch = (title, branch) => (branch ? `${title} · ${branch[getContentLanguage()] || branch.en}` : title);
@@ -118,7 +118,7 @@ app.innerHTML = `
 <header>
   <div class="brand-block">
     <a class="brand" href="#/">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
-    <div class="header-module-links">${epsLinkMarkup(getContentLanguage())}${pharmacologyLinkMarkup(getContentLanguage())}${ecgLinkMarkup(getContentLanguage())}${angioLinkMarkup(getContentLanguage())}</div>
+    <div class="header-module-links">${epsLinkMarkup(getContentLanguage())}${pharmacologyLinkMarkup(getContentLanguage())}${ecgLinkMarkup(getContentLanguage())}${angioLinkMarkup(getContentLanguage())}${echoLinkMarkup(getContentLanguage())}</div>
   </div>
   <div id="header-search" class="header-search"></div>
   <div class="header-right">
@@ -1225,6 +1225,12 @@ function handleHashChange() {
     // The former hemodynamics mode is part of catheterization now.
     const targetMode = match ? (match[1] === 'hemodynamics' ? 'cath' : match[1]) : null;
 
+    if (['echo', 'tee', 'ice'].includes(targetMode)) {
+      const modality = targetMode === 'tee' ? 'tee' : targetMode === 'ice' ? 'ice' : 'tte';
+      window.location.replace(`./echo/?modality=${modality}`);
+      return;
+    }
+
     const urlParams = new URLSearchParams(hash.split('?')[1] || '');
     const targetStructure = urlParams.get('structure') || (hash.match(/#\/structure\/([a-z0-9_-]+)/i)?.[1]);
 
@@ -1981,6 +1987,7 @@ function updateLanguageUI() {
   syncPharmacologyLink(getContentLanguage());
   syncEcgLink(getContentLanguage());
   syncAngioLink(getContentLanguage());
+  syncEchoLink(getContentLanguage());
   defectPanel.refresh();
   panelShell?.refresh();
   quickSearches.forEach(search => search.refresh());

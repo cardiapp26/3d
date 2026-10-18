@@ -16,7 +16,8 @@ const TEXTS = {
     pharma: 'Farmakoloji',
     ecg: 'EKG',
     angio: 'Anjiyografi',
-    disclaimer: 'Eğitim ve simülasyon amaçlıdır. AngioView, Kern (Cardiac Catheterization Handbook) ve SCAI kılavuzları temel alınarak C-arm projeksiyon açıları (LAO/RAO, Cranial/Caudal), damar kısalması (foreshortening), süperpozisyon ve koroner lezyonlar modellenmiştir. Klinik kararlar için uzman hekim değerlendirmesi esastır.'
+    echo: 'Eko',
+    disclaimer: 'Cardia’nın mevcut 3B kalp atlası ve floroskopi görünümü kullanılır. Floroskopi, atlas yüzeylerinin geometrik projeksiyonudur; hasta röntgeni değildir. C-arm cihazı ve koroner lezyon alıştırması şematiktir. Eğitim ve simülasyon amaçlıdır.'
   },
   en: {
     title: 'Cardia · Coronary Angiography & C-Arm Studio',
@@ -26,7 +27,8 @@ const TEXTS = {
     pharma: 'Pharmacology',
     ecg: 'ECG',
     angio: 'Angiography',
-    disclaimer: 'For educational and simulation use. C-arm gantry projections (LAO/RAO, Cranial/Caudal), vessel foreshortening, branch overlap, and coronary stenosis profiles modeled after AngioView, Kern (Cardiac Catheterization Handbook), and SCAI guidelines. Clinical decisions require licensed physician assessment.'
+    echo: 'Echo',
+    disclaimer: 'Uses the existing Cardia 3D heart atlas and fluoroscopy view. Fluoroscopy is a geometric projection of atlas surfaces, not a patient radiograph. The C-arm device and coronary lesion exercise are schematic. For education and simulation.'
   }
 };
 
@@ -51,7 +53,8 @@ function renderShell() {
   document.title = t.title;
 
   text('.ecg-brand-badge', t.badge);
-  text('[data-simulator-link]', t.back);
+  text('.ecg-modules [data-simulator-link]', t.back);
+  text('.ecg-modules [aria-current="page"]', t.angio);
   linkToLastRoute(document);
   text('[data-angio-disclaimer]', t.disclaimer);
 
@@ -61,6 +64,8 @@ function renderShell() {
   if (pharmaLink) pharmaLink.textContent = t.pharma;
   const ecgLink = document.querySelector('[href="../ecg/"]');
   if (ecgLink) ecgLink.textContent = t.ecg;
+  const echoLink = document.querySelector('[href="../echo/"]');
+  if (echoLink) echoLink.textContent = t.echo;
 
   document.querySelectorAll('[data-angio-lang]').forEach(btn => {
     const isAct = btn.dataset.angioLang === lang;

@@ -380,10 +380,10 @@ export function createEchoMode({ heart, mount, getLang }) {
   }
 
   return {
-    /** `modality`: the mode's fixed modality (TTE and TEE are separate modes). */
-    enter(modality = 'tte') {
+    /** `modality`: the mode's initial modality. `lock`: if true, hides the modality switcher. */
+    enter(modality = 'tte', { lock = false } = {}) {
       active = true;
-      state.locked = modality;
+      state.locked = lock ? modality : null;
       ensurePanel();
       mount.hidden = false;
       if (!ensureAnatomy()) return;
@@ -411,6 +411,10 @@ export function createEchoMode({ heart, mount, getLang }) {
     // loop): section after the current task, from the deformed geometry.
     tick() {
       if (!active || pendingTick) return;
+      if (!anatomy && ensureAnatomy()) {
+        if (overlay) overlay.group.visible = true;
+        refresh(true);
+      }
       pendingTick = true;
       queueMicrotask(() => { pendingTick = false; refresh(false); });
     },

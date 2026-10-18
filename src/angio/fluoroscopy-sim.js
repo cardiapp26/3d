@@ -140,7 +140,15 @@ export function renderFluoroscopyCanvas(canvas, state) {
 
   const cx = W / 2;
   const cy = H / 2 + 10;
-  const scale = Math.min(W, H) * 0.28;
+  // Fit the whole tree at rest; keep this frame stable so cine motion survives.
+  const reference = (CORONARY_VESSEL_TREES[system] || [])
+    .flatMap(v => v.points.map(pt => projectPoint(pt, alpha, beta)));
+  const centerU = reference.length ? (Math.min(...reference.map(p => p.u)) + Math.max(...reference.map(p => p.u))) / 2 : 0;
+  const centerV = reference.length ? (Math.min(...reference.map(p => p.v)) + Math.max(...reference.map(p => p.v))) / 2 : 0;
+  const radius = Math.max(0.1, ...reference.map(p => Math.hypot(p.u - centerU, p.v - centerV)));
+  const scale = Math.min(W, H) * 0.38 / radius;
+  const originX = cx - centerU * scale;
+  const originY = cy - centerV * scale;
 
   // 1. High-Contrast Cath Lab Screen Background (Inverted X-Ray Appearance)
   const bgGrad = ctx.createRadialGradient(cx, cy, scale * 0.3, cx, cy, scale * 2.2);
@@ -207,8 +215,8 @@ export function renderFluoroscopyCanvas(canvas, state) {
   if (showCatheter && rootVessel && rootVessel.points.length > 0) {
     const ostiumPt = rootVessel.points[0];
     const ostiumProj = projectPoint(ostiumPt, alpha, beta, beatPhase);
-    const ox = cx + ostiumProj.u * scale;
-    const oy = cy + ostiumProj.v * scale;
+    const ox = originX + ostiumProj.u * scale;
+    const oy = originY + ostiumProj.v * scale;
 
     ctx.save();
     ctx.strokeStyle = '#0f172a'; // Opaque catheter shadow
@@ -251,7 +259,7 @@ export function renderFluoroscopyCanvas(canvas, state) {
     // Build projected 2D coordinates for all control points
     const projPts = v.points.map(pt => {
       const pr = projectPoint(pt, alpha, beta, beatPhase);
-      return { x: cx + pr.u * scale, y: cy + pr.v * scale, raw: pr };
+      return { x: originX + pr.u * scale, y: originY + pr.v * scale, raw: pr };
     });
 
     // Check if this vessel has an active clinical lesion
@@ -465,7 +473,7 @@ export function renderFluoroscopyCanvas(canvas, state) {
 
   ctx.fillStyle = '#10b981';
   ctx.font = 'bold 12px ui-monospace, monospace';
-  ctx.fillText('15 FPS · CINE', W - 110, 32);
+  ctx.fillText(state.cinePlaying === false ? (isTr ? 'DONDURULDU' : 'FROZEN') : 'CINE · 72 BPM', W - 110, 32);
   ctx.fillStyle = '#94a3b8';
   ctx.font = '10px system-ui, sans-serif';
   ctx.fillText('SID 100 cm', W - 110, 46);
