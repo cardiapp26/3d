@@ -239,3 +239,7 @@
     padding: 4px 8px;
   }
 }
+
+/* Viewport fullscreen (echo-view-controls.js); the fallback covers the window when the API is refused. */
+.echo-viewport-container:fullscreen { width: 100vw; height: 100vh; }
+.echo-viewport-container.is-fullscreen-fallback { position: fixed; inset: 0; z-index: 200; }

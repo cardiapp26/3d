@@ -2,6 +2,7 @@
 import { createHeart } from '../heart.js';
 import { mountSiteHeader } from '../site-header.js';
 import { initEchoResizer } from './echo-resizer.js';
+import { createEchoViewControls } from './echo-view-controls.js';
 import { createPersonalNotes } from '../personal-notes.js';
 import { createEchoMode } from '../echo-mode.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
@@ -77,6 +78,13 @@ if (heart && echoMount) {
   window.cardiaEcho = echoMode;
 }
 
+// Myocardium opacity and fullscreen / zoom / reset over the 3D viewport.
+const viewControls = createEchoViewControls({
+  container: document.querySelector('.echo-viewport-container'),
+  heart,
+  getLang: () => lang
+});
+
 // Divider between the 3D viewport and the console.
 const resizer = initEchoResizer({
   workspace: document.querySelector('[data-echo-workspace]'),
@@ -88,6 +96,7 @@ const resizer = initEchoResizer({
 function renderShell() {
   const t = TEXTS[lang];
   resizer.setLanguage(lang);
+  viewControls.setLanguage(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
 

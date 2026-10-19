@@ -62,6 +62,18 @@ export function createEchoMode({ heart, mount, getLang }) {
   };
   let sweepRaf = 0, needle = null;
   let lastSection = 0, lastResult = null;
+  // Parts line while the heart beats: everything the cut meets over the cycle
+  // at this probe pose, so the line (and the panel below it) does not change
+  // with every frame. A new pose, view or depth starts over; a stopped heart
+  // shows the exact cut of the shown phase.
+  const partsSeen = new Map();
+  let partsPose = '';
+  function partsForLine(parts, playing) {
+    const pose = JSON.stringify([state.modality, state.view, state.tte, state.tee, state.ice, state.depth, state.sectorAngle, state.task?.target]);
+    if (pose !== partsPose || !playing) { partsSeen.clear(); partsPose = pose; }
+    for (const item of parts || []) partsSeen.set(`${item.id}:${item.part.key}`, item);
+    return [...partsSeen.values()];
+  }
   const getMeshes = id => heart.getMeshes(id).filter(m => !m.userData.micro);
 
   function ensureAnatomy() {
@@ -337,7 +349,7 @@ export function createEchoMode({ heart, mount, getLang }) {
         drawMitralMap(panel.mitralMap, mitralMap, mapCutLine(mitralMap, frame), inCut, { lang, dpr: Math.min(globalThis.devicePixelRatio || 1, 2) });
       }
     }
-    panel?.setParts(state.parts ? partGroups(drawn?.parts, lang) : []);
+    panel?.setParts(state.parts ? partGroups(partsForLine(drawn?.parts, playing), lang) : []);
     panel?.setHits(drawn?.hits, STRUCTURE_INFO);
   }
 

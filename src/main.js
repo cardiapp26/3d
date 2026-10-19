@@ -114,7 +114,7 @@ app.innerHTML = `
 <header class="site-header" data-site-page="${currentPageId()}">
   <div class="site-header-actions">
     <div id="header-search" class="header-search"></div>
-    <button id="lang-btn" class="lang-btn" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
+    <button id="lang-btn" class="lang-btn site-lang-toggle" data-lang="${getContentLanguage()}" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
     <button id="header-update-btn" class="header-update-btn" title="Güncellemeleri denetle / Check for updates">
       <span class="update-btn-icon">↺</span>
       <span class="update-label" data-i18n="updateBtn">${getTranslation('updateBtn')}</span>
@@ -2008,7 +2008,7 @@ function updateLanguageUI() {
   headerTabs?.refresh();
   const currentLang = getContentLanguage();
   const langBtn = document.querySelector('#lang-btn');
-  if (langBtn) langBtn.textContent = currentLang.toUpperCase();
+  if (langBtn) { langBtn.textContent = currentLang.toUpperCase(); langBtn.dataset.lang = currentLang; }
 
   const flowBtn = document.querySelector('#flow-toggle');
   if (flowBtn) {

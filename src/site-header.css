@@ -29,7 +29,18 @@
   font-size:13px;font-weight:600;color:var(--site-link);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
 .site-module:hover{background:var(--site-hover);color:var(--site-text)}
 .site-module[aria-current=page]{background:var(--site-active);color:var(--site-on-active)}
-.site-module:focus-visible,.site-subpage:focus-visible,.site-brand:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
+.site-module-group{flex:0 0 auto;display:inline-flex;align-items:center}
+.site-module-group .site-module{border-top-right-radius:0;border-bottom-right-radius:0;padding-right:8px}
+.site-module-more{height:32px;width:24px;padding:0;border:0;border-radius:0 7px 7px 0;background:transparent;color:var(--site-link);font-size:11px;cursor:pointer}
+.site-module-more:hover,.site-module-more[aria-expanded=true]{background:var(--site-hover);color:var(--site-text)}
+.site-module-group:has(.site-module[aria-current=page]) .site-module-more{background:var(--site-active);color:var(--site-on-active);box-shadow:inset 1px 0 0 rgba(255,255,255,.25)}
+.site-module-menu{position:fixed;z-index:130;display:flex;flex-direction:column;min-width:230px;padding:6px;background:var(--site-control);border:1px solid var(--site-line);border-radius:9px;box-shadow:0 10px 28px rgba(24,59,48,.16)}
+.site-module-menu[hidden]{display:none}
+.site-module-menu a{display:block;padding:8px 10px;border-radius:6px;color:var(--site-text);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}
+.site-module-menu a:hover,.site-module-menu a:focus-visible{background:var(--site-hover)}
+.site-module-menu a[aria-current=page]{background:#e7ece5}
+.site-module-menu .site-menu-lesson{padding-left:24px;font-weight:500;color:var(--site-link)}
+.site-module-more:focus-visible,.site-module-menu a:focus-visible,.site-module:focus-visible,.site-subpage:focus-visible,.site-brand:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
 
 /* The page's own controls (language, search, tools) take the header colours. */
 .site-header-actions{grid-area:actions;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;height:52px;font-size:12px;color:var(--site-muted)}
@@ -39,7 +50,20 @@ header.site-header .site-header-actions button,header.site-header .site-header-a
   font:inherit;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;box-shadow:none}
 header.site-header .site-header-actions button:hover,header.site-header .site-header-actions a:hover{background:var(--site-hover);color:var(--site-text)}
 header.site-header .site-header-actions :is(button,a)[aria-pressed=true],header.site-header .site-header-actions button.active{background:var(--site-active);color:var(--site-on-active);border-color:var(--site-active)}
-header.site-header .site-header-actions [role=group]{display:inline-flex;gap:4px}
+/* Same right end on every page: page tools, then Notes, then the TR | EN switch. */
+.site-header-actions > .notes-toggle{order:90}
+.site-header-actions > :is([role=group],.site-lang-toggle){order:100}
+/* One TR | EN look: the module pages' two-button group and the 3D page's toggle
+   (#lang-btn keeps the current language as its text; both halves are drawn). */
+header.site-header .site-header-actions [role=group]{display:inline-flex;gap:0;border:1px solid var(--site-control-line);border-radius:7px;overflow:hidden;background:var(--site-control)}
+header.site-header .site-header-actions [role=group]>button{border:0;border-radius:0;min-height:30px;padding:0 10px;background:transparent}
+header.site-header .site-header-actions [role=group]>button+button{border-left:1px solid var(--site-control-line)}
+header.site-header .site-header-actions [role=group]>button[aria-pressed=true]{background:var(--site-active);color:var(--site-on-active)}
+header.site-header .site-header-actions .site-lang-toggle{padding:0;gap:0;overflow:hidden;font-size:0}
+header.site-header .site-header-actions .site-lang-toggle::before,header.site-header .site-header-actions .site-lang-toggle::after{display:inline-flex;align-items:center;align-self:stretch;padding:0 10px;font-size:12px;font-weight:600}
+header.site-header .site-header-actions .site-lang-toggle::before{content:'TR'}
+header.site-header .site-header-actions .site-lang-toggle::after{content:'EN';border-left:1px solid var(--site-control-line)}
+header.site-header .site-header-actions .site-lang-toggle[data-lang=tr]::before,header.site-header .site-header-actions .site-lang-toggle[data-lang=en]::after{background:var(--site-active);color:var(--site-on-active)}
 header.site-header .site-header-actions kbd{background:#eef2ec;border:1px solid var(--site-control-line);color:var(--site-text);border-radius:4px;padding:0 4px;font-size:10px}
 header.site-header .site-header-actions .quick-search input{min-height:32px;background:var(--site-control)}
 
@@ -51,6 +75,8 @@ header.site-header .site-header-actions .quick-search input{min-height:32px;back
   .site-subpage{padding:6px 8px;font-size:11px}
   .site-modules{height:48px;margin:0 -10px;padding:0 8px}
   .site-module{height:44px;padding:0 11px;font-size:12px}
+  .site-module-more{height:44px;width:32px}
+  .site-module-menu a{padding:12px 10px}
   .site-header-actions{height:48px;gap:4px}
   header.site-header .site-header-actions button,header.site-header .site-header-actions a{min-height:44px;min-width:44px;padding:0 8px;justify-content:center}
 }

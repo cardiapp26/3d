@@ -10,7 +10,16 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
   });
   let syncing = false, loaded = false, disposed = false;
   let alpha = 45, beta = -35, system = 'left', playing = true, opacity = .25;
-  const layers = { veins: false, valves: false, conduction: false, thorax: false };
+  const layers = { veins: false, valves: false, conduction: false };
+  // Thoracic landmarks (thorax.js): the spine and the diaphragm separately; the phrenic nerves stay off.
+  const landmarks = { vertebrae: false, diaphragm: false };
+  let contours = true;
+  function applyLandmarks(h) {
+    h.setLayer('thorax', landmarks.vertebrae || landmarks.diaphragm);
+    h.setLayer('vertebrae', landmarks.vertebrae);
+    h.setLayer('diaphragm', landmarks.diaphragm);
+    h.setLayer('phrenic', false);
+  }
   const selection = mount.querySelector('[data-atlas-selection]');
   const hearts = [];
   let appliedSystem = null, selectedId = null, contrast = 1;
@@ -64,6 +73,8 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
       h.setMode('angiography'); h.setFluoroscopy(i === 1); h.setOpacity(opacity);
       h.setLayer('flow', false); h.setLayer('icns', false);
       Object.entries(layers).forEach(([key, on]) => h.setLayer(key, on));
+      applyLandmarks(h);
+      h.setFluoroContours(contours);
     });
     setAngles(alpha, beta, true); setSystem(system);
     hearts[1].setCoronaryContrast(contrast);
@@ -78,7 +89,12 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
     element: mount, ready, setAngles, setSystem,
     setPlaying(on) { if (on === playing) return; playing = on; if (loaded) hearts[0].setBeating(on); },
     setOpacity(value) { opacity = value; if (loaded) hearts.forEach(h => h.setOpacity(value)); },
-    setLayer(key, on) { layers[key] = on; if (loaded) hearts.forEach(h => key === 'veins' ? h.setVeinsVisible(on) : h.setLayer(key, on)); },
+    setLayer(key, on) {
+      if (key in landmarks) { landmarks[key] = on; if (loaded) hearts.forEach(applyLandmarks); return; }
+      layers[key] = on; if (loaded) hearts.forEach(h => key === 'veins' ? h.setVeinsVisible(on) : h.setLayer(key, on));
+    },
+    /** Chamber and vessel outlines over the fluoroscopy image. */
+    setContours(on) { contours = Boolean(on); if (loaded) hearts[1].setFluoroContours(contours); },
     setContrast(value) { if (value === contrast) return; contrast = value; if (loaded) hearts[1].setCoronaryContrast(value); },
     getState: () => ({ anatomy: hearts[0].getState(), fluoro: hearts[1].getState(), cycle: hearts[0].getCycleState(), fluoroCycle: hearts[1].getCycleState() }),
     dispose() { disposed = true; unsubscribe(); hearts.forEach(h => h.dispose()); mount.remove(); }

@@ -60,18 +60,21 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       : (isTr ? 'EKG Fizyolojisi · Etkileşimli çalışma alanı' : 'ECG Physiology · Interactive workspace');
 
     container.innerHTML = `
-      <div class="guyton-tabs" role="tablist">
-        ${GUYTON_TOPICS.map((t, idx) => `
-          <button type="button" role="tab" tabindex="${idx === activeTopicIdx && !isDaVinci ? 0 : -1}" aria-selected="${idx === activeTopicIdx && !isDaVinci}" class="guyton-tab-btn ${idx === activeTopicIdx && !isDaVinci ? 'active' : ''}" data-topic="${idx}">
-            <span class="guyton-tab-ch">CH ${t.chapter}</span>
-            <span class="guyton-tab-name">${t.title[lang]}</span>
+      <nav class="guyton-chapters" aria-label="${isTr ? 'Bölümler' : 'Chapters'}">
+        <p class="guyton-chapters-title">${isTr ? 'Bölümler' : 'Chapters'}</p>
+        <div class="guyton-tabs" role="tablist" aria-orientation="vertical">
+          ${GUYTON_TOPICS.map((t, idx) => `
+            <button type="button" role="tab" tabindex="${idx === activeTopicIdx && !isDaVinci ? 0 : -1}" aria-selected="${idx === activeTopicIdx && !isDaVinci}" class="guyton-tab-btn ${idx === activeTopicIdx && !isDaVinci ? 'active' : ''}" data-topic="${idx}">
+              <span class="guyton-tab-ch">${isTr ? 'Bölüm' : 'Chapter'} ${t.chapter}</span>
+              <span class="guyton-tab-name">${t.title[lang]}</span>
+            </button>
+          `).join('')}
+          <button type="button" role="tab" tabindex="${isDaVinci ? 0 : -1}" aria-selected="${isDaVinci}" class="guyton-tab-btn davinci-tab-pill ${isDaVinci ? 'active' : ''}" data-davinci-tab="true">
+            <span class="guyton-tab-ch">${isTr ? 'Ek' : 'Appendix'} · JACC 2025</span>
+            <span class="guyton-tab-name">${isTr ? '12 Derivasyon EKG Anatomisi' : '12-Lead ECG Anatomy'}</span>
           </button>
-        `).join('')}
-        <button type="button" role="tab" tabindex="${isDaVinci ? 0 : -1}" aria-selected="${isDaVinci}" class="guyton-tab-btn davinci-tab-pill ${isDaVinci ? 'active' : ''}" data-davinci-tab="true">
-          <span class="guyton-tab-ch" style="color:${isDaVinci ? '#ffffff' : '#38bdf8'};font-weight:800;">DA VINCI · JACC 2025</span>
-          <span class="guyton-tab-name">${isTr ? '12 Derivasyon EKG Anatomisi' : '12-Lead ECG Anatomy'}</span>
-        </button>
-      </div>
+        </div>
+      </nav>
 
       <div class="guyton-content-area">
         <div id="clinical-sim-mount"></div>
@@ -103,10 +106,12 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     // Bind topic tabs
     container.querySelectorAll('[data-topic]').forEach(btn => {
       btn.addEventListener('keydown', e => {
-        if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+        // A vertical list on wide screens, a row on phones: both arrow pairs move.
+        if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)) return;
         e.preventDefault();
         isDaVinci = false;
-        activeTopicIdx = e.key === 'Home' ? 0 : e.key === 'End' ? GUYTON_TOPICS.length - 1 : (activeTopicIdx + (e.key === 'ArrowRight' ? 1 : -1) + GUYTON_TOPICS.length) % GUYTON_TOPICS.length;
+        const step = ['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : -1;
+        activeTopicIdx = e.key === 'Home' ? 0 : e.key === 'End' ? GUYTON_TOPICS.length - 1 : (activeTopicIdx + step + GUYTON_TOPICS.length) % GUYTON_TOPICS.length;
         render(); container.querySelector(`[data-topic="${activeTopicIdx}"]`)?.focus();
       });
       btn.addEventListener('click', () => {

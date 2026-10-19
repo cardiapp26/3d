@@ -95,7 +95,8 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     </div>
     <div class="angio-atlas-tools">
       <label><span data-atlas-opacity-label></span><input data-atlas-opacity type="range" min="0.08" max="1" step="0.01" value="0.25"></label>
-      ${['veins', 'valves', 'conduction', 'thorax'].map(key => `<label><input type="checkbox" data-atlas-layer="${key}"><span data-atlas-layer-label="${key}"></span></label>`).join('')}
+      ${['veins', 'valves', 'conduction', 'vertebrae', 'diaphragm'].map(key => `<label><input type="checkbox" data-atlas-layer="${key}"><span data-atlas-layer-label="${key}"></span></label>`).join('')}
+      <label><input type="checkbox" data-atlas-contours checked><span data-atlas-contours-label></span></label>
     </div>
     <p data-atlas-note></p><p data-atlas-selection role="status"></p>`;
   const deviceElement = document.createElement('div');
@@ -103,15 +104,17 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
   deviceElement.dataset.angioDevice = '';
   atlasElement.querySelector('[data-atlas-opacity]').addEventListener('input', e => atlas?.setOpacity(Number(e.target.value)));
   atlasElement.querySelectorAll('[data-atlas-layer]').forEach(input => input.addEventListener('change', () => atlas?.setLayer(input.dataset.atlasLayer, input.checked)));
+  atlasElement.querySelector('[data-atlas-contours]').addEventListener('change', e => atlas?.setContours(e.target.checked));
 
   function syncAtlas() {
     const isTr = getLang() === 'tr';
     atlasElement.querySelector('[data-atlas-title=anatomy]').textContent = isTr ? '3B Anatomi · Cardia atlası' : '3D Anatomy · Cardia atlas';
     atlasElement.querySelector('[data-atlas-title=fluoro]').textContent = isTr ? 'Floroskopi · Aynı projeksiyon' : 'Fluoroscopy · Same projection';
     atlasElement.querySelector('[data-atlas-opacity-label]').textContent = isTr ? 'Doku opaklığı' : 'Tissue opacity';
-    const names = isTr ? { veins: 'Venler', valves: 'Kapaklar', conduction: 'İleti sistemi', thorax: 'Toraks' }
-      : { veins: 'Veins', valves: 'Valves', conduction: 'Conduction', thorax: 'Thorax' };
+    const names = isTr ? { veins: 'Venler', valves: 'Kapaklar', conduction: 'İleti sistemi', vertebrae: 'Vertebra', diaphragm: 'Diyafram' }
+      : { veins: 'Veins', valves: 'Valves', conduction: 'Conduction', vertebrae: 'Spine', diaphragm: 'Diaphragm' };
     atlasElement.querySelectorAll('[data-atlas-layer-label]').forEach(label => { label.textContent = names[label.dataset.atlasLayerLabel]; });
+    atlasElement.querySelector('[data-atlas-contours-label]').textContent = isTr ? 'Konturlar' : 'Outlines';
     atlas?.setAngles(state.alpha, state.beta);
     atlas?.setSystem(state.system);
     atlas?.setPlaying(state.cinePlaying);

@@ -12,6 +12,15 @@ export const CONDUCTION_STAGES = [
   { id: 'repol', startMs: 320, endMs: 860, color: '#38bdf8', wave: 'ST Segmenti & T', tr: 'Repolarizasyon', en: 'Repolarization', vel: 'Faz 2–3', descTr: 'Epikarddan endokarda doğru ventriküler repolarizasyon (T dalgası QRS ile konkordandır) ve diyastolik dinlenme.', descEn: 'Epicardial-to-endocardial ventricular recovery inscribing the T wave and returning to phase-4 baseline.' }
 ];
 
+// Simulator views (one tab row).
+const SIM_MODES = Object.freeze([
+  { id: 'simulator', tr: 'Canlı monitör', en: 'Live monitor' },
+  { id: '12lead', tr: '12 derivasyon', en: '12-lead' },
+  { id: 'skillstat', tr: '6 sn ritim', en: '6-second rhythm' },
+  { id: 'compass', tr: 'Adım adım okuma', en: 'Step-by-step reading' },
+  { id: 'study', tr: 'Alıştırma', en: 'Practice' }
+]);
+
 export const CLINICAL_CATEGORIES = [
   { id: 'ischemia', tr: 'İskemi & STEMI Eşdeğerleri', en: 'Ischemia & STEMI Equivalents' },
   { id: 'arrhythmia', tr: 'Aritmiler', en: 'Arrhythmias' },
@@ -3256,8 +3265,6 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
     const qtcfMs = rrMs > 0 ? Math.round(qtMs / Math.cbrt(rrMs / 1000)) : 0;
     const activeStage = getActiveStage(st.conductionMs);
 
-    const filteredConditions = CLINICAL_CONDITIONS.filter(c => c.cat === st.catId);
-
     const allQuestions = PREMIUM_STUDY_QUESTIONS;
     const filteredQuestions = allQuestions.filter(q => {
       if (st.studyFilter === 'missed') return studyState.missedIds.includes(q.id);
@@ -3294,29 +3301,14 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
         <div class="clin-sim-brand">
           <span class="clin-sim-pulse-dot" aria-hidden="true"></span>
           <span class="clin-sim-brand-title">
-            ${isTr ? 'Canlı EKG Simülatörü · ECGLens, SkillStat & EKG Compass Stüdyosu' : 'Live ECG Simulator · ECGLens, SkillStat & EKG Compass Studio'}
-          </span>
-          <span class="clin-sim-premium-pill">
-            ✨ ${isTr ? 'TÜM PREMIUM ÖZELLİKLER AÇIK' : 'ALL PREMIUM FEATURES UNLOCKED'}
+            ${isTr ? 'Klinik EKG simülatörü' : 'Clinical ECG simulator'}
           </span>
         </div>
 
-        <div class="clin-sim-mode-tabs">
-          <button type="button" class="clin-sim-mode-btn ${st.mode === 'simulator' ? 'active' : ''}" data-sim-mode="simulator">
-            📈 ${isTr ? 'Canlı Monitör & İletim' : 'Live Sweep & Conduction'}
-          </button>
-          <button type="button" class="clin-sim-mode-btn ${st.mode === '12lead' ? 'active' : ''}" data-sim-mode="12lead">
-            🗂️ ${isTr ? '12-Derivasyon & 3B Kalp' : '12-Lead & 3D Heart'}
-          </button>
-          <button type="button" class="clin-sim-mode-btn ${st.mode === 'skillstat' ? 'active' : ''}" data-sim-mode="skillstat">
-            ⚡ ${isTr ? 'SkillStat 6-Sn Klasik & 27 Ritim' : 'SkillStat 6-Sec Classic & 27-Rhythm'}
-          </button>
-          <button type="button" class="clin-sim-mode-btn ${st.mode === 'compass' ? 'active' : ''}" data-sim-mode="compass">
-            🧭 ${isTr ? 'EKG Compass: 9-Adım Okuyucu & Elektrolit' : 'EKG Compass: 9-Step Reader & Electrolytes'}
-          </button>
-          <button type="button" class="clin-sim-mode-btn ${st.mode === 'study' ? 'active' : ''}" data-sim-mode="study">
-            🎯 ${isTr ? 'Premium Quiz & Derivasyon Seçimi' : 'Premium Study Hub & Drills'}
-          </button>
+        <div class="clin-sim-mode-tabs" role="tablist" aria-label="${isTr ? 'Simülatör görünümü' : 'Simulator view'}">
+          ${SIM_MODES.map(m => `
+            <button type="button" role="tab" aria-selected="${st.mode === m.id}" class="clin-sim-mode-btn ${st.mode === m.id ? 'active' : ''}" data-sim-mode="${m.id}">${isTr ? m.tr : m.en}</button>
+          `).join('')}
           <button type="button" class="clin-sim-collapse-btn" data-sim-collapse="true">
             ${st.collapsed ? (isTr ? '▼ Simülatörü Aç' : '▼ Expand Simulator') : (isTr ? '▲ Küçült' : '▲ Minimize')}
           </button>
@@ -3628,23 +3620,21 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
             }).join('')}
           </div>
         ` : st.mode !== 'study' ? `
-          <!-- Category Bar -->
-          <div class="clin-sim-cat-row" role="tablist" aria-label="${isTr ? 'Klinik EKG Kategorileri' : 'Clinical ECG Categories'}">
-            ${CLINICAL_CATEGORIES.map(cat => `
-              <button type="button" class="clin-sim-cat-btn ${cat.id === st.catId ? 'active' : ''}" data-sim-cat="${cat.id}">
-                ${isTr ? cat.tr : cat.en}
-              </button>
-            `).join('')}
-          </div>
-
-          <!-- Condition Pills -->
-          <div class="clin-sim-cond-row" role="list" aria-label="${isTr ? 'Klinik EKG Paterni Seçimi' : 'Select Clinical ECG Pattern'}">
-            ${filteredConditions.map(c => `
-              <button type="button" class="clin-sim-cond-pill ${c.id === st.condId ? 'active' : ''}" data-sim-cond="${c.id}">
-                <span class="clin-sim-cond-dot" style="background:${c.color}"></span>
-                <span>${isTr ? c.tr : c.en}</span>
-              </button>
-            `).join('')}
+          <!-- One pattern picker, grouped by category; the arrows step through the list. -->
+          <div class="clin-sim-pattern-row">
+            <label class="clin-sim-pattern">
+              <span>${isTr ? 'EKG paterni' : 'ECG pattern'}</span>
+              <select data-sim-pattern>
+                ${CLINICAL_CATEGORIES.map(cat => `
+                  <optgroup label="${isTr ? cat.tr : cat.en}" data-sim-cat="${cat.id}">
+                    ${CLINICAL_CONDITIONS.filter(c => c.cat === cat.id).map(c => `<option value="${c.id}" data-sim-cond="${c.id}"${c.id === st.condId ? ' selected' : ''}>${isTr ? c.tr : c.en}</option>`).join('')}
+                  </optgroup>
+                `).join('')}
+              </select>
+            </label>
+            <span class="clin-sim-pattern-dot" style="background:${cond.color}" aria-hidden="true"></span>
+            <button type="button" class="clin-tool-btn" data-sim-pattern-step="-1" aria-label="${isTr ? 'Önceki patern' : 'Previous pattern'}">◀</button>
+            <button type="button" class="clin-tool-btn" data-sim-pattern-step="1" aria-label="${isTr ? 'Sonraki patern' : 'Next pattern'}">▶</button>
           </div>
 
           <!-- Live Digital Telemetry Readout Strip (ECGSweep Style) -->
@@ -4223,34 +4213,26 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
       render();
     });
 
-    // Category tabs
-    root.querySelectorAll('[data-sim-cat]').forEach(btn => {
+    // Pattern picker (grouped by category) and its previous / next arrows.
+    function choosePattern(condId) {
+      const next = CLINICAL_CONDITIONS.find(c => c.id === condId);
+      if (!next) return;
+      if (next.cat === 'channelopathy' && next.cat !== st.catId && st.rightPanelMode === 'heart') st.rightPanelMode = 'auto';
+      st.catId = next.cat;
+      st.condId = next.id;
+      st.hrOverride = null;
+      const matchNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.condId === st.condId) ||
+                        CARDIAC_CHANNELOPATHY_NODES.find(n => (n.altCondIds || []).includes(st.condId));
+      if (matchNode) st.chanNodeId = matchNode.id;
+      render();
+      root.querySelector('[data-sim-pattern]')?.focus();
+    }
+    root.querySelector('[data-sim-pattern]')?.addEventListener('change', e => choosePattern(e.target.value));
+    root.querySelectorAll('[data-sim-pattern-step]').forEach(btn => {
       btn.addEventListener('click', () => {
-        st.catId = btn.dataset.simCat;
-        if (st.catId === 'channelopathy' && st.rightPanelMode === 'heart') {
-          st.rightPanelMode = 'auto';
-        }
-        const firstInCat = CLINICAL_CONDITIONS.find(c => c.cat === st.catId);
-        if (firstInCat) {
-          st.condId = firstInCat.id;
-          st.hrOverride = null;
-          const matchNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.condId === st.condId) ||
-                            CARDIAC_CHANNELOPATHY_NODES.find(n => (n.altCondIds || []).includes(st.condId));
-          if (matchNode) st.chanNodeId = matchNode.id;
-        }
-        render();
-      });
-    });
-
-    // Condition pills
-    root.querySelectorAll('[data-sim-cond]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        st.condId = btn.dataset.simCond;
-        st.hrOverride = null;
-        const matchNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.condId === st.condId) ||
-                          CARDIAC_CHANNELOPATHY_NODES.find(n => (n.altCondIds || []).includes(st.condId));
-        if (matchNode) st.chanNodeId = matchNode.id;
-        render();
+        const order = CLINICAL_CATEGORIES.flatMap(cat => CLINICAL_CONDITIONS.filter(c => c.cat === cat.id));
+        const at = order.findIndex(c => c.id === st.condId);
+        choosePattern(order[(at + Number(btn.dataset.simPatternStep) + order.length) % order.length].id);
       });
     });
 

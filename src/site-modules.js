@@ -3,7 +3,7 @@
 
 const word = (tr, en) => ({ tr, en });
 
-/** Module menu, in display order. A sub-page lists under its module. */
+/** Module menu, in display order. A sub-page lists under its module (and in its ▾ menu, with its lessons). */
 export const SITE_MODULES = Object.freeze([
   { id: 'anatomy', path: './', label: word('3D Anatomi', '3D Anatomy') },
   { id: 'exam', path: './exam/', label: word('Fizik muayene', 'Physical exam') },
@@ -22,7 +22,16 @@ export const SITE_MODULES = Object.freeze([
     title: word('EPS laboratuvarı: canlı kayıt, vakalar, manevralar, ablasyon', 'EPS laboratory: live recording, cases, maneuvers, ablation'),
     pages: [
       { id: 'eps', path: './eps/', label: word('Laboratuvar', 'Laboratory') },
-      { id: 'ep-anatomy', path: './eps/anatomy/', label: word('3D EP anatomisi', '3D EP anatomy') }
+      {
+        id: 'ep-anatomy', path: './eps/anatomy/', label: word('3D EP anatomisi', '3D EP anatomy'),
+        // The 3D lessons of the page, listed in the EPS menu (mode ids of cardia-pages.js).
+        lessons: [
+          { mode: 'transseptal', label: word('Transseptal & septostomi', 'Transseptal & septostomy') },
+          { mode: 'ablation', label: word('Elektrofizyolojik anatomi', 'Electrophysiological anatomy') },
+          { mode: 'pacemaker', label: word('Kalp pili elektrotları', 'Pacemaker leads') },
+          { mode: 'bachmann', label: word('Bachmann demeti & pacing', 'Bachmann bundle & pacing') }
+        ]
+      }
     ]
   },
   { id: 'pharmacology', path: './pharmacology/', label: word('Farmakoloji', 'Pharmacology') }
