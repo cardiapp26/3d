@@ -1,6 +1,7 @@
 import { TTE_LIMITS, TEE_LIMITS, ICE_LIMITS } from './echo-probe.js';
 import { ICE_PRESET_NOTES, TTE_PRESET_NOTES, TEE_PRESET_NOTES, icePosition } from './echo-views.js';
 import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
+import { createProbeWidgets, SHORT_LABELS, setControl, stepOf, holdRepeat } from './echo-probe-panel.js';
 
 /*
  * Echo panel: TTE / TEE choice, the view set, the 2D sector, explainable
@@ -110,7 +111,7 @@ export function createEchoPanel(mount, handlers) {
   });
   canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
   const feedback = el('div', 'echo-feedback', { 'aria-live': 'polite' });
-  const taskRow = el('div', 'echo-task-row');
+  const taskRow = el('div', 'echo-task-row echo-toolbar', { role: 'toolbar' });
   const resetBtn = el('button', '', { type: 'button', 'data-echo-action': 'reset' });
   const taskBtn = el('button', '', { type: 'button', 'data-echo-action': 'task' });
   const freezeBtn = el('button', '', { type: 'button', 'data-echo-action': 'freeze' });
@@ -134,9 +135,13 @@ export function createEchoPanel(mount, handlers) {
   const displayBody = el('div', 'echo-sliders');
   displayBox.append(displaySummary, displayBody);
   const limits = el('p', 'echo-limits');
-  // Compact order: the sector and the probe controls come right after the view choice.
+  // Working order: the sector, its actions and the probe controls first (the
+  // hands stay next to the image), then what the cut shows and the feedback.
   heading.hidden = true;
-  root.append(heading, modality, viewRow, title, quickRow, canvas, tip, partsLine, mitralMap, septalMap, sub, iceInfo, iceSweep, tsBox, taskStatus, feedback, taskRow, probeBox, displayBox, limits);
+  // The action buttons sit over the sector's top-right corner as an icon toolbar.
+  const sector = el('div', 'echo-sector');
+  sector.append(canvas, taskRow);
+  root.append(heading, modality, viewRow, title, quickRow, sector, tip, probeBox, iceSweep, taskStatus, feedback, partsLine, mitralMap, septalMap, sub, iceInfo, tsBox, displayBox, limits);
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -151,21 +156,39 @@ export function createEchoPanel(mount, handlers) {
   let builtFor = null;
   const sliders = new Map();
   const format = (value, unit) => unit === '%' ? `${Math.round(value * 100)}%` : unit === '°' ? `${Math.round(value)}°` : Number(value).toFixed(2);
+  // A control row: short name (long description as its tooltip), value, − / + steppers
+  // around the range, and a faint mark at the view's preset (free mode). Double-clicking
+  // the name returns that motion to the preset.
+  let presetPose = null;
   function slider(parent, key, labelKey, min, max, step, unit, onInput) {
     const row = el('label', 'echo-slider');
-    const name = el('span'); const out = el('output');
+    const name = el('span', 'echo-slider-name'); const out = el('output');
     const input = el('input', '', { type: 'range', min: String(min), max: String(max), step: String(step), 'data-echo-control': key });
     input.addEventListener('input', () => { out.textContent = format(Number(input.value), unit); onInput(Number(input.value)); });
-    row.append(name, out, input);
+    const track = el('span', 'echo-range');
+    const mark = el('span', 'echo-range-preset', { 'aria-hidden': 'true' });
+    mark.hidden = true;
+    track.append(input, mark);
+    const minus = el('button', 'echo-step', { type: 'button', 'data-echo-step': `${key}:-1`, tabindex: '-1' }); minus.textContent = '−';
+    const plus = el('button', 'echo-step', { type: 'button', 'data-echo-step': `${key}:1`, tabindex: '-1' }); plus.textContent = '+';
+    const nudge = dir => shift => setControl(input, Number(input.value) + dir * stepOf(unit) * (shift ? 5 : 1));
+    holdRepeat(minus, nudge(-1));
+    holdRepeat(plus, nudge(1));
+    name.addEventListener('dblclick', e => { e.preventDefault(); if (Number.isFinite(presetPose?.[key])) setControl(input, presetPose[key]); });
+    row.append(name, out, minus, track, plus);
     parent.append(row);
-    sliders.set(key, { input, out, name, labelKey, unit });
+    sliders.set(key, { input, out, name, labelKey, unit, mark, minus, plus });
   }
+  let widgets = null;
   function buildProbe(kind) {
     if (builtFor === kind) return;
     builtFor = kind;
     for (const key of [...sliders.keys()]) if (!['sectorAngle', 'depth'].includes(key)) sliders.delete(key);
     probeSliders.replaceChildren();
-    for (const [key, labelKey, min, max, step, unit] of sliderDefs[kind]) slider(probeSliders, key, labelKey, min, max, step, unit, v => handlers.onControl('probe', key, v));
+    const rows = el('div', 'echo-probe-rows');
+    for (const [key, labelKey, min, max, step, unit] of sliderDefs[kind]) slider(rows, key, labelKey, min, max, step, unit, v => handlers.onControl('probe', key, v));
+    widgets = createProbeWidgets(kind, sliders);
+    probeSliders.append(widgets.element, rows);
     labelSliders();
   }
   // Display options.
@@ -192,7 +215,15 @@ export function createEchoPanel(mount, handlers) {
 
   function labelSliders() {
     const t = T[lang];
-    for (const s of sliders.values()) s.name.textContent = t[s.labelKey];
+    const short = SHORT_LABELS[lang]?.[builtFor] || {};
+    for (const [key, s] of sliders) {
+      const isProbe = !['sectorAngle', 'depth'].includes(key);
+      s.name.textContent = (isProbe && short[key]) || t[s.labelKey];
+      s.name.title = t[s.labelKey];
+      s.minus.setAttribute('aria-label', `${t[s.labelKey]} −`);
+      s.plus.setAttribute('aria-label', `${t[s.labelKey]} +`);
+    }
+    widgets?.label(short);
   }
   let lastViews = null;
   // ICE views come in two groups by catheter position: the RA, and the LA after the septal crossing.
@@ -229,8 +260,13 @@ export function createEchoPanel(mount, handlers) {
   }
 
   const setText = (node, text) => { if (node.textContent !== text) node.textContent = text; };
+  /** Icon button: the glyph shows, the name is its tooltip and accessible name. */
+  function tool(button, icon, label) {
+    if (button.textContent !== icon) button.textContent = icon;
+    if (button.title !== label) { button.title = label; button.setAttribute('aria-label', label); }
+  }
   let feedbackKey = '';
-  function render({ state, result, view, playing, presetOmega, hasFossa = true }) {
+  function render({ state, result, view, playing, presetOmega, preset, hasFossa = true }) {
     const t = T[lang];
     setText(heading, t.heading);
     modality.hidden = Boolean(state.locked);
@@ -239,7 +275,7 @@ export function createEchoPanel(mount, handlers) {
     buildProbe(state.modality);
     // The advance slider names where the catheter moves: in the RA, or from the fossa into the LA.
     const advanceSlider = sliders.get('advance');
-    if (state.modality === 'ice' && advanceSlider) setText(advanceSlider.name, T[lang][{ la: 'iceAdvanceLa', lv: 'iceAdvanceLv' }[icePosition(view)] || 'iceAdvance']);
+    if (state.modality === 'ice' && advanceSlider) advanceSlider.name.title = T[lang][{ la: 'iceAdvanceLa', lv: 'iceAdvanceLv' }[icePosition(view)] || 'iceAdvance'];
     const probe = state[state.modality];
     for (const [key, s] of sliders) {
       const value = key === 'sectorAngle' ? (state.sectorAngle * 180) / Math.PI : key === 'depth' ? state.depth : probe[key];
@@ -248,6 +284,14 @@ export function createEchoPanel(mount, handlers) {
       // Depth in atlas units (not cm): a percentage of the slider maximum read as 42% at the low end.
       setText(s.out, s.unit === 'depth' ? value.toFixed(1) : format(value, s.unit));
     }
+    // Preset marks (free mode only: in a task they would give the answer).
+    presetPose = state.task ? null : preset || null;
+    for (const [key, s] of sliders) {
+      const at = presetPose?.[key];
+      s.mark.hidden = !Number.isFinite(at);
+      if (Number.isFinite(at)) s.mark.style.left = `${((at - Number(s.input.min)) / (Number(s.input.max) - Number(s.input.min))) * 100}%`;
+    }
+    widgets?.sync(presetPose);
     // The sector names the view; the heading line is only needed for a task target.
     title.hidden = !state.task;
     if (state.task) setText(title, `${t.target}: ${view.title[lang]}`);
@@ -289,12 +333,13 @@ export function createEchoPanel(mount, handlers) {
       feedbackKey = messages.join('|');
       feedback.replaceChildren(...messages.map(text => { const p = el('p'); p.textContent = text; return p; }));
     }
-    setText(resetBtn, state.task ? t.restart : t.reset);
     taskBtn.dataset.mode = state.task ? (state.task.done ? 'new' : 'end') : 'start';
-    setText(taskBtn, state.task ? (state.task.done ? t.newTask : t.endTask) : t.task);
-    setText(freezeBtn, playing ? t.freeze : t.play);
-    setText(lookBtn, t.look);
-    setText(sizeBtn, canvas.classList.contains('is-large') ? t.shrink : t.enlarge);
+    const large = canvas.classList.contains('is-large');
+    tool(resetBtn, '↺', state.task ? t.restart : t.reset);
+    tool(taskBtn, state.task ? (state.task.done ? '⟳' : '✕') : '⌖', state.task ? (state.task.done ? t.newTask : t.endTask) : t.task);
+    tool(freezeBtn, playing ? '\u2016' : '\u25B6\uFE0E', playing ? t.freeze : t.play);
+    tool(lookBtn, '◎', t.look);
+    tool(sizeBtn, large ? '\u2921\uFE0E' : '\u2922\uFE0E', large ? t.shrink : t.enlarge);
     setText(probeSummary, t.probe); setText(displaySummary, t.display);
     setText(styleName, t.style); styleOptions.forEach(o => setText(o, t[o.value]));
     styleSelect.value = state.style;

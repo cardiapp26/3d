@@ -243,3 +243,43 @@
 /* Viewport fullscreen (echo-view-controls.js); the fallback covers the window when the API is refused. */
 .echo-viewport-container:fullscreen { width: 100vw; height: 100vh; }
 .echo-viewport-container.is-fullscreen-fallback { position: fixed; inset: 0; z-index: 200; }
+
+/* Sector with its action toolbar over the top-right corner (echo-panel.js). */
+.echo-panel .echo-sector { position: relative; }
+.echo-panel .echo-toolbar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 2; }
+.echo-panel .echo-toolbar button {
+  width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 7px; background: rgba(7, 12, 18, 0.72);
+  color: #e2f5ec; font-size: 14px; line-height: 1; cursor: pointer; backdrop-filter: blur(4px);
+}
+.echo-panel .echo-toolbar button:hover { background: rgba(33, 73, 63, 0.92); border-color: #39e8ad; }
+.echo-panel .echo-toolbar button[aria-pressed=true] { background: #fcd34d; border-color: #e0b72f; color: #3a2e05; }
+.echo-panel .echo-toolbar button:focus-visible { outline: 2px solid #39e8ad; outline-offset: 2px; }
+
+/* Probe panel (echo-probe-panel.js): pads and dials, then one row per motion
+   with − / + steppers and the view's preset marked on the track. */
+.echo-panel .echo-controls .echo-sliders { display: grid; gap: 10px; }
+.echo-panel .echo-probe-widgets { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: end; gap: 10px 12px; }
+.echo-panel .echo-probe-widget { margin: 0; display: grid; justify-items: center; gap: 2px; }
+.echo-panel .echo-probe-widget figcaption { font-size: 11px; font-weight: 600; color: #4b6259; }
+.echo-panel .echo-pad, .echo-panel .echo-dial { width: 104px; height: auto; touch-action: none; cursor: grab; user-select: none; }
+.echo-panel .echo-pad:active, .echo-panel .echo-dial:active { cursor: grabbing; }
+.echo-pad-field { fill: #f1f5ef; stroke: #b9c9bf; }
+.echo-pad-axis { stroke: #c9d6cd; stroke-dasharray: 3 3; }
+.echo-pad-dot { fill: #21493f; stroke: #fff; stroke-width: 2; }
+.echo-pad-preset, .echo-dial-preset { fill: none; stroke: #2fa77d; stroke-width: 2; stroke-dasharray: 3 2; opacity: 0.8; }
+.echo-dial-track { fill: none; stroke: #c9d6cd; stroke-width: 8; stroke-linecap: round; }
+.echo-dial-tick { stroke: #7f9488; stroke-width: 1.5; }
+.echo-dial-label { font: 600 8px ui-sans-serif, system-ui, sans-serif; fill: #6d8177; text-anchor: middle; }
+.echo-dial-needle { stroke: #21493f; stroke-width: 3.5; stroke-linecap: round; }
+.echo-dial-preset { stroke-width: 2.5; }
+.echo-dial-hub { fill: #21493f; }
+.echo-panel .echo-probe-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 4px 18px; }
+.echo-panel .echo-slider { display: grid; grid-template-columns: 26px minmax(0, 1fr) 26px; align-items: center; gap: 2px 6px; margin: 2px 0; }
+.echo-panel .echo-slider .echo-slider-name { grid-column: 1 / 3; font-size: 12px; font-weight: 600; color: #3c5d4b; cursor: help; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.echo-panel .echo-slider output { grid-column: 3; justify-self: end; font-size: 11px; }
+.echo-panel .echo-slider .echo-step { width: 26px; height: 26px; padding: 0; border: 1px solid #cbd5cf; border-radius: 6px; background: #fff; color: #21493f; font-size: 15px; font-weight: 700; line-height: 1; cursor: pointer; }
+.echo-panel .echo-slider .echo-step:hover { background: #e8efe9; }
+.echo-panel .echo-range { position: relative; display: block; min-width: 0; }
+.echo-panel .echo-range input { width: 100%; margin: 4px 0; grid-column: auto; }
+.echo-panel .echo-range-preset { position: absolute; top: 50%; width: 2px; height: 14px; margin-left: -1px; transform: translateY(-50%); background: #2fa77d; border-radius: 1px; opacity: 0.75; pointer-events: none; }

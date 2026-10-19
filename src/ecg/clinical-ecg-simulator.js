@@ -12,6 +12,44 @@ export const CONDUCTION_STAGES = [
   { id: 'repol', startMs: 320, endMs: 860, color: '#38bdf8', wave: 'ST Segmenti & T', tr: 'Repolarizasyon', en: 'Repolarization', vel: 'Faz 2–3', descTr: 'Epikarddan endokarda doğru ventriküler repolarizasyon (T dalgası QRS ile konkordandır) ve diyastolik dinlenme.', descEn: 'Epicardial-to-endocardial ventricular recovery inscribing the T wave and returning to phase-4 baseline.' }
 ];
 
+const STAGE_BY_ID = Object.fromEntries(CONDUCTION_STAGES.map(stg => [stg.id, stg]));
+
+/**
+ * Conduction timeline of one beat in beat phase, on the same positions as the
+ * synthesized trace (sampleConditionLeadMv: P around 0.16, QRS at 0.30, T near
+ * 0.48). Rhythms without an organized sinus P (AF, flutter, AVNRT, VT, complete
+ * block) have no SA-node or atrial-spread stage; VF and torsades have none.
+ */
+export function conductionTimeline(cond) {
+  const m = cond.morph || {};
+  const prShift = ((m.prMs || cond.pr || 160) - 160) / 1000;
+  const pCenter = Math.max(0.08, 0.16 - prShift * 0.45);
+  const halfQrs = Math.max(0.04, (0.04 * (cond.qrs || 90)) / 90);
+  const qOn = 0.30 - halfQrs, qOff = 0.30 + halfQrs;
+  const tEnd = Math.min(0.78, Math.max(0.5, 0.30 + (0.28 * (cond.qt || 400)) / 400));
+  const atrial = m.afib ? 'fibrillation' : m.flutter ? 'flutter' : (m.chb || m.avnrt || m.vt) ? 'none' : 'sinus';
+  return { pOn: pCenter - 0.05, pOff: pCenter + 0.05, hisOn: qOn - 0.012, qOn, qOff, tEnd, atrial, chaotic: Boolean(m.vfib || m.torsades), dropped: b => (m.mobitz1 && b % 4 === 3) || (m.mobitz2 && b % 3 === 2) };
+}
+
+/** Stage (CONDUCTION_STAGES id, or 'fibrillation' / 'flutter' for disorganized atria) and scrubber ms at a beat phase. */
+export function conductionAt(tl, phase, beatIdx = 0) {
+  if (tl.chaotic) return { id: null, ms: null };
+  const lin = (a, b, m0, m1) => m0 + ((phase - a) / Math.max(1e-6, b - a)) * (m1 - m0);
+  const ventricular = !tl.dropped(beatIdx);
+  if (ventricular && phase >= tl.hisOn && phase < tl.qOn) return { id: 'his', ms: lin(tl.hisOn, tl.qOn, 205, 225) };
+  if (ventricular && phase >= tl.qOn && phase < tl.qOn + 0.3 * (tl.qOff - tl.qOn)) return { id: 'branches', ms: lin(tl.qOn, tl.qOn + 0.3 * (tl.qOff - tl.qOn), 225, 255) };
+  if (ventricular && phase >= tl.qOn && phase < tl.qOff) return { id: 'purkinje', ms: lin(tl.qOn + 0.3 * (tl.qOff - tl.qOn), tl.qOff, 255, 320) };
+  if (ventricular && phase >= tl.qOff && phase < tl.tEnd) return { id: 'repol', ms: lin(tl.qOff, tl.tEnd, 320, 860) };
+  if (tl.atrial === 'sinus') {
+    if (phase >= tl.pOn && phase < tl.pOn + 0.012) return { id: 'sa', ms: lin(tl.pOn, tl.pOn + 0.012, 0, 35) };
+    if (phase >= tl.pOn + 0.012 && phase < tl.pOff) return { id: 'atria', ms: lin(tl.pOn + 0.012, tl.pOff, 35, 115) };
+    if (phase >= tl.pOff && phase < tl.hisOn) return { id: 'avn', ms: lin(tl.pOff, tl.hisOn, 115, 205) };
+    return { id: null, ms: null };
+  }
+  if (tl.atrial === 'fibrillation' || tl.atrial === 'flutter') return { id: tl.atrial, ms: null };
+  return { id: null, ms: null };
+}
+
 // Simulator views (one tab row).
 const SIM_MODES = Object.freeze([
   { id: 'simulator', tr: 'Canlı monitör', en: 'Live monitor' },
@@ -2866,20 +2904,29 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
       ctx.fill();
     }
 
+    // Conduction band under the trace: each column shows the stage of the same
+    // instant as the trace above it (same time axis, same beat-phase mapper).
     const bandY = H - 24;
-    const bandW = W - 88;
-    const bandX = 44;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.08)';
-    ctx.fillRect(bandX, bandY, bandW, 14);
-
-    CONDUCTION_STAGES.forEach(stg => {
-      const sx = bandX + (stg.startMs / 860) * bandW;
-      const sw = ((stg.endMs - stg.startMs) / 860) * bandW;
-      ctx.fillStyle = stg.color + '55';
-      ctx.fillRect(sx, bandY, sw, 14);
-    });
-
-    const playheadX = bandX + (st.conductionMs / 860) * bandW;
+    const tl = conductionTimeline(cond);
+    const isIrreg = Boolean(cond.morph?.irregular);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.06)';
+    ctx.fillRect(44, bandY, W - 56, 14);
+    let headBeat = null, playheadX = sweepHeadX, bestGap = Infinity;
+    for (let x = 44; x < W - 12; x += 1) {
+      if (st.running && x > sweepHeadX && x < sweepHeadX + 24) continue;
+      const relSec = ((x - 44) / usableW) * speedFactor;
+      const sampleSec = Math.max(0, Math.floor(sweepSec / speedFactor) * speedFactor + relSec - (x > sweepHeadX ? speedFactor : 0));
+      const { beatIdx, phase } = mapContinuousBeatPhase(sampleSec, rrSec, isIrreg);
+      const at = conductionAt(tl, phase, beatIdx);
+      if (x <= sweepHeadX) headBeat = beatIdx;
+      if (!st.running && at.ms !== null && beatIdx === headBeat && Math.abs(at.ms - st.conductionMs) < bestGap) { bestGap = Math.abs(at.ms - st.conductionMs); playheadX = x; }
+      if (!at.id) continue;
+      if (at.id === 'fibrillation' || at.id === 'flutter') {
+        // Disorganized atria: a hatched band, no SA node or atrial-spread sequence.
+        ctx.fillStyle = (Math.floor(x / 3) % 2) ? '#f59e0b40' : '#f59e0b18';
+      } else ctx.fillStyle = `${STAGE_BY_ID[at.id].color}66`;
+      ctx.fillRect(x, bandY, 1, 14);
+    }
     ctx.strokeStyle = '#dc2626';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -2920,7 +2967,8 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
     }
 
     if (st.running && !st.collapsed) {
-      sweepSec += dt;
+      // Slow motion slows the sweep itself, so the trace and the conduction stay together.
+      sweepSec += dt * st.scrubberSpeed;
       const cond = getActiveCondition();
       const hr = st.hrOverride || cond.hr || 72;
       const rrSec = 60 / Math.max(30, hr);
@@ -2930,7 +2978,9 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
         lastBeepBeat = currentBeat;
         playQrsBeep();
       }
-      st.conductionMs = Math.round(((st.conductionMs + dt * 260 * st.scrubberSpeed) % 860));
+      const { beatIdx: nowBeat, phase: nowPhase } = mapContinuousBeatPhase(sweepSec, rrSec, Boolean(cond.morph?.irregular));
+      const now = conductionAt(conductionTimeline(cond), nowPhase, nowBeat);
+      if (now.ms !== null) st.conductionMs = Math.round(now.ms);
       const scrubInput = root.querySelector('#clin-conduction-slider');
       const scrubLabel = root.querySelector('#clin-conduction-ms-val');
       if (scrubInput) scrubInput.value = String(st.conductionMs);
@@ -3384,7 +3434,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
                     <h4 style="margin:0;font-size:13.5px;color:#38bdf8">
                       🧠 ${isTr ? 'Canlı Evrimleşen Ayırıcı Tanı Listesi' : 'Live Evolving Differential Diagnoses'}
                     </h4>
-                    <span class="clin-sim-premium-pill">${compassEval.differentials.length} ${isTr ? 'Bulgu' : 'Findings'}</span>
+                    <span class="clin-study-tag">${compassEval.differentials.length} ${isTr ? 'Bulgu' : 'Findings'}</span>
                   </div>
                   <div class="compass-diff-list">
                     ${compassEval.differentials.map(d => `
@@ -3738,15 +3788,29 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
                   </div>
                 </div>
                 <input type="range" id="clin-conduction-slider" min="0" max="860" value="${st.conductionMs}" style="width:100%;accent-color:${activeStage.color}" />
+                ${(() => {
+                  const atrial = conductionTimeline(cond).atrial;
+                  const noSinus = atrial !== 'sinus';
+                  const why = atrial === 'fibrillation'
+                    ? (isTr ? 'Atriyal fibrilasyon: organize SA düğümü ve atriyal yayılım yok; atriyumlar fibrilatuvar (bantta taralı), AV düğüm düzensiz iletir.' : 'Atrial fibrillation: no organized SA-node firing or atrial spread; the atria fibrillate (hatched in the band) and the AV node conducts irregularly.')
+                    : atrial === 'flutter'
+                      ? (isTr ? 'Atriyal flutter: makro-reentran atriyal döngü; SA düğümü evresi yok (bantta taralı).' : 'Atrial flutter: macro-reentrant atrial circuit; no SA-node stage (hatched in the band).')
+                      : (isTr ? 'Bu ritimde sinüs kaynaklı organize P dalgası yok; SA ve atriyal evreler gösterilmez.' : 'No organized sinus P wave in this rhythm; the SA and atrial stages are not shown.');
+                  return `
                 <div class="clin-stage-pills">
-                  ${CONDUCTION_STAGES.map(stg => `
-                    <button type="button" class="clin-stage-pill ${stg.id === activeStage.id ? 'active' : ''}"
-                            style="${stg.id === activeStage.id ? `background:${stg.color}` : ''}"
-                            data-stage-jump="${Math.round((stg.startMs + stg.endMs) / 2)}">
+                  ${CONDUCTION_STAGES.map(stg => {
+                    const off = noSinus && (stg.id === 'sa' || stg.id === 'atria');
+                    const on = !off && stg.id === activeStage.id;
+                    return `
+                    <button type="button" class="clin-stage-pill ${on ? 'active' : ''}"
+                            style="${on ? `background:${stg.color}` : ''}"
+                            data-stage-jump="${Math.round((stg.startMs + stg.endMs) / 2)}"${off ? ` disabled title="${why}"` : ''}>
                       ${isTr ? stg.tr : stg.en}
-                    </button>
-                  `).join('')}
+                    </button>`;
+                  }).join('')}
                 </div>
+                ${noSinus ? `<p class="clin-stage-note">${why}</p>` : ''}`;
+                })()}
               </div>
             </div>
 
@@ -3765,6 +3829,10 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
                     </button>
                   </div>
 
+                  ${showChanAp ? `
+                  <section class="clin-chan-section" aria-labelledby="clin-chan-heading">
+                    <h4 class="clin-chan-heading" id="clin-chan-heading">${isTr ? 'Kanalopatiler · Faz 0–4 aksiyon potansiyeli ve gen atlası' : 'Channelopathies · Phase 0–4 action potential and gene atlas'}</h4>
+                  ` : ''}
                   <div class="clin-heart-svg-wrap" id="clin-heart-svg-mount">
                     ${showChanAp ? buildChannelopathyApSvg(st.chanNodeId, isTr) : buildHeartCoronarySvg(cond, activeStage, isTr)}
                   </div>
@@ -3785,11 +3853,13 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
                         ${activeChanNode.syndromes.map(s => `<span class="clin-chan-syn-tag">${s}</span>`).join('')}
                       </div>
                     </div>
+                  </section>
                   ` : ''}
                 `;
               })()}
 
-              <div class="clin-clinical-pearl-box">
+              <!-- The ECG pattern card belongs to the trace; beside the channelopathy atlas it shows only for a channelopathy pattern. -->
+              <div class="clin-clinical-pearl-box" ${(st.rightPanelMode === 'channelopathy' || (st.rightPanelMode === 'auto' && st.catId === 'channelopathy')) && cond.cat !== 'channelopathy' ? 'hidden' : ''}>
                 <h4>
                   ${st.blindMode
                     ? (isTr ? '🔒 Kör Okuma Modu Aktif — Önce Kendiniz Yorumlayın!' : '🔒 Blind Reading Mode — Interpret the Trace First!')
@@ -3857,7 +3927,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
 
             <div class="clin-heart-card">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
-                <span class="clin-sim-premium-pill">
+                <span class="clin-study-tag">
                   ${activeQuestion.type === 'lead-selection'
                     ? (isTr ? '12-DERİVASYON SEÇİM DRİLL' : 'LEAD-SELECTION DRILL')
                     : (isTr ? 'KLİNİK TANI SORUSU' : 'CLINICAL DIAGNOSIS MCQ')}

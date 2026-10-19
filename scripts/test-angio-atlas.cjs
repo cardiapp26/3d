@@ -44,12 +44,24 @@ const assert = require('node:assert/strict');
     assert.ok(Math.abs(initial.cycle.phase - initial.fluoroCycle.phase) < .04, 'both views share cardiac phase');
     await page.locator('[data-device-beam]').uncheck();
     assert.equal((await state()).device.beam, false);
+    // Fluoroscopy console: grafts with their own geometry, angle rail, cine corners.
+    await page.locator('[data-console-bar] [data-angio-sys="lima"]').click();
+    await page.waitForFunction(() => window.angioStudio.getAtlasState().fluoro.graft === 'lima');
+    assert.equal(await page.locator('[data-cine-system]').textContent(), 'LIMA');
+    assert.equal(await page.locator('[data-graft-switch="on"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-graft-switch="off"]').click();
+    await page.waitForFunction(() => window.angioStudio.getAtlasState().fluoro.graft === null);
+    await page.locator('[data-console-alpha]').fill('13');
+    await page.locator('[data-console-beta]').fill('37');
+    assert.equal(await page.locator('[data-cine-angle]').textContent(), 'LAO 13 CRA 37');
+    const angio = (await state()).fluoro.angio;
+    assert.deepEqual([angio.laoRao, angio.craCau], [13, 37], 'console sliders drive the C-arm');
     for (const width of [390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `no overflow ${width}`);
     }
     await page.screenshot({ path: '/tmp/angio-atlas-after.png', fullPage: true });
     assert.deepEqual(errors, []);
-    console.log('PASS angio atlas: shared original model, anatomy/fluoro, angles, device, shared cine, layers, persistent renderers, TR/EN, responsive layout');
+    console.log('PASS angio atlas: shared original model, anatomy/fluoro, angles, device, shared cine, layers, graft console and cine corners, persistent renderers, TR/EN, responsive layout');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

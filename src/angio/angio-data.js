@@ -4,6 +4,7 @@
 export const CORONARY_SYSTEMS = [
   { id: 'left', nameTr: 'Sol Koroner Sistem (LCA)', nameEn: 'Left Coronary System (LCA)', icon: '🩸' },
   { id: 'right', nameTr: 'Sağ Koroner Sistem (RCA)', nameEn: 'Right Coronary System (RCA)', icon: '🫀' },
+  { id: 'both', nameTr: 'Sol + sağ koroner sistem', nameEn: 'Left + right coronary systems', icon: '🫀' },
   { id: 'lima', nameTr: 'LIMA → LAD Grefti', nameEn: 'LIMA → LAD Bypass Graft', icon: '🪡' },
   { id: 'svg-om', nameTr: 'Safin Ven Grefti (SVG → OM)', nameEn: 'Saphenous Vein (SVG → OM)', icon: '🩺' },
   { id: 'svg-pda', nameTr: 'Safin Ven Grefti (SVG → PDA)', nameEn: 'Saphenous Vein (SVG → PDA)', icon: '🔬' }
@@ -675,6 +676,12 @@ export const CORONARY_VESSEL_TREES = {
     }
   ]
 };
+
+// Both native systems together (fluoroscopy console: LCA + RCA).
+CORONARY_VESSEL_TREES.both = [...CORONARY_VESSEL_TREES.left, ...CORONARY_VESSEL_TREES.right];
+
+/** Standard views of a system; both natives share the left and right lists. */
+export const viewsOfSystem = system => STANDARD_ANGIO_VIEWS.filter(v => v.system === system || (system === 'both' && ['left', 'right'].includes(v.system)));
 
 // Clinical Lesions Catalog (Interactive Stenosis Simulator)
 export const CLINICAL_LESIONS = [

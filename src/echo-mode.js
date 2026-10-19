@@ -30,6 +30,8 @@ const MIN_SECTION_INTERVAL = 30;   // ms between sections while the heart beats
  * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en' }} deps
  */
 // Visible parts by structure for the panel line: LV segments in number order, leaflets by name.
+// TTE views start from the window with the probe at rest (echo-views.js windows).
+const TTE_HOME = Object.freeze({ rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 });
 const PART_ORDER = ['lv', 'rv', 'mitral', 'tricuspid', 'aortic-valve', 'pulmonary-valve'];
 function partGroups(parts, lang) {
   const by = new Map();
@@ -152,7 +154,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     state.modality = modalityOf(view);
     state.view = id;
     if (state.modality === 'tte') {
-      state.tte = { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 };
+      state.tte = { ...TTE_HOME };
       state.depth = baseOf(id).depth;
     } else if (state.modality === 'ice') {
       const preset = icePreset(id);
@@ -322,7 +324,9 @@ export function createEchoMode({ heart, mount, getLang }) {
     heart.requestRender();
     const playing = heart.getCycleState().playing;
     if (playing) state.frozen = false;
-    panel?.render({ state, result, view, playing, frame, hasFossa: Boolean(anatomy.fossa), presetOmega: state.modality === 'tee' ? teePreset(view.id, anatomy, path)?.omega : state.modality === 'ice' ? icePreset(view.id)?.rotation : null });
+    // The view's probe pose: the panel marks it on each control (free mode).
+    const preset = state.modality === 'tee' ? teePreset(view.id, anatomy, path) : state.modality === 'ice' ? icePreset(view.id) : TTE_HOME;
+    panel?.render({ state, result, view, playing, frame, hasFossa: Boolean(anatomy.fossa), preset, presetOmega: state.modality === 'tee' ? preset?.omega : state.modality === 'ice' ? preset?.rotation : null });
     const drawn = drawEchoSector(panel?.canvas, section, {
       style: state.style, sectorAngle: state.sectorAngle, depth: state.depth, lang,
       info: state.task ? { tr: 'Görev: görünümü bulun', en: 'Task: find the view' } : view.title,

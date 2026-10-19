@@ -13,6 +13,7 @@ import { addSchematicAvLeaflets } from './schematic-leaflets.js';
 import { addLaaMarker, smoothLaNormals, laaOrificeOf } from './la-landmarks.js';
 import { createAuscultationMarkers } from './auscultation-points.js';
 import { createThorax } from './thorax.js';
+import { createCoronaryGrafts, GRAFTS } from './coronary-grafts.js';
 import { createIcns } from './icns.js';
 import { createTransseptal } from './transseptal.js';
 import { createCathLab } from './cath-lab.js';
@@ -224,6 +225,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });
   heart.add(thorax.group);
+  // Bypass grafts (angiography): one shown at a time; its run-off is the injected native artery.
+  const grafts = createCoronaryGrafts({ getMeshes: id => meshMap.get(id) || [], toLocal: v => heart.worldToLocal(v) });
+  heart.add(grafts.group);
+  let activeGraft = null;
   const icns = createIcns({ sourceCenter, register, isReady });
   layers.icns.add(icns.group);
   layers.valves.add(annuli.group);
@@ -422,6 +427,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     mitralScallops.build();
     buildPartTables();
     thorax.build();
+    grafts.setGraft(activeGraft);
     computeVesselTrims();
     modelReady=true;
     epLandmarks.init();
@@ -1067,7 +1073,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const original=object.material;
     const layer=object.userData.layer;
     const atlas=object.userData.provenance==='atlas';
-    const contrast=atlas && layer==='coronaries' && mode==='angiography';
+    // With a graft shown, the graft and the artery it fills carry the contrast; the other natives do not.
+    const graftRun=activeGraft?grafts.targetOf(activeGraft):null;
+    const contrast=(object.userData.graft&&object.userData.graft===activeGraft)||(atlas && layer==='coronaries' && mode==='angiography' && (!activeGraft||object.userData.id===graftRun));
     let device=false;
     let schematicTissue=false;
     let deviceTint=null;
@@ -1214,6 +1222,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setWallCut,
     setView,setAngioProjection,getAngioAngles,setFluoroscopy,
     setCoronaryContrast(value){coronaryContrast=THREE.MathUtils.clamp(Number(value)||0,0,1);requestRender();},
+    /** Show a bypass graft ('lima' | 'svg-om' | 'svg-pda') or none (null). */
+    setGraft(id){activeGraft=GRAFTS[id]?id:null;if(modelReady)grafts.setGraft(activeGraft);requestRender();},
     zoomIn,zoomOut,getZoomInfo,
     /** Segmentation-style label colours on the atlas meshes; fluoroscopy takes precedence while it is on. */
     setSegmentation,
@@ -1347,7 +1357,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       setView('anterior');
       requestRender();
     },
-    getState(){return {defects:septalDefects.getState(),mitralFocus,kochFocus,mode,system,rootWindow,fluoroscopy,segmentation,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
+    getState(){return {defects:septalDefects.getState(),mitralFocus,kochFocus,mode,graft:activeGraft,system,rootWindow,fluoroscopy,segmentation,visibility:{...visibility},valves:visibility.valves,veins:visibility.veins,conduction:visibility.conduction,flow:Boolean(visibility.flow),bloodFlowLowPower:bloodFlow?bloodFlow.getLowPower():false,angio:getAngioAngles(),wallCuts:{...wallCuts},selected,normalization:{center:center.toArray(),scale},structures:meshes.filter(m=>!m.userData.micro).map(m=>({name:m.name,id:m.userData.leaflet?m.userData.id+'-'+m.userData.leaflet:m.userData.id,valveId:m.userData.id,layer:m.userData.layer,provenance:m.userData.provenance||(m.userData.layer==='conduction'?'schematic':'atlas'),visible:m.visible,vertices:m.geometry.attributes.position.count,bounds:{min:new THREE.Box3().setFromObject(m).min.toArray(),max:new THREE.Box3().setFromObject(m).max.toArray()},clipping:m.material.clippingPlanes?m.material.clippingPlanes.length:0,matrix:m.matrixWorld.toArray()}))};},
     dispose(){septalDefects.dispose();mitralScallops.dispose();sceneLabels.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();for(const [event,handler] of [['pointermove',pointerMove],['pointerdown',pointerDown],['pointerup',pointerUp],['pointerleave',pointerLeave]])renderer.domElement.removeEventListener(event,handler);for(const mat of projectionMaterials.values())mat.dispose();projectionMaterials.clear();for(const mat of labelMaterials.values())mat.dispose();labelMaterials.clear();segLegend.dispose();if(bloodFlow)bloodFlow.dispose();disposeScene(scene);renderer.dispose();renderer.domElement.remove();loading.remove();}
   };
 }

@@ -1267,3 +1267,22 @@
 
 
 
+
+/* Conduction stages missing in the rhythm (no organized sinus P): shown, not usable. */
+.clin-stage-pill:disabled { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; }
+.clin-stage-note { margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: #fbbf24; }
+
+/* Small uppercase tag (study and step-by-step views). */
+.clin-study-tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); white-space: nowrap; }
+
+/* Channelopathy atlas: one card under one heading in the right panel. */
+.clin-chan-section { display: grid; gap: 10px; padding: 12px; border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 10px; background: rgba(6, 78, 59, 0.12); }
+.clin-chan-heading { margin: 0; font-size: 13px; font-weight: 800; color: #6ee7b7; }
+.clin-chan-section .clin-heart-svg-wrap { margin: 0; }
+
+/* The monitor needs its width: when the simulator is narrow the right panel
+   moves under the monitor instead of being squeezed or cut off. */
+.clin-sim-body { container-type: inline-size; }
+@container (max-width: 1000px) {
+  .clin-stage-grid { grid-template-columns: minmax(0, 1fr); }
+}

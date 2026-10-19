@@ -53,16 +53,17 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
   function setSystem(value) {
     system = value;
     if (!loaded) return;
-    const nativeSystem = value === 'svg-pda' ? 'right' : ['lima', 'svg-om'].includes(value) ? 'left' : value;
+    // A graft shows over all native arteries; in fluoroscopy only the graft and its run-off fill.
+    const graft = ['lima', 'svg-om', 'svg-pda'].includes(value) ? value : null;
+    const nativeSystem = graft ? 'both' : value;
     if (appliedSystem !== value) {
-      hearts.forEach(h => { h.clearSelection(); h.setCoronarySystem(nativeSystem); });
+      hearts.forEach(h => { h.clearSelection(); h.setCoronarySystem(nativeSystem); h.setGraft(graft); });
       selectedId = null;
       appliedSystem = value;
     }
-    const graft = !['left', 'right'].includes(value);
     const note = mount.querySelector('[data-atlas-note]');
     note.textContent = graft
-      ? (getLang() === 'tr' ? 'Atlas doğal koronerleri gösterir. Greft yolları aşağıdaki şematik alıştırmadadır.' : 'Atlas shows native coronaries. Graft paths appear in the schematic exercise below.')
+      ? (getLang() === 'tr' ? 'Greft yolu ve sternal teller şematik çizimdir; hedef damarlar atlastan alınır.' : 'The graft route and sternal wires are schematic; the target arteries come from the atlas.')
       : (getLang() === 'tr' ? 'İki görüntü aynı Cardia atlasından üretilir. Sürükle: açı · Kaydır: yakınlaştır · Tıkla: yapı seç.' : 'Both views use the same Cardia atlas. Drag: angle · Scroll: zoom · Click: select.');
     selection.textContent = selectedId ? `${getLang() === 'tr' ? 'Seçili yapı' : 'Selected structure'}: ${selectedId}` : '';
   }
