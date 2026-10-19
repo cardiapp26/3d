@@ -6,25 +6,13 @@
     <meta name="theme-color" content="#0d1520" />
     <title>Cardia · EKG</title>
   </head>
-  <body class="ecg-app">
-    <header class="ecg-header">
-      <div class="ecg-brand-wrap">
-        <a class="ecg-brand" href="../">✳ CARDIA</a>
-        <span class="ecg-brand-badge">EKG FİZYOLOJİSİ</span>
-      </div>
-      <nav aria-label="Modules" class="ecg-modules" data-ecg-modules>
-        <a href="../" data-ecg-back>3D Anatomi</a>
-        <a href="../exam/" data-module-link="exam">Fizik muayene</a>
-        <a href="../hemo/" data-module-link="hemo">Hemodinami</a>
-        <a href="../eps/">EPS</a>
-        <a href="../pharmacology/">Farmakoloji</a>
-        <a href="./" aria-current="page" data-ecg-module>EKG</a>
-        <a href="../angio/">Anjiyografi</a>
-        <a href="../echo/">Eko</a>
-      </nav>
-      <div class="ecg-lang" role="group" aria-label="Language">
-        <button type="button" data-ecg-lang="tr">TR</button>
-        <button type="button" data-ecg-lang="en">EN</button>
+  <body class="ecg-app" data-cardia-root="../">
+    <header class="site-header" data-site-page="ecg">
+      <div class="site-header-actions">
+        <div class="ecg-lang" role="group" aria-label="Language">
+          <button type="button" data-ecg-lang="tr">TR</button>
+          <button type="button" data-ecg-lang="en">EN</button>
+        </div>
       </div>
     </header>
     <main class="ecg-workspace" data-ecg-workspace></main>

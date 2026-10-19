@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{const browser=await chromium.launch({headless:true,channel:'chrome'});try{
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(`${process.env.APP_URL||'http://127.0.0.1:5189'}/ecg/?lang=tr`);await page.locator('[data-ecg-lab=ch11_basics]').waitFor({state:'visible'});
- assert.ok(!(await page.title()).includes('Guyton'));assert.ok(!(await page.locator('.ecg-header').textContent()).includes('GUYTON'));
+ assert.ok(!(await page.title()).includes('Guyton'));assert.ok(!(await page.locator('.site-header').textContent()).includes('GUYTON'));
  assert.equal(await page.locator('[data-lcam="studio"]').isVisible(),true,'lead camera studio visible on ECG entry');
  assert.equal(await page.locator('#clin-sim-canvas').isVisible(),true,'clinical live ECG simulator canvas visible on entry');
  assert.equal(await page.locator('[data-sim-cat]').count(),6,'six clinical & pharmacology categories');

@@ -1,9 +1,9 @@
 import { fromRoot } from './cardia-pages.js';
 
-// Links from the 3D simulator to the EPS laboratory page (eps/index.html):
-// the header button, and the card of the ablation lesson steps that carry a
-// recording (`egm` in content.js), which opens that recording in the EPS page
-// (#/clip/<id>). The two pages share the language choice (entry-language.js).
+// Link from the 3D lessons to the EPS laboratory page (eps/index.html): the
+// card of the ablation lesson steps that carry a recording (`egm` in
+// content.js) opens that recording in the EPS page (#/clip/<id>). The header
+// menu entry lives in site-modules.js; both pages share the language choice.
 
 export const EPS_URL = './eps/';
 
@@ -26,28 +26,17 @@ export const LESSON_CLIPS = Object.freeze({
 
 const WORDS = {
   tr: {
-    headerTitle: 'EPS laboratuvarı: canlı kayıt, vakalar, manevralar, ablasyon',
     eyebrow: 'ELEKTROFİZYOLOJİ KAYDI',
     text: 'Bu adımın sentetik intrakardiyak kaydı EPS laboratuvarında tam ekran açılır: kanal seçimi, kaliper, manevralar ve canlı kayıt orada.',
     open: 'EPS laboratuvarında aç'
   },
   en: {
-    headerTitle: 'EPS laboratory: live recording, cases, maneuvers, ablation',
     eyebrow: 'ELECTROPHYSIOLOGY RECORDING',
     text: 'The synthetic intracardiac recording of this step opens full screen in the EPS laboratory, with channel choice, calipers, maneuvers and live recording.',
     open: 'Open in the EPS laboratory'
   }
 };
 const words = (lang) => WORDS[lang === 'en' ? 'en' : 'tr'];
-
-export function epsLinkMarkup(lang) {
-  return `<a id="eps-link" class="eps-link" href="${EPS_URL}" title="${words(lang).headerTitle}"><span class="eps-link-icon" aria-hidden="true">⚡</span>EPS</a>`;
-}
-
-export function syncEpsLink(lang) {
-  const link = typeof document !== 'undefined' ? document.querySelector('#eps-link') : null;
-  if (link) link.title = words(lang).headerTitle;
-}
 
 /**
  * Lesson card in `mount`: show(clip) opens it for a recording of LESSON_CLIPS

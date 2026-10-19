@@ -273,7 +273,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5180').replace(/\/$/, '');
     await page.waitForSelector('.pharma-panel');
     assert.ok(page.url().includes('/pharmacology/'), 'main mobile header link usable');
     await page.goto(`${APP}/eps/`);
-    assert.equal(await page.locator('[data-app-pharmacology]').getAttribute('href'), '../pharmacology/');
+    assert.equal(await page.locator('#pharmacology-link').getAttribute('href'), '../pharmacology/');
     assert.deepEqual(errors, [], 'no runtime errors');
     console.log('PASS pharmacology browser: standalone route, header links, mobile layout, target map, AP classes, PK slider, search, comparison, quiz, coagulation/PT/aPTT/drug overlays/feedback, diuretic nephron/classes/electrolytes/reset, sources and persistent TR/EN');
     console.log(`Screenshots: ${shots}`);

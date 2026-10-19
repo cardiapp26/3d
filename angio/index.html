@@ -6,26 +6,13 @@
     <meta name="theme-color" content="#070a0f" />
     <title>Cardia · Koroner Anjiyografi & C-Arm Stüdyosu</title>
   </head>
-  <body class="angio-app">
-    <header class="ecg-header">
-      <div class="ecg-brand-wrap">
-        <a class="ecg-brand" href="../">✳ CARDIA</a>
-        <span class="ecg-brand-badge">KORONER ANJİYOGRAFİ</span>
-      </div>
-      <nav aria-label="Modules" class="ecg-modules" data-angio-modules>
-        <a href="../" data-simulator-link>3D Anatomi</a>
-        <a href="../exam/" data-module-link="exam">Fizik muayene</a>
-        <a href="../hemo/" data-module-link="hemo">Hemodinami</a>
-        <a href="../eps/">EPS</a>
-        <a href="../pharmacology/">Farmakoloji</a>
-        <a href="../ecg/">EKG</a>
-        <a href="./" aria-current="page">Anjiyografi</a>
-        <a href="./3d/" data-module-link="angio-3d">3D koroner anjiyo</a>
-        <a href="../echo/">Eko</a>
-      </nav>
-      <div class="ecg-lang" role="group" aria-label="Language">
-        <button type="button" data-angio-lang="tr">TR</button>
-        <button type="button" data-angio-lang="en">EN</button>
+  <body class="angio-app" data-cardia-root="../">
+    <header class="site-header" data-site-page="angio">
+      <div class="site-header-actions">
+        <div class="ecg-lang" role="group" aria-label="Language">
+          <button type="button" data-angio-lang="tr">TR</button>
+          <button type="button" data-angio-lang="en">EN</button>
+        </div>
       </div>
     </header>
     <main class="angio-workspace" data-angio-workspace></main>

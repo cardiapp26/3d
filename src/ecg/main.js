@@ -1,5 +1,5 @@
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
-import { syncModuleNav } from '../module-nav.js';
+import { mountSiteHeader } from '../site-header.js';
 import { linkToLastRoute } from '../entry-route.js';
 import { createGuytonEcgStudio } from './guyton-studio.js';
 import './guyton-studio.css';
@@ -10,24 +10,10 @@ let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : init
 const TEXTS = {
   tr: {
     title: 'Cardia · EKG Fizyolojisi',
-    badge: 'EKG FİZYOLOJİSİ',
-    back: '3D Anatomi',
-    eps: 'EPS',
-    pharma: 'Farmakoloji',
-    module: 'EKG',
-    angio: 'Anjiyografi',
-    echo: 'Eko',
     disclaimer: 'Eğitim amaçlıdır. Guyton & Hall Tıbbi Fizyoloji Ders Kitabı (Bölüm III: Kalp, 11., 12. ve 13. Bölümler) ve Netter Cardiovascular System (2. baskı, 2014, s. 34–48) temel alınarak vektöryel analiz, Einthoven kanunları, hasar akımı ve re-entry sirküler hareket ilkeleri modellenmiştir. Klinik tanı ve tedavi için yetkili uzman hekim değerlendirmesi esastır.'
   },
   en: {
     title: 'Cardia · ECG Physiology',
-    badge: 'ECG PHYSIOLOGY',
-    back: '3D Anatomy',
-    eps: 'EPS',
-    pharma: 'Pharmacology',
-    module: 'ECG',
-    angio: 'Angiography',
-    echo: 'Echo',
     disclaimer: 'For educational purposes. Vectorial analysis, Einthoven\'s law, current of injury and circus movement re-entry principles modeled after Guyton & Hall Textbook of Medical Physiology (Unit III: The Heart, Chapters 11, 12, and 13) and Netter Cardiovascular System (2nd edition, 2014, pp. 34–48). Clinical diagnosis and treatment require licensed medical evaluation.'
   }
 };
@@ -45,24 +31,12 @@ const studio = createGuytonEcgStudio({
 
 function renderShell() {
   const t = TEXTS[lang];
-  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
 
-  text('.ecg-brand-badge', t.badge);
-  text('[data-ecg-back]', t.back);
+  mountSiteHeader(document.querySelector('.site-header'), lang);
   linkToLastRoute(document);
-  text('[data-ecg-module]', t.module);
   text('[data-ecg-disclaimer]', t.disclaimer);
-
-  const epsLink = document.querySelector('[href="../eps/"]');
-  if (epsLink) epsLink.textContent = t.eps;
-  const pharmaLink = document.querySelector('[href="../pharmacology/"]');
-  if (pharmaLink) pharmaLink.textContent = t.pharma;
-  const angioLink = document.querySelector('[href="../angio/"]');
-  if (angioLink) angioLink.textContent = t.angio;
-  const echoLink = document.querySelector('[href="../echo/"]');
-  if (echoLink) echoLink.textContent = t.echo;
 
   document.querySelectorAll('[data-ecg-lang]').forEach((btn) => {
     btn.setAttribute('aria-pressed', String(btn.dataset.ecgLang === lang));

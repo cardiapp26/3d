@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+/* Shared Cardia header (site-header.js): the same two rows on every page.
+   Row 1: brand, page badge, sub-pages, the page's own controls.
+   Row 2: the module menu, one line, scrolling sideways when narrow.
+   --site-header-h is the full height; page layouts subtract it. */
+:root{--site-header-h:96px}
+.site-header{
+  --site-bg:#f6f7f4;--site-line:#dee4de;--site-text:#21493f;--site-muted:#81908b;
+  --site-link:#4b6259;--site-hover:#e8efe9;--site-active:#21493f;--site-on-active:#fff;
+  --site-control:#fff;--site-control-line:#cbd5cf;
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"brand . actions" "nav nav nav";
+  align-items:center;column-gap:16px;height:auto;min-height:0;padding:0 24px;margin:0;
+  background:var(--site-bg);color:var(--site-text);border:0;border-bottom:1px solid var(--site-line);box-sizing:border-box;overflow:visible;
+  position:sticky;top:0;z-index:90;font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.2
+}
+.site-header *{box-sizing:border-box}
+.site-brand-block{grid-area:brand;display:flex;align-items:center;gap:14px;min-width:0;height:52px}
+.site-brand{display:flex;align-items:center;gap:7px;color:var(--site-text);text-decoration:none;font-size:20px;line-height:1}
+.site-brand strong{font-size:17px;font-weight:800;letter-spacing:3px}
+.site-badge{font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--site-muted);white-space:nowrap}
+.site-subpages{display:flex;gap:2px;padding:2px;border-radius:8px;background:#e7ece5;border:1px solid var(--site-line)}
+.site-subpage{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;color:var(--site-link);text-decoration:none;white-space:nowrap}
+.site-subpage:hover{background:var(--site-hover);color:var(--site-text)}
+.site-subpage[aria-current=page]{background:var(--site-control);color:var(--site-text);box-shadow:0 1px 2px rgba(33,73,63,.15)}
+.site-modules{grid-area:nav;display:flex;align-items:center;gap:4px;height:44px;min-width:0;margin:0 -24px;padding:0 20px;
+  border-top:1px solid var(--site-line);overflow-x:auto;scrollbar-width:none}
+.site-modules::-webkit-scrollbar{display:none}
+.site-module{flex:0 0 auto;display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:7px;
+  font-size:13px;font-weight:600;color:var(--site-link);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.site-module:hover{background:var(--site-hover);color:var(--site-text)}
+.site-module[aria-current=page]{background:var(--site-active);color:var(--site-on-active)}
+.site-module:focus-visible,.site-subpage:focus-visible,.site-brand:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
+
+/* The page's own controls (language, search, tools) take the header colours. */
+.site-header-actions{grid-area:actions;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;height:52px;font-size:12px;color:var(--site-muted)}
+header.site-header .site-header-actions button,header.site-header .site-header-actions a{
+  display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:0 11px;margin:0;border-radius:7px;
+  border:1px solid var(--site-control-line);background:var(--site-control);color:var(--site-text);
+  font:inherit;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;box-shadow:none}
+header.site-header .site-header-actions button:hover,header.site-header .site-header-actions a:hover{background:var(--site-hover);color:var(--site-text)}
+header.site-header .site-header-actions :is(button,a)[aria-pressed=true],header.site-header .site-header-actions button.active{background:var(--site-active);color:var(--site-on-active);border-color:var(--site-active)}
+header.site-header .site-header-actions [role=group]{display:inline-flex;gap:4px}
+header.site-header .site-header-actions kbd{background:#eef2ec;border:1px solid var(--site-control-line);color:var(--site-text);border-radius:4px;padding:0 4px;font-size:10px}
+header.site-header .site-header-actions .quick-search input{min-height:32px;background:var(--site-control)}
+
+@media(max-width:640px){
+  .site-header{padding:0 10px;column-gap:8px}
+  .site-brand-block{height:48px;gap:8px}
+  .site-brand strong{font-size:15px;letter-spacing:1px}
+  .site-badge{display:none}
+  .site-subpage{padding:6px 8px;font-size:11px}
+  .site-modules{height:48px;margin:0 -10px;padding:0 8px}
+  .site-module{height:44px;padding:0 11px;font-size:12px}
+  .site-header-actions{height:48px;gap:4px}
+  header.site-header .site-header-actions button,header.site-header .site-header-actions a{min-height:44px;min-width:44px;padding:0 8px;justify-content:center}
+}
+@media(max-width:420px){
+  .site-subpages{display:none}
+}

@@ -17,7 +17,7 @@ const fs = require('node:fs');
     await page.locator('#angio-fluo-canvas').waitFor({ state: 'visible' });
 
     assert.ok((await page.title()).includes('Anjiyografi') || (await page.title()).includes('Angiography'));
-    assert.match(await page.locator('.ecg-brand-badge').textContent(), /KORONER ANJİYOGRAFİ|CORONARY ANGIOGRAPHY/);
+    assert.match(await page.locator('[data-site-badge]').textContent(), /KORONER ANJİYOGRAFİ|CORONARY ANGIOGRAPHY/);
 
     // Verify initial hash parsing of a=-35, b=-45, sys=left
     const badgeText = await page.locator('#angio-angle-badge').textContent();

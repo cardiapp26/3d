@@ -6,22 +6,13 @@
     <meta name="theme-color" content="#183e34" />
     <title>Cardia · Farmakoloji</title>
   </head>
-  <body class="pharma-app">
-    <header class="pharma-header">
-      <a class="pharma-brand" href="../">✳ CARDIA</a>
-      <nav aria-label="Modules" data-pharma-modules>
-        <a href="../" data-pharma-back>3D Anatomi</a>
-        <a href="../exam/" data-module-link="exam">Fizik muayene</a>
-        <a href="../hemo/" data-module-link="hemo">Hemodinami</a>
-        <a href="../eps/">EPS</a>
-        <a href="./" aria-current="page" data-pharma-module>Farmakoloji</a>
-        <a href="../ecg/" data-pharma-ecg>EKG</a>
-        <a href="../angio/">Anjiyografi</a>
-        <a href="../echo/" data-pharma-echo>Eko</a>
-      </nav>
-      <div class="pharma-lang" role="group" aria-label="Language">
-        <button type="button" data-pharma-lang="tr">TR</button>
-        <button type="button" data-pharma-lang="en">EN</button>
+  <body class="pharma-app" data-cardia-root="../">
+    <header class="site-header" data-site-page="pharmacology">
+      <div class="site-header-actions">
+        <div class="pharma-lang" role="group" aria-label="Language">
+          <button type="button" data-pharma-lang="tr">TR</button>
+          <button type="button" data-pharma-lang="en">EN</button>
+        </div>
       </div>
     </header>
     <main class="pharma-workspace">

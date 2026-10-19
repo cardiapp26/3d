@@ -5,7 +5,8 @@
 // shows only for a known recording.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { LESSON_CLIPS, epsClipUrl, createEpsHandoff, epsLinkMarkup, EPS_URL } from '../../src/eps-link.js';
+import { LESSON_CLIPS, epsClipUrl, createEpsHandoff, EPS_URL } from '../../src/eps-link.js';
+import { SITE_MODULES } from '../../src/site-modules.js';
 import { epRecording, EP_CASES } from '../../src/eps/ep-cases.js';
 import { EP_TEXT, EP_CLIP_TEXT } from '../../src/eps/ep-case-text.js';
 import { clipFromHash } from '../../src/eps/app-text.js';
@@ -30,10 +31,11 @@ for (const [clip, entry] of Object.entries(LESSON_CLIPS)) {
   assert.equal(clipFromHash(epsClipUrl(clip).slice(EPS_URL.length)), clip, `${clip}: address round trip`);
 }
 
-// Header markup.
-assert.match(epsLinkMarkup('en'), /href="\.\/eps\/"/);
-assert.match(epsLinkMarkup('en'), /EPS laboratory/);
-assert.match(epsLinkMarkup('tr'), /EPS laboratuvarı/);
+// Header menu entry (site-modules.js): the EPS page, titled in both languages.
+const epsModule = SITE_MODULES.find((m) => m.id === 'eps');
+assert.equal(epsModule.path, EPS_URL);
+assert.match(epsModule.title.en, /EPS laboratory/);
+assert.match(epsModule.title.tr, /EPS laboratuvarı/);
 
 // Lesson card against a minimal fake DOM.
 function fake(tag) {

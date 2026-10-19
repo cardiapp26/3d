@@ -1,5 +1,5 @@
 import { initialLanguage, rememberLanguage } from './entry-language.js';
-import { syncModuleNav } from './module-nav.js';
+import { mountSiteHeader } from './site-header.js';
 import { linkToLastRoute } from './entry-route.js';
 import { PHARMA_TOPICS } from './pharmacology-data.js';
 import { pharmaText } from './pharmacology-model.js';
@@ -20,8 +20,8 @@ const params = new URLSearchParams(location.search);
 let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : initialLanguage();
 let topicIndex = 0;
 const WORDS = {
-  tr: { title: 'Farmakoloji', eyebrow: 'KARDİYOVASKÜLER İLAÇ ATLASI', subtitle: 'Hedefi keşfet. Mekanizmayı anla. Güvenlik noktasını bul.', back: '3D Anatomi', chapter: 'BÖLÜM', topics: 'Farmakoloji alt başlıkları', sourceNote: 'İki PDF, iki sunum ve çevrimiçi kaynak; kartlarda kaynak izi.', disclaimer: 'Eğitim amaçlıdır. Görseller ve eğriler şematik öğretim modelleridir; klinik yanıt, doz veya reçete önerisi değildir. Hasta bakımında güncel kılavuz ve ürün bilgisi gerekir.' },
-  en: { title: 'Pharmacology', eyebrow: 'CARDIOVASCULAR DRUG ATLAS', subtitle: 'Explore the target. Understand the mechanism. Find the safety point.', back: '3D Anatomy', chapter: 'CHAPTER', topics: 'Pharmacology topics', sourceNote: 'Two PDFs, two slide decks and online sources; references on each card.', disclaimer: 'For education. Visuals and curves are schematic teaching models, not clinical responses, doses or prescribing advice. Patient care requires current guidelines and product information.' }
+  tr: { title: 'Farmakoloji', eyebrow: 'KARDİYOVASKÜLER İLAÇ ATLASI', subtitle: 'Hedefi keşfet. Mekanizmayı anla. Güvenlik noktasını bul.', chapter: 'BÖLÜM', topics: 'Farmakoloji alt başlıkları', sourceNote: 'İki PDF, iki sunum ve çevrimiçi kaynak; kartlarda kaynak izi.', disclaimer: 'Eğitim amaçlıdır. Görseller ve eğriler şematik öğretim modelleridir; klinik yanıt, doz veya reçete önerisi değildir. Hasta bakımında güncel kılavuz ve ürün bilgisi gerekir.' },
+  en: { title: 'Pharmacology', eyebrow: 'CARDIOVASCULAR DRUG ATLAS', subtitle: 'Explore the target. Understand the mechanism. Find the safety point.', chapter: 'CHAPTER', topics: 'Pharmacology topics', sourceNote: 'Two PDFs, two slide decks and online sources; references on each card.', disclaimer: 'For education. Visuals and curves are schematic teaching models, not clinical responses, doses or prescribing advice. Patient care requires current guidelines and product information.' }
 };
 const text = (selector, value) => { document.querySelector(selector).textContent = value; };
 const visual = createPharmacologyVisual({ mount: document.querySelector('[data-pharma-visual]'), getLang: () => lang });
@@ -47,17 +47,13 @@ const panel = createPharmacologyPanel({
 
 function renderShell() {
   const w = WORDS[lang];
-  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = `Cardia · ${w.title}`;
   text('[data-pharma-title]', w.title);
-  text('[data-pharma-module]', w.title);
   text('[data-pharma-eyebrow]', w.eyebrow);
   text('[data-pharma-subtitle]', w.subtitle);
-  text('[data-pharma-back]', w.back);
+  mountSiteHeader(document.querySelector('.site-header'), lang);
   linkToLastRoute(document);
-  text('[data-pharma-ecg]', lang === 'tr' ? 'EKG' : 'ECG');
-  text('[data-pharma-echo]', lang === 'tr' ? 'Eko' : 'Echo');
   text('[data-pharma-source-note]', w.sourceNote);
   text('[data-pharma-disclaimer]', w.disclaimer);
   const nav = document.querySelector('[data-pharma-chapters]');

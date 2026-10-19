@@ -2,10 +2,7 @@ import { createSeptalDefectsPanel } from './septal-defects-panel.js';
 import { createPanelShell } from './panel-shell.js';
 import { createPersonalNotes } from './personal-notes.js';
 import { createHeaderTabs } from './header-tabs.js';
-import { pharmacologyLinkMarkup, syncPharmacologyLink } from './pharmacology-link.js';
-import { ecgLinkMarkup, syncEcgLink } from './ecg-link.js';
-import { angioLinkMarkup, syncAngioLink } from './angio-link.js';
-import { echoLinkMarkup, syncEchoLink } from './echo-link.js';
+import { mountSiteHeader, setSiteHeaderLanguage } from './site-header.js';
 import { createQuickSearch, rememberMode, normalizeSearch } from './quick-search.js';
 import { createPractice } from './practice.js';
 import { DEFECT_TYPES } from './septal-defects-data.js';
@@ -14,7 +11,7 @@ import './style.css';
 import {createHeart} from './heart.js';
 import {structures,rawStructures,rawLessons,uiTranslations,lessons,setContentLanguage,getContentLanguage,hasExplicitLanguageChoice,getTranslation,getUiModes,getAngioDescription} from './content.js';
 import { fetchCountryCode, languageForCountry } from './entry-language.js';
-import { epsLinkMarkup, syncEpsLink, createEpsHandoff, LESSON_CLIPS } from './eps-link.js';
+import { createEpsHandoff, LESSON_CLIPS } from './eps-link.js';
 import {LESSON_TISSUE_OPACITY} from './layer-defaults.js';
 import {drawEcgTrace, formatValveSync, ecgPhaseAt} from './ecg-trace.js';
 import {drawWiggers, formatCycleTiming, wiggersPhaseAt, profileFromStations} from './wiggers.js';
@@ -25,8 +22,7 @@ import { createKochSpPanel } from './koch-sp-panel.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
 import { rememberRoute as rememberAnyRoute } from './entry-route.js';
-import { CARDIA_PAGES, currentPageId, fromRoot, modeHref } from './cardia-pages.js';
-import { pageLinksMarkup, syncPageLinks, rebaseModuleLinks } from './page-links.js';
+import { CARDIA_PAGES, currentPageId, modeHref } from './cardia-pages.js';
 
 document.documentElement.lang = getContentLanguage();
 
@@ -115,14 +111,9 @@ function layerGroup(id, color, children) {
 const VIEW_SHORT = { anterior: 'Ant', posterior: 'Post' };
 const app = document.querySelector('#app');
 app.innerHTML = `
-<header>
-  <div class="brand-block">
-    <a class="brand" href="${currentPageId() === 'anatomy' ? '#/' : fromRoot('./')}">✳ <strong>CARDIA</strong><span data-i18n="brandSubtitle">${getTranslation('brandSubtitle')}</span></a>
-    <div class="header-module-links">${epsLinkMarkup(getContentLanguage())}${pharmacologyLinkMarkup(getContentLanguage())}${ecgLinkMarkup(getContentLanguage())}${angioLinkMarkup(getContentLanguage())}${echoLinkMarkup(getContentLanguage())}${pageLinksMarkup(getContentLanguage())}</div>
-  </div>
-  <div id="header-search" class="header-search"></div>
-  <div class="header-right">
-    <span class="dot"></span> <span data-i18n="headerTitle">${getTranslation('headerTitle')}</span>
+<header class="site-header" data-site-page="${currentPageId()}">
+  <div class="site-header-actions">
+    <div id="header-search" class="header-search"></div>
     <button id="lang-btn" class="lang-btn" title="Dili değiştir / Switch language">${getContentLanguage().toUpperCase()}</button>
     <button id="header-update-btn" class="header-update-btn" title="Güncellemeleri denetle / Check for updates">
       <span class="update-btn-icon">↺</span>
@@ -524,7 +515,7 @@ app.innerHTML = `
 
 <div id="toast" class="app-toast" hidden></div>
 `;
-rebaseModuleLinks(app.querySelector('.header-module-links'));
+mountSiteHeader(app.querySelector('.site-header'), getContentLanguage());
 
 const select = document.querySelector('#structure-select');
 for (const [id, s] of Object.entries(structures)) {
@@ -2009,12 +2000,7 @@ function applyChromeTranslations() {
 }
 
 function updateLanguageUI() {
-  syncEpsLink(getContentLanguage());
-  syncPharmacologyLink(getContentLanguage());
-  syncEcgLink(getContentLanguage());
-  syncAngioLink(getContentLanguage());
-  syncEchoLink(getContentLanguage());
-  syncPageLinks(getContentLanguage());
+  setSiteHeaderLanguage(document.querySelector('.site-header'), getContentLanguage());
   defectPanel.refresh();
   panelShell?.refresh();
   quickSearches.forEach(search => search.refresh());

@@ -8,25 +8,13 @@
     <link rel="stylesheet" href="../src/style.css" />
     <link rel="stylesheet" href="../src/echo/echo-studio.css" />
   </head>
-  <body class="echo-app">
-    <header class="ecg-header">
-      <div class="ecg-brand-wrap">
-        <a class="ecg-brand" href="../">✳ CARDIA</a>
-        <span class="ecg-brand-badge" data-echo-badge>EKOKARDİYOGRAFİ</span>
-      </div>
-      <nav aria-label="Modules" class="ecg-modules" data-echo-modules>
-        <a href="../" data-simulator-link>3D Anatomi</a>
-        <a href="../exam/" data-module-link="exam">Fizik muayene</a>
-        <a href="../hemo/" data-module-link="hemo">Hemodinami</a>
-        <a href="../eps/">EPS</a>
-        <a href="../pharmacology/">Farmakoloji</a>
-        <a href="../ecg/">EKG</a>
-        <a href="../angio/">Anjiyografi</a>
-        <a href="./" aria-current="page" data-echo-current-link>Eko</a>
-      </nav>
-      <div class="ecg-lang" role="group" aria-label="Language">
-        <button type="button" data-echo-lang="tr">TR</button>
-        <button type="button" data-echo-lang="en">EN</button>
+  <body class="echo-app" data-cardia-root="../">
+    <header class="site-header" data-site-page="echo">
+      <div class="site-header-actions">
+        <div class="ecg-lang" role="group" aria-label="Language">
+          <button type="button" data-echo-lang="tr">TR</button>
+          <button type="button" data-echo-lang="en">EN</button>
+        </div>
       </div>
     </header>
 

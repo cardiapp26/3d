@@ -1,6 +1,6 @@
 // Standalone Echocardiography Module (TTE, TEE, ICE) Entry Point
 import { createHeart } from '../heart.js';
-import { syncModuleNav } from '../module-nav.js';
+import { mountSiteHeader } from '../site-header.js';
 import { createEchoMode } from '../echo-mode.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { linkToLastRoute } from '../entry-route.js';
@@ -24,13 +24,6 @@ let currentModality = parseInitialModality();
 const TEXTS = {
   tr: {
     title: 'Cardia · Ekokardiyografi Stüdyosu (TTE, TEE & ICE)',
-    badge: 'EKOKARDİYOGRAFİ',
-    back: '3D Anatomi',
-    eps: 'EPS',
-    pharma: 'Farmakoloji',
-    ecg: 'EKG',
-    angio: 'Anjiyografi',
-    echo: 'Eko',
     beatPause: '⏸ Durdur',
     beatPlay: '▶ Oynat',
     look: '🎯 Düzleme Bak',
@@ -38,13 +31,6 @@ const TEXTS = {
   },
   en: {
     title: 'Cardia · Echocardiography Studio (TTE, TEE & ICE)',
-    badge: 'ECHOCARDIOGRAPHY',
-    back: '3D Anatomy',
-    eps: 'EPS',
-    pharma: 'Pharmacology',
-    ecg: 'ECG',
-    angio: 'Angiography',
-    echo: 'Echo',
     beatPause: '⏸ Freeze',
     beatPlay: '▶ Play',
     look: '🎯 Face Plane',
@@ -90,25 +76,12 @@ if (heart && echoMount) {
 // 3. UI Synchronization & Shell Texts
 function renderShell() {
   const t = TEXTS[lang];
-  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
 
-  text('[data-echo-badge]', t.badge);
-  text('.ecg-modules [data-simulator-link]', t.back);
+  mountSiteHeader(document.querySelector('.site-header'), lang);
   linkToLastRoute(document);
   text('[data-echo-disclaimer]', t.disclaimer);
-
-  const epsLink = document.querySelector('[href="../eps/"]');
-  if (epsLink) epsLink.textContent = t.eps;
-  const pharmaLink = document.querySelector('[href="../pharmacology/"]');
-  if (pharmaLink) pharmaLink.textContent = t.pharma;
-  const ecgLink = document.querySelector('[href="../ecg/"]');
-  if (ecgLink) ecgLink.textContent = t.ecg;
-  const angioLink = document.querySelector('[href="../angio/"]');
-  if (angioLink) angioLink.textContent = t.angio;
-  const echoLink = document.querySelector('[data-echo-current-link]');
-  if (echoLink) echoLink.textContent = t.echo;
 
   const lookBtn = document.querySelector('[data-echo-action="look"]');
   if (lookBtn) lookBtn.textContent = t.look;

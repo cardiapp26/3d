@@ -23,11 +23,11 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     await Promise.all([page.waitForURL(/\/eps\/$/), page.locator('#eps-link').click()]);
     await page.waitForSelector('[data-ep-live]');
     assert.equal(await page.evaluate(() => window.epsLab.getLang()), 'en', 'language carried to the EPS page');
-    assert.equal(await page.locator('[data-app-back]').textContent(), '3D Anatomy');
+    assert.equal(await page.locator('[data-site-link="anatomy"]').textContent(), '3D Anatomy');
 
     // Turkish on the EPS page, then back: the 3D page follows.
     await page.locator('[data-app-lang-option=tr]').click();
-    await Promise.all([page.waitForURL((url) => !url.pathname.startsWith('/eps')), page.locator('[data-app-back]').click()]);
+    await Promise.all([page.waitForURL((url) => !url.pathname.startsWith('/eps')), page.locator('[data-site-link="anatomy"]').click()]);
     await page.waitForSelector('#lang-btn');
     assert.equal((await page.locator('#lang-btn').textContent()).trim(), 'TR', 'language carried back to the 3D page');
     assert.match(await page.locator('#eps-link').getAttribute('title'), /EPS laboratuvarı/);
@@ -36,7 +36,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     await page.setViewportSize({ width: 390, height: 844 });
     const box = await page.locator('#eps-link').boundingBox();
     assert.ok(box && box.height >= 44, `mobile link ${JSON.stringify(box)}`);
-    const right = await page.evaluate(() => Math.max(...[...document.querySelectorAll('header .header-right > *')].filter((e) => e.offsetParent).map((e) => e.getBoundingClientRect().right)));
+    const right = await page.evaluate(() => Math.max(...[...document.querySelectorAll('.site-header .site-header-actions > *')].filter((e) => e.offsetParent).map((e) => e.getBoundingClientRect().right)));
     assert.ok(right <= 390, `header row fits the phone: right edge ${right}`);
     assert.deepEqual(errors, []);
     console.log('PASS eps-link-browser: 3D header link to /eps/, shared TR/EN choice both ways, back link to the 3D page, mobile touch target');

@@ -30,11 +30,12 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5173').replace(/\/$/, '');
     await page.waitForFunction(() => window.cardiaEcho?.getResult());
 
     assert.ok((await page.title()).includes('Ekokardiyografi') || (await page.title()).includes('Echocardiography'));
-    assert.match(await page.locator('[data-echo-badge]').textContent(), /EKOKARDİYOGRAFİ|ECHOCARDIOGRAPHY/);
+    assert.match(await page.locator('[data-site-badge]').textContent(), /EKOKARDİYOGRAFİ|ECHOCARDIOGRAPHY/);
 
     // 2. Check header navigation links
-    const modulesNav = page.locator('[data-echo-modules]');
-    assert.equal(await modulesNav.locator('a').count(), 6, 'All 6 modules linked in header');
+    const modulesNav = page.locator('.site-modules');
+    assert.deepEqual(await modulesNav.locator('a').evaluateAll(links => links.map(a => a.dataset.siteLink)),
+      ['anatomy', 'exam', 'hemo', 'echo', 'angio', 'ecg', 'eps', 'pharmacology'], 'every module linked in the shared order');
     assert.equal(await modulesNav.locator('[aria-current="page"]').textContent(), 'Eko');
 
     // 3. Modality tab switching (TTE -> TEE -> ICE)
@@ -84,13 +85,13 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5173').replace(/\/$/, '');
 
     // 7. Test Language Switch (TR -> EN -> TR)
     await page.locator('[data-echo-lang="en"]').click();
-    assert.match(await page.locator('[data-echo-badge]').textContent(), /ECHOCARDIOGRAPHY/);
-    assert.equal(await page.locator('[data-echo-current-link]').textContent(), 'Echo');
-    assert.equal(await page.locator('.ecg-modules [data-simulator-link]').textContent(), '3D Anatomy');
+    assert.match(await page.locator('[data-site-badge]').textContent(), /ECHOCARDIOGRAPHY/);
+    assert.equal(await page.locator('.site-modules [aria-current="page"]').textContent(), 'Echo');
+    assert.equal(await page.locator('.site-modules [data-simulator-link]').textContent(), '3D Anatomy');
 
     await page.locator('[data-echo-lang="tr"]').click();
-    assert.match(await page.locator('[data-echo-badge]').textContent(), /EKOKARDİYOGRAFİ/);
-    assert.equal(await page.locator('[data-echo-current-link]').textContent(), 'Eko');
+    assert.match(await page.locator('[data-site-badge]').textContent(), /EKOKARDİYOGRAFİ/);
+    assert.equal(await page.locator('.site-modules [aria-current="page"]').textContent(), 'Eko');
 
     // 8. Test Legacy Hash Redirection from /#/mode/echo
     await page.goto(`${APP}/#/mode/echo`);

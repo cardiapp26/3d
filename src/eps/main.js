@@ -1,5 +1,5 @@
-// EPS laboratory entry: header with the link back to the 3D simulator and
-// the language switch (shared with the 3D page), the EP panel
+// EPS laboratory entry: the shared Cardia header (site-header.js) with the
+// language switch (shared with the 3D page), the EP panel
 // (Diagnosis / Maneuvers / Treatment lessons, the live recording
 // workstation, activation mapping, pace mapping, the electrogram basics,
 // SVT, WPW and VES localization, ep-panel.js) and the
@@ -7,23 +7,20 @@
 // #/maneuver, #/treatment, #/mapping, #/pacemap, #/basics, #/svt, #/wpw, #/ves); #/clip/<id> opens
 // one recording (the 3D ablation lesson links to its clips this way).
 import './style.css';
-import { syncModuleNav } from '../module-nav.js';
+import { mountSiteHeader } from '../site-header.js';
 import './lesson.css';
 import './ves-loc.css';
-import { APP_TEXT, LANGS, CARDIA_URL, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
+import { APP_TEXT, LANGS, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
 import { createEpPanel, EP_VIEWS } from './ep-panel.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
-import { simulatorHref } from '../entry-route.js';
+import { linkToLastRoute } from '../entry-route.js';
 import { registerOffline } from './offline.js';
 
 let lang = resolveLang(location.search, initialLanguage());
 const getLang = () => lang;
 
-const title = document.querySelector('[data-app-title]');
-const subtitle = document.querySelector('[data-app-subtitle]');
 const langGroup = document.querySelector('[data-app-lang]');
 const shortcuts = document.querySelector('[data-app-shortcuts]');
-const back = document.querySelector('[data-app-back]');
 const disclaimer = document.querySelector('[data-app-disclaimer]');
 const workspace = document.querySelector('[data-app-workspace]');
 
@@ -56,24 +53,13 @@ const langButtons = LANGS.map((id) => {
 
 function renderShell() {
   const t = APP_TEXT[lang];
-  syncModuleNav(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
-  title.textContent = t.title;
-  subtitle.textContent = t.subtitle;
+  mountSiteHeader(document.querySelector('.site-header'), lang);
+  linkToLastRoute(document);
   langGroup.setAttribute('aria-label', t.langLabel);
   for (const button of langButtons) button.setAttribute('aria-pressed', String(button.dataset.appLangOption === lang));
   shortcuts.textContent = t.shortcuts;
-  back.textContent = t.back;
-  back.title = t.backTitle;
-  back.href = simulatorHref(CARDIA_URL);
-  document.querySelector('[data-app-pharmacology]').textContent = lang === 'tr' ? 'Farmakoloji' : 'Pharmacology';
-  const ecgLink = document.querySelector('[data-app-ecg]');
-  if (ecgLink) ecgLink.textContent = lang === 'tr' ? 'EKG' : 'ECG';
-  const angioLink = document.querySelector('[data-app-angio]');
-  if (angioLink) angioLink.textContent = lang === 'tr' ? 'Anjiyografi' : 'Angiography';
-  const echoLink = document.querySelector('[data-app-echo]');
-  if (echoLink) echoLink.textContent = lang === 'tr' ? 'Eko' : 'Echo';
   disclaimer.textContent = t.disclaimer;
 }
 

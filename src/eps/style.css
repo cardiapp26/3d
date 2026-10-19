@@ -19,24 +19,14 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body { margin: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100dvh; background: var(--bg); }
+body { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; height: 100dvh; background: var(--bg); }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
-/* Header and footer */
-.app-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
-.app-brand h1 { margin: 0; font-size: 16px; letter-spacing: .3px; }
-.app-brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
-.app-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 12px; min-width: 0; }
-.app-shortcuts { font: 11px var(--mono); color: var(--muted); }
-.app-back { color: var(--text); text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; font-size: 12px; }
-.app-back::before { content: '\2190\00a0'; color: var(--accent); }
-.app-back:hover { border-color: var(--accent); }
-.app-lang { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.app-lang button { border: 0; background: transparent; padding: 4px 10px; font-size: 11.5px; color: var(--muted); }
-.app-lang button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+/* Header: shared Cardia header (src/site-header.css). Footer: */
+.app-shortcuts { font: 11px var(--mono); color: #81908b; }
 .app-workspace { min-height: 0; padding: 8px; }
 .app-footer { border-top: 1px solid var(--line); padding: 6px 16px; background: var(--panel); }
 .app-footer p { margin: 0; font-size: 11px; color: var(--muted); }
@@ -89,8 +79,6 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 @media (max-width: 900px) {
   body { height: auto; min-height: 100dvh; }
   .app-shortcuts { display: none; }
-  .app-brand p { display: none; }
-  .app-back { padding: 4px 8px; font-size: 11.5px; white-space: nowrap; }
   .ep-live { grid-template-columns: 1fr; height: auto; }
   .ep-live-canvas { flex: none; height: 62vh; min-height: 300px; }
   .ep-live-console { overflow: visible; }

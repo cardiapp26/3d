@@ -754,44 +754,8 @@
 
 /* Standalone module shell, scoped so anatomy and ECG keep their own layouts. */
 .angio-app * { box-sizing: border-box; }
-.angio-app .ecg-header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  padding: 14px clamp(14px, 3vw, 32px);
-  background: #0f172a;
-  border-bottom: 1px solid #1e293b;
-}
-.angio-app .ecg-brand-wrap { display: flex; align-items: center; gap: 12px; }
-.angio-app .ecg-brand { color: #38bdf8; text-decoration: none; font-weight: 800; white-space: nowrap; }
-.angio-app .ecg-brand-badge { color: #94a3b8; font-size: 10px; letter-spacing: .08em; }
-.angio-app .ecg-modules { display: flex; gap: 4px; min-width: 0; overflow-x: auto; }
-.angio-app .ecg-modules a {
-  flex: 0 0 auto;
-  padding: 7px 10px;
-  color: #cbd5e1;
-  text-decoration: none;
-  font-size: 12px;
-  border-radius: 6px;
-}
-.angio-app .ecg-modules a[aria-current="page"] { background: #0369a1; color: #fff; }
-.angio-app .ecg-lang { display: flex; gap: 4px; margin-left: auto; }
-.angio-app .ecg-lang button {
-  padding: 6px 10px;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  color: #cbd5e1;
-  background: #1e293b;
-  cursor: pointer;
-}
-.angio-app .ecg-lang button[aria-pressed="true"] { background: #38bdf8; color: #0f172a; }
 .angio-app .ecg-footer { padding: 16px; color: #94a3b8; font-size: 11px; line-height: 1.6; border-top: 1px solid #1e293b; }
 .angio-app :is(button, input, select, a):focus-visible { outline: 2px solid #38bdf8; outline-offset: 3px; }
-@media (max-width: 800px) {
-  .angio-app .ecg-modules { order: 3; width: 100%; }
-  .angio-app .ecg-brand-badge { display: none; }
-}
 
 /* Original atlas views share C-arm angles, while keeping their own materials. */
 .angio-stage-grid { grid-template-columns: minmax(0, 1.9fr) minmax(340px, 1fr); }

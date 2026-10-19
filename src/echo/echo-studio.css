@@ -12,12 +12,13 @@
   overflow-x: hidden;
 }
 
-/* Studio Workspace Grid */
+/* Studio Workspace Grid (order: style.css moves <main> first on phones for the 3D page). */
 .echo-workspace {
+  order: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(380px, 460px);
   flex: 1;
-  min-height: calc(100vh - 46px - 44px);
+  min-height: calc(100vh - var(--site-header-h) - 44px);
   background: radial-gradient(circle at 35% 30%, #0d1520 0%, #070a0f 75%);
 }
 
