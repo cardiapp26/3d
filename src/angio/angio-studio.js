@@ -223,9 +223,6 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     const laoRao = Math.abs(state.alpha) < 0.5 ? 'AP 0°' : `${state.alpha > 0 ? 'LAO' : 'RAO'} ${Math.abs(Math.round(state.alpha))}°`;
     const craCau = Math.abs(state.beta) < 0.5 ? '0°' : `${state.beta > 0 ? 'CRA' : 'CAU'} ${Math.abs(Math.round(state.beta))}°`;
 
-    const badge = container.querySelector('#angio-angle-badge');
-    if (badge) badge.textContent = `${laoRao} · ${craCau}`;
-
     const alphaSlider = container.querySelector('#angio-alpha-slider');
     if (alphaSlider) alphaSlider.value = String(Math.round(state.alpha));
 
@@ -336,32 +333,20 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     const systemViews = STANDARD_ANGIO_VIEWS.filter(v => v.system === state.system);
 
     container.innerHTML = `
-      <!-- TOP NAVIGATION BAR -->
-      <header class="angio-topbar">
-        <div class="angio-brand-area">
-          <div class="angio-brand-title">
-            <span class="angio-pulse-dot"></span>
-            <strong>CARDIA</strong> · ${isTr ? 'KORONER ANJİYOGRAFİ & C-ARM STÜDYOSU' : 'CORONARY ANGIOGRAPHY & C-ARM STUDIO'}
-          </div>
-          <span class="angio-badge-view" id="angio-angle-badge">AP 0° · 0°</span>
-        </div>
-
-        <div class="angio-top-tools">
-          <button type="button" class="angio-tool-btn" id="angio-btn-share" title="${isTr ? 'Bağlantıyı Kopyala' : 'Copy Share URL'}">
-            🔗 ${isTr ? 'Açıyı Paylaş (#a, #b)' : 'Share View URL'}
-          </button>
-        </div>
-      </header>
-
-      <!-- SYSTEM SELECTION TABS -->
-      <nav class="angio-sys-tabs" role="tablist" aria-label="${isTr ? 'Arteriyel Sistem Seçimi' : 'Select Arterial System'}">
-        ${CORONARY_SYSTEMS.map(sys => `
-          <button type="button" role="tab" aria-selected="${sys.id === state.system}" class="angio-sys-btn ${sys.id === state.system ? 'active' : ''}" data-angio-sys="${sys.id}">
-            <span class="angio-sys-icon">${sys.icon}</span>
-            <span>${isTr ? sys.nameTr : sys.nameEn}</span>
-          </button>
-        `).join('')}
-      </nav>
+      <!-- SYSTEM SELECTION TABS (the page header names the module; the angle reads in the C-arm controls) -->
+      <div class="angio-sys-row">
+        <nav class="angio-sys-tabs" role="tablist" aria-label="${isTr ? 'Arteriyel Sistem Seçimi' : 'Select Arterial System'}">
+          ${CORONARY_SYSTEMS.map(sys => `
+            <button type="button" role="tab" aria-selected="${sys.id === state.system}" class="angio-sys-btn ${sys.id === state.system ? 'active' : ''}" data-angio-sys="${sys.id}">
+              <span class="angio-sys-icon">${sys.icon}</span>
+              <span>${isTr ? sys.nameTr : sys.nameEn}</span>
+            </button>
+          `).join('')}
+        </nav>
+        <button type="button" class="angio-tool-btn angio-share-btn" id="angio-btn-share" title="${isTr ? 'Bağlantıyı Kopyala' : 'Copy Share URL'}">
+          🔗 ${isTr ? 'Açıyı Paylaş' : 'Share View URL'}
+        </button>
+      </div>
 
       <!-- MAIN WORKSPACE SPLIT GRID -->
       <div class="angio-stage-grid">

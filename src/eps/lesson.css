@@ -399,7 +399,15 @@
 .svt-practice { align-self: flex-start; }
 .ep-practice { display: flex; gap: 6px; }
 .ep-lesson[data-side-only=true] { grid-template-columns: minmax(0, 1fr); }
-.ep-lesson[data-side-only=true] .ep-side { max-width: 880px; }
+/* Practice views without a recording: the exercise (12-lead ECG, question,
+   answers) on the left, the heart schematic beside it, so wide screens are used
+   without stretching the ECG. Narrow screens keep one column. */
+@media (min-width: 1280px) {
+  .ep-lesson[data-side-only=true] .ep-side { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); align-content: start; gap: 8px 14px; }
+  .ep-lesson[data-side-only=true] .ep-side > * { grid-column: 1; }
+  .ep-lesson[data-side-only=true] .ep-side > .ep-practice { grid-column: 1 / -1; }
+  .ep-lesson[data-side-only=true] .ep-side > .ep-schematic { grid-column: 2; grid-row: 2 / span 3; align-self: start; position: sticky; top: 0; }
+}
 
 /* 4-step atrial tachycardia analysis schematic (at-markowitz-guide.js). */
 .at-steps { display: flex; flex-direction: column; gap: 8px; min-width: 0; }

@@ -23,7 +23,7 @@ const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
     });
     const page = await context.newPage();
     await page.goto('https://3d.drtr.uk/?lang=tr');
-    await page.locator('#panel-tab-notes').click();
+    await page.locator('#notes-toggle').click();
     await page.evaluate(() => localStorage.setItem('cardia.personal-notes.v1.angiography', 'Anjiyografi fixture notu'));
     await page.locator('#personal-notes-input').fill('Anatomi fixture notu');
     const popupPromise = context.waitForEvent('page');

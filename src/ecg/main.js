@@ -1,11 +1,14 @@
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { mountSiteHeader } from '../site-header.js';
+import { createPersonalNotes } from '../personal-notes.js';
 import { linkToLastRoute } from '../entry-route.js';
 import { createGuytonEcgStudio } from './guyton-studio.js';
 import './guyton-studio.css';
 
 const params = new URLSearchParams(location.search);
 let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : initialLanguage();
+// Notes drawer (right edge), created once the header exists.
+let notes = null;
 
 const TEXTS = {
   tr: {
@@ -35,6 +38,7 @@ function renderShell() {
   document.title = t.title;
 
   mountSiteHeader(document.querySelector('.site-header'), lang);
+  notes?.refresh();
   linkToLastRoute(document);
   text('[data-ecg-disclaimer]', t.disclaimer);
 
@@ -60,6 +64,7 @@ document.querySelectorAll('[data-ecg-lang]').forEach((btn) => {
 });
 
 renderShell();
+notes = createPersonalNotes({ getLang: () => lang });
 
 // Register service worker if supported
 if ('serviceWorker' in navigator) {

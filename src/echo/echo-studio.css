@@ -16,7 +16,7 @@
 .echo-workspace {
   order: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(380px, 460px);
+  grid-template-columns: minmax(0, 1fr) 8px var(--echo-panel-w, 420px);
   flex: 1;
   min-height: calc(100vh - var(--site-header-h) - 44px);
   background: radial-gradient(circle at 35% 30%, #0d1520 0%, #070a0f 75%);
@@ -205,8 +205,15 @@
   border: 1px solid #13241d;
 }
 
+/* Divider between viewport and console (echo-resizer.js); style.css hides the
+   3D page's resizer below 1100 px, the echo studio keeps its own until it stacks. */
+@media (min-width: 961px) {
+  .echo-app .echo-resizer { display: flex !important; }
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 960px) {
+  .echo-app .echo-resizer { display: none !important; }
   .echo-workspace {
     grid-template-columns: 1fr;
     min-height: auto;

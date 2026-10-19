@@ -1,5 +1,6 @@
 import { initialLanguage, rememberLanguage } from './entry-language.js';
 import { mountSiteHeader } from './site-header.js';
+import { createPersonalNotes } from './personal-notes.js';
 import { linkToLastRoute } from './entry-route.js';
 import { PHARMA_TOPICS } from './pharmacology-data.js';
 import { pharmaText } from './pharmacology-model.js';
@@ -18,6 +19,8 @@ import './pharmacology-page.css';
 
 const params = new URLSearchParams(location.search);
 let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : initialLanguage();
+// Notes drawer (right edge), created once the header exists.
+let notes = null;
 let topicIndex = 0;
 const WORDS = {
   tr: { title: 'Farmakoloji', eyebrow: 'KARDİYOVASKÜLER İLAÇ ATLASI', subtitle: 'Hedefi keşfet. Mekanizmayı anla. Güvenlik noktasını bul.', chapter: 'BÖLÜM', topics: 'Farmakoloji alt başlıkları', sourceNote: 'İki PDF, iki sunum ve çevrimiçi kaynak; kartlarda kaynak izi.', disclaimer: 'Eğitim amaçlıdır. Görseller ve eğriler şematik öğretim modelleridir; klinik yanıt, doz veya reçete önerisi değildir. Hasta bakımında güncel kılavuz ve ürün bilgisi gerekir.' },
@@ -53,6 +56,7 @@ function renderShell() {
   text('[data-pharma-eyebrow]', w.eyebrow);
   text('[data-pharma-subtitle]', w.subtitle);
   mountSiteHeader(document.querySelector('.site-header'), lang);
+  notes?.refresh();
   linkToLastRoute(document);
   text('[data-pharma-source-note]', w.sourceNote);
   text('[data-pharma-disclaimer]', w.disclaimer);
@@ -134,6 +138,7 @@ document.querySelectorAll('[data-pharma-lang]').forEach(button => button.addEven
 }));
 window.addEventListener('hashchange', followHash);
 renderShell();
+notes = createPersonalNotes({ getLang: () => lang });
 panel.enter();
 followHash();
 

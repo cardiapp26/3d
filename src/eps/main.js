@@ -8,6 +8,7 @@
 // one recording (the 3D ablation lesson links to its clips this way).
 import './style.css';
 import { mountSiteHeader } from '../site-header.js';
+import { createPersonalNotes } from '../personal-notes.js';
 import './lesson.css';
 import './ves-loc.css';
 import { APP_TEXT, LANGS, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
@@ -17,6 +18,8 @@ import { linkToLastRoute } from '../entry-route.js';
 import { registerOffline } from './offline.js';
 
 let lang = resolveLang(location.search, initialLanguage());
+// Notes drawer (right edge), created once the header exists.
+let notes = null;
 const getLang = () => lang;
 
 const langGroup = document.querySelector('[data-app-lang]');
@@ -56,6 +59,7 @@ function renderShell() {
   document.documentElement.lang = lang;
   document.title = t.title;
   mountSiteHeader(document.querySelector('.site-header'), lang);
+  notes?.refresh();
   linkToLastRoute(document);
   langGroup.setAttribute('aria-label', t.langLabel);
   for (const button of langButtons) button.setAttribute('aria-pressed', String(button.dataset.appLangOption === lang));
@@ -104,6 +108,7 @@ document.addEventListener('keyup', (event) => { if (spaceTargetFor(event)) event
 window.addEventListener('resize', () => { if (panel.getActiveView() === 'live') live.render(); else panel.draw(); });
 
 renderShell();
+notes = createPersonalNotes({ getLang: () => lang });
 window.addEventListener('load', () => { registerOffline(); });
 
 /** Test hooks (browser tests). */

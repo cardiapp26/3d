@@ -1,6 +1,8 @@
 // Standalone Echocardiography Module (TTE, TEE, ICE) Entry Point
 import { createHeart } from '../heart.js';
 import { mountSiteHeader } from '../site-header.js';
+import { initEchoResizer } from './echo-resizer.js';
+import { createPersonalNotes } from '../personal-notes.js';
 import { createEchoMode } from '../echo-mode.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { linkToLastRoute } from '../entry-route.js';
@@ -8,6 +10,8 @@ import './echo-studio.css';
 
 const params = new URLSearchParams(location.search);
 let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : initialLanguage();
+// Notes drawer (right edge), created once the header exists.
+let notes = null;
 
 // Modality from URL query param, hash, or default to TTE
 function parseInitialModality() {
@@ -73,13 +77,22 @@ if (heart && echoMount) {
   window.cardiaEcho = echoMode;
 }
 
+// Divider between the 3D viewport and the console.
+const resizer = initEchoResizer({
+  workspace: document.querySelector('[data-echo-workspace]'),
+  resizer: document.querySelector('[data-echo-resizer]'),
+  panel: document.querySelector('.echo-panel-container')
+});
+
 // 3. UI Synchronization & Shell Texts
 function renderShell() {
   const t = TEXTS[lang];
+  resizer.setLanguage(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
 
   mountSiteHeader(document.querySelector('.site-header'), lang);
+  notes?.refresh();
   linkToLastRoute(document);
   text('[data-echo-disclaimer]', t.disclaimer);
 
@@ -204,6 +217,7 @@ document.body.appendChild(langBtnCompat);
 
 // 5. Model Loading & Initial Enter
 renderShell();
+notes = createPersonalNotes({ getLang: () => lang });
 
 if (heart?.ready) {
   heart.ready

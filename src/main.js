@@ -798,11 +798,10 @@ const defectPanel = createSeptalDefectsPanel({
 });
 panelShell = createPanelShell({ getLang: getContentLanguage });
 const findingsPanel = panelShell.addTab({ id: 'findings', label: { tr: 'İlerleme', en: 'Progress' }, onShow: () => practice?.refresh() });
+// Notes drawer at the right edge: one note per lesson mode.
 const personalNotes = createPersonalNotes({
-  shell: panelShell,
   getLang: getContentLanguage,
-  getContext: () => ({ id: mode, title: getUiModes().find(([id]) => id === mode)?.[2] || mode }),
-  getSections: () => getUiModes().map(([id, , title]) => ({ id, title })),
+  getContext: () => ({ id: mode, title: getUiModes().find(([id]) => id === mode)?.[2] || mode })
 });
 const refreshPanelShell = panelShell.refresh;
 panelShell.refresh = () => { refreshPanelShell(); personalNotes.refresh(); };

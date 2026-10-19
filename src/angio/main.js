@@ -1,12 +1,15 @@
 // Coronary Angiography Module Entry Point (angio/index.html)
 import { createAngioStudio } from './angio-studio.js';
 import { mountSiteHeader } from '../site-header.js';
+import { createPersonalNotes } from '../personal-notes.js';
 import './angio-studio.css';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { linkToLastRoute } from '../entry-route.js';
 
 const params = new URLSearchParams(location.search);
 let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : initialLanguage();
+// Notes drawer (right edge), created once the header exists.
+let notes = null;
 
 const TEXTS = {
   tr: {
@@ -40,6 +43,7 @@ function renderShell() {
   document.title = t.title;
 
   mountSiteHeader(document.querySelector('.site-header'), lang);
+  notes?.refresh();
   linkToLastRoute(document);
   text('[data-angio-disclaimer]', t.disclaimer);
 
@@ -67,6 +71,7 @@ document.querySelectorAll('[data-angio-lang]').forEach(btn => {
 });
 
 renderShell();
+notes = createPersonalNotes({ getLang: () => lang });
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('../sw.js', { scope: '../', updateViaCache: 'none' })
