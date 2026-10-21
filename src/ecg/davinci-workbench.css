@@ -9,6 +9,15 @@
 .da-reading{border-top:1px solid #2f4654;padding-top:12px;display:grid;gap:5px}.da-reading>span{font-size:9px;font-weight:700;letter-spacing:.12em;color:#91b4c5}.da-reading strong{font-size:16px;color:#f5d494;line-height:1.4}.da-compare-bar{display:flex;gap:7px}.da-compare-bar button{font-size:10px;min-height:29px;padding:5px 9px}.da-compare-bar button[hidden]{display:none}
 .da-strips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.da-workbench .da-strip{display:grid;grid-template-columns:auto 1fr;gap:3px;padding:7px 9px;background:#0a1721;text-align:left;border-color:#314653;min-width:0;position:relative;overflow:hidden}.da-workbench .da-strip[aria-pressed=true]{background:#182f37;border-color:#7dd9c7}.da-strip-name{font-size:12px;font-weight:800;grid-column:1}.da-strip svg{width:100%;height:68px;grid-column:1/-1;min-width:0;display:block}.da-strip-sign{position:absolute;top:8px;right:9px;font-size:9px;color:#a8bdcb}.da-paper{fill:none;stroke:#4b5d68;stroke-opacity:.3;stroke-width:.6}.da-trace{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.da-trace-a{fill:none;stroke:#d1dae0;stroke-opacity:.7;stroke-width:1.5;stroke-dasharray:4 4}.da-wave-note{font-size:10px;color:#99b2c2;line-height:1.5;margin:0}
 .da-evidence{border-top:1px solid #2c414e;padding:18px 24px;background:#101e2a}.da-evidence-main{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:start}.da-figure{color:#86d5c7;font-size:10px;letter-spacing:.1em;font-weight:800;padding-top:3px;white-space:nowrap}.da-evidence-main p{font-size:12px;line-height:1.75;color:#cbdae3;margin:0}.da-evidence a{font-size:10px;color:#9ccff0;line-height:1.7;text-decoration:none}.da-evidence details{font-size:11px;line-height:1.8;margin-top:14px;color:#94afbf}.da-evidence summary{cursor:pointer}.da-evidence details p{max-width:100ch}
+.da-evidence-left{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.da-fig-mini-card{position:relative;display:block;width:105px;height:95px;padding:0!important;border:1px solid #3d5e73!important;border-radius:8px!important;overflow:hidden;background:#09131a!important;cursor:pointer;transition:transform .18s ease,border-color .18s ease}
+.da-fig-mini-card:hover{transform:translateY(-2px);border-color:#6ed0c2!important;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.da-fig-mini-card img{width:100%;height:100%;object-fit:cover;display:block}
+.da-fig-mini-badge{position:absolute;bottom:0;inset-inline:0;background:rgba(10,20,30,.88);font-size:9px;font-weight:700;color:#c9efff;text-align:center;padding:2px 4px}
+.da-evidence-body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.da-evidence-links{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.da-link-btn{font-size:11px!important;padding:3px 8px!important;min-height:24px!important;background:#172a39!important;border-color:#355366!important;color:#92d9ce!important}
+.da-link-btn:hover{background:#233e52!important;border-color:#6ed0c2!important;color:#fff!important}
 .davinci-lab:has(.da-workbench)>.davinci-header{display:none}.davinci-lab:has(.da-workbench)>.davinci-nav{margin-bottom:0}.davinci-lab:has(.da-workbench) .davinci-nav-btn{padding:10px 13px}.davinci-lab:has(.da-workbench) .davinci-nav-btn .nav-label{font-size:12px}
 @media(min-width:1500px){.da-atlas{min-height:660px}.da-strip svg{height:80px}}
 @media(max-width:900px){.da-layout{grid-template-columns:minmax(0,1fr)}.da-stage{border-right:0;border-bottom:1px solid #2b404e}.da-atlas{min-height:470px}.da-panel{padding:18px}.da-strips{grid-template-columns:repeat(3,minmax(0,1fr))}.da-intro{padding:18px}.da-source-chip{display:none}.da-evidence{padding:16px}.da-evidence-main{grid-template-columns:auto minmax(0,1fr)}.da-evidence-main a{grid-column:2}}
@@ -18,3 +27,4 @@
 .da-strips[data-layout=panoramic] .da-strip svg{grid-column:2;grid-row:1;height:45px}
 .da-strips[data-layout=panoramic] .da-strip-sign{position:static;grid-column:3;grid-row:1;text-align:right}
 .da-strip-name small{display:block;color:#8faeba;font-size:9px;font-weight:400;margin-top:3px}
+.da-cross-link{font-size:11.5px;color:#8be1d6;text-underline-offset:3px}

@@ -6,3 +6,9 @@ FARMAKOLOJI_MODUL_INCELEME_RAPORU.md
 PANEL_VE_MODUL_INCELEME_RAPORU.md
 WPW_DUZELTME_VE_GELISTIRME_PLANI.md
 
+
+# Large source-paper supplements and generated previews (kept locally)
+research/ecg-anatomy/jaccas_105998_mmc1.3mf
+research/ecg-anatomy/mmc1.zip
+public/ecg-anatomy/figures/*.png
+/*-preview.png

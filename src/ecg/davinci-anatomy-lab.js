@@ -5,6 +5,7 @@
 
 import './davinci-anatomy-lab.css';
 import { createDavinciWorkbench } from './davinci-workbench.js';
+import { createDavinciFigures } from './davinci-figures.js';
 
 export function createDaVinciAnatomyLab({ mount, getLang = () => 'tr', state = {} }) {
   const st = Object.assign({
@@ -18,12 +19,24 @@ export function createDaVinciAnatomyLab({ mount, getLang = () => 'tr', state = {
     icnsSgp: 'all', // 'all' | 'vrasgp' | 'vlasgp' | 'ldsgp' | 'mdsgp' | 'drasgp' | 'rcsgp' | 'lcsgp'
     cnaTarget: 'sa_node' // 'sa_node' | 'av_node' | 'marshall'
   }, state);
+  // An older in-memory state may still name the removed article tab.
+  if (!['cabrera', 'heights', 'nomenclature', 'atrial', 'icns'].includes(st.tab)) st.tab = 'cabrera';
 
   const root = document.createElement('section');
   root.className = 'davinci-lab';
 
   const tr = (trText, enText) => getLang() === 'en' ? enText : trText;
-  const workbench = createDavinciWorkbench({ getLang, state: st });
+
+  // Paper figures and clinical checks live inside the topic they illustrate.
+  const figures = createDavinciFigures({ getLang, onApply: applyFigureTarget });
+  const workbench = createDavinciWorkbench({ getLang, state: st, figures });
+
+  function applyFigureTarget(target = {}) {
+    const map = { scenario: 'cabreraScenario' };
+    for (const [key, value] of Object.entries(target)) if (value !== undefined) st[map[key] || key] = value;
+    render();
+    root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   function preserveFocus(redraw) {
     const active = root.contains(document.activeElement) ? document.activeElement : null;
@@ -35,28 +48,55 @@ export function createDaVinciAnatomyLab({ mount, getLang = () => 'tr', state = {
   function render() {
     root.replaceChildren();
     const tabs = [
-      ['cabrera',tr('Cabrera · bakış ve vektör','Cabrera · view and vector'),'Fig 1, 2, 10, 11'],
-      ['heights',tr('3D elektrot düzlemleri','3D electrode planes'),'Fig 3–6'],
-      ['nomenclature',tr('Anatomik isimler','Anatomical names'),'Fig 7, 8'],
-      ['atrial',tr('Atriyal odaklar ve P','Atrial sites and P'),'Fig 9'],
-      ['icns',tr('Otonom sistem · ek kaynak','Autonomic system · separate source'),'Aksu et al. 2021']
+      ['cabrera', tr('Cabrera · bakış ve vektör', 'Cabrera · view and vector'), 'Fig 1, 2, 10, 11'],
+      ['heights', tr('3D elektrot düzlemleri', '3D electrode planes'), 'Fig 3–6'],
+      ['nomenclature', tr('Anatomik isimler', 'Anatomical names'), 'Fig 7, 8'],
+      ['atrial', tr('Atriyal odaklar ve P', 'Atrial sites and P'), 'Fig 9'],
+      ['icns', tr('Otonom sistem · ek kaynak', 'Autonomic system · separate source'), 'Aksu et al. 2021']
     ];
-    const nav=document.createElement('nav');nav.className='davinci-nav';nav.setAttribute('role','tablist');nav.setAttribute('aria-label',tr('Uzaysal EKG konuları','Spatial ECG topics'));
-    tabs.forEach(([id,title,fig],i)=>{
-      const b=document.createElement('button');b.type='button';b.className=`davinci-nav-btn ${st.tab===id?'active':''}`;b.dataset.davinciSection=id;
-      b.setAttribute('role','tab');b.setAttribute('aria-selected',String(st.tab===id));b.tabIndex=st.tab===id?0:-1;b.id=`davinci-tab-${id}`;b.setAttribute('aria-controls','davinci-content');
-      b.innerHTML=`<span class="nav-ch">${fig}</span><span class="nav-label">${title}</span>`;
-      b.addEventListener('click',()=>{st.tab=id;preserveFocus(render);});
-      b.addEventListener('keydown',event=>{
-        if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
-        event.preventDefault();const index=event.key==='Home'?0:event.key==='End'?tabs.length-1:(i+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
-        st.tab=tabs[index][0];render();root.querySelector(`[data-davinci-section="${st.tab}"]`).focus();
-      });nav.append(b);
+    const nav = document.createElement('nav');
+    nav.className = 'davinci-nav';
+    nav.setAttribute('role', 'tablist');
+    nav.setAttribute('aria-label', tr('Uzaysal EKG konuları', 'Spatial ECG topics'));
+
+    tabs.forEach(([id, title, fig], i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `davinci-nav-btn ${st.tab === id ? 'active' : ''}`;
+      b.dataset.davinciSection = id;
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(st.tab === id));
+      b.tabIndex = st.tab === id ? 0 : -1;
+      b.id = `davinci-tab-${id}`;
+      b.setAttribute('aria-controls', 'davinci-content');
+      b.innerHTML = `<span class="nav-ch">${fig}</span><span class="nav-label">${title}</span>`;
+      b.addEventListener('click', () => {
+        st.tab = id;
+        preserveFocus(render);
+      });
+      b.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const index = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (i + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        st.tab = tabs[index][0];
+        render();
+        root.querySelector(`[data-davinci-section="${st.tab}"]`)?.focus();
+      });
+      nav.append(b);
     });
-    const content=document.createElement('div');content.className='davinci-content';content.id='davinci-content';content.setAttribute('role','tabpanel');content.setAttribute('aria-labelledby',`davinci-tab-${st.tab}`);
-    root.append(nav,content);
-    if(st.tab==='icns')renderIcnsTab(content,getLang()!=='en');
-    else content.append(workbench.render(st.tab));
+
+    const content = document.createElement('div');
+    content.className = 'davinci-content';
+    content.id = 'davinci-content';
+    content.setAttribute('role', 'tabpanel');
+    content.setAttribute('aria-labelledby', `davinci-tab-${st.tab}`);
+    root.append(nav, content);
+
+    if (st.tab === 'icns') {
+      renderIcnsTab(content, getLang() !== 'en');
+    } else {
+      content.append(workbench.render(st.tab));
+    }
   }
 
   // --- SUB-MODULE 5: INTRINSIC CARDIAC AUTONOMIC NERVOUS SYSTEM (ICNS) ---
