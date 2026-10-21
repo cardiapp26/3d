@@ -40,7 +40,7 @@
     "echo:calibrate": "node scripts/echo-calibrate.cjs",
     "echo:audit": "node scripts/echo-audit.cjs",
     "test:eps": "node scripts/eps/run-tests.mjs",
-    "test:eps-browser": "node scripts/eps/test-ep-live-browser.cjs && node scripts/eps/test-ep-lessons-browser.cjs && node scripts/eps/test-amap-interactions-browser.cjs && node scripts/eps/test-ep-labs-browser.cjs && node scripts/eps/test-eps-link-browser.cjs && node scripts/eps/test-ves-browser.cjs && node scripts/eps/test-recording-browser.cjs",
+    "test:eps-browser": "node scripts/eps/test-ep-live-browser.cjs && node scripts/eps/test-ep-lessons-browser.cjs && node scripts/eps/test-amap-interactions-browser.cjs && node scripts/eps/test-ep-labs-browser.cjs && node scripts/eps/test-eps-link-browser.cjs && node scripts/eps/test-ves-browser.cjs && node scripts/eps/test-recording-browser.cjs && node scripts/eps/test-csp-browser.cjs",
     "test:eps-offline": "node scripts/eps/test-eps-offline-browser.cjs",
     "test:pharmacology": "node scripts/test-pharmacology.mjs",
     "test:pharmacology-browser": "node scripts/test-pharmacology-browser.cjs",
@@ -72,7 +72,9 @@
     "test:echo-browser": "node scripts/test-echo-browser.cjs",
     "test:angio-atlas": "node scripts/test-angio-atlas.cjs",
     "test:recording": "node scripts/eps/test-recording.mjs",
-    "test:recording-browser": "node scripts/eps/test-recording-browser.cjs"
+    "test:recording-browser": "node scripts/eps/test-recording-browser.cjs",
+    "test:csp": "node scripts/eps/test-csp.mjs",
+    "test:csp-browser": "node scripts/eps/test-csp-browser.cjs"
   },
   "keywords": [],
   "author": "",

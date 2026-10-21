@@ -1,0 +1,62 @@
+// CSP / LBBAP laboratory inside the EPS page (#/csp): the standalone package journey on the integrated tab.
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert=require('node:assert/strict');
+const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5173').replace(/\/$/, '')}/eps`).replace(/\/$/, '');
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'chrome'});
+ try {
+  const page=await browser.newPage({viewport:{width:1440,height:1050}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(`${APP}/?lang=tr#/csp`);await page.evaluate(()=>localStorage.removeItem('cardia.csp.prototype.history.v1'));await page.reload();await page.locator('[data-csp]').waitFor({state:'visible'});
+  const input=key=>page.locator(`[data-csp-control=${key}]`);
+  const set=async(key,value)=>input(key).evaluate((n,v)=>{n.value=String(v);n.dispatchEvent(new Event('input',{bubbles:true}));},value);
+  const state=()=>page.evaluate(()=>window.epsLab.panel.csp.getState());
+  const capture=()=>page.evaluate(()=>window.epsLab.panel.csp.getResult().capture.type);
+  assert.equal(await capture(),'nonselective');
+  await page.locator('[data-csp-reference]').click();const ref=await page.evaluate(()=>window.epsLab.panel.csp.getReference().leads.V6);
+  await set('output',.7);assert.equal(await capture(),'selective');assert.deepEqual(await page.evaluate(()=>window.epsLab.panel.csp.getReference().leads.V6),ref,'pinned reference survives settings');await set('output',.1);assert.equal(await capture(),'none');
+  await set('output',2);await set('pulseWidth',.2);
+  assert.equal((await state()).pulseWidth,.2);await set('pulseWidth',.4);
+  await page.locator('[data-csp-pacing]').click();assert.equal(await capture(),'off');
+  await page.locator('[data-csp-test=threshold]').click();assert.equal((await state()).pacing,true,'test explicitly enables pacing');
+  assert.equal(await page.locator('[data-csp-row]').count(),33);
+  await page.locator('[data-csp-row="29"]').click();assert.equal(await capture(),'selective','test row controls actual acquired beat');
+  await page.locator('[data-csp-caliper]').click();await page.locator('[data-csp-time]').evaluate(n=>{n.value='50';n.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.locator('[data-csp-mark]').click();await page.locator('[data-csp-time]').evaluate(n=>{n.value='120';n.dispatchEvent(new Event('input',{bubbles:true}));});await page.locator('[data-csp-mark]').click();
+  assert.equal(await page.locator('[data-csp-caliper-value]').textContent(),'Δt = 70 ms');
+  const before=await state();await page.locator('[data-app-lang-option=en]').click();assert.deepEqual(await state(),before,'language preserves settings, test and measurements');
+  assert.equal(await page.locator('[data-csp] h2').textContent(),'CSP / LBBAP Laboratory');
+  await set('angle',20);assert.equal(await page.locator('[data-csp-row]').count(),0);assert.deepEqual((await state()).ui.marks,[]);
+  await page.locator('[data-csp-reset]').click();await input('caseId').selectOption('slow');
+  await page.locator('[data-csp-test=s2]').click();assert.equal(await page.locator('[data-csp-row]').count(),28);
+  await page.locator('[data-csp-row="17"]').click();assert.equal((await state()).s2,280);assert.equal(await capture(),'lvsp');
+  await page.locator('[data-csp-page=quiz]').click();assert.equal(await page.locator('[data-csp-truth]').isVisible(),false);assert.equal(await input('caseId').isVisible(),false);
+  assert.equal((await state()).ui.projection,'rao');
+  await page.locator('[data-csp-answer=lvsp]').click();assert.match(await page.locator('[data-csp-feedback]').textContent(),/Correct/);
+  await page.locator('[data-csp-reveal]').click();assert.equal(await page.locator('[data-csp-truth]').isVisible(),true);
+  await page.locator('[data-csp-page=implant]').click();await page.locator('[data-csp-page=quiz]').click();assert.equal(await page.locator('[data-csp-truth]').isVisible(),false,'blind re-entry hides revealed truth');
+  await page.locator('[data-csp-reveal]').click();
+  await page.getByRole('button',{name:'Clear test',exact:true}).click();assert.equal((await state()).ui.revealed,false);assert.equal((await state()).ui.answer,null);assert.deepEqual((await state()).ui.marks,[]);assert.equal((await state()).s2,null);assert.equal(await page.evaluate(()=>window.epsLab.panel.csp.getReference()),null);assert.equal(await page.locator('[data-csp-truth]').isVisible(),false,'cleared test retires reveal');
+  await page.locator('[data-csp-page=history]').click();await page.locator('[data-csp-save]').click();assert.equal(await page.evaluate(()=>window.epsLab.panel.csp.getHistory().length),1);
+  await page.reload();await page.locator('[data-csp]').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>window.epsLab.panel.csp.getHistory().length),1);
+  await set('depth',1.1);assert.equal(await capture(),'perforation');assert.notEqual(await page.locator('[data-csp-warning]').textContent(),'');
+  await page.locator('[data-csp-reset]').click();
+  await page.locator('[data-csp-play]').click();const cursor=(await state()).ui.cursor;
+  await page.waitForFunction(v=>window.epsLab.panel.csp.getState().ui.cursor!==v,cursor);
+  await page.evaluate(()=>window.epsLab.panel.csp.setActive(false));const paused=(await state()).ui.cursor;
+  await page.waitForTimeout(130);assert.equal((await state()).ui.cursor,paused,'hidden panel stops animation');await page.evaluate(()=>window.epsLab.panel.csp.setActive(true));await page.locator('[data-csp-play]').click();
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.locator('[data-csp]').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,'mobile no horizontal overflow in the CSP panel');
+  assert.equal(await page.evaluate(()=>window.epsLab.panel.getActiveView()),'csp','direct #/csp route');
+  await page.locator('[data-csp-strip]').scrollIntoViewIfNeeded();
+  await page.evaluate(async()=>{
+   const { createCspPanel } = await import('/src/eps/csp/csp-panel.mjs');
+   window.testStorage=createCspPanel(document,{getLang:()=> 'en',storage:{getItem(){throw new Error('blocked');},setItem(){throw new Error('quota');}}});
+   document.body.append(window.testStorage.element);window.testStorage.setActive(true);
+   window.testStorage.element.querySelector('[data-csp-page=history]').click();window.testStorage.element.querySelector('[data-csp-save]').click();
+  });
+  assert.equal(await page.evaluate(()=>window.testStorage.getHistory().length),1,'storage failure keeps session record');
+  assert.match(await page.evaluate(()=>window.testStorage.element.textContent),/Persistent storage unavailable/);
+  assert.deepEqual(errors,[]);
+  console.log('PASS csp-browser (EPS #/csp): capture transitions, width, pacing/test state, threshold and S2 row replay, calipers, TR/EN state, invalidation, blind reveal, history reload/failure, perforation, hidden animation, 390px layout; no page errors');
+ } finally {await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});
