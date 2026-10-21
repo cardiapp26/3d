@@ -19,7 +19,9 @@ export default defineConfig({
         exam: page('./exam/index.html'),
         hemo: page('./hemo/index.html'),
         epAnatomy: page('./eps/anatomy/index.html'),
-        angio3d: page('./angio/3d/index.html')
+        angio3d: page('./angio/3d/index.html'),
+        angioCarotid: page('./angio/carotid/index.html'),
+        angioPeripheral: page('./angio/peripheral/index.html')
       },
       output: {
         manualChunks(id) {

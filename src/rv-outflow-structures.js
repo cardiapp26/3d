@@ -93,6 +93,12 @@ export const FIG2_LABELS = {
     'Left semilunar leaflet of pulmonary valve': { tr: 'Sol komşu pulmoner sinüs', en: 'Left adjacent pulmonary sinus' },
     'Anterior semilunar leaflet of pulmonary valve': { tr: 'Komşu olmayan pulmoner sinüs', en: 'Non-adjacent pulmonary sinus' }
   },
+  // Aortic cusps shown as a silhouette for the outflow neighbourhood (atlas ids).
+  aortic: {
+    rcc: { tr: 'Sağ koroner aort kapakçığı', en: 'Right coronary aortic cusp' },
+    lcc: { tr: 'Sol koroner aort kapakçığı', en: 'Left coronary aortic cusp' },
+    ncc: { tr: 'Koroner olmayan aort kapakçığı', en: 'Non-coronary aortic cusp' }
+  },
   papillary: {
     'Anterior papillary muscle of right ventricle': { tr: 'Anterior papiller kas', en: 'Anterior papillary muscle' },
     'Inferior papillary muscle of right ventricle': { tr: 'İnferior papiller kas', en: 'Inferior papillary muscle' },

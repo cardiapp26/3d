@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createTteProbe, placeTteProbe } from './tte-probe.js';
 import { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTURES } from './echo-anatomy.js';
 import { TTE_VIEWS, TEE_VIEWS, ICE_VIEWS, SECTOR_ANGLE, viewById, tteBase, teePath, teePreset, icePath, iceLaPath, iceLvPath, icePreset, icePosition } from './echo-views.js';
 import { tteFrame, teeFrame, iceFrame } from './echo-probe.js';
@@ -497,8 +498,7 @@ function createOverlay(path, chest, icePaths, anatomy) {
   const edge = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x1f9e78 }));
   edge.frustumCulled = false;       // its points move every update
   const probeMaterial = new THREE.MeshStandardMaterial({ color: 0x3c4a46, roughness: 0.5 });
-  const tteProbe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.5, 20), probeMaterial);
-  tteProbe.name = 'TTE probe (schematic)';
+  const tteProbe = createTteProbe();
   const marker = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), new THREE.MeshBasicMaterial({ color: 0x39e8ad }));
   marker.name = 'Probe index marker';
   const oesophagus = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(path.points.map(p => new THREE.Vector3(...p))), 80, 0.13, 12, false),
@@ -546,6 +546,7 @@ function createOverlay(path, chest, icePaths, anatomy) {
     edge.geometry.setFromPoints(pts);
     // Index marker on the screen-right side of the transducer.
     marker.position.copy(o).addScaledVector(l, 0.14);
+    marker.visible = state.modality !== 'tte';   // the TTE probe carries its own index notch
     const tte = state.modality === 'tte', ice = state.modality === 'ice';
     tteProbe.visible = tte; chestShell.visible = tte; oesophagus.visible = !tte && !ice; shaft.visible = !tte && !ice; iceCatheterGroup.visible = ice;
     if (ice) {
@@ -584,8 +585,7 @@ function createOverlay(path, chest, icePaths, anatomy) {
         iceFace.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(d, bm), d, bm));
       }
     } else if (tte) {
-      tteProbe.position.copy(o).addScaledVector(b, -0.27);
-      tteProbe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().negate());
+      placeTteProbe(tteProbe, o, b, l);
     } else {
       // The shaft follows the path down to the tip (rebuilt only when the tip moves).
       const key = [state.tee.advance, ...frame.tip, ...frame.shaft].map(v => v.toFixed(3)).join('_');

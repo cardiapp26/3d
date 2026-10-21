@@ -1,0 +1,344 @@
+/* Peripheral angiography teaching page. Dark shell, slate panels, sky accent. */
+
+.peri-wrap {
+  flex: 1;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 16px 14px 32px;
+  min-width: 0;
+}
+
+.peri-page { min-width: 0; }
+
+.peri-kicker {
+  margin: 0 0 6px;
+  color: #38bdf8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.peri-intro,
+.peri-lead,
+.peri-view-pearl,
+.peri-scale-note,
+.peri-card p,
+.peri-refs p,
+.peri-refs li,
+.peri-scale p,
+.peri-scale span {
+  overflow-wrap: anywhere;
+}
+
+.peri-intro,
+.peri-lead {
+  margin: 0 0 12px;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.peri-tabs {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 0 14px;
+}
+
+.peri-tabs button,
+.peri-modes button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.peri-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.25;
+  padding: 8px 4px;
+}
+
+.peri-tabs button[aria-selected="true"],
+.peri-modes button[aria-pressed="true"] {
+  color: #e0f2fe;
+  background: #0c4a6e;
+  border-color: #38bdf8;
+}
+
+.peri-page h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.peri-view-pearl {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  color: #e2e8f0;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.peri-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 0 12px;
+}
+
+.peri-modes button { padding: 7px 12px; }
+
+.peri-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.8fr);
+  gap: 14px;
+  min-width: 0;
+  align-items: start;
+}
+
+.peri-canvas,
+.peri-card,
+.peri-scale,
+.peri-refs {
+  min-width: 0;
+  background: #0b1220;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+}
+
+.peri-canvas { padding: 8px 8px 12px; }
+.peri-card { padding: 16px; }
+
+.peri-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #0b1220;
+  border-radius: 12px;
+}
+
+.peri-structure { cursor: pointer; outline: none; }
+
+.peri-hitdot {
+  fill: rgba(248, 250, 252, 0.04);
+  stroke: transparent;
+  pointer-events: all;
+}
+
+.peri-structure:focus-visible .peri-hitdot {
+  stroke: #38bdf8;
+  stroke-width: 2px;
+}
+
+.peri-hitstroke {
+  fill: none;
+  stroke: rgba(248, 250, 252, 0.04);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: stroke;
+}
+
+.peri-artery,
+.peri-branch,
+.peri-small,
+.peri-trunk,
+.peri-variant,
+.peri-landmark {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.peri-trunk { stroke: #fb7185; }
+.peri-artery { stroke: #fb7185; }
+.peri-branch { stroke: #fda4af; }
+.peri-small { stroke: #fecdd3; }
+.peri-variant { stroke: #fbbf24; stroke-dasharray: 7 5; }
+.peri-landmark { stroke: #64748b; }
+
+.peri-structure.is-on .peri-artery,
+.peri-structure.is-on .peri-branch,
+.peri-structure.is-on .peri-small,
+.peri-structure.is-on .peri-trunk { stroke: #7dd3fc; }
+
+.peri-safe { fill: rgba(52, 211, 153, 0.28); stroke: #34d399; }
+.peri-risk { fill: rgba(248, 113, 113, 0.24); stroke: #f87171; }
+.peri-warn { fill: rgba(251, 146, 60, 0.22); stroke: #fb923c; }
+.peri-zone { fill: rgba(56, 189, 248, 0.1); stroke: rgba(56, 189, 248, 0.55); }
+.peri-bone { fill: rgba(100, 116, 139, 0.38); stroke: #64748b; }
+.peri-frame { fill: rgba(15, 23, 42, 0.2); stroke: #334155; }
+.peri-skin { fill: rgba(148, 163, 184, 0.16); stroke: #94a3b8; }
+.peri-dot-vein { fill: #38bdf8; stroke: none; }
+.peri-dot-artery { fill: #fb7185; stroke: none; }
+.peri-dot-nerve { fill: #fbbf24; stroke: none; }
+.peri-marker { fill: #38bdf8; stroke: #e0f2fe; stroke-width: 2; }
+
+.peri-label,
+.peri-shape-text,
+.peri-caption,
+.peri-watermark {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  fill: #e2e8f0;
+  stroke: #070a0f;
+  stroke-width: 4px;
+  paint-order: stroke;
+  pointer-events: none;
+}
+
+.peri-watermark { font-size: 12px; fill: #64748b; }
+.peri-caption { font-size: 12px; fill: #94a3b8; }
+.peri-scenery,
+.peri-label,
+.peri-shape-text,
+.peri-watermark,
+.peri-caption { pointer-events: none; }
+
+.peri-ghost { stroke: #475569; fill: none; }
+.peri-organ { fill: rgba(51, 65, 85, 0.45); stroke: #64748b; stroke-width: 1.5; }
+
+.peri-scale-note,
+.peri-legend-label {
+  margin: 8px 8px 0;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.peri-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 6px 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.peri-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.peri-swatch {
+  width: 16px;
+  height: 5px;
+  border-radius: 99px;
+  flex: 0 0 auto;
+}
+
+.peri-swatch-artery { background: #fb7185; }
+.peri-swatch-branch { background: #fda4af; }
+.peri-swatch-safe { background: #34d399; }
+.peri-swatch-risk { background: #f87171; }
+.peri-swatch-variant { background: #fbbf24; }
+.peri-swatch-vein { background: #38bdf8; }
+.peri-swatch-bone { background: #64748b; }
+
+.peri-card-kicker {
+  margin: 0 0 6px;
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.peri-card h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.peri-card h3 {
+  margin: 12px 0 4px;
+  color: #7dd3fc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.peri-card p { margin: 0; color: #e2e8f0; font-size: 14px; line-height: 1.55; }
+
+.peri-scales,
+.peri-refs { margin-top: 16px; }
+
+.peri-scales h2,
+.peri-refs h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.peri-scale-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.peri-scale { padding: 14px; }
+
+.peri-scale h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+
+.peri-scale-source,
+.peri-scale-note { margin: 0 0 10px; color: #94a3b8; font-size: 12px; line-height: 1.45; }
+
+.peri-scale-rows {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 6px 8px;
+  align-items: start;
+}
+
+.peri-grade { color: #7dd3fc; font-size: 13px; font-weight: 700; }
+.peri-scale-rows span { font-size: 13px; line-height: 1.4; color: #e2e8f0; }
+
+.peri-refs { padding: 14px; }
+.peri-refs p { margin: 0 0 8px; color: #94a3b8; font-size: 13px; }
+.peri-refs ol { margin: 0; padding-left: 18px; }
+.peri-refs li { margin: 0 0 6px; color: #cbd5e1; font-size: 13px; line-height: 1.45; }
+
+.peri-tip {
+  position: fixed;
+  z-index: 80;
+  max-width: min(240px, calc(100vw - 16px));
+  padding: 6px 8px;
+  color: #f8fafc;
+  background: #0f172a;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.peri-tip[hidden] { display: none; }
+
+@media (max-width: 860px) {
+  .peri-stage { grid-template-columns: minmax(0, 1fr); }
+  .peri-page h1 { font-size: 22px; }
+}
+
+@media (max-width: 420px) {
+  .peri-wrap { padding: 12px 10px 24px; }
+  .peri-tabs button { font-size: 12px; padding: 8px 2px; }
+}

@@ -45,6 +45,24 @@ async function measure(page) {
       out.pa[name] = { untrimmed: trimmedReach(verts(m), null, bifurcation), reach: trimmedReach(verts(m), plane, bifurcation), clipped: Boolean(plane), samePlane: plane ? plane.normal.distanceTo(planes.get(name).normal) < 1e-6 && Math.abs(plane.constant - planes.get(name).constant) < 1e-6 : !planes.has(name) };
     }
     out.maxReach = PA_BRANCH_MAX_REACH;
+    // Pulmonary trunk root seated in the RV infundibulum: from every root-ring vertex, a ray back up the
+    // trunk axis meets the RV wall within the sink depth (no crescent of background at the RVOT).
+    const { boundaryLoops, ROOT_SINK } = await import('/src/pulmonary-root.js');
+    const trunk = named('Pulmonary trunk'), rv = h.getMeshes('rv')[0], seat = h.atlasAdjustments().pulmonaryTrunk;
+    const tp = trunk.geometry.attributes.position;
+    const rootLoop = seat ? boundaryLoops(trunk.geometry).map((l) => l.map((i) => new THREE.Vector3(tp.getX(i), tp.getY(i), tp.getZ(i)))).sort((a, b) => a[0].distanceTo(new THREE.Vector3(...seat.root)) - b[0].distanceTo(new THREE.Vector3(...seat.root)))[0] : [];
+    const up = seat ? new THREE.Vector3(...seat.distal).sub(new THREE.Vector3(...seat.root)).normalize() : null;
+    const ray = new THREE.Raycaster();
+    // RV wall or the valve sinus at its base (the leaflet hinge lines the root).
+    const walls = [rv, ...h.getMeshes('pulmonary-valve')], sides = walls.map((m) => m.material.side);
+    walls.forEach((m) => { m.material.side = THREE.DoubleSide; });
+    // The infundibulum wraps the anterior half of the ring; the posterior half faces the transverse sinus and the aortic root.
+    const rootCentre = new THREE.Vector3(...seat.root), toRv = new THREE.Vector3(0, 0, 1);
+    toRv.addScaledVector(up, -toRv.dot(up)).normalize();
+    const facing = rootLoop.filter((v) => v.clone().sub(rootCentre).dot(toRv) > 0);
+    const covered = facing.filter((v) => { ray.set(v, up); ray.far = ROOT_SINK + 0.06; return ray.intersectObjects(walls, false).length > 0; }).length;
+    walls.forEach((m, i) => { m.material.side = sides[i]; });
+    out.root = { seated: Boolean(seat), loop: rootLoop.length, facing: facing.length, covered };
     out.bifurcationIntact = named('Bifurcation of pulmonary trunk')?.material.clippingPlanes?.length === 0 && named('Pulmonary trunk')?.material.clippingPlanes?.length === 0;
     return out;
   });
@@ -75,6 +93,9 @@ function checkGeometry(g, where) {
   }
   assert.ok(g.pa['Left pulmonary artery'].clipped, `${where}: LPA trimmed`);
   assert.ok(g.bifurcationIntact, `${where}: trunk and bifurcation intact`);
+  assert.ok(g.root.seated && g.root.loop === 23, `${where}: pulmonary trunk root seated (${JSON.stringify(g.root)})`);
+  // One vertex at the posterior edge borders the aortic root; deeper sinking would reach the PLAX echo plane.
+  assert.ok(g.root.facing >= 8 && g.root.covered >= g.root.facing - 1, `${where}: RV-facing root-ring vertices lie under the infundibulum wall (${g.root.covered}/${g.root.facing})`);
 }
 
 (async () => {

@@ -52,7 +52,7 @@ const openDrawer = async (page, id) => {
     await openDrawer(page, 'layers');
     await page.locator('[data-layer=bachmann]').uncheck();
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'bachmann').visible), false);
-    await page.locator('#reset').click();
+    await page.locator('#viewport-reset').click();
     assert.equal(await page.evaluate(() => window.heart.getState().visibility.bachmann), true);
     await openMode(page, url, 'bachmann');
     await page.locator('#steps [data-step="1"]').click();
@@ -80,7 +80,7 @@ const openDrawer = async (page, id) => {
     assert.match(await page.locator('#lesson-title').textContent(), /Bachmann bundle/);
     assert.equal(await page.locator('#steps .current').getAttribute('data-step'), '3');
     assert.match((await leads())[0].name, /Bachmann/);
-    await page.locator('#reset').click();
+    await page.locator('#viewport-reset').click();
     assert.equal(await page.evaluate(() => window.heart.getState().fluoroscopy), false);
     // Reset returns to the first lesson of this page (the EP anatomy page opens with transseptal).
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'transseptal');

@@ -39,10 +39,13 @@ const assert = require('node:assert/strict');
     assert.ok((await materials()).filter(m => m.layer === 'vessels').every(m => m.opacity <= 0.15), 'lower slider value fades vessels further');
     await setOpacity('100');
     assert.ok((await materials()).filter(m => m.layer === 'vessels').every(m => m.opacity === 1 && !m.transparent && m.depthWrite), 'full opacity restores vessel depth rendering');
-    await page.locator('#reset').click();
+    await page.locator('#viewport-reset').click();
     assert.equal(await page.locator('#myo-opacity').inputValue(), '100');
     assert.ok((await materials()).filter(m => m.layer === 'vessels').every(m => m.opacity === 1), 'reset restores full opacity');
-    await page.locator('[data-mode=transseptal]').dispatchEvent('click');
+    // Transseptal lives on the EP anatomy page.
+    await page.goto(`${url}/eps/anatomy/#/mode/transseptal`);
+    await page.waitForSelector('#viewport[data-model-ready=true]');
+    await page.waitForFunction(() => window.heart.getState().mode === 'transseptal');
     await page.evaluate(() => window.heart.setOpacity(1));
     state = await materials();
     assert.ok(state.filter(m => ['aorta', 'pa', 'svc', 'ivc'].includes(m.id)).every(m => m.opacity <= 0.28), 'catheter teaching context keeps its transparency cap');

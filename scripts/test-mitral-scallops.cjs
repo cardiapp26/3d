@@ -1,13 +1,16 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
 const { openMode } = require('./lib/open-mode.cjs');
-const APP = (process.env.APP_URL || 'http://127.0.0.1:5177').replace(/\/$/, '');
+// APP_URL, or a Vite server started here on a free port.
+let APP = (process.env.APP_URL || '').replace(/\/$/, '');
 // Layers and tools open as a drawer from the header tabs (tablet and desktop).
 const openDrawer = async (page, id) => {
   const tab = page.locator(`[data-drawer=${id}]`);
   if (await tab.getAttribute('aria-expanded') !== 'true') await tab.click();
 };
 (async () => {
+  const server = APP ? null : await (await import('vite')).createServer({ server: { host: '127.0.0.1', port: 0 }, logLevel: 'silent' });
+  if (server) { await server.listen(); APP = `http://127.0.0.1:${server.httpServer.address().port}`; }
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
@@ -38,7 +41,7 @@ const openDrawer = async (page, id) => {
     assert.equal(await page.evaluate(() => window.heart.getState().structures.find(s => s.id === 'la').visible), true);
     await page.locator('#structure-select').selectOption('mitral');
     await page.waitForSelector('.mitral-scallops:not([hidden])');
-    await page.locator('#reset').click();
+    await page.locator('#viewport-reset').click();
     await page.waitForSelector('.mitral-scallops[hidden]', { state: 'attached' });
     assert.equal(await page.evaluate(() => window.heart.getState().mitralFocus), false);
     // The mitral view of the angiography page opens the anatomy page focused on the valve.
@@ -56,5 +59,5 @@ const openDrawer = async (page, id) => {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
     console.log('PASS: six mitral regions, leaflet visibility, animation, focus exit, reset and mobile layout');
-  } finally { await browser.close(); }
+  } finally { await browser.close(); await server?.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

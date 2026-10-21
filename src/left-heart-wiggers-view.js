@@ -77,7 +77,9 @@ export function createHeartWiggersView({ heart, getLang = () => 'tr' }) {
       const av = centreOf(outflow.flatMap(regionMeshes));
       const normal = new THREE.Vector3().crossVectors(av.clone().sub(mv.center), apex.clone().sub(mv.center)).normalize();
       if (normal.lengthSq() < .5) normal.set(0, 0, -1);
-      if (normal.z > 0) normal.negate();
+      // Left heart: seen from the patient's left (parasternal long-axis orientation: apex on
+      // the left, aorta and LA on the right). Right heart and both sides together: from the front.
+      if (key === 'left' && side !== 'both' ? normal.x > 0 : normal.z > 0) normal.negate();
       return { plane: new THREE.Plane().setFromNormalAndCoplanarPoint(normal, mv.center), mv: mv.center.clone(), apex, av };
     });
   }

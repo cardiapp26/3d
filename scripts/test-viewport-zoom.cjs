@@ -39,10 +39,8 @@ const assert = require('node:assert/strict');
     assert.ok(await fsBtn.isVisible(), 'mobile fullscreen button is visible');
     assert.ok(await resetBtn.isVisible(), 'mobile reset button is visible');
 
-    // Check dock tools zoom buttons
-    assert.ok(await mobilePage.locator('#zoom-in').count() > 0, 'dock zoom-in exists');
-    assert.ok(await mobilePage.locator('#zoom-out').count() > 0, 'dock zoom-out exists');
-    assert.ok(await mobilePage.locator('#fullscreen-toggle').count() > 0, 'dock fullscreen exists');
+    // One set of view controls: the scene HUD; the bottom dock has no copies.
+    for (const id of ['#zoom-in', '#zoom-out', '#fullscreen-toggle', '#reset']) assert.equal(await mobilePage.locator(id).count(), 0, `no duplicate ${id} in the dock`);
 
     // Initial camera position & distance
     const initialZoom = await mobilePage.evaluate(() => window.heart.getZoomInfo());
@@ -106,13 +104,8 @@ const assert = require('node:assert/strict');
     await desktopPage.goto(`${url}/#/mode/anatomy`);
     await desktopPage.waitForSelector('#viewport[data-model-ready=true]');
 
-    const dockZoomIn = desktopPage.locator('#zoom-in');
-    const dockZoomOut = desktopPage.locator('#zoom-out');
-    const dockFs = desktopPage.locator('#fullscreen-toggle');
-
-    assert.ok(await dockZoomIn.isVisible(), 'dock zoom-in is visible on desktop');
-    assert.ok(await dockZoomOut.isVisible(), 'dock zoom-out is visible on desktop');
-    assert.ok(await dockFs.isVisible(), 'dock fullscreen is visible on desktop');
+    for (const id of ['#viewport-zoom-in', '#viewport-zoom-out', '#viewport-fullscreen', '#viewport-reset']) assert.ok(await desktopPage.locator(id).isVisible(), `HUD ${id} visible on desktop`);
+    for (const id of ['#zoom-in', '#zoom-out', '#fullscreen-toggle', '#reset']) assert.equal(await desktopPage.locator(id).count(), 0, `no duplicate ${id} in the dock`);
 
     const deskInitZoom = await desktopPage.evaluate(() => window.heart.getZoomInfo());
 

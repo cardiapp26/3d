@@ -105,7 +105,7 @@ const visibleArticle = page => page.evaluate(() => getComputedStyle(document.que
     // Scene dock: presets scroll, the tools stay on screen, clear of the cycle panel, and are tappable.
     const dockCheck = () => page.evaluate(() => {
       const box = s => document.querySelector(s).getBoundingClientRect();
-      const tools = ['#carm-toggle-dock', '#fluoro-toggle-dock', '#reset'].map(box);
+      const tools = ['#carm-toggle-dock', '#fluoro-toggle-dock'].map(box);
       const cycle = box('#cycle-panel'), dock = box('.view-controls');
       return { inside: tools.every(r => r.left >= 0 && r.right <= innerWidth), clear: dock.bottom <= cycle.top, minH: Math.min(...tools.map(r => r.height)) };
     });
@@ -113,7 +113,7 @@ const visibleArticle = page => page.evaluate(() => getComputedStyle(document.que
       await page.setViewportSize({ width: w, height: h });
       await page.waitForTimeout(200);
       const dock = await dockCheck();
-      assert.ok(dock.inside, `${w} px: C-Arm, fluoroscopy and reset stay on screen`);
+      assert.ok(dock.inside, `${w} px: C-Arm and fluoroscopy stay on screen`);
       assert.ok(dock.clear, `${w} px: dock clear of the cycle panel`);
       assert.ok(dock.minH >= 32, `${w} px: dock tools tappable (${dock.minH})`);
     }

@@ -27,7 +27,7 @@ assert.equal(indexContent.match(/name=["']app-version["']\s+content=["']([^'"]+)
 assert.equal(indexContent.match(/name=["']app-build["']\s+content=["']([^'"]+)["']/)?.[1], versionData.build, 'HTML and worker cache revision agree');
 assert.match(indexContent, /<noscript>/);
 // Every page entry carries the release stamp.
-for (const page of ['hemo', 'exam', 'eps/anatomy', 'angio/3d', 'ecg', 'eps', 'echo', 'angio', 'pharmacology']) {
+for (const page of ['hemo', 'exam', 'eps/anatomy', 'angio/3d', 'angio/carotid', 'angio/peripheral', 'ecg', 'eps', 'echo', 'angio', 'pharmacology']) {
   const file = path.resolve(page, 'index.html');
   if (!fs.existsSync(file)) continue;
   const html = fs.readFileSync(file, 'utf8');

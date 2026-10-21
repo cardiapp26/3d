@@ -205,11 +205,10 @@ export function createLiveWiggersPanel(mount, options = {}) {
   const bpmValue = create('output', '', bpmLabel);
   const speedLabel = create('label', 'live-wiggers__control', controls);
   const speedText = create('span', '', speedLabel);
-  const speed = create('select', '', speedLabel);
-  for (const value of [0.25, 0.5, 1]) {
-    const option = create('option', '', speed);
-    option.value = String(value); option.textContent = `${value}×`;
-  }
+  // Continuous playback speed, 0.1-2×.
+  const speed = create('input', 'live-wiggers__speed', speedLabel);
+  speed.type = 'range'; speed.min = '0.1'; speed.max = '2'; speed.step = '0.05';
+  const speedValue = create('output', '', speedLabel);
   const values = create('div', 'live-wiggers__pressures');
   const readouts = {};
   for (const key of ['la', 'lv', 'ao', 'ra', 'rv', 'pa']) {
@@ -290,7 +289,7 @@ export function createLiveWiggersPanel(mount, options = {}) {
   }
   play.addEventListener('click', () => { if (active) callback('onPlaying', !current.playing); });
   bpm.addEventListener('input', () => { if (active) callback('onBpm', Number(bpm.value)); });
-  speed.addEventListener('change', () => { if (active) callback('onSpeed', Number(speed.value)); });
+  speed.addEventListener('input', () => { if (active) callback('onSpeed', Number(speed.value)); });
   phase.addEventListener('input', () => seek(Number(phase.value)));
   let dragging = false;
   const seekPointer = event => seek(wiggersPhaseAt(canvas, event.clientX, lastFrame.bpm));
@@ -376,6 +375,7 @@ export function createLiveWiggersPanel(mount, options = {}) {
     play.setAttribute('aria-pressed', String(Boolean(current.playing && !current.reducedMotion)));
     bpm.value = String(f.bpm); bpmValue.textContent = `${f.bpm} ${c.rate}`;
     speed.value = String(current.speed || 1);
+    speedValue.textContent = `${Number(current.speed || 1).toFixed(2).replace(/0$/, '')}×`;
     phase.value = String(f.phase);
     phaseName.textContent = lang === 'tr' ? f.interval.nameTr : f.interval.name;
     volume.textContent = `${side === 'left' ? c.volume : side === 'right' ? c.volume.replace('LV', 'RV') : c.volume.replace('LV', 'LV/RV')}: ${f.volume.toFixed(0)} ml`;

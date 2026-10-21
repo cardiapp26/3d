@@ -224,10 +224,6 @@ app.innerHTML = `
       <button id="fluoro-toggle-dock" class="fluoro-dock-btn" title="${getTranslation('fluoroDockTitle')}" aria-pressed="false">☢ <span data-i18n="fluoroDockBtn">${getTranslation('fluoroDockBtn')}</span> <kbd>X</kbd></button>
       <button id="fluoro-contours-toggle" class="fluoro-contours-btn" title="${getTranslation('fluoroContoursTitle')}" aria-pressed="true" hidden><span data-i18n="fluoroContours">${getTranslation('fluoroContours')}</span></button>
       <button id="segmentation-toggle" class="segmentation-btn" type="button" title="${getTranslation('segmentationTitle')}" aria-pressed="false"><span class="seg-btn-icon" aria-hidden="true"></span><span class="seg-btn-label" data-i18n="segmentationBtn">${getTranslation('segmentationBtn')}</span> <kbd>G</kbd></button>
-      <button id="zoom-in" class="zoom-btn btn-zoom-in" type="button" title="${getTranslation('zoomInBtn')}" aria-label="${getTranslation('zoomInBtn')}">＋</button>
-      <button id="zoom-out" class="zoom-btn btn-zoom-out" type="button" title="${getTranslation('zoomOutBtn')}" aria-label="${getTranslation('zoomOutBtn')}">－</button>
-      <button id="fullscreen-toggle" class="fullscreen-btn btn-fullscreen-toggle" type="button" title="${getTranslation('fullscreenBtn')}" aria-label="${getTranslation('fullscreenBtn')}" aria-pressed="false">⛶</button>
-      <button id="reset" class="btn-view-reset" title="${getTranslation('resetBtn')} (0)">↺</button>
       </div>
     </div>
     <div id="cycle-panel" class="cycle-panel">
@@ -1981,7 +1977,7 @@ document.querySelectorAll('.btn-zoom-in').forEach(btn => {
 document.querySelectorAll('.btn-zoom-out').forEach(btn => {
   setupHoldAction(btn, zoomOut);
 });
-document.querySelectorAll('.btn-view-reset, #reset').forEach(btn => {
+document.querySelectorAll('.btn-view-reset').forEach(btn => {
   btn.addEventListener('click', resetAll);
 });
 

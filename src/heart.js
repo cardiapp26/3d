@@ -38,6 +38,7 @@ import { RVOT_SEGMENT_TEXT, RVOT_SEGMENTS } from './eps/rvot-segments.js';
 import { createModeratorBand } from './moderator-band.js';
 import { buildArchBranches } from './aortic-arch-branches.js';
 import { pulmonaryBranchTrims } from './pulmonary-trims.js';
+import { seatPulmonaryTrunk } from './pulmonary-root.js';
 import { mitralParts, wholeMesh, TRICUSPID_LEAFLETS, AORTIC_CUSPS, pulmonaryCusp } from './valve-parts.js';
 import { computeContours, drawContours } from './fluoro-contours.js';
 import { separateAtriaFromAorta } from './transverse-sinus.js';
@@ -69,6 +70,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   controls.minDistance = 0.02;
   controls.maxDistance = 16;
   let needsRender = true;
+  // A pan (right button, modifier drag or two fingers) keeps its target; a preset view clears it.
+  let userPanned = false;
+  renderer.domElement.addEventListener('pointerdown', e => { if (e.button === 2 || e.shiftKey || e.ctrlKey || e.metaKey) userPanned = true; });
+  renderer.domElement.addEventListener('touchstart', e => { if (e.touches.length >= 2) userPanned = true; }, { passive: true });
   function requestRender() { needsRender = true; }
   controls.addEventListener('change', () => {
     needsRender = true;
@@ -82,7 +87,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         camera.position.addScaledVector(forward, push);
         cameraTarget.copy(camera.position);
         lookTarget.copy(controls.target);
-      } else if (dist > 1.4 && controls.target.distanceTo(fitCenter) > 0.05 && !rvotOn() && !fig3Sliced()) {
+      } else if (dist > 1.4 && controls.target.distanceTo(fitCenter) > 0.05 && !userPanned && !chamberMode(mode) && !/wiggers$/.test(mode) && !rvotOn() && !fig3Sliced()) {
+        // Whole-heart views drift back to the heart centre until the user pans; single-chamber views never drift.
         controls.target.lerp(fitCenter, 0.05);
         lookTarget.copy(controls.target);
       }
@@ -479,6 +485,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const laMesh = meshMap.get('la')?.[0];
     if (laMesh) atlasAdjustments.laaScale = shrinkAppendage(laMesh);
     // Transverse sinus: atria no longer enter the aortic root (before any measurement).
+    // Pulmonary trunk: root sunk into the RV infundibulum, distal end inside the bifurcation (no seams; before any measurement).
+    atlasAdjustments.pulmonaryTrunk = seatPulmonaryTrunk(meshes.find(m => m.name === 'Pulmonary trunk'), sourceCenter('rv'));
     atlasAdjustments.transverseSinus = separateAtriaFromAorta([...(meshMap.get('ra')||[]), ...(meshMap.get('la')||[])], meshMap.get('aorta')||[]);
     // Named coronary side branches; LAD and LCX branches and the septal perforators placed proximally (D1 ~1/4 of the LAD, S1 just before it, OM1 ~1/3 of the LCX).
     const coronary = buildCoronaryBranches(Object.fromEntries(['lad','septal','lcx','rca','lm','rcc','lv','rv'].map(id => [id, meshMap.get(id)?.[0]])));
@@ -663,7 +671,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       // Name shows while the pointer is over this region of the RV surface.
       if(index>=0)sceneLabels.add({mesh:rv,index,tone:'region',text:{tr:FIG2_NAMES[id].tr,en:FIG2_NAMES[id].en},when:fig2On,hover:()=>hoverHit?.mesh===rv&&rvFig2Data?.byVertex[hoverHit.vertex]===k});
     }
-    const overMesh=m=>()=>hoverHit?.mesh===m;
+    const overMesh=m=>(hoverLabelMeshes.add(m),()=>hoverHit?.mesh===m);
+    hoverLabelMeshes.add(rv);
+    for(const id of ['rcc','lcc','ncc'])for(const m of meshMap.get(id)||[])sceneLabels.add({mesh:m,tone:'region',text:FIG2_LABELS.aortic[id],when:fig2On,hover:overMesh(m)});
     // Leaflets and sinuses carry the paper names on hover; the figure's key structures stay labelled.
     for(const m of meshMap.get('tricuspid')||[]){const t=FIG2_LABELS.leaflets[m.userData.leaflet];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On,hover:overMesh(m)});}
     for(const m of [...pulmonary,...(meshMap.get('rv-papillary')||[])]){const t=FIG2_LABELS.sinuses[m.name]||FIG2_LABELS.papillary[m.name];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On,hover:overMesh(m)});}
@@ -1062,7 +1072,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     emitAngleChange();
   }
 
-  function setView(name,smooth=true){
+  function setView(name,smooth=true){userPanned=false;
     mitralFocus=name==='mitral'&&mode==='anatomy';
     kochFocus=KOCH_VIEWS[name]!==undefined&&mode==='ablation';
     applyState();
@@ -1213,16 +1223,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   let pickedBranch=null;
   const branchOf=h=>h.face?branchAt(h.object.userData.branches,h.face.a):null;
   let hoverHit=null;   // last picked surface hit: mesh and vertex, for region-level hover labels
+  const hoverLabelMeshes=new Set();   // meshes with hover labels: the front one wins even when see-through
   function pick(e){pickedBranch=null;hoverHit=null;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
     const hits=raycaster.intersectObjects(pickTargets()).filter(h=>{for(let p=h.object;p;p=p.parent)if(!p.visible)return false;return !(h.object.material.clippingPlanes||[]).some(p=>p.distanceToPoint(h.point)<0);});
+    const labelHit=hits.find(h=>hoverLabelMeshes.has(h.object));
+    const done=v=>{if(labelHit)hoverHit={mesh:labelHit.object,vertex:labelHit.face?.a??-1};return v;};
     // See-through tissue (opacity < .5) should not swallow clicks aimed at
     // devices or solid structures behind it.
     for(const h of hits){
-      if(h.object.userData.pickId){hoverHit={mesh:h.object,vertex:h.face?.a??-1};return h.object.userData.pickId;}
-      if((h.object.material.opacity??1)>=0.5){hoverHit={mesh:h.object,vertex:h.face?.a??-1};pickedBranch=branchOf(h);return shownStructureId(h.object);}
+      if(h.object.userData.pickId){hoverHit={mesh:h.object,vertex:h.face?.a??-1};return done(h.object.userData.pickId);}
+      if((h.object.material.opacity??1)>=0.5){hoverHit={mesh:h.object,vertex:h.face?.a??-1};pickedBranch=branchOf(h);return done(shownStructureId(h.object));}
     }
     if(hits[0]){hoverHit={mesh:hits[0].object,vertex:hits[0].face?.a??-1};pickedBranch=branchOf(hits[0]);}
-    return hits[0]?shownStructureId(hits[0].object):null;
+    return done(hits[0]?shownStructureId(hits[0].object):null);
   }
   function pointerMove(e){hovered=pick(e);sceneLabels.setFocus(hovered,selected);paintSelection();requestRender();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered,pickedBranch);}
   function pointerDown(e){transition=false;down=[e.clientX,e.clientY];}

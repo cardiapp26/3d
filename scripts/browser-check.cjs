@@ -392,7 +392,7 @@ const openDrawer = async (page, id) => {
     assert.ok(await page.locator('#carm-panel').evaluate(el => el.classList.contains('collapsed')), 'C-Arm collapses when returning to anatomy mode');
     assert.deepEqual(await page.evaluate(ids => window.heart.getState().structures.filter(s => ids.includes(s.id)).map(s => s.visible), cardiacVeinIds), cardiacVeinsBeforeAngio, 'cardiac vein visibility returns after leaving angiography');
 
-    // 8. Reset equality (Key '0' vs #reset button)
+    // 8. Reset equality (Key '0' vs #viewport-reset button)
     const alterState = async () => {
       await openDrawer(page, 'layers');
       // Returning from the angiography page reloads the anatomy page: the cutaway group starts collapsed again.
@@ -419,7 +419,7 @@ const openDrawer = async (page, id) => {
     const stateAfterKey0 = await captureState();
 
     await alterState();
-    await page.locator('#reset').click();
+    await page.locator('#viewport-reset').click();
     const stateAfterButton = await captureState();
 
     assert.equal(stateAfterKey0.rvWall, '0');

@@ -102,7 +102,7 @@ const shotDir = process.env.SHOT_DIR || 'research/screenshots';
     await page.locator('[data-mode=atria]').dispatchEvent('click');
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-    await page.locator('#reset').click();
+    await page.locator('#viewport-reset').click();
     assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
     assert.deepEqual(errors, []);
     console.log('PASS: atrial isolation (LA+LAA), separate RA mode, deep link, focus, wall cuts, mode restoration and mobile reset');

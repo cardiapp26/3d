@@ -124,7 +124,7 @@ const assertMode = process.argv.includes('--assert');
       let drift = 0;
       for (const m of followers) { const cur = m.geometry.attributes.position.array, r = before.get(m); for (let i = 0; i < r.length; i++) drift = Math.max(drift, Math.abs(cur[i] - r[i])); }
       window.heart.seekCycle(0.65);
-      document.querySelector('#reset').click();
+      document.querySelector('#viewport-reset').click();
       let resetGap = 0;
       for (const m of followers) { const cur = m.geometry.attributes.position.array, r = rest.get(m); for (let i = 0; i < r.length; i++) resetGap = Math.max(resetGap, Math.abs(cur[i] - r[i])); }
       // Relative stretch on edges of at least 0.01 units; absolute change as % of heart length.
