@@ -21,6 +21,11 @@ import { createEchoMode } from './echo-mode.js';
 import { createKochSpPanel } from './koch-sp-panel.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
+import { createRvotSectionPanel } from './rvot-section-panel.js';
+import { createRvFigure2Panel } from './rv-figure2-panel.js';
+import { createRvFigure3Panel } from './rv-figure3-panel.js';
+// Assigned once the RV tools exist; translations may run earlier.
+let rvotSectionPanel = null, rvFigure2Panel = null, rvFigure3Panel = null;
 import { rememberRoute as rememberAnyRoute } from './entry-route.js';
 import { CARDIA_PAGES, currentPageId, modeHref } from './cardia-pages.js';
 
@@ -60,6 +65,7 @@ function chamberToolsMarkup(id, { chamber, focus, regions }) {
       ${focus.map(([target, key]) => `<button data-chamber-focus="${target}" data-i18n="${key}">${getTranslation(key)}</button>`).join('')}
       ${id === 'ra' ? `<label class="layer"><i style="background:#eadbc8"></i><span data-i18n="raChiariOptional">${getTranslation('raChiariOptional')}</span><input type="checkbox" data-chiari-network></label>` : ''}
       ${regions ? `<label class="layer"><i style="background:linear-gradient(90deg,#e06666,#f1c232,#6fa8dc)"></i><span data-i18n="ventricleRegions">${getTranslation('ventricleRegions')}</span><input type="checkbox" data-ventricle-regions checked></label>` : ''}
+      ${id === 'rv' ? '<div data-rvot-section-slot></div>' : ''}
       <label class="slider-label"><span data-i18n="${wallKey}">${getTranslation(wallKey)}</span><output id="${id}-cut-${chamber}">0%</output></label><input data-chamber-wall="${chamber}" aria-label="${chamber.toUpperCase()} wall section" type="range" min="0" max="80" value="0">
     </section>`;
 }
@@ -1071,6 +1077,36 @@ function setChiariNetwork(on) {
 }
 document.querySelectorAll('[data-chiari-network]').forEach(box => box.addEventListener('change', () => setChiariNetwork(box.checked)));
 document.querySelectorAll('[data-chamber-focus]').forEach(button => button.addEventListener('click', () => inspect(button.dataset.chamberFocus)));
+// RVOT superior section in the RV mode (Miyazaki 2026; Aronis 2026).
+rvotSectionPanel = createRvotSectionPanel(document, {
+  getLang: getContentLanguage,
+  onToggle(on) { heart?.setRvotSection(on); if (on) { rvFigure2Panel?.setOn(false); rvFigure3Panel?.setOn(false); } else heart?.setView('anterior'); syncChamberWalls(); },
+  onSegment(id) { heart?.setRvotSegment(id); },
+  onVariant(value) { heart?.setRvotVariant(value); },
+  onCamera(view) { heart?.setRvotCamera(view); }
+});
+// Miyazaki 2026 Figure 2 view: one of the two RV views at a time.
+rvFigure2Panel = createRvFigure2Panel(document, {
+  getLang: getContentLanguage,
+  onToggle(on) { heart?.setRvFigure2(on); if (on) { rvotSectionPanel.setOn(false); rvFigure3Panel?.setOn(false); } syncChamberWalls(); }
+});
+/** RV wall slider follows a cut set by the Figure 2 view. */
+function syncChamberWalls() {
+  document.querySelectorAll('[data-chamber-wall]').forEach(input => {
+    const value = Math.round((heart?.getState().wallCuts[input.dataset.chamberWall] || 0) * 100);
+    input.value = value;
+    const out = input.closest('.chamber-tools')?.querySelector('output');
+    if (out) out.textContent = `${value}%`;
+  });
+}
+const rvSlot = document.querySelector('[data-rvot-section-slot]');
+rvFigure3Panel = createRvFigure3Panel(document, {
+  getLang: getContentLanguage,
+  getMeasures: () => heart?.getRvFigure3?.().measures || null,
+  onLevel(level) { heart?.setRvFigure3Level(level); },
+  onToggle(on) { heart?.setRvFigure3(on); if (on) { rvotSectionPanel.setOn(false); rvFigure2Panel.setOn(false); } else heart?.setView('anterior'); syncChamberWalls(); }
+});
+rvSlot?.replaceWith(rvFigure2Panel.element, rvFigure3Panel.element, rvotSectionPanel.element);
 document.querySelectorAll('[data-ventricle-regions]').forEach(box => box.addEventListener('change', () => {
   heart?.setVentricleRegions(box.checked);
   document.querySelectorAll('[data-ventricle-regions]').forEach(other => { other.checked = box.checked; });
@@ -1948,6 +1984,9 @@ document.querySelectorAll('.btn-view-reset, #reset').forEach(btn => {
 
 function applyChromeTranslations() {
   document.documentElement.lang = getContentLanguage();
+  rvotSectionPanel?.render();
+  rvFigure2Panel?.render();
+  rvFigure3Panel?.render();
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = getTranslation(el.dataset.i18n);
   });

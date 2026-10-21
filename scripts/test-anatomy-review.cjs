@@ -56,6 +56,82 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     await page.hover('.workspace > aside');
     await page.locator('[data-chamber-focus=tricuspid]').click();
     assert.match(await page.locator('#structure-title').textContent(), /Triküspit/);
+    // RVOT superior section (Miyazaki 2026; Aronis 2026): six segments, neighbours, cut below the pulmonary valve.
+    await page.hover('.workspace > aside');
+    await page.locator('[data-rvot-section] > label').click();
+    const section = await page.evaluate(() => window.heart.getRvotSection());
+    assert.equal(section.on, true, 'RVOT section on');
+    for (const id of ['anterior', 'lateral', 'posterolateral', 'posterior', 'medial', 'septal']) assert.ok((section.counts[id] || 0) > 30, `segment ${id} has vertices (${section.counts[id]})`);
+    assert.ok(section.cap?.visible && section.cap.rings >= 1 && section.cap.points > 50, `filled cut face drawn (${JSON.stringify(section.cap)})`);
+    const beat = await page.evaluate(async () => { window.heart.setBeating(true); await new Promise(r => setTimeout(r, 400)); const s = window.heart.getRvotSection().cap; window.heart.setBeating(false); window.heart.seekCycle(0); return s; });
+    assert.ok(beat.visible && beat.rings >= 1, 'cut face follows the beating heart');
+    const sectionIds = await visibleIds();
+    for (const id of ['rv', 'lv', 'aorta', 'lad', 'rca', 'rcc']) assert.ok(sectionIds.includes(id), `section shows neighbour ${id}`);
+    assert.ok(!sectionIds.includes('pulmonary-valve') && !sectionIds.includes('tricuspid'), 'pulmonary root and tricuspid removed from the superior view');
+    await page.hover('.workspace > aside');
+    await page.locator('[data-rvot-section-segment=septal]').click();
+    assert.equal((await page.evaluate(() => window.heart.getRvotSection())).segment, 'septal');
+    assert.match(await page.locator('[data-rvot-section-card]').textContent(), /sağ dal bloğu/);
+    await page.locator('[data-rvot-section-segment=posterior]').click();
+    await page.locator('[data-rvot-section-variant=absent]').click();
+    assert.match(await page.locator('[data-rvot-section-variant-box]').textContent(), /candy cane/);
+    assert.equal((await page.evaluate(() => window.heart.getRvotSection())).variant, 'absent', 'posterior free wall variant reaches the 3D section (Figs. 10-12)');
+    await page.locator('[data-rvot-section-camera=posterior]').click();
+    const posteriorIds = await visibleIds();
+    assert.ok(posteriorIds.includes('pa') && posteriorIds.includes('pulmonary-valve'), 'posterior view shows the uncut pulmonary root (Figs. 11-12 A-B)');
+    assert.equal((await page.evaluate(() => window.heart.getRvotSection())).cap.visible, false, 'no cut face in the posterior view');
+    assert.ok((await page.evaluate(() => window.heart.getMeshes('lad')[0].material.opacity)) < 0.3, 'coronaries faded in the posterior view');
+    await page.locator('[data-rvot-section-camera=superior]').click();
+    await page.locator('[data-rvot-section-variant=present]').click();
+    await page.locator('[data-rvot-section] > label').click();
+    assert.equal((await page.evaluate(() => window.heart.getRvotSection())).on, false);
+    assert.equal((await page.evaluate(() => window.heart.getRvotSection())).cap.visible, false, 'cut face hidden with the section off');
+    assert.deepEqual(await visibleIds(), ['moderator-band', 'pulmonary-valve', 'rv', 'rv-papillary', 'tricuspid', 'tricuspid-annulus'], 'section off restores the RV mode');
+    // Miyazaki 2026 Figure 2: RV regions, crest and septomarginal trabeculation; exclusive with the RVOT section.
+    await page.hover('.workspace > aside');
+    await page.locator('[data-rv-fig2] > label').click();
+    const fig2 = await page.evaluate(() => window.heart.getRvFigure2());
+    assert.equal(fig2.on, true, 'Figure 2 view on');
+    for (const id of ['inflow', 'outflow', 'apical', 'crest', 'smt']) assert.ok((fig2.counts[id] || 0) > 50, `Figure 2 region ${id} (${fig2.counts[id]})`);
+    assert.ok(fig2.wallCut > 0.4, 'free wall opened');
+    assert.equal(await page.locator('[data-chamber-wall=rv]').inputValue(), '45', 'RV slider follows the opened wall');
+    await page.hover('.workspace > aside');
+    await page.locator('[data-rvot-section] > label').click();
+    assert.equal((await page.evaluate(() => window.heart.getRvFigure2())).on, false, 'the RVOT section replaces the Figure 2 view');
+    assert.equal(await page.locator('[data-rv-fig2-toggle]').isChecked(), false);
+    await page.locator('[data-rvot-section] > label').click();
+    await page.evaluate(() => { window.heart.setWallCut('rv', 0); });
+    // Miyazaki 2026 Figure 3A-B: electrodes on the chest frame, RVOT/LVOT crisscross, exclusive with the other RV views.
+    await page.hover('.workspace > aside');
+    await page.locator('[data-rv-fig3] > label').click();
+    const fig3 = await page.evaluate(() => window.heart.getRvFigure3());
+    assert.equal(fig3.on, true, 'Figure 3 view on');
+    const e = fig3.measures.electrodes;
+    assert.ok(e.V1[0] < e.V2[0] && Math.abs(e.V1[1] - e.V2[1]) < 1e-9, 'V1 right and V2 left of the sternum at one level');
+    assert.ok(e.V4[1] < e.V2[1] && e.V4[0] > e.V2[0] && Math.abs(e.V3[0] - (e.V2[0] + e.V4[0]) / 2) < 1e-9, 'V4 lower and lateral, V3 midway');
+    assert.ok(fig3.measures.rvotAxis.superior && fig3.measures.rvotAxis.posterior, 'RVOT axis runs posterosuperiorly');
+    assert.ok(fig3.measures.lvotAxis.superior && fig3.measures.lvotAxis.right, 'LVOT axis runs right superiorly');
+    assert.ok(fig3.measures.crossAngle > 30, `outflow axes cross (${fig3.measures.crossAngle.toFixed(0)}°)`);
+    assert.match(await page.locator('[data-rv-fig3-measure]').textContent(), /V2/);
+    // Figure 3C axial levels from above.
+    for (const level of ['root', 'high', 'low']) {
+      await page.hover('.workspace > aside');
+      await page.locator(`[data-rv-fig3-level=${level}]`).click();
+      const f = await page.evaluate(() => window.heart.getRvFigure3());
+      assert.equal(f.level, level);
+      assert.ok(f.caps.visible && f.caps.rv >= 1 && f.caps.aorta >= 1, `${level}: RV and aortic cut faces (${JSON.stringify(f.caps)})`);
+    }
+    const lv = await page.evaluate(() => window.heart.getRvFigure3().levels);
+    assert.ok(lv.root > lv.high && lv.high > lv.low, 'levels descend from the pulmonary root to the low RVOT');
+    assert.ok((await page.evaluate(() => window.heart.getRvFigure3())).caps.lv >= 1, 'low RVOT level cuts the LVOT');
+    await page.locator('[data-rv-fig3-level=front]').click();
+    assert.equal((await page.evaluate(() => window.heart.getRvFigure3())).caps.visible, false);
+    assert.ok((await visibleIds()).includes('aorta') && (await visibleIds()).includes('pa'), 'great arteries shown');
+    await page.hover('.workspace > aside');
+    await page.locator('[data-rv-fig2] > label').click();
+    assert.equal((await page.evaluate(() => window.heart.getRvFigure3())).on, false, 'Figure 2 replaces Figure 3');
+    await page.locator('[data-rv-fig2] > label').click();
+    await page.evaluate(() => { window.heart.setWallCut('rv', 0); });
     await open('#/mode/lv');
     assert.deepEqual(await visibleIds(), ['lcc', 'lv', 'lv-papillary', 'mitral', 'mitral-annulus', 'ncc', 'rcc'], 'LV mode shows the LV, mitral valve and aortic cusps');
     // A structure of another chamber is not selectable in a chamber mode.

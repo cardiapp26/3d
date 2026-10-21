@@ -27,7 +27,13 @@ import { createSceneLabels } from './scene-labels.js';
 import { chamberMode } from './chamber-modes.js';
 import { createEustachianValve, createChiariNetwork } from './ra-valves.js';
 import { buildCoronaryBranches, branchAt } from './coronary-branches.js';
-import { lvRegions, rvRegions } from './ventricle-regions.js';
+import { lvRegions, rvRegions, nearSet } from './ventricle-regions.js';
+import { rvotSegments, RVOT_SEGMENT_COLORS, RVOT_SEPTAL_GAP } from './rvot-section.js';
+import { createRvotCap, createSectionCaps } from './rvot-cap.js';
+import { rvFigure2Regions, FIG2_COLORS, FIG2_NAMES, FIG2_LABELS } from './rv-outflow-structures.js';
+import { createRvThorax } from './rv-thorax.js';
+import { chestPlaneZ } from './auscultation-points.js';
+import { RVOT_SEGMENT_TEXT, RVOT_SEGMENTS } from './eps/rvot-segments.js';
 import { createModeratorBand } from './moderator-band.js';
 import { mitralParts, wholeMesh, TRICUSPID_LEAFLETS, AORTIC_CUSPS, pulmonaryCusp } from './valve-parts.js';
 import { computeContours, drawContours } from './fluoro-contours.js';
@@ -73,7 +79,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         camera.position.addScaledVector(forward, push);
         cameraTarget.copy(camera.position);
         lookTarget.copy(controls.target);
-      } else if (dist > 1.4 && controls.target.distanceTo(fitCenter) > 0.05) {
+      } else if (dist > 1.4 && controls.target.distanceTo(fitCenter) > 0.05 && !rvotOn() && !fig3Sliced()) {
         controls.target.lerp(fitCenter, 0.05);
         lookTarget.copy(controls.target);
       }
@@ -109,6 +115,57 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   const cameraTarget=camera.position.clone(), lookTarget=new THREE.Vector3();
   let rootHeight=.7;
   const wallCuts={lv:0,rv:0,la:0,ra:0};
+  // RVOT superior section state (RV mode); see buildRvotSection.
+  let rvotSection=false,rvotSegment=null,rvotData=null,rvotPainted='',rvotVariant='present',rvotCamera='superior';
+  // Posterior camera (Figs. 11-12 A-B): the uncut heart from behind, pulmonary root in place.
+  const rvotCut=()=>rvotOn()&&rvotCamera!=='posterior';
+  const rvotPaTrim=new THREE.Plane(new THREE.Vector3(0,-1,0),0);   // trunk kept, bifurcation removed in the posterior view
+  // Posterior free wall absent (Miyazaki Figs. 10, 12): that segment is referred to as the septal wall.
+  const rvotColorOf=id=>RVOT_SEGMENT_COLORS[id==='posterior'&&rvotVariant==='absent'?'septal':id];
+  const RVOT_SECTION_IDS=['rv','moderator-band','lv','aorta','lcc','rcc','ncc','lm','lad','septal','rca','gcv'];
+  const RVOT_HIDDEN_IDS=['pulmonary-valve','tricuspid','tricuspid-annulus','tricuspid-septal','tricuspid-inferior','tricuspid-anterior','rv-papillary'];
+  const rvotOn=()=>rvotSection&&mode==='rv'&&!fluoroscopy;
+  // Miyazaki 2026 Figure 2 view (RV mode): inflow/outflow/apical regions, crest, septomarginal trabeculation.
+  let rvFig2=false,rvFig2Data=null;
+  const fig2On=()=>rvFig2&&mode==='rv'&&!fluoroscopy&&!rvotOn();
+  // Miyazaki 2026 Figure 3A-B view (RV mode): right heart blue, left heart red, electrodes and outflow axes.
+  let rvFig3=false,rvThorax=null,rvFig3Colors=null;
+  // Figure 3C axial levels: pulmonary root, high RVOT, low RVOT (heights from the atlas valves).
+  let fig3Level=null,fig3Levels=null,fig3Caps=null,fig3CapKey='';
+  const fig3Plane=new THREE.Plane(new THREE.Vector3(0,-1,0),0);
+  const fig3Sliced=()=>fig3On()&&Boolean(fig3Level)&&Boolean(fig3Levels);
+  function updateFig3Caps(force=false){
+    const on=fig3Sliced();
+    fig3Caps?.setVisible(on);
+    if(!on||!fig3Caps)return;
+    const key=`${fig3Level}|${beating}|${document.documentElement.lang}`;
+    if(!force&&!beating&&key===fig3CapKey)return;
+    fig3CapKey=key;
+    const en=document.documentElement.lang==='en';
+    // At the root level the atlas RV surface carries the pulmonary sinuses (the leaflets sit inside its ring).
+    const names={rv:fig3Level==='root'?(en?'Pulmonary root':'Pulmoner kök'):'RVOT',pa:null,lv:fig3Level==='low'?'LVOT':null,aorta:fig3Level==='root'?(en?'Ascending aorta':'Çıkan aort'):fig3Level==='high'?(en?'Aortic root':'Aort kökü'):null};
+    const blue='#3f7fe0',red='#d2382f';
+    const items=[['rv',blue],['pa',blue],['lv',red],['aorta',red],['ra',blue],['la',red]].flatMap(([id,color])=>(meshMap.get(id)||[]).map(mesh=>({mesh,color,label:names[id]||null})));
+    fig3Caps.update({plane:fig3Plane,centre:fig3Levels.centre,items});
+  }
+  const fig3On=()=>rvFig3&&mode==='rv'&&!fluoroscopy;
+  const FIG3_IDS=['rv','lv','ra','la','laa','aorta','pa','svc','pulmonary-valve','tricuspid','tricuspid-annulus','moderator-band'];
+  const FIG3_TINT={ra:'#6f9be0',pa:'#4f86dc',svc:'#6f9be0','pulmonary-valve':'#9fbfee',lv:'#c8443c',la:'#cf5a50',laa:'#cf5a50',aorta:'#d2382f'};
+  let rvotCap=null,rvotCapKey='';
+  // Cut face: rebuilt when the section opens, a segment changes or (while beating) each frame.
+  function updateRvotCap(force=false){
+    const on=rvotCut()&&Boolean(rvotData);
+    rvotCap?.setVisible(on);
+    if(!on||!rvotCap)return;
+    const key=`${rvotSegment}|${beating}|${rvotVariant}`;
+    if(!force&&!beating&&key===rvotCapKey)return;
+    rvotCapKey=key;
+    const rv=meshMap.get('rv')?.[0];
+    const named=rvotData.parts.names.map(n=>n.key.startsWith('rvot-')?{...n,color:rvotColorOf(n.key.slice(5))}:n);
+    const parts={...rvotData.parts,names:rvotSegment?named.map(n=>n.key===`rvot-${rvotSegment}`||!n.key.startsWith('rvot-')?n:{...n,color:`#${new THREE.Color(n.color).lerp(new THREE.Color('#3b3f45'),.78).getHexString()}`}):named};
+    rvotCap.update({plane:rvotData.plane,centre:rvotData.frame.cutPoint,rv,parts,outlines:['lv','aorta'].flatMap(id=>meshMap.get(id)||[])});
+  }
+
   const wallPlanes=new Map();
   const ivcPlane=new THREE.Plane(new THREE.Vector3(0,1,0),2);
   // The atlas LPA sweeps far posteroinferiorly; trim the distal tail for a tidy silhouette.
@@ -233,6 +290,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   layers.icns.add(icns.group);
   layers.valves.add(annuli.group);
   function applyState(){
+    paintRvot();
     layers.conduction.visible = visibility.conduction !== false;
     layers.icns.visible = visibility.icns !== false;
     const chamber = chamberMode(mode);
@@ -247,7 +305,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
           : ['lv','rv','lcc','rcc','ncc','pulmonary-valve','mitral-annulus','tricuspid-annulus'];
         if(!ids.includes(m.userData.id)){m.visible=false;continue;}
       }
-      if(chamber&&!chamber.ids.includes(m.userData.id)){m.visible=false;continue;}
+      if(chamber&&!chamber.ids.includes(m.userData.id)&&!(rvotOn()&&(RVOT_SECTION_IDS.includes(m.userData.id)||(rvotCamera==='posterior'&&['pa','pulmonary-valve'].includes(m.userData.id))))&&!(fig3On()&&FIG3_IDS.includes(m.userData.id))){m.visible=false;continue;}
+      if(fig3On()&&!FIG3_IDS.includes(m.userData.id)){m.visible=false;continue;}
+      if(rvotOn()&&RVOT_HIDDEN_IDS.includes(m.userData.id)&&!(rvotCamera==='posterior'&&m.userData.id==='pulmonary-valve')){m.visible=false;continue;}
       if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
       // Koch close-up: chambers, conduction and the venous entries of the catheters only.
       if(kochFocus&&!['chambers','conduction'].includes(m.userData.layer)&&!KOCH_FOCUS_IDS.includes(m.userData.id)){m.visible=false;continue;}
@@ -289,15 +349,23 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const roofContext=mode==='bachmann'&&(layer==='vessels'||layer==='coronaries');
       const faintPa=visibility['pa-faint']&&id==='pa';
       let alpha=mode==='defects'?(layer==='chambers'?.16:layer==='valves'?.55:.22):mode==='atria'&&selected==='laa'?(id==='la'?Math.min(opacity,.32):1):tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
+      // RVOT section: the LV and aorta are context, the RV ring is the subject.
+      if(rvotOn()&&(id==='lv'||id==='aorta'))alpha=Math.min(alpha,.3);
+      // Posterior view (Figs. 11-12 A-B): coronaries and cardiac veins fade so the posterior wall and summit stay readable.
+      if(rvotOn()&&rvotCamera==='posterior'&&(layer==='coronaries'||['gcv','cs','mcv','piv','cardiac-veins'].includes(id)))alpha=Math.min(alpha,.22);
+      // Figure 3 tint: right heart blue, left heart red (meshes without vertex colours).
+      const tint=fig3On()?FIG3_TINT[id]:null;
+      if(tint&&!m.material.vertexColors){m.material.color.set(tint);m.userData.fig3Tinted=true;}
+      else if(m.userData.fig3Tinted&&!m.material.vertexColors){m.material.color.set(m.userData.color);m.userData.fig3Tinted=false;}
       // Great-vessel walls follow the slider while procedural caps stay effective.
       if(layer==='vessels')alpha=Math.min(alpha,opacity);
       m.material.opacity=alpha;m.material.transparent=alpha<1;m.material.depthWrite=alpha>=.95;
       // Ventricle modes: wall regions in colour (the hover names work everywhere).
       if((id==='lv'||id==='rv')&&m.geometry.attributes.color){
-        const regions=ventricleRegions&&chamber?.chamber===id&&!fluoroscopy;
+        const regions=(ventricleRegions||(id==='rv'&&(rvotOn()||fig2On()||fig3On())))&&chamber?.chamber===id&&!fluoroscopy;
         if(m.material.vertexColors!==regions){m.material.vertexColors=regions;m.material.color.set(regions?0xffffff:m.userData.color);m.material.needsUpdate=true;}
       }
-      m.material.clippingPlanes=mode==='defects'?[]:vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
+      m.material.clippingPlanes=rvotOn()&&rvotCamera==='posterior'&&id==='pa'?[rvotPaTrim]:fig3Sliced()&&FIG3_IDS.includes(id)?[fig3Plane]:rvotCut()&&rvotData&&RVOT_SECTION_IDS.includes(id)?[rvotData.plane]:mode==='defects'?[]:vesselTrims.has(m.name)?[vesselTrims.get(m.name)]:id==='aorta'&&rootWindow?[rootPlane]:id==='ivc'?[ivcPlane]:wallCuts[id]>0&&wallPlanes.has(id)?[wallPlanes.get(id).plane]:[];
       if(layer==='coronaries'){
         m.material.roughness=0.65;
         m.material.metalness=0;
@@ -485,6 +553,110 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   // outflow, apex, walls) and leaflet identities of the valves, per vertex:
   // hover names, the ventricle-mode colours and the echo section labels.
   let ventricleRegions=true;
+  // RVOT superior section (RV mode): six outflow segments, a cut just below
+  // the pulmonary valve and the neighbours of Miyazaki 2026 / Aronis 2026.
+  function paintRvot(){
+    const rv=meshMap.get('rv')?.[0];
+    if(!rv||!rvotData)return;
+    const key=`${rvotOn()}|${rvotSegment}|${fig2On()}|${fig3On()}|${rvotVariant}`;if(key===rvotPainted)return;rvotPainted=key;
+    const colors=rvotOn()?rvotData.sectionColors:fig3On()&&rvFig3Colors?rvFig3Colors:fig2On()&&rvFig2Data?rvFig2Data.colors:rvotData.regionColors;
+    if(rvotOn()){
+      const c=new THREE.Color();
+      rvotData.byVertex.forEach((k,i)=>{const id=rvotData.ids[k];c.set(rvotColorOf(id));if(rvotSegment&&id!==rvotSegment&&id!=='other')c.lerp(new THREE.Color('#3b3f45'),.78);c.toArray(colors,i*3);});
+    }
+    const attribute=rv.geometry.attributes.color;
+    if(attribute){attribute.array.set(colors);attribute.needsUpdate=true;}
+    rv.userData.branches=rvotOn()?rvotData.parts:fig2On()&&rvFig2Data?rvFig2Data.parts:rv.userData.parts;
+  }
+  function buildRvotSection(first,centroidOf){
+    const rv=first('rv'),lv=first('lv'),parts=rv?.userData.parts,pulmonary=meshMap.get('pulmonary-valve')||[];
+    const lad=meshMap.get('lad')||[],rcc=meshMap.get('rcc')||[];
+    if(!rv||!lv||!parts||!pulmonary.length||!lad.length||!rcc.length)return;
+    const rvotIndex=parts.names.findIndex(n=>n.key==='rv-rvot');
+    const ladPoints=[];for(const m of lad){const p=m.geometry.attributes.position;for(let i=0;i<p.count;i+=3)ladPoints.push(new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)));}
+    const lvPos=lv.geometry.attributes.position,lvPoints=[];for(let i=0;i<lvPos.count;i+=2)lvPoints.push(new THREE.Vector3(lvPos.getX(i),lvPos.getY(i),lvPos.getZ(i)));
+    const result=rvotSegments({rvGeometry:rv.geometry,rvotMask:i=>parts.byVertex[i]===rvotIndex,pulmonaryCenter:centroidOf(pulmonary),rccCenter:centroidOf(rcc),ladPoints,nearLv:nearSet(lvPoints,RVOT_SEPTAL_GAP)});
+    if(!result)return;
+    // Hover names: segment names on the outflow, the RV regions elsewhere.
+    const segNames=result.ids.slice(0,-1).map(id=>({tr:RVOT_SEGMENT_TEXT.tr.segments[id].name,en:RVOT_SEGMENT_TEXT.en.segments[id].name,abbr:id,short:{tr:RVOT_SEGMENT_TEXT.tr.segments[id].name,en:RVOT_SEGMENT_TEXT.en.segments[id].name},color:RVOT_SEGMENT_COLORS[id],key:`rvot-${id}`}));
+    const other=result.ids.length-1,offset=parts.names.length;
+    const byVertex=new Int16Array(result.byVertex.length);result.byVertex.forEach((k,i)=>{byVertex[i]=k===other?parts.byVertex[i]:offset+k;});
+    rvotData={...result,parts:{names:[...parts.names,...segNames],byVertex},regionColors:Float32Array.from(rv.geometry.attributes.color?.array||[]),sectionColors:new Float32Array(result.byVertex.length*3)};
+    // One label per segment at the cut: the member vertex just below the plane nearest the segment's cut centroid.
+    const pos=rv.geometry.attributes.position,v=new THREE.Vector3(),segLabelIndex={};
+    result.ids.slice(0,-1).forEach((id,k)=>{
+      const near=[];for(let i=0;i<pos.count;i++){if(result.byVertex[i]!==k)continue;v.fromBufferAttribute(pos,i);const d=result.plane.distanceToPoint(v);if(d>=0&&d<(id==='septal'?.6:.25))near.push(i);}
+      if(!near.length)return;
+      const mid=new THREE.Vector3();near.forEach(i=>mid.add(v.fromBufferAttribute(pos,i)));mid.divideScalar(near.length);
+      const index=near.reduce((b,i)=>{const d=v.fromBufferAttribute(pos,i).distanceToSquared(mid);return d<b.d?{i,d}:b;},{i:near[0],d:Infinity}).i;
+      segLabelIndex[id]=index;
+      if(id==='posterior')return;   // labelled with its variant below
+      const short=RVOT_SEGMENTS.find(seg=>seg.id===id).short;
+      sceneLabels.add({mesh:rv,index,tone:'region',text:{tr:short,en:short},when:rvotOn,always:true});
+    });
+    // Neighbours named in the figure: aortic sinuses and the LV summit (near the LAD/LCX bifurcation).
+    for(const [id,abbr] of [['rcc','RCC'],['lcc','LCC'],['ncc','NCC']])for(const m of (meshMap.get(id)||[]).slice(0,1))sceneLabels.add({mesh:m,tone:'region',text:{tr:abbr,en:abbr},when:rvotOn,always:true});
+    const bifurcation=sourceCenter('lm');
+    if(bifurcation){let index=0,best=Infinity;for(let i=0;i<lvPos.count;i++){v.fromBufferAttribute(lvPos,i);if(result.plane.distanceToPoint(v)<0)continue;const d=v.distanceToSquared(bifurcation);if(d<best){best=d;index=i;}}sceneLabels.add({mesh:lv,index,tone:'region',text:{tr:'LV summit',en:'LV summit'},when:rvotOn,always:true});
+      // Figs. 11-12: elevated infundibulum versus the left adjacent sinus crescent attached to the summit.
+      const pv=segLabelIndex.posterior??-1;
+      if(pv>=0)sceneLabels.add({mesh:rv,index:pv,tone:'region',text:{tr:'P · yükselmiş infundibulum',en:'P · elevated infundibulum'},when:()=>rvotOn()&&rvotVariant==='present',always:true});
+      if(pv>=0)sceneLabels.add({mesh:rv,index:pv,tone:'region',text:{tr:'P yok → septal duvar',en:'No P → septal wall'},when:()=>rvotOn()&&rvotVariant==='absent',always:true});
+      sceneLabels.add({mesh:lv,index,tone:'region',text:{tr:'l sinüs hilali → LV summit',en:'l sinus crescent → LV summit'},when:()=>rvotOn()&&rvotVariant==='absent',always:true});}
+    paintRvot();
+    rvotCap=createRvotCap({parent:heart});
+    buildFigure2(rv,lv,parts,lvPoints,centroidOf);
+    buildFigure3(rv,lv,parts,rvotIndex,result,centroidOf);
+  }
+  function buildFigure3(rv,lv,parts,rvotIndex,section,centroidOf){
+    const lvParts=lv.userData.parts,cusps=['lcc','rcc','ncc'].flatMap(id=>meshMap.get(id)||[]);
+    const chestZ=chestPlaneZ(meshVertices);
+    if(!lvParts||!cusps.length||chestZ==null)return;
+    const pos=rv.geometry.attributes.position,points=[],c=new THREE.Color(),colors=new Float32Array(pos.count*3);
+    for(let i=0;i<pos.count;i++){const inRvot=parts.byVertex[i]===rvotIndex;if(inRvot)points.push(new THREE.Vector3().fromBufferAttribute(pos,i));c.set(inRvot?'#2f6fd6':'#86aee8').toArray(colors,i*3);}
+    rvFig3Colors=colors;
+    const rvotCentroid=points.reduce((s,p)=>s.add(p),new THREE.Vector3()).divideScalar(Math.max(1,points.length));
+    const lvotIndex=lvParts.names.findIndex(n=>n.key==='lvot'),lvPos=lv.geometry.attributes.position,lvotPoints=[];
+    for(let i=0;i<lvPos.count;i++)if(lvParts.byVertex[i]===lvotIndex)lvotPoints.push(new THREE.Vector3().fromBufferAttribute(lvPos,i));
+    if(!lvotPoints.length)return;
+    const lvotCentroid=lvotPoints.reduce((s,p)=>s.add(p),new THREE.Vector3()).divideScalar(lvotPoints.length);
+    // Outflow direction of the LV: from the LV cavity centre through the aortic valve (the LVOT region itself is too short for an axis).
+    const lvotAxis=centroidOf(cusps).sub(centroidOf([lv])).normalize();
+    const pvY=centroidOf(meshMap.get('pulmonary-valve')||[])?.y,aoY=centroidOf(cusps).y;
+    if(Number.isFinite(pvY)){
+      const centre=rvotCentroid.clone().lerp(lvotCentroid,.5);
+      // Pulmonary root above the pulmonary valve, high RVOT just below it, low RVOT through the LVOT below the aortic valve (~3.7 cm per unit).
+      fig3Levels={root:pvY+.14,high:pvY-.12,low:aoY-.16,centre};
+      fig3Caps=createSectionCaps({parent:heart});
+    }
+    rvThorax=createRvThorax({parent:heart,chestZ,rvot:{centroid:rvotCentroid,axis:section.frame.axis.clone(),points},lvot:{centroid:lvotCentroid,axis:lvotAxis}});
+    const nearest=(mesh,target)=>{const p=mesh.geometry.attributes.position,v=new THREE.Vector3();let index=0,best=Infinity;for(let i=0;i<p.count;i++){const d=v.fromBufferAttribute(p,i).distanceToSquared(target);if(d<best){best=d;index=i;}}return index;};
+    sceneLabels.add({mesh:rv,index:nearest(rv,rvotCentroid),tone:'region',text:{tr:'RVOT',en:'RVOT'},when:()=>fig3On()&&!fig3Sliced(),always:true});
+    sceneLabels.add({mesh:lv,index:nearest(lv,lvotCentroid),tone:'region',text:{tr:'LVOT',en:'LVOT'},when:()=>fig3On()&&!fig3Sliced(),always:true});
+  }
+  function buildFigure2(rv,lv,parts,lvPoints,centroidOf){
+    const tv=meshMap.get('tricuspid-annulus')?.[0]?.userData.frame?.center,band=meshMap.get('moderator-band')?.[0]?.userData.path;
+    const pulmonary=meshMap.get('pulmonary-valve')||[],rcc=meshMap.get('rcc')||[];
+    if(!tv||!band||!pulmonary.length||!rcc.length)return;
+    const result=rvFigure2Regions({rvGeometry:rv.geometry,regionParts:parts,tvCenter:tv,pvCenter:centroidOf(pulmonary),rccCenter:centroidOf(rcc),mbSeptal:new THREE.Vector3(...band[0]),nearLv:nearSet(lvPoints,RVOT_SEPTAL_GAP)});
+    const names=result.ids.map(id=>({tr:FIG2_NAMES[id].tr,en:FIG2_NAMES[id].en,abbr:FIG2_NAMES[id].abbr,short:{tr:FIG2_NAMES[id].tr,en:FIG2_NAMES[id].en},color:FIG2_COLORS[id],key:`fig2-${id}`}));
+    const colors=new Float32Array(result.byVertex.length*3),c=new THREE.Color();
+    result.byVertex.forEach((k,i)=>c.set(FIG2_COLORS[result.ids[k]]).toArray(colors,i*3));
+    rvFig2Data={...result,colors,parts:{names,byVertex:Int16Array.from(result.byVertex)}};
+    // Labels: the three regions, crest and septomarginal trabeculation on the RV; paper names on valves and muscles.
+    const pos=rv.geometry.attributes.position,v=new THREE.Vector3();
+    const nearestTo=(target,filter)=>{let index=-1,best=Infinity;for(let i=0;i<pos.count;i++){if(!filter(i))continue;const d=v.fromBufferAttribute(pos,i).distanceToSquared(target);if(d<best){best=d;index=i;}}return index;};
+    const centroidOfId=k=>{const m=new THREE.Vector3();let n=0;for(let i=0;i<pos.count;i++)if(result.byVertex[i]===k){m.add(v.fromBufferAttribute(pos,i));n++;}return n?m.divideScalar(n):null;};
+    for(const id of ['inflow','outflow','apical','crest','smt']){
+      const k=result.ids.indexOf(id),target=id==='crest'?result.anchors.crest:id==='smt'?result.anchors.smtTop.clone().lerp(result.anchors.mbSeptal,.5):centroidOfId(k);
+      const index=target?nearestTo(target,i=>result.byVertex[i]===k):-1;
+      if(index>=0)sceneLabels.add({mesh:rv,index,tone:'region',text:{tr:FIG2_NAMES[id].tr,en:FIG2_NAMES[id].en},when:fig2On,always:true});
+    }
+    // Leaflets and sinuses carry the paper names on hover; the figure's key structures stay labelled.
+    for(const m of meshMap.get('tricuspid')||[]){const t=FIG2_LABELS.leaflets[m.userData.leaflet];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On});}
+    for(const m of [...pulmonary,...(meshMap.get('rv-papillary')||[])]){const t=FIG2_LABELS.sinuses[m.name]||FIG2_LABELS.papillary[m.name];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On,always:m.name==='Septal papillary muscle of right ventricle'});}
+    const mb=meshMap.get('moderator-band')?.[0];if(mb)sceneLabels.add({mesh:mb,tone:'region',text:FIG2_LABELS.band,when:fig2On,always:true});
+  }
   function buildPartTables(){
     const first=id=>meshMap.get(id)?.[0];
     const centroidOf=list=>{const c=new THREE.Vector3();let n=0;for(const m of list){const p=m.geometry.attributes.position;for(let i=0;i<p.count;i++){c.x+=p.getX(i);c.y+=p.getY(i);c.z+=p.getZ(i);n++;}}return n?c.divideScalar(n):null;};
@@ -507,9 +679,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         if(!members.length)return;
         const mid=new THREE.Vector3();members.forEach(i=>{mid.x+=pos.getX(i);mid.y+=pos.getY(i);mid.z+=pos.getZ(i);});mid.divideScalar(members.length);
         const index=members.reduce((b,i)=>{const d=(pos.getX(i)-mid.x)**2+(pos.getY(i)-mid.y)**2+(pos.getZ(i)-mid.z)**2;return d<b.d?{i,d}:b;},{i:members[0],d:Infinity}).i;
-        sceneLabels.add({mesh:m,index,tone:'region',text:name.short,when:()=>chamberMode(mode)?.chamber===id&&ventricleRegions&&!fluoroscopy});
+        sceneLabels.add({mesh:m,index,tone:'region',text:name.short,when:()=>chamberMode(mode)?.chamber===id&&ventricleRegions&&!fluoroscopy&&!(id==='rv'&&(rvotOn()||fig2On()||fig3On()))});
       });
     }
+    buildRvotSection(first,centroidOf);
     const ring=first('mitral-annulus')?.userData,posterior=first('mitral-posterior');
     for(const m of meshMap.get('mitral')||[]){const parts=mitralParts(m,ring,posterior);if(parts){m.userData.parts=parts;m.userData.branches=parts;}}
     for(const m of meshMap.get('tricuspid')||[]){const name=TRICUSPID_LEAFLETS[m.userData.leaflet];if(name)m.userData.parts=wholeMesh(m,name);}
@@ -891,6 +1064,15 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
       emitAngleChange();requestRender();return;
     }
+    if(name==='rvot'&&rvotData){
+      // From above and slightly behind, so the default up vector puts anterior at the top and the patient's right on the right (Aronis Fig. 1).
+      const {cutPoint,view:axis,anterior}=rvotData.frame;
+      lookTarget.copy(cutPoint);
+      cameraTarget.copy(cutPoint).addScaledVector(axis,3.3).addScaledVector(anterior,-.8);
+      transition=smooth;container.dataset.cameraSettled=String(!smooth);
+      if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
+      emitAngleChange();requestRender();return;
+    }
     const root=sourceCenter('lm')||new THREE.Vector3(0,.6,0);
     const target=name==='root'?root:fitCenter.clone();
     const offsets={anterior:[0,.1,9.3],posterior:[0,.1,-9.3],rao:[-6.6,.3,6.6],lao:[6.6,.3,6.6],root:[.2,3.7,1.4]};
@@ -1128,6 +1310,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     septalDefects.updateLabels(camera);
     mitralScallops.update(camera,mitralFocus&&!fluoroscopy&&mode==='anatomy');
     sceneLabels.update(camera);
+    updateRvotCap();
+    rvThorax?.setVisible(fig3On());
+    rvThorax?.setSliced(fig3Sliced());
+    updateFig3Caps();
     if(fluoroscopy && mode!=='micro')renderSwapped(projectionMaterial);
     else if(segmentationShown())renderSwapped(labelMaterial);
     else renderer.render(scene,camera);
@@ -1269,6 +1455,42 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     },
     requestRender,
     setVentricleRegions(on){ventricleRegions=Boolean(on);applyState();requestRender();},
+    /** RVOT superior section in the RV mode (Miyazaki 2026 / Aronis 2026). */
+    setRvotSection(on,{view=true}={}){rvotSection=Boolean(on);rvotCamera='superior';if(rvotSection){rvFig2=false;rvFig3=false;}if(!rvotSection)rvotSegment=null;paintRvot();applyState();updateRvotCap(true);if(rvotSection&&view)setView('rvot');requestRender();},
+    /** Miyazaki 2026 Figure 2 view in the RV mode: free wall opened, anterior view. */
+    setRvFigure2(on,{view=true}={}){rvFig2=Boolean(on);if(rvFig2){rvotSection=false;rvotSegment=null;rvFig3=false;}setWallCut('rv',rvFig2?.45:0);paintRvot();applyState();if(rvFig2&&view){
+      // Anterior view of the opened RV, as Figure 2 (superior up, patient left on the right).
+      const target=sourceCenter('rv');
+      if(target){lookTarget.copy(target);cameraTarget.copy(target).add(new THREE.Vector3(.4,.35,5.3));transition=true;container.dataset.cameraSettled='false';emitAngleChange();}
+    }requestRender();},
+    getRvFigure2(){const counts={};if(rvFig2Data)rvFig2Data.byVertex.forEach(k=>{const id=rvFig2Data.ids[k];counts[id]=(counts[id]||0)+1;});return {on:fig2On(),ready:Boolean(rvFig2Data),counts,wallCut:wallCuts.rv};},
+    /** Miyazaki 2026 Figure 3A-B view in the RV mode: thorax electrodes and outflow axes. */
+    setRvFigure3(on,{view=true}={}){rvFig3=Boolean(on);fig3Level=null;if(rvFig3){rvotSection=false;rvotSegment=null;rvFig2=false;setWallCut('rv',0);}paintRvot();applyState();if(rvFig3&&view)setView('anterior');requestRender();},
+    getRvFigure3(){return {on:fig3On(),ready:Boolean(rvThorax),measures:rvThorax?.measures||null,level:fig3Level,levels:fig3Levels?{root:fig3Levels.root,high:fig3Levels.high,low:fig3Levels.low}:null,caps:fig3Caps?.getSummary()||null};},
+    /** Figure 3C axial level ('root' | 'high' | 'low') seen from above, or null for the anterior view. */
+    setRvFigure3Level(level){
+      fig3Level=fig3Levels&&['root','high','low'].includes(level)?level:null;
+      if(fig3Level)fig3Plane.constant=fig3Levels[fig3Level];
+      applyState();updateFig3Caps(true);
+      if(fig3Level){
+        // From above and slightly behind: anterior at the top, the patient's right on the right (Figure 3C).
+        const target=fig3Levels.centre.clone();target.y=fig3Levels[fig3Level];
+        lookTarget.copy(target);cameraTarget.copy(target).add(new THREE.Vector3(0,5.4,-1.3));transition=true;container.dataset.cameraSettled='false';emitAngleChange();
+      }else setView('anterior');
+      requestRender();
+    },
+    /** Posterior free wall of the RVOT: 'present' (elevated infundibulum) or 'absent' (Miyazaki Figs. 10-12). */
+    setRvotVariant(value){rvotVariant=value==='absent'?'absent':'present';paintRvot();updateRvotCap(true);requestRender();},
+    /** RVOT section camera: 'superior' (Figs. 4, 11C, 12C) or 'posterior' (Figs. 11-12 A-B). */
+    setRvotCamera(view){
+      if(!rvotData)return;
+      rvotCamera=view==='posterior'?'posterior':'superior';rvotPaTrim.constant=rvotData.frame.centre.y+.35;applyState();updateRvotCap(true);
+      if(view!=='posterior'){setView('rvot');return;}
+      const {cutPoint}=rvotData.frame;
+      lookTarget.copy(cutPoint);cameraTarget.copy(cutPoint).add(new THREE.Vector3(.2,.2,-4.4));transition=true;container.dataset.cameraSettled='false';emitAngleChange();requestRender();
+    },
+    setRvotSegment(id){rvotSegment=rvotData?.ids.includes(id)&&id!=='other'?id:null;paintRvot();updateRvotCap(true);requestRender();},
+    getRvotSection(){const counts={};if(rvotData)rvotData.byVertex.forEach(k=>{const id=rvotData.ids[k];counts[id]=(counts[id]||0)+1;});const f=rvotData?.frame;return {on:rvotOn(),ready:Boolean(rvotData),segment:rvotSegment,variant:rvotVariant,counts,anchors:f?.anchors||null,cap:rvotCap?.getSummary()||null};},
     getVentricleRegions(){return ventricleRegions;},
     // Test hook: client coordinates of a scene point (pick tests).
     screenPoint(point){const v=new THREE.Vector3(...point).project(camera),r=renderer.domElement.getBoundingClientRect();return {x:r.left+(v.x+1)/2*r.width,y:r.top+(1-v.y)/2*r.height,inFront:v.z<1};},

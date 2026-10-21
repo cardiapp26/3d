@@ -160,7 +160,7 @@ const SEPTAL_GAP = 0.32;        // RV vertices this close to the LV form the sep
 const CELL = 0.2;
 
 /** Nearest-distance test against a point set on a coarse grid. */
-function nearSet(points, radius) {
+export function nearSet(points, radius) {
   const grid = new Map(), key = (x, y, z) => `${x},${y},${z}`;
   for (const p of points) {
     const k = key(Math.floor(p.x / CELL), Math.floor(p.y / CELL), Math.floor(p.z / CELL));

@@ -2,9 +2,10 @@ import { VES_REGIONS, VES_INPUTS, VES_OPTIONS, VES_SOURCES, VES_POSITIONS, vesRe
 import { VES_TEXT } from './ves-loc-text.js';
 import { vesSvg, renderVesOption, renderVesEcg, renderVesRecording } from './ves-loc-visual.js';
 import { renderVesMap, renderV1Gradient, renderFrontalVector, VIEW_SITES } from './ves-loc-map.js';
+import { SEGMENTS_FOR_SITE } from './rvot-segments.js';
 
 export function createVesLocPanel(doc, { getLang = () => 'tr', onPractice = null } = {}) {
-  const state = { active: false, page: 'loc', mapView: 'base', atlas3d: false, v1Principle: false, selected: 'rvot-septal', inputs: vesFeatures('rvot-septal'), position: 'near', scar: false, amplitudes: {} };
+  const state = { active: false, page: 'loc', mapView: 'base', atlas3d: false, v1Principle: false, selected: 'rvot-septal', inputs: vesFeatures('rvot-septal'), position: 'near', scar: false, amplitudes: {}, rvotSegment: 'medial', rvotVariant: 'present' };
   const L = () => getLang() === 'en' ? 'en' : 'tr';
   const el = (tag, cls = '', attrs = {}) => {
     const n = doc.createElement(tag); n.className = cls;
@@ -40,7 +41,7 @@ export function createVesLocPanel(doc, { getLang = () => 'tr', onPractice = null
     const box = el('aside', 'ves-atlas');
     const h = el('h4');
     const viewRow = el('div', 'amap-toggles');
-    const viewButtons = new Map(['base', 'root', 'rvot', 'chambers'].map(view => {
+    const viewButtons = new Map(['base', 'root', 'rvot', 'segments', 'chambers'].map(view => {
       const b = button({ 'data-ves-map-view': view }, () => { state.mapView = view; render(); });
       viewRow.append(b); return [view, b];
     }));
@@ -58,8 +59,21 @@ export function createVesLocPanel(doc, { getLang = () => 'tr', onPractice = null
       const b = button({ 'data-ves-example': r.id }, () => select(r.id));
       list.append(b); return [r.id, b];
     }));
-    box.append(h, viewRow, svg, gradient, frontalBox, n, list); parent.append(box);
-    mapParts.push({ h, svg, gradient, frontal, frontalBox, n, buttons, viewButtons, atlasToggle, principleToggle, recording });
+    // RVOT segment card (Miyazaki 2026, Aronis 2026): shown with the segment view.
+    const seg = el('section', 'rvot-seg-card', { 'data-rvot-seg-card': '' });
+    const segTitle = el('h4'), segIntro = note(), segName = el('h5', '', { 'data-rvot-seg-name': '' });
+    const segFields = el('dl', 'ves-anatomy', { 'data-rvot-seg-fields': '' });
+    const variantTitle = el('strong'), variantRow = el('div', 'amap-toggles'), variantNote = note();
+    const variantButtons = new Map(['present', 'absent'].map(id => {
+      const b = button({ 'data-rvot-variant': id }, () => { state.rvotVariant = id; state.rvotSegment = 'posterior'; render(); });
+      variantRow.append(b); return [id, b];
+    }));
+    const siteNote = el('p', 'amap-note rvot-seg-site', { 'data-rvot-seg-site': '' });
+    const general = el('ul', 'rvot-seg-general'), segNote = note();
+    seg.append(segTitle, segIntro, segName, segFields, variantTitle, variantRow, variantNote, siteNote, general, segNote);
+    box.append(h, viewRow, svg, gradient, frontalBox, n, list, seg); parent.append(box);
+    mapParts.push({ h, svg, gradient, frontal, frontalBox, n, buttons, viewButtons, atlasToggle, principleToggle, recording,
+      seg: { seg, segTitle, segIntro, segName, segFields, variantTitle, variantButtons, variantNote, siteNote, general, segNote } });
   }
   const loc = pages.get('loc'), recordings = pages.get('recordings');
   const locLayout = el('div', 'ves-localize-layout');
@@ -135,6 +149,25 @@ export function createVesLocPanel(doc, { getLang = () => 'tr', onPractice = null
   const optionText = (t, key, value) => key === 'transition' ? t.transitionOptions[value] || t.options[value] : t.options[value];
   const fillDl = (dl, rows) => dl.replaceChildren(...rows.flatMap(([k, v]) => { const dt = el('dt'), dd = el('dd'); dt.textContent = k; dd.textContent = v; return [dt, dd]; }));
 
+  function renderRvotCard(t, p) {
+    const T = t.rvotSeg, on = state.mapView === 'segments';
+    p.seg.hidden = !on;
+    if (!on) return;
+    const id = state.rvotSegment, text = T.segments[id];
+    const absent = id === 'posterior' && state.rvotVariant === 'absent';
+    p.segTitle.textContent = T.title; p.segIntro.textContent = T.intro;
+    p.segName.textContent = absent ? `${text.name} · ${T.absentShort}` : text.name;
+    fillDl(p.segFields, ['neighbour', 'surface', 'procedure', 'device', 'figures'].map(key => [T.fields[key], text[key]]));
+    p.variantTitle.textContent = T.variantTitle;
+    for (const [v, b] of p.variantButtons) { b.textContent = T.variants[v]; b.setAttribute('aria-pressed', state.rvotVariant === v); }
+    p.variantNote.textContent = T.variantNote[state.rvotVariant];
+    const related = Object.entries(SEGMENTS_FOR_SITE).find(([site]) => site === state.selected);
+    p.siteNote.textContent = related ? T.sites[related[0]] : '';
+    p.siteNote.hidden = !related;
+    p.general.replaceChildren(...T.general.map(g => { const li = el('li'); li.textContent = g; return li; }));
+    p.segNote.textContent = T.note;
+  }
+
   function render() {
     const t = VES_TEXT[L()], result = localizeVes(state.inputs, { scar: state.scar });
     const selected = vesRegion(state.selected), candidateIds = state.scar ? [] : result.candidates;
@@ -166,7 +199,10 @@ export function createVesLocPanel(doc, { getLang = () => 'tr', onPractice = null
       parts.atlasToggle.setAttribute('aria-pressed', state.atlas3d); parts.atlasToggle.hidden = state.mapView !== 'base';
       parts.principleToggle.textContent = t.v1Principle; parts.principleToggle.setAttribute('aria-pressed', state.v1Principle); parts.principleToggle.hidden = state.mapView !== 'chambers';
       renderVesMap(doc, parts.svg, { t, selected: state.selected, candidates: candidateIds, position: parts.recording && selected ? state.position : null, view: state.mapView, atlas3d: state.atlas3d, v1Principle: state.v1Principle,
+        segment: state.rvotSegment, variant: state.rvotVariant,
+        onSegment(id) { state.rvotSegment = id; render(); parts.svg.querySelector?.(`[data-rvot-segment="${id}"]`)?.focus(); },
         onSelect(id) { select(id); parts.svg.querySelector?.(`[data-ves-map-site="${id}"]`)?.focus(); } });
+      renderRvotCard(t, parts.seg);
       renderV1Gradient(doc, parts.gradient, { t, selected: state.selected, onSelect: select });
       renderFrontalVector(doc, parts.frontal, { t, selected: state.selected, axis: selected ? vesFrontalAxis(selected.id) : null });
       parts.frontalBox.hidden = !selected;

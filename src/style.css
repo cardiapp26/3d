@@ -1257,3 +1257,23 @@ main:has(> .view-controls){container-type:inline-size}
   .view-controls button kbd{display:none}
   .view-controls button{padding:4px 6px}
 }
+
+/* RVOT superior section tools (RV mode). */
+.rvot-section-tools { display: grid; gap: 8px; margin: 6px 0 10px; }
+.rvot-section-body { display: grid; gap: 8px; }
+.rvot-section-body[hidden] { display: none; }
+.rvot-section-pick { display: flex; flex-wrap: wrap; gap: 4px; }
+.chamber-tools .rvot-section-pick button { display: inline-block; width: auto; margin: 0; min-width: 34px; padding: 4px 8px; border-radius: 6px; font-weight: 700; border-left: 4px solid var(--seg, #999); }
+.chamber-tools .rvot-section-pick button[aria-pressed=true] { outline: 2px solid var(--seg, #2f6f5e); }
+.rvot-section-card { display: grid; gap: 6px; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, .04); font-size: 12.5px; line-height: 1.5; }
+.rvot-section-card[hidden], .rvot-section-variant[hidden] { display: none; }
+.rvot-section-card dl { margin: 0; display: grid; gap: 2px; }
+.rvot-section-card dt { font-weight: 700; margin-top: 4px; }
+.rvot-section-card dd { margin: 0; }
+.rvot-section-variant { display: flex; flex-wrap: wrap; gap: 4px; }
+.chamber-tools .rvot-section-variant button { width: auto; margin: 0; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; }
+.rvot-section-variant button[aria-pressed=true] { font-weight: 700; outline: 2px solid #a07ac8; }
+.rvot-section-general { margin: 0; padding-left: 16px; font-size: 12px; line-height: 1.5; display: grid; gap: 4px; }
+.rv-fig2-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 12px; }
+.rv-fig2-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.chamber-tools .rv-fig3-tools .rvot-section-pick button { border-left: 0; font-weight: 600; }

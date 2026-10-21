@@ -10,7 +10,7 @@ import { CHEST, areaPoints, icsY, lineX } from './chest-surface.js';
 // segmented surface anatomy.
 
 /** z of the chest plane: in front of the most anterior heart point. */
-function chestPlaneZ(meshVertices) {
+export function chestPlaneZ(meshVertices) {
   const fronts = ['rv', 'lv', 'ra', 'aorta', 'pa'].flatMap(id => {
     const verts = meshVertices(id);
     return verts.length ? [Math.max(...verts.map(v => v.z))] : [];
@@ -27,7 +27,7 @@ export function auscultationPositions({ meshVertices }) {
 
 // Faint chest-wall guides: sternal borders, intercostal ticks (numbered on
 // the left sternal border) and the left midclavicular line.
-function chestGuides(z) {
+export function chestGuides(z) {
   const group = new THREE.Group();
   group.name = 'Chest wall reference (schematic)';
   const line = (points, dashed = false) => {

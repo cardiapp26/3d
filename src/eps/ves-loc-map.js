@@ -1,3 +1,4 @@
+import { renderRvotSegments, RVOT_SEGMENT_SITES } from './rvot-segments.js';
 import { VES_REGIONS, LIMB_LEAD_ANGLES } from './ves-loc-model.js';
 
 // Two original anatomical schematics for the PVC workbook. Basal view: the
@@ -384,17 +385,18 @@ function basal3dView(doc, g, t) {
 }
 
 /** Extra views drawn over the basal examples: region id -> marker position. */
-export const VIEW_SITES = Object.freeze({ root: ROOT_SITES, rvot: RVOT_SITES });
+export const VIEW_SITES = Object.freeze({ root: ROOT_SITES, rvot: RVOT_SITES, segments: RVOT_SEGMENT_SITES });
 
-export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base', atlas3d = false, v1Principle = false }) {
+export function renderVesMap(doc, svg, { t, selected, candidates = [], onSelect, position = null, view = 'base', atlas3d = false, v1Principle = false, segment = null, variant = 'present', onSegment = () => {} }) {
   const uid = `vesmap${++uidCounter}`;
   const photo = view === 'base' && atlas3d;
   svg.replaceChildren(s(doc, 'title', {}, t.map), defs(doc, uid));
   svg.setAttribute('aria-label', `${t.map}: ${t[view]}${photo ? ' · 3D' : ''}`); svg.setAttribute('role', 'group');
-  svg.setAttribute('viewBox', photo ? `0 0 ${BASAL_3D_SIZE[0]} ${BASAL_3D_SIZE[1]}` : view === 'chambers' ? '380 0 380 350' : view === 'rvot' ? '0 0 370 372' : '0 0 370 350');
+  svg.setAttribute('viewBox', photo ? `0 0 ${BASAL_3D_SIZE[0]} ${BASAL_3D_SIZE[1]}` : view === 'chambers' ? '380 0 380 350' : view === 'rvot' || view === 'segments' ? '0 0 370 372' : '0 0 370 350');
   svg.setAttribute('data-ves-atlas', photo ? '3d' : 'svg');
   const scene = s(doc, 'g', { 'aria-hidden': 'true' });
   if (photo) basal3dView(doc, scene, t);
+  else if (view === 'segments') renderRvotSegments(doc, svg, { t, segment, variant, onSegment });
   else {
     scene.append(view === 'chambers' ? s(doc, 'rect', { x: 382, y: 5, width: 371, height: 339, rx: 16, class: 'ves-map-frame' }) : s(doc, 'rect', { x: 5, y: 5, width: 356, height: view === 'rvot' ? 361 : 339, rx: 16, class: 'ves-map-frame' }));
     if (view === 'base') basalView(doc, scene, uid, t); else if (view === 'root') rootView(doc, scene, uid, t); else if (view === 'rvot') rvotView(doc, scene, uid, t); else { cutawayView(doc, scene, uid, t); if (v1Principle) v1PrincipleOverlay(doc, scene, t); }

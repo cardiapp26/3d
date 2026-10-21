@@ -230,3 +230,25 @@
   .ves-map { min-height: 200px; }
   .ves .amap-readout { grid-template-columns: 1fr 1fr; }
 }
+
+/* RVOT segments, superior view (Miyazaki 2026; Aronis 2026). */
+.rvot-seg-wall { stroke: #9fb7c6; stroke-width: 3; stroke-dasharray: 6 4; }
+.rvot-seg-aorta { fill: #3a2b2b; stroke: #c98b7d; stroke-width: 1.5; }
+.rvot-seg-rca { fill: none; stroke: #e2685a; stroke-width: 4; stroke-linecap: round; }
+.rvot-seg-lad { fill: none; stroke: #e2685a; stroke-width: 4; stroke-linecap: round; }
+.rvot-seg-summit { fill: #2f3448; stroke: #8fa3d9; stroke-width: 1.5; }
+.rvot-seg-root { fill: #1b2a33; stroke: #7fa6b8; stroke-width: 1.5; }
+.rvot-seg-sinus { fill: #24404d; stroke: #7fa6b8; }
+.rvot-seg { cursor: pointer; outline: none; }
+.rvot-seg-arc { fill: #2f5a4a; stroke: #0d1914; stroke-width: 2; transition: fill .15s; }
+.rvot-seg[data-level=low] .rvot-seg-arc { fill: #3a4d3f; stroke: #9ccdb6; stroke-dasharray: 5 4; }
+.rvot-seg[data-absent=true] .rvot-seg-arc { fill: #1b2420; stroke: #6f8579; stroke-dasharray: 3 3; }
+.rvot-seg:hover .rvot-seg-arc, .rvot-seg:focus-visible .rvot-seg-arc { fill: #3f7a63; }
+.rvot-seg[aria-pressed=true] .rvot-seg-arc { fill: #f2c46d; }
+.rvot-seg-label { fill: #eaf4ef; font: 700 12px system-ui, sans-serif; pointer-events: none; }
+.rvot-seg[aria-pressed=true] .rvot-seg-label { fill: #23200f; }
+.rvot-seg-card { display: grid; gap: 8px; margin-top: 10px; padding: 12px; border: 1px solid rgba(242, 196, 109, .35); border-radius: 10px; background: rgba(242, 196, 109, .05); }
+.rvot-seg-card[hidden] { display: none; }
+.rvot-seg-card h4, .rvot-seg-card h5 { margin: 0; }
+.rvot-seg-card h5 { font-size: 15px; color: #f2c46d; }
+.rvot-seg-general { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; display: grid; gap: 4px; }

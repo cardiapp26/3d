@@ -42,7 +42,9 @@ export const VES_SOURCES = Object.freeze([
   { id: 'park', title: 'Park, Kim, Marchlinski · Surface ECG localization of idiopathic VT (PACE 2012)', url: 'https://doi.org/10.1111/j.1540-8159.2012.03488.x' },
   { id: 'qrs-notch', title: 'Outflow tract VAs with qrS or notched QS in V1: origins (BMC Cardiovasc Disord 2017)', url: 'https://doi.org/10.1186/s12872-017-0561-y' },
   { id: 'aortic-root', title: 'John, Ghazizadeh, Ceresnak · Aortic root substrates (Heart Rhythm 2026)', url: 'https://doi.org/10.1016/j.hrthm.2026.01.055' },
-  { id: 'egm', title: 'Focal PVC · Local activation annotation (2018)', url: 'https://academic.oup.com/europace/article/20/FI2/f171/4587592' }
+  { id: 'egm', title: 'Focal PVC · Local activation annotation (2018)', url: 'https://academic.oup.com/europace/article/20/FI2/f171/4587592' },
+  { id: 'rvot-miyazaki', title: 'Miyazaki et al. · The right ventricular outflow tract, part 1 (JACC Case Rep 2026)', url: 'https://doi.org/10.1016/j.jaccas.2026.109418' },
+  { id: 'rvot-aronis', title: 'Aronis · The RVOT is a neighborhood: interventional anatomy (JACC Case Rep 2026)', url: 'https://doi.org/10.1016/j.jaccas.2026.110024' }
 ]);
 export const vesRegion = id => VES_REGIONS.find(r => r.id === id) || null;
 

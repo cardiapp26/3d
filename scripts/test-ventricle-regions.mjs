@@ -86,3 +86,35 @@ assert.ok(mb.path[0].distanceTo(new THREE.Vector3(0, 0, 0)) < 1e-6 && mb.path.at
 assert.ok(mb.path[8].y > 0, 'and sags toward the cavity centre');
 
 console.log('PASS: moderator band; ventricle regions (AHA 16 segments, valve-plane anchors, LVOT), valve parts, part pieces and part criteria');
+
+// RVOT superior section: anchored angles and the free-wall arcs of the EPS schematic.
+{
+  const { twoAnchorAngles, freeWallAt } = await import('../src/rvot-section.js');
+  const m = twoAnchorAngles(34, 55, 149, 189);
+  assert.ok(Math.abs(m(34) - 55) < 1e-9 && Math.abs(m(149) - 189) < 1e-9, 'RCC direction is the posterolateral centre, LAD the medial centre');
+  assert.ok(m(91.5) > 55 && m(91.5) < 189, 'between the anchors: posterior side');
+  assert.ok(m(300) > 189 || m(300) < 55, 'opposite arc: anterior and lateral side');
+  assert.equal(freeWallAt(270), 'anterior');
+  assert.equal(freeWallAt(340), 'lateral');
+  assert.equal(freeWallAt(55), 'posterolateral');
+  assert.equal(freeWallAt(119), 'posterior');
+  assert.equal(freeWallAt(189), 'medial');
+  assert.equal(freeWallAt(5), 'lateral', 'lateral arc wraps past 0°');
+}
+
+// Figure 2 regions on a toy RV: crest between the valves on the RCC side, SMT from the crest foot to the band.
+{
+  const { rvFigure2Regions, segmentDistance } = await import('../src/rv-outflow-structures.js');
+  const THREE = await import('three');
+  assert.ok(Math.abs(segmentDistance(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-1, 0, 0), new THREE.Vector3(1, 0, 0)) - 1) < 1e-9);
+  const pts = [[0.5, 0.3, 0], [0.5, -0.3, 0], [0.1, 0.2, 0], [1.0, 0, 0], [-0.4, -0.5, 0]];
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3));
+  const parts = { names: [{ key: 'rv-inlet' }, { key: 'rv-rvot' }], byVertex: [1, 1, 0, 1, 0] };
+  const r = rvFigure2Regions({ rvGeometry: g, regionParts: parts, tvCenter: new THREE.Vector3(0, 0, 0), pvCenter: new THREE.Vector3(1, 0, 0),
+    rccCenter: new THREE.Vector3(0.5, 1, 0), mbSeptal: new THREE.Vector3(-0.4, -0.6, 0), nearLv: (p) => p.y < 0 || p.y > 0.25 });
+  const at = (i) => r.ids[r.byVertex[i]];
+  assert.equal(at(0), 'crest', 'between the valves, RCC side: crest');
+  assert.equal(at(1), 'outflow', 'opposite side of the axis: not crest');
+  assert.equal(at(3), 'outflow', 'at the pulmonary valve end: outside the crest band');
+  assert.equal(at(4), 'smt', 'septal band toward the moderator band insertion');
+}
