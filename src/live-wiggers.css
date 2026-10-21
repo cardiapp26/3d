@@ -1,0 +1,106 @@
+.live-wiggers {
+  --live-ink: #244137;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+  color: var(--live-ink);
+  background: rgba(250, 253, 250, .96);
+  border: 1px solid #d6e3db;
+  border-radius: 18px;
+  font-family: 'DM Sans', sans-serif;
+}
+.live-wiggers[hidden] { display: none; }
+/* This tab gives the native cutaway and its synchronized plot equal space. */
+html[data-live-wiggers] :is(#cycle-panel, #wiggers-strip, .view-controls, .myo-control, .viewer-top, .scene-labels, .hemo-crosslink, #step-detail, #steps, .lesson-heading) { display: none !important; }
+html[data-live-wiggers] #viewport { top: 0; bottom: 0; }
+html[data-live-wiggers] #lesson > :not(#hemo-panel) { display: none !important; }
+html[data-live-wiggers] :is(.workspace > aside, [data-drawer], .mobile-tab[data-sheet=layers], .mobile-tab[data-sheet=tools], .btn-view-reset) { display: none !important; }
+html[data-live-wiggers] .hemo-tabs { flex-wrap: wrap; }
+@media (min-width: 1101px) {
+  html[data-live-wiggers][data-app-mode=cath] .workspace { grid-template-columns: minmax(360px, 1fr) 8px minmax(460px, 1fr); }
+}
+@media (max-width: 640px) {
+  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn] { --echo-sheet-h: 54dvh; }
+  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn] .workspace > article { top: auto; bottom: var(--tabbar-h); height: 54dvh; border-radius: 14px 14px 0 0; }
+  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn] .workspace > main { margin-top: 0; height: calc(100% - 54dvh); }
+  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn][data-sheet-size=full] .workspace > main { height: calc(100% - 54dvh); }
+  html[data-live-wiggers] .live-wiggers button, html[data-live-wiggers] .live-wiggers select { min-height: 44px; }
+}
+.live-wiggers .live-wiggers__title { margin: 0; font-size: 21px; line-height: 1.15; }
+.live-wiggers .live-wiggers__subtitle { margin: -5px 0 0; color: #61766b; font-size: 12px; }
+.live-wiggers__controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.live-wiggers button, .live-wiggers select {
+  min-height: 36px;
+  border: 1px solid #c6d9cc;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #fff;
+  color: var(--live-ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.live-wiggers button:hover { background: #e8f1ea; }
+.live-wiggers button:focus-visible, .live-wiggers input:focus-visible, .live-wiggers select:focus-visible,
+.live-wiggers canvas:focus-visible { outline: 3px solid #417b64; outline-offset: 3px; }
+.live-wiggers .live-wiggers__play { background: #2e6450; color: #fff; min-width: 80px; }
+.live-wiggers__control { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 11px; }
+.live-wiggers__control input { width: 95px; accent-color: #2e6450; }
+.live-wiggers__control output { min-width: 49px; font-variant-numeric: tabular-nums; }
+.live-wiggers__pressures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.live-wiggers__pressure {
+  border: 1px solid #d9e4dc;
+  border-top: 5px solid var(--pressure-color, #4d6fba);
+  border-radius: 10px;
+  padding: 10px 8px;
+  background: #fff;
+}
+.live-wiggers__pressure-name { display: block; min-height: 29px; font-size: 11px; line-height: 1.3; }
+.live-wiggers__pressure-value { font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.live-wiggers__unit { margin-left: 4px; color: #61766b; font-size: 10px; }
+.live-wiggers__status { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; }
+.live-wiggers__phase { font-size: 14px; }
+.live-wiggers__valves { display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px; }
+.live-wiggers__valves > span { border-radius: 7px; padding: 6px 8px; background: #e8eded; }
+.live-wiggers__valves > span[data-open='true'] { background: #dceee1; color: #265a3d; }
+.live-wiggers .live-wiggers__info { margin: 0; min-height: 42px; color: #4e6759; font-size: 12px; line-height: 1.5; }
+.live-wiggers__scrub { display: grid; grid-template-columns: 1fr auto; gap: 7px; font-size: 11px; }
+.live-wiggers__scrub input { width: 100%; grid-column: 1 / -1; grid-row: 2; margin: 0; accent-color: #2e6450; }
+.live-wiggers__time { text-align: right; font-variant-numeric: tabular-nums; }
+.live-wiggers__presets { display: flex; flex-wrap: wrap; gap: 5px; }
+.live-wiggers__presets button { flex: 1 1 140px; font-size: 10px; padding: 6px; line-height: 1.3; }
+.live-wiggers__presets button[aria-pressed='true'] { border-color: #3c765a; background: #dfede3; font-weight: 600; }
+.live-wiggers .live-wiggers__plot-title { margin: 3px 0 -5px; font-size: 14px; }
+.live-wiggers__curve-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 10px; }
+.live-wiggers__curve-legend span::before { content: ''; display: inline-block; width: 16px; height: 3px; margin: 0 4px 3px 0; background: currentColor; }
+.live-wiggers__curve-la { color: #9b6528; }
+.live-wiggers__curve-lv { color: #d23a4f; }
+.live-wiggers__curve-ao { color: #2f3a36; }
+.live-wiggers__canvas { display: block; width: 100%; height: 320px; border-radius: 8px; background: #fff; touch-action: none; cursor: crosshair; }
+.live-wiggers__axis { margin-top: -7px; text-align: center; font-size: 10px; color: #61766b; }
+.live-wiggers__scale { padding: 11px; border: 1px solid #dde6de; border-radius: 9px; }
+.live-wiggers__scale strong { display: block; margin-bottom: 8px; font-size: 11px; }
+.live-wiggers__gradient { height: 9px; border-radius: 5px; }
+.live-wiggers__ticks { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; font-variant-numeric: tabular-nums; }
+.live-wiggers .live-wiggers__note { margin: 0; color: #647b6b; font-size: 10px; line-height: 1.5; }
+.live-wiggers__scale .live-wiggers__note { margin-top: 5px; }
+.live-wiggers .live-wiggers__disclaimer { margin: 0; padding-top: 9px; border-top: 1px solid #dbe6de; color: #617468; font-size: 10px; line-height: 1.5; }
+@media (max-width: 600px) {
+  .live-wiggers { padding: 12px; gap: 10px; border-radius: 12px; }
+  .live-wiggers__canvas { height: 300px; }
+  .live-wiggers__pressure-value { font-size: 23px; }
+  .live-wiggers__unit { display: block; margin-left: 0; }
+  .live-wiggers__time { font-size: 10px; }
+  .live-wiggers__presets button { flex-basis: 110px; }
+}
+.live-wiggers__la-title { margin: 10px 0 4px; font-size: 12px; font-weight: 600; color: #4b5a52; }
+.live-wiggers__la { display: block; width: 100%; height: 90px; border: 1px solid #dfe5e1; border-radius: 8px; background: #fff; }
+.live-wiggers__sides { display: flex; gap: 4px; margin: 4px 0 10px; }
+.live-wiggers__sides button { flex: 1 1 0; font-size: 11px; padding: 6px 4px; }
+.live-wiggers__sides button[aria-pressed='true'] { border-color: #3c765a; background: #dfede3; font-weight: 600; }
+.live-wiggers__right { display: block; width: 100%; height: 150px; border: 1px solid #dfe5e1; border-radius: 8px; background: #fff; cursor: crosshair; touch-action: none; }
+.live-wiggers .live-wiggers__info--right { padding-left: 8px; border-left: 3px solid #3f6fb5; }
+.live-wiggers[data-side=both] .live-wiggers__info:not(.live-wiggers__info--right) { padding-left: 8px; border-left: 3px solid #a94b49; }
+.live-wiggers [hidden] { display: none !important; }

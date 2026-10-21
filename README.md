@@ -173,6 +173,10 @@ Fizyoloji görselleri: Farmakoloji → Antiaritmikler altında ventriküler iyon
 
 Vazopressör / İnotrop: `/pharmacology/?lang=tr#/vasoactive`, üç hemodinamik profil, 10 ilaç hedefi, beş şok senaryosu, kaynak doz kartları ve perfüzyon izlemi. [Kaynak doğrulaması ve görsel düzeltmeleri](research/VASOACTIVE_MODULE_AUDIT.md). Testler: `npm run test:vasoactive` ve `npm run test:vasoactive-browser`.
 
+### Canlı Wiggers
+
+Hemodinami → **Canlı Wiggers**: özgün 3D atlas üzerinde LA, mitral kapak, LV, aort kapağı ve aorta kesiti; ortak saatle basınç renkleri, kapaklar ve canlı Wiggers diyagramı. [Model ve doğrulama](research/LIVE_WIGGERS.md). Test: `npm run test:live-wiggers`; tarayıcı: `APP_URL=http://127.0.0.1:5196 npm run test:live-wiggers-browser`.
+
 ### Cardi note transfer
 
 Personal notes → **Send all notes to Cardi** opens `https://cardi.drtr.uk/transfer.html`.

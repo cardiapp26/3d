@@ -21,6 +21,8 @@ import { drawEcgGrid, drawCalibratedWave, generateEcgPoints, drawVectorHexaxial 
 export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let activeTopicIdx = 0;
   let isDaVinci = new URLSearchParams(location.search).get('lesson') === 'davinci';
+  // Channelopathies: own entry in the left panel (Phase 0-4 action potential, genes and syndromes).
+  let isChan = !isDaVinci && new URLSearchParams(location.search).get('lesson') === 'channelopathies';
   let vectorAngle = 59; // Normal axis
   let vectorMag = 1.0;
   let activeInjuryCase = 'anterior_mi';
@@ -49,13 +51,19 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     const isTr = lang === 'tr';
     const topic = GUYTON_TOPICS[activeTopicIdx];
 
-    const currentTitle = isDaVinci
+    const currentTitle = isChan
+      ? (isTr ? 'Kardiyak kanalopatiler' : 'Cardiac channelopathies')
+      : isDaVinci
       ? (isTr ? '12 Derivasyonlu EKG Anatomisi (Da Vinci Köşesi)' : '12-Lead Electrocardiographic Anatomy (Da Vinci Corner)')
       : topic.title[lang];
-    const currentSubtitle = isDaVinci
+    const currentSubtitle = isChan
+      ? (isTr ? 'Faz 0–4 iyon akımları, genler ve sendromlar; EKG bulgusunu canlı monitörde aksiyon potansiyeliyle birlikte incele.' : 'Phase 0–4 ion currents, genes and syndromes; study the ECG finding together with the action potential on the live monitor.')
+      : isDaVinci
       ? (isTr ? 'Bradfield, Shivkumar ve Mori (JACC 2025): Cabrera panoramik sıralaması, prekordiyal 3D düzlem farkları ve anatomik terminoloji' : 'Bradfield, Shivkumar, and Mori (JACC 2025): Cabrera panoramic sequence, 3D precordial height levels, and anatomical nomenclature')
       : topic.subtitle[lang];
-    const currentBadge = isDaVinci
+    const currentBadge = isChan
+      ? (isTr ? 'EKG Fizyolojisi · Kanalopatiler' : 'ECG Physiology · Channelopathies')
+      : isDaVinci
       ? (isTr ? 'JACC 2025 · DA VINCI KÖŞESİ' : 'JACC 2025 · DA VINCI CORNER')
       : (isTr ? 'EKG Fizyolojisi · Etkileşimli çalışma alanı' : 'ECG Physiology · Interactive workspace');
 
@@ -64,13 +72,14 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
         <p class="guyton-chapters-title">${isTr ? 'Bölümler' : 'Chapters'}</p>
         <div class="guyton-tabs" role="tablist" aria-orientation="vertical">
           ${GUYTON_TOPICS.map((t, idx) => `
-            <button type="button" role="tab" tabindex="${idx === activeTopicIdx && !isDaVinci ? 0 : -1}" aria-selected="${idx === activeTopicIdx && !isDaVinci}" class="guyton-tab-btn ${idx === activeTopicIdx && !isDaVinci ? 'active' : ''}" data-topic="${idx}">
-              <span class="guyton-tab-ch">${isTr ? 'Bölüm' : 'Chapter'} ${t.chapter}</span>
+            <button type="button" role="tab" tabindex="${idx === activeTopicIdx && !isDaVinci && !isChan ? 0 : -1}" aria-selected="${idx === activeTopicIdx && !isDaVinci && !isChan}" class="guyton-tab-btn ${idx === activeTopicIdx && !isDaVinci && !isChan ? 'active' : ''}" data-topic="${idx}">
               <span class="guyton-tab-name">${t.title[lang]}</span>
             </button>
           `).join('')}
+          <button type="button" role="tab" tabindex="${isChan ? 0 : -1}" aria-selected="${isChan}" class="guyton-tab-btn ${isChan ? 'active' : ''}" data-chan-tab="true">
+            <span class="guyton-tab-name">${isTr ? 'Kanalopatiler · Faz 0–4' : 'Channelopathies · Phase 0–4'}</span>
+          </button>
           <button type="button" role="tab" tabindex="${isDaVinci ? 0 : -1}" aria-selected="${isDaVinci}" class="guyton-tab-btn davinci-tab-pill ${isDaVinci ? 'active' : ''}" data-davinci-tab="true">
-            <span class="guyton-tab-ch">${isTr ? 'Ek' : 'Appendix'} · JACC 2025</span>
             <span class="guyton-tab-name">${isTr ? '12 Derivasyon EKG Anatomisi' : '12-Lead ECG Anatomy'}</span>
           </button>
         </div>
@@ -93,9 +102,10 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       clinicalSim = createClinicalEcgSimulator({
         mount: simMount,
         getLang,
-        initialCollapsed: activeTopicIdx !== 0 || isDaVinci
+        initialCollapsed: !isChan && (activeTopicIdx !== 0 || isDaVinci)
       });
-      if (!isDaVinci) {
+      if (isChan) clinicalSim.selectCategory('channelopathy', 'brugada_1');
+      else if (!isDaVinci) {
         if (topic.id === 'ch12_injury') clinicalSim.selectCategory('ischemia', 'anterior_stemi');
         else if (topic.id === 'ch13_arrhythmias') clinicalSim.selectCategory('arrhythmia', 'afib');
         else if (topic.id === 'ch12_axis') clinicalSim.selectCategory('conduction', 'lafb_ashman');
@@ -109,13 +119,13 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
         // A vertical list on wide screens, a row on phones: both arrow pairs move.
         if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)) return;
         e.preventDefault();
-        isDaVinci = false;
+        isDaVinci = false; isChan = false;
         const step = ['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : -1;
         activeTopicIdx = e.key === 'Home' ? 0 : e.key === 'End' ? GUYTON_TOPICS.length - 1 : (activeTopicIdx + step + GUYTON_TOPICS.length) % GUYTON_TOPICS.length;
         render(); container.querySelector(`[data-topic="${activeTopicIdx}"]`)?.focus();
       });
       btn.addEventListener('click', () => {
-        isDaVinci = false;
+        isDaVinci = false; isChan = false;
         activeTopicIdx = Number(btn.dataset.topic);
         render();
         container.querySelector(`[data-topic="${activeTopicIdx}"]`)?.focus();
@@ -125,13 +135,20 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     const davinciBtn = container.querySelector('[data-davinci-tab]');
     if (davinciBtn) {
       davinciBtn.addEventListener('click', () => {
-        isDaVinci = true;
+        isDaVinci = true; isChan = false;
         render();
       });
     }
+    container.querySelector('[data-chan-tab]')?.addEventListener('click', () => {
+      isChan = true; isDaVinci = false;
+      render();
+    });
 
     const viewArea = container.querySelector('#guyton-view');
-    if (isDaVinci) {
+    if (isChan) {
+      viewArea.replaceChildren();
+      renderChannelopathyAtlasCard(viewArea, lang === 'tr');
+    } else if (isDaVinci) {
       daVinciLab = createDaVinciAnatomyLab({
         mount: viewArea,
         getLang,
@@ -140,7 +157,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
     } else {
       renderActiveTopic(viewArea, lang);
     }
-    if (!isDaVinci) createLessonExperiments({ mount: viewArea, topic: topic.id, getLang });
+    if (!isDaVinci && !isChan) createLessonExperiments({ mount: viewArea, topic: topic.id, getLang });
     container.querySelectorAll('canvas').forEach(c => { c.setAttribute('role','img'); c.setAttribute('aria-label', c.closest('.guyton-card')?.querySelector('h3')?.textContent || (isDaVinci ? 'Da Vinci Anatomy' : topic.title[lang])); });
   }
 
@@ -185,9 +202,6 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       ? createQrsVectorLab({ mount: mountNode, getLang, steps: topic.vectors, state: labStates[topic.id] ||= {} })
       : createEcgLab({ mount: mountNode, topic: topic.id, getLang, state: labStates[topic.id] ||= {},
       getExternal: () => ({ caseId:activeInjuryCase, vectorAngle }) });
-    if (topic.id === 'ch11_basics') {
-      renderChannelopathyAtlasCard(mountNode, isTr);
-    }
     mountNode.append(source);
   }
 

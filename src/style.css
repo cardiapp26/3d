@@ -1081,6 +1081,8 @@ main.is-fullscreen-fallback #viewport {
 .drawer-tab:hover{background:#e8efe9}
 .drawer-tab[aria-expanded=true]{background:#244f43;border-color:#244f43;color:#fff}
 .drawer-tab[hidden],.drawer-close{display:none}
+.drawer-modes{display:none}
+.scene-label[data-tone=region]{background:#2c4a3fe6}
 .drawer-tab-icon{font-size:12px;line-height:1}
 @media (min-width:641px){
   .header-tabs .mode-group-label{display:none}
@@ -1098,6 +1100,12 @@ main.is-fullscreen-fallback #viewport {
   body[data-open-drawer=tools] .chamber-tools{padding:4px 0;font-size:11.5px;line-height:1.5}
   body[data-open-drawer=tools] .chamber-tools button{margin:5px 0;padding:6px 9px;font-size:12px}
   body[data-open-drawer=tools] .chamber-tools .layer{font-size:11.5px}
+  /* Merged panel: the group's modes above the current mode's tools. */
+  .drawer-modes{display:none}
+  body[data-open-drawer=tools] .drawer-modes:not([hidden]){display:flex;flex-wrap:wrap;gap:4px;padding:2px 0 8px;margin-bottom:6px;border-bottom:1px solid #dfe7e1}
+  .drawer-modes button{border:1px solid #cbd5cf;border-radius:5px;background:transparent;padding:4px 8px;font-size:11px;font-weight:600;color:#29483e;cursor:pointer}
+  .drawer-modes button:hover{background:#e8efe9}
+  .drawer-modes button[aria-pressed=true]{background:#244f43;border-color:#244f43;color:#fff}
   /* Peek: opened on mode entry, the drawer waits as a slim edge tab and slides open on hover or focus. */
   /* The edge tab sits over the scene's top-left corner: nudge the overlays there to its right. */
   body[data-drawer-peek] :is(.myo-control,.top-badges){margin-left:36px}

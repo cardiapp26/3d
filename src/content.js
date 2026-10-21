@@ -888,6 +888,84 @@ export const rawStructures = {
     },
     source: 'ACC/AHA coronary definitions, 2014'
   },
+  pda: {
+    tr: {
+      title: 'Posterior inen arter • PDA',
+      description: 'Sağ dominant dolaşımda RCA\'nın crux cordis düzeyinde verdiği dal; inferior interventriküler olukta orta kardiyak venle birlikte apekse doğru iner.',
+      clinical: 'İnferior septal perforatörlerle septumun inferior üçte birini ve inferior LV duvarını besler. LAO kranial görüntüde crux ve PDA ayrışır; SVG-PDA greftinin distal anastomozu bu daldadır.'
+    },
+    en: {
+      title: 'Posterior descending artery • PDA',
+      description: 'Branch of the dominant RCA at the crux cordis, running in the inferior interventricular groove with the middle cardiac vein toward the apex.',
+      clinical: 'Supplies the inferior third of the septum through inferior septal perforators and the inferior LV wall. LAO cranial opens the crux and the PDA; the distal anastomosis of the SVG-PDA graft lies on it.'
+    },
+    source: 'ACC/AHA coronary definitions, 2014'
+  },
+  brachiocephalic: {
+    tr: {
+      title: 'Brakiyosefalik trunkus (innominat arter) · şematik',
+      description: 'Arkusun üst yüzünden çıkan ilk ve en kalın daldır (yaklaşık 12 mm). Yukarı, sağa ve hafif arkaya yaklaşık 4–5 cm seyreder; sağ sternoklaviküler eklemin arkasında sağ subklavyen ve sağ ana karotis artere ayrılır.',
+      clinical: 'Sağ radiyal yoldan koroner anjiyografide kateter subklavyen ve brakiyosefalik trunkustan geçerek asendan aorta ulaşır; trunkus kıvrımı kateter yönlendirmesini zorlaştırabilir. Trunkus bifurkasyonunu RAO 20–30° açar. Atlasta düğüm yoktur: ölçülmüş arkus duvarına oturtulmuş öğretim geometrisidir.'
+    },
+    en: {
+      title: 'Brachiocephalic trunk (innominate artery) · schematic',
+      description: 'First and largest branch from the superior surface of the arch (about 12 mm). Runs up, to the right and slightly back for about 4–5 cm and divides behind the right sternoclavicular joint into the right subclavian and right common carotid arteries.',
+      clinical: 'From the right radial approach the catheter passes the subclavian artery and the brachiocephalic trunk to reach the ascending aorta; tortuosity here makes catheter steering harder. RAO 20–30° opens the trunk bifurcation. The atlas has no node: teaching geometry seated on the measured arch wall.'
+    },
+    source: "Gray's Anatomy, 42nd ed. (aortic arch and its branches); şematik öğretim geometrisi / schematic teaching geometry"
+  },
+  rcca: {
+    tr: {
+      title: 'Sağ ana karotis arter · şematik',
+      description: 'Brakiyosefalik trunkusun dalıdır; boyunda trakea ve tiroidin yanında yukarı çıkar ve genellikle C3–C4 düzeyinde iç ve dış karotise ayrılır.',
+      clinical: 'Sağ karotis anjiyografi ve stentlemede brakiyosefalik trunkus üzerinden selektif kanülasyon gerekir. Şematik kök, boyun tabanında kesik uçla gösterilir.'
+    },
+    en: {
+      title: 'Right common carotid artery · schematic',
+      description: 'Branch of the brachiocephalic trunk; ascends in the neck beside the trachea and thyroid and usually divides at C3–C4 into the internal and external carotid arteries.',
+      clinical: 'Right carotid angiography and stenting need selective cannulation through the brachiocephalic trunk. The schematic stump ends with a cut at the root of the neck.'
+    },
+    source: "Gray's Anatomy, 42nd ed. (aortic arch and its branches); şematik öğretim geometrisi / schematic teaching geometry"
+  },
+  rsca: {
+    tr: {
+      title: 'Sağ subklavyen arter · şematik',
+      description: 'Brakiyosefalik trunkusun lateral dalıdır; plevra kubbesinin üzerinden laterale kıvrılarak birinci kaburganın dış kenarında aksiller artere devam eder. Vertebral, internal torasik (RIMA), tiroservikal ve kostoservikal dalları verir.',
+      clinical: 'Sağ radiyal girişte kateterin ilk geçtiği büyük damardır. Aberran sağ subklavyen arter (arteria lusoria) arkusun son dalı olarak sol subklavyenin distalinden çıkar ve radiyal girişi zorlaştırır.'
+    },
+    en: {
+      title: 'Right subclavian artery · schematic',
+      description: 'Lateral branch of the brachiocephalic trunk; arches laterally over the pleural cupula and continues as the axillary artery at the outer border of the first rib. Gives the vertebral, internal thoracic (RIMA), thyrocervical and costocervical branches.',
+      clinical: 'The first large vessel the catheter crosses from the right radial approach. An aberrant right subclavian artery (arteria lusoria) arises as the last arch branch distal to the left subclavian and complicates radial access.'
+    },
+    source: "Gray's Anatomy, 42nd ed. (aortic arch and its branches); şematik öğretim geometrisi / schematic teaching geometry"
+  },
+  lcca: {
+    tr: {
+      title: 'Sol ana karotis arter · şematik',
+      description: 'Arkusun ikinci dalıdır; doğrudan arkusun üst yüzünden, brakiyosefalik trunkusun hemen solundan ve arkasından çıkar ve boyunda yukarı çıkar.',
+      clinical: 'En sık arkus varyantında (yaklaşık %10–25) brakiyosefalik trunkus ile ortak kökten ya da trunkustan çıkar ("bovin arkus"; sığır arkusuna benzemediği için yanlış bir adlandırmadır); bu durum sol karotis kanülasyonunu zorlaştırır. Arkusu açmak için LAO 30–45° kullanılır.'
+    },
+    en: {
+      title: 'Left common carotid artery · schematic',
+      description: 'Second branch of the arch; arises directly from its superior surface just left of and behind the brachiocephalic trunk and ascends in the neck.',
+      clinical: 'In the commonest arch variant (about 10–25%) it shares a common origin with, or arises from, the brachiocephalic trunk ("bovine arch", a misnomer: it does not resemble the bovine arch), which makes left carotid cannulation harder. LAO 30–45° opens the arch.'
+    },
+    source: "Gray's Anatomy, 42nd ed. (aortic arch and its branches); şematik öğretim geometrisi / schematic teaching geometry"
+  },
+  lsca: {
+    tr: {
+      title: 'Sol subklavyen arter · şematik',
+      description: 'Arkusun üçüncü ve en distal dalıdır; arkusun sol arka kesiminden çıkar, yukarı ve laterale seyreder. Vertebral arter, internal torasik arter (LIMA), tiroservikal ve kostoservikal trunkusları verir.',
+      clinical: 'LIMA greftinin kaynağıdır: proksimal sol subklavyen darlığı LIMA-LAD greftinde koroner-subklavyen çalma sendromuna yol açabilir. Sol radiyal girişte kateter bu daldan arkusa geçer.'
+    },
+    en: {
+      title: 'Left subclavian artery · schematic',
+      description: 'Third and most distal arch branch; arises from the left posterior part of the arch and runs up and laterally. Gives the vertebral artery, the internal thoracic artery (LIMA) and the thyrocervical and costocervical trunks.',
+      clinical: 'Source of the LIMA graft: a proximal left subclavian stenosis can cause coronary-subclavian steal in a LIMA-LAD graft. From the left radial approach the catheter enters the arch through it.'
+    },
+    source: "Gray's Anatomy, 42nd ed. (aortic arch and its branches); şematik öğretim geometrisi / schematic teaching geometry"
+  },
   'moderator-band': {
     tr: {
       title: 'Moderatör bant (septomarjinal bant) · şematik',

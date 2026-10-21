@@ -157,7 +157,7 @@ export function createVesLocPanel(doc, { getLang = () => 'tr', onPractice = null
     const absent = id === 'posterior' && state.rvotVariant === 'absent';
     p.segTitle.textContent = T.title; p.segIntro.textContent = T.intro;
     p.segName.textContent = absent ? `${text.name} · ${T.absentShort}` : text.name;
-    fillDl(p.segFields, ['neighbour', 'surface', 'procedure', 'device', 'figures'].map(key => [T.fields[key], text[key]]));
+    fillDl(p.segFields, ['neighbour', 'surface', 'procedure', 'device'].map(key => [T.fields[key], text[key]]));
     p.variantTitle.textContent = T.variantTitle;
     for (const [v, b] of p.variantButtons) { b.textContent = T.variants[v]; b.setAttribute('aria-pressed', state.rvotVariant === v); }
     p.variantNote.textContent = T.variantNote[state.rvotVariant];

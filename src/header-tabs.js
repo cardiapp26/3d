@@ -3,6 +3,8 @@
  * and the Layers / Tools tabs open the former left panel as a floating
  * drawer over the scene. Phones keep the bottom sheets from panel-shell; the
  * mode list moves back into the aside there, so every control exists once.
+ * When a mode has tools, its group tab opens one left panel holding both: the
+ * group's modes at the top and the mode's tools below (no separate Tools tab).
  */
 const WORDS = {
   tr: { layers: 'Katmanlar', tools: 'Araçlar', close: 'Kapat', label: 'Modlar ve katmanlar' },
@@ -31,6 +33,12 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
   drawerClose.type = 'button';
   drawerClose.className = 'drawer-close';
   aside.prepend(drawerClose);
+  // Mode switcher at the top of the merged Anatomy / Tools panel.
+  const switcher = document.createElement('div');
+  switcher.className = 'drawer-modes';
+  switcher.setAttribute('role', 'group');
+  drawerClose.after(switcher);
+  const hasTools = () => TOOL_SECTIONS.some(visible);
   let openGroup = null;
   let drawer = null;
   let wasToolsOnly = false;
@@ -63,7 +71,11 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
     }
   }
   for (const group of groups) {
-    tabOf(group).addEventListener('click', () => setGroup(openGroup === group ? null : group));
+    tabOf(group).addEventListener('click', () => {
+      // A mode with tools: the tab opens the merged panel instead of the menu.
+      if (!mobile.matches && hasTools()) { setGroup(null); setDrawer(drawer === 'tools' && !document.body.dataset.drawerPeek ? null : 'tools'); return; }
+      setGroup(openGroup === group ? null : group);
+    });
   }
   nav.addEventListener('keydown', event => {
     if (mobile.matches) return;
@@ -108,6 +120,22 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
     if (which && peek) document.body.dataset.drawerPeek = 'true';
     else delete document.body.dataset.drawerPeek;
     for (const [id, tab] of Object.entries(drawerTabs)) tab?.setAttribute('aria-expanded', String(id === which));
+    for (const group of groups) if (group.classList.contains('current') && hasTools()) tabOf(group).setAttribute('aria-expanded', String(which === 'tools'));
+  }
+  function renderSwitcher() {
+    const group = groups.find(g => g.classList.contains('current')) || groups[0];
+    const items = group ? itemsOf(group).filter(item => !item.classList.contains('mode-substep')) : [];
+    switcher.setAttribute('aria-label', group?.querySelector('.mode-group-name')?.textContent || '');
+    switcher.replaceChildren(...items.map(item => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.drawerMode = item.dataset.mode;
+      b.textContent = item.querySelector('.mode-label')?.textContent || item.dataset.mode;
+      b.setAttribute('aria-pressed', String(item.classList.contains('active')));
+      b.addEventListener('click', () => item.click());
+      return b;
+    }));
+    switcher.hidden = items.length < 2;
   }
   for (const [id, tab] of Object.entries(drawerTabs)) {
     tab?.addEventListener('click', () => {
@@ -148,9 +176,11 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
       if (current) current.textContent = active?.querySelector('.mode-label')?.textContent || '';
     }
     const available = { layers: visible('#layers'), tools: TOOL_SECTIONS.some(visible) };
+    renderSwitcher();
     for (const [id, tab] of Object.entries(drawerTabs)) {
       if (!tab) continue;
-      tab.hidden = !available[id];
+      // Tools open from the mode group tab on tablets and desktops.
+      tab.hidden = !available[id] || (id === 'tools' && !mobile.matches);
       tab.querySelector('.drawer-tab-label').textContent = w[id];
       tab.title = w[id];
     }
@@ -159,7 +189,8 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
     const toolsOnly = available.tools && !available.layers;
     if (toolsOnly && !wasToolsOnly && !mobile.matches) setDrawer('tools', { peek: canHover.matches });
     wasToolsOnly = toolsOnly;
-    aside.dataset.peekLabel = w.tools;
+    const current = groups.find(g => g.classList.contains('current'));
+    aside.dataset.peekLabel = current?.querySelector('.mode-group-current')?.textContent || w.tools;
     drawerClose.textContent = `${w.close} ×`;
     drawerClose.setAttribute('aria-label', drawer ? `${w[drawer]}: ${w.close}` : w.close);
   }

@@ -8,8 +8,8 @@ import { RVOT_SEGMENT_COLORS } from './rvot-section.js';
  * the EPS RVOT segment map (Miyazaki 2026; Aronis 2026).
  */
 const UI = {
-  tr: { camera: 'Bakış', cameras: { superior: 'Üstten (Şekil 4, 11C, 12C)', posterior: 'Arkadan (Şekil 11–12 A–B)' }, toggle: 'RVOT üstten kesit · 6 segment', note: 'Pulmoner kapağın hemen altından kesilmiş, yukarıdan bakış: ön yukarıda, hasta sağı sağda. Kesit ve segment sınırları bu atlasın geometrisinden türetilmiş öğretim bölgeleridir.', pick: 'Segment seç', all: 'Tümü', sources: 'Kaynaklar' },
-  en: { camera: 'View', cameras: { superior: 'Superior (Figs. 4, 11C, 12C)', posterior: 'Posterior (Figs. 11–12 A–B)' }, toggle: 'RVOT superior section · 6 segments', note: 'Cut just below the pulmonary valve, seen from above: anterior up, patient right on the right. The cut and segment borders are teaching regions derived from this atlas geometry.', pick: 'Pick a segment', all: 'All', sources: 'Sources' }
+  tr: { camera: 'Bakış', cameras: { superior: 'Üstten', posterior: 'Arkadan' }, toggle: 'RVOT üstten kesit · 6 segment', note: 'Pulmoner kapağın hemen altından kesilmiş, yukarıdan bakış: ön yukarıda, hasta sağı sağda. Kesit ve segment sınırları bu atlasın geometrisinden türetilmiş öğretim bölgeleridir.', pick: 'Segment seç', all: 'Tümü', sources: 'Kaynaklar' },
+  en: { camera: 'View', cameras: { superior: 'Superior', posterior: 'Posterior' }, toggle: 'RVOT superior section · 6 segments', note: 'Cut just below the pulmonary valve, seen from above: anterior up, patient right on the right. The cut and segment borders are teaching regions derived from this atlas geometry.', pick: 'Pick a segment', all: 'All', sources: 'Sources' }
 };
 
 export function createRvotSectionPanel(doc, { getLang = () => 'tr', onToggle = () => {}, onSegment = () => {}, onVariant = () => {}, onCamera = () => {} } = {}) {
@@ -90,7 +90,7 @@ export function createRvotSectionPanel(doc, { getLang = () => 'tr', onToggle = (
     if (state.segment) {
       const text = T.segments[state.segment];
       title.textContent = text.name;
-      fields.replaceChildren(...['neighbour', 'surface', 'procedure', 'device', 'figures'].flatMap((key) => {
+      fields.replaceChildren(...['neighbour', 'surface', 'procedure', 'device'].flatMap((key) => {
         const dt = el('dt'), dd = el('dd');
         dt.textContent = T.fields[key]; dd.textContent = text[key];
         return [dt, dd];

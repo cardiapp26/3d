@@ -123,7 +123,8 @@ export function aorticPressure(u, rhythm = 'sinus', p = DEFAULT_PROFILE) {
     // gradient (LV peak above aortic systolic) opens between them mid-ejection.
     const lv = ventricularPressure(uu, rhythm, p);
     const early = uu < S.ejectionPeak ? -2 * Math.sin(Math.PI * (uu - EVENTS.aorticOpen) / (S.ejectionPeak - EVENTS.aorticOpen)) : 0;
-    const late = uu >= S.ejectionPeak ? 2.5 * Math.sin(Math.PI * (uu - S.ejectionPeak) / (EVENTS.aorticClose - S.ejectionPeak)) : 0;
+    // Late ejection: aorta above the falling LV, but never above the LV peak (peak LV >= peak aortic).
+    const late = uu >= S.ejectionPeak ? Math.min(2.5 * Math.sin(Math.PI * (uu - S.ejectionPeak) / (EVENTS.aorticClose - S.ejectionPeak)), 0.8 * Math.max(0, p.lvPeak - lv)) : 0;
     const f = (uu - EVENTS.aorticOpen) / (EVENTS.aorticClose - EVENTS.aorticOpen);
     const fp = (S.ejectionPeak - EVENTS.aorticOpen) / (EVENTS.aorticClose - EVENTS.aorticOpen);
     const gradient = Math.max(0, p.lvPeak - p.aoSys) * Math.sin(Math.PI * f) / Math.sin(Math.PI * fp);

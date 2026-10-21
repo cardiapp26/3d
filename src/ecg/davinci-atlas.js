@@ -4,6 +4,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { ATLAS_URL, normalizedParts, normalizeAtlasName } from '../atlas.js';
 import { CABRERA, CHEST, SITES, PV_SITES } from './davinci-model.js';
+import { buildArchBranches } from '../aortic-arch-branches.js';
+import { pulmonaryBranchTrims } from '../pulmonary-trims.js';
 
 export function createDavinciAtlas({getLang,onSelect}) {
  const element=document.createElement('div');element.className='da-atlas';
@@ -18,7 +20,7 @@ export function createDavinciAtlas({getLang,onSelect}) {
   return {element,update(){},view(){},destroy(){element.remove();}};
  }
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0x0a1520,0);
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;host.append(renderer.domElement);
+ renderer.localClippingEnabled=true;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;host.append(renderer.domElement);
  renderer.domElement.setAttribute('role','img');renderer.domElement.setAttribute('aria-label',tr('Döndürülebilir 3D kalp ve elektrotlar. Aynı seçimler yan taraftaki düğmelerle yapılabilir.','Rotatable 3D heart and electrodes. Equivalent selections are available through the adjacent buttons.'));
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,.1,50);
  camera.position.set(0,.35,10.8);
@@ -26,7 +28,7 @@ export function createDavinciAtlas({getLang,onSelect}) {
  scene.add(new THREE.HemisphereLight(0xf5efff,0x34404d,2.6));
  for(const [pos,intensity] of [[[3,5,7],3.2],[[-4,1,3],1.4],[[1,3,-5],2]]){const light=new THREE.DirectionalLight(0xffece0,intensity);light.position.set(...pos);scene.add(light);}
  const heart=new THREE.Group(),overlay=new THREE.Group();scene.add(heart,overlay);
- const meshes=[],pins=[],electrodes=[],byId=new Map();
+ const meshes=[],pins=[],electrodes=[],byId=new Map(),trims=[];
  let destroyed=false,frame=0,dirty=true,loaded=false,current={tab:'cabrera',opacity:.8,selectedLead:'II',rvotFocus:.5,bodyShift:0},markers=new THREE.Group();overlay.add(markers);
  const decoder=new DRACOLoader().setDecoderPath('/draco/');const loader=new GLTFLoader().setDRACOLoader(decoder);
  const material=(color,opacity=1)=>new THREE.MeshStandardMaterial({color,roughness:.55,metalness:.05,transparent:opacity<1,opacity,side:THREE.DoubleSide,depthWrite:opacity>=.8});
@@ -52,6 +54,13 @@ export function createDavinciAtlas({getLang,onSelect}) {
  for(const lead of CHEST){const marker=pin(lead.id,V(...lead.position),lead.color,chestGroup);marker.userData={lead:lead.id};electrodes.push(marker);}
  const axes=document.createElement('div');axes.className='da-compass';element.append(axes);
  let pointerDown;
+ // Hover names the schematic arch branches (TR/EN); atlas meshes stay unnamed as before.
+ renderer.domElement.addEventListener('pointermove',e=>{
+  if(!loaded)return;const box=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new THREE.Vector2((e.clientX-box.left)/box.width*2-1,-(e.clientY-box.top)/box.height*2+1),camera);
+  const hit=raycaster.intersectObjects(meshes,false).find(h=>!(h.object.material.clippingPlanes||[]).some(p=>p.distanceToPoint(h.point)<0));
+  const label=hit?.object.userData.label;const text=label?tr(label.tr,label.en):'';
+  if(renderer.domElement.title!==text){renderer.domElement.title=text;element.dataset.hover=hit?.object.userData.id&&label?hit.object.userData.id:'';}
+ });
  renderer.domElement.addEventListener('pointerdown',e=>{pointerDown=[e.clientX,e.clientY];});
  const raycaster=new THREE.Raycaster();
  renderer.domElement.addEventListener('pointerup',e=>{
@@ -80,7 +89,8 @@ export function createDavinciAtlas({getLang,onSelect}) {
   for(const id of sites){const selected=id===(current.tab==='atrial'?current.pvSite:current.focusSite);const p=pin(id==='inferoseptal'?'ISP':id==='superolateral'?'SL':id==='inferomedial'?'IM':id==='summit'?'SUM':id,markerPosition(id),selected?'#ffe4a0':'#9cc1d4',markers);p.userData={site:id};p.scale.setScalar(selected?1.7:1);}
  }
  function update(next){
-  current={...current,...next};heart.position.y=current.bodyShift||0;heart.updateMatrixWorld(true);const atrial=current.tab==='atrial';
+  current={...current,...next};heart.position.y=current.bodyShift||0;heart.updateMatrixWorld(true);
+  for(const {plane,local} of trims)plane.copy(local).applyMatrix4(heart.matrixWorld);const atrial=current.tab==='atrial';
   for(const m of meshes){const isChamber=m.userData.layer==='chambers',isAtrial=['la','ra'].includes(m.userData.id);m.visible=true;m.material.opacity=isChamber?(atrial?(isAtrial?current.opacity:.18):current.opacity):.85;m.material.transparent=m.material.opacity<1;m.material.depthWrite=m.material.opacity>=.8;m.material.color.setHex(m.userData.color);if(current.tab==='nomenclature'&&isChamber)m.material.color.set(isAtrial?'#6d85b2':m.userData.id==='rv'?'#dd8c75':'#b56470');}
   const visibleLeads=new Set(current.visibleLeads||CABRERA.map(l=>l.id));
   limbGroup.visible=[...visibleLeads].some(id=>!id.startsWith('V'));
@@ -114,8 +124,18 @@ export function createDavinciAtlas({getLang,onSelect}) {
   const bounds=new THREE.Box3();found.filter(x=>x.part.layer==='chambers').forEach(x=>bounds.expandByObject(x.obj));if(bounds.isEmpty())throw new Error('Atlas chamber nodes missing');
   const centre=bounds.getCenter(new THREE.Vector3()),scale=3.3/Math.max(...bounds.getSize(new THREE.Vector3()).toArray());
   for(const {obj,part} of found){const geometry=obj.geometry.clone().applyMatrix4(obj.matrixWorld);geometry.translate(-centre.x,-centre.y,-centre.z);geometry.scale(scale,scale,scale);const mesh=new THREE.Mesh(geometry,material(part.color));mesh.userData=part;heart.add(mesh);meshes.push(mesh);if(!byId.has(part.id))byId.set(part.id,[]);byId.get(part.id).push(mesh);}
+  addArchBranchesAndTrims();
   disposeNode(gltf.scene);decoder.dispose();loaded=true;element.dataset.loaded='true';update(current);
  }).catch(error=>{if(destroyed)return;status.hidden=false;status.textContent=tr('Atlas yüklenemedi; şematik işaretler kalp anatomisi yerine geçmez.','Atlas failed to load; schematic markers do not replace cardiac anatomy.');element.dataset.loaded='error';console.error('Da Vinci atlas:',error);});
+ // Same atlas frame as heart.js: schematic supra-aortic branches on the arch, PA branches trimmed to hilar length.
+ function addArchBranchesAndTrims(){
+  const arch=meshes.find(m=>m.userData.sourceName==='Aortic arch');
+  if(arch)for(const b of buildArchBranches(arch.geometry)){const mesh=new THREE.Mesh(b.geometry,material(arch.userData.color));mesh.name=`${b.en} (schematic)`;mesh.userData={id:b.id,layer:'vessels',color:arch.userData.color,provenance:'schematic',label:{tr:b.tr,en:b.en}};heart.add(mesh);meshes.push(mesh);}
+  const verts=name=>{const m=meshes.find(x=>x.userData.sourceName===name);if(!m)return[];const p=m.geometry.attributes.position;return Array.from({length:p.count},(_,i)=>new THREE.Vector3().fromBufferAttribute(p,i));};
+  for(const [name,local] of pulmonaryBranchTrims(verts).planes){const plane=local.clone();for(const m of meshes)if(m.userData.sourceName===name)m.material.clippingPlanes=[plane];trims.push({plane,local});}
+  element.dataset.archBranches=meshes.filter(m=>m.userData.provenance==='schematic').map(m=>m.userData.id).sort().join(',');
+  element.dataset.paTrims=[...new Set(meshes.filter(m=>m.material.clippingPlanes?.length).map(m=>m.userData.sourceName))].join(',');
+ }
  function view(name){const positions={anterior:[0,.35,10.8],superior:[0,10.8,.01],left:[10,.8,0],posterior:[0,.35,-10.8]};camera.position.set(...positions[name]);camera.up.set(0,1,0);if(name==='superior')camera.up.set(0,0,-1);controls.target.set(0,0,0);controls.update();dirty=true;element.dataset.view=name;}
  update(current);
  return {element,update,view,destroy(){destroyed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();disposeNode(scene);renderer.dispose();renderer.forceContextLoss();element.remove();}};

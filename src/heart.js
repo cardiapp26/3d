@@ -14,6 +14,7 @@ import { addLaaMarker, smoothLaNormals, laaOrificeOf } from './la-landmarks.js';
 import { createAuscultationMarkers } from './auscultation-points.js';
 import { createThorax } from './thorax.js';
 import { createCoronaryGrafts, GRAFTS } from './coronary-grafts.js';
+import { buildSchematicPda } from './coronary-pda.js';
 import { createIcns } from './icns.js';
 import { createTransseptal } from './transseptal.js';
 import { createCathLab } from './cath-lab.js';
@@ -35,6 +36,8 @@ import { createRvThorax } from './rv-thorax.js';
 import { chestPlaneZ } from './auscultation-points.js';
 import { RVOT_SEGMENT_TEXT, RVOT_SEGMENTS } from './eps/rvot-segments.js';
 import { createModeratorBand } from './moderator-band.js';
+import { buildArchBranches } from './aortic-arch-branches.js';
+import { pulmonaryBranchTrims } from './pulmonary-trims.js';
 import { mitralParts, wholeMesh, TRICUSPID_LEAFLETS, AORTIC_CUSPS, pulmonaryCusp } from './valve-parts.js';
 import { computeContours, drawContours } from './fluoro-contours.js';
 import { separateAtriaFromAorta } from './transverse-sinus.js';
@@ -128,6 +131,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   // Miyazaki 2026 Figure 2 view (RV mode): inflow/outflow/apical regions, crest, septomarginal trabeculation.
   let rvFig2=false,rvFig2Data=null;
   const fig2On=()=>rvFig2&&mode==='rv'&&!fluoroscopy&&!rvotOn();
+  // Aortic root as a faint silhouette behind the opened RV (orientation for the crest and the outflow).
+  const FIG2_CONTEXT_IDS=['aorta','lcc','rcc','ncc'];
   // Miyazaki 2026 Figure 3A-B view (RV mode): right heart blue, left heart red, electrodes and outflow axes.
   let rvFig3=false,rvThorax=null,rvFig3Colors=null;
   // Figure 3C axial levels: pulmonary root, high RVOT, low RVOT (heights from the atlas valves).
@@ -236,12 +241,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   function computeVesselTrims(){
     const verts=name=>{const m=meshes.find(x=>x.name===name);if(!m)return[];m.updateWorldMatrix(true,false);const p=m.geometry.attributes.position;const out=[];for(let i=0;i<p.count;i++)out.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld));return out;};
     const bifurcation=sourceCenter('pa')||new THREE.Vector3(0.07,1.5,-0.42);
-    const bif=verts('Bifurcation of pulmonary trunk');
-    const bifCenter=bif.length?bif.reduce((a,v)=>a.add(v),new THREE.Vector3()).multiplyScalar(1/bif.length):bifurcation;
     const la=sourceCenter('la')||new THREE.Vector3(-0.05,0.27,-0.37);
-    // LPA: keep the arch over the left bronchus (~4 cm), drop the lower-lobe run.
-    const lpa=vesselTrimPlane(verts('Left pulmonary artery'),bifCenter,1.1);
-    if(lpa)vesselTrims.set('Left pulmonary artery',lpa);
+    // LPA and RPA: hilar length from the bifurcation (pulmonary-trims.js, shared with the ECG atlas).
+    for(const [name,plane] of pulmonaryBranchTrims(verts,bifurcation).planes)vesselTrims.set(name,plane);
     // RSPV: keep a stump comparable to the other pulmonary veins.
     const rspv=vesselTrimPlane(verts('Right superior pulmonary vein'),la,0.55);
     if(rspv)vesselTrims.set('Right superior pulmonary vein',rspv);
@@ -305,7 +307,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
           : ['lv','rv','lcc','rcc','ncc','pulmonary-valve','mitral-annulus','tricuspid-annulus'];
         if(!ids.includes(m.userData.id)){m.visible=false;continue;}
       }
-      if(chamber&&!chamber.ids.includes(m.userData.id)&&!(rvotOn()&&(RVOT_SECTION_IDS.includes(m.userData.id)||(rvotCamera==='posterior'&&['pa','pulmonary-valve'].includes(m.userData.id))))&&!(fig3On()&&FIG3_IDS.includes(m.userData.id))){m.visible=false;continue;}
+      if(chamber&&!chamber.ids.includes(m.userData.id)&&!(rvotOn()&&(RVOT_SECTION_IDS.includes(m.userData.id)||(rvotCamera==='posterior'&&['pa','pulmonary-valve'].includes(m.userData.id))))&&!(fig3On()&&FIG3_IDS.includes(m.userData.id))&&!(fig2On()&&FIG2_CONTEXT_IDS.includes(m.userData.id))){m.visible=false;continue;}
       if(fig3On()&&!FIG3_IDS.includes(m.userData.id)){m.visible=false;continue;}
       if(rvotOn()&&RVOT_HIDDEN_IDS.includes(m.userData.id)&&!(rvotCamera==='posterior'&&m.userData.id==='pulmonary-valve')){m.visible=false;continue;}
       if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
@@ -339,7 +341,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       const allowed=system==='all'||(branch&&branch!=='veins'&&(system==='both'||system===branch))||id==='aorta'||layer==='valves'||layer==='chambers'||branch==='veins'||layer==='vessels';
       const leafletKey=m.userData.leaflet?`${id}-${m.userData.leaflet}`:null;
-      m.visible=(Boolean(chamber)||mode==='defects')||visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&allowed;
+      m.visible=(Boolean(chamber)||mode==='defects')||visibility[layer]!==false&&visibility[id]!==false&&(!m.userData.veinGroup||visibility[m.userData.veinGroup]!==false)&&(!leafletKey||visibility[leafletKey]!==false)&&(!m.userData.followsId||visibility[m.userData.followsId]!==false)&&allowed;
       // The crista is a ridge inside the RA: it stays opaque when the walls are faded.
       const tissue=layer==='chambers'&&!['crista-terminalis','coumadin-ridge','eustachian-valve','chiari-network'].includes(id);
       // Catheters run inside these vessels in the transseptal lesson; keep them
@@ -351,6 +353,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       let alpha=mode==='defects'?(layer==='chambers'?.16:layer==='valves'?.55:.22):mode==='atria'&&selected==='laa'?(id==='la'?Math.min(opacity,.32):1):tissue?opacity:faintPa?.22:roofContext?.14:catheterVessel?.28:(id==='aorta'&&rootWindow?.22:1);
       // RVOT section: the LV and aorta are context, the RV ring is the subject.
       if(rvotOn()&&(id==='lv'||id==='aorta'))alpha=Math.min(alpha,.3);
+      if(fig2On()&&FIG2_CONTEXT_IDS.includes(id))alpha=Math.min(alpha,.28);
       // Posterior view (Figs. 11-12 A-B): coronaries and cardiac veins fade so the posterior wall and summit stay readable.
       if(rvotOn()&&rvotCamera==='posterior'&&(layer==='coronaries'||['gcv','cs','mcv','piv','cardiac-veins'].includes(id)))alpha=Math.min(alpha,.22);
       // Figure 3 tint: right heart blue, left heart red (meshes without vertex colours).
@@ -479,6 +482,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     for (const [id, branchTable] of Object.entries(coronary.tables)) { const m = meshMap.get(id)?.[0]; if (m) m.userData.branches = branchTable; }
     atlasAdjustments.septalReorder = coronary.septalMoves;
     atlasAdjustments.branchMoves = coronary.branchMoves;
+    // The atlas has no PDA: a schematic one from the crux along the inferior interventricular groove.
+    const pda = buildSchematicPda(id => meshMap.get(id) || []);
+    if (pda) { layers.coronaries.add(pda); register(pda, 'pda'); }
+    buildSupraAorticBranches();
     const lmCenter=sourceCenter('lm'),rccCenter=sourceCenter('rcc');
     rootHeight=Math.max(lmCenter?.y??.6,rccCenter?.y??.6)+.13;rootPlane.constant=rootHeight;
     ivcPlane.constant=-(chamberBounds.min.y-center.y)*scale+.45;
@@ -495,7 +502,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     mitralScallops.build();
     buildPartTables();
     thorax.build();
-    grafts.setGraft(activeGraft);
+    grafts.build();grafts.setGraft(activeGraft);
     computeVesselTrims();
     modelReady=true;
     epLandmarks.init();
@@ -515,7 +522,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     idle(() => { channels?.prepare(); const step = () => { if (!disposed && !overlayFollow?.prepare(channels?.fieldContext())) idle(step); }; idle(step); });
     // Lesson overlays, devices and flow ride the beating heart (phase D).
     // Before the first beat (or with the heart at rest) there is no field.
-    overlayFollow = createOverlayFollow({ getContext: () => channels?.isDeformed() ? channels.fieldContext() : null, roots: () => [epLandmarks.group, pacemakerLeads.group, transseptal.group, cathLab.group, bachmannTargetGroup] });
+    overlayFollow = createOverlayFollow({ getContext: () => channels?.isDeformed() ? channels.fieldContext() : null, roots: () => [epLandmarks.group, pacemakerLeads.group, transseptal.group, cathLab.group, bachmannTargetGroup, grafts.group] });
     bloodFlow = createBloodFlow({ resolveRoutes: () => withRestPose(() => measuredFlowRoutes({ sourceCenter, meshVertices, getMeshes: id => meshMap.get(id) || [], getVesselTrim: name => vesselTrims.get(name) || null })) });
     bloodFlow.setField(overlayFollow.points);
     layers.flow.add(bloodFlow.group);
@@ -688,6 +695,19 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     for(const m of meshMap.get('tricuspid')||[]){const name=TRICUSPID_LEAFLETS[m.userData.leaflet];if(name)m.userData.parts=wholeMesh(m,name);}
     for(const id of ['lcc','rcc','ncc'])for(const m of meshMap.get(id)||[])m.userData.parts=wholeMesh(m,AORTIC_CUSPS[id]);
     for(const m of pulmonary){const name=pulmonaryCusp(m.userData.sourceName||m.name);if(name)m.userData.parts=wholeMesh(m,name);}
+  }
+
+  // Supra-aortic branches (schematic, seated on the atlas arch; aortic-arch-branches.js). They follow the aorta's visibility toggle.
+  function buildSupraAorticBranches() {
+    const arch = meshes.find(m => m.name === 'Aortic arch');
+    if (!arch) return;
+    for (const b of buildArchBranches(arch.geometry)) {
+      const mesh = new THREE.Mesh(b.geometry, material(0xc18068));
+      mesh.name = `${b.en} (schematic)`;
+      mesh.userData = { id: b.id, layer: 'vessels', color: 0xc18068, provenance: 'schematic', sourceName: mesh.name, followsId: 'aorta', origin: b.origin.toArray(), end: b.end.toArray(), radius: b.radius, parentId: b.parent };
+      arch.parent.add(mesh);
+      register(mesh, b.id);
+    }
   }
 
   // Moderator band: RV muscle bundle around the RBB, septum to the anterior papillary base.
@@ -1148,6 +1168,23 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     };
   }
 
+  function restoreCameraPose(pose) {
+    if (![pose?.position, pose?.target].every(v => Array.isArray(v) && v.length === 3 && v.every(Number.isFinite))) return;
+    transition = false;
+    camera.position.fromArray(pose.position);
+    controls.target.fromArray(pose.target);
+    cameraTarget.copy(camera.position);
+    lookTarget.copy(controls.target);
+    controls.update();
+    // OrbitControls change handlers can recenter the target. Preserve the snapshot.
+    controls.target.fromArray(pose.target);
+    lookTarget.copy(controls.target);
+    camera.lookAt(controls.target);
+    container.dataset.cameraSettled = 'true';
+    emitAngleChange();
+    requestRender();
+  }
+
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let catheterPickables=null;
   function pickTargets(){
@@ -1257,7 +1294,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const atlas=object.userData.provenance==='atlas';
     // With a graft shown, the graft and the artery it fills carry the contrast; the other natives do not.
     const graftRun=activeGraft?grafts.targetOf(activeGraft):null;
-    const contrast=(object.userData.graft&&object.userData.graft===activeGraft)||(atlas && layer==='coronaries' && mode==='angiography' && (!activeGraft||object.userData.id===graftRun));
+    const contrast=(object.userData.graft&&object.userData.graft===activeGraft)||((atlas||object.userData.nativeCoronary) && layer==='coronaries' && mode==='angiography' && (!activeGraft||object.userData.id===graftRun));
     let device=false;
     let schematicTissue=false;
     let deviceTint=null;
@@ -1358,6 +1395,13 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       applyState();
     },
+    /** Restore the exact flags, including absence of per-structure overrides. */
+    restoreLayerVisibility(saved){
+      for(const key of Object.keys(visibility))delete visibility[key];
+      Object.assign(visibility,saved);
+      applyState();
+      requestRender();
+    },
     setValvesVisible(value){
       const boolVal = Boolean(value);
       visibility.valves = boolVal;
@@ -1410,7 +1454,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setCoronaryContrast(value){coronaryContrast=THREE.MathUtils.clamp(Number(value)||0,0,1);requestRender();},
     /** Show a bypass graft ('lima' | 'svg-om' | 'svg-pda') or none (null). */
     setGraft(id){activeGraft=GRAFTS[id]?id:null;if(modelReady)grafts.setGraft(activeGraft);requestRender();},
-    zoomIn,zoomOut,getZoomInfo,
+    zoomIn,zoomOut,getZoomInfo,restoreCameraPose,
     /** Segmentation-style label colours on the atlas meshes; fluoroscopy takes precedence while it is on. */
     setSegmentation,
     getSegmentation(){return {on:segmentation,shown:segmentationShown(),labels:segLegend.keys()};},
@@ -1418,6 +1462,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     setFluoroContours(on){fluoroContours=Boolean(on);contourKey='';requestRender();},
     getFluoroContours(){return {on:fluoroContours,visible:!contourCanvas.hidden,contours:lastContours.map(c=>({id:c.id,points:c.points.length,centroid:c.centroid}))};},selectStructure,clearSelection(){selectStructure(null,false);},
     setOpacity(value){opacity=THREE.MathUtils.clamp(Number(value),.08,1);applyState();},
+    getOpacity:()=>opacity,
     setBeating(value){
       beating=mode==='defects'?false:Boolean(value);
       if(beating)lastAtrialPhase=null;   // the shared clock drives atria and ventricles together again

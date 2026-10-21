@@ -95,7 +95,7 @@ export const RVOT_SEGMENT_TEXT = {
     absentShort: 'bu kalpte yok',
     neighbours: { chest: 'ön göğüs duvarı · V2 (sol parasternal)', aorta: 'aort kökü', rca: 'sağ AV oluk · RCA', lad: 'ön IV oluk · LAD, AIV, S1', summit: 'LV summit', lvot: 'LVOT ↙' },
     fields: { neighbour: 'Komşu', surface: 'Endokard yüzeyi', procedure: 'Ablasyon', device: 'Cihaz / ileti sistemi', figures: 'Şekil' },
-    variantTitle: 'Posterior serbest duvar (Şekil 10–12)',
+    variantTitle: 'Posterior serbest duvar',
     variants: { present: 'Var · “yükselmiş infundibulum”', absent: 'Yok · pulmoner kök LV summit ile devamlı' },
     variantNote: {
       present: 'İnce fibroadipöz doku posterior serbest duvarı LV summit’ten ayırır. LV summit’in septal kenarına RVOT’un posterior serbest duvarından ulaşılabilir; burası mediyal duvarla birlikte perforasyon riski taşıyan ikinci bölgedir.',
@@ -126,7 +126,7 @@ export const RVOT_SEGMENT_TEXT = {
     absentShort: 'absent in this heart',
     neighbours: { chest: 'anterior chest wall · V2 (left parasternal)', aorta: 'aortic root', rca: 'right AV groove · RCA', lad: 'AIV groove · LAD, AIV, S1', summit: 'LV summit', lvot: 'LVOT ↙' },
     fields: { neighbour: 'Neighbour', surface: 'Endocardial surface', procedure: 'Ablation', device: 'Devices / conduction', figures: 'Figure' },
-    variantTitle: 'Posterior free wall (Figs. 10–12)',
+    variantTitle: 'Posterior free wall',
     variants: { present: 'Present · “elevated infundibulum”', absent: 'Absent · pulmonary root continuous with LV summit' },
     variantNote: {
       present: 'A thin fibroadipose plane separates the posterior free wall from the LV summit. The septal margin of the LV summit can be approached from the posterior free wall of the RVOT; with the medial wall, this is the second region of perforation risk.',

@@ -747,6 +747,7 @@ const hemoMode = heart ? createHemoMode({
   mount: document.querySelector('#hemo-panel'),
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
   onFocus: station => inspect(`cath-${station === 'pcwp' ? 'wedge' : station}`, false, false),
+  onLiveViewChange: active => { if (active) setWiggersOpen(false); },
   onOpenJvp: scenario => openJvpCase(scenario)
 }) : null;
 const examMode = heart ? createExamMode({
@@ -1183,6 +1184,8 @@ function setMode(newMode, updateUrl = true) {
   rememberMode(newMode);
   step = 0;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode && b.dataset.modeStep === undefined));
+  // Restore the isolated hemodynamic scene before applying another mode.
+  hemoMode?.exit();
   heart?.setMode(mode);
   const isDefects = mode === 'defects';
   const isEcho = Boolean(ECHO_MODALITY[mode]);
@@ -2229,6 +2232,8 @@ window.addEventListener('keydown', e => {
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
 
   const key = e.key;
+  // The live cutaway owns pressure materials and its imaging plane.
+  if (document.documentElement.dataset.liveWiggers && (/^[aprlsmwcxgofn0]$/i.test(key) || key === 'ArrowRight')) return;
 
   if (key >= '1' && key <= '9') {
     const modeIndex = parseInt(key, 10) - 1;

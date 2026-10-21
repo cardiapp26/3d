@@ -5,6 +5,8 @@
 
 import './hemo-panel.css';
 import './hemo-loads.css';
+import './live-wiggers.css';
+import { createLiveWiggersPanel } from './live-wiggers-panel.js';
 import { createPhysiologyGuide } from './physiology-guide.js';
 import { createLoadExplorer } from './hemo-loads.js';
 import { STATIONS, STATION_INFO } from './hemodynamics.js';
@@ -147,8 +149,8 @@ function buildDom() {
   // Sub-tabs under the scenario header: pressure tracings or the LV
   // pressure-volume loop (hemo-pv-loop.js); metrics and calculators stay shared.
   refs.tabs = el('div', 'hemo-tabs', null, { role: 'tablist' });
-  refs.tabButtons = ['pressure', 'pv', 'loads', 'physiology'].map(view => {
-    const b = Object.assign(textEl('button', 'hemo-tab', view === 'physiology' ? 'physiologyTab' : view === 'loads' ? 'loadsTab' : view === 'pv' ? 'pvLoop' : 'pressureTab'), { type: 'button' });
+  refs.tabButtons = ['pressure', 'pv', 'loads', 'physiology', 'wiggers'].map(view => {
+    const b = Object.assign(textEl('button', 'hemo-tab', view === 'wiggers' ? 'wiggersTab' : view === 'physiology' ? 'physiologyTab' : view === 'loads' ? 'loadsTab' : view === 'pv' ? 'pvLoop' : 'pressureTab'), { type: 'button' });
     b.setAttribute('role', 'tab');
     b.dataset.hemoView = view;
     refs.tabs.append(b);
@@ -335,7 +337,7 @@ export function createHemoPanel(root, options = {}) {
   const { hemo, getCycleState = () => ({}), onScenarioChange, onChannelsChange, onStationFocus } = options;
   if (!root || !hemo) throw new Error('createHemoPanel: root and options.hemo are required');
   let lang = options.lang === 'en' ? 'en' : 'tr';
-  const state = { channels: [...DEFAULT_CHANNELS], beats: 3, respiration: false, pvc: false, pvLoop: false, loads: false, physiology: false, scenarioId: hemo.getScenario().id };
+  const state = { channels: [...DEFAULT_CHANNELS], beats: 3, respiration: false, pvc: false, pvLoop: false, loads: false, physiology: false, wiggers: false, scenarioId: hemo.getScenario().id };
   let pvCache = { id: null, data: null };
   // Interactive P-V model state: source, condition preset and the four parameters.
   const pv = { source: 'scenario', condition: 'normal', params: pvParams({}, 'normal') };
@@ -362,6 +364,9 @@ export function createHemoPanel(root, options = {}) {
   physiology.element.hidden = true;
   element.insertBefore(physiology.element, hint);
   root.append(element);
+  const liveWiggers = createLiveWiggersPanel(element, {
+    getLang: () => lang, getCycleState, ...options.liveWiggers
+  });
   const layer = document.createElement('canvas');
 
   function renderScenarioOptions() {
@@ -387,7 +392,7 @@ export function createHemoPanel(root, options = {}) {
 
   function applyText() {
     const T = TEXT[lang];
-    for (const node of element.querySelectorAll('[data-k]')) node.textContent = T[node.dataset.k];
+    for (const node of element.querySelectorAll('[data-k]')) node.textContent = node.dataset.k === 'wiggersTab' ? (lang === 'tr' ? 'Canlı Wiggers' : 'Live Wiggers') : T[node.dataset.k];
     presetButtons.forEach((b, i) => { b.title = T.presetTitles[i]; });
     canvas.setAttribute('aria-label', T.canvas);
     pvCanvas.setAttribute('aria-label', T.pvCanvas);
@@ -466,6 +471,7 @@ export function createHemoPanel(root, options = {}) {
   function draw(cycleState) {
     if (destroyed) return;
     const cs = cycleState || getCycleState() || {};
+    if (state.wiggers) { liveWiggers.tick(cs); return; }
     syncScenario();
     if (state.loads || state.physiology) return;
     const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
@@ -530,17 +536,21 @@ export function createHemoPanel(root, options = {}) {
   }
   function applyPvLoop(enabled) { applyView(enabled ? 'pv' : 'pressure'); }
   function applyView(view) {
+    const previous = state.wiggers;
     state.pvLoop = view === 'pv';
     state.loads = view === 'loads';
     state.physiology = view === 'physiology';
+    state.wiggers = view === 'wiggers';
     pvWrap.hidden = !state.pvLoop;
     pressureView.hidden = view !== 'pressure';
     loads.element.hidden = !state.loads;
     physiology.element.hidden = !state.physiology;
-    for (const node of [grid, metricsTitle, calculators.element, element.querySelector('.hemo-header')]) node.hidden = state.loads || state.physiology;
-    hint.hidden = state.loads || state.physiology || !hint.textContent;
+    liveWiggers.setActive(state.wiggers);
+    for (const node of [grid, metricsTitle, calculators.element, element.querySelector('.hemo-header')]) node.hidden = state.loads || state.physiology || state.wiggers;
+    hint.hidden = state.loads || state.physiology || state.wiggers || !hint.textContent;
     for (const b of tabButtons) b.setAttribute('aria-selected', String(b.dataset.hemoView === view));
     cache.key = '';
+    if (previous !== state.wiggers) options.onViewChange?.(view);
     renderMetrics();
     draw();
   }
@@ -584,6 +594,7 @@ export function createHemoPanel(root, options = {}) {
       calculators.setLanguage(lang);
       loads.setLanguage(lang);
       physiology.setLanguage(lang);
+      liveWiggers.setLanguage(lang);
       draw();
     },
     setScenario(id) {
@@ -605,7 +616,9 @@ export function createHemoPanel(root, options = {}) {
     setRespiration(enabled) { state.respiration = Boolean(enabled); respBox.checked = state.respiration; draw(); },
     /** Toggle the post-PVC beat (the beat after the cursor's first beat). */
     triggerPvc() { state.pvc = !state.pvc; pvcButton.setAttribute('aria-pressed', String(state.pvc)); draw(); },
-    setHint(text) { hint.textContent = text || ''; hint.hidden = state.loads || state.physiology || !text; },
+    setHint(text) { hint.textContent = text || ''; hint.hidden = state.loads || state.physiology || state.wiggers || !text; },
+    setView: applyView,
+    getView: () => state.wiggers ? 'wiggers' : state.pvLoop ? 'pv' : state.loads ? 'loads' : state.physiology ? 'physiology' : 'pressure',
     /** Show or hide the LV pressure-volume loop. */
     setPvLoop(enabled) { applyPvLoop(enabled); },
     getPvLoop: () => (state.pvLoop ? (pv.source === 'model' ? pvModelLoop(pv.params) : pvCache.data) : null),

@@ -1,6 +1,7 @@
 import { createHemodynamics } from './hemodynamics.js';
 import { createHemoPanel } from './hemo-panel.js';
 import { hemoJvpScenario } from './jvp-physiology.js';
+import { createHeartWiggersView } from './left-heart-wiggers-view.js';
 
 // Glue between the catheterization lesson, the 3D cath lab and the
 // hemodynamics panel (one module: catheterization and hemodynamics). The
@@ -27,15 +28,58 @@ const JVP_LINK = Object.freeze({ tr: 'Boyunda aynı olgu: juguler venöz nabız 
  *   onOpenJvp?: (jvpScenario: string) => void }} deps
  *   onOpenJvp: a scenario the JVP model shares (normal, constriction, tamponade) opens the same case there.
  */
-export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp }) {
+export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp, onLiveViewChange }) {
   let hemo = null;
   let panel = null;
   let jvpLink = null;
+  let liveScene = null;
+  let liveActive = false;
+  let liveSide = 'left';
+  let previousClock = null;
+
+  function setLiveActive(value) {
+    const next = Boolean(value && active);
+    if (next === liveActive) return;
+    liveActive = next;
+    if (next) {
+      previousClock = heart.getCycleState();
+      liveScene ||= createHeartWiggersView({ heart, getLang });
+      liveScene.enter(liveSide).then(() => {
+        if (liveActive && !liveScene.getState().active) throw new Error('Native heart cutaway unavailable');
+      }).catch(error => {
+        if (!liveActive) return;
+        console.error('Live Wiggers:', error);
+        panel?.setView('pressure');
+        panel?.setHint(getLang() === 'tr' ? 'Canlı kalp kesiti yüklenemedi. Basınç görünümüne dönüldü.' : 'The live heart cutaway could not load. Returned to pressure view.');
+      });
+      document.documentElement.dataset.liveWiggers = 'true';
+      onLiveViewChange?.(true);
+      heart.setRhythm('sinus');
+      heart.setBpm(72);
+      heart.setCycleSpeed(0.5);
+      heart.setBeating(true);
+    } else {
+      liveScene?.exit();
+      delete document.documentElement.dataset.liveWiggers;
+      if (previousClock) {
+        const saved = previousClock;
+        previousClock = null;
+        heart.setRhythm(saved.rhythm);
+        heart.setBpm(saved.bpm);
+        heart.setCycleSpeed(saved.speed);
+        heart.seekCycle(saved.phase);
+        heart.setBeating(saved.playing);
+      }
+      onLiveViewChange?.(false);
+      if (active && heart.getState().mode === 'cath') showStations(panel?.getChannels());
+    }
+    renderJvpLink();
+  }
 
   function renderJvpLink() {
     if (!jvpLink) return;
     const target = onOpenJvp && hemo ? hemoJvpScenario(hemo.getScenario().id) : null;
-    jvpLink.hidden = !target;
+    jvpLink.hidden = liveActive || !target;
     jvpLink.textContent = JVP_LINK[getLang() === 'en' ? 'en' : 'tr'];
   }
   let active = false;
@@ -48,6 +92,18 @@ export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp }) {
       hemo,
       lang: getLang(),
       getCycleState: () => heart.getCycleState(),
+      liveWiggers: {
+        onSeek: phase => heart.seekCycle(phase),
+        onPlaying: playing => heart.setBeating(playing),
+        onBpm: bpm => heart.setBpm(bpm),
+        onSpeed: speed => heart.setCycleSpeed(speed),
+        // Left, right or both cutaways on the same clock.
+        onSide(side) {
+          liveSide = side;
+          if (liveActive) liveScene?.setSide(side).catch(error => console.error('Live Wiggers side:', error));
+        }
+      },
+      onViewChange: view => setLiveActive(view === 'wiggers'),
       onScenarioChange() {
         heart.setBpm(hemo.getScenario().hr);
         renderJvpLink();
@@ -88,10 +144,12 @@ export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp }) {
       active = true;
       ensurePanel();
       mount.hidden = false;
+      setLiveActive(panel.getView() === 'wiggers');
     },
     /** Station targets of the active scenario (the Wiggers strip draws the same pressures). */
-    getStations() { return active && hemo ? hemo.getScenario().stations : null; },
+    getStations() { return active && hemo && !liveActive ? hemo.getScenario().stations : null; },
     exit() {
+      setLiveActive(false);
       if (active && previousBpm !== null) heart.setBpm(previousBpm);
       active = false;
       mount.hidden = true;
@@ -101,6 +159,8 @@ export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp }) {
     applyStep(step, { relabel = false } = {}) {
       const p = ensurePanel();
       if (relabel) { p.setHint?.(step.title || ''); return; }
+      // Leave the independent normal model before the lesson changes its clock.
+      p.setView(step.pvLoop ? 'pv' : 'pressure');
       if (step.scenario) {
         p.setScenario(step.scenario);
         heart.setBpm(hemo.getScenario().hr);
@@ -127,10 +187,12 @@ export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp }) {
       showStations(next);
     },
     tick(state) {
+      if (liveActive) liveScene?.tick(state);
       if (active && panel) panel.draw(state);
     },
     setLanguage(lang) {
       panel?.setLanguage(lang);
+      liveScene?.setLanguage(lang);
       renderJvpLink();
     },
     isActive: () => active,

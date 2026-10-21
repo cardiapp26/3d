@@ -103,8 +103,8 @@ export const FIG2_LABELS = {
 
 export const FIG2_TEXT = {
   tr: {
-    toggle: 'Şekil 2 · RV bölümleri ve çıkış yapıları',
-    intro: 'Serbest duvar kaldırılmış, önden bakış (Miyazaki 2026, Şekil 2). Sağ ventrikül üç bölgeye ayrılır: giriş, çıkış ve apikal trabeküler bölge. Üç çıkış yapısı, yani supraventriküler krista, septomarjinal trabekülasyon ve moderatör bant, çıkış yolunun alt sınırını girişin üstünde çevreler.',
+    toggle: 'RV bölümleri ve çıkış yapıları',
+    intro: 'Serbest duvar kaldırılmış, önden bakış (Miyazaki 2026). Sağ ventrikül üç bölgeye ayrılır: giriş, çıkış ve apikal trabeküler bölge. Üç çıkış yapısı, yani supraventriküler krista, septomarjinal trabekülasyon ve moderatör bant, çıkış yolunun alt sınırını girişin üstünde çevreler.',
     legend: 'Renkler',
     items: [
       ['crest', 'Triküspit ile pulmoner kapak arasındaki kas kıvrımı; sağ koroner aort sinüsünü örten endokard yüzeyi düzdür ve pulmoner kapağı triküspit kapaktan yükseltir. RVOT kesitinde posterolateral serbest duvar ile aynı yapıdır.'],
@@ -119,8 +119,8 @@ export const FIG2_TEXT = {
     limits: 'Atlas RV iç yüzeyi düzdür; trabeküller gösterilemez. Krista ve septomarjinal trabekülasyon, kapak merkezleri, sağ koroner sinüs ve moderatör bant ucundan türetilmiş öğretim bölgeleridir.'
   },
   en: {
-    toggle: 'Figure 2 · RV regions and outflow structures',
-    intro: 'Free wall removed, anterior view (Miyazaki 2026, Figure 2). The right ventricle has three regions: inflow, outflow and apical trabeculated. Three outflow structures, the supraventricular crest, septomarginal trabeculation and moderator band, encircle the inferior border of the outflow above the inflow.',
+    toggle: 'RV regions and outflow structures',
+    intro: 'Free wall removed, anterior view (Miyazaki 2026). The right ventricle has three regions: inflow, outflow and apical trabeculated. Three outflow structures, the supraventricular crest, septomarginal trabeculation and moderator band, encircle the inferior border of the outflow above the inflow.',
     legend: 'Colours',
     items: [
       ['crest', 'Muscular fold between the tricuspid and pulmonary valves; its endocardium over the right coronary aortic sinus is smooth and it lifts the pulmonary valve away from the tricuspid valve. In the RVOT section it is the posterolateral free wall.'],

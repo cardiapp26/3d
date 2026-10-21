@@ -109,15 +109,15 @@ export function createRvThorax({ parent, chestZ, rvot, lvot }) {
 
 export const FIG3_TEXT = {
   tr: {
-    toggle: 'Şekil 3 · Göğüs içinde RVOT',
-    levels: { front: 'Önden (A–B)', root: 'Pulmoner kök', high: 'Yüksek RVOT', low: 'Düşük RVOT' },
+    toggle: 'Göğüs içinde RVOT',
+    levels: { front: 'Önden', root: 'Pulmoner kök', high: 'Yüksek RVOT', low: 'Düşük RVOT' },
     levelNote: {
       root: 'Pulmoner kök düzeyi, yukarıdan (ön yukarıda, hasta sağı sağda): pulmoner kök çıkan aortun solunda ve aort kökünün sol-üstündedir.',
       high: 'Yüksek RVOT düzeyi: RVOT aort kökünün sol-önündedir; aort kökü (R, L) RVOT’un arkasında görülür.',
       low: 'Düşük RVOT düzeyi: RVOT, LVOT’un önünde ve ön-üstündedir. Bu düzeyde V2 elektrodu, RVOT ve LVOT ön-arka bir sıra oluşturur.'
     },
     levelLimits: 'Kesitler BT görüntüsü değil; atlas yüzeylerinin konturlarıdır. Sağ taraf mavi, sol taraf kırmızı halka; düzeyler pulmoner kapak ve aort kapağı yüksekliklerinden seçildi.',
-    intro: 'Önden bakış (Miyazaki 2026, Şekil 3A–B). Sağ kalp mavi, sol kalp kırmızı; RVOT parlak mavi. Prekordiyal elektrotlar göğüs ön yüzü çerçevesinde: V1 ve V2 4. interkostal aralıkta sternum kenarlarında, V4 5. aralıkta midklaviküler çizgide, V3 ikisinin ortasında.',
+    intro: 'Önden bakış (Miyazaki 2026). Sağ kalp mavi, sol kalp kırmızı; RVOT parlak mavi. Prekordiyal elektrotlar göğüs ön yüzü çerçevesinde: V1 ve V2 4. interkostal aralıkta sternum kenarlarında, V4 5. aralıkta midklaviküler çizgide, V3 ikisinin ortasında.',
     v2: (m) => m.over
       ? `Bu atlasta V2, RVOT’un hemen önünde (ön yüzde ${m.cm.toFixed(1)} cm uzaklıkta, yaklaşık ${(m.depth * 3.7).toFixed(1)} cm derinde).`
       : `Bu atlasta V2, RVOT’a ön yüzde ${m.cm.toFixed(1)} cm uzakta; gerçekte V2’nin yeri kişiden kişiye belirgin değişir.`,
@@ -130,15 +130,15 @@ export const FIG3_TEXT = {
     limits: 'Kaburga, sternum ve akciğer atlasta yoktur; göğüs çizgileri ve elektrotlar şematik çerçevededir (yaklaşık 3,7 cm/birim). Göğüs düz bir düzlem olarak alındığından V5 ve V6 yaklaşık konumdadır.'
   },
   en: {
-    toggle: 'Figure 3 · RVOT in the thorax',
-    levels: { front: 'Anterior (A–B)', root: 'Pulmonary root', high: 'High RVOT', low: 'Low RVOT' },
+    toggle: 'RVOT in the thorax',
+    levels: { front: 'Anterior', root: 'Pulmonary root', high: 'High RVOT', low: 'Low RVOT' },
     levelNote: {
       root: 'Pulmonary root level from above (anterior up, patient right on the right): the pulmonary root lies left of the ascending aorta and left superior to the aortic root.',
       high: 'High RVOT level: the RVOT lies left anterior to the aortic root; the aortic root (R, L) is seen behind it.',
       low: 'Low RVOT level: the RVOT lies anterior to anterosuperior to the LVOT. At this level V2, the RVOT and the LVOT form an anteroposterior sequence.'
     },
     levelLimits: 'The sections are not CT images but contours of the atlas surfaces. Right-sided structures are blue rings, left-sided red; levels are chosen from the pulmonary and aortic valve heights.',
-    intro: 'Anterior view (Miyazaki 2026, Figure 3A–B). Right heart blue, left heart red; RVOT bright blue. Precordial electrodes on the chest-wall frame: V1 and V2 at the 4th intercostal space beside the sternum, V4 at the 5th space on the midclavicular line, V3 midway.',
+    intro: 'Anterior view (Miyazaki 2026). Right heart blue, left heart red; RVOT bright blue. Precordial electrodes on the chest-wall frame: V1 and V2 at the 4th intercostal space beside the sternum, V4 at the 5th space on the midclavicular line, V3 midway.',
     v2: (m) => m.over
       ? `On this atlas V2 lies just in front of the RVOT (${m.cm.toFixed(1)} cm away in the frontal plane, about ${(m.depth * 3.7).toFixed(1)} cm deep).`
       : `On this atlas V2 is ${m.cm.toFixed(1)} cm from the RVOT in the frontal plane; in reality V2 placement varies markedly between individuals.`,

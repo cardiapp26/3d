@@ -3820,14 +3820,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
                 const showChanAp = st.rightPanelMode === 'channelopathy' || (st.rightPanelMode === 'auto' && st.catId === 'channelopathy');
                 const activeChanNode = CARDIAC_CHANNELOPATHY_NODES.find(n => n.id === st.chanNodeId) || CARDIAC_CHANNELOPATHY_NODES[0];
                 return `
-                  <div class="clin-right-view-tabs" role="tablist" aria-label="${isTr ? 'Sağ Panel Görünümü' : 'Right Panel View'}">
-                    <button type="button" class="clin-right-tab-btn ${!showChanAp ? 'active' : ''}" data-right-panel="heart">
-                      🫀 ${isTr ? '3B Kalp & Koroner Harita' : '3D Heart & Coronary Map'}
-                    </button>
-                    <button type="button" class="clin-right-tab-btn ${showChanAp ? 'active' : ''}" data-right-panel="channelopathy">
-                      🧬 ${isTr ? 'Faz 0–4 Kanalopati Atlası' : 'Phase 0–4 Channelopathies'}
-                    </button>
-                  </div>
+                  <!-- Channelopathies live in the ECG left panel; the AP atlas shows here for channelopathy conditions. -->
 
                   ${showChanAp ? `
                   <section class="clin-chan-section" aria-labelledby="clin-chan-heading">
