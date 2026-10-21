@@ -26,6 +26,16 @@ const indexContent = fs.readFileSync(indexPath, 'utf8');
 assert.equal(indexContent.match(/name=["']app-version["']\s+content=["']([^'"]+)["']/)?.[1], versionData.version, 'HTML and release version agree');
 assert.equal(indexContent.match(/name=["']app-build["']\s+content=["']([^'"]+)["']/)?.[1], versionData.build, 'HTML and worker cache revision agree');
 assert.match(indexContent, /<noscript>/);
+// Every page entry carries the release stamp.
+for (const page of ['hemo', 'exam', 'eps/anatomy', 'angio/3d', 'ecg', 'eps', 'echo', 'angio', 'pharmacology']) {
+  const file = path.resolve(page, 'index.html');
+  if (!fs.existsSync(file)) continue;
+  const html = fs.readFileSync(file, 'utf8');
+  const meta = html.match(/name=["']app-version["']\s+content=["']([^'"]+)["']/)?.[1];
+  if (meta) assert.equal(meta, versionData.version, `${page} page version agrees with release`);
+  const build = html.match(/name=["']app-build["']\s+content=["']([^'"]+)["']/)?.[1];
+  if (build) assert.equal(build, versionData.build, `${page} page build agrees with release`);
+}
 
 // 4. Verify translation strings
 setContentLanguage('tr');

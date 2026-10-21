@@ -44,8 +44,10 @@ export function createSceneLabels(container) {
    * @param {{ mesh: THREE.Mesh, index?: number, text: { tr: string, en: string }, tone: string, when: () => boolean }} entry
    *   `index`: anchor vertex (default: the vertex nearest the mesh centre).
    *   `always`: shown whenever `when` holds, also in 'hover' mode (named parts of a teaching section).
+   *   `hover`: in 'hover' mode, shown only while this returns true (e.g. the pointer is over its
+   *   region of a shared mesh), instead of the near/focus rule.
    */
-  function add({ mesh, index = null, text, tone, when, always = false }) {
+  function add({ mesh, index = null, text, tone, when, always = false, hover = null }) {
     if (!mesh?.geometry?.attributes?.position) return;
     const pos = mesh.geometry.attributes.position;
     if (index === null) {
@@ -61,7 +63,7 @@ export function createSceneLabels(container) {
     label.className = 'scene-label';
     label.dataset.tone = tone;
     overlay.append(label);
-    entries.push({ mesh, index, text, label, when, always, ids: idsOf(mesh) });
+    entries.push({ mesh, index, text, label, when, always, hover, ids: idsOf(mesh) });
   }
 
   function shown(mesh) {
@@ -73,7 +75,7 @@ export function createSceneLabels(container) {
     const lang = document.documentElement.lang === 'en' ? 'en' : 'tr';
     const width = overlay.clientWidth, height = overlay.clientHeight;
     const placed = [];
-    for (const { mesh, index, text, label, when, always, ids } of entries) {
+    for (const { mesh, index, text, label, when, always, hover, ids } of entries) {
       if (!when() || !shown(mesh)) { label.hidden = true; continue; }
       mesh.updateWorldMatrix(true, false);
       const p = WORLD.fromBufferAttribute(mesh.geometry.attributes.position, index).applyMatrix4(mesh.matrixWorld).project(camera);
@@ -82,7 +84,7 @@ export function createSceneLabels(container) {
       const x = (p.x + 1) / 2 * width, y = (1 - p.y) / 2 * height;
       const near = pointer && Math.hypot(pointer[0] - x, pointer[1] - y) < NEAR_PX;
       const focused = [...ids].some(id => focus.has(id));
-      label.hidden = mode === 'hover' && !near && !focused && !always;
+      label.hidden = mode === 'hover' && (hover ? !hover() : !near && !focused && !always);
       if (label.hidden) continue;
       label.textContent = text[lang];
       // Anchors of nearby markers can be close: lift a label clear of the

@@ -132,7 +132,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   let rvFig2=false,rvFig2Data=null;
   const fig2On=()=>rvFig2&&mode==='rv'&&!fluoroscopy&&!rvotOn();
   // Aortic root as a faint silhouette behind the opened RV (orientation for the crest and the outflow).
-  const FIG2_CONTEXT_IDS=['aorta','lcc','rcc','ncc'];
+  // Aortic valve level only (cusps): the ascending aorta would cover the RVOT.
+  const FIG2_CONTEXT_IDS=['lcc','rcc','ncc'];
   // Miyazaki 2026 Figure 3A-B view (RV mode): right heart blue, left heart red, electrodes and outflow axes.
   let rvFig3=false,rvThorax=null,rvFig3Colors=null;
   // Figure 3C axial levels: pulmonary root, high RVOT, low RVOT (heights from the atlas valves).
@@ -309,6 +310,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       }
       if(chamber&&!chamber.ids.includes(m.userData.id)&&!(rvotOn()&&(RVOT_SECTION_IDS.includes(m.userData.id)||(rvotCamera==='posterior'&&['pa','pulmonary-valve'].includes(m.userData.id))))&&!(fig3On()&&FIG3_IDS.includes(m.userData.id))&&!(fig2On()&&FIG2_CONTEXT_IDS.includes(m.userData.id))){m.visible=false;continue;}
       if(fig3On()&&!FIG3_IDS.includes(m.userData.id)){m.visible=false;continue;}
+      // The band lies inside the RV: only the axial cut shows it, not the closed anterior view.
+      if(fig3On()&&m.userData.id==='moderator-band'&&!fig3Sliced()){m.visible=false;continue;}
       if(rvotOn()&&RVOT_HIDDEN_IDS.includes(m.userData.id)&&!(rvotCamera==='posterior'&&m.userData.id==='pulmonary-valve')){m.visible=false;continue;}
       if(mitralFocus&&!['mitral','mitral-annulus','lv-papillary'].includes(m.userData.id)){m.visible=false;continue;}
       // Koch close-up: chambers, conduction and the venous entries of the catheters only.
@@ -657,12 +660,14 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     for(const id of ['inflow','outflow','apical','crest','smt']){
       const k=result.ids.indexOf(id),target=id==='crest'?result.anchors.crest:id==='smt'?result.anchors.smtTop.clone().lerp(result.anchors.mbSeptal,.5):centroidOfId(k);
       const index=target?nearestTo(target,i=>result.byVertex[i]===k):-1;
-      if(index>=0)sceneLabels.add({mesh:rv,index,tone:'region',text:{tr:FIG2_NAMES[id].tr,en:FIG2_NAMES[id].en},when:fig2On,always:true});
+      // Name shows while the pointer is over this region of the RV surface.
+      if(index>=0)sceneLabels.add({mesh:rv,index,tone:'region',text:{tr:FIG2_NAMES[id].tr,en:FIG2_NAMES[id].en},when:fig2On,hover:()=>hoverHit?.mesh===rv&&rvFig2Data?.byVertex[hoverHit.vertex]===k});
     }
+    const overMesh=m=>()=>hoverHit?.mesh===m;
     // Leaflets and sinuses carry the paper names on hover; the figure's key structures stay labelled.
-    for(const m of meshMap.get('tricuspid')||[]){const t=FIG2_LABELS.leaflets[m.userData.leaflet];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On});}
-    for(const m of [...pulmonary,...(meshMap.get('rv-papillary')||[])]){const t=FIG2_LABELS.sinuses[m.name]||FIG2_LABELS.papillary[m.name];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On,always:m.name==='Septal papillary muscle of right ventricle'});}
-    const mb=meshMap.get('moderator-band')?.[0];if(mb)sceneLabels.add({mesh:mb,tone:'region',text:FIG2_LABELS.band,when:fig2On,always:true});
+    for(const m of meshMap.get('tricuspid')||[]){const t=FIG2_LABELS.leaflets[m.userData.leaflet];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On,hover:overMesh(m)});}
+    for(const m of [...pulmonary,...(meshMap.get('rv-papillary')||[])]){const t=FIG2_LABELS.sinuses[m.name]||FIG2_LABELS.papillary[m.name];if(t)sceneLabels.add({mesh:m,tone:'region',text:t,when:fig2On,hover:overMesh(m)});}
+    const mb=meshMap.get('moderator-band')?.[0];if(mb)sceneLabels.add({mesh:mb,tone:'region',text:FIG2_LABELS.band,when:fig2On,hover:overMesh(mb)});
   }
   function buildPartTables(){
     const first=id=>meshMap.get(id)?.[0];
@@ -1207,21 +1212,22 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   // The named side branch under the last pick (coronary tubes), or null.
   let pickedBranch=null;
   const branchOf=h=>h.face?branchAt(h.object.userData.branches,h.face.a):null;
-  function pick(e){pickedBranch=null;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
+  let hoverHit=null;   // last picked surface hit: mesh and vertex, for region-level hover labels
+  function pick(e){pickedBranch=null;hoverHit=null;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
     const hits=raycaster.intersectObjects(pickTargets()).filter(h=>{for(let p=h.object;p;p=p.parent)if(!p.visible)return false;return !(h.object.material.clippingPlanes||[]).some(p=>p.distanceToPoint(h.point)<0);});
     // See-through tissue (opacity < .5) should not swallow clicks aimed at
     // devices or solid structures behind it.
     for(const h of hits){
-      if(h.object.userData.pickId)return h.object.userData.pickId;
-      if((h.object.material.opacity??1)>=0.5){pickedBranch=branchOf(h);return shownStructureId(h.object);}
+      if(h.object.userData.pickId){hoverHit={mesh:h.object,vertex:h.face?.a??-1};return h.object.userData.pickId;}
+      if((h.object.material.opacity??1)>=0.5){hoverHit={mesh:h.object,vertex:h.face?.a??-1};pickedBranch=branchOf(h);return shownStructureId(h.object);}
     }
-    if(hits[0])pickedBranch=branchOf(hits[0]);
+    if(hits[0]){hoverHit={mesh:hits[0].object,vertex:hits[0].face?.a??-1};pickedBranch=branchOf(hits[0]);}
     return hits[0]?shownStructureId(hits[0].object):null;
   }
   function pointerMove(e){hovered=pick(e);sceneLabels.setFocus(hovered,selected);paintSelection();requestRender();renderer.domElement.style.cursor=hovered?'pointer':'grab';onHover(hovered,pickedBranch);}
   function pointerDown(e){transition=false;down=[e.clientX,e.clientY];}
   function pointerUp(e){if(!down)return;const click=Math.hypot(e.clientX-down[0],e.clientY-down[1])<6;down=null;if(click){const id=pick(e);if(id)onSelect(id,pickedBranch);}}
-  function pointerLeave(){hovered=null;down=null;sceneLabels.setFocus(selected);paintSelection();requestRender();onHover(null);}
+  function pointerLeave(){hovered=null;hoverHit=null;down=null;sceneLabels.setFocus(selected);paintSelection();requestRender();onHover(null);}
   renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointerleave',pointerLeave);
   const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();computeFit();if(modelReady&&mode==='atria'&&['la','laa'].includes(selected))focusLeftAtrium(selected);requestRender();};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();

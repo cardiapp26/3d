@@ -154,8 +154,10 @@ export async function checkVersionJsonFallback() {
     const res = await fetch(fromRoot('./version.json') + '?_t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) return false;
     const data = await res.json();
-    const metaBuild = getMeta('app-build', release.build);
-    const metaVer = getMeta('app-version', release.version);
+    // Compare with the release bundled into this build, not the page meta: every
+    // page carries its own meta, and a stale one would prompt after every reload.
+    const metaBuild = release.build;
+    const metaVer = release.version;
 
     const hasNewBuild = Boolean(data.build && metaBuild && data.build !== metaBuild);
     const hasNewVersion = Boolean(data.version && metaVer && data.version !== metaVer);
