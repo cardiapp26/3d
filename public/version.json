@@ -1,7 +1,7 @@
 {
-  "version": "1.12.0",
-  "build": "v12",
-  "date": "2026-10-06",
+  "version": "1.13.0",
+  "build": "v13",
+  "date": "2026-10-21",
   "name": "Cardia 3D",
-  "description": "ECG laboratory (axis and QRS vector labs, rhythm strips with P waves), pharmacology labs and vasoactive selection, EPS standard SVT recordings and source links, Koch functional layers, JVP and catheter cross-links, quick search over lesson steps, cardiac physiology guide, updater fix"
+  "description": "EPS: guided EGM recording lessons, CSP / LBBAP laboratory and RVOT segment map; ECG: Bradfield anatomy figures inside Da Vinci topics; 3D: RVOT superior section, RV Figure 2 regions and RVOT in the thorax with axial levels"
 }
