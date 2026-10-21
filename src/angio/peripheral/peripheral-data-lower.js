@@ -8,13 +8,16 @@ const circ = (kind, cx, cy, r) => ({ type: 'circle', kind, cx, cy, r });
 
 const S = (spec) => spec;
 
-const BIF = [348, 308];
-const R_CIA = [214, 448];
-const L_CIA = [506, 448];
-const R_IIA = [252, 572];
-const L_IIA = [468, 572];
-const R_IEA = [168, 688];
-const L_IEA = [560, 688];
+const mir = ([x, y]) => [720 - x, y];
+const FORK = [360, 220];
+const R_CIA = [176, 392];
+const R_IIA = [300, 500];
+const R_ANT = [346, 592];
+const R_POST = [262, 578];
+const R_EIA = [118, 744];
+const TAKE = [140, 610.2];
+const R_IEA = [214, 468];
+const R_DCIA = [28, 548];
 const GROIN_BIF = [368, 452];
 
 export const AORTOILIAC = [
@@ -32,9 +35,9 @@ export const AORTOILIAC = [
       tr: 'İliyak veya femoral girişimden önce inflow bu segmentte okunur. Karşı oblik iliyak bifurkasyon içindir. Kalsifikasyon, anevrizma veya trombüs tel ve cihaz seçimini değiştirir. Bu çizimde lezyon yoktur.',
       en: 'Read inflow on this segment before an iliac or femoral intervention. Contralateral oblique is for the iliac bifurcation. Calcification, aneurysm, or thrombus changes wire and device choice. This drawing has no lesion.'
     },
-    hit: { x: 356, y: 110 },
-    label: { tr: 'Karın aortu', en: 'Abdominal aorta', x: 390, y: 100 },
-    draw: { map: [line('trunk', [[360, 36], [356, 150], [352, 240], BIF], 22)] }
+    hit: { x: 360, y: 132 },
+    label: { tr: 'Karın aortu', en: 'Abdominal aorta', x: 400, y: 100, to: [360, 100] },
+    draw: { map: [line('trunk', [[360, 44], FORK], 22)] }
   }),
   S({
     id: 'aortic-bifurcation',
@@ -50,9 +53,9 @@ export const AORTOILIAC = [
       tr: 'AP projeksiyon bifurkasyon yüksekliğini ve median sakral arteri gösterir. İliyak ağızların üst üste binmesi karşı oblikle açılır. Bifurkasyon stent-greft veya kissing stent planında referans noktadır. Ölçü bu şemadan alınmaz.',
       en: 'AP shows bifurcation height and the median sacral artery. Overlap of the iliac origins is opened with a contralateral oblique. The bifurcation is a reference for stent-graft or kissing-stent planning. Do not measure from this schematic.'
     },
-    hit: { x: 348, y: 308 },
-    label: { tr: 'Bifurkasyon L4', en: 'Bifurcation L4', x: 390, y: 292 },
-    draw: { map: [circ('marker', 348, 308, 9)] }
+    hit: { x: 360, y: 220 },
+    label: { tr: 'Bifurkasyon L4', en: 'Bifurcation L4', x: 400, y: 188, to: [369, 220] },
+    draw: { map: [circ('marker', 360, 220, 9)] }
   }),
   S({
     id: 'common-iliac',
@@ -68,12 +71,12 @@ export const AORTOILIAC = [
       tr: 'AP projeksiyonda iç ve dış iliyak ağızlar üst üste biner. Sağ bifurkasyon için LAO, sol için RAO, yaklaşık 20–30° karşı oblik ağzı açar. Darlık inflow hastalığıdır ve distal yatağı etkiler.',
       en: 'On AP, the internal and external iliac origins overlap. A contralateral oblique of about 20–30° opens the bifurcation: LAO for the right side, RAO for the left. Stenosis here is inflow disease and affects the distal bed.'
     },
-    hit: { x: 270, y: 390 },
-    label: { tr: 'Ana iliyak', en: 'Common iliac', x: 230, y: 360, anchor: 'end' },
+    hit: { x: 268, y: 306 },
+    label: { tr: 'Ana iliyak', en: 'Common iliac', x: 64, y: 310, to: [262, 312] },
     draw: {
       map: [
-        line('artery', [BIF, [290, 368], [246, 414], R_CIA]),
-        line('artery', [BIF, [410, 368], [470, 414], L_CIA])
+        line('artery', [FORK, R_CIA]),
+        line('artery', [FORK, mir(R_CIA)])
       ]
     }
   }),
@@ -91,12 +94,12 @@ export const AORTOILIAC = [
       tr: 'Her iki iç iliyak arter ve mezenterik kollateraller birlikte kaybolursa pelvik ve barsak iskemi riski artar. Rekonstrüksiyonda en az bir iç iliyak akımını korumak klasik öğretidir. Şema her dalı tek tek çizmez.',
       en: 'Pelvic and bowel ischemia becomes a concern if both internal iliac arteries and the mesenteric collaterals are lost. Preserving flow in at least one internal iliac artery is the usual teaching during reconstruction. This schematic does not draw every branch.'
     },
-    hit: { x: 236, y: 520 },
-    label: { tr: 'İç iliyak', en: 'Internal iliac', x: 188, y: 500, anchor: 'end' },
+    hit: { x: 238, y: 446 },
+    label: { tr: 'İç iliyak', en: 'Internal iliac', x: 320, y: 468, to: [264, 468] },
     draw: {
       map: [
-        line('artery', [R_CIA, [232, 508], R_IIA]),
-        line('artery', [L_CIA, [488, 508], L_IIA])
+        line('artery', [R_CIA, R_IIA]),
+        line('artery', [mir(R_CIA), mir(R_IIA)])
       ]
     }
   }),
@@ -114,12 +117,12 @@ export const AORTOILIAC = [
       tr: 'Ön bölüm kanaması veya embolizasyonunda organ ve pudendal dallar hatırlanır. Obturator arter bazen alt epigastrik arterden çıkar (corona mortis) ve pelvik cerrahide kanayabilir. Bu varyant şemada ayrı çizilmez.',
       en: 'Visceral and pudendal branches matter in anterior-division bleeding or embolization. The obturator artery sometimes arises from the inferior epigastric artery (corona mortis) and can bleed in pelvic surgery. That variant is not drawn separately.'
     },
-    hit: { x: 310, y: 680 },
-    label: { tr: 'Ön bölüm', en: 'Anterior div.', x: 328, y: 700 },
+    hit: { x: 323, y: 546 },
+    label: { tr: 'Ön bölüm', en: 'Anterior div.', x: 360, y: 630, anchor: 'middle', to: [346, 592] },
     draw: {
       map: [
-        line('branch', [R_IIA, [286, 640], [322, 710]]),
-        line('branch', [L_IIA, [434, 640], [398, 710]])
+        line('branch', [R_IIA, R_ANT]),
+        line('branch', [mir(R_IIA), mir(R_ANT)])
       ]
     }
   }),
@@ -137,12 +140,12 @@ export const AORTOILIAC = [
       tr: 'Üst gluteal arter, derin femoral arter ağıyla kalça çevresinde kollateral kurabilir. İliolumbar arter lomber ve derin sirkumfleks iliyak arterlerle bağlantı kurar. Bu yüzden tek taraflı iliyak tıkanıklıkta retrograd doluş görülebilir.',
       en: 'The superior gluteal artery can collateralize around the hip with the deep femoral network. The iliolumbar artery connects with lumbar arteries and the deep circumflex iliac artery. Unilateral iliac occlusion may therefore fill retrograde.'
     },
-    hit: { x: 188, y: 690 },
-    label: { tr: 'Arka bölüm', en: 'Posterior div.', x: 150, y: 670, anchor: 'end' },
+    hit: { x: 281, y: 539 },
+    label: { tr: 'Arka bölüm', en: 'Posterior div.', x: 214, y: 676, to: [262, 576] },
     draw: {
       map: [
-        line('branch', [R_IIA, [214, 648], [176, 728]]),
-        line('branch', [L_IIA, [506, 648], [544, 728]])
+        line('branch', [R_IIA, R_POST]),
+        line('branch', [mir(R_IIA), mir(R_POST)])
       ]
     }
   }),
@@ -160,12 +163,12 @@ export const AORTOILIAC = [
       tr: 'Dış iliyak tıkanıklığında kasık, alt epigastrik ve derin sirkumfleks iliyak kollateralleriyle retrograd dolabilir. Yüksek femoral giriş bu damarın retroperitoneal parçasına denk gelirse kanama retroperitona kaçar.',
       en: 'If the external iliac artery occludes, the groin may still fill retrograde through inferior epigastric and deep circumflex iliac collaterals. A high femoral puncture into this retroperitoneal segment bleeds into the retroperitoneum.'
     },
-    hit: { x: 176, y: 600 },
-    label: { tr: 'Dış iliyak', en: 'External iliac', x: 112, y: 575, anchor: 'end' },
+    hit: { x: 147, y: 568 },
+    label: { tr: 'Dış iliyak', en: 'External iliac', x: 52, y: 430, to: [150, 550] },
     draw: {
       map: [
-        line('artery', [R_CIA, [190, 540], [174, 630], R_IEA, [156, 760]]),
-        line('artery', [L_CIA, [538, 540], [554, 630], L_IEA, [574, 760]])
+        line('artery', [R_CIA, R_EIA]),
+        line('artery', [mir(R_CIA), mir(R_EIA)])
       ]
     }
   }),
@@ -183,12 +186,12 @@ export const AORTOILIAC = [
       tr: 'Güvenli femoral giriş bu arterin çıkışının distalinde kalır. Çıkışın proksimalindeki giriş dış iliyak artere denk gelir ve retroperitoneal kanama riski taşır. Karşı tarafın arteri ayna görüntüsündedir.',
       en: 'A safe femoral puncture stays distal to this origin. A stick proximal to it enters the external iliac artery and risks retroperitoneal bleeding. The opposite artery is the mirror image.'
     },
-    hit: { x: 250, y: 520 },
-    label: { tr: 'A. epigastrica inf.', en: 'Inf. epigastric', x: 268, y: 490 },
+    hit: { x: 177, y: 539 },
+    label: { tr: 'A. epigastrica inf.', en: 'Inf. epigastric', x: 160, y: 732, to: [178, 537] },
     draw: {
       map: [
-        line('branch', [R_IEA, [210, 620], [255, 520], [292, 410]]),
-        line('branch', [L_IEA, [518, 620], [474, 520], [438, 410]])
+        line('branch', [TAKE, R_IEA]),
+        line('branch', [mir(TAKE), mir(R_IEA)])
       ]
     }
   }),
@@ -206,12 +209,12 @@ export const AORTOILIAC = [
       tr: 'Lomber, iliolumbar ve sirkumfleks femoral arterlerle kollateral ağa katılır. Dış iliyak darlığında kasığı retrograd dolduran yollardan biridir. Şemada her iki taraf lateral yönde ayrılır.',
       en: 'It joins the collateral net with lumbar, iliolumbar, and circumflex femoral arteries. It is one route that can fill the groin retrograde when the external iliac artery is narrowed. Both sides leave laterally on this map.'
     },
-    hit: { x: 86, y: 590 },
-    label: { tr: 'A. circ. iliaca prof.', en: 'Deep circ. iliac', x: 48, y: 500 },
+    hit: { x: 84, y: 579 },
+    label: { tr: 'A. circ. iliaca prof.', en: 'Deep circ. iliac', x: 16, y: 168, to: [28, 548] },
     draw: {
       map: [
-        line('branch', [R_IEA, [120, 650], [72, 590], [40, 520]]),
-        line('branch', [L_IEA, [608, 650], [656, 590], [690, 520]])
+        line('branch', [TAKE, R_DCIA]),
+        line('branch', [mir(TAKE), mir(R_DCIA)])
       ]
     }
   }),
@@ -229,9 +232,9 @@ export const AORTOILIAC = [
       tr: 'AP aortografide bifurkasyonun orta hat işareti olarak işe yarar. Pelvik travma veya sakrum önü cerrahide kanama kaynağı olabilir. İnce olduğu için kontrastta kolayca gözden kaçar.',
       en: 'On an AP aortogram it is a midline marker of the bifurcation. It can bleed in pelvic trauma or presacral surgery. Because it is small, it is easy to miss in the contrast column.'
     },
-    hit: { x: 348, y: 470 },
-    label: { tr: 'Median sakral', en: 'Median sacral', x: 364, y: 500 },
-    draw: { map: [line('small', [[348, 318], [348, 420], [348, 530], [348, 650]])] }
+    hit: { x: 360, y: 320 },
+    label: { tr: 'Median sakral', en: 'Median sacral', x: 378, y: 370, to: [360, 370] },
+    draw: { map: [line('small', [[360, 240], [360, 400]])] }
   })
 ];
 
@@ -251,7 +254,7 @@ export const FEMORAL_MAP = [
       en: 'The angiographic marker of the ligament is the upward turn of the inferior epigastric artery. The skin crease is an unreliable guide to this level. In patients with obesity or a lax groin, fluoroscopy relative to the femoral head is required. Retroperitoneal bleeding may present with hypotension.'
     },
     hit: { x: 430, y: 130 },
-    label: { tr: 'Yüksek giriş', en: 'High stick', x: 470, y: 124 },
+    label: { tr: 'Yüksek giriş', en: 'High stick', x: 40, y: 58, to: [360, 110] },
     draw: { map: [poly('risk', [[292, 78], [500, 96], [468, 196], [286, 176]])] }
   }),
   S({
@@ -269,7 +272,7 @@ export const FEMORAL_MAP = [
       en: 'The bifurcation is sometimes well above the skin crease. Teaching is to stay above the lower edge of the femoral head on fluoroscopy. At a low stick the vein is immediately posteromedial, which is how a fistula forms.'
     },
     hit: { x: 455, y: 560 },
-    label: { tr: 'Alçak giriş', en: 'Low stick', x: 500, y: 545 },
+    label: { tr: 'Alçak giriş', en: 'Low stick', x: 530, y: 700, to: [470, 620] },
     draw: { map: [poly('warn', [[346, 478], [492, 498], [508, 648], [362, 626]])] }
   }),
   S({
@@ -287,7 +290,7 @@ export const FEMORAL_MAP = [
       en: 'Bone backing lets compression separate the artery from the vein after the sheath is removed. Sandoval 2017 and Garrett 2005 are the sources used here for contemporary access teaching. The band is teaching geometry, not a fluoroscopic image.'
     },
     hit: { x: 445, y: 330 },
-    label: { tr: 'Güvenli bant', en: 'Safe zone', x: 478, y: 312 },
+    label: { tr: 'Güvenli bant', en: 'Safe zone', x: 500, y: 210, to: [460, 280] },
     draw: { map: [poly('safe', [[304, 228], [462, 248], [474, 430], [324, 446]])] }
   }),
   S({
@@ -305,7 +308,7 @@ export const FEMORAL_MAP = [
       en: 'Garrett and colleagues described fluoroscopic localization against the femoral head. The needle tip should sit over the mid to lower medial head, proximal to the bifurcation. Distal to the lower cortical edge is a low stick.'
     },
     hit: { x: 230, y: 360 },
-    label: { tr: 'Femur başı', en: 'Femoral head', x: 188, y: 300, anchor: 'middle' },
+    label: { tr: 'Femur başı', en: 'Femoral head', x: 150, y: 250, anchor: 'end', to: [180, 280] },
     draw: { map: [ell('bone', 300, 332, 126, 140)] }
   }),
   S({
@@ -323,7 +326,7 @@ export const FEMORAL_MAP = [
       en: 'The skin crease does not stand in for the ligament. The practical angiographic marker is the inferior epigastric artery turning upward just above it. Artery at the line itself is still treated as retroperitoneal.'
     },
     hit: { x: 150, y: 196 },
-    label: { tr: 'İnguinal ligaman', en: 'Inguinal ligament', x: 70, y: 150 },
+    label: { tr: 'İnguinal ligaman', en: 'Inguinal ligament', x: 48, y: 118, to: [200, 196] },
     draw: { map: [line('landmark', [[48, 172], [660, 268]], 3)] }
   }),
   S({
@@ -341,7 +344,7 @@ export const FEMORAL_MAP = [
       en: 'This is the target vessel for percutaneous access. An ipsilateral oblique of 20–40° (RAO for a right groin, LAO for a left groin) opens the bifurcation and shows that the needle is in one lumen. AP can lay the profunda origin over the superficial femoral artery.'
     },
     hit: { x: 374, y: 310 },
-    label: { tr: 'A. femoralis comm.', en: 'CFA', x: 392, y: 280 },
+    label: { tr: 'A. femoralis comm.', en: 'CFA', x: 500, y: 330, to: [385, 300] },
     draw: { map: [line('artery', [[372, 186], [372, 280], [370, 370], GROIN_BIF], 16)] }
   }),
   S({
@@ -359,7 +362,7 @@ export const FEMORAL_MAP = [
       en: 'The puncture should stay proximal to the bifurcation. Ipsilateral oblique 20–40° separates the two origins. An early circumflex branch from the common femoral artery can be mistaken for the bifurcation. See whether the branch continues down the thigh.'
     },
     hit: { x: 368, y: 452 },
-    label: { tr: 'Bifurkasyon', en: 'Bifurcation', x: 300, y: 440, anchor: 'end' },
+    label: { tr: 'Bifurkasyon', en: 'Bifurcation', x: 500, y: 470, to: [380, 452] },
     draw: { map: [circ('marker', 368, 452, 8)] }
   }),
   S({
@@ -377,7 +380,7 @@ export const FEMORAL_MAP = [
       en: 'A low stick often lands in the proximal part of this artery. The femoral head has ended here, so compression is poor. The adductor canal and the below-knee continuation are on the leg tab.'
     },
     hit: { x: 412, y: 640 },
-    label: { tr: 'SFA', en: 'SFA', x: 436, y: 620 },
+    label: { tr: 'SFA', en: 'SFA', x: 470, y: 700, to: [420, 700] },
     draw: { map: [line('artery', [GROIN_BIF, [390, 550], [412, 650], [432, 760]], 13)] }
   }),
   S({
@@ -395,7 +398,7 @@ export const FEMORAL_MAP = [
       en: 'Teaching is to avoid stenting or plating across the profunda origin, because that door feeds the collateral path. Ipsilateral oblique separates the origin from the superficial femoral artery. Perforating branches are not separate buttons.'
     },
     hit: { x: 270, y: 640 },
-    label: { tr: 'Profunda', en: 'Profunda', x: 210, y: 610, anchor: 'end' },
+    label: { tr: 'Profunda', en: 'Profunda', x: 160, y: 680, anchor: 'end', to: [250, 680] },
     draw: { map: [line('artery', [GROIN_BIF, [320, 530], [270, 630], [228, 740]], 11)] }
   }),
   S({
@@ -413,7 +416,7 @@ export const FEMORAL_MAP = [
       en: 'A high origin from the common femoral artery mimics the bifurcation. If the branch runs lateral and does not continue down the thigh like the SFA, think circumflex. It also collateralizes with the deep circumflex iliac artery.'
     },
     hit: { x: 150, y: 468 },
-    label: { tr: 'A. circ. fem. lat.', en: 'Lat. circumflex', x: 60, y: 420 },
+    label: { tr: 'A. circ. fem. lat.', en: 'Lat. circumflex', x: 16, y: 400, to: [100, 440] },
     draw: { map: [line('branch', [[320, 530], [240, 492], [150, 458], [64, 428]])] }
   }),
   S({
@@ -431,7 +434,7 @@ export const FEMORAL_MAP = [
       en: 'It matters for bleeding and perfusion in hip surgery and femoral neck fracture. A small medial branch should not be confused with the profunda trunk. The profunda trunk continues down and lateral.'
     },
     hit: { x: 500, y: 512 },
-    label: { tr: 'A. circ. fem. med.', en: 'Med. circumflex', x: 520, y: 490 },
+    label: { tr: 'A. circ. fem. med.', en: 'Med. circumflex', x: 548, y: 610, to: [580, 540] },
     draw: { map: [line('branch', [[320, 530], [410, 500], [510, 518], [610, 548]])] }
   })
 ];

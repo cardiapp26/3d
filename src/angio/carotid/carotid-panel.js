@@ -6,6 +6,7 @@ import {
   STRUCTURES,
   VIEW_DEFS,
   calculateNascet,
+  formatNascetPercent,
   localize,
   nascetCategory,
   tortuosityClass,
@@ -16,52 +17,54 @@ import { renderCarotidSvg } from './carotid-svg.js';
 const copy = {
   tr: {
     viewIntro: {
-      arch: 'Normal dallanma, ark varyantları ve Myla-Casserly girişimsel ark tipleri.',
-      cervical: 'Bifurkasyon, bulbus, dalsız İKA ve sekiz klasik EKA dalı.',
+      arch: 'Normal dallanma, ark varyantları ve Casserly girişimsel ark tipleri.',
+      cervical: 'Bifurkasyon, bulbus, dalsız İKA ve değişken kökenli sekiz klasik EKA dalı.',
       ica: 'Bouthillier C1–C7 segmentleri ve karotis sifonu.',
       circle: 'Koronal Willis poligonu, ACA, MCA ve posterior dolaşım.',
       stenosis: 'NASCET ölçümü, damar açısı ve stent planlama ilkeleri.'
     },
-    normal: 'Normal', lateral: 'Lateral', ap: 'AP', projectionPearl: 'Lateral projeksiyon dalları ayırır; AP simetriyi ve medial-lateral ilişkiyi gösterir.',
+    normal: 'Standart yüzde', lateral: 'Lateral', ap: 'AP', projectionPearl: 'Bifurkasyon için lateral ve ipsilateral oblik 30–45° kullanın; AP’de İKA ve EKA çoğunlukla üst üste biner. Darlığı en dar lümeni gösteren projeksiyonda ve en az iki projeksiyonda ölçün. Sağ BCT bifurkasyonu RAO 20–30° ile açılır.',
     identification: 'İKA genellikle daha geniş, posterolateral ve servikal dalsızdır. EKA daha anteromedialdir ve dalları boyunda erken görülür. Rotasyon bu ilişkiyi ters gösterebilir; dal paterni daha güvenilir işarettir.',
-    archPearl: 'En iyi başlangıç projeksiyonu: LAO 30–45°. Tip III arkta dallar tepeye göre daha kaudaldir; ortak BCT-LCCA kökeni keskin seçim açısı oluşturabilir. Her ikisi karotis erişimini zorlaştırabilir.',
-    typeRule: 'BCT kökeninin ark dış kavsinin tepesine dikey uzaklığı, CCA çapı cinsinden.',
-    mnemonicTitle: 'EKA dalları, sırayla',
-    mnemonic: 'Üst Tiroid, Asendan Faringeal, Lingual, Fasiyal, Oksipital, Posterior Auriküler, Maksiller, Süperfisiyal Temporal.',
+    archPearl: 'LAO 30–45° arkı açar. BCT kökeni tip arttıkça en fazla kaudale iner; LCCA daha az, LSCA en az yer değiştirir. Yaş ve hipertansiyonla tip artabilir.',
+    typeRule: 'BCT kökeninin ark dış kavisi tepesinden dikey uzaklığı, LCCA çapı cinsinden, LAO 30–45°’de ölçülür.',
+    mnemonicTitle: 'EKA dalları, klasik liste',
+    mnemonic: 'Süperior tiroid, asendan faringeal, lingual, fasiyal, oksipital, posterior auriküler, maksiller, yüzeyel temporal. Köken sırası değişkendir; asendan faringeal sıklıkla ilk daldır, lingofasiyal trunkus yaklaşık %20 görülür. Maksiller ve yüzeyel temporal terminal dallardır. EKA, oftalmik (fasiyal, maksiller, yüzeyel temporal), petröz İKA ve vertebral (oksipital, asendan faringeal) dolaşımla kollateral yapar; embolizasyonda bunlar tehlikeli anastomozlardır.',
     mnemonicAid: 'Türkçe ipucu: Tıp Fakültesinde Lütfen Fazla Okuyup Pratikle Meslekte Sivril.',
-    icaPearl: 'C2: karotikotimpanik, vidian. C4: meningohipofizyal, inferolateral trunkus. C6: oftalmik, süperior hipofizyal. C7: PComm, anterior koroidal. Terminal dallar ACA ve MCA’dır.',
-    circlePearl: 'A1-AComm-A2 ve M1–M4 boyunca doluşu izleyin. Sylvian nokta, distal MCA dönüşünü işaretler. Persistan embriyonik anastomozlar nadirdir.',
+    icaPearl: 'Karotis sifonu C4–C6’dır ve lateral projeksiyonda iyi görülür. C2: karotikotimpanik, vidian. C4: meningohipofizyal ve inferolateral trunkuslar. C6: oftalmik, süperior hipofizyal. C7: PComm, anterior koroidal. Fischer 1938 sınıflaması C1–C5’i kan akımına ters numaralandırır.',
+    circlePearl: 'Gibo tanımında M1 limen insula genuya dek sürer; erken postbifurkasyon trunkuslar M1’dir. A1 mediyal lentikülostriatları, A1-A2 bileşkesi Heubner arterini verir. Trigeminal bağlantı en sık, otik en nadir ve tartışmalıdır; proatlantal arter vertebrale katılır.',
     residual: 'Minimal rezidüel lümen (mm)', distal: 'Normal distal İKA (mm)', result: 'NASCET darlığı',
     invalid: 'Rezidüel lümen 0 ile distal referans arasında olmalıdır.',
-    near: 'Near-oklüzyon uyarısı: distal İKA kollapsı varsa standart yüzde hesaplamasına güvenmeyin; ayrı kategori olarak raporlayın.',
-    ecst: 'ECST, tahmini orijinal bulbus çapını kullanır. NASCET ve ECST yüzdeleri doğrudan eşdeğer değildir.',
-    angle: 'İKA eksen açısı', geometry: 'Geometri', device: 'Cihaz planlama notu',
-    deviceNote: 'Artan tortiyozite, distal embolik koruma cihazının geçişini ve stabilitesini zorlaştırabilir. Stent ve koruma stratejisi lezyon, damar çapı, kalsifikasyon ve ark desteğiyle birlikte bireyselleştirilir. Bu şema tedavi önerisi değildir.',
+    near: 'Distal İKA kollapsı varsa yüzdeye güvenmeyin; tama yakın oklüzyonu ayrı kategori seçin.',
+    nearOption: 'Tama yakın oklüzyon (distal kollaps)',
+    ecst: 'ECST tahmini orijinal bulbus çapını kullanır: NASCET %50 ≈ ECST %75, NASCET %70 ≈ ECST %85; yaklaşık dönüşüm ECST ≈ 0,6 × NASCET + 40.',
+    angle: 'Düz eksenden sapma', geometry: 'Weibel-Fields geometrisi', coilOption: 'Koil (halka), 360° seyir', device: 'Cihaz planlama notu',
+    deviceNote: 'Distal İKA tortüözitesi veya tip III/bovin arkta proksimal koruma, akım tersine çevirme, TCAR veya KEA düşünülebilir. Semptomatik %50–99 darlıkta ve ≥70 yaşta ESVS 2023 çoğunlukla KEA’yı CAS’a tercih eder. Bu şema tedavi önerisi değildir.',
     standard: 'Standart anatomi', selected: 'Seçili', structures: 'seçilebilir yapı'
   },
   en: {
     viewIntro: {
-      arch: 'Normal branching, arch variants, and Myla-Casserly interventional arch types.',
-      cervical: 'Bifurcation, bulb, branchless ICA, and eight classic ECA branches.',
+      arch: 'Normal branching, arch variants, and Casserly interventional arch types.',
+      cervical: 'Bifurcation, bulb, branchless ICA, and eight classic ECA branches with variable origins.',
       ica: 'Bouthillier C1–C7 segments and carotid siphon.',
       circle: 'Coronal Circle of Willis, ACA, MCA, and posterior circulation.',
       stenosis: 'NASCET measurement, vessel angulation, and stent planning principles.'
     },
-    normal: 'Normal', lateral: 'Lateral', ap: 'AP', projectionPearl: 'Lateral projection separates branches; AP shows symmetry and medial-lateral relationships.',
+    normal: 'Standard percentage', lateral: 'Lateral', ap: 'AP', projectionPearl: 'Use lateral and ipsilateral oblique 30–45° for the bifurcation; ICA and ECA usually overlap in AP. Measure stenosis in at least two projections, using the view showing the narrowest lumen. RAO 20–30° opens the right BCT bifurcation.',
     identification: 'ICA is usually larger, posterolateral, and branchless in the neck. ECA is more anteromedial and gives early cervical branches. Rotation may reverse apparent position, so branch pattern is more reliable.',
-    archPearl: 'Best starting projection: LAO 30–45°. In type III arch, branches arise farther caudal to arch apex; a common BCT-LCCA origin can create a sharp selection angle. Both may make carotid access harder.',
-    typeRule: 'Vertical distance from BCT origin to top of outer arch curve, measured in CCA diameters.',
-    mnemonicTitle: 'ECA branches, in order',
-    mnemonic: 'Superior Thyroid, Ascending Pharyngeal, Lingual, Facial, Occipital, Posterior Auricular, Maxillary, Superficial Temporal.',
+    archPearl: 'LAO 30–45° opens the arch. As type rises, the BCT origin drops most, LCCA less, and LSCA least. Type may rise with age and hypertension.',
+    typeRule: 'Vertical distance from the BCT origin to the apex of the outer arch curve, in LCCA diameters, measured in LAO 30–45°.',
+    mnemonicTitle: 'ECA branches, classic listing',
+    mnemonic: 'Superior thyroid, ascending pharyngeal, lingual, facial, occipital, posterior auricular, maxillary, superficial temporal. Origin order varies; ascending pharyngeal is often first and a linguofacial trunk occurs in about 20%. Maxillary and superficial temporal are terminal branches. The ECA anastomoses with ophthalmic (facial, maxillary, superficial temporal), petrous ICA, and vertebral (occipital, ascending pharyngeal) circulations; these are dangerous anastomoses during embolisation.',
     mnemonicAid: 'Mnemonic: Some Anatomists Like Freaking Out Poor Medical Students.',
-    icaPearl: 'C2: caroticotympanic, vidian. C4: meningohypophyseal, inferolateral trunk. C6: ophthalmic, superior hypophyseal. C7: PComm, anterior choroidal. Terminal branches are ACA and MCA.',
-    circlePearl: 'Follow filling across A1-AComm-A2 and M1–M4. Sylvian point marks distal MCA turn. Persistent embryonic anastomoses are rare.',
+    icaPearl: 'The carotid siphon is C4–C6 and is best seen laterally. C2: caroticotympanic, vidian. C4: meningohypophyseal and inferolateral trunks. C6: ophthalmic, superior hypophyseal. C7: PComm, anterior choroidal. Fischer’s 1938 C1–C5 scheme numbers against blood flow.',
+    circlePearl: 'In the Gibo definition, M1 extends to the genu at the limen insulae; early post-bifurcation trunks remain M1. A1 gives medial lenticulostriates and the A1-A2 junction gives the recurrent artery of Heubner. Trigeminal is the commonest primitive connection, otic the rarest and disputed; proatlantal joins the vertebral artery.',
     residual: 'Minimal residual lumen (mm)', distal: 'Normal distal ICA (mm)', result: 'NASCET stenosis',
     invalid: 'Residual lumen must be between zero and distal reference.',
-    near: 'Near-occlusion caveat: if distal ICA collapse is present, do not rely on standard percentage calculation; report it as a separate category.',
-    ecst: 'ECST uses estimated original bulb diameter. NASCET and ECST percentages are not directly equivalent.',
-    angle: 'ICA axis angle', geometry: 'Geometry', device: 'Device planning note',
-    deviceNote: 'Increasing tortuosity may impair delivery and stability of distal embolic protection. Stent and protection strategy is individualized with lesion, vessel diameter, calcification, and arch support. This schematic is not treatment advice.',
+    near: 'If distal ICA collapse is present, do not rely on the percentage; select near-occlusion as a separate category.',
+    nearOption: 'Near-occlusion (distal collapse)',
+    ecst: 'ECST uses the estimated original bulb: NASCET 50% ≈ ECST 75%, NASCET 70% ≈ ECST 85%; approximate conversion ECST ≈ 0.6 × NASCET + 40.',
+    angle: 'Deviation from straight axis', geometry: 'Weibel-Fields geometry', coilOption: 'Coil/loop, 360° course', device: 'Device planning note',
+    deviceNote: 'With distal ICA tortuosity or a type III/bovine arch, consider proximal protection, flow reversal, TCAR, or CEA. ESVS 2023 generally favors CEA over CAS for symptomatic 50–99% stenosis and in patients aged ≥70. This schematic is not treatment advice.',
     standard: 'Standard anatomy', selected: 'Selected', structures: 'selectable structures'
   }
 };
@@ -99,7 +102,11 @@ function viewControls(view, state, lang) {
 function stenosisControls(state, lang) {
   const t = copy[lang];
   const pct = calculateNascet(state.residual, state.distal);
-  const result = pct === null ? t.invalid : `${pct.toFixed(1)}% · ${nascetCategory(pct, lang)}`;
+  const result = pct === null
+    ? t.invalid
+    : state.nearOcclusion
+      ? nascetCategory(pct, lang, true)
+      : `${formatNascetPercent(pct)}% · ${nascetCategory(pct, lang)}`;
   const formula = lang === 'tr' ? '(1 − minimal lümen / distal normal İKA) × 100' : '(1 − minimal lumen / normal distal ICA) × 100';
   return `<div class="calculator" data-nascet-calculator>
     <div class="formula">${formula}</div>
@@ -108,12 +115,14 @@ function stenosisControls(state, lang) {
       <label>${t.distal}<input type="number" min="0.1" step="0.1" value="${state.distal}" data-nascet-distal></label>
     </div>
     <output class="nascet-output ${pct === null ? 'invalid' : ''}" data-nascet-output><span>${t.result}</span><strong>${result}</strong></output>
+    <label class="option-toggle"><input type="checkbox" data-near-occlusion ${state.nearOcclusion ? 'checked' : ''}><span>${t.nearOption}</span></label>
     <p>${t.near}</p><p>${t.ecst}</p>
   </div>
   <label class="angle-control"><span>${t.angle}: <strong data-angle-value>${state.angle}°</strong></span>
     <input type="range" min="0" max="130" step="5" value="${state.angle}" data-ica-angle>
   </label>
-  <div class="geometry-result"><span>${t.geometry}</span><strong data-tortuosity-class>${tortuosityClass(state.angle, lang)}</strong></div>
+  <label class="option-toggle"><input type="checkbox" data-coil-course ${state.coil ? 'checked' : ''}><span>${t.coilOption}</span></label>
+  <div class="geometry-result"><span>${t.geometry}</span><strong data-tortuosity-class>${tortuosityClass(state.angle, lang, state.coil)}</strong></div>
   <div class="teaching-note warning"><strong>${t.device}</strong><span>${t.deviceNote}</span></div>`;
 }
 
@@ -137,7 +146,7 @@ function referencesMarkup(lang) {
 export function createCarotidPanel({ mount, getLang }) {
   const state = {
     view: 'arch', selected: null, archType: 'I', archVariant: 'normal', projection: 'lateral',
-    residual: 1.2, distal: 4, angle: 25
+    residual: 1.2, distal: 4, nearOcclusion: false, angle: 25, coil: false
   };
 
   function render() {
@@ -145,7 +154,8 @@ export function createCarotidPanel({ mount, getLang }) {
     const shell = SHELL_TEXT[lang];
     const t = copy[lang];
     const current = VIEW_DEFS.find(view => view.id === state.view);
-    const count = viewStructures(state.view).length;
+    const bctAbsent = state.view === 'arch' && ['lusoria', 'right-arch'].includes(state.archVariant);
+    const count = viewStructures(state.view).length - (bctAbsent ? 1 : 0);
     mount.innerHTML = `<section class="carotid-hero">
       <div><span class="carotid-eyebrow">${shell.eyebrow}</span><h1>${shell.heading}</h1><p>${shell.intro}</p></div>
       <span class="schematic-badge">${shell.schematic}</span>
@@ -179,7 +189,12 @@ export function createCarotidPanel({ mount, getLang }) {
     const output = mount.querySelector('[data-nascet-output]');
     if (!output) return;
     output.classList.toggle('invalid', pct === null);
-    output.innerHTML = `<span>${t.result}</span><strong>${pct === null ? t.invalid : `${pct.toFixed(1)}% · ${nascetCategory(pct, lang)}`}</strong>`;
+    const result = pct === null
+      ? t.invalid
+      : state.nearOcclusion
+        ? nascetCategory(pct, lang, true)
+        : `${formatNascetPercent(pct)}% · ${nascetCategory(pct, lang)}`;
+    output.innerHTML = `<span>${t.result}</span><strong>${result}</strong>`;
   }
 
   function bindEvents() {
@@ -189,7 +204,7 @@ export function createCarotidPanel({ mount, getLang }) {
       render();
     }));
     mount.querySelectorAll('[data-arch-type]').forEach(button => button.addEventListener('click', () => { state.archType = button.dataset.archType; render(); }));
-    mount.querySelectorAll('[data-arch-variant]').forEach(button => button.addEventListener('click', () => { state.archVariant = button.dataset.archVariant; render(); }));
+    mount.querySelectorAll('[data-arch-variant]').forEach(button => button.addEventListener('click', () => { state.archVariant = button.dataset.archVariant; state.selected = null; render(); }));
     mount.querySelectorAll('[data-projection]').forEach(button => button.addEventListener('click', () => { state.projection = button.dataset.projection; render(); }));
     mount.querySelectorAll('.carotid-structure').forEach(node => {
       node.addEventListener('click', () => selectStructure(node.dataset.structure));
@@ -207,7 +222,9 @@ export function createCarotidPanel({ mount, getLang }) {
     const distal = mount.querySelector('[data-nascet-distal]');
     residual?.addEventListener('input', () => { state.residual = residual.value; updateNascet(); });
     distal?.addEventListener('input', () => { state.distal = distal.value; updateNascet(); });
+    mount.querySelector('[data-near-occlusion]')?.addEventListener('change', event => { state.nearOcclusion = event.target.checked; updateNascet(); });
     mount.querySelector('[data-ica-angle]')?.addEventListener('input', event => { state.angle = Number(event.target.value); render(); });
+    mount.querySelector('[data-coil-course]')?.addEventListener('change', event => { state.coil = event.target.checked; render(); });
   }
 
   render();

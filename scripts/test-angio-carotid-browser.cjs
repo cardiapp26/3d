@@ -3,6 +3,28 @@ const assert = require('node:assert/strict');
 
 const baseUrl = process.env.APP_URL || 'http://localhost:5173';
 
+// Click points along the vessel (midpoint first); a point at a branch origin may belong to the branch's
+// hit stroke, so the next sample is tried. Returns the selected id.
+async function clickPathMidpoint(page, structure, id) {
+  await structure.scrollIntoViewIfNeeded();
+  let selected = null;
+  for (const f of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+    const point = await structure.locator('.vessel-hit').first().evaluate((path, at) => {
+      const local = path.getPointAtLength(path.getTotalLength() * at);
+      const matrix = path.getScreenCTM();
+      if (!matrix) throw new Error('SVG path has no screen transform');
+      return {
+        x: local.x * matrix.a + local.y * matrix.c + matrix.e,
+        y: local.x * matrix.b + local.y * matrix.d + matrix.f
+      };
+    }, f);
+    await page.mouse.click(point.x, point.y);
+    selected = await page.locator('[data-detail-id]').getAttribute('data-detail-id');
+    if (selected === id) break;
+  }
+  return selected;
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
@@ -29,8 +51,7 @@ const baseUrl = process.env.APP_URL || 'http://localhost:5173';
         assert.equal(await structure.getAttribute('role'), 'button', `${id} has button role`);
         assert.equal(await structure.getAttribute('tabindex'), '0', `${id} is keyboard focusable`);
         assert.ok(await structure.getAttribute('aria-label'), `${id} has accessible name`);
-        await structure.evaluate(node => node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-        assert.equal(await page.locator('[data-detail-id]').getAttribute('data-detail-id'), id, `${id} opens detail card`);
+        assert.equal(await clickPathMidpoint(page, structure, id), id, `${id} opens detail card`);
       }
     }
 
@@ -41,6 +62,16 @@ const baseUrl = process.env.APP_URL || 'http://localhost:5173';
     assert.notEqual(archBefore, archAfter, 'arch type redraws geometry');
     await page.locator('[data-arch-variant="lusoria"]').click();
     assert.match(await page.locator('[data-variant-note]').textContent(), /lusoria|son dal/i);
+    assert.equal(await page.locator('[data-structure="bct"]').count(), 0, 'lusoria omits absent BCT');
+    await clickPathMidpoint(page, page.locator('[data-structure="rsub"]'), 'rsub');
+    assert.equal(await page.locator('[data-detail-id]').getAttribute('data-detail-id'), 'rsub', 'lusoria is really clickable');
+    await page.locator('[data-arch-variant="right-arch"]').click();
+    await page.locator('[data-arch-type="I"]').click();
+    const rightArchI = await page.locator('[data-structure="rcca"] .vessel').getAttribute('d');
+    await page.locator('[data-arch-type="III"]').click();
+    const rightArchIII = await page.locator('[data-structure="rcca"] .vessel').getAttribute('d');
+    assert.notEqual(rightArchI, rightArchIII, 'right arch type redraws origins');
+    assert.equal(await page.locator('[data-structure="bct"]').count(), 0, 'right arch with aberrant LSCA omits absent BCT');
 
     await page.locator('[data-view-tab="cervical"]').click();
     const cervicalBefore = await page.locator('[data-structure="cervical-ica"] .vessel').getAttribute('d');
@@ -56,15 +87,23 @@ const baseUrl = process.env.APP_URL || 'http://localhost:5173';
     await page.locator('[data-nascet-residual]').fill('1.2');
     await page.locator('[data-nascet-distal]').fill('4');
     assert.match(await page.locator('[data-nascet-output]').textContent(), /70\.0%/);
-    await page.locator('[data-ica-angle]').fill('80');
+    await page.locator('[data-nascet-residual]').fill('1.2016');
+    assert.match(await page.locator('[data-nascet-output]').textContent(), /69\.9%.*orta/s);
+    await page.locator('[data-near-occlusion]').check();
+    assert.match(await page.locator('[data-nascet-output]').textContent(), /Tama yakın oklüzyon/);
+    await page.locator('[data-near-occlusion]').uncheck();
+    await page.locator('[data-ica-angle]').fill('100');
     assert.match(await page.locator('[data-tortuosity-class]').textContent(), /Kink/);
+    await page.locator('[data-coil-course]').check();
+    assert.match(await page.locator('[data-tortuosity-class]').textContent(), /Koil/);
+    await page.locator('[data-coil-course]').uncheck();
 
     await page.screenshot({ path: '/tmp/angio-carotid-desktop.png', fullPage: true });
 
     await page.locator('[data-carotid-lang="en"]').click();
     assert.equal((await page.locator('[data-site-badge]').textContent()).trim(), 'CAROTID ANGIOGRAPHY');
     assert.match(await page.locator('h1').textContent(), /Carotid and cerebral/);
-    assert.match(await page.locator('[data-nascet-output]').textContent(), /severe/);
+    assert.match(await page.locator('[data-nascet-output]').textContent(), /moderate/);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(150);

@@ -1,13 +1,48 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
 
-const REAL_CLICK = {
-  aortoiliac: { map: 'aortic-bifurcation' },
-  femoral: { map: 'femoral-bifurcation', xs: 'xs-popliteal' },
-  runoff: { map: 'plantar-arch' },
-  visceral: { ap: 'accessory-renal', lateral: 'accessory-renal', oblique: 'accessory-renal' },
-  arm: { typical: 'distal-radial', variant: 'high-bifurcation' }
-};
+async function pointOnStructure(page, id) {
+  return page.evaluate(structureId => {
+    const group = document.querySelector(`[data-structure="${structureId}"]`);
+    if (!group) return { error: 'missing group' };
+    group.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+    const strokes = [...group.querySelectorAll('.peri-hitstroke')];
+    if (!strokes.length) return { error: 'missing hit stroke' };
+    const pick = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      for (const stroke of strokes) {
+        const len = stroke.getTotalLength();
+        const ctm = stroke.getScreenCTM();
+        if (!ctm || !len) continue;
+        for (let i = 2; i <= 22; i += 1) {
+          const local = stroke.getPointAtLength((i / 24) * len);
+          const screen = new DOMPoint(local.x, local.y).matrixTransform(ctm);
+          if (screen.x < 2 || screen.y < 2 || screen.x > vw - 2 || screen.y > vh - 2) continue;
+          const el = document.elementFromPoint(screen.x, screen.y);
+          if (el && group.contains(el)) return { x: screen.x, y: screen.y };
+        }
+      }
+      return null;
+    };
+    const first = pick();
+    if (first) return first;
+    const stroke = strokes[0];
+    const len = stroke.getTotalLength();
+    const ctm = stroke.getScreenCTM();
+    if (!ctm || !len) return { error: 'no screen point' };
+    const mid = stroke.getPointAtLength(len * 0.5);
+    const screen = new DOMPoint(mid.x, mid.y).matrixTransform(ctm);
+    window.scrollBy(0, screen.y - window.innerHeight / 2);
+    return pick() || { error: 'no hittable point on the path' };
+  }, id);
+}
+
+async function clickStructure(page, id) {
+  const point = await pointOnStructure(page, id);
+  assert.ok(point && point.x != null, `${id}: ${point?.error || 'no point'}`);
+  await page.mouse.click(point.x, point.y);
+}
 
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
@@ -41,24 +76,20 @@ const REAL_CLICK = {
         for (const id of ids) {
           const hit = page.locator(`[data-structure="${id}"]`);
           const name = await hit.getAttribute('data-name');
-          assert.equal(await hit.getAttribute('role'), 'button');
-          assert.equal(await hit.getAttribute('tabindex'), '0');
-          await hit.dispatchEvent('click');
+          assert.equal(await hit.getAttribute('role'), 'button', id);
+          assert.equal(await hit.getAttribute('tabindex'), '0', id);
+          await clickStructure(page, id);
           assert.equal((await page.locator('[data-card-name]').innerText()).trim(), name, `${id} card`);
-          assert.equal(await page.locator(`[data-structure="${id}"]`).getAttribute('aria-pressed'), 'true');
+          assert.equal(await page.locator(`[data-structure="${id}"]`).getAttribute('aria-pressed'), 'true', id);
           seen.add(id);
         }
-        const realId = REAL_CLICK[tab][mode];
-        await page.locator(`[data-structure="${realId}"] .peri-hitdot`).click({ timeout: 8000 });
-        const realName = await page.locator(`[data-structure="${realId}"]`).getAttribute('data-name');
-        assert.equal((await page.locator('[data-card-name]').innerText()).trim(), realName, `real click ${realId}`);
       }
     }
     assert.equal(seen.size, 71, `clicked ${seen.size} structures`);
 
-    const keyTarget = page.locator('[data-structure="abdominal-aorta"]');
     await page.locator('[data-peri-tab="aortoiliac"]').click();
-    await keyTarget.focus();
+    const aorta = page.locator('[data-structure="abdominal-aorta"]');
+    await aorta.focus();
     await page.keyboard.press('Enter');
     assert.equal(
       (await page.locator('[data-card-name]').innerText()).trim(),
@@ -71,12 +102,19 @@ const REAL_CLICK = {
       await page.locator('[data-structure="aortic-bifurcation"]').getAttribute('data-name')
     );
 
-    const hover = page.locator('[data-structure="common-iliac"] .peri-hitdot');
     const hoverName = await page.locator('[data-structure="common-iliac"]').getAttribute('data-name');
-    await hover.hover();
+    await page.mouse.move(8, 8);
+    const hoverPoint = await pointOnStructure(page, 'common-iliac');
+    assert.ok(hoverPoint && hoverPoint.x != null, `common-iliac hover: ${hoverPoint?.error || 'no point'}`);
+    await page.mouse.move(hoverPoint.x, hoverPoint.y);
     await page.locator('[data-peri-tip]:not([hidden])').waitFor({ state: 'visible' });
     assert.equal((await page.locator('[data-peri-tip]').innerText()).trim(), hoverName);
     await page.screenshot({ path: '/tmp/peripheral-desktop.png' });
+
+    for (let index = 0; index < tabs.length; index += 1) {
+      await page.locator(`[data-peri-tab="${tabs[index]}"]`).click();
+      await page.locator('.peri-stage').screenshot({ path: `/tmp/peripheral-tab${index}.png` });
+    }
 
     await page.locator('[data-peri-lang="en"]').click();
     await page.waitForFunction(() => document.documentElement.lang === 'en');

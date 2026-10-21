@@ -22,13 +22,17 @@ export const VISCERAL = [
       tr: 'Ostial mezenterik darlık için lateral, renal ağız için hafif oblik kullanılır. AP adlandırma görünümüdür. Aortadaki kalsifikasyon, anevrizma veya mural trombüs kateter seçimini değiştirir. Bu çizimde lezyon yoktur.',
       en: 'Use a lateral projection for an ostial mesenteric stenosis and a slight oblique for a renal ostium. AP is the naming view. Aortic calcification, aneurysm, or mural thrombus changes catheter choice. This drawing has no lesion.'
     },
-    hit: { x: 360, y: 80 },
-    hits: { ap: { x: 360, y: 80 }, lateral: { x: 210, y: 100 }, oblique: { x: 300, y: 110 } },
-    label: { tr: 'Aort', en: 'Aorta', x: 378, y: 78 },
+    hit: { x: 360, y: 100 },
+    hits: { ap: { x: 360, y: 100 }, lateral: { x: 200, y: 100 }, oblique: { x: 340, y: 48 } },
+    label: { tr: 'Aort', en: 'Aorta', x: 392, y: 78, to: [360, 78] },
+    labels: {
+      lateral: { tr: 'Aort', en: 'Aorta', x: 40, y: 90, to: [200, 90] },
+      oblique: { tr: 'Aort', en: 'Aorta', x: 480, y: 78, to: [324, 90] }
+    },
     draw: {
-      ap: [line('trunk', [[360, 32], [358, 180], [356, 360], [352, 560], [348, 760]], 22)],
-      lateral: [line('trunk', [[214, 40], [210, 180], [206, 360], [202, 560], [198, 760]], 22)],
-      oblique: [line('trunk', [[340, 40], [280, 150], [250, 300], [270, 480], [320, 640], [300, 760]], 20)]
+      ap: [line('trunk', [[360, 40], [360, 780]], 22)],
+      lateral: [line('trunk', [[200, 40], [200, 780]], 22)],
+      oblique: [line('trunk', [[340, 48], [300, 150], [270, 280], [300, 450], [324, 580], [300, 760]], 20)]
     }
   }),
   S({
@@ -45,13 +49,17 @@ export const VISCERAL = [
       tr: 'Ağız ön yüzdedir, bu yüzden lateral projeksiyon ostiumu profilde gösterir. Ekspirasyonda median arkuat ligaman çölyak kökünü kıvrımlı gösterebilir. AP üç dalı adlandırmak içindir. Gövde üzerindeki nokta duvarın üstünde değil, trunkusun kendisindedir.',
       en: 'The ostium is anterior, so a lateral projection shows it in profile. In expiration the median arcuate ligament can make the celiac origin look kinked. AP is for naming the three branches. The hit point sits on the trunk, not on the aortic wall.'
     },
-    hit: { x: 326, y: 150 },
-    hits: { ap: { x: 326, y: 150 }, lateral: { x: 300, y: 148 }, oblique: { x: 220, y: 142 } },
-    label: { tr: 'Çölyak', en: 'Celiac', x: 300, y: 128 },
+    hit: { x: 404, y: 144 },
+    hits: { ap: { x: 404, y: 144 }, lateral: { x: 340, y: 118 }, oblique: { x: 255, y: 137 } },
+    label: { tr: 'Çölyak', en: 'Celiac', x: 392, y: 112, to: [410, 145] },
+    labels: {
+      lateral: { tr: 'Çölyak', en: 'Celiac', x: 360, y: 70, to: [340, 118] },
+      oblique: { tr: 'Çölyak', en: 'Celiac', x: 230, y: 86, to: [255, 136] }
+    },
     draw: {
-      ap: [line('artery', [[360, 148], [326, 150], [292, 154]], 13)],
-      lateral: [line('artery', [[210, 156], [300, 148], [380, 142]], 13)],
-      oblique: [line('artery', [[272, 156], [220, 142], [168, 128]], 12)]
+      ap: [line('artery', [[360, 148], [448, 140]], 12)],
+      lateral: [line('artery', [[200, 156], [340, 118], [500, 76]], 12)],
+      oblique: [line('artery', [[300, 150], [210, 124]], 10)]
     }
   }),
   S({
@@ -68,13 +76,17 @@ export const VISCERAL = [
       tr: 'Mide kanaması veya sol gastrik varyantı aranırken seçici enjeksiyon yapılır. Replaced sol hepatik arter bazen sol gastrikten çıkar. Lateralde dal düzlem dışına kısa bir kök olarak çizilir. Bu bir ölçeksiz şemadır.',
       en: 'Selective injection is used when looking for gastric bleeding or a left gastric variant. A replaced left hepatic artery sometimes arises from the left gastric artery. On the lateral sketch the branch is a short out-of-plane stem. This is an unscaled schematic.'
     },
-    hit: { x: 348, y: 102 },
-    hits: { ap: { x: 348, y: 102 }, lateral: { x: 396, y: 100 }, oblique: { x: 180, y: 90 } },
-    label: { tr: 'Sol gastrik', en: 'Left gastric', x: 390, y: 64 },
+    hit: { x: 560, y: 78 },
+    hits: { ap: { x: 560, y: 78 }, lateral: { x: 545, y: 56 }, oblique: { x: 200, y: 70 } },
+    label: { tr: 'Sol gastrik', en: 'Left gastric', x: 560, y: 36, to: [600, 62] },
+    labels: {
+      lateral: { tr: 'Sol gastrik', en: 'Left gastric', x: 700, y: 58, anchor: 'end', to: [560, 52] },
+      oblique: { tr: 'Sol gastrik', en: 'Left gastric', x: 24, y: 48, to: [230, 55] }
+    },
     draw: {
-      ap: [line('branch', [[292, 154], [330, 112], [378, 68]], 7)],
-      lateral: [line('branch', [[380, 142], [400, 96], [392, 52]], 6)],
-      oblique: [line('branch', [[168, 128], [186, 84], [176, 48]], 6)]
+      ap: [line('branch', [[448, 140], [560, 78], [640, 44]], 7)],
+      lateral: [line('branch', [[500, 76], [590, 36]], 7)],
+      oblique: [line('branch', [[210, 124], [200, 70], [280, 36]], 6)]
     }
   }),
   S({
@@ -91,13 +103,17 @@ export const VISCERAL = [
       tr: 'Kıvrımlı seyir normaldir, spazm sanılmamalıdır. Dalak hilusu travma, anevrizma ve hipersplenizmde bakılır. Lateralde dal düzlem dışındadır ve kısa bir kök olarak bırakılır. Ölçü bu çizgiden alınmaz.',
       en: 'A tortuous course is normal and should not be called spasm. The splenic hilum is reviewed in trauma, aneurysm, and hypersplenism. On the lateral sketch the artery is out of plane and is left as a short stem. Do not measure from this line.'
     },
-    hit: { x: 470, y: 148 },
-    hits: { ap: { x: 470, y: 148 }, lateral: { x: 345, y: 170 }, oblique: { x: 320, y: 152 } },
-    label: { tr: 'Splenik', en: 'Splenic', x: 520, y: 118 },
+    hit: { x: 600, y: 154 },
+    hits: { ap: { x: 600, y: 154 }, lateral: { x: 370, y: 164 }, oblique: { x: 275, y: 167 } },
+    label: { tr: 'Splenik', en: 'Splenic', x: 500, y: 236, to: [560, 190] },
+    labels: {
+      lateral: { tr: 'Splenik', en: 'Splenic', x: 420, y: 230, to: [390, 200] },
+      oblique: { tr: 'Splenik', en: 'Splenic', x: 400, y: 236, to: [320, 190] }
+    },
     draw: {
-      ap: [line('artery', [[292, 154], [380, 168], [470, 136], [560, 172], [650, 148]], 11)],
-      lateral: [line('branch', [[330, 150], [360, 188]], 7)],
-      oblique: [line('branch', [[240, 160], [320, 148], [400, 160]], 8)]
+      ap: [line('artery', [[448, 140], [540, 206], [600, 154], [642, 188]], 9)],
+      lateral: [line('branch', [[340, 118], [400, 210]], 8)],
+      oblique: [line('branch', [[210, 124], [340, 210]], 7)]
     }
   }),
   S({
@@ -114,13 +130,17 @@ export const VISCERAL = [
       tr: 'Replaced sağ hepatik arter SMA\'dan, replaced sol hepatik arter sol gastrikten çıkabilir. AP\'de dalın yönü karaciğer tarafına bakılarak doğrulanır. Lateralde kısa bir öne giden köktür. Şema varyantı çizmez, metin hatırlatır.',
       en: 'A replaced right hepatic artery can arise from the SMA, and a replaced left hepatic artery from the left gastric artery. On AP the direction toward the liver confirms the branch. On the lateral sketch it is a short anterior stem. The schematic does not draw the variant. The text is the reminder.'
     },
-    hit: { x: 220, y: 178 },
-    hits: { ap: { x: 220, y: 178 }, lateral: { x: 364, y: 172 }, oblique: { x: 168, y: 154 } },
-    label: { tr: 'A. hepatica comm.', en: 'Common hepatic', x: 168, y: 164, anchor: 'end' },
+    hit: { x: 260, y: 198 },
+    hits: { ap: { x: 260, y: 198 }, lateral: { x: 415, y: 152 }, oblique: { x: 200, y: 160 } },
+    label: { tr: 'A. hepatica comm.', en: 'Common hepatic', x: 200, y: 158, to: [330, 178] },
+    labels: {
+      lateral: { tr: 'A. hepatica comm.', en: 'Common hepatic', x: 500, y: 210, to: [470, 180] },
+      oblique: { tr: 'A. hepatica comm.', en: 'Common hepatic', x: 24, y: 100, to: [208, 132] }
+    },
     draw: {
-      ap: [line('artery', [[292, 154], [230, 172], [176, 204]], 11)],
-      lateral: [line('branch', [[350, 146], [378, 196]], 8)],
-      oblique: [line('branch', [[196, 138], [140, 168]], 8)]
+      ap: [line('artery', [[448, 140], [390, 176], [260, 198], [206, 204]], 9)],
+      lateral: [line('artery', [[340, 118], [490, 186]], 8)],
+      oblique: [line('artery', [[210, 124], [190, 196]], 7)]
     }
   }),
   S({
@@ -137,13 +157,17 @@ export const VISCERAL = [
       tr: 'Hepatik enjeksiyonda sağ ve sol dallar hilusta ayrılır. Tümör, travma veya safra kaçağı embolizasyonunda hangi sektöre gidildiği sorulur. Bu şema sağ ve sol dalı ayrı düğme yapmaz. Proper hepatik tek karttır.',
       en: 'On a hepatic injection the right and left branches separate at the hilum. Embolization for tumor, trauma, or bile leak asks which sector is supplied. This schematic does not make the right and left branches separate buttons. The proper hepatic artery is one card.'
     },
-    hit: { x: 118, y: 248 },
-    hits: { ap: { x: 118, y: 248 }, lateral: { x: 394, y: 224 }, oblique: { x: 116, y: 192 } },
-    label: { tr: 'A. hepatica propria', en: 'Proper hepatic', x: 70, y: 270 },
+    hit: { x: 168, y: 150 },
+    hits: { ap: { x: 168, y: 150 }, lateral: { x: 525, y: 141 }, oblique: { x: 130, y: 186 } },
+    label: { tr: 'A. hepatica propria', en: 'Proper hepatic', x: 36, y: 200, to: [172, 156] },
+    labels: {
+      lateral: { tr: 'A. hepatica propria', en: 'Proper hepatic', x: 500, y: 90, to: [540, 110] },
+      oblique: { tr: 'A. hepatica propria', en: 'Proper hepatic', x: 24, y: 156, to: [130, 186] }
+    },
     draw: {
-      ap: [line('branch', [[176, 204], [130, 236], [96, 286]], 8)],
-      lateral: [line('branch', [[378, 196], [408, 250]], 7)],
-      oblique: [line('branch', [[140, 168], [96, 214]], 7)]
+      ap: [line('artery', [[206, 204], [168, 150], [150, 108]], 8)],
+      lateral: [line('artery', [[490, 186], [560, 96]], 7)],
+      oblique: [line('artery', [[190, 196], [70, 175]], 6)]
     }
   }),
   S({
@@ -160,13 +184,17 @@ export const VISCERAL = [
       tr: 'Duodenum ülser kanamasının klasik kaynağı gastroduodenal arter veya pankreatikoduodenal dalıdır. Çölyak ile SMA arasında pankreas başı üzerinden kollateral yol burasıdır. Şemada tek bir inen dal olarak çizilir.',
       en: 'The classic source of a bleeding duodenal ulcer is the gastroduodenal artery or a pancreaticoduodenal branch. This is the collateral route between the celiac artery and the SMA across the pancreatic head. The schematic draws it as one descending branch.'
     },
-    hit: { x: 196, y: 340 },
-    hits: { ap: { x: 196, y: 340 }, lateral: { x: 364, y: 310 }, oblique: { x: 152, y: 280 } },
-    label: { tr: 'GDA', en: 'GDA', x: 214, y: 360 },
+    hit: { x: 168, y: 268 },
+    hits: { ap: { x: 168, y: 268 }, lateral: { x: 472, y: 248 }, oblique: { x: 190, y: 253 } },
+    label: { tr: 'GDA', en: 'GDA', x: 236, y: 268, to: [192, 250] },
+    labels: {
+      lateral: { tr: 'GDA', en: 'GDA', x: 430, y: 280, to: [460, 280] },
+      oblique: { tr: 'GDA', en: 'GDA', x: 24, y: 276, to: [190, 250] }
+    },
     draw: {
-      ap: [line('branch', [[176, 204], [192, 300], [206, 420], [198, 530]], 8)],
-      lateral: [line('branch', [[378, 196], [362, 320], [350, 440]], 7)],
-      oblique: [line('branch', [[140, 168], [154, 280], [164, 400]], 7)]
+      ap: [line('branch', [[206, 204], [168, 268], [176, 308]], 7)],
+      lateral: [line('branch', [[490, 186], [455, 310]], 7)],
+      oblique: [line('branch', [[190, 196], [190, 310]], 6)]
     }
   }),
   S({
@@ -183,25 +211,17 @@ export const VISCERAL = [
       tr: 'Ostial SMA darlığı lateralde profilde aranır. Akut mezenter iskemide emboli çoğu kez ostiumun birkaç santim distaline oturur. Jejunal dallar bu şemada yelpaze çizgisidir, tek tek adlandırılmaz. Çölyak kapalıysa GDA üzerinden dolum görülebilir.',
       en: 'An ostial SMA stenosis is sought in profile on the lateral view. In acute mesenteric ischemia an embolus often lodges a few centimeters beyond the ostium. The jejunal branches here are a fan, not individually named. If the celiac artery is occluded, filling may arrive through the GDA.'
     },
-    hit: { x: 372, y: 400 },
-    hits: { ap: { x: 372, y: 400 }, lateral: { x: 360, y: 310 }, oblique: { x: 190, y: 310 } },
-    label: { tr: 'SMA', en: 'SMA', x: 400, y: 250 },
+    hit: { x: 560, y: 450 },
+    hits: { ap: { x: 560, y: 450 }, lateral: { x: 380, y: 310 }, oblique: { x: 240, y: 420 } },
+    label: { tr: 'SMA', en: 'SMA', x: 620, y: 500, to: [570, 500] },
+    labels: {
+      lateral: { tr: 'SMA', en: 'SMA', x: 400, y: 360, to: [380, 320] },
+      oblique: { tr: 'SMA', en: 'SMA', x: 24, y: 420, to: [240, 400] }
+    },
     draw: {
-      ap: [
-        line('artery', [[360, 224], [372, 340], [368, 480], [352, 640]], 12),
-        line('small', [[372, 340], [250, 390]], 4),
-        line('small', [[370, 400], [270, 460]], 4),
-        line('small', [[368, 360], [480, 400]], 4),
-        line('small', [[366, 450], [500, 490]], 4)
-      ],
-      lateral: [
-        line('artery', [[208, 236], [320, 274], [440, 340], [468, 520]], 12),
-        line('small', [[400, 320], [480, 360]], 4)
-      ],
-      oblique: [
-        line('artery', [[256, 248], [190, 292], [150, 380]], 11),
-        line('small', [[180, 310], [120, 350]], 4)
-      ]
+      ap: [line('artery', [[360, 206], [470, 310], [560, 450], [580, 650], [560, 770]], 11)],
+      lateral: [line('artery', [[200, 224], [380, 310], [540, 430]], 11)],
+      oblique: [line('artery', [[270, 280], [240, 420], [210, 540]], 9)]
     }
   }),
   S({
@@ -218,13 +238,17 @@ export const VISCERAL = [
       tr: 'SMA ile IMA arasında Drummond marjinal arteri ve Riolan arkı kollateraldir. Kronik mezenter iskemide tek damar darlığı çoğu kez kollaterallerle karşılanır. IMA ince olduğu için ostium seçici kateterle aranır. Şema kollateral ağı çizmez, metin hatırlatır.',
       en: 'The marginal artery of Drummond and the arc of Riolan connect the SMA and the IMA. In chronic mesenteric ischemia, stenosis of a single vessel is often compensated by collaterals. The IMA is small, so the ostium is sought with a selective catheter. The schematic does not draw the collateral net. The text is the reminder.'
     },
-    hit: { x: 480, y: 560 },
-    hits: { ap: { x: 480, y: 560 }, lateral: { x: 280, y: 554 }, oblique: { x: 420, y: 558 } },
-    label: { tr: 'IMA', en: 'IMA', x: 520, y: 540 },
+    hit: { x: 420, y: 660 },
+    hits: { ap: { x: 420, y: 660 }, lateral: { x: 255, y: 604 }, oblique: { x: 387, y: 610 } },
+    label: { tr: 'IMA', en: 'IMA', x: 440, y: 730, to: [405, 700] },
+    labels: {
+      lateral: { tr: 'IMA', en: 'IMA', x: 250, y: 700, to: [290, 640] },
+      oblique: { tr: 'IMA', en: 'IMA', x: 470, y: 640, to: [430, 630] }
+    },
     draw: {
-      ap: [line('branch', [[352, 508], [430, 544], [520, 590], [600, 640]], 7)],
-      lateral: [line('branch', [[204, 518], [300, 558], [360, 600]], 7)],
-      oblique: [line('branch', [[300, 518], [420, 558], [530, 604]], 7)]
+      ap: [line('branch', [[360, 560], [420, 660], [390, 750]], 8)],
+      lateral: [line('branch', [[200, 548], [310, 660]], 7)],
+      oblique: [line('branch', [[324, 580], [450, 640]], 7)]
     }
   }),
   S({
@@ -241,19 +265,20 @@ export const VISCERAL = [
       tr: 'Renal ağız için hafif ipsilateral oblik veya sık kullanılan 10–20° LAO tercih edilir. Lateral, mezenter ağızları içindir. Renal ostium lateralde arkaya kısa bir kök gibi görünür. Aksesuar renal arter ayrı karttadır ve segmental uç arterdir.',
       en: 'A slight ipsilateral oblique, often 10–20° LAO, is used for the renal ostia. The lateral projection is for the mesenteric ostia. On the lateral sketch a renal ostium looks like a short posterior stem. An accessory renal artery has its own card and is a segmental end artery.'
     },
-    hit: { x: 200, y: 300 },
-    hits: { ap: { x: 200, y: 300 }, lateral: { x: 150, y: 316 }, oblique: { x: 160, y: 338 } },
-    label: { tr: 'Renal', en: 'Renal', x: 120, y: 276, anchor: 'end' },
+    hit: { x: 200, y: 386 },
+    hits: { ap: { x: 200, y: 386 }, lateral: { x: 135, y: 314 }, oblique: { x: 365, y: 460 } },
+    label: { tr: 'Renal', en: 'Renal', x: 36, y: 348, to: [230, 360] },
+    labels: {
+      lateral: { tr: 'Renal', en: 'Renal', x: 40, y: 300, to: [120, 318] },
+      oblique: { tr: 'Renal', en: 'Renal', x: 470, y: 430, to: [400, 450] }
+    },
     draw: {
       ap: [
-        line('artery', [[358, 300], [250, 292], [140, 312], [72, 332]], 10),
-        line('artery', [[358, 268], [480, 252], [590, 272], [660, 292]], 10)
+        line('artery', [[360, 272], [280, 334], [200, 386], [140, 430]], 8),
+        line('artery', [[360, 255], [480, 288], [550, 308], [586, 320]], 8)
       ],
-      lateral: [line('branch', [[208, 300], [140, 318], [80, 332]], 8)],
-      oblique: [
-        line('artery', [[252, 310], [150, 340], [70, 360]], 9),
-        line('artery', [[268, 278], [420, 250], [560, 232], [650, 244]], 9)
-      ]
+      lateral: [line('artery', [[200, 300], [70, 328]], 8)],
+      oblique: [line('artery', [[300, 450], [430, 470]], 7)]
     }
   }),
   S({
@@ -270,13 +295,17 @@ export const VISCERAL = [
       tr: 'Alt polar arter üreteri çaprazlayabilir. Stent veya aort grefti bu ostiumu örterse segmental infarkt olur. Gonadal arterle karıştırılmamalıdır: aksesuar böbreğe girer, gonadal aşağı iner. Kesik çizgi varyantı gösterir. Her hastada yoktur.',
       en: 'A lower polar artery can cross the ureter. If a stent or an aortic graft covers this ostium, that segment infarcts. Do not confuse it with the gonadal artery: the accessory vessel enters the kidney, while the gonadal artery continues downward. The dashed line marks a variant. It is not present in every patient.'
     },
-    hit: { x: 220, y: 388 },
-    hits: { ap: { x: 220, y: 388 }, lateral: { x: 150, y: 386 }, oblique: { x: 170, y: 406 } },
-    label: { tr: 'Aksesuar renal', en: 'Accessory renal', x: 96, y: 424 },
+    hit: { x: 160, y: 452 },
+    hits: { ap: { x: 160, y: 452 }, lateral: { x: 140, y: 398 }, oblique: { x: 375, y: 530 } },
+    label: { tr: 'Aksesuar renal', en: 'Accessory renal', x: 36, y: 520, to: [200, 430] },
+    labels: {
+      lateral: { tr: 'Aksesuar renal', en: 'Accessory renal', x: 40, y: 500, to: [150, 400] },
+      oblique: { tr: 'Aksesuar renal', en: 'Accessory renal', x: 470, y: 560, to: [420, 530] }
+    },
     draw: {
-      ap: [line('variant', [[356, 372], [240, 392], [130, 414]], 6)],
-      lateral: [line('variant', [[206, 370], [140, 390], [90, 402]], 5)],
-      oblique: [line('variant', [[258, 378], [160, 408], [90, 428]], 5)]
+      ap: [line('variant', [[360, 368], [240, 420], [160, 452], [118, 448]], 6)],
+      lateral: [line('variant', [[200, 378], [80, 418]], 6)],
+      oblique: [line('variant', [[310, 520], [440, 540]], 6)]
     }
   }),
   S({
@@ -293,19 +322,20 @@ export const VISCERAL = [
       tr: 'AP\'de alt polar renal arter sanılabilir. Gonadal arter böbreğe girmeden aşağı devam eder. Polar arter hilusa veya kutba gider ve uç arterdir. Bu şema veni çizmez. Sol renal ven varyantı aranırken bu ayrım hatırlanır.',
       en: 'On AP it can be mistaken for a lower polar renal artery. The gonadal artery continues downward without entering the kidney. A polar artery goes to the hilum or a pole and is an end artery. This schematic does not draw the vein. The distinction matters when a left renal vein variant is being sought.'
     },
-    hit: { x: 300, y: 480 },
-    hits: { ap: { x: 300, y: 480 }, lateral: { x: 270, y: 410 }, oblique: { x: 210, y: 500 } },
-    label: { tr: 'Gonadal', en: 'Gonadal', x: 250, y: 560, anchor: 'end' },
+    hit: { x: 280, y: 580 },
+    hits: { ap: { x: 280, y: 580 }, lateral: { x: 370, y: 530 }, oblique: { x: 364, y: 715 } },
+    label: { tr: 'Gonadal', en: 'Gonadal', x: 168, y: 640, anchor: 'end', to: [280, 600] },
+    labels: {
+      lateral: { tr: 'Gonadal', en: 'Gonadal', x: 460, y: 680, to: [390, 660] },
+      oblique: { tr: 'Gonadal', en: 'Gonadal', x: 470, y: 720, to: [400, 720] }
+    },
     draw: {
       ap: [
-        line('small', [[348, 338], [300, 460], [272, 630]], 4),
-        line('small', [[368, 328], [430, 470], [468, 650]], 4)
+        line('small', [[346, 438], [280, 580], [240, 750]]),
+        line('small', [[374, 400], [470, 470], [470, 750]])
       ],
-      lateral: [line('small', [[212, 340], [280, 400], [300, 500]], 4)],
-      oblique: [
-        line('small', [[262, 356], [200, 500], [184, 640]], 4),
-        line('small', [[286, 348], [360, 500], [404, 660]], 4)
-      ]
+      lateral: [line('small', [[200, 448], [370, 530], [410, 740]])],
+      oblique: [line('small', [[308, 680], [420, 750]])]
     }
   })
 ];

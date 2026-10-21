@@ -11,6 +11,7 @@ import {
   hitPoint,
   structuresFor
 } from '../src/angio/peripheral/peripheral-data.js';
+import { LABEL_CHAR, LABEL_FONT, curveSamples, labelFor } from '../src/angio/peripheral/peripheral-svg.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const problems = [];
@@ -186,6 +187,473 @@ if (/font-weight\s*:\s*(650|750|800)/.test(css)) fail('peripheral.css uses a hea
 walk({ VIEWS, SHELL, UI, SCALES, REFERENCES }, value => {
   if (value.includes('\u2014')) fail(`exported string contains an em dash: ${value.slice(0, 80)}`);
 });
+
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const WIDTH = { trunk: 22, artery: 16, branch: 10, small: 6, variant: 6, landmark: 4, marker: 3 };
+const HIT_EXTRA = {
+  trunk: 18, artery: 16, branch: 14, small: 14, variant: 16, landmark: 14, marker: 18,
+  zone: 16, safe: 16, risk: 16, warn: 16, bone: 16, frame: 14, skin: 14
+};
+const KIND_ORDER = [
+  'zone', 'safe', 'risk', 'warn', 'skin', 'bone', 'frame', 'landmark',
+  'trunk', 'artery', 'branch', 'small', 'variant',
+  'dot-nerve', 'dot-artery', 'dot-vein', 'marker'
+];
+const VESSEL = new Set(['trunk', 'artery', 'branch', 'small', 'variant']);
+const FILL = new Set(['zone', 'safe', 'risk', 'warn', 'bone', 'skin']);
+const ALLOW = { 'visceral/ap': new Set(['renal|sma', 'common-hepatic|visceral-aorta']) };
+
+function hitRadius(shape) {
+  const kind = shape.kind || 'artery';
+  const base = shape.w || WIDTH[kind] || 8;
+  const extra = HIT_EXTRA[kind] ?? 16;
+  const hw = shape.type === 'line' ? Math.max(base + extra, 22) : Math.max(extra, 16);
+  return hw / 2;
+}
+
+function visualRadius(shape) {
+  const kind = shape.kind || 'artery';
+  return (shape.w || WIDTH[kind] || 8) / 2;
+}
+
+function samplesOf(shape) {
+  if (shape.type === 'line' || shape.type === 'poly') {
+    const pts = shape.pts;
+    let longest = 1;
+    for (let i = 1; i < pts.length; i += 1) longest = Math.max(longest, dist(pts[i - 1], pts[i]));
+    if (shape.type === 'poly' && pts.length > 2) longest = Math.max(longest, dist(pts[0], pts[pts.length - 1]));
+    const steps = Math.max(8, Math.ceil(longest / 10));
+    return curveSamples(pts, shape.type === 'poly', steps);
+  }
+  if (shape.type === 'circle' || shape.type === 'ellipse') {
+    const rx = shape.rx || shape.r;
+    const ry = shape.ry || shape.r;
+    const pts = [];
+    for (let i = 0; i < 48; i += 1) {
+      const angle = (i / 48) * Math.PI * 2;
+      pts.push([shape.cx + Math.cos(angle) * rx, shape.cy + Math.sin(angle) * ry]);
+    }
+    return pts;
+  }
+  if (shape.type === 'rect') {
+    const { x, y, w, h } = shape;
+    return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+  }
+  return [];
+}
+
+function controlsOf(shape) {
+  if (shape.type === 'line' || shape.type === 'poly') return shape.pts;
+  if (shape.type === 'circle' || shape.type === 'ellipse') return [[shape.cx, shape.cy]];
+  if (shape.type === 'rect') return [[shape.x, shape.y]];
+  return [];
+}
+
+function nearAny(p, pts, limit) {
+  return pts.some(q => dist(p, q) <= limit);
+}
+
+function segHit(a, b, c, d) {
+  const rx = b[0] - a[0];
+  const ry = b[1] - a[1];
+  const sx = d[0] - c[0];
+  const sy = d[1] - c[1];
+  const den = rx * sy - ry * sx;
+  if (Math.abs(den) < 1e-9) return null;
+  const qpx = c[0] - a[0];
+  const qpy = c[1] - a[1];
+  const t = (qpx * sy - qpy * sx) / den;
+  const u = (qpx * ry - qpy * rx) / den;
+  if (t <= 0.03 || t >= 0.97 || u <= 0.03 || u >= 0.97) return null;
+  return [a[0] + t * rx, a[1] + t * ry];
+}
+
+function crossings(samplesA, samplesB, ctrlsA, ctrlsB) {
+  const hits = [];
+  for (let i = 0; i < samplesA.length - 1; i += 1) {
+    for (let j = 0; j < samplesB.length - 1; j += 1) {
+      const hit = segHit(samplesA[i], samplesA[i + 1], samplesB[j], samplesB[j + 1]);
+      if (!hit) continue;
+      if (nearAny(hit, ctrlsA, 16) || nearAny(hit, ctrlsB, 16)) continue;
+      if (hits.some(prev => dist(prev, hit) < 14)) continue;
+      hits.push(hit);
+    }
+  }
+  return hits;
+}
+
+function selfCrossings(samples, ctrls) {
+  const hits = [];
+  for (let i = 0; i < samples.length - 1; i += 1) {
+    for (let j = i + 2; j < samples.length - 1; j += 1) {
+      const hit = segHit(samples[i], samples[i + 1], samples[j], samples[j + 1]);
+      if (!hit) continue;
+      if (nearAny(hit, ctrls, 16)) continue;
+      if (hits.some(prev => dist(prev, hit) < 14)) continue;
+      hits.push(hit);
+    }
+  }
+  return hits;
+}
+
+function textWidth(text, font) {
+  return text.length * font * LABEL_CHAR;
+}
+
+function boxOf(label, font = LABEL_FONT) {
+  const width = textWidth(label.text, font);
+  const anchor = label.anchor || 'start';
+  const x0 = anchor === 'end' ? label.x - width : anchor === 'middle' ? label.x - width / 2 : label.x;
+  return { x0, y0: label.y - font, x1: x0 + width, y1: label.y + 4, width };
+}
+
+function overlap(a, b, gap = 2) {
+  return a.x0 < b.x1 + gap && a.x1 > b.x0 - gap && a.y0 < b.y1 + gap && a.y1 > b.y0 - gap;
+}
+
+function pointInBox(x, y, box) {
+  return x >= box.x0 && x <= box.x1 && y >= box.y0 && y <= box.y1;
+}
+
+function segNearBox(a, b, box) {
+  if (pointInBox(a[0], a[1], box) || pointInBox(b[0], b[1], box)) return true;
+  const edges = [
+    [[box.x0, box.y0], [box.x1, box.y0]],
+    [[box.x1, box.y0], [box.x1, box.y1]],
+    [[box.x1, box.y1], [box.x0, box.y1]],
+    [[box.x0, box.y1], [box.x0, box.y0]]
+  ];
+  return edges.some(([c, d]) => segHit(a, b, c, d));
+}
+
+function leaderOf(label, text) {
+  const width = textWidth(text, LABEL_FONT);
+  const anchor = label.anchor || 'start';
+  const x0 = anchor === 'end' ? label.x - width : anchor === 'middle' ? label.x - width / 2 : label.x;
+  const x1 = x0 + width;
+  const x = Math.min(Math.max(label.to[0], x0), x1);
+  return [[x, label.y - 3], [label.to[0], label.to[1]]];
+}
+
+function inEllipse(x, y, cx, cy, rx, ry) {
+  return ((x - cx) ** 2) / (rx ** 2) + ((y - cy) ** 2) / (ry ** 2) < 1;
+}
+
+function pointInPoly(x, y, samples) {
+  let inside = false;
+  for (let i = 0, j = samples.length - 1; i < samples.length; j = i, i += 1) {
+    const [x1, y1] = samples[i];
+    const [x2, y2] = samples[j];
+    if ((y1 > y) !== (y2 > y) && x < ((x2 - x1) * (y - y1)) / (y2 - y1) + x1) inside = !inside;
+  }
+  return inside;
+}
+
+function insideFill(p, shape) {
+  if (shape.type === 'ellipse' || shape.type === 'circle') {
+    return inEllipse(p[0], p[1], shape.cx, shape.cy, shape.rx || shape.r, shape.ry || shape.r);
+  }
+  if (shape.type === 'poly') return pointInPoly(p[0], p[1], samplesOf(shape));
+  if (shape.type === 'rect') {
+    return p[0] > shape.x && p[0] < shape.x + shape.w && p[1] > shape.y && p[1] < shape.y + shape.h;
+  }
+  return false;
+}
+
+function minDist(p, samples) {
+  let best = Infinity;
+  for (const q of samples) best = Math.min(best, dist(p, q));
+  return best;
+}
+
+function capLang(name, tr, en, x, y, anchor = 'start') {
+  const trBox = boxOf({ text: tr, x, y, anchor }, 12);
+  const enBox = boxOf({ text: en, x, y, anchor }, 12);
+  const box = trBox.width >= enBox.width ? trBox : enBox;
+  return { name, ...box };
+}
+
+const watermark = (w, h) => capLang('watermark', 'Şematik eğitim geometrisi', 'Schematic teaching geometry', w - 16, h - 16, 'end');
+
+const SCENERY = {
+  'aortoiliac/map': [
+    capLang('right', 'RIGHT', 'SAĞ', 24, 28),
+    capLang('left', 'LEFT', 'SOL', 696, 28, 'end'),
+    capLang('L4', 'L4', 'L4', 48, 248),
+    capLang('ligament', 'Inguinal ligament', 'İnguinal ligaman', 360, 786, 'middle'),
+    watermark(720, 800)
+  ],
+  'femoral/map': [
+    capLang('iea', 'IEA marker (not a second target)', 'İEA işareti (ayrı hedef değil)', 430, 78),
+    capLang('groin', 'RIGHT GROIN', 'SAĞ KASIK', 28, 32),
+    capLang('lat', 'Lateral', 'Lateral', 28, 776),
+    capLang('med', 'Medial', 'Medial', 692, 776, 'end'),
+    watermark(720, 800)
+  ],
+  'runoff/map': [
+    capLang('leg', 'RIGHT LEG', 'SAĞ BACAK', 28, 28),
+    capLang('knee', 'Knee joint', 'Diz eklemi', 148, 548),
+    watermark(720, 1280)
+  ],
+  'visceral/ap': [
+    capLang('laterality', 'RIGHT (image left)', 'SAĞ (görüntü solu)', 24, 28),
+    capLang('left', 'LEFT', 'SOL', 696, 28, 'end'),
+    capLang('liver', 'Karaciğer', 'Liver', 148, 78, 'middle'),
+    capLang('spleen', 'Dalak', 'Spleen', 624, 168, 'middle'),
+    capLang('rk', 'Sağ böbrek', 'R kidney', 108, 400, 'middle'),
+    capLang('lk', 'Sol böbrek', 'L kidney', 608, 292, 'middle'),
+    capLang('IVC', 'IVC', 'IVC', 250, 348, 'middle'),
+    capLang('behind', 'behind IVC', 'İVC arkası', 196, 312, 'end'),
+    watermark(720, 820)
+  ],
+  'visceral/lateral': [
+    capLang('posterior', 'Posterior', 'Arka', 24, 28),
+    capLang('anterior', 'Anterior', 'Ön', 696, 28, 'end'),
+    watermark(720, 820)
+  ],
+  'visceral/oblique': [
+    capLang('note', 'Shallow schematic, not a measured angle', 'Sığ şema, ölçülmüş açı değildir', 24, 800),
+    watermark(720, 820)
+  ]
+};
+
+const armScenery = [
+  capLang('arch', 'Arch', 'Ark', 28, 196),
+  capLang('rib', '1st rib', '1. kaburga', 478, 206),
+  capLang('arm', 'LEFT ARM', 'SOL KOL', 24, 28),
+  capLang('ulnar-side', 'Ulnar / medial', 'Ulnar / medial', 24, 250),
+  capLang('radial-side', 'Radial / lateral', 'Radiyal / lateral', 696, 250, 'end'),
+  capLang('arch-note', 'Arch types I-III are not drawn', 'Ark tipleri I-III çizilmez', 24, 1136),
+  watermark(720, 1160)
+];
+SCENERY['arm/typical'] = armScenery;
+SCENERY['arm/variant'] = armScenery;
+
+function exempt(item) {
+  return item.id.startsWith('xs-') || item.kind === 'frame' || item.kind === 'text';
+}
+
+function checkView(view, mode) {
+  const name = `${view.id}/${mode.id}`;
+  const [w, h] = mode.viewBox;
+  const items = structuresFor(view.id, mode.id);
+  const scenery = SCENERY[name] || [watermark(w, h)];
+  const allow = ALLOW[name] || new Set();
+  const expectSelf = name === 'arm/variant' ? { radial: 1 } : {};
+  const drawn = [];
+  items.forEach((item, index) => {
+    (item.draw[mode.id] || []).forEach((shape, shapeIndex) => {
+      if (shape.type === 'text') return;
+      drawn.push({
+        id: item.id,
+        kind: shape.kind || item.kind,
+        shape,
+        index,
+        shapeIndex,
+        rank: KIND_ORDER.indexOf(shape.kind || item.kind)
+      });
+    });
+  });
+  drawn.sort((a, b) => a.rank - b.rank || a.index - b.index || a.shapeIndex - b.shapeIndex);
+
+  const leftFrame = new Set();
+  for (const entry of drawn) {
+    if (exempt(entry)) continue;
+    const samples = samplesOf(entry.shape);
+    const pad = visualRadius(entry.shape);
+    const outside = samples.some(p => p[0] - pad < 0 || p[1] - pad < 0 || p[0] + pad > w || p[1] + pad > h);
+    if (outside && !leftFrame.has(entry.id)) {
+      leftFrame.add(entry.id);
+      fail(`${name} ${entry.id} stroke leaves the frame`);
+    }
+    if (entry.shape.type === 'line' && VESSEL.has(entry.kind)) {
+      const self = selfCrossings(samples, controlsOf(entry.shape));
+      const expected = expectSelf[entry.id] || 0;
+      if (self.length !== expected) fail(`${name} ${entry.id} self-cross ${self.length} expected ${expected}`);
+    }
+  }
+
+  const vesselShapes = drawn.filter(entry => entry.shape.type === 'line' && VESSEL.has(entry.kind) && !exempt(entry));
+  for (let i = 0; i < vesselShapes.length; i += 1) {
+    for (let j = i + 1; j < vesselShapes.length; j += 1) {
+      const a = vesselShapes[i];
+      const b = vesselShapes[j];
+      if (a.id === b.id) continue;
+      const hits = crossings(samplesOf(a.shape), samplesOf(b.shape), controlsOf(a.shape), controlsOf(b.shape));
+      if (!hits.length) continue;
+      const key = [a.id, b.id].sort().join('|');
+      const limit = allow.has(key) ? 1 : 0;
+      if (hits.length > limit && (view.id === 'aortoiliac' || view.id === 'visceral' || view.id === 'arm')) {
+        fail(`${name} cross ${key} (${hits.length})`);
+      }
+    }
+  }
+
+  const fills = drawn.filter(entry => FILL.has(entry.kind));
+  for (const lang of ['tr', 'en']) {
+    const labelBoxes = [];
+    for (const item of items) {
+      const label = labelFor(item, mode.id);
+      if (!label) {
+        if (!exempt(item)) fail(`${name} ${item.id} missing label`);
+        continue;
+      }
+      if (!exempt(item) && !label.to) fail(`${name} ${item.id} missing leader target`);
+      const box = boxOf({ ...label, text: label[lang] });
+      if (box.x0 < 4 || box.y0 < 4 || box.x1 > w - 4 || box.y1 > h - 4) {
+        fail(`${name} ${item.id} ${lang} label outside ${box.x0.toFixed(0)},${box.y0.toFixed(0)}-${box.x1.toFixed(0)},${box.y1.toFixed(0)}`);
+      }
+      if (exempt(item)) continue;
+      const leader = leaderOf(label, label[lang]);
+      const target = label.to;
+      const ownSamples = (item.draw[mode.id] || []).flatMap(samplesOf);
+      const ownShapes = item.draw[mode.id] || [];
+      const onMarker = ownShapes.some(shape => (
+        (shape.type === 'circle' || shape.type === 'ellipse')
+        && dist(target, [shape.cx, shape.cy]) <= (shape.r || Math.max(shape.rx, shape.ry)) + 6
+      ));
+      const inOwnFill = ownShapes.some(shape => FILL.has(shape.kind || item.kind) && insideFill(target, shape));
+      if (lang === 'tr' && minDist(target, ownSamples) > 24 && !onMarker && !inOwnFill) {
+        fail(`${name} ${item.id} leader target far ${target}`);
+      }
+      scenery.forEach(obstacle => {
+        if (overlap(box, obstacle, 1)) fail(`${name} ${item.id} ${lang} label hits scenery ${obstacle.name}`);
+        if (segNearBox(leader[0], leader[1], obstacle)) fail(`${name} ${item.id} ${lang} leader hits scenery ${obstacle.name}`);
+      });
+      labelBoxes.forEach(prev => {
+        if (overlap(prev.box, box, 2)) fail(`${name} label overlap ${prev.id} x ${item.id} (${lang})`);
+      });
+      const probes = [
+        [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2],
+        [box.x0, box.y0], [box.x1, box.y0], [box.x0, box.y1], [box.x1, box.y1]
+      ];
+      fills.forEach(entry => {
+        if (entry.id === item.id) return;
+        if (probes.some(p => insideFill(p, entry.shape))) fail(`${name} ${item.id} ${lang} label inside ${entry.id}`);
+      });
+      const covered = drawn.filter(entry => entry.id !== item.id).flatMap(entry => samplesOf(entry.shape))
+        .find(p => pointInBox(p[0], p[1], box) && dist(p, target) > 20);
+      if (covered) fail(`${name} ${item.id} ${lang} label covers geometry`);
+      const steps = Math.max(1, Math.ceil(dist(leader[0], leader[1]) / 6));
+      let leaderNear = false;
+      let leaderThrough = false;
+      for (let s = 0; s <= steps && (!leaderNear || !leaderThrough); s += 1) {
+        const p = lerp(leader[0], leader[1], s / steps);
+        if (dist(p, target) <= 18 || dist(p, leader[0]) <= 18) continue;
+        if (!leaderThrough) {
+          const through = labelBoxes.find(prev => pointInBox(p[0], p[1], prev.box));
+          if (through) {
+            fail(`${name} ${item.id} ${lang} leader through ${through.id}`);
+            leaderThrough = true;
+          }
+        }
+        if (!leaderNear) {
+          const near = vesselShapes.find(entry => entry.id !== item.id && minDist(p, samplesOf(entry.shape)) < 8);
+          if (near) {
+            fail(`${name} ${item.id} ${lang} leader near ${near.id}`);
+            leaderNear = true;
+          }
+        }
+      }
+      labelBoxes.push({ id: item.id, box });
+    }
+  }
+
+  for (const item of items) {
+    if (exempt(item)) continue;
+    const hit = item.hits?.[mode.id] || item.hit;
+    const shapes = item.draw[mode.id] || [];
+    const near = shapes.some(shape => {
+      if (shape.type === 'poly' || shape.type === 'rect' || shape.type === 'ellipse') {
+        return insideFill([hit.x, hit.y], shape) || minDist([hit.x, hit.y], samplesOf(shape)) <= 18;
+      }
+      return minDist([hit.x, hit.y], samplesOf(shape)) <= 18;
+    });
+    if (!near) fail(`${name} ${item.id} hit ${hit.x},${hit.y} is off the shape`);
+  }
+
+  for (let i = 0; i < drawn.length; i += 1) {
+    const earlier = drawn[i];
+    if (!VESSEL.has(earlier.kind) || earlier.shape.type !== 'line') continue;
+    const samples = samplesOf(earlier.shape);
+    const mid = samples.filter((_, index) => index > samples.length * 0.15 && index < samples.length * 0.85);
+    const later = drawn.slice(i + 1).filter(entry => entry.id !== earlier.id);
+    const free = mid.filter(p => later.every(entry => {
+      if (nearAny(p, controlsOf(entry.shape), 26)) return true;
+      if (entry.shape.type === 'circle' || entry.shape.type === 'ellipse') {
+        const rx = entry.shape.rx || entry.shape.r;
+        const ry = entry.shape.ry || entry.shape.r;
+        const nx = (p[0] - entry.shape.cx) / rx;
+        const ny = (p[1] - entry.shape.cy) / ry;
+        return Math.abs(Math.hypot(nx, ny) - 1) * Math.min(rx, ry) > hitRadius(entry.shape);
+      }
+      return minDist(p, samplesOf(entry.shape)) > hitRadius(entry.shape);
+    }));
+    if (!free.length) fail(`${name} ${earlier.id} centerline covered by a later hit stroke`);
+  }
+}
+
+for (const view of VIEWS) {
+  for (const mode of view.modes) checkView(view, mode);
+}
+
+function byId(viewId, modeId) {
+  return Object.fromEntries(structuresFor(viewId, modeId).map(item => [item.id, item]));
+}
+
+const ap = byId('visceral', 'ap');
+const liver = { cx: 148, cy: 118, rx: 78, ry: 52 };
+const spleen = { cx: 624, cy: 168, rx: 52, ry: 46 };
+const rightKidney = { cx: 108, cy: 400, rx: 46, ry: 58 };
+const leftKidney = { cx: 608, cy: 300, rx: 44, ry: 52 };
+const endPoint = shape => shape.pts[shape.pts.length - 1];
+const splenicEnd = endPoint(ap.splenic.draw.ap[0]);
+const properEnd = endPoint(ap['proper-hepatic'].draw.ap[0]);
+const renalRight = endPoint(ap.renal.draw.ap[0]);
+const renalLeft = endPoint(ap.renal.draw.ap[1]);
+const accessoryEnd = endPoint(ap['accessory-renal'].draw.ap[0]);
+const gdaEnd = endPoint(ap.gastroduodenal.draw.ap[0]);
+const gastricEnd = endPoint(ap['left-gastric'].draw.ap[0]);
+if (!inEllipse(...splenicEnd, spleen.cx, spleen.cy, spleen.rx, spleen.ry)) fail('splenic artery ends outside the spleen');
+if (!inEllipse(...properEnd, liver.cx, liver.cy, liver.rx, liver.ry)) fail('proper hepatic ends outside the liver');
+if (!inEllipse(...renalRight, rightKidney.cx, rightKidney.cy, rightKidney.rx, rightKidney.ry)) fail('right renal ends outside the kidney');
+if (!inEllipse(...renalLeft, leftKidney.cx, leftKidney.cy, leftKidney.rx, leftKidney.ry)) fail('left renal ends outside the kidney');
+if (!inEllipse(...accessoryEnd, rightKidney.cx, rightKidney.cy, rightKidney.rx, rightKidney.ry)) fail('accessory renal ends outside the kidney');
+if (inEllipse(...gastricEnd, liver.cx, liver.cy, liver.rx, liver.ry)) fail('left gastric ends in the liver');
+if (gdaEnd[1] >= 318) fail('gastroduodenal ends in the IVC band');
+const renalSamples = samplesOf(ap.renal.draw.ap[0]);
+if (!renalSamples.some(p => p[0] >= 228 && p[0] <= 272 && p[1] >= 318 && p[1] <= 468)) fail('right renal misses the IVC');
+for (const shape of ap.gonadal.draw.ap) {
+  if (samplesOf(shape).some(p => (
+    inEllipse(p[0], p[1], rightKidney.cx, rightKidney.cy, rightKidney.rx, rightKidney.ry)
+    || inEllipse(p[0], p[1], leftKidney.cx, leftKidney.cy, leftKidney.rx, leftKidney.ry)
+  ))) fail('gonadal artery enters a kidney');
+}
+
+const lateral = byId('visceral', 'lateral');
+const celiacPts = lateral.celiac.draw.lateral[0].pts;
+const smaPts = lateral.sma.draw.lateral[0].pts;
+const celiacStart = celiacPts[0];
+const celiacTip = celiacPts[celiacPts.length - 1];
+const smaStart = smaPts[0];
+const smaTip = smaPts[smaPts.length - 1];
+if (!(celiacTip[0] - celiacStart[0] > 40 && celiacTip[1] - celiacStart[1] < -10)) fail('lateral celiac ostium has no anterior upward angle');
+if (!(smaTip[0] - smaStart[0] > 40 && smaTip[1] - smaStart[1] > 30)) fail('lateral SMA ostium has no anterior downward angle');
+if (celiacStart[0] > 230 || smaStart[0] > 230) fail('lateral ostia are not on the anterior aorta');
+
+const arm = byId('arm', 'typical');
+const subclavianStart = arm.subclavian.draw.typical[0].pts[0];
+if (subclavianStart[0] !== 108 || subclavianStart[1] !== 78) fail('subclavian does not start at the arch');
+const rib = curveSamples([[360, 168], [430, 188], [470, 176]], false, 16);
+const subclavian = curveSamples(arm.subclavian.draw.typical[0].pts, false, 16);
+let ribGap = Infinity;
+subclavian.forEach(p => {
+  if (p[0] < 360 || p[0] > 470) return;
+  const nearest = rib.reduce((best, q) => (Math.abs(q[0] - p[0]) < Math.abs(best[0] - p[0]) ? q : best));
+  ribGap = Math.min(ribGap, nearest[1] - p[1]);
+});
+if (!(ribGap > 4)) fail('subclavian does not clear the first rib');
 
 if (problems.length) {
   console.error(problems.join('\n'));

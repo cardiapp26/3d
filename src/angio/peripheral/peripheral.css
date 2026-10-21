@@ -136,7 +136,7 @@
 .peri-hitdot {
   fill: rgba(248, 250, 252, 0.04);
   stroke: transparent;
-  pointer-events: all;
+  pointer-events: none;
 }
 
 .peri-structure:focus-visible .peri-hitdot {
@@ -186,13 +186,13 @@
 .peri-dot-artery { fill: #fb7185; stroke: none; }
 .peri-dot-nerve { fill: #fbbf24; stroke: none; }
 .peri-marker { fill: #38bdf8; stroke: #e0f2fe; stroke-width: 2; }
+.peri-shape { pointer-events: none; }
 
 .peri-label,
 .peri-shape-text,
 .peri-caption,
 .peri-watermark {
   font-family: system-ui, sans-serif;
-  font-size: 13px;
   font-weight: 600;
   fill: #e2e8f0;
   stroke: #070a0f;
@@ -201,8 +201,14 @@
   pointer-events: none;
 }
 
-.peri-watermark { font-size: 12px; fill: #64748b; }
-.peri-caption { font-size: 12px; fill: #94a3b8; }
+.peri-watermark { fill: #64748b; }
+.peri-caption { fill: #94a3b8; }
+.peri-leader {
+  stroke: #94a3b8;
+  stroke-width: 1.25;
+  fill: none;
+  pointer-events: none;
+}
 .peri-scenery,
 .peri-label,
 .peri-shape-text,
@@ -211,6 +217,9 @@
 
 .peri-ghost { stroke: #475569; fill: none; }
 .peri-organ { fill: rgba(51, 65, 85, 0.45); stroke: #64748b; stroke-width: 1.5; }
+.peri-ivc { fill: rgba(56, 189, 248, 0.22); stroke: #7dd3fc; stroke-width: 1.5; }
+.peri-limb { fill: rgba(148, 163, 184, 0.08); stroke: #64748b; stroke-width: 1.5; }
+.peri-rib { stroke: #64748b; fill: none; }
 
 .peri-scale-note,
 .peri-legend-label {
