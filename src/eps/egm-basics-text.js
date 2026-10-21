@@ -16,8 +16,8 @@ export const BASICS_TEXT = {
       angle: 'Yön (çift eksenine göre)', spacing: 'Kutup aralığı', far: 'Uzak alan (uzak odacık)',
       unipolar: 'Unipolar', bipolar: 'Bipolar', farName: 'uzak alan', local: 'yerel',
       chips: { morphology: 'Unipolar şekil', amp: 'Bipolar yerel sinyal (unipolar = 100)', ratio: 'Bipolar uzak alan / unipolar uzak alan' },
-      note: 'Bipolar uzak alanı belirgin azaltır, silmez. Dalga çift eksenine dik gelirse yerel sinyal de kaybolur.',
-      qsHint: 'Odakta başlayan dalga: saf QS (yaklaşma fazı yok).'
+      note: 'Bipolar ortak uzak alanı azaltır, tümünü silmez. İdeal düzlemsel dalga çift eksenine dik ilerlerse yerel sinyal de iptal olabilir. Aralık-genlik ilişkisi geometri, temas ve dalga biçimine bağlıdır; bu şema tek örnektir.',
+      qsHint: 'Bu şemada odaktan uzaklaşan dalga QS üretir. QS, breakthrough bölgesinde de görülebilir; temas ve filtre doğrulanmadan tek başına odağı veya ablasyon hedefini belirlemez.'
     },
     filters: {
       title: 'Filtre bandı sinyali nasıl bozar',
@@ -25,7 +25,7 @@ export const BASICS_TEXT = {
       presets: 'Standart', bipolarPreset: 'Bipolar 30-500', unipolarPreset: 'Unipolar geniş bant',
       chips: { qs: 'QS korunuyor', overshoot: 'Dönüş sapması', slope: 'En dik iniş', wander: 'Taban oynaması' },
       yes: 'evet', no: 'hayır',
-      note: 'Bipolar 30-500 Hz. Unipolarda alt sınır düşük tutulur (laboratuvara göre 0,05 ile 1 Hz); yüksek alt sınır QS\'i bozar.'
+      note: '30-500 Hz, bu şemanın bipolar ön ayarıdır; evrensel standart değildir. Unipolarda alt sınır düşük tutulur (genellikle ≤1-2 Hz). Yüksek alt sınır QS\'i bozabilir veya yalancı QS oluşturabilir; üst sınır keskin potansiyelleri ve gürültüyü birlikte etkiler.'
     },
     catheters: {
       title: 'Dört kateter, ne kaydeder',
@@ -79,7 +79,7 @@ export const BASICS_TEXT = {
       block: 'İletim yok (düğüm ERP)',
       jumpNote: '10 ms\'lik adımda AH 50 ms ve üstü uzarsa sıçrama: yavaş yola geçiş.'
     },
-    source: 'Kavramlar: intrakardiyak elektrogram ve EP laboratuvarına giriş (J. Cooper, aritmi eğitim video dizisi). Sinyaller ve sayılar öğretim için tasarlanmıştır.'
+    source: 'Kavramlar: intrakardiyak elektrogram ve EP laboratuvarına giriş (J. Cooper, aritmi eğitim video dizisi). Kayıt sınırlamaları: Haq ve ark., Electrogram recording (2026), doi:10.1016/j.ipej.2026.09.004, §2.4, §4.3, §5.3-5.5. Sinyaller ve sayılar öğretim için tasarlanmıştır.'
   },
   en: {
     tab: 'EGM basics',
@@ -92,8 +92,8 @@ export const BASICS_TEXT = {
       angle: 'Direction (to the pair axis)', spacing: 'Pole spacing', far: 'Far field (distant chamber)',
       unipolar: 'Unipolar', bipolar: 'Bipolar', farName: 'far field', local: 'local',
       chips: { morphology: 'Unipolar shape', amp: 'Bipolar local signal (unipolar = 100)', ratio: 'Bipolar far field / unipolar far field' },
-      note: 'Bipolar reduces far field markedly; it does not erase it. A wave crossing the pair axis at a right angle loses the local signal too.',
-      qsHint: 'A wave starting at the focus: pure QS (no approach phase).'
+      note: 'Bipolar reduces shared far field; it does not erase all of it. An ideal planar wave propagating perpendicular to the pair axis can cancel the local signal too. Spacing-amplitude behavior depends on geometry, contact and waveform; this schematic shows one example.',
+      qsHint: 'In this schematic, a wave leaving the focus produces QS. QS can also mark breakthrough; without checking contact and filtering, it cannot alone identify the origin or an ablation target.'
     },
     filters: {
       title: 'How the filter band changes the signal',
@@ -101,7 +101,7 @@ export const BASICS_TEXT = {
       presets: 'Standard', bipolarPreset: 'Bipolar 30-500', unipolarPreset: 'Unipolar wide band',
       chips: { qs: 'QS preserved', overshoot: 'Rebound', slope: 'Steepest downstroke', wander: 'Baseline wander' },
       yes: 'yes', no: 'no',
-      note: 'Bipolar 30-500 Hz. Unipolar keeps the high-pass low (0.05 to 1 Hz depending on the laboratory); a high cut-off breaks the QS.'
+      note: '30-500 Hz is this schematic\'s bipolar preset, not a universal standard. Unipolar keeps the high-pass low (typically ≤1-2 Hz). A high cut-off can distort QS or create pseudo-QS; the low-pass setting affects sharp potentials as well as noise.'
     },
     catheters: {
       title: 'Four catheters, what each records',
@@ -155,6 +155,6 @@ export const BASICS_TEXT = {
       block: 'No conduction (node ERP)',
       jumpNote: 'AH lengthening by 50 ms or more in a 10 ms step is a jump: conduction moved to the slow pathway.'
     },
-    source: 'Concepts: introduction to intracardiac electrograms and the EP laboratory (J. Cooper, arrhythmia education video series). Signals and numbers are designed for teaching.'
+    source: 'Concepts: introduction to intracardiac electrograms and the EP laboratory (J. Cooper, arrhythmia education video series). Recording limitations: Haq et al., Electrogram recording (2026), doi:10.1016/j.ipej.2026.09.004, §2.4, §4.3, §5.3-5.5. Signals and numbers are designed for teaching.'
   }
 };

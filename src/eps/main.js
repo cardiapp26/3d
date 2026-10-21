@@ -11,6 +11,7 @@ import { mountSiteHeader } from '../site-header.js';
 import { createPersonalNotes } from '../personal-notes.js';
 import './lesson.css';
 import './ves-loc.css';
+import './recording.css';
 import { APP_TEXT, LANGS, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
 import { createEpPanel, EP_VIEWS } from './ep-panel.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
@@ -88,6 +89,7 @@ function spaceTarget() {
   if (view === 'live' || (!live.element.hidden && live.element.offsetParent !== null)) {
     return live.element.querySelector('[data-ep-live-run]');
   }
+  if (view === 'recording') return panel.recording.element.querySelector('[data-recording-play]');
   if (view === 'afmap') {
     const play = panel.afmap.element.querySelector('[data-afmap-play]');
     return play && !play.parentElement?.hidden ? play : null;

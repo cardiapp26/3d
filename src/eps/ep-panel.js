@@ -30,6 +30,8 @@ import { createAfMappingPanel } from './afmap-panel.js';
 import { AFMAP_TEXT } from './afmap-text.js';
 import { createEgmBasicsPanel } from './egm-basics-panel.js';
 import { BASICS_TEXT } from './egm-basics-text.js';
+import { createRecordingPanel } from './recording-panel.js';
+import { RECORDING_TEXT } from './recording-text.js';
 import { createSvtDxPanel } from './svt-dx-panel.js';
 import { SVT_DX_TEXT } from './svt-dx-text.js';
 import { createWpwLocPanel } from './wpw-loc-panel.js';
@@ -123,7 +125,7 @@ const ZOOMS = [1, 2, 4];
 
 const pick = (obj, lang) => (lang === 'en' ? obj.en : obj.tr);
 
-export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'substrate', 'mapbasics', 'afmap', 'basics', 'svt', 'wpw', 'ves', 'svt-practice', 'ves-practice']);
+export const EP_VIEWS = Object.freeze([...EP_SECTIONS, 'live', 'mapping', 'pacemap', 'substrate', 'mapbasics', 'afmap', 'basics', 'svt', 'wpw', 'ves', 'svt-practice', 'ves-practice', 'recording']);
 
 /**
  * @param {HTMLElement} mount
@@ -135,7 +137,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const doc = mount?.ownerDocument || globalThis.document;
   if (!mount || !doc) return null;
   let lang = (typeof getLang === 'function' && getLang()) === 'en' ? 'en' : 'tr';
-  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, substrate: false, mapbasics: false, afmap: false, basics: false, svt: false, wpw: false, ves: false, practice: null };
+  const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, substrate: false, mapbasics: false, afmap: false, basics: false, recording: false, svt: false, wpw: false, ves: false, practice: null };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
   const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links') };
@@ -212,6 +214,16 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   basicsTab.addEventListener('click', () => { showView('basics'); notifySection(); });
   tabs.appendChild(basicsTab);
   const basicsPanel = createEgmBasicsPanel(doc, { getLang: () => lang });
+  const recordingTab = el('button');
+  recordingTab.type = 'button';
+  recordingTab.setAttribute('role', 'tab');
+  recordingTab.setAttribute('data-ep-section', 'recording');
+  recordingTab.addEventListener('click', () => { showView('recording'); notifySection(); });
+  tabs.appendChild(recordingTab);
+  const recordingPanel = createRecordingPanel(doc, { getLang: () => lang });
+  const recordingEntry = el('a', 'recording-entry');
+  recordingEntry.setAttribute('href', '#/recording');
+  basicsPanel.element.appendChild(recordingEntry);
   // SVT algorithm: findings narrow the list of mechanisms.
   const svtTab = el('button');
   svtTab.type = 'button';
@@ -410,7 +422,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   sideCol.append(practiceBar, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
-  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, mapBasicsPanel.element, afMapPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element);
+  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, mapBasicsPanel.element, afMapPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element, recordingPanel.element);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -499,6 +511,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   }
 
   function redraw() {
+    if (state.recording) { recordingPanel.draw(); return; }
     lastDrawn = drawRecording(canvas) || lastDrawn;
     const recording = current();
     const show = Boolean(view.ladder && recording && lastDrawn && !ladderLocked());
@@ -597,7 +610,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const recording = current();
     sectionButtons.forEach((button, i) => {
       button.textContent = t.sections[EP_SECTIONS[i]];
-      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.substrate && !state.mapbasics && !state.afmap && !state.basics && !state.svt && !state.wpw && !state.ves && !state.practice && EP_SECTIONS[i] === state.section));
+      button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.substrate && !state.mapbasics && !state.afmap && !state.basics && !state.recording && !state.svt && !state.wpw && !state.ves && !state.practice && EP_SECTIONS[i] === state.section));
     });
     liveTab.textContent = lang === 'en' ? 'Live recording' : 'Canlı kayıt';
     liveTab.setAttribute('aria-selected', String(state.live));
@@ -619,7 +632,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     wpwTab.setAttribute('aria-selected', String(state.wpw));
     vesTab.textContent = VES_TEXT[lang].tab;
     vesTab.setAttribute('aria-selected', String(state.ves || state.practice === 'ves'));
-    lessonBox.hidden = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.svt || state.wpw || state.ves;
+    lessonBox.hidden = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.recording || state.svt || state.wpw || state.ves;
     livePanel.setActive(state.live);
     mappingPanel.setActive(state.mapping);
     paceMapPanel.setActive(state.pacemap);
@@ -627,6 +640,10 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     mapBasicsPanel.setActive(state.mapbasics);
     afMapPanel.setActive(state.afmap);
     basicsPanel.setActive(state.basics);
+    recordingTab.textContent = RECORDING_TEXT[lang].tab;
+    recordingTab.setAttribute('aria-selected', String(state.recording));
+    recordingEntry.textContent = `${RECORDING_TEXT[lang].title} →`;
+    recordingPanel.setActive(state.recording);
     svtPanel.setActive(state.svt);
     wpwPanel.setActive(state.wpw);
     vesPanel.setActive(state.ves);
@@ -800,7 +817,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     view.waves = readFlag('waves');   // the live monitor may have changed the shared choices
     view.ladder = readFlag('ladder');
     view.links = readFlag('links');
-    const wasLab = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.svt || state.wpw || state.ves;
+    const wasLab = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.recording || state.svt || state.wpw || state.ves;
     state.live = id === 'live';
     state.mapping = id === 'mapping';
     state.pacemap = id === 'pacemap';
@@ -808,10 +825,11 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     state.mapbasics = id === 'mapbasics';
     state.afmap = id === 'afmap';
     state.basics = id === 'basics';
+    state.recording = id === 'recording';
     state.svt = id === 'svt';
     state.wpw = id === 'wpw';
     state.ves = id === 'ves';
-    const lab = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.svt || state.wpw || state.ves;
+    const lab = state.live || state.mapping || state.pacemap || state.substrate || state.mapbasics || state.afmap || state.basics || state.recording || state.svt || state.wpw || state.ves;
     if (practice) {
       // A practice view is the Diagnosis strip with one exercise: resume it, or start one.
       setSection('diagnosis');
@@ -827,7 +845,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     if (!lab) setSection(id);
     if (lab || wasLab || wasPractice) render();
   }
-  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.substrate ? 'substrate' : state.mapbasics ? 'mapbasics' : state.afmap ? 'afmap' : state.basics ? 'basics' : state.svt ? 'svt' : state.wpw ? 'wpw' : state.ves ? 'ves' : state.practice ? `${state.practice}-practice` : state.section);
+  const currentView = () => (state.live ? 'live' : state.mapping ? 'mapping' : state.pacemap ? 'pacemap' : state.substrate ? 'substrate' : state.mapbasics ? 'mapbasics' : state.afmap ? 'afmap' : state.basics ? 'basics' : state.recording ? 'recording' : state.svt ? 'svt' : state.wpw ? 'wpw' : state.ves ? 'ves' : state.practice ? `${state.practice}-practice` : state.section);
   const notifySection = () => { if (typeof onSection === 'function') onSection(currentView()); };
 
   if (EP_SECTIONS.includes(initial) && initial !== state.section) setSection(initial);
@@ -838,6 +856,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   state.mapbasics = initial === 'mapbasics';
   state.afmap = initial === 'afmap';
   state.basics = initial === 'basics';
+  state.recording = initial === 'recording';
   state.svt = initial === 'svt';
   state.wpw = initial === 'wpw';
   state.ves = initial === 'ves';
@@ -859,6 +878,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     mapbasics: mapBasicsPanel,
     afmap: afMapPanel,
     basics: basicsPanel,
+    recording: recordingPanel,
     svt: svtPanel,
     wpw: wpwPanel,
     ves: vesPanel,

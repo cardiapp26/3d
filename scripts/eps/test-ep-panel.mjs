@@ -37,7 +37,7 @@ const tabs = byClass('ep-sections');
 const row = byClass('egm-scenarios');
 const text = byClass('egm-text');
 const title = byClass('egm-title');
-assert.equal(tabs.children.length, 13, 'three lesson sections, live recording, mapping, pace map, substrate, mapping basics, AF mapping, EGM basics, SVT, WPW and VES localization tabs');
+assert.equal(tabs.children.length, 14, 'three lesson sections, live recording, mapping, pace map, substrate, mapping basics, AF mapping, EGM basics, SVT, WPW, VES localization and EGM recording tabs');
 
 // Lesson entry: the legacy scenario ids open the treatment clips.
 panel.openLesson('sinus');
