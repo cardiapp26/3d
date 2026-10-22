@@ -351,3 +351,14 @@
   .peri-wrap { padding: 12px 10px 24px; }
   .peri-tabs button { font-size: 12px; padding: 8px 2px; }
 }
+
+/* Phones: the card sits below the drawing, so a tapped vessel would open it off screen. Once a structure is
+   selected the card docks to the bottom of the viewport (scrollable) while the drawing is in view. */
+@media (max-width: 860px) {
+  .peri-card:has([data-card-pearl]:not(:empty)) {
+    position: sticky; bottom: 0; z-index: 6;
+    max-height: 42vh; overflow-y: auto; overscroll-behavior: contain;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.55);
+  }
+}

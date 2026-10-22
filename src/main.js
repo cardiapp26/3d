@@ -234,6 +234,7 @@ app.innerHTML = `
           <button id="wiggers-toggle" class="cycle-flow-btn" aria-pressed="false" title="Wiggers diyagramı (basınç / hacim / EKG)">Wiggers <kbd>W</kbd></button>
           <span id="cycle-interval-name" class="cycle-badge">Rapid ventricular filling</span>
           <span id="cycle-phase-val" class="cycle-phase-tag">%0</span>
+          <button id="cycle-collapse" type="button" class="cycle-collapse-btn" aria-controls="cycle-panel" aria-expanded="true"></button>
         </div>
         <div class="cycle-rate-group">
           <div class="flow-legend" title="Oksijenlenme: Kırmızı (Sol kalp / Aort / Koroner arter) · Mavi (Sağ kalp / Pulmoner arter / Venöz sistem)">
@@ -652,6 +653,26 @@ if (cyclePanelEl && workspaceEl) {
   }).observe(cyclePanelEl);
   syncCycleHeight();
 }
+// Phones: the cycle panel starts as one row (beat, flow, Wiggers) so the 3D model keeps most of the screen;
+// the chevron opens rate, rhythm, timeline and ECG strip. --cycle-h follows through the observer above.
+const cycleCollapseBtn = document.querySelector('#cycle-collapse');
+const phoneQuery = window.matchMedia('(max-width: 640px)');
+function syncCycleCollapse() {
+  if (!cyclePanelEl || !cycleCollapseBtn) return;
+  const collapsed = cyclePanelEl.classList.contains('is-collapsed');
+  const label = getTranslation(collapsed ? 'cycleExpand' : 'cycleCollapse');
+  cycleCollapseBtn.setAttribute('aria-expanded', String(!collapsed));
+  cycleCollapseBtn.setAttribute('aria-label', label);
+  cycleCollapseBtn.title = label;
+  cycleCollapseBtn.textContent = collapsed ? '▴' : '▾';
+}
+function setCycleCollapsed(on) {
+  cyclePanelEl?.classList.toggle('is-collapsed', on);
+  syncCycleCollapse();
+}
+cycleCollapseBtn?.addEventListener('click', () => setCycleCollapsed(!cyclePanelEl.classList.contains('is-collapsed')));
+phoneQuery.addEventListener('change', event => setCycleCollapsed(event.matches));
+setCycleCollapsed(phoneQuery.matches);
 
 let lastCycleState = null;
 
@@ -1219,9 +1240,9 @@ function setMode(newMode, updateUrl = true) {
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
-  // On a phone the echo image, the angiography steps and the hemodynamics panel live in the Learn sheet:
-  // open it with the mode, the 3D scene stays in the strip above it.
-  if ((isEcho || mode === 'angiography' || mode === 'cath') && panelShell?.isMobile()) panelShell.open('learn', undefined, 'half');
+  // On a phone the echo image lives in the Learn sheet: open it with the mode, the 3D scene stays in the strip
+  // above it. Angiography steps and the hemodynamics panel stay behind the Learn tab so the model keeps the screen.
+  if (isEcho && panelShell?.isMobile()) panelShell.open('learn', undefined, 'half');
   headerTabs?.refresh();
   filterAtrialOptions();
   document.querySelectorAll(`.chamber-tools[data-chamber-mode="${mode}"] [data-chamber-wall]`).forEach(input => {
@@ -1989,6 +2010,7 @@ function applyChromeTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = getTranslation(el.dataset.i18n);
   });
+  syncCycleCollapse();
   const labels = new Map(getUiModes().map(([id, , label]) => [id, label]));
   document.querySelectorAll('[data-mode]').forEach(btn => {
     const labelEl = btn.querySelector('.mode-label');

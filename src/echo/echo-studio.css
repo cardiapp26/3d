@@ -224,7 +224,11 @@
     min-height: 320px;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    /* The 3D view must not spill over the console below (it covered the TTE/TEE/ICE row). */
+    overflow: hidden;
   }
+
+  .echo-viewport { min-height: 0; }
 
   .echo-panel-container {
     border-left: none;

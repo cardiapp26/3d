@@ -79,7 +79,9 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 @media (max-width: 900px) {
   body { height: auto; min-height: 100dvh; }
   .app-shortcuts { display: none; }
-  .ep-live { grid-template-columns: 1fr; height: auto; }
+  /* minmax(0, 1fr): a 1fr track grows to its widest control and pushed the console off a phone screen. */
+  .ep-live { grid-template-columns: minmax(0, 1fr); height: auto; min-width: 0; }
+  .ep-live-console, .ep-live > * { min-width: 0; }
   .ep-live-canvas { flex: none; height: 62vh; min-height: 300px; }
   .ep-live-console { overflow: visible; }
   .ep-live-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
