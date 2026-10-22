@@ -1,12 +1,14 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { startApp } = require('./lib/app-server.cjs');
 const assert = require('node:assert/strict');
 (async () => {
+  const app = await startApp();
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto(`${process.env.APP_URL || 'http://127.0.0.1:5193'}/angio/?lang=tr#a=-35&b=-45&sys=left`);
+    await page.goto(`${app.url}/angio/?lang=tr#a=-35&b=-45&sys=left`);
     assert.equal(await page.locator('[data-atlas-viewport]').count(), 2, 'anatomy and fluoroscopy reuse atlas engine');
     await page.waitForFunction(() => document.querySelector('[data-angio-atlas]').dataset.ready === 'true', undefined, { timeout: 60000 });
     const state = () => page.evaluate(() => window.angioStudio.getAtlasState());
@@ -56,6 +58,21 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('[data-cine-angle]').textContent(), 'LAO 13 CRA 37');
     const angio = (await state()).fluoro.angio;
     assert.deepEqual([angio.laoRao, angio.craCau], [13, 37], 'console sliders drive the C-arm');
+    // Venous phase: coronary veins only, in both views.
+    await page.locator('[data-atlas-veins-only]').click();
+    await page.waitForFunction(() => window.angioStudio.getAtlasState().fluoro.system === 'veins');
+    assert.equal(await page.locator('[data-cine-system]').textContent(), 'VEINS');
+    await page.locator('[data-atlas-veins-only]').click();
+    await page.waitForFunction(() => window.angioStudio.getAtlasState().fluoro.system !== 'veins');
+    // Hover names a structure over the anatomy view.
+    const box = await page.locator('[data-atlas-viewport=anatomy]').boundingBox();
+    let tip = null;
+    for (let y = box.y + box.height * .4; y < box.y + box.height * .85 && !tip; y += 20)
+      for (let x = box.x + box.width * .3; x < box.x + box.width * .7 && !tip; x += 20) {
+        await page.mouse.move(x, y);
+        tip = await page.evaluate(() => { const t = document.querySelector('[data-atlas-viewport=anatomy] .angio-atlas-tip'); return t && !t.hidden ? t.textContent : null; });
+      }
+    assert.ok(tip, 'hover shows a structure name');
     for (const width of [390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `no overflow ${width}`);
@@ -63,5 +80,5 @@ const assert = require('node:assert/strict');
     await page.screenshot({ path: '/tmp/angio-atlas-after.png', fullPage: true });
     assert.deepEqual(errors, []);
     console.log('PASS angio atlas: shared original model, anatomy/fluoro, angles, device, shared cine, layers, graft console and cine corners, persistent renderers, TR/EN, responsive layout');
-  } finally { await browser.close(); }
+  } finally { await browser.close(); await app.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

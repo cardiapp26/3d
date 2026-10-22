@@ -326,11 +326,16 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const {id,layer,system:branch}=m.userData;
       // The Chiari network is a variant (2-3%): hidden unless the RA mode's optional switch is on.
       if(id==='chiari-network'&&!(mode==='ra'&&visibility.chiariNetwork===true)){m.visible=false;continue;}
-      if (mode === 'angiography' && m.userData.veinGroup === 'cardiac-veins') {
+      // Angiography: cardiac veins only in the venous phase ('veins' system), then without the great veins.
+      if (mode === 'angiography' && m.userData.veinGroup === 'cardiac-veins' && system !== 'veins') {
         m.visible = false;
         continue;
       }
       const isVein = branch === 'veins' || ['svc', 'ivc', 'pv', 'cs', 'gcv', 'mcv', 'piv', 'lspv', 'lipv', 'rspv', 'ripv', 'cardiac-veins'].includes(id);
+      if (mode === 'angiography' && system === 'veins' && isVein && m.userData.veinGroup !== 'cardiac-veins') {
+        m.visible = false;
+        continue;
+      }
       if (mode !== 'defects' && !visibility.veins && isVein) {
         m.visible = false;
         continue;
@@ -1605,7 +1610,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     getCatheterVisibility(){return transseptal.getCatheterVisibility();},
     resetCatheterToggles(){transseptal.resetCatheterToggles();requestRender();},
     setProgress(value){if(mode==='cath'){cathLab.setProgress(Number(value));requestRender();return;}if(mode==='transseptal')transseptal.setProgress(Number(value));else pacemakerLeads.setProgress(Number(value));requestRender();},
-    setCoronarySystem(value){system=['all','both','left','right'].includes(value)?value:'all';applyState();},
+    // 'veins': coronary veins only (venous phase); arteries hidden.
+    setCoronarySystem(value){system=['all','both','left','right','veins'].includes(value)?value:'all';applyState();},
     setRootWindow(value){rootWindow=Boolean(value);applyState();},
     reset(){
       septalDefects.group.visible=false;septalDefects.select(DEFECT_IDS[0]);

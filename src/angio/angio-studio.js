@@ -105,6 +105,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
             <button type="button" data-angio-sys="lima">LIMA</button><button type="button" data-angio-sys="svg-om">SVG–OM</button><button type="button" data-angio-sys="svg-pda">SVG–PDA</button>
           </div>
           <button type="button" class="angio-console-toggle" data-atlas-contours aria-pressed="true"></button>
+          <button type="button" class="angio-console-toggle" data-atlas-veins-only aria-pressed="false"></button>
         </div>
         <div class="angio-console-stage">
           <div class="angio-cine">
@@ -151,6 +152,13 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     contoursBtn.setAttribute('aria-pressed', String(on));
     atlas?.setContours(on);
   });
+  const veinsOnlyBtn = atlasElement.querySelector('[data-atlas-veins-only]');
+  veinsOnlyBtn.addEventListener('click', () => {
+    const on = veinsOnlyBtn.getAttribute('aria-pressed') !== 'true';
+    veinsOnlyBtn.setAttribute('aria-pressed', String(on));
+    atlas?.setVeinsOnly(on);
+    atlasElement.querySelector('[data-cine-system]').textContent = on ? (getLang() === 'tr' ? 'VENLER' : 'VEINS') : SYSTEM_CORNER[state.system] || '';
+  });
   atlasElement.querySelector('[data-console-alpha]').addEventListener('input', e => setAngles(Number(e.target.value), state.beta));
   atlasElement.querySelector('[data-console-beta]').addEventListener('input', e => setAngles(state.alpha, Number(e.target.value)));
   const SYSTEM_CORNER = { left: 'LCA', right: 'RCA', both: 'LCA + RCA', lima: 'LIMA', 'svg-om': 'SVG–OM', 'svg-pda': 'SVG–PDA' };
@@ -175,6 +183,8 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     atlasElement.querySelector('[data-console-group="grafts"]').classList.toggle('is-off', !graftOn);
     atlasElement.querySelector('[data-console-group="native"]').classList.toggle('is-off', graftOn);
     contoursBtn.textContent = isTr ? 'Konturlar' : 'Outlines';
+    veinsOnlyBtn.textContent = isTr ? 'Yalnız venler' : 'Veins only';
+    veinsOnlyBtn.title = isTr ? 'Koroner venler: arterler ve greftler gizlenir' : 'Coronary veins: arteries and grafts hidden';
     const a = Math.round(state.alpha), b = Math.round(state.beta);
     const rot = a === 0 ? 'AP 0°' : `${a > 0 ? 'LAO' : 'RAO'} ${Math.abs(a)}°`;
     const ang = b === 0 ? (isTr ? 'Düz 0°' : 'Straight 0°') : `${b > 0 ? 'CRA' : 'CAU'} ${Math.abs(b)}°`;
@@ -188,7 +198,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     betaInput.setAttribute('aria-label', isTr ? `Angülasyon (CRA / CAU): ${ang}` : `Angulation (CRA / CAU): ${ang}`);
     // Cine corners: projection as the lab monitor writes it, and the injected system.
     atlasElement.querySelector('[data-cine-angle]').textContent = `${a === 0 ? 'AP' : `${a > 0 ? 'LAO' : 'RAO'} ${Math.abs(a)}`} ${b === 0 ? '' : `${b > 0 ? 'CRA' : 'CAU'} ${Math.abs(b)}`}`.trim();
-    atlasElement.querySelector('[data-cine-system]').textContent = SYSTEM_CORNER[state.system] || '';
+    atlasElement.querySelector('[data-cine-system]').textContent = veinsOnlyBtn.getAttribute('aria-pressed') === 'true' ? (isTr ? 'VENLER' : 'VEINS') : SYSTEM_CORNER[state.system] || '';
   }
 
   function syncAtlas() {

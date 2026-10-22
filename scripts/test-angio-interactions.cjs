@@ -1,13 +1,15 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { startApp } = require('./lib/app-server.cjs');
 const assert = require('node:assert/strict');
 
 (async () => {
+  const app = await startApp();
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 2 });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto(`${process.env.APP_URL || 'http://127.0.0.1:5189'}/angio/?lang=tr`);
+    await page.goto(`${app.url}/angio/?lang=tr`);
     await page.waitForFunction(() => document.querySelector('[data-angio-atlas]')?.dataset.ready === 'true', undefined, { timeout: 60000 });
     await page.locator('[data-toggle-cine]').click();
     await page.locator('[data-angio-schematic] summary').click();
@@ -99,5 +101,5 @@ const assert = require('node:assert/strict');
     assert.deepEqual(errors, []);
     await page.screenshot({ path: '/tmp/angio-after.png', fullPage: true });
     console.log('PASS angiography: cine/freeze pixels, all systems/presets in detector, scaled vessel selection, angle details, lesions, contrast, TR/EN, stable gantry DOM, joystick and responsive layout');
-  } finally { await browser.close(); }
+  } finally { await browser.close(); await app.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1,4 +1,5 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { startApp } = require('./lib/app-server.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
@@ -6,6 +7,7 @@ const fs = require('node:fs');
 const angleText = async page => `${await page.locator('#angio-alpha-val').textContent()} · ${await page.locator('#angio-beta-val').textContent()}`;
 
 (async () => {
+  const app = await startApp();
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -13,7 +15,7 @@ const angleText = async page => `${await page.locator('#angio-alpha-val').textCo
     page.on('pageerror', e => errors.push(e.message));
 
     // 1. Initial entry with user's exact requested hash: #a=-35&b=-45&sys=left
-    const testUrl = `${process.env.APP_URL || 'http://127.0.0.1:5189'}/angio/#a=-35&b=-45&sys=left`;
+    const testUrl = `${app.url}/angio/#a=-35&b=-45&sys=left`;
     await page.goto(testUrl);
     await page.waitForFunction(() => document.querySelector('[data-angio-atlas]')?.dataset.ready === 'true', undefined, { timeout: 60000 });
     await page.locator('[data-angio-schematic] summary').click();
@@ -102,6 +104,7 @@ const angleText = async page => `${await page.locator('#angio-alpha-val').textCo
     console.log(`Screenshots: ${shots}`);
   } finally {
     await browser.close();
+    await app.close();
   }
 })().catch(e => {
   console.error(e);

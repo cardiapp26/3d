@@ -1,4 +1,5 @@
 import { createHeart } from '../heart.js';
+import { rawStructures } from '../content.js';
 
 export function createAngioAtlas({ mount, getLang, onAngles }) {
   const hosts = ['anatomy', 'fluoro'].map(kind => {
@@ -22,7 +23,22 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
   }
   const selection = mount.querySelector('[data-atlas-selection]');
   const hearts = [];
-  let appliedSystem = null, selectedId = null, contrast = 1;
+  let appliedSystem = null, selectedId = null, contrast = 1, veinsOnly = false;
+  // Hover names: structure title, plus the named branch when the pointer is on one.
+  const tips = hosts.map(host => {
+    const tip = document.createElement('span');
+    tip.className = 'angio-atlas-tip'; tip.hidden = true; tip.setAttribute('role', 'status');
+    host.append(tip);
+    host.addEventListener('pointermove', e => { const r = host.getBoundingClientRect(); tip.style.left = `${e.clientX - r.left + 14}px`; tip.style.top = `${e.clientY - r.top + 14}px`; });
+    host.addEventListener('pointerleave', () => { tip.hidden = true; });
+    return tip;
+  });
+  function nameOf(id, branch) {
+    const lang = getLang() === 'tr' ? 'tr' : 'en';
+    const title = rawStructures[id]?.[lang]?.title || rawStructures[id]?.en?.title || id;
+    return branch ? `${title} · ${branch[lang] || branch.en}` : title;
+  }
+  const hovered = index => (id, branch = null) => { const tip = tips[index]; if (!id) { tip.hidden = true; return; } tip.textContent = nameOf(id, branch); tip.hidden = false; };
   function selected(id) {
     selectedId = id;
     hearts.forEach(h => h.selectStructure(id, false));
@@ -33,7 +49,7 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
     onAngles(angle.laoRao, angle.craCau);
   }
   try {
-    hosts.forEach(host => hearts.push(createHeart(host, selected, () => {}, moved, { pixelRatioCap: 1.25, maxFps: 30 })));
+    hosts.forEach((host, i) => hearts.push(createHeart(host, selected, hovered(i), moved, { pixelRatioCap: 1.25, maxFps: 30 })));
   } catch (error) {
     hearts.forEach(h => h.dispose());
     mount.dataset.ready = 'error';
@@ -56,10 +72,12 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
     // A graft shows over all native arteries; in fluoroscopy only the graft and its run-off fill.
     const graft = ['lima', 'svg-om', 'svg-pda'].includes(value) ? value : null;
     const nativeSystem = graft ? 'both' : value;
-    if (appliedSystem !== value) {
-      hearts.forEach(h => { h.clearSelection(); h.setCoronarySystem(nativeSystem); h.setGraft(graft); });
+    // Veins only: coronary veins in both views (venous phase), arteries and grafts hidden.
+    const key = veinsOnly ? 'veins' : value;
+    if (appliedSystem !== key) {
+      hearts.forEach(h => { h.clearSelection(); h.setCoronarySystem(veinsOnly ? 'veins' : nativeSystem); h.setGraft(veinsOnly ? null : graft); h.setVeinsVisible(veinsOnly || layers.veins); });
       selectedId = null;
-      appliedSystem = value;
+      appliedSystem = key;
     }
     const note = mount.querySelector('[data-atlas-note]');
     note.textContent = graft
@@ -88,11 +106,14 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
   });
   return {
     element: mount, ready, setAngles, setSystem,
+    /** Coronary veins only, in the 3D view and the fluoroscopy (venous phase). */
+    setVeinsOnly(on) { veinsOnly = Boolean(on); setSystem(system); },
+    getVeinsOnly: () => veinsOnly,
     setPlaying(on) { if (on === playing) return; playing = on; if (loaded) hearts[0].setBeating(on); },
     setOpacity(value) { opacity = value; if (loaded) hearts.forEach(h => h.setOpacity(value)); },
     setLayer(key, on) {
       if (key in landmarks) { landmarks[key] = on; if (loaded) hearts.forEach(applyLandmarks); return; }
-      layers[key] = on; if (loaded) hearts.forEach(h => key === 'veins' ? h.setVeinsVisible(on) : h.setLayer(key, on));
+      layers[key] = on; if (loaded) hearts.forEach(h => key === 'veins' ? h.setVeinsVisible(on || veinsOnly) : h.setLayer(key, on));
     },
     /** Chamber and vessel outlines over the fluoroscopy image. */
     setContours(on) { contours = Boolean(on); if (loaded) hearts[1].setFluoroContours(contours); },

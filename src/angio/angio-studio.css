@@ -785,3 +785,6 @@
   .angio-rotation-readout { font-size: 18px; }
   .angio-cine-corner { font-size: 13px; }
 }
+/* Hover name over the 3D anatomy and the fluoroscopy. */
+.angio-atlas-viewport { position: relative; }
+.angio-atlas-tip { position: absolute; z-index: 5; pointer-events: none; max-width: 260px; padding: 4px 8px; border-radius: 6px; background: rgba(8, 18, 28, .9); color: #f1f5f2; font: 600 12px/1.35 system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
