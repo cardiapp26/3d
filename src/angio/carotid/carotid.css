@@ -90,15 +90,17 @@
 }
 
 .visual-card { padding: 12px; }
-.svg-wrap { position: relative; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 13px; background: #030712; }
+.svg-wrap { position: relative; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 13px; background: #e7ece9; }
 .carotid-svg { display: block; width: 100%; height: min(56vw, 530px); min-height: 390px; }
-.svg-bg { fill: #030712; stroke: rgba(148, 163, 184, 0.12); }
+.svg-bg { fill: url(#anatomyPaper); stroke: #d1dad4; }
 .vessel,
 .terminal-branch,
 .small-branch,
-.eca-ghost { fill: none; stroke: url(#arteryGlow); stroke-linecap: round; stroke-linejoin: round; filter: url(#softGlow); }
+.eca-ghost { fill: none; stroke: url(#arteryGlow); stroke-linecap: round; stroke-linejoin: round; filter: none; }
 .vessel-hit { fill: none; stroke: transparent; stroke-linecap: round; stroke-linejoin: round; pointer-events: stroke; }
-.vessel-fill { fill: #ef4444; filter: url(#softGlow); }
+.vessel-wall, .vessel-fill { fill: url(#arteryGlow); stroke: none; }
+.vessel-light { fill: none; stroke: #f7c0a8; opacity: .48; stroke-linecap: round; pointer-events: none; }
+.anatomy-context { fill: none; stroke: #aeb8ad; stroke-width: 1.5; opacity: .65; pointer-events: none; }
 .vessel-hit-fill { fill: transparent; stroke: transparent; stroke-width: 17; pointer-events: all; }
 .muted-vessel { opacity: 0.8; }
 .terminal-branch { stroke-width: 10; }
@@ -107,7 +109,7 @@
 .bone-hint,
 .neck-hint,
 .skull-base,
-.brain-hint { fill: none; stroke: #334155; stroke-width: 2; stroke-dasharray: 5 6; }
+.brain-hint { fill: none; stroke: #b2beb3; stroke-width: 1.5; }
 .orientation path,
 .callout,
 .axis-guide,
@@ -117,12 +119,12 @@
 .scale-note,
 .vessel-label,
 .leader-label text { fill: #94a3b8; font-family: system-ui, sans-serif; font-size: 11px; }
-.vessel-label { fill: #e2e8f0; font-size: 10px; font-weight: 700; paint-order: stroke; stroke: #030712; stroke-width: 4px; }
+.vessel-label { fill: #344a43; font-size: 10px; font-weight: 700; paint-order: stroke; stroke: #f3f5ef; stroke-width: 4px; }
 .leader-label { pointer-events: none; }
-.leader-label text { fill: #e2e8f0; font-size: 9px; font-weight: 750; paint-order: stroke; stroke: #030712; stroke-width: 3px; }
+.leader-label text { fill: #344a43; font-size: 9px; font-weight: 600; paint-order: stroke; stroke: #f3f5ef; stroke-width: 3px; }
 .flow-line path { fill: none; stroke: #fecaca; stroke-width: 2; stroke-dasharray: 7 6; opacity: 0.8; }
-.perforators path { fill: none; stroke: #fb7185; stroke-width: 4; stroke-linecap: round; }
-.ica-terminal circle { fill: #f87171; filter: url(#softGlow); pointer-events: none; }
+.perforators path { fill: none; stroke: #bb6564; stroke-width: 2; stroke-linecap: round; }
+.ica-terminal circle { fill: #b76060; filter: none; pointer-events: none; }
 .plaque { fill: none; stroke: #facc15; stroke-width: 7; stroke-linecap: round; }
 .angle-arc { stroke: var(--carotid-accent); stroke-dasharray: 4 4; }
 .orientation,
@@ -144,10 +146,10 @@
 .carotid-structure .vessel-fill { transition: filter 140ms ease, opacity 140ms ease, stroke-width 140ms ease; }
 .carotid-structure:hover .vessel,
 .carotid-structure:focus .vessel,
-.carotid-structure.selected .vessel { stroke: #fef08a !important; filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.8)); }
+.carotid-structure.selected .vessel { stroke: #713d39 !important; filter: brightness(1.08); }
 .carotid-structure:hover .vessel-fill,
 .carotid-structure:focus .vessel-fill,
-.carotid-structure.selected .vessel-fill { fill: #facc15; }
+.carotid-structure.selected .vessel-fill { fill: #d99664; }
 .carotid-structure:focus-visible { filter: drop-shadow(0 0 7px var(--carotid-accent)); }
 
 .hover-label {
@@ -267,6 +269,13 @@
   .detail-content { transition: none; animation: none; }
 }
 
+.carotid-structure:hover .vessel-wall,
+.carotid-structure:focus .vessel-wall,
+.carotid-structure.selected .vessel-wall { fill: #d99664; stroke-width: 1.2; }
+.orientation text, .scale-note { fill: #64776c; }
+/* Unselectable context branches must not intercept the segment beneath them. */
+.carotid-svg > path { pointer-events: none; }
+
 /* Phones: the detail card sits below the drawing, so a tapped vessel would open a card off screen. Once a
    structure is selected the card docks to the bottom of the viewport (scrollable) while the drawing is in view. */
 @media (max-width: 860px) {
@@ -275,6 +284,8 @@
     max-height: 42vh; overflow-y: auto; overscroll-behavior: contain;
     padding-bottom: env(safe-area-inset-bottom, 0);
     box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.55);
+    /* Opaque while docked: the drawing must not show through the text. */
+    background: #0b1220;
   }
   .detail-card:has(.detail-content) .detail-head { position: sticky; top: 0; z-index: 1; background: inherit; }
   .detail-empty { min-height: 0; padding: 14px; }

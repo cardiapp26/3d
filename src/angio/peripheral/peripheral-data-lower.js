@@ -37,7 +37,7 @@ export const AORTOILIAC = [
     },
     hit: { x: 360, y: 132 },
     label: { tr: 'Karın aortu', en: 'Abdominal aorta', x: 400, y: 100, to: [360, 100] },
-    draw: { map: [line('trunk', [[360, 44], FORK], 22)] }
+    draw: { map: [line('trunk', [[360, 44], [357, 104], [359, 165], FORK], 22)] }
   }),
   S({
     id: 'aortic-bifurcation',
@@ -75,8 +75,8 @@ export const AORTOILIAC = [
     label: { tr: 'Ana iliyak', en: 'Common iliac', x: 64, y: 310, to: [262, 312] },
     draw: {
       map: [
-        line('artery', [FORK, R_CIA]),
-        line('artery', [FORK, mir(R_CIA)])
+        line('artery', [FORK, [331, 252], [268, 306], [207, 354], R_CIA]),
+        line('artery', [FORK, [389, 252], [452, 306], [513, 354], mir(R_CIA)])
       ]
     }
   }),
@@ -98,8 +98,8 @@ export const AORTOILIAC = [
     label: { tr: 'İç iliyak', en: 'Internal iliac', x: 320, y: 468, to: [264, 468] },
     draw: {
       map: [
-        line('artery', [R_CIA, R_IIA]),
-        line('artery', [mir(R_CIA), mir(R_IIA)])
+        line('artery', [R_CIA, [192, 415], [238, 446], [285, 474], R_IIA]),
+        line('artery', [mir(R_CIA), [528, 415], [482, 446], [435, 474], mir(R_IIA)])
       ]
     }
   }),
@@ -121,8 +121,8 @@ export const AORTOILIAC = [
     label: { tr: 'Ön bölüm', en: 'Anterior div.', x: 360, y: 630, anchor: 'middle', to: [346, 592] },
     draw: {
       map: [
-        line('branch', [R_IIA, R_ANT]),
-        line('branch', [mir(R_IIA), mir(R_ANT)])
+        line('branch', [R_IIA, [310, 524], [323, 546], [339, 571], R_ANT]),
+        line('branch', [mir(R_IIA), [410, 524], [397, 546], [381, 571], mir(R_ANT)])
       ]
     }
   }),
@@ -144,8 +144,8 @@ export const AORTOILIAC = [
     label: { tr: 'Arka bölüm', en: 'Posterior div.', x: 214, y: 676, to: [262, 576] },
     draw: {
       map: [
-        line('branch', [R_IIA, R_POST]),
-        line('branch', [mir(R_IIA), mir(R_POST)])
+        line('branch', [R_IIA, [296, 519], [281, 539], R_POST]),
+        line('branch', [mir(R_IIA), [424, 519], [439, 539], mir(R_POST)])
       ]
     }
   }),
@@ -167,8 +167,8 @@ export const AORTOILIAC = [
     label: { tr: 'Dış iliyak', en: 'External iliac', x: 52, y: 430, to: [150, 550] },
     draw: {
       map: [
-        line('artery', [R_CIA, R_EIA]),
-        line('artery', [mir(R_CIA), mir(R_EIA)])
+        line('artery', [R_CIA, [164, 461], [150, 548], TAKE, [124, 683], R_EIA]),
+        line('artery', [mir(R_CIA), [556, 461], [570, 548], mir(TAKE), [596, 683], mir(R_EIA)])
       ]
     }
   }),
@@ -190,8 +190,8 @@ export const AORTOILIAC = [
     label: { tr: 'A. epigastrica inf.', en: 'Inf. epigastric', x: 160, y: 732, to: [178, 537] },
     draw: {
       map: [
-        line('branch', [TAKE, R_IEA]),
-        line('branch', [mir(TAKE), mir(R_IEA)])
+        line('branch', [TAKE, [160, 591], [177, 539], [199, 492], R_IEA]),
+        line('branch', [mir(TAKE), [560, 591], [543, 539], [521, 492], mir(R_IEA)])
       ]
     }
   }),
@@ -213,8 +213,8 @@ export const AORTOILIAC = [
     label: { tr: 'A. circ. iliaca prof.', en: 'Deep circ. iliac', x: 16, y: 168, to: [28, 548] },
     draw: {
       map: [
-        line('branch', [TAKE, R_DCIA]),
-        line('branch', [mir(TAKE), mir(R_DCIA)])
+        line('branch', [TAKE, [118, 598], [84, 579], [49, 566], R_DCIA]),
+        line('branch', [mir(TAKE), [602, 598], [636, 579], [671, 566], mir(R_DCIA)])
       ]
     }
   }),
@@ -234,7 +234,7 @@ export const AORTOILIAC = [
     },
     hit: { x: 360, y: 320 },
     label: { tr: 'Median sakral', en: 'Median sacral', x: 378, y: 370, to: [360, 370] },
-    draw: { map: [line('small', [[360, 240], [360, 400]])] }
+    draw: { map: [line('small', [[360, 220], [358, 272], [360, 320], [359, 365], [360, 400]])] }
   })
 ];
 
@@ -399,7 +399,7 @@ export const FEMORAL_MAP = [
     },
     hit: { x: 270, y: 640 },
     label: { tr: 'Profunda', en: 'Profunda', x: 160, y: 680, anchor: 'end', to: [250, 680] },
-    draw: { map: [line('artery', [GROIN_BIF, [320, 530], [270, 630], [228, 740]], 11)] }
+    draw: { map: [line('artery', [GROIN_BIF, [347, 493], [320, 530], [288, 594], [270, 640], [228, 740]], 11)] }
   }),
   S({
     id: 'lateral-circumflex',

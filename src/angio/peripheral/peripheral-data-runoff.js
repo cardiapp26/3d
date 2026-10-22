@@ -145,7 +145,7 @@ export const RUNOFF = [
     },
     hit: { x: 240, y: 328 },
     label: { tr: 'Üst lat. gen.', en: 'Sup. lat. gen.', x: 70, y: 300, to: [180, 320] },
-    draw: { map: [line('branch', [[412, 372], [320, 342], [230, 322], [150, 308]])] }
+    draw: { map: [line('branch', [[412, 372], [365, 355], [310, 333], [260, 319], [230, 322], [190, 329], [150, 308]])] }
   }),
   S({
     id: 'gen-sm',
@@ -163,7 +163,7 @@ export const RUNOFF = [
     },
     hit: { x: 590, y: 336 },
     label: { tr: 'Üst med. gen.', en: 'Sup. med. gen.', x: 560, y: 280, to: [600, 328] },
-    draw: { map: [line('branch', [[414, 380], [510, 348], [600, 328], [680, 316]])] }
+    draw: { map: [line('branch', [[414, 380], [461, 360], [510, 338], [558, 323], [600, 328], [641, 335], [680, 316]])] }
   }),
   S({
     id: 'gen-il',
@@ -181,7 +181,7 @@ export const RUNOFF = [
     },
     hit: { x: 230, y: 590 },
     label: { tr: 'Alt lat. gen.', en: 'Inf. lat. gen.', x: 24, y: 640, to: [160, 610] },
-    draw: { map: [line('branch', [[420, 530], [320, 566], [220, 596], [130, 612]])] }
+    draw: { map: [line('branch', [[420, 530], [376, 550], [320, 572], [270, 598], [220, 596], [170, 588], [130, 612]])] }
   }),
   S({
     id: 'gen-im',
@@ -199,7 +199,7 @@ export const RUNOFF = [
     },
     hit: { x: 600, y: 600 },
     label: { tr: 'Alt med. gen.', en: 'Inf. med. gen.', x: 560, y: 680, to: [610, 608] },
-    draw: { map: [line('branch', [[422, 542], [520, 578], [610, 608], [690, 626]])] }
+    draw: { map: [line('branch', [[422, 542], [468, 560], [520, 585], [568, 611], [610, 608], [650, 603], [690, 626]])] }
   }),
   S({
     id: 'anterior-tibial',

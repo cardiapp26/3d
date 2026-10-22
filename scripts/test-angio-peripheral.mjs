@@ -11,11 +11,18 @@ import {
   hitPoint,
   structuresFor
 } from '../src/angio/peripheral/peripheral-data.js';
-import { LABEL_CHAR, LABEL_FONT, curveSamples, labelFor } from '../src/angio/peripheral/peripheral-svg.js';
+import { LABEL_CHAR, LABEL_FONT, curveSamples, labelFor, vesselRibbon } from '../src/angio/peripheral/peripheral-svg.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const problems = [];
 const fail = message => problems.push(message);
+
+// Taper remains tied to arc length, independent of centerline point density.
+const ribbon = vesselRibbon([[0, 0], [100, 0]], 20, 0.5);
+const ribbonCoords = [...ribbon.matchAll(/-?\d+(?:\.\d+)?/g)].map(match => Number(match[0]));
+if (!ribbon.endsWith(' Z') || ribbonCoords.some(value => !Number.isFinite(value))) fail('invalid vessel ribbon');
+if (!ribbon.startsWith('M 0 10') || !ribbon.includes('A 5 5 0 0 0 100 -5')) fail('vessel ribbon must taper from 20 to 10 units with a rounded distal cap');
+if (vesselRibbon([], 20) !== '') fail('empty centerline must not draw a vessel');
 
 const REQUIRED = [
   'abdominal-aorta', 'aortic-bifurcation', 'common-iliac', 'internal-iliac', 'iia-anterior', 'iia-posterior',
@@ -179,7 +186,7 @@ for (const rel of owned) {
   }
 }
 const css = fs.readFileSync(path.join(root, 'src/angio/peripheral/peripheral.css'), 'utf8');
-if (/url\s*\(/i.test(css)) fail('peripheral.css uses url(');
+if (/url\s*\(\s*['"]?(?!#)/i.test(css)) fail('peripheral.css uses an external URL');
 if (/cdn|fonts\.google|fonts\.gstatic/i.test(css)) fail('peripheral.css uses a CDN');
 if (/overflow-x\s*:\s*hidden/i.test(css)) fail('peripheral.css hides overflow-x');
 if (/font-weight\s*:\s*(650|750|800)/.test(css)) fail('peripheral.css uses a heavy font-weight');

@@ -48,7 +48,7 @@ export const SECTIONS = [
       en: 'The saphenofemoral junction lies about 2–4 cm distal to the inguinal ligament, on the anteromedial side. The great saphenous vein is superficial to the fascia and outside the femoral sheath. The common femoral artery and vein are deeper. This vein is not the puncture target.'
     },
     pearl: {
-      tr: 'Yüzeyel veni arter sanıp girmeyin. Ultrason kesitinde safen veni komprese olur, arter nabız verir ve venin medialindedir. Şemada küçük anteromedial daire VSM\'dir.',
+      tr: 'Yüzeyel veni arter sanıp girmeyin. Ultrason kesitinde safen veni komprese olur, arter nabız verir ve femoral venin lateralindedir. Şemada küçük anteromedial daire VSM\'dir.',
       en: 'Do not puncture the superficial vein thinking it is the artery. On ultrasound the saphenous vein compresses, while the artery pulses and lies lateral to the femoral vein. The small anteromedial circle is the GSV.'
     },
     hit: { x: 330, y: 360 },

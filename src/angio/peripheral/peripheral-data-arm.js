@@ -11,7 +11,7 @@ const both = (shapes) => ({ typical: shapes, variant: shapes });
 const S = (spec) => spec;
 
 const TYPICAL_RADIAL = [[408, 650], [470, 780], [510, 880], [528, 960], [536, 1040]];
-const VARIANT_RADIAL = [[424, 520], [450, 540], [660, 620], [480, 720], [680, 560], [600, 800], [540, 900], [528, 960], [536, 1040]];
+const VARIANT_RADIAL = [[424, 520], [450, 540], [550, 590], [613, 651], [580, 690], [540, 670], [540, 630], [580, 610], [609, 658], [620, 720], [600, 800], [540, 900], [528, 960], [536, 1040]];
 
 export const ARM = [
   S({
@@ -214,7 +214,7 @@ export const ARM = [
     },
     hit: { x: 360, y: 1084 },
     label: { tr: 'Yüzeyel ark', en: 'Superficial arch', x: 300, y: 1110, to: [400, 1088] },
-    draw: both([line('branch', [[276, 1040], [360, 1084], [470, 1092], [530, 1064]], 8)])
+    draw: both([line('branch', [[276, 1040], [360, 1084], [470, 1092], [530, 1064]], 8), line('small', [[528, 960], [558, 996], [560, 1032], [530, 1064]], 5)])
   }),
   S({
     id: 'deep-arch',
@@ -232,7 +232,7 @@ export const ARM = [
     },
     hit: { x: 430, y: 1016 },
     label: { tr: 'Derin ark', en: 'Deep arch', x: 410, y: 960, to: [430, 1016] },
-    draw: both([line('branch', [[536, 1040], [430, 1016], [320, 1004]], 8)])
+    draw: both([line('branch', [[536, 1040], [480, 1023], [430, 1016], [320, 1004], [295, 1015], [276, 1040]], 8)])
   }),
   S({
     id: 'distal-radial',
@@ -267,8 +267,8 @@ export const ARM = [
       en: 'A hydrophilic wire and the direction of the loop decide whether it can be crossed. Forcing the wire causes a dissection. Typical mode has no marker, because a usual radial artery descends straight from the elbow. The dashed ellipse teaches the site. It is not a patient\'s anatomy.'
     },
     hit: { x: 597, y: 650 },
-    label: { tr: 'Loop', en: 'Loop', x: 620, y: 760, to: [600, 680] },
-    draw: { variant: [ell('variant', 575, 650, 22, 16)] }
+    label: { tr: 'Loop', en: 'Loop', x: 648, y: 620, to: [601, 639] },
+    draw: { variant: [ell('variant', 575, 650, 26, 22)] }
   }),
   S({
     id: 'high-bifurcation',

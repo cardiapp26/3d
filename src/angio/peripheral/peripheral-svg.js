@@ -140,6 +140,29 @@ function hitWidth(shape) {
   return Math.max(extra, 16);
 }
 
+/** Offset a densely sampled centerline to create a tapered lumen silhouette. */
+export function vesselRibbon(points, width, endScale = 0.72) {
+  const samples = curveSamples(points, false, 16);
+  if (samples.length < 2) return '';
+  const left = [], right = [];
+  const lengths = [0];
+  for (let i = 1; i < samples.length; i += 1) lengths.push(lengths[i - 1] + Math.hypot(samples[i][0] - samples[i - 1][0], samples[i][1] - samples[i - 1][1]));
+  const total = lengths.at(-1) || 1;
+  for (let i = 0; i < samples.length; i += 1) {
+    const a = samples[Math.max(0, i - 1)], b = samples[Math.min(samples.length - 1, i + 1)];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const radius = width / 2 * (1 - (1 - endScale) * lengths[i] / total);
+    const nx = -(b[1] - a[1]) / len * radius, ny = (b[0] - a[0]) / len * radius;
+    left.push([num(samples[i][0] + nx), num(samples[i][1] + ny)]);
+    right.push([num(samples[i][0] - nx), num(samples[i][1] - ny)]);
+  }
+  const end = right.at(-1);
+  const start = left[0];
+  const endRadius = num(width * endScale / 2);
+  const startRadius = num(width / 2);
+  return `M ${left.map(p => p.join(' ')).join(' L ')} A ${endRadius} ${endRadius} 0 0 0 ${end.join(' ')} L ${right.reverse().slice(1).map(p => p.join(' ')).join(' L ')} A ${startRadius} ${startRadius} 0 0 0 ${start.join(' ')} Z`;
+}
+
 function shapeSvg(shape) {
   const kind = shape.kind || 'artery';
   const cls = `peri-shape peri-${kind}`;
@@ -148,7 +171,13 @@ function shapeSvg(shape) {
     const d = smooth(shape.pts, shape.type === 'poly');
     const w = shape.w || WIDTH[kind] || 3;
     const fill = shape.type === 'line' ? ' fill="none"' : '';
-    visible = `<path class="${cls}" d="${d}" stroke-width="${w}"${fill}/>`;
+    if (shape.type === 'line' && ['trunk', 'artery', 'branch', 'small'].includes(kind)) {
+      const width = w * (kind === 'trunk' ? 1.55 : kind === 'artery' ? 1.22 : 0.86);
+      const taper = shape.taper ?? (kind === 'trunk' ? 0.86 : kind === 'artery' ? 0.96 : 0.48);
+      visible = `<path class="peri-vessel-wall" d="${vesselRibbon(shape.pts, width + 1.2, taper)}"/>
+        <path class="peri-vessel-body" d="${vesselRibbon(shape.pts, width, taper)}"/>
+        <path class="peri-vessel-light" d="${vesselRibbon(shape.pts, width * 0.25, taper)}"/>`;
+    } else visible = `<path class="${cls}" d="${d}" stroke-width="${w}"${fill}/>`;
   } else if (shape.type === 'ellipse') {
     visible = `<ellipse class="${cls}" cx="${num(shape.cx)}" cy="${num(shape.cy)}" rx="${num(shape.rx)}" ry="${num(shape.ry)}"/>`;
   } else if (shape.type === 'circle') {
@@ -244,10 +273,10 @@ function scenery(view, mode, lang) {
   }
   if (view === 'visceral' && mode === 'ap') {
     return `<g class="peri-scenery">
-      <ellipse class="peri-organ" cx="148" cy="118" rx="78" ry="52"/>
-      <ellipse class="peri-organ" cx="624" cy="168" rx="52" ry="46"/>
-      <ellipse class="peri-organ" cx="108" cy="400" rx="46" ry="58"/>
-      <ellipse class="peri-organ" cx="608" cy="300" rx="44" ry="52"/>
+      <path class="peri-organ" d="M 58 91 C 82 56 165 53 216 76 L 276 106 Q 253 137 207 134 L 162 174 C 116 195 66 161 58 91 Z"/>
+      <path class="peri-organ" d="M 627 116 C 668 108 687 147 674 181 C 661 220 621 235 599 211 Q 579 187 600 170 Q 614 148 627 116 Z"/>
+      <path class="peri-organ" d="M 97 337 C 45 346 45 430 76 454 C 106 479 143 454 143 433 C 143 416 117 417 121 398 C 126 380 150 382 143 361 Q 132 333 97 337 Z"/>
+      <path class="peri-organ" d="M 623 239 C 675 249 674 330 643 355 C 613 380 578 355 578 332 C 578 316 604 316 600 299 C 596 280 571 282 579 263 Q 591 235 623 239 Z"/>
       ${cap(148, 78, en ? 'Liver' : 'Karaciğer', 'middle')}
       ${cap(624, 168, en ? 'Spleen' : 'Dalak', 'middle')}
       ${cap(108, 400, en ? 'R kidney' : 'Sağ böbrek', 'middle')}
@@ -269,11 +298,7 @@ function scenery(view, mode, lang) {
   }
   if (view === 'arm') {
     const arch = smooth([[36, 168], [64, 108], [108, 78]], false);
-    const limb = smooth([
-      [300, 150], [250, 220], [230, 420], [210, 700],
-      [200, 980], [230, 1100], [520, 1110], [560, 980],
-      [540, 700], [500, 400], [470, 180], [400, 120], [300, 150]
-    ], true);
+    const limb = 'M 386 172 C 335 209 338 302 343 397 C 345 475 344 550 326 628 C 289 717 260 816 252 922 L 248 1000 C 217 1038 230 1105 278 1123 L 486 1123 C 546 1116 577 1084 570 1044 L 553 998 C 554 922 550 845 522 761 C 498 685 485 625 488 555 L 505 357 C 519 266 500 191 466 172 Z';
     const rib = smooth([[360, 168], [430, 188], [470, 176]], false);
     return `<g class="peri-scenery">
       <path class="peri-limb" d="${limb}"/>
@@ -288,6 +313,34 @@ function scenery(view, mode, lang) {
     </g>`;
   }
   return '';
+}
+
+function anatomicalContext(view, mode) {
+  const path = (d, cls = 'peri-context-bone') => `<path class="${cls}" d="${d}"/>`;
+  let art = '';
+  if (view === 'aortoiliac') {
+    art = path('M 332 58 Q 360 47 388 58 L 392 107 Q 360 119 328 107 Z M 328 124 Q 360 114 392 124 L 396 181 Q 360 192 324 181 Z M 324 197 Q 360 187 396 197 L 400 254 Q 360 268 320 254 Z M 320 274 Q 360 263 400 274 L 405 335 Q 360 348 315 335 Z')
+      + path('M 300 320 C 273 280 239 263 193 274 C 135 287 87 328 66 390 C 52 437 68 483 103 516 L 145 568 C 162 606 173 664 221 688 Q 264 707 302 673 L 326 618 L 360 595 L 394 618 L 418 673 Q 456 707 499 688 C 547 664 558 606 575 568 L 617 516 C 652 483 668 437 654 390 C 633 328 585 287 527 274 C 481 263 447 280 420 320 L 411 404 L 393 465 L 360 492 L 327 465 L 309 404 Z')
+      + path('M 322 339 Q 360 323 398 339 L 390 443 L 360 504 L 330 443 Z')
+      + path('M 211 576 C 183 561 163 586 176 615 C 188 642 219 651 244 638 L 269 607 Q 244 589 211 576 Z M 509 576 C 537 561 557 586 544 615 C 532 642 501 651 476 638 L 451 607 Q 476 589 509 576 Z', 'peri-context-space');
+  } else if (view === 'femoral' && mode === 'map') {
+    art = path('M 255 442 C 231 456 218 485 201 520 L 162 752 L 230 776 L 292 564 C 315 524 358 480 367 457 Z')
+      + path('M 148 268 C 111 191 138 132 205 118 C 270 106 325 137 347 187 M 140 295 C 128 371 158 447 215 468', 'peri-context-line');
+  } else if (view === 'runoff') {
+    art = path('M 335 48 L 326 348 C 325 399 302 430 294 470 C 282 524 310 552 351 548 Q 385 542 402 517 Q 423 546 464 547 C 507 542 517 505 498 469 C 476 424 464 388 461 348 L 450 48 Z')
+      + path('M 303 575 Q 384 557 479 577 L 464 636 C 443 698 442 835 443 1064 L 463 1128 Q 428 1157 396 1134 L 385 1050 C 381 876 363 729 331 647 Z')
+      + path('M 267 601 Q 284 580 299 602 L 305 636 L 284 1052 L 292 1134 L 266 1148 L 256 1113 L 268 673 Z')
+      + path('M 336 1148 Q 385 1125 453 1152 L 490 1189 Q 394 1244 304 1222 L 270 1187 Z');
+  } else if (view === 'arm') {
+    art = path('M 390 226 Q 408 202 433 224 Q 452 243 439 275 L 417 574 Q 434 608 419 631 Q 396 649 377 627 L 371 602 L 393 278 Q 375 251 390 226 Z')
+      + path('M 387 660 Q 406 643 414 669 C 435 742 471 828 482 940 L 470 983 L 443 979 C 443 858 416 762 387 693 Z')
+      + path('M 360 662 Q 374 654 380 677 C 359 780 331 868 319 978 L 297 984 C 305 873 333 750 360 662 Z');
+    for (let i = 0; i < 4; i += 1) art += path(`M ${302 + i * 43} 1026 L ${290 + i * 50} 1098`, 'peri-context-line');
+  } else if (view === 'visceral' && mode !== 'ap') {
+    const x = mode === 'lateral' ? 124 : 236;
+    for (let y = 65; y < 750; y += 92) art += path(`M ${x - 30} ${y} Q ${x} ${y - 10} ${x + 30} ${y} L ${x + 34} ${y + 63} Q ${x} ${y + 75} ${x - 30} ${y + 63} Z`);
+  }
+  return `<g class="peri-anatomical-context" aria-hidden="true">${art}</g>`;
 }
 
 function foreground(view, mode, lang) {
@@ -308,5 +361,5 @@ export function renderPeripheralSvg({ view, mode, structures, lang, selectedId }
     .sort((a, b) => rank(a.item.kind) - rank(b.item.kind) || a.index - b.index);
   const body = ordered.map(({ item }) => structureSvg(item, mode, selectedId)).join('');
   const title = UI[argumentsLang].watermark;
-  return `<svg class="peri-svg" viewBox="0 0 ${w} ${h}" role="group" aria-label="${esc(title)}">${scenery(view, mode, argumentsLang)}${body}${foreground(view, mode, argumentsLang)}<text class="peri-watermark" x="${w - 16}" y="${h - 16}" text-anchor="end" font-size="12">${esc(title)}</text></svg>`;
+  return `<svg class="peri-svg" viewBox="0 0 ${w} ${h}" role="group" aria-label="${esc(title)}"><defs><linearGradient id="peri-lumen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a94b56"/><stop offset="0.38" stop-color="#df7e7b"/><stop offset="0.62" stop-color="#ef9a8b"/><stop offset="1" stop-color="#bd5965"/></linearGradient><linearGradient id="peri-lumen-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffdbb9" stop-opacity="0"/><stop offset="0.5" stop-color="#ffdbb9" stop-opacity="0.45"/><stop offset="1" stop-color="#ffdbb9" stop-opacity="0"/></linearGradient></defs>${anatomicalContext(view, mode)}${scenery(view, mode, argumentsLang)}${body}${foreground(view, mode, argumentsLang)}<text class="peri-watermark" x="${w - 16}" y="${h - 16}" text-anchor="end" font-size="12">${esc(title)}</text></svg>`;
 }

@@ -65,7 +65,16 @@ const bctOriginY = ARCH_TYPES.map(type => {
   const group = svg.match(/data-structure="bct"[\s\S]*?<path class="vessel-hit" d="M[\d.]+ ([\d.]+)/)?.[1];
   return Number(group);
 });
-assert.deepEqual(bctOriginY, [94, 121, 153], 'BCT origin drops visibly from type I to III');
+assert.ok(bctOriginY.every(Number.isFinite), 'BCT origins are finite');
+assert.ok(bctOriginY[0] < bctOriginY[1] && bctOriginY[1] < bctOriginY[2], 'BCT origin drops from type I to III');
+for (const [index, type] of ARCH_TYPES.entries()) {
+  const svg = renderCarotidSvg('arch', { ...defaultState, archType: type.id }, 'en');
+  const wall = svg.match(/data-structure="aortic-arch"[\s\S]*?<path class="vessel vessel-wall" d="([^"]+)"/)[1];
+  const values = [...wall.matchAll(/-?[\d.]+/g)].map(match => Number(match[0]));
+  const apex = Math.min(...values.filter((_, i) => i % 2 === 1));
+  const depth = (bctOriginY[index] - apex) / 10;
+  assert.ok(Math.abs(depth - type.depth) < 0.01, `${type.id} branch depth matches LCCA diameter classification`);
+}
 assert.equal(new Set(ARCH_VARIANTS.map(variant => renderCarotidSvg('arch', { ...defaultState, archVariant: variant.id }, 'en'))).size, ARCH_VARIANTS.length, 'each arch variant redraws recognisably');
 assert.match(ARCH_VARIANTS.find(variant => variant.id === 'lusoria').label.tr, /Aberran sağ subklavyen/, 'aberran spelling is consistent');
 for (const variant of ['lusoria', 'right-arch']) {

@@ -352,6 +352,40 @@
   .peri-tabs button { font-size: 12px; padding: 8px 2px; }
 }
 
+/* Original layered arterial illustration: lumen, wall and longitudinal light. */
+.peri-svg { background: radial-gradient(ellipse at 48% 38%, #172b36 0%, #0c1823 63%, #09121c 100%); }
+.peri-canvas { border-color: #30434a; padding: 12px; }
+.peri-vessel-wall { fill: #a24d58; stroke: none; pointer-events: none; }
+.peri-vessel-body { fill: url(#peri-lumen); pointer-events: none; }
+.peri-vessel-light { fill: url(#peri-lumen-light); opacity: 0.6; pointer-events: none; }
+.peri-structure:hover .peri-vessel-body { fill: #eb8582; }
+.peri-structure.is-on .peri-vessel-wall { fill: #246773; stroke: #91d6dd; }
+.peri-structure.is-on .peri-vessel-body { fill: #63bdc9; }
+.peri-structure.is-on .peri-vessel-light { fill: #d9f9f4; }
+.peri-structure:focus-visible .peri-vessel-wall { stroke: #f5e4b8; stroke-width: 3; }
+.peri-hitstroke { stroke: transparent; }
+.peri-hitdot { fill: transparent; }
+.peri-anatomical-context { pointer-events: none; }
+.peri-context-bone { fill: #d6cbb3; fill-opacity: 0.065; stroke: #b8b6a3; stroke-opacity: 0.24; stroke-width: 1.6; }
+.peri-context-space { fill: #0d1b26; stroke: #b8b6a3; stroke-opacity: 0.2; stroke-width: 1.4; }
+.peri-context-line { fill: none; stroke: #b8b6a3; stroke-opacity: 0.25; stroke-width: 4; stroke-linecap: round; }
+.peri-organ { fill: #ae9b86; fill-opacity: 0.07; stroke: #bcab96; stroke-opacity: 0.3; }
+.peri-limb { fill: #c5b6a4; fill-opacity: 0.025; stroke: #9cafa8; stroke-opacity: 0.27; }
+.peri-label { fill: #f0e9dc; font-weight: 500; stroke: #0c1823; stroke-width: 5; }
+.peri-leader { stroke: #bdc8c5; stroke-opacity: 0.62; stroke-width: 1; }
+.peri-marker { fill: #0d2631; stroke: #b1e3e3; stroke-width: 1.5; }
+.peri-bone { fill: #cabca3; fill-opacity: 0.12; stroke: #b9ad99; stroke-opacity: 0.55; }
+.peri-frame { fill: #24323a; fill-opacity: 0.35; stroke: #536062; stroke-opacity: 0.5; }
+.peri-dot-artery { fill: #d77673; stroke: #8a3e44; stroke-width: 4; }
+.peri-dot-vein { fill: #578baf; stroke: #386281; stroke-width: 3; }
+.peri-dot-nerve { fill: #d6bb79; stroke: #a08b54; stroke-width: 2; }
+.peri-safe, .peri-risk, .peri-warn { fill-opacity: 0.3; stroke-width: 1; stroke-dasharray: 4 5; }
+.peri-watermark { font-weight: 400; fill: #82948f; }
+@media (max-width: 600px) {
+  .peri-canvas { overflow-x: auto; padding: 6px; }
+  .peri-svg { min-width: 560px; }
+}
+
 /* Phones: the card sits below the drawing, so a tapped vessel would open it off screen. Once a structure is
    selected the card docks to the bottom of the viewport (scrollable) while the drawing is in view. */
 @media (max-width: 860px) {
