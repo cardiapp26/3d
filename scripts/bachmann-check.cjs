@@ -82,9 +82,10 @@ const openDrawer = async (page, id) => {
     assert.match((await leads())[0].name, /Bachmann/);
     await page.locator('#viewport-reset').click();
     assert.equal(await page.evaluate(() => window.heart.getState().fluoroscopy), false);
-    // Reset returns to the first lesson of this page (the EP anatomy page opens with transseptal).
-    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'transseptal');
-    assert.deepEqual(await leads(), []);
+    // Reset reopens the current lesson at the current step's own view; it does not leave the lesson.
+    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'bachmann');
+    assert.equal(await page.locator('#steps .current').getAttribute('data-step'), '3');
+    assert.match((await leads())[0].name, /Bachmann/, 'the step is rebuilt after reset');
     await openMode(page, url, 'bachmann');
     await page.locator('#steps [data-step="3"]').click();
     assert.match((await leads())[0].name, /Bachmann/, 'lesson can resume after reset');

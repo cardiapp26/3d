@@ -73,6 +73,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   let needsRender = true;
   // A pan (right button, modifier drag or two fingers) keeps its target; a preset view clears it.
   let userPanned = false;
+  // Orbit centre of the current view (preset, lesson step or module camera); rotation drifts back to it, not to the whole heart.
+  const orbitHome = new THREE.Vector3(0, .4, 0);
+  const markHome = () => { orbitHome.copy(lookTarget); userPanned = false; };
   renderer.domElement.addEventListener('pointerdown', e => { if (e.button === 2 || e.shiftKey || e.ctrlKey || e.metaKey) userPanned = true; });
   renderer.domElement.addEventListener('touchstart', e => { if (e.touches.length >= 2) userPanned = true; }, { passive: true });
   function requestRender() { needsRender = true; }
@@ -88,9 +91,9 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
         camera.position.addScaledVector(forward, push);
         cameraTarget.copy(camera.position);
         lookTarget.copy(controls.target);
-      } else if (dist > 1.4 && controls.target.distanceTo(fitCenter) > 0.05 && !userPanned && !chamberMode(mode) && !/wiggers$/.test(mode) && !rvotOn() && !fig3Sliced()) {
-        // Whole-heart views drift back to the heart centre until the user pans; single-chamber views never drift.
-        controls.target.lerp(fitCenter, 0.05);
+      } else if (dist > 1.4 && controls.target.distanceTo(orbitHome) > 0.05 && !userPanned && !rvotOn() && !fig3Sliced()) {
+        // Rotation drifts back to the current view's centre (the module's framing) until the user pans.
+        controls.target.lerp(orbitHome, 0.05);
         lookTarget.copy(controls.target);
       }
     }
@@ -1089,7 +1092,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       if(!f)return;
       lookTarget.copy(f.center);
       cameraTarget.copy(f.center).addScaledVector(f.normal,-Math.max(2.8,f.radius*5));
-      transition=smooth;container.dataset.cameraSettled=String(!smooth);
+      transition=smooth;container.dataset.cameraSettled=String(!smooth);markHome();
       if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
       requestRender();return;
     }
@@ -1103,7 +1106,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const dir=new THREE.Vector3(Math.sin(theta),0,Math.cos(theta));
       lookTarget.copy(kochCentre);
       cameraTarget.copy(kochCentre).addScaledVector(dir,Math.max(KOCH_VIEW_DISTANCE,heartSurfaceExit(kochCentre,dir)+KOCH_VIEW_CLEARANCE));
-      transition=smooth;container.dataset.cameraSettled=String(!smooth);
+      transition=smooth;container.dataset.cameraSettled=String(!smooth);markHome();
       if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
       emitAngleChange();requestRender();return;
     }
@@ -1112,7 +1115,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       const {cutPoint,view:axis,anterior}=rvotData.frame;
       lookTarget.copy(cutPoint);
       cameraTarget.copy(cutPoint).addScaledVector(axis,3.3).addScaledVector(anterior,-.8);
-      transition=smooth;container.dataset.cameraSettled=String(!smooth);
+      transition=smooth;container.dataset.cameraSettled=String(!smooth);markHome();
       if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
       emitAngleChange();requestRender();return;
     }
@@ -1121,7 +1124,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const offsets={anterior:[0,.1,9.3],posterior:[0,.1,-9.3],rao:[-6.6,.3,6.6],lao:[6.6,.3,6.6],root:[.2,3.7,1.4]};
     cameraTarget.copy(target).add(new THREE.Vector3(...(offsets[name]||offsets.anterior)));lookTarget.copy(target);
     if(name==='root'){rootWindow=true;applyState();}
-    transition=smooth;container.dataset.cameraSettled=String(!smooth);if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
+    transition=smooth;container.dataset.cameraSettled=String(!smooth);markHome();if(!smooth){camera.position.copy(cameraTarget);controls.target.copy(lookTarget);controls.update();}
     emitAngleChange();
   }
 
@@ -1161,8 +1164,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
 
-    // If target drifted away from heart center, gently return it towards fitCenter
-    const targetOffset = controls.target.clone().sub(fitCenter);
+    // If the target drifted away from the view's centre, gently return it there
+    const targetOffset = controls.target.clone().sub(orbitHome);
     const targetDist = targetOffset.length();
     if (targetDist > 0.03) {
       const pull = Math.min(targetDist, 0.14);
@@ -1261,6 +1264,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const dt = Math.min(100, Math.max(0, now - lastTime));
     lastTime = now;
     if(transition){
+      markHome();
       camera.position.lerp(cameraTarget,.12);
       controls.target.lerp(lookTarget,.12);
       if(camera.position.distanceTo(cameraTarget)<.002&&controls.target.distanceTo(lookTarget)<.002)transition=false;

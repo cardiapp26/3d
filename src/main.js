@@ -624,7 +624,8 @@ let heart;
 try {
   heart = createHeart(
     document.querySelector('#viewport'),
-    (id, branch) => { inspect(id, true, true, branch); practice?.onScenePick(resolveStructureId(id)); },
+    // A click in the scene selects what is already in view; the camera keeps the module's framing.
+    (id, branch) => { inspect(id, false, true, branch); practice?.onScenePick(resolveStructureId(id)); },
     onHoverStructure,
     (angles) => updateJoystickFromCamera(angles)
   );
@@ -1826,6 +1827,20 @@ document.querySelector('#cycle-rhythm')?.addEventListener('change', e => {
   heart?.setRhythm(e.target.value);
 });
 
+/**
+ * View reset: clear layers, tools and camera, then re-open the current module at the current step's own
+ * view (e.g. Koch's triangle), not the general anatomy view.
+ */
+function resetView() {
+  const current = mode, currentStep = step;
+  resetAll();
+  if (current !== HOME_MODE) setMode(current);
+  if (lessons[current] && currentStep > 0 && currentStep < lessons[current].steps.length) {
+    step = currentStep;
+    showStep();
+  }
+}
+
 function resetAll() {
   setMode(HOME_MODE);
   heart?.reset();
@@ -1999,7 +2014,7 @@ document.querySelectorAll('.btn-zoom-out').forEach(btn => {
   setupHoldAction(btn, zoomOut);
 });
 document.querySelectorAll('.btn-view-reset').forEach(btn => {
-  btn.addEventListener('click', resetAll);
+  btn.addEventListener('click', resetView);
 });
 
 function applyChromeTranslations() {
@@ -2281,7 +2296,7 @@ window.addEventListener('keydown', e => {
   } else if (key === 'o' || key === 'O') {
     setCameraPreset('root');
   } else if (key === '0') {
-    resetAll();
+    resetView();
   } else if (key === ' ') {
     e.preventDefault();
     toggleBeat();

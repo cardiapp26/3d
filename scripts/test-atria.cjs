@@ -1,16 +1,18 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { startApp } = require('./lib/app-server.cjs');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
 const shotDir = process.env.SHOT_DIR || 'research/screenshots';
 (async () => {
+  const app = await startApp();
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     fs.mkdirSync(shotDir, { recursive: true });
     const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto((process.env.APP_URL || 'http://127.0.0.1:5177') + '/#/mode/atria?structure=laa');
+    await page.goto(app.url + '/#/mode/atria?structure=laa');
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     const visible = () => page.evaluate(() => window.heart.getState().structures.filter(s => s.visible).map(s => s.id).sort());
@@ -103,8 +105,9 @@ const shotDir = process.env.SHOT_DIR || 'research/screenshots';
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.locator('#viewport-reset').click();
-    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'anatomy');
+    // Reset reopens the current module at its first view; it does not leave the module.
+    assert.equal(await page.evaluate(() => window.heart.getState().mode), 'atria');
     assert.deepEqual(errors, []);
     console.log('PASS: atrial isolation (LA+LAA), separate RA mode, deep link, focus, wall cuts, mode restoration and mobile reset');
-  } finally { await browser.close(); }
+  } finally { await browser.close(); await app.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });
