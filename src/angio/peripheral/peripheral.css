@@ -1,14 +1,41 @@
-/* Peripheral angiography teaching page. Dark shell, slate panels, sky accent. */
+/* Peripheral angiography teaching & C-Arm DSA studio. Dark shell, slate panels, sky accent. */
 
 .peri-wrap {
   flex: 1;
-  width: min(1120px, 100%);
+  width: min(1420px, 100%);
   margin: 0 auto;
   padding: 16px 14px 32px;
   min-width: 0;
 }
 
 .peri-page { min-width: 0; }
+
+.peri-top-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.peri-share-btn {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.peri-share-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
 
 .peri-kicker {
   margin: 0 0 6px;
@@ -104,14 +131,29 @@
 
 .peri-stage {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.8fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.38fr) minmax(300px, 0.95fr);
+  gap: 16px;
   min-width: 0;
   align-items: start;
 }
 
+.peri-left-col,
+.peri-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.peri-console-head,
 .peri-canvas,
+.peri-fluoro-card,
 .peri-card,
+.peri-pad-box,
+.peri-preset-box,
+.peri-lesion-box,
+.peri-device-box,
+.peri-abi-box,
 .peri-scale,
 .peri-refs {
   min-width: 0;
@@ -120,21 +162,674 @@
   border-radius: 16px;
 }
 
-.peri-canvas { padding: 8px 8px 12px; }
-.peri-card { padding: 16px; }
+.peri-console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-color: #30434a;
+}
 
+.peri-console-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.peri-live-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #10b981;
+}
+
+.peri-angle-readout {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.peri-console-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.peri-inject-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #ef4444;
+  background: rgba(239, 68, 68, 0.24);
+  color: #fee2e2;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.peri-inject-btn:hover,
+.peri-inject-btn.is-injecting {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.peri-cine-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.peri-cine-btn.is-on {
+  border-color: #10b981;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.16);
+}
+
+.peri-canvas { padding: 12px; border-color: #30434a; }
+.peri-card { padding: 16px; }
+.peri-fluoro-card,
+.peri-pad-box,
+.peri-preset-box,
+.peri-lesion-box,
+.peri-device-box { padding: 12px 14px; }
+
+.peri-subcard-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.peri-fluoro-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.peri-img-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.peri-chip {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.peri-chip.is-on {
+  background: #0c4a6e;
+  border-color: #38bdf8;
+  color: #e0f2fe;
+}
+
+.peri-fluoro-canvas-wrap {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  overflow: hidden;
+  background: #020617;
+}
+
+#peri-fluo-canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  cursor: crosshair;
+}
+
+.peri-toggle-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.peri-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.peri-toggle-chip input {
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.peri-tele-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  background: #070c16;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.peri-tele-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.peri-tele-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+.peri-tele-val {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #38bdf8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.peri-tele-val.excellent,
+.peri-tele-val.ok { color: #34d399; }
+.peri-tele-val.moderate { color: #fbbf24; }
+.peri-tele-val.severe { color: #f87171; }
+
+/* 2D JOYSTICK TRACKPAD & SLIDERS */
+.peri-pad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.peri-reset-btn {
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.peri-reset-btn:hover { border-color: #38bdf8; }
+
+.peri-pad-flex {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.peri-joystick-wrap {
+  width: 136px;
+  height: 136px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.peri-joy-pad {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1e293b 0%, #090f1a 100%);
+  border: 2px solid rgba(56, 189, 248, 0.45);
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+}
+
+.peri-joy-pad:active { cursor: grabbing; }
+
+.peri-joy-axis {
+  position: absolute;
+  background: rgba(148, 163, 184, 0.22);
+  pointer-events: none;
+}
+
+.peri-joy-axis.joy-h { width: 100%; height: 1px; top: 50%; left: 0; }
+.peri-joy-axis.joy-v { width: 1px; height: 100%; left: 50%; top: 0; }
+
+.peri-joy-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.peri-joy-ring.ring-30 { width: 56px; height: 56px; }
+.peri-joy-ring.ring-60 { width: 94px; height: 94px; }
+
+.peri-joy-puck {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #38bdf8 0%, #0284c7 100%);
+  border: 2px solid #ffffff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  pointer-events: none;
+}
+
+.peri-joy-lbl {
+  position: absolute;
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.peri-joy-lbl.lbl-top { top: 4px; left: 50%; transform: translateX(-50%); color: #38bdf8; }
+.peri-joy-lbl.lbl-bottom { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.peri-joy-lbl.lbl-left { left: 5px; top: 50%; transform: translateY(-50%); }
+.peri-joy-lbl.lbl-right { right: 5px; top: 50%; transform: translateY(-50%); color: #38bdf8; }
+
+.peri-nudge-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.peri-slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.peri-slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.peri-slider-label strong {
+  color: #38bdf8;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.peri-slider-item input[type="range"] {
+  width: 100%;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.peri-nudge-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.peri-nudge-mid {
+  display: flex;
+  gap: 4px;
+}
+
+.peri-nudge-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.peri-nudge-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* PRESETS GALLERY */
+.peri-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.peri-preset-btn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #1e293b;
+  background: #0f172a;
+  color: #e2e8f0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.peri-preset-btn:hover { border-color: #38bdf8; }
+
+.peri-preset-btn.is-on {
+  background: rgba(12, 74, 110, 0.55);
+  border-color: #38bdf8;
+}
+
+.peri-preset-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.peri-preset-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.peri-preset-ang {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  color: #38bdf8;
+}
+
+.peri-preset-target {
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CLINICAL LESION SIMULATOR */
+.peri-lesion-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.peri-lesion-picker label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.peri-select {
+  width: 100%;
+  max-width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.peri-lesion-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.peri-lesion-card[hidden] { display: none; }
+
+.peri-lesion-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.peri-lesion-head strong {
+  font-size: 12px;
+  color: #fecaca;
+}
+
+.peri-lesion-pct {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.peri-lesion-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.peri-meta-pill {
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #7dd3fc;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.peri-lesion-desc,
+.peri-lesion-access {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #e2e8f0;
+}
+
+.peri-lesion-rec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: #fde047;
+}
+
+.peri-jump-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #10b981;
+  background: rgba(16, 185, 129, 0.2);
+  color: #a7f3d0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.peri-jump-btn:hover {
+  background: #10b981;
+  color: #ffffff;
+}
+
+/* 3D C-ARM DEVICE */
+.peri-device-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.peri-device-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.peri-device-viewport {
+  position: relative;
+  width: 100%;
+  height: 210px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #070d17;
+  border: 1px solid #1e293b;
+}
+
+.peri-device-viewport canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.peri-beam-chip { margin-top: 8px; }
+
+/* ABI & TBI HEMODYNAMIC CALCULATOR */
+.peri-abi-box {
+  margin-top: 16px;
+  padding: 14px;
+}
+
+.peri-abi-box h2 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.peri-abi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(220px, 1.3fr);
+  gap: 10px;
+  align-items: end;
+}
+
+.peri-abi-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #cbd5e1;
+  min-width: 0;
+}
+
+.peri-abi-field input {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.peri-abi-output {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  min-width: 0;
+}
+
+.peri-abi-output.status-normal { border-color: #10b981; }
+.peri-abi-output.status-borderline,
+.peri-abi-output.status-mild,
+.peri-abi-output.status-noncompressible { border-color: #f59e0b; }
+.peri-abi-output.status-moderate,
+.peri-abi-output.status-severe { border-color: #ef4444; }
+
+.peri-abi-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.peri-abi-main strong {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 14px;
+  color: #38bdf8;
+}
+
+.peri-abi-badge {
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(56, 189, 248, 0.14);
+  color: #e0f2fe;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.peri-abi-stage {
+  margin: 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+/* SVG ATLAS & LAYERED ARTERIAL ILLUSTRATION */
 .peri-svg {
   display: block;
   width: 100%;
   height: auto;
-  background: #0b1220;
+  background: radial-gradient(ellipse at 48% 38%, #172b36 0%, #0c1823 63%, #09121c 100%);
   border-radius: 12px;
+}
+
+.peri-svg.is-bolus-flash .peri-vessel-body {
+  filter: brightness(1.25);
 }
 
 .peri-structure { cursor: pointer; outline: none; }
 
 .peri-hitdot {
-  fill: rgba(248, 250, 252, 0.04);
+  fill: transparent;
   stroke: transparent;
   pointer-events: none;
 }
@@ -146,7 +841,7 @@
 
 .peri-hitstroke {
   fill: none;
-  stroke: rgba(248, 250, 252, 0.04);
+  stroke: transparent;
   stroke-linecap: round;
   stroke-linejoin: round;
   pointer-events: stroke;
@@ -179,14 +874,39 @@
 .peri-risk { fill: rgba(248, 113, 113, 0.24); stroke: #f87171; }
 .peri-warn { fill: rgba(251, 146, 60, 0.22); stroke: #fb923c; }
 .peri-zone { fill: rgba(56, 189, 248, 0.1); stroke: rgba(56, 189, 248, 0.55); }
-.peri-bone { fill: rgba(100, 116, 139, 0.38); stroke: #64748b; }
-.peri-frame { fill: rgba(15, 23, 42, 0.2); stroke: #334155; }
+.peri-bone { fill: #cabca3; fill-opacity: 0.12; stroke: #b9ad99; stroke-opacity: 0.55; }
+.peri-frame { fill: #24323a; fill-opacity: 0.35; stroke: #536062; stroke-opacity: 0.5; }
 .peri-skin { fill: rgba(148, 163, 184, 0.16); stroke: #94a3b8; }
-.peri-dot-vein { fill: #38bdf8; stroke: none; }
-.peri-dot-artery { fill: #fb7185; stroke: none; }
-.peri-dot-nerve { fill: #fbbf24; stroke: none; }
-.peri-marker { fill: #38bdf8; stroke: #e0f2fe; stroke-width: 2; }
+.peri-dot-vein { fill: #578baf; stroke: #386281; stroke-width: 3; }
+.peri-dot-artery { fill: #d77673; stroke: #8a3e44; stroke-width: 4; }
+.peri-dot-nerve { fill: #d6bb79; stroke: #a08b54; stroke-width: 2; }
+.peri-marker { fill: #0d2631; stroke: #b1e3e3; stroke-width: 1.5; }
 .peri-shape { pointer-events: none; }
+
+.peri-vessel-wall { fill: #a24d58; stroke: none; pointer-events: none; }
+.peri-vessel-body { fill: url(#peri-lumen); pointer-events: none; }
+.peri-vessel-light { fill: url(#peri-lumen-light); opacity: 0.6; pointer-events: none; }
+.peri-structure:hover .peri-vessel-body { fill: #eb8582; }
+.peri-structure.is-on .peri-vessel-wall { fill: #246773; stroke: #91d6dd; }
+.peri-structure.is-on .peri-vessel-body { fill: #63bdc9; }
+.peri-structure.is-on .peri-vessel-light { fill: #d9f9f4; }
+.peri-structure:focus-visible .peri-vessel-wall { stroke: #f5e4b8; stroke-width: 3; }
+
+.peri-anatomical-context,
+.peri-lesion-overlay { pointer-events: none; }
+.peri-lesion-ring { fill: rgba(239, 68, 68, 0.18); stroke: #ef4444; stroke-width: 2; stroke-dasharray: 4 3; pointer-events: none; }
+.peri-lesion-core { fill: #dc2626; stroke: #ffffff; stroke-width: 1.5; pointer-events: none; }
+.peri-lesion-pill { fill: #b91c1c; stroke: #fca5a5; stroke-width: 1; pointer-events: none; }
+.peri-lesion-text { fill: #ffffff; font-family: ui-monospace, SFMono-Regular, monospace; font-weight: 700; pointer-events: none; }
+
+.peri-context-bone { fill: #d6cbb3; fill-opacity: 0.065; stroke: #b8b6a3; stroke-opacity: 0.24; stroke-width: 1.6; }
+.peri-context-space { fill: #0d1b26; stroke: #b8b6a3; stroke-opacity: 0.2; stroke-width: 1.4; }
+.peri-context-line { fill: none; stroke: #b8b6a3; stroke-opacity: 0.25; stroke-width: 4; stroke-linecap: round; }
+.peri-organ { fill: #ae9b86; fill-opacity: 0.07; stroke: #bcab96; stroke-opacity: 0.3; stroke-width: 1.5; }
+.peri-limb { fill: #c5b6a4; fill-opacity: 0.025; stroke: #9cafa8; stroke-opacity: 0.27; stroke-width: 1.5; }
+.peri-ivc { fill: rgba(56, 189, 248, 0.22); stroke: #7dd3fc; stroke-width: 1.5; }
+.peri-rib { stroke: #64748b; fill: none; }
+.peri-ghost { stroke: #475569; fill: none; }
 
 .peri-label,
 .peri-shape-text,
@@ -201,11 +921,13 @@
   pointer-events: none;
 }
 
-.peri-watermark { fill: #64748b; }
+.peri-label { fill: #f0e9dc; font-weight: 500; stroke: #0c1823; stroke-width: 5; }
+.peri-watermark { font-weight: 400; fill: #82948f; }
 .peri-caption { fill: #94a3b8; }
 .peri-leader {
-  stroke: #94a3b8;
-  stroke-width: 1.25;
+  stroke: #bdc8c5;
+  stroke-opacity: 0.62;
+  stroke-width: 1;
   fill: none;
   pointer-events: none;
 }
@@ -215,11 +937,7 @@
 .peri-watermark,
 .peri-caption { pointer-events: none; }
 
-.peri-ghost { stroke: #475569; fill: none; }
-.peri-organ { fill: rgba(51, 65, 85, 0.45); stroke: #64748b; stroke-width: 1.5; }
-.peri-ivc { fill: rgba(56, 189, 248, 0.22); stroke: #7dd3fc; stroke-width: 1.5; }
-.peri-limb { fill: rgba(148, 163, 184, 0.08); stroke: #64748b; stroke-width: 1.5; }
-.peri-rib { stroke: #64748b; fill: none; }
+.peri-safe, .peri-risk, .peri-warn { fill-opacity: 0.3; stroke-width: 1; stroke-dasharray: 4 5; }
 
 .peri-scale-note,
 .peri-legend-label {
@@ -300,6 +1018,7 @@
 
 .peri-scale-grid {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -342,9 +1061,22 @@
 
 .peri-tip[hidden] { display: none; }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .peri-stage { grid-template-columns: minmax(0, 1fr); }
+  .peri-abi-grid { grid-template-columns: minmax(0, 1fr); }
+  .peri-scale-grid { grid-template-columns: minmax(0, 1fr); }
   .peri-page h1 { font-size: 22px; }
+}
+
+@media (max-width: 600px) {
+  .peri-canvas { padding: 6px; }
+  .peri-tele-strip { grid-template-columns: minmax(0, 1fr); }
+  .peri-pad-flex {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+  .peri-nudge-col { width: 100%; }
+  .peri-preset-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 420px) {
@@ -352,42 +1084,6 @@
   .peri-tabs button { font-size: 12px; padding: 8px 2px; }
 }
 
-/* Original layered arterial illustration: lumen, wall and longitudinal light. */
-.peri-svg { background: radial-gradient(ellipse at 48% 38%, #172b36 0%, #0c1823 63%, #09121c 100%); }
-.peri-canvas { border-color: #30434a; padding: 12px; }
-.peri-vessel-wall { fill: #a24d58; stroke: none; pointer-events: none; }
-.peri-vessel-body { fill: url(#peri-lumen); pointer-events: none; }
-.peri-vessel-light { fill: url(#peri-lumen-light); opacity: 0.6; pointer-events: none; }
-.peri-structure:hover .peri-vessel-body { fill: #eb8582; }
-.peri-structure.is-on .peri-vessel-wall { fill: #246773; stroke: #91d6dd; }
-.peri-structure.is-on .peri-vessel-body { fill: #63bdc9; }
-.peri-structure.is-on .peri-vessel-light { fill: #d9f9f4; }
-.peri-structure:focus-visible .peri-vessel-wall { stroke: #f5e4b8; stroke-width: 3; }
-.peri-hitstroke { stroke: transparent; }
-.peri-hitdot { fill: transparent; }
-.peri-anatomical-context { pointer-events: none; }
-.peri-context-bone { fill: #d6cbb3; fill-opacity: 0.065; stroke: #b8b6a3; stroke-opacity: 0.24; stroke-width: 1.6; }
-.peri-context-space { fill: #0d1b26; stroke: #b8b6a3; stroke-opacity: 0.2; stroke-width: 1.4; }
-.peri-context-line { fill: none; stroke: #b8b6a3; stroke-opacity: 0.25; stroke-width: 4; stroke-linecap: round; }
-.peri-organ { fill: #ae9b86; fill-opacity: 0.07; stroke: #bcab96; stroke-opacity: 0.3; }
-.peri-limb { fill: #c5b6a4; fill-opacity: 0.025; stroke: #9cafa8; stroke-opacity: 0.27; }
-.peri-label { fill: #f0e9dc; font-weight: 500; stroke: #0c1823; stroke-width: 5; }
-.peri-leader { stroke: #bdc8c5; stroke-opacity: 0.62; stroke-width: 1; }
-.peri-marker { fill: #0d2631; stroke: #b1e3e3; stroke-width: 1.5; }
-.peri-bone { fill: #cabca3; fill-opacity: 0.12; stroke: #b9ad99; stroke-opacity: 0.55; }
-.peri-frame { fill: #24323a; fill-opacity: 0.35; stroke: #536062; stroke-opacity: 0.5; }
-.peri-dot-artery { fill: #d77673; stroke: #8a3e44; stroke-width: 4; }
-.peri-dot-vein { fill: #578baf; stroke: #386281; stroke-width: 3; }
-.peri-dot-nerve { fill: #d6bb79; stroke: #a08b54; stroke-width: 2; }
-.peri-safe, .peri-risk, .peri-warn { fill-opacity: 0.3; stroke-width: 1; stroke-dasharray: 4 5; }
-.peri-watermark { font-weight: 400; fill: #82948f; }
-@media (max-width: 600px) {
-  .peri-canvas { overflow-x: auto; padding: 6px; }
-  .peri-svg { min-width: 560px; }
-}
-
-/* Phones: the card sits below the drawing, so a tapped vessel would open it off screen. Once a structure is
-   selected the card docks to the bottom of the viewport (scrollable) while the drawing is in view. */
 @media (max-width: 860px) {
   .peri-card:has([data-card-pearl]:not(:empty)) {
     position: sticky; bottom: 0; z-index: 6;

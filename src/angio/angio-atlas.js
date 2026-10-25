@@ -44,12 +44,15 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
     hearts.forEach(h => h.selectStructure(id, false));
     selection.textContent = `${getLang() === 'tr' ? 'Seçili yapı' : 'Selected structure'}: ${id}`;
   }
-  function moved(angle) {
+  let activeSource = -1;
+  const moved = index => angle => {
     if (syncing || !loaded || disposed || (angle.laoRao === alpha && angle.craCau === beta)) return;
-    onAngles(angle.laoRao, angle.craCau);
-  }
+    activeSource = index;
+    try { onAngles(angle.laoRao, angle.craCau); }
+    finally { activeSource = -1; }
+  };
   try {
-    hosts.forEach((host, i) => hearts.push(createHeart(host, selected, hovered(i), moved, { pixelRatioCap: 1.25, maxFps: 30 })));
+    hosts.forEach((host, i) => hearts.push(createHeart(host, selected, hovered(i), moved(i), { pixelRatioCap: 1.25, maxFps: 30 })));
   } catch (error) {
     hearts.forEach(h => h.dispose());
     mount.dataset.ready = 'error';
@@ -63,7 +66,11 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
     alpha = a; beta = b;
     if (!loaded) return;
     syncing = true;
-    try { hearts.forEach(h => h.setAngioProjection(a, b, false, !fit)); }
+    try {
+      hearts.forEach((h, i) => {
+        if (i !== activeSource) h.setAngioProjection(a, b, false, !fit);
+      });
+    }
     finally { syncing = false; }
   }
   function setSystem(value) {

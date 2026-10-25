@@ -1069,6 +1069,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
 
     cameraTarget.copy(target).add(new THREE.Vector3(x,y,z));
     lookTarget.copy(target);
+    markHome();
 
     if(smooth){
       transition=true;
@@ -1077,7 +1078,10 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
       transition=false;
       camera.position.copy(cameraTarget);
       controls.target.copy(lookTarget);
+      const wasDamping=controls.enableDamping;
+      controls.enableDamping=false;
       controls.update();
+      controls.enableDamping=wasDamping;
       container.dataset.cameraSettled='true';
     }
     emitAngleChange();

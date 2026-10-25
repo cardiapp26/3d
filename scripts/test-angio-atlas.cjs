@@ -20,6 +20,14 @@ const assert = require('node:assert/strict');
       assert.equal(view.angio.laoRao, -35);
       assert.equal(view.angio.craCau, -45);
     }
+    const initialDist = initial.anatomy.angio.distance;
+    await page.waitForTimeout(260);
+    const afterBeat = await state();
+    for (const view of [afterBeat.anatomy, afterBeat.fluoro]) {
+      assert.equal(view.angio.laoRao, -35, 'laoRao must not drift across frames');
+      assert.equal(view.angio.craCau, -45, 'craCau must not drift or jitter across frames');
+      assert.ok(Math.abs(view.angio.distance - initialDist) < 1e-6, 'camera distance must not jitter across frames');
+    }
     const viewport = await page.locator('[data-atlas-viewport=anatomy]').elementHandle();
     await page.locator('[data-toggle-cine]').click();
     const phase = (await state()).cycle.phase;

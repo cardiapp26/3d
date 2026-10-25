@@ -12,6 +12,14 @@ import {
   structuresFor
 } from '../src/angio/peripheral/peripheral-data.js';
 import { LABEL_CHAR, LABEL_FONT, curveSamples, labelFor, vesselRibbon } from '../src/angio/peripheral/peripheral-svg.js';
+import {
+  PERIPHERAL_3D_TREES,
+  PERIPHERAL_LESIONS,
+  PERIPHERAL_PRESETS,
+  computeAbiTbi,
+  computePeripheralTelemetry,
+  projectPeripheralPoint
+} from '../src/angio/peripheral/peripheral-sim.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const problems = [];
@@ -171,6 +179,7 @@ const owned = [
   'src/angio/peripheral/peripheral-data-runoff.js',
   'src/angio/peripheral/peripheral-data-visceral.js',
   'src/angio/peripheral/peripheral-data-arm.js',
+  'src/angio/peripheral/peripheral-sim.js',
   'src/angio/peripheral/peripheral-svg.js',
   'src/angio/peripheral/peripheral-panel.js',
   'src/angio/peripheral/peripheral.css',
@@ -662,8 +671,56 @@ subclavian.forEach(p => {
 });
 if (!(ribGap > 4)) fail('subclavian does not clear the first rib');
 
+// Studio simulation & C-arm projection tests
+for (const view of VIEWS) {
+  const tree = PERIPHERAL_3D_TREES[view.id];
+  if (!Array.isArray(tree) || tree.length < 5) fail(`missing 3D tree for ${view.id}`);
+  tree.forEach(branch => {
+    if (!unique.has(branch.id)) fail(`3D branch ${branch.id} does not match a canonical structure id`);
+    if (!Array.isArray(branch.points) || branch.points.length < 2) fail(`3D branch ${branch.id} has <2 points`);
+  });
+  const presets = PERIPHERAL_PRESETS[view.id];
+  if (!Array.isArray(presets) || presets.length < 3) fail(`missing C-arm presets for ${view.id}`);
+  presets.forEach(p => {
+    if (!p.name?.tr || !p.name?.en || !p.target?.tr || !p.target?.en) fail(`preset ${p.id} missing text`);
+    if (p.targetId && !unique.has(p.targetId)) fail(`preset ${p.id} targetId ${p.targetId} invalid`);
+  });
+}
+
+if (PERIPHERAL_LESIONS.length < 8) fail('expected at least 8 peripheral lesion scenarios');
+PERIPHERAL_LESIONS.forEach(les => {
+  if (les.id !== 'none' && (!unique.has(les.vesselId) || les.pct <= 0)) {
+    fail(`invalid lesion scenario ${les.id}`);
+  }
+});
+
+// Verify C-arm angulation separates anterior visceral ostia in Lateral vs AP
+const viscAp = computePeripheralTelemetry('visceral', 0, 0, 'celiac');
+const viscLat = computePeripheralTelemetry('visceral', 85, 0, 'celiac');
+if (!(viscLat.target.elongation > viscAp.target.elongation)) {
+  fail('lateral projection must elongate anterior celiac ostium relative to AP');
+}
+if (viscAp.overlapStatus.state !== 'severe' || viscLat.overlapStatus.state !== 'excellent') {
+  fail('visceral celiac overlap status must improve from AP to Lateral');
+}
+
+// Verify ipsilateral RAO opens right femoral bifurcation relative to AP
+const femAp = computePeripheralTelemetry('femoral', 0, 0, 'profunda');
+const femRao = computePeripheralTelemetry('femoral', -32, 0, 'profunda');
+if (femAp.overlapStatus.state !== 'moderate' || femRao.overlapStatus.state !== 'excellent') {
+  fail('femoral overlap status must open in RAO 32');
+}
+
+// Verify ABI & TBI hemodynamic calculator
+const abiNorm = computeAbiTbi({ ankle: 120, brachial: 120, toe: 90 });
+const abiPad = computeAbiTbi({ ankle: 66, brachial: 120, toe: 48 });
+const abiCalc = computeAbiTbi({ ankle: 180, brachial: 120, toe: 24 });
+if (abiNorm.abi !== 1 || abiNorm.status !== 'normal') fail('normal ABI calculation failed');
+if (abiPad.abi !== 0.55 || abiPad.status !== 'moderate') fail('moderate PAD ABI calculation failed');
+if (abiCalc.status !== 'noncompressible' || abiCalc.tbi !== 0.2) fail('noncompressible ABI / TBI calculation failed');
+
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exit(1);
 }
-console.log('PASS peripheral data 71 structures');
+console.log('PASS peripheral data 71 structures + C-arm DSA studio');

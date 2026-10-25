@@ -353,13 +353,29 @@ function foreground(view, mode, lang) {
   </g>`;
 }
 
-export function renderPeripheralSvg({ view, mode, structures, lang, selectedId }) {
+export function renderPeripheralSvg({ view, mode, structures, lang, selectedId, activeLesion = null }) {
   argumentsLang = lang === 'en' ? 'en' : 'tr';
   const [w, h] = viewBoxFor(view, mode);
   const ordered = structures
     .map((item, index) => ({ item, index }))
     .sort((a, b) => rank(a.item.kind) - rank(b.item.kind) || a.index - b.index);
   const body = ordered.map(({ item }) => structureSvg(item, mode, selectedId)).join('');
+  let lesionSvg = '';
+  if (activeLesion && activeLesion.vesselId && activeLesion.pct > 0) {
+    const targetItem = structures.find(s => s.id === activeLesion.vesselId);
+    if (targetItem) {
+      const pt = hitPoint(targetItem, mode);
+      const badge = activeLesion.isCto ? 'CTO %100' : `-%${activeLesion.pct}`;
+      const bx = Math.min(w - 86, Math.max(12, pt.x + 16));
+      const by = Math.max(24, pt.y - 22);
+      lesionSvg = `<g class="peri-lesion-overlay" aria-hidden="true">
+        <circle class="peri-lesion-ring" cx="${num(pt.x)}" cy="${num(pt.y)}" r="18"/>
+        <circle class="peri-lesion-core" cx="${num(pt.x)}" cy="${num(pt.y)}" r="6"/>
+        <rect class="peri-lesion-pill" x="${num(bx)}" y="${num(by - 13)}" width="72" height="18" rx="5"/>
+        <text class="peri-lesion-text" x="${num(bx + 36)}" y="${num(by)}" text-anchor="middle" font-size="11">${esc(badge)}</text>
+      </g>`;
+    }
+  }
   const title = UI[argumentsLang].watermark;
-  return `<svg class="peri-svg" viewBox="0 0 ${w} ${h}" role="group" aria-label="${esc(title)}"><defs><linearGradient id="peri-lumen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a94b56"/><stop offset="0.38" stop-color="#df7e7b"/><stop offset="0.62" stop-color="#ef9a8b"/><stop offset="1" stop-color="#bd5965"/></linearGradient><linearGradient id="peri-lumen-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffdbb9" stop-opacity="0"/><stop offset="0.5" stop-color="#ffdbb9" stop-opacity="0.45"/><stop offset="1" stop-color="#ffdbb9" stop-opacity="0"/></linearGradient></defs>${anatomicalContext(view, mode)}${scenery(view, mode, argumentsLang)}${body}${foreground(view, mode, argumentsLang)}<text class="peri-watermark" x="${w - 16}" y="${h - 16}" text-anchor="end" font-size="12">${esc(title)}</text></svg>`;
+  return `<svg class="peri-svg" viewBox="0 0 ${w} ${h}" role="group" aria-label="${esc(title)}"><defs><linearGradient id="peri-lumen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a94b56"/><stop offset="0.38" stop-color="#df7e7b"/><stop offset="0.62" stop-color="#ef9a8b"/><stop offset="1" stop-color="#bd5965"/></linearGradient><linearGradient id="peri-lumen-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffdbb9" stop-opacity="0"/><stop offset="0.5" stop-color="#ffdbb9" stop-opacity="0.45"/><stop offset="1" stop-color="#ffdbb9" stop-opacity="0"/></linearGradient></defs>${anatomicalContext(view, mode)}${scenery(view, mode, argumentsLang)}${body}${foreground(view, mode, argumentsLang)}${lesionSvg}<text class="peri-watermark" x="${w - 16}" y="${h - 16}" text-anchor="end" font-size="12">${esc(title)}</text></svg>`;
 }

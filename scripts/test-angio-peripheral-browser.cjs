@@ -116,6 +116,32 @@ async function clickStructure(page, id) {
       await page.locator('.peri-stage').screenshot({ path: `/tmp/peripheral-tab${index}.png` });
     }
 
+    // Verify C-Arm DSA Studio controls, presets, lesion simulator, and ABI/TBI calculator
+    await page.locator('[data-peri-tab="aortoiliac"]').click();
+    assert.ok(await page.locator('[data-peri-fluo-canvas]').isVisible(), 'fluoro/DSA canvas visible');
+    await page.locator('[data-peri-preset="ai-right-obl"]').click();
+    assert.match(await page.locator('[data-peri-angle-readout]').textContent(), /LAO 26°/);
+    assert.match(await page.locator('[data-peri-tele-overlap]').textContent(), /Açık/);
+
+    await page.locator('[data-peri-nudge="ap"]').click();
+    assert.match(await page.locator('[data-peri-angle-readout]').textContent(), /AP 0°/);
+
+    await page.locator('[data-peri-img-mode="roadmap"]').click();
+    assert.equal(await page.locator('[data-peri-img-mode="roadmap"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-peri-img-mode="dsa"]').click();
+
+    await page.locator('[data-peri-inject]').click();
+    await page.locator('[data-peri-lesion-select]').selectOption('sfa-hunter-cto');
+    assert.equal(await page.locator('[data-peri-tab="runoff"]').getAttribute('aria-selected'), 'true');
+    assert.ok(await page.locator('[data-peri-lesion-card]').isVisible(), 'lesion card visible');
+    assert.ok(await page.locator('.peri-lesion-overlay').isVisible(), 'SVG lesion overlay visible');
+    await page.locator('[data-peri-jump-optimal]').click();
+    await page.locator('[data-peri-lesion-select]').selectOption('none');
+
+    await page.locator('[data-abi-ankle]').fill('66');
+    await page.locator('[data-abi-brachial]').fill('120');
+    assert.match(await page.locator('[data-abi-value]').textContent(), /ABI 0\.55/);
+
     await page.locator('[data-peri-lang="en"]').click();
     await page.waitForFunction(() => document.documentElement.lang === 'en');
     assert.match(await page.locator('[data-site-badge]').textContent(), /PERIPHERAL ANGIOGRAPHY/);
