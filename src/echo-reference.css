@@ -1,0 +1,26 @@
+.echo-reference { margin: 8px 0; border: 1px solid #b9cec4; border-radius: 8px; background: #f4f8f5; color: #25473e; }
+.echo-reference[hidden] { display: none; }
+.echo-reference > summary { padding: 10px 12px; cursor: pointer; font-size: 12px; font-weight: 650; }
+.echo-reference-body { padding: 0 12px 12px; }
+.echo-reference-recordings { display: grid; gap: 5px; margin: 8px 0; font-size: 11px; font-weight: 600; }
+.echo-reference-recordings[hidden] { display: none; }
+.echo-reference-recordings select { width: 100%; min-width: 0; padding: 7px; border: 1px solid #9ebbac; border-radius: 5px; background: #fff; color: #25473e; font: inherit; }
+.echo-reference-recordings select:focus-visible { outline: 2px solid #16795b; outline-offset: 2px; }
+.echo-reference h4 { margin: 0 0 6px; font-size: 12px; }
+.echo-reference p { font-size: 11px; line-height: 1.5; margin: 6px 0; }
+.echo-reference-context, .echo-reference-note { color: #536b60; }
+.echo-reference-category { color: #167052; font-weight: 650; }
+.echo-reference-category[data-sample=pathology] { color: #9b4320; }
+.echo-reference-source-note { color: #65400e; background: #fff1d6; padding: 6px 8px; border-radius: 4px; }
+.echo-reference-credit { color: #536b60; overflow-wrap: anywhere; }
+.echo-reference-credit a { color: #185f4b; text-decoration: underline; }
+.echo-reference-stage { background: #08130f; color: #c2d5ca; border-radius: 6px; padding: 14px; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.echo-reference-stage video, .echo-reference-stage img { display: block; width: 100%; max-height: 380px; object-fit: contain; }
+.echo-reference-caption { color: #c2d5ca; }
+.echo-reference-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.echo-reference-actions button[hidden] { display: none; }
+.echo-reference-choose, .echo-reference-actions button { position: relative; display: inline-block; border: 1px solid #9ebbac; border-radius: 5px; padding: 7px 10px; background: #fff; color: #25473e; font: inherit; font-size: 11px; cursor: pointer; }
+.echo-reference-choose:focus-within, .echo-reference-actions button:focus-visible, .echo-reference summary:focus-visible { outline: 2px solid #16795b; outline-offset: 3px; }
+.echo-reference-choose input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.echo-reference-status { color: #a32727; overflow-wrap: anywhere; }
+.echo-reference-status:empty { display: none; }

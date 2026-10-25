@@ -1000,6 +1000,9 @@ main.is-fullscreen-fallback #viewport {
 .echo-task-status{font-size:10.5px!important;font-weight:600;color:#1f7a52!important;background:#eaf6ef;border-radius:4px;padding:3px 8px;margin:4px 0!important}
 .echo-feedback{min-height:2.6em;border-left:3px solid #c9a227;background:#fbf6e6;border-radius:4px;padding:4px 8px;margin:4px 0 6px}
 .echo-feedback[data-state=ok]{border-left-color:#2f9e6d;background:#eaf6ef}
+.echo-feedback[data-state=limited]{border-left-color:#b46b13;background:#fff1d6}
+.echo-view-caveat{margin:6px 0;padding:8px 10px;border:1px solid #d4a448;border-left:4px solid #b46b13;border-radius:6px;background:#fff1d6;color:#65400e;font-size:11.5px;line-height:1.5}
+.echo-view-caveat p{margin:4px 0 0;font-size:11px;line-height:1.5;color:#65400e}
 .echo-feedback p{font-size:10.5px;line-height:1.4;margin:2px 0;color:#4d5e52}
 .echo-task-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:3px}
 .echo-task-row button[aria-pressed=true]{background:#fcd34d;border-color:#e0b72f;color:#3a2e05}

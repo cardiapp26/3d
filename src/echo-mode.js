@@ -410,6 +410,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     },
     exit() {
       active = false;
+      panel?.pauseReference();
       cancelAnimationFrame(sweepRaf);
       state.frozen = false;
       mount.hidden = true;

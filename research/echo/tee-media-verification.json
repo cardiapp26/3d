@@ -1,0 +1,52 @@
+[
+  {
+    "id": "tee-me2c",
+    "verifiedOn": "2026-10-25",
+    "original": "research/echo/source-media/tee-me2c.ogv",
+    "output": "public/echo-references/tee-me2c.webm",
+    "frameCount": 43,
+    "decodedFrameDigest": "206bb62bcf201270553a221c6fe4b2d2659a02e122588950d76252858a621ff1",
+    "sourceSha256": "ffabedf364d576254dd5ccd68445e7d5f42e733b337f5409227f69840de757ec",
+    "sha256": "5f40462089d3a7a6bb2ebd630dba788482b7aa517f9dd31aa70b7f6dbabfcb74"
+  },
+  {
+    "id": "tee-melax",
+    "verifiedOn": "2026-10-25",
+    "original": "research/echo/source-media/tee-melax.ogv",
+    "output": "public/echo-references/tee-melax.webm",
+    "frameCount": 44,
+    "decodedFrameDigest": "a9d976c3ede6cb26b304d56cb7182b7e1ed6567051b7d1d2aa03c0d4f1d2f228",
+    "sourceSha256": "6a070221213aaeec74e916de1ffacdcd323398fa97d25ed7f9f4fd4364333295",
+    "sha256": "b50f804e5fb0ddce75d90d3c7220f16584ea418078da6978963970b7acc2a8e8"
+  },
+  {
+    "id": "tee-bicaval",
+    "verifiedOn": "2026-10-25",
+    "original": "research/echo/source-media/tee-bicaval.ogv",
+    "output": "public/echo-references/tee-bicaval.webm",
+    "frameCount": 41,
+    "decodedFrameDigest": "9416ed77be39b9359f42063a6f6fb2c384a1cc3bf6b49224fec13d84d0882b06",
+    "sourceSha256": "7da6d3a199f3386b0516f2b9f0d91a6caebcb45d95c661dbbda20b0f4643a57f",
+    "sha256": "3c74b172fa261fc9fb3c6abedfc64109298c0100fac42104de2e9a8b9fc6acbb"
+  },
+  {
+    "id": "tee-me4c",
+    "verifiedOn": "2026-10-25",
+    "original": "research/echo/source-media/tee-me4c.ogv",
+    "output": "public/echo-references/tee-me4c.webm",
+    "frameCount": 45,
+    "decodedFrameDigest": "0ecc81400b4518da792350c6d2b01b48f75d1cc2eddc7142cf9a54f357c773ab",
+    "sourceSha256": "eea725dd7dba5162e737226accfd3da693f10cf05d3870d982f7f214c457fc5e",
+    "sha256": "fd1c2195a7ce7745ab7c37ade59843f86e3a229a0930b5563e4062df97adb0c5"
+  },
+  {
+    "id": "tee-tgsax",
+    "verifiedOn": "2026-10-25",
+    "original": "research/echo/source-media/tee-tgsax.ogv",
+    "output": "public/echo-references/tee-tgsax.webm",
+    "frameCount": 45,
+    "decodedFrameDigest": "6f274a1de5313d05283711409241fc2806a184f73ca27f512d4912c12cdfe288",
+    "sourceSha256": "810d682da8d5cd4a43258e169e47ac3df53cd5da30874eb1ea77ac48b4573e2a",
+    "sha256": "20e3991306790f9369ab28acb7fbc565d5709dd6fa4c47eeb401e305f4ebe5d6"
+  }
+]

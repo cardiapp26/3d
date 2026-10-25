@@ -58,10 +58,61 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5173').replace(/\/$/, '');
     assert.equal(await iceBtn.getAttribute('aria-pressed'), 'true', 'ICE is active');
     assert.ok(await page.locator('[data-echo-view="ice-home"]').isVisible(), 'ICE Home view button visible for ICE');
 
+    // Real ICE topic references are radial recordings, not exact phased-array plane matches.
+    await page.locator('[data-echo-view="ice-septal-sax"]').click();
+    await page.locator('.echo-reference summary').click();
+    const recording = page.locator('[data-echo-reference-choice]');
+    assert.equal(await recording.locator('option').count(), 2);
+    await page.waitForFunction(() => document.querySelector('.echo-reference video')?.readyState >= 2);
+    assert.equal(await recording.inputValue(), '/echo-references/ice-septal-crossing.webm');
+    assert.match(await page.locator('.echo-reference-category').textContent(), /Konu referansı/);
+    assert.match(await page.locator('.echo-reference-source-note').textContent(), /360°/);
+    const icePose = await page.evaluate(() => window.cardiaEcho.getState().ice);
+    await recording.selectOption('/echo-references/ice-septal-distorted.webm');
+    await page.waitForFunction(() => document.querySelector('.echo-reference video')?.readyState >= 2);
+    assert.equal(await page.locator('.echo-reference-category').getAttribute('data-sample'), 'pathology');
+    assert.deepEqual(await page.evaluate(() => window.cardiaEcho.getState().ice), icePose, 'choosing a reference must not move the catheter');
+    await page.locator('[data-echo-lang="en"]').click();
+    assert.equal(await recording.inputValue(), '/echo-references/ice-septal-distorted.webm');
+    assert.match(await page.locator('.echo-reference-source-note').textContent(), /360° radial ICE/);
+    await page.locator('[data-echo-lang="tr"]').click();
+    await page.locator('[data-echo-reference-file]').setInputFiles({ name: 'test.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64') });
+    assert.equal(await recording.isDisabled(), true, 'local file overrides the library choice');
+    await page.locator('[data-echo-reference-remove]').click();
+    assert.equal(await page.locator('.echo-reference video').getAttribute('src'), '/echo-references/ice-septal-distorted.webm', 'removal restores the chosen library recording');
+    await page.locator('[data-echo-view="ice-home"]').click();
+    assert.equal(await page.locator('.echo-reference video').count(), 0, 'septal reference does not leak into home view');
+    await page.locator('[data-echo-view="ice-septal-sax"]').click();
+    assert.equal(await recording.inputValue(), '/echo-references/ice-septal-distorted.webm');
+    await page.locator('.echo-reference summary').click();
+
     // Switch back to TEE for multiplane controls
     await teeBtn.click();
     await page.waitForFunction(() => window.cardiaEcho?.getState().modality === 'tee');
     await page.locator('[data-echo-view="me4c"]').click();
+
+    // A model pass must not conceal the known ME two-chamber anatomical limitation.
+    await page.locator('[data-echo-view="me2c"]').click();
+    assert.equal(await page.locator('[data-echo-view-caveat]').isVisible(), true);
+    assert.match(await page.locator('[data-echo-view-caveat]').textContent(), /inferior duvar/);
+    assert.equal(await page.locator('.echo-feedback').getAttribute('data-state'), 'limited');
+    await page.locator('.echo-reference summary').click();
+    await page.waitForFunction(() => document.querySelector('.echo-reference video')?.readyState >= 2);
+    assert.equal(await page.locator('.echo-reference video').getAttribute('src'), '/echo-references/tee-me2c.webm');
+    assert.equal(await page.locator('.echo-reference video').evaluate(v => v.paused), true, 'references do not autoplay');
+    assert.match(await page.locator('.echo-reference-source-note').textContent(), /60°/);
+    await page.locator('[data-echo-lang="en"]').click();
+    assert.match(await page.locator('[data-echo-view-caveat]').textContent(), /Anatomical limitation/);
+    assert.match(await page.locator('.echo-reference-source-note').textContent(), /105°/);
+    await page.locator('[data-echo-lang="tr"]').click();
+    await page.locator('[data-echo-view="mebicaval"]').click();
+    assert.equal(await page.locator('.echo-reference-category').getAttribute('data-sample'), 'pathology');
+    assert.match(await page.locator('.echo-reference-source-note').textContent(), /Normal bikaval örneği değildir/);
+    await page.locator('[data-echo-view="memc"]').click();
+    assert.equal(await page.locator('.echo-reference video').count(), 0, 'no unrelated clip for an unverified view');
+    await page.locator('.echo-reference summary').click();
+    await page.locator('[data-echo-view="me4c"]').click();
+    assert.equal(await page.locator('[data-echo-view-caveat]').isVisible(), false);
 
     // 4. Test Probe Controls in TEE (Omega multiplane angle)
     const omegaSlider = page.locator('[data-echo-control="omega"]');

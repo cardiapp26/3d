@@ -2,6 +2,7 @@ import { TTE_LIMITS, TEE_LIMITS, ICE_LIMITS } from './echo-probe.js';
 import { ICE_PRESET_NOTES, TTE_PRESET_NOTES, TEE_PRESET_NOTES, icePosition } from './echo-views.js';
 import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
 import { createProbeWidgets, SHORT_LABELS, setControl, stepOf, holdRepeat } from './echo-probe-panel.js';
+import { createEchoReference } from './echo-reference.js';
 
 /*
  * Echo panel: TTE / TEE choice, the view set, the 2D sector, explainable
@@ -44,11 +45,17 @@ export function createEchoPanel(mount, handlers) {
   const doc = mount.ownerDocument;
   const el = (tag, cls, attrs = {}) => { const n = doc.createElement(tag); if (cls) n.className = cls; for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); return n; };
   const root = el('section', 'echo-panel');
+  const reference = createEchoReference(doc);
   const heading = el('p', 'eyebrow');
   const modality = el('div', 'echo-modality', { role: 'group' });
   const modalityButtons = ['tte', 'tee', 'ice'].map(id => { const b = el('button', '', { type: 'button', 'data-echo-modality': id }); b.addEventListener('click', () => handlers.onModality(id)); modality.append(b); return b; });
   const viewRow = el('div', 'echo-views', { role: 'group' });
   const title = el('h3', 'echo-title');
+  const viewCaveat = el('aside', 'echo-view-caveat', { 'data-echo-view-caveat': '', 'aria-live': 'polite' });
+  const caveatTitle = el('strong');
+  const caveatText = el('p');
+  viewCaveat.append(caveatTitle, caveatText);
+  viewCaveat.hidden = true;
   const sub = el('p', 'echo-sub');
   // ICE: the move from the previous view and where the atlas preset departs from the source.
   const iceInfo = el('p', 'echo-ice-info');
@@ -141,7 +148,7 @@ export function createEchoPanel(mount, handlers) {
   // The action buttons sit over the sector's top-right corner as an icon toolbar.
   const sector = el('div', 'echo-sector');
   sector.append(canvas, taskRow);
-  root.append(heading, modality, viewRow, title, quickRow, sector, tip, probeBox, iceSweep, taskStatus, feedback, partsLine, mitralMap, septalMap, sub, iceInfo, tsBox, displayBox, limits);
+  root.append(heading, modality, viewRow, title, quickRow, viewCaveat, sector, reference.element, tip, probeBox, iceSweep, taskStatus, feedback, partsLine, mitralMap, septalMap, sub, iceInfo, tsBox, displayBox, limits);
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -268,6 +275,14 @@ export function createEchoPanel(mount, handlers) {
   let feedbackKey = '';
   function render({ state, result, view, playing, presetOmega, preset, hasFossa = true }) {
     const t = T[lang];
+    const limited = state.modality === 'tee' && view.id === 'me2c';
+    // Keep the known anatomical limitation visible beside the image, including in tasks.
+    viewCaveat.hidden = !limited;
+    setText(caveatTitle, lang === 'en' ? 'Anatomical limitation: approximate two-chamber section' : 'Anatomik sınırlama: yaklaşık iki boşluk kesiti');
+    setText(caveatText, lang === 'en'
+      ? 'This atlas cuts different LV segments in place of the expected inferior wall. Meeting the model criteria does not establish a standard clinical two-chamber view.'
+      : 'Bu atlasta beklenen inferior duvar yerine farklı LV segmentleri kesilir. Model ölçütlerinin karşılanması, standart klinik iki boşluk görünümünün elde edildiğini göstermez.');
+    reference.render({ state, view, lang });
     setText(heading, t.heading);
     modality.hidden = Boolean(state.locked);
     modalityButtons.forEach(b => { setText(b, t[b.dataset.echoModality]); b.setAttribute('aria-pressed', String(b.dataset.echoModality === state.modality)); b.disabled = Boolean(state.task && !state.task.done); });
@@ -326,9 +341,10 @@ export function createEchoPanel(mount, handlers) {
     canvas.setAttribute('aria-label', `${view.title[lang]}: ${lang === 'en' ? 'anatomical section, not an ultrasound image' : 'anatomik kesit, ultrason görüntüsü değil'}`);
     taskStatus.hidden = !state.task?.done;
     setText(taskStatus, state.task?.done ? `✓ ${t.done}` : '');
-    feedback.dataset.state = result.achieved ? 'ok' : 'hint';
+    feedback.dataset.state = limited ? 'limited' : result.achieved ? 'ok' : 'hint';
     // Rebuilt only when the messages change (live region: no re-announcing every frame).
-    const messages = [state.task?.done ? `${t.current}:` : null, ...result.messages].filter(Boolean);
+    const messages = [state.task?.done ? `${t.current}:` : null, ...result.messages,
+      limited ? (lang === 'en' ? 'Known anatomical limitation remains; see the note above the image.' : 'Bilinen anatomik sınırlama devam eder; görüntünün üstündeki notu inceleyin.') : null].filter(Boolean);
     if (messages.join('|') !== feedbackKey) {
       feedbackKey = messages.join('|');
       feedback.replaceChildren(...messages.map(text => { const p = el('p'); p.textContent = text; return p; }));
@@ -354,6 +370,7 @@ export function createEchoPanel(mount, handlers) {
 
   return {
     element: root, canvas, render, mitralMap, septalMap,
+    pauseReference: reference.pause,
     setSeptalMapVisible(show) { if (septalMap.hidden === show) { septalMap.hidden = !show; septalMap.setAttribute('aria-label', lang === 'en' ? 'Fossa ovalis seen from the right atrium with its sectors and the current cut line' : 'Sağ atriyumdan bakılan fossa ovalis, sektörleri ve kesit çizgisi'); } },
     setMitralMapVisible(show) { if (mitralMap.hidden === show) { mitralMap.hidden = !show; mitralMap.setAttribute('aria-label', lang === 'en' ? 'Mitral valve seen from the left atrium with the current cut line' : 'Sol atriyumdan bakılan mitral kapak ve kesit çizgisi'); } },
     /** Drawn contours in canvas pixels (renderer hits) and the structure names, for the pointer name. */

@@ -40,7 +40,8 @@ const SHOTS = process.env.SHOT_DIR || null;
         const r = await page.evaluate(() => window.cardiaEcho.getResult());
         assert.equal(r.view, id);
         assert.ok(r.achieved, `${id}: preset meets the criteria (missing ${r.missing}, wrong ${r.wrong})`);
-        assert.equal(await page.locator('.echo-feedback').getAttribute('data-state'), 'ok');
+        assert.equal(await page.locator('.echo-feedback').getAttribute('data-state'), id === 'me2c' ? 'limited' : 'ok');
+        assert.equal(await page.locator('[data-echo-view-caveat]').isVisible(), id === 'me2c', 'only the known limited view carries the anatomical caveat');
         if (SHOTS && ['plax', 'a4c', 'me4c', 'tgsax'].includes(id)) await page.locator('.echo-canvas').screenshot({ path: `${SHOTS}/echo-${id}.png` });
       }
     }

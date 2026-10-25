@@ -1,0 +1,24 @@
+[
+  {
+    "id": "ice-septal-crossing",
+    "verifiedOn": "2026-10-25",
+    "sourceSha256": "3565ba1a0a47e175b5f08b8e6cf6adc784464b36ee402300e76e3ce9fa84ef05",
+    "sha256": "32b4ac77daba0502e6b4ba09c1446be1a8ae1785e4aee427d5a32ea6c5ecf349",
+    "frameCount": 25,
+    "decodedMaskedFrameDigest": "d8eee12b8e384af50196484e1d7c735959686c6ec55baeaa3ab7a2def20eeaae",
+    "filter": "drawbox=x=0:y=0:w=360:h=70:color=black:t=fill,drawbox=x=480:y=0:w=288:h=70:color=black:t=fill",
+    "sourceRetainedInRepository": false,
+    "output": "public/echo-references/ice-septal-crossing.webm"
+  },
+  {
+    "id": "ice-septal-distorted",
+    "verifiedOn": "2026-10-25",
+    "sourceSha256": "edf04a7f707f60e18f4d075bd76f01bcbec75e2524ea0fad49bb5b765284788e",
+    "sha256": "274240be7241fe6169a870e3a4da20dfdbbd56756ebe8e0404da3d5d565cb3e3",
+    "frameCount": 254,
+    "decodedMaskedFrameDigest": "d66dd520f2691d49c77dd51508f747b2a3fda345069d438b49f98fc074a293a9",
+    "filter": "drawbox=x=0:y=0:w=100:h=28:color=black:t=fill,drawbox=x=230:y=0:w=122:h=28:color=black:t=fill",
+    "sourceRetainedInRepository": false,
+    "output": "public/echo-references/ice-septal-distorted.webm"
+  }
+]
