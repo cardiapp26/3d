@@ -1,7 +1,7 @@
 {
-  "version": "1.13.0",
-  "build": "v13",
-  "date": "2026-10-21",
+  "version": "1.14.0",
+  "build": "v14",
+  "date": "2026-10-25",
   "name": "Cardia 3D",
-  "description": "EPS: guided EGM recording lessons, CSP / LBBAP laboratory and RVOT segment map; ECG: Bradfield anatomy figures inside Da Vinci topics; 3D: RVOT superior section, RV Figure 2 regions and RVOT in the thorax with axial levels"
+  "description": "Live Wiggers left/right/both; carotid and peripheral angiography with C-arm simulation; coronary hover names and venous phase; PA root and middle cardiac vein joined; echo reference media and TTE probe; camera keeps the module framing; mobile layout"
 }
