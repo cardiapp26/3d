@@ -39,6 +39,7 @@ import { createModeratorBand } from './moderator-band.js';
 import { buildArchBranches } from './aortic-arch-branches.js';
 import { pulmonaryBranchTrims } from './pulmonary-trims.js';
 import { seatPulmonaryTrunk } from './pulmonary-root.js';
+import { joinMiddleCardiacVein } from './cardiac-veins.js';
 import { mitralParts, wholeMesh, TRICUSPID_LEAFLETS, AORTIC_CUSPS, pulmonaryCusp } from './valve-parts.js';
 import { computeContours, drawContours } from './fluoro-contours.js';
 import { separateAtriaFromAorta } from './transverse-sinus.js';
@@ -507,6 +508,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     ivcPlane.constant=-(chamberBounds.min.y-center.y)*scale+.45;
     initializeWallPlanes();
     seatCoronarySinus();
+    // Middle cardiac vein: seating the sinus on the RA ostium pulls the CS away from the vein's end; continue the vein into the CS.
+    atlasAdjustments.middleCardiacVein = joinMiddleCardiacVein(meshMap.get('mcv')?.[0], meshMap.get('cs')?.[0]);
     buildCristaTerminalis();
     buildRaValves();
     buildConductionSystem();
