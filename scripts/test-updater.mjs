@@ -32,9 +32,9 @@ for (const page of ['hemo', 'exam', 'eps/anatomy', 'angio/3d', 'angio/carotid', 
   if (!fs.existsSync(file)) continue;
   const html = fs.readFileSync(file, 'utf8');
   const meta = html.match(/name=["']app-version["']\s+content=["']([^'"]+)["']/)?.[1];
-  if (meta) assert.equal(meta, versionData.version, `${page} page version agrees with release`);
+  assert.equal(meta, versionData.version, `${page} page carries the release version`);
   const build = html.match(/name=["']app-build["']\s+content=["']([^'"]+)["']/)?.[1];
-  if (build) assert.equal(build, versionData.build, `${page} page build agrees with release`);
+  assert.equal(build, versionData.build, `${page} page carries the release build`);
 }
 
 // 4. Verify translation strings
