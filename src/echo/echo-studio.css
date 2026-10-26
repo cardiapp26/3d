@@ -1,10 +1,19 @@
-/* Cardia Echocardiography Studio Styling */
+/* Cardia echocardiography studio (echo/index.html): three views of one plane
+   side by side (3D heart and probe, echo sector, anatomy of the plane), the
+   controls in a row of cards below them and the view notes under those.
+   Dark cards; the panel parts come from echo-panel.js through its slots. */
 
 .echo-app {
+  --es-bg: #0a0d11;
+  --es-card: #11161c;
+  --es-line: rgba(255, 255, 255, 0.08);
+  --es-text: #dbe4ea;
+  --es-muted: #8a99a5;
+  --es-accent: #39e8ad;
+  --es-chip: rgba(255, 255, 255, 0.06);
   margin: 0;
-  padding: 0;
-  background-color: #070a0f;
-  color: #e2e8f0;
+  background: var(--es-bg);
+  color: var(--es-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   min-height: 100vh;
   display: flex;
@@ -12,241 +21,67 @@
   overflow-x: hidden;
 }
 
-/* Studio Workspace Grid (order: style.css moves <main> first on phones for the 3D page). */
-.echo-workspace {
-  order: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 8px var(--echo-panel-w, 420px);
-  flex: 1;
-  min-height: calc(100vh - var(--site-header-h) - 44px);
-  background: radial-gradient(circle at 35% 30%, #0d1520 0%, #070a0f 75%);
+/* The page can grow past the body's height: the root carries the dark background too. */
+html:has(> body.echo-app) { background: #0a0d11; color-scheme: dark; }
+
+.echo-studio { order: 0; background: none; overflow: visible; min-height: 0; display: grid; gap: 12px; padding: 12px 16px 20px; max-width: 1720px; width: 100%; box-sizing: border-box; margin: 0 auto; }
+.echo-studio[hidden] { display: none; }
+
+/* Top bar: modality switch, hint, cardiac cycle. */
+.es-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.es-hint { flex: 1 1 260px; margin: 0; font-size: 12px; color: var(--es-muted); }
+.echo-cycle-bar { display: flex; align-items: center; gap: 8px; }
+.echo-tool-btn, .echo-cam-btn {
+  background: var(--es-chip); border: 1px solid var(--es-line); border-radius: 6px; color: #c5d1d9;
+  font-size: 11.5px; font-weight: 500; padding: 4px 9px; cursor: pointer; line-height: 1.25;
 }
+.echo-tool-btn:hover, .echo-cam-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.echo-tool-btn[aria-pressed="true"] { background: rgba(57, 232, 173, 0.16); border-color: rgba(57, 232, 173, 0.5); color: var(--es-accent); }
+.echo-cam-look { color: var(--es-accent); border-color: rgba(57, 232, 173, 0.35); }
+#cycle-slider { width: 120px; accent-color: var(--es-accent); cursor: pointer; }
+.echo-cycle-phase { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--es-muted); min-width: 34px; }
 
-/* Left: 3D Heart & Ultrasound Probe Viewport */
-.echo-viewport-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 480px;
-  background: radial-gradient(circle at 50% 50%, #0c141d 0%, #06090e 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-}
+.echo-studio .echo-modality { display: inline-flex; margin: 0; border: 1px solid var(--es-line); border-radius: 8px; overflow: hidden; background: var(--es-card); }
+.echo-studio .echo-modality button { border: 0; border-radius: 0; padding: 6px 16px; font-size: 12px; font-weight: 600; background: transparent; color: #c5d1d9; cursor: pointer; }
+.echo-studio .echo-modality button[aria-pressed="true"] { background: #bfe9ff; color: #0b2a3a; }
 
-.echo-viewport {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  min-height: 380px;
-  outline: none;
-}
+/* Cards. */
+.es-card { background: var(--es-card); border: 1px solid var(--es-line); border-radius: 12px; min-width: 0; display: flex; flex-direction: column; }
+.es-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--es-line); }
+.es-card-head h2 { margin: 0; font-size: 13px; font-weight: 650; color: var(--es-text); }
+.es-card-body { position: relative; flex: 1; min-height: 0; }
+.es-card-foot { padding: 6px 12px 8px; border-top: 1px solid var(--es-line); }
+.es-card-title { margin: 0 0 8px; font-size: 12.5px; font-weight: 650; color: var(--es-text); }
+.es-controls > .es-card, .es-info > .es-card { padding: 12px 14px; }
+.echo-cam-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 
-.echo-viewport canvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-}
-
-/* Viewport Floating Toolbar */
-.echo-viewport-toolbar {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 14px;
-  background: rgba(13, 21, 32, 0.88);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 6px 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  z-index: 10;
-  pointer-events: auto;
-}
-
-.echo-cycle-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.echo-tool-btn,
-.echo-cam-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 4px;
-  color: #cbd5e1;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  line-height: 1.2;
-}
-
-.echo-tool-btn:hover,
-.echo-cam-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.28);
-}
-
-.echo-tool-btn[aria-pressed="true"],
-.echo-beat-btn.active {
-  background: #10b981;
-  border-color: #059669;
-  color: #022c22;
-  font-weight: 600;
-}
-
-.echo-cam-look {
-  background: rgba(57, 232, 173, 0.12);
-  border-color: rgba(57, 232, 173, 0.4);
-  color: #39e8ad;
-}
-
-.echo-cam-look:hover {
-  background: rgba(57, 232, 173, 0.24);
-  color: #fff;
-  border-color: #39e8ad;
-}
-
-#cycle-slider {
-  width: 110px;
-  height: 4px;
-  accent-color: #10b981;
-  cursor: pointer;
-}
-
-.echo-cycle-phase {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: #94a3b8;
-  min-width: 32px;
-}
-
-.echo-cam-presets {
-  display: flex;
-  gap: 4px;
-}
-
-/* Right: Ultrasound Console & 2D Echo Panel Mount */
-.echo-panel-container {
-  background: #fbfdfc;
-  color: #1e293b;
-  overflow-y: auto;
-  padding: 14px 18px 24px;
-  border-left: 1px solid #d1d9d4;
-  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-}
-
-/* Ensure echo-panel-mount has full height and crisp styling */
-.echo-panel-mount {
-  margin: 0;
-  padding: 0;
-  border-bottom: none;
-}
-
-.echo-panel .eyebrow {
-  margin: 0 0 6px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #244f43;
-}
-
-/* Enhanced Modality Switch Bar */
-.echo-panel .echo-modality {
-  display: flex;
-  width: 100%;
-  border: 1px solid #9bbcb1;
-  background: #eaf1ed;
-  border-radius: 6px;
-  margin: 0 0 10px;
-  overflow: hidden;
-}
-
-.echo-panel .echo-modality button {
-  flex: 1;
-  padding: 6px 4px;
-  font-size: 11px;
-  font-weight: 600;
-  border: none;
-  background: transparent;
-  color: #244f43;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: center;
-}
-
-.echo-panel .echo-modality button:not(:last-child) {
-  border-right: 1px solid #bcd4cc;
-}
-
-.echo-panel .echo-modality button[aria-pressed="true"] {
-  background: #1e4a3f;
-  color: #ffffff;
-}
-
-.echo-panel .echo-canvas {
-  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.25);
-  border: 1px solid #13241d;
-}
-
-.echo-panel .echo-mitral-map {
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
-  border: 1px solid #13241d;
-}
-
-/* Divider between viewport and console (echo-resizer.js); style.css hides the
-   3D page's resizer below 1100 px, the echo studio keeps its own until it stacks. */
-@media (min-width: 961px) {
-  .echo-app .echo-resizer { display: flex !important; }
-}
-
-/* Responsive Breakpoints */
-@media (max-width: 960px) {
-  .echo-app .echo-resizer { display: none !important; }
-  .echo-workspace {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .echo-viewport-container {
-    height: 52vh;
-    min-height: 320px;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    /* The 3D view must not spill over the console below (it covered the TTE/TEE/ICE row). */
-    overflow: hidden;
-  }
-
-  .echo-viewport { min-height: 0; }
-
-  .echo-panel-container {
-    border-left: none;
-    height: auto;
-    overflow-y: visible;
-  }
-
-  .echo-viewport-toolbar {
-    bottom: 8px;
-    left: 8px;
-    right: 8px;
-    padding: 4px 8px;
-  }
-}
-
-/* Viewport fullscreen (echo-view-controls.js); the fallback covers the window when the API is refused. */
+/* The three views: equal columns, one height. */
+.es-stage { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.es-stage .es-card { height: clamp(380px, 52vh, 620px); }
+/* The sector's enlarge button makes the three views taller together. */
+.es-stage:has(.echo-canvas.is-large) .es-card { height: clamp(560px, 80vh, 960px); }
+.es-card-3d .echo-viewport-container { position: relative; overflow: hidden; border-radius: 0 0 12px 12px; background: radial-gradient(circle at 50% 45%, #121b25 0%, #06090e 100%); }
+.echo-studio #viewport { position: absolute; inset: 0; outline: none; }
+.echo-viewport canvas { width: 100% !important; height: 100% !important; display: block; }
+.echo-studio .myo-control { background: rgba(10, 14, 18, 0.82); border-color: var(--es-line); color: var(--es-text); top: 8px; left: 8px; }
 .echo-viewport-container:fullscreen { width: 100vw; height: 100vh; }
-.echo-viewport-container.is-fullscreen-fallback { position: fixed; inset: 0; z-index: 200; }
+.echo-viewport-container.is-fullscreen-fallback { position: fixed; inset: 0; z-index: 200; border-radius: 0; }
+
+/* Echo and anatomy sectors fill their card. */
+.es-card-echo .es-card-body, .es-card-plane .es-card-body { display: flex; flex-direction: column; padding: 0; background: #000; }
+.es-card-echo .es-card-body { border-radius: 0 0 12px 12px; }
+.echo-studio .echo-sector { position: relative; flex: 1; min-height: 0; }
+.echo-studio .echo-canvas, .echo-studio .echo-canvas.is-large { height: 100%; min-height: 0; border-radius: 0; background: #000; border: 0; box-shadow: none; }
+.echo-studio .echo-anatomy-canvas { flex: 1; }
+.echo-studio .echo-quick-labels { margin: 0; padding: 6px 10px; gap: 6px; background: var(--es-card); border-top: 1px solid var(--es-line); border-radius: 0 0 12px 12px; }
+.echo-studio .echo-quick-labels button { background: var(--es-chip); border-color: var(--es-line); color: #c5d1d9; }
+.echo-studio .echo-quick-labels button[aria-pressed="true"] { background: #bfe9ff; border-color: #bfe9ff; color: #0b2a3a; }
+.echo-studio .echo-view-caveat { margin: 0; border-radius: 0; font-size: 11px; padding: 6px 10px; }
+.echo-orientation { margin: 0; font-size: 11.5px; color: var(--es-muted); font-variant-numeric: tabular-nums; }
+
+/* Control row and notes row. */
+.es-controls { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 0.95fr); gap: 12px; align-items: start; }
+.es-info { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
 
 /* Sector with its action toolbar over the top-right corner (echo-panel.js). */
 .echo-panel .echo-sector { position: relative; }
@@ -287,3 +122,69 @@
 .echo-panel .echo-range { position: relative; display: block; min-width: 0; }
 .echo-panel .echo-range input { width: 100%; margin: 4px 0; grid-column: auto; }
 .echo-panel .echo-range-preset { position: absolute; top: 50%; width: 2px; height: 14px; margin-left: -1px; transform: translateY(-50%); background: #2fa77d; border-radius: 1px; opacity: 0.75; pointer-events: none; }
+
+/* Dark versions of the panel parts (style.css draws them for the light 3D page panel). */
+.echo-studio .echo-views { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 5px; }
+.echo-studio .echo-views button, .echo-studio .echo-btn {
+  background: var(--es-chip); border: 1px solid var(--es-line); color: #c5d1d9; border-radius: 7px; padding: 5px 7px; font-size: 11.5px;
+}
+.echo-studio .echo-views button:hover, .echo-studio .echo-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.echo-studio .echo-views button[aria-pressed="true"] { background: #f6a623; border-color: #f6a623; color: #231500; font-weight: 650; }
+.echo-studio .echo-btn[aria-pressed="true"] { background: #ffd966; border-color: #d9b23f; color: #3a2e05; }
+.echo-studio .echo-views-group { color: var(--es-muted); font-size: 10px; margin-top: 6px; }
+.echo-studio .echo-title { color: #f6c86b; }
+.echo-studio .echo-transseptal { background: rgba(255, 217, 102, 0.06); border-color: rgba(255, 217, 102, 0.3); }
+.echo-studio .echo-transseptal-title, .echo-studio .echo-transseptal-text { color: #f2dca0; }
+.echo-studio .echo-transseptal-limits { color: #b8a774; }
+.echo-studio .echo-task-status { background: rgba(47, 158, 109, 0.16); color: #7fe0b4 !important; }
+.echo-studio .echo-feedback { background: rgba(201, 162, 39, 0.08); border-left-color: #c9a227; }
+.echo-studio .echo-feedback[data-state=ok] { background: rgba(47, 158, 109, 0.12); border-left-color: #2f9e6d; }
+.echo-studio .echo-feedback[data-state=limited] { background: rgba(180, 107, 19, 0.14); }
+.echo-studio .echo-feedback p, .echo-studio .echo-parts { color: #c9d4db; font-size: 11.5px; }
+.echo-studio .echo-sub { color: var(--es-muted) !important; font-size: 10.5px !important; }
+.echo-studio .echo-ice-info { background: rgba(57, 163, 127, 0.1); color: #c9e9dc; font-size: 12px; }
+.echo-studio .echo-limits { color: var(--es-muted) !important; font-size: 10.5px !important; margin: 0; }
+.echo-studio .echo-controls { border-top: 1px solid var(--es-line); margin-top: 10px; }
+.echo-studio .echo-controls summary { color: var(--es-muted); }
+.echo-studio .echo-slider { color: #c5d1d9; }
+.echo-studio .echo-slider output { color: var(--es-accent); white-space: nowrap; }
+.echo-studio .echo-panel .echo-slider .echo-slider-name, .echo-studio .echo-slider .echo-slider-name { color: #c5d1d9; }
+.echo-studio .echo-slider .echo-step { background: var(--es-chip); border-color: var(--es-line); color: #dbe4ea; }
+.echo-studio .echo-slider input, .echo-studio .echo-range input { accent-color: #7cc7f2; }
+.echo-studio select { background: #0d1217; color: var(--es-text); border: 1px solid var(--es-line); border-radius: 6px; }
+.echo-studio .echo-probe-rows { grid-template-columns: 1fr; }
+.echo-studio .echo-probe-widget-holder .echo-probe-widgets { justify-content: space-around; }
+.echo-studio .echo-probe-widget figcaption { color: var(--es-muted); }
+.echo-studio .echo-pad-field { fill: #0d1217; stroke: #2a3640; }
+.echo-studio .echo-pad-axis { stroke: #2a3640; }
+.echo-studio .echo-pad-dot, .echo-studio .echo-dial-needle, .echo-studio .echo-dial-hub { fill: #7cc7f2; stroke: #7cc7f2; }
+.echo-studio .echo-pad-dot { stroke: #0d1217; }
+.echo-studio .echo-dial-track { stroke: #2a3640; }
+.echo-studio .echo-dial-label { fill: var(--es-muted); }
+.echo-studio .echo-mitral-map { max-width: 100%; }
+.echo-studio .echo-reference { margin: 0; background: transparent; border-color: var(--es-line); color: var(--es-text); }
+
+/* "In this image": colour, name, side and depth range. */
+.echo-structure-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.echo-structure-list li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+.echo-structure-dot { width: 9px; height: 9px; border-radius: 3px; }
+.echo-structure-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.echo-structure-where { color: var(--es-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.echo-structure-empty { color: var(--es-muted); grid-template-columns: 1fr !important; }
+
+.echo-app .ecg-footer { padding: 10px 16px 18px; font-size: 11px; color: var(--es-muted); max-width: 1720px; margin: 0 auto; }
+
+@media (max-width: 1280px) {
+  .es-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .es-info { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) {
+  .es-stage { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .es-stage .es-card-3d { grid-column: 1 / -1; }
+}
+@media (max-width: 700px) {
+  .echo-studio { padding: 8px 10px 16px; }
+  .es-stage, .es-controls { grid-template-columns: 1fr; }
+  .es-stage .es-card { height: 360px; }
+}
+

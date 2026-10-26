@@ -132,7 +132,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.locator('[data-echo-lang="en"]').click();
     assert.equal(await page.evaluate(() => JSON.stringify({ task: window.cardiaEcho.getState().task?.target, tte: window.cardiaEcho.getState().tte })), running, 'language switch keeps the task');
     await page.locator('[data-echo-lang="tr"]').click();
-    await page.locator('.echo-controls summary').nth(1).click();
+    await page.locator('[data-echo-box="display"] summary').click();
     await page.locator('[data-echo-control="labels"]').uncheck();
     assert.equal(await page.evaluate(() => window.cardiaEcho.getState().labels), false);
 
@@ -165,7 +165,8 @@ const SHOTS = process.env.SHOT_DIR || null;
     await useModality(page, 'tte');
     const seeded = await page.evaluate(() => { window.cardiaEcho.startTask('tte', { seed: 7 }); const a = window.cardiaEcho.getState(); window.cardiaEcho.startTask('tte', { seed: 7 }); const b = window.cardiaEcho.getState(); return { a: [a.task.target, a.tte], b: [b.task.target, b.tte] }; });
     assert.equal(JSON.stringify(seeded.a[1]), JSON.stringify(seeded.b[1]), 'same seed, same start pose');
-    await page.locator('.echo-controls summary').first().evaluate(el => { el.parentElement.open = true; });
+    // The studio shows the motion rows in its own card; the 3D page keeps them in a fold.
+    await page.evaluate(() => { const box = document.querySelector('[data-echo-box="probe"]'); if (box) box.open = true; });
     for (const key of ['rotation', 'tilt', 'rock']) {
       const value = await page.evaluate(k => window.cardiaEcho.getState().tte[k], key);
       await page.locator(`[data-echo-control="${key}"]`).focus();
@@ -180,7 +181,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     const before = await page.evaluate(() => ({ h: document.querySelector('.echo-canvas').height, phase: window.heart.getCycleState().phase, playing: window.heart.getCycleState().playing }));
     await page.locator('[data-echo-action="size"]').click();
     const after = await page.evaluate(() => ({ h: document.querySelector('.echo-canvas').height, css: Math.round(parseFloat(getComputedStyle(document.querySelector('.echo-canvas')).height)), phase: window.heart.getCycleState().phase }));
-    assert.ok(after.css === 440 && after.h > before.h, 'enlarged sector redrawn');
+    assert.ok(after.css >= 440 && after.h > before.h, 'enlarged sector redrawn');
     assert.equal(after.phase, before.phase, 'frozen phase unchanged by the resize');
     await page.locator('[data-echo-action="size"]').click();
 

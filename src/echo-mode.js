@@ -8,8 +8,11 @@ import { mitralMapData, mapCutLine, drawMitralMap } from './echo-mitral-map.js';
 import { fossaFrame, septalCut, drawSeptalMap } from './echo-septal-map.js';
 import { partLengths, evaluateView, visibleLengths, imagePoint, CAVAL_OFF_PLANE, LANDMARK_OFF_PLANE, STRUCTURE_GROUPS } from './echo-training.js';
 import { drawEchoSector } from './echo-renderer.js';
+import { drawEchoImage } from './echo-bmode.js';
+import { measureCavityFacing } from './echo-cavity.js';
 import { transseptalGeometry } from './echo-transseptal.js';
 import { createEchoPanel } from './echo-panel.js';
+import { imageStructures, planeOrientation, CM_PER_UNIT } from './echo-image-summary.js';
 
 /*
  * Echocardiography mode (research/TTE_TEE_ENTEGRASYON_RAPORU.md): the probe
@@ -28,7 +31,7 @@ const STRUCTURE_INFO = {
 const MIN_SECTION_INTERVAL = 30;   // ms between sections while the heart beats
 
 /**
- * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en' }} deps
+ * @param {{ heart: object, mount: HTMLElement, getLang: () => 'tr'|'en', slots?: object }} deps (slots: the studio layout, echo-panel.js)
  */
 // Visible parts by structure for the panel line: LV segments in number order, leaflets by name.
 // TTE views start from the window with the probe at rest (echo-views.js windows).
@@ -46,7 +49,7 @@ function partGroups(parts, lang) {
   }));
 }
 
-export function createEchoMode({ heart, mount, getLang }) {
+export function createEchoMode({ heart, mount, getLang, slots = null }) {
   let ivcAnchor = null;
   let active = false, anatomy = null, items = null, path = null, icePathData = null, hull = null, chest = null, panel = null, overlay = null;
   // ICE catheter paths by position: the RA, and the LA after the septal crossing (null without a measured fossa).
@@ -56,9 +59,11 @@ export function createEchoMode({ heart, mount, getLang }) {
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
-    modality: 'tte', view: 'plax', style: 'anatomy', labels: true, parts: true, sectorAngle: SECTOR_ANGLE,
+    modality: 'tte', view: 'plax', style: 'anatomy', labels: !slots,   // studio: the echo image starts clean (the anatomy card is labelled)
+    parts: true, sectorAngle: SECTOR_ANGLE,
     locked: null,  // modality fixed by the app mode (TTE or TEE); the panel then hides its switch
     tte: { rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 }, tee: null, ice: null, depth: 4,
+    gain: 0,   // studio echo image gain, dB
     task: null,  // { target: viewId, done: boolean, start: probe pose at the start }
     frozen: false,  // stopped with the panel's freeze button (the badge says so)
     transseptal: null  // ICE septal view: schematic transseptal stage (echo-transseptal.js)
@@ -106,6 +111,15 @@ export function createEchoMode({ heart, mount, getLang }) {
       sectionMeshes(list, { origin: [0, 0, 0], beam: [0, 0, 1], lateral: [1, 0, 0], normal: [0, 1, 0] });
       return list;
     });
+    // Studio echo image: which side of each chamber wall faces a cavity (echo-cavity.js), at rest.
+    if (slots) {
+      heart.withRestPose(() => {
+        // Valves and papillary muscles sit inside the cavities: they do not count as its far wall.
+        const walls = ['lv', 'rv', 'la', 'ra', 'aorta', 'pa', 'svc', 'lspv', 'lipv', 'rspv', 'ripv', 'cs'];
+        const obstacles = walls.flatMap(getMeshes);
+        for (const [mesh, facing] of measureCavityFacing(['lv', 'rv', 'la', 'ra'].flatMap(getMeshes), obstacles)) mesh.userData.echoFacing = facing;
+      });
+    }
     hull = HULL_IDS.flatMap(getMeshes);
     chest = heart.withRestPose(() => chestSurface(hull));
     path = teePath(anatomy);
@@ -213,8 +227,10 @@ export function createEchoMode({ heart, mount, getLang }) {
     const key = JSON.stringify([view.id, frame.origin, frame.beam, frame.lateral, state.depth, state.sectorAngle, lang]);
     if (key !== judged.key) {
       const label = id => STRUCTURE_INFO[id]?.label[lang] || id;
-      const result = heart.withRestPose(() => evaluateView(sectionMeshes(items, frame), view, { sectorAngle: state.sectorAngle, depth: state.depth, frame, anatomy, label, lang }));
-      judged = { key, result };
+      let rest = null;
+      const result = heart.withRestPose(() => evaluateView(rest = sectionMeshes(items, frame), view, { sectorAngle: state.sectorAngle, depth: state.depth, frame, anatomy, label, lang }));
+      // The studio list is read from the same rest geometry: it does not flicker with the beat.
+      judged = { key, result, structures: imageStructures(rest, state.sectorAngle, state.depth) };
     }
     return judged.result;
   }
@@ -328,8 +344,9 @@ export function createEchoMode({ heart, mount, getLang }) {
     // The view's probe pose: the panel marks it on each control (free mode).
     const preset = state.modality === 'tee' ? teePreset(view.id, anatomy, path) : state.modality === 'ice' ? icePreset(view.id) : TTE_HOME;
     panel?.render({ state, result, view, playing, frame, hasFossa: Boolean(anatomy.fossa), preset, presetOmega: state.modality === 'tee' ? preset?.omega : state.modality === 'ice' ? preset?.rotation : null });
-    const drawn = drawEchoSector(panel?.canvas, section, {
-      style: state.style, sectorAngle: state.sectorAngle, depth: state.depth, lang,
+    const studio = Boolean(panel?.anatomyCanvas);
+    const sectorOptions = {
+      sectorAngle: state.sectorAngle, depth: state.depth, lang, cmPerUnit: CM_PER_UNIT,
       info: state.task ? { tr: 'Görev: görünümü bulun', en: 'Task: find the view' } : view.title,
       structureInfo: STRUCTURE_INFO, frozen: state.frozen, hideLabels: !state.labels,
       // ICE: the view's targets are drawn emphasised (not during a task: that would give the answer).
@@ -337,7 +354,19 @@ export function createEchoMode({ heart, mount, getLang }) {
       markers: [...(view.bicaval ? cavalMarker(frame) : []), ...landmarkMarkers(frame, view.landmarks)],
       paths: transseptalPaths(frame),
       showParts: state.parts
-    });
+    };
+    // Studio: the echo card shows the echo-like image, the anatomy card the coloured section with its labels.
+    const drawn = studio
+      ? drawEchoImage(panel.canvas, section, { ...sectorOptions, gainDb: state.gain, labels: state.labels, time: now })
+      : drawEchoSector(panel?.canvas, section, { ...sectorOptions, style: state.style });
+    if (studio) {
+      const anatomyDrawn = drawEchoSector(panel.anatomyCanvas, section, { ...sectorOptions, style: 'anatomy', hideLabels: false });
+      panel.setAnatomyHits(anatomyDrawn?.hits);
+      // Segment and leaflet names come from the coloured section.
+      if (drawn) drawn.parts = anatomyDrawn?.parts;
+      panel.setStructures(judged.structures, STRUCTURE_INFO);
+      panel.setOrientation(planeOrientation(frame));
+    }
     // Septal views: the fossa seen from the RA with its sectors and the current cut.
     if (panel?.septalMap) {
       const show = Boolean(septal && (view.septalCut || view.landmarks?.includes('fossa')));
@@ -361,7 +390,7 @@ export function createEchoMode({ heart, mount, getLang }) {
   function ensurePanel() {
     if (panel) return panel;
     panel = createEchoPanel(mount, {
-      getLang,
+      getLang, slots,
       views: VIEWS,
       // Picking a view (allowed once a task is solved) ends the task.
       onView: id => selectView(id),
@@ -442,6 +471,7 @@ export function createEchoMode({ heart, mount, getLang }) {
     // lengths: the live (current phase) section; achieved/missing/wrong: the rest-pose judgement.
     getResult: () => lastResult && { achieved: lastResult.result.achieved, missing: lastResult.result.missing, wrong: lastResult.result.wrong, lengths: lastResult.live, stats: lastResult.section.stats, view: lastResult.view.id, frame: lastResult.frame },
     // Measured landmarks and the ICE catheter path (geometry checks in tests).
+    getSection: () => lastResult?.section || null,
     getAnatomy: () => anatomy, getIcePath: (position = 'ra') => icePaths[position] || null,
     sweep, setTransseptal(stage) { state.transseptal = stage; refresh(true); },
     selectView, startTask, isActive: () => active

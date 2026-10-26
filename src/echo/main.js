@@ -1,7 +1,6 @@
 // Standalone Echocardiography Module (TTE, TEE, ICE) Entry Point
 import { createHeart } from '../heart.js';
 import { mountSiteHeader } from '../site-header.js';
-import { initEchoResizer } from './echo-resizer.js';
 import { createEchoViewControls } from './echo-view-controls.js';
 import { createPersonalNotes } from '../personal-notes.js';
 import { createEchoMode } from '../echo-mode.js';
@@ -31,14 +30,16 @@ const TEXTS = {
     title: 'Cardia · Ekokardiyografi Stüdyosu (TTE, TEE & ICE)',
     beatPause: '⏸ Durdur',
     beatPlay: '▶ Oynat',
-    look: '🎯 Düzleme Bak',
+    look: 'Düzleme bak',
+    labels: { hint: 'Üç görünüm aynı düzlemi gösterir: 3D kalp ve prob, eko sektörü ve bu düzlemin anatomisi.', anatomy3d: '3D anatomi', plane: 'Bu düzlemdeki anatomi', views: 'Görünümler', probe: 'Prob ve kateter konumu', handle: 'Kumanda', inImage: 'Bu görüntüde', thisView: 'Bu görünüm', reference: 'Gerçek eko kaydı', limits: 'Model sınırları' },
     disclaimer: 'Eğitim ve simülasyon amaçlıdır. EACVI/ASE kılavuzları (Lang 2015, Hahn 2013) ve PCR-EAPCI ICE konsensusu temel alınarak TTE (transtorasik), TEE (transözofajiyal multiplan) ve ICE (intrakardiyak ekokardiyografi) kesitleri 3D kalp geometrisinden anlık düzlem kesme algoritmasıyla modellenmiştir. Klinik tanı ve tedavi için uzman kardiyolog değerlendirmesi şarttır.'
   },
   en: {
     title: 'Cardia · Echocardiography Studio (TTE, TEE & ICE)',
     beatPause: '⏸ Freeze',
     beatPlay: '▶ Play',
-    look: '🎯 Face Plane',
+    look: 'Face the plane',
+    labels: { hint: 'All three views show one plane: the 3D heart with the probe, the echo sector and the anatomy of this plane.', anatomy3d: '3D anatomy', plane: 'Anatomy in this plane', views: 'Views', probe: 'Probe and catheter position', handle: 'Handle', inImage: 'In this image', thisView: 'This view', reference: 'Recorded echo', limits: 'Model limits' },
     disclaimer: 'For educational and simulation purposes. Modeled after EACVI/ASE standards (Lang 2015, Hahn 2013) and the PCR-EAPCI ICE consensus. TTE, multiplane TEE, and ICE sections are rendered in real time from dynamic 3D cardiac surfaces via planar geometric clipping. Clinical decisions require licensed specialist assessment.'
   }
 };
@@ -70,10 +71,13 @@ try {
 const echoMount = document.querySelector('#echo-panel');
 let echoMode = null;
 if (heart && echoMount) {
+  // Studio layout: each part of the echo panel has its own place on the page (echo-panel.js slots).
+  const slots = Object.fromEntries([...document.querySelectorAll('[data-echo-slot]')].map(node => [node.dataset.echoSlot, node]));
   echoMode = createEchoMode({
     heart,
     mount: echoMount,
-    getLang: () => lang
+    getLang: () => lang,
+    slots
   });
   window.cardiaEcho = echoMode;
 }
@@ -85,17 +89,10 @@ const viewControls = createEchoViewControls({
   getLang: () => lang
 });
 
-// Divider between the 3D viewport and the console.
-const resizer = initEchoResizer({
-  workspace: document.querySelector('[data-echo-workspace]'),
-  resizer: document.querySelector('[data-echo-resizer]'),
-  panel: document.querySelector('.echo-panel-container')
-});
 
 // 3. UI Synchronization & Shell Texts
 function renderShell() {
   const t = TEXTS[lang];
-  resizer.setLanguage(lang);
   viewControls.setLanguage(lang);
   document.documentElement.lang = lang;
   document.title = t.title;
@@ -104,6 +101,7 @@ function renderShell() {
   notes?.refresh();
   linkToLastRoute(document);
   text('[data-echo-disclaimer]', t.disclaimer);
+  document.querySelectorAll('[data-echo-text]').forEach(node => { node.textContent = t.labels[node.dataset.echoText] || node.textContent; });
 
   const lookBtn = document.querySelector('[data-echo-action="look"]');
   if (lookBtn) lookBtn.textContent = t.look;

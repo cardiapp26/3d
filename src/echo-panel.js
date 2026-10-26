@@ -3,6 +3,7 @@ import { ICE_PRESET_NOTES, TTE_PRESET_NOTES, TEE_PRESET_NOTES, icePosition } fro
 import { TRANSSEPTAL_STAGES, TRANSSEPTAL_TEXT } from './echo-transseptal.js';
 import { createProbeWidgets, SHORT_LABELS, setControl, stepOf, holdRepeat } from './echo-probe-panel.js';
 import { createEchoReference } from './echo-reference.js';
+import { CM_PER_UNIT } from './echo-image-summary.js';
 
 /*
  * Echo panel: TTE / TEE choice, the view set, the 2D sector, explainable
@@ -17,24 +18,30 @@ const SHORT = {
 const T = {
   tr: {
     heading: 'EKOKARDİYOGRAFİ · ANATOMİK KESİT', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Görünümler', iceAdvance: 'İlerlet / geri çek (RA içinde)', iceAdvanceLa: 'İlerlet / geri çek (fossadan LA içine)', iceGuideLa: 'Enriquez 2026 sol kalp ICE', icePathLa: 'Şematik fossa → LA kateter yolu', icePathLv: 'Şematik fossa → LA → mitral → LV kateter yolu', icePosRa: 'Sağ atriyum', icePosLa: 'Sol atriyum (transseptal)', icePosLv: 'Sol ventrikül (mitral kapaktan)', iceAdvanceLv: 'İlerlet / geri çek (mitral anulustan apekse)', iceRotation: 'Saat yönü rotasyon (home = 0°)', iceAp: 'Ön (+) / arka (−) büküm: ucu transdüser yüzüne doğru / ters', iceLr: 'Sol (+) / sağ (−) büküm: düzlem dışına', iceMove: 'Manevra', iceAtlas: 'Atlas notu', icePrev: '◀ Önceki görünüme geç (hareketli)', iceNext: 'Sonraki görünüme geç (hareketli) ▶', iceRotationLabel: 'Atlas rotasyonu', iceGuide: 'PCR-EAPCI ICE kılavuzu', icePath: 'Şematik IVC → sağ atriyum kateter yolu', reset: 'Görünüme dön', restart: 'Başlangıca dön', task: 'Görünümü bul', endTask: 'Görevi bitir', newTask: 'Yeni görev',
-    freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', parts: 'LV segmentleri ve yaprakçıklar', partsSeen: 'Kesitte', quickLabels: 'Etiketler', quickParts: 'Segmentler', quickHint: 'Etiketler kapalıyken konturun üzerine gelin: adı görünür', sector: 'Sektör genişliği', depth: 'Derinlik (göreli)',
+    freeze: 'Dondur', play: 'Oynat', look: 'Düzleme bak', style: 'Görüntü', anatomy: 'Anatomik renk', gray: 'Şematik gri', labels: 'Yapı etiketleri', parts: 'LV segmentleri ve yaprakçıklar', partsSeen: 'Kesitte', quickLabels: 'Etiketler', quickParts: 'Segmentler', quickHint: 'Etiketler kapalıyken konturun üzerine gelin: adı görünür', sector: 'Sektör genişliği', depth: 'Derinlik', gain: 'Kazanç',
     rotation: 'Rotasyon', tilt: 'Tilt (eğim)', rock: 'Rock (düzlem içi)', slideLateral: 'Kaydır (işaret yönü)', slideElevation: 'Kaydır (dik yön)',
     advance: 'İlerlet / geri çek (göreli)', shaft: 'Şaft rotasyonu (sağ +)', flexion: 'Antefleksiyon (+) / retrofleksiyon (−)', lateralFlexion: 'Sol (+) / sağ (−) fleksiyon', omega: 'Multiplan açı',
     probe: 'Prob hareketleri', display: 'Görüntü ayarları', feedback: 'Geri bildirim', target: 'Hedef', done: 'Görev tamamlandı: hedef görünümün model ölçütleri bir kez karşılandı.', atlasAngle: 'Atlas başlangıç açısı', guideline: 'ASE/SCA yaklaşık aralığı', teePath: 'Şematik özofagus-mide yolu', current: 'Şu anki kesit', enlarge: 'Büyüt', shrink: 'Küçült',
     window: { parasternal: 'Parasternal pencere', apical: 'Apikal pencere', subcostal: 'Subkostal pencere' },
-    limits: 'Geri bildirim dinlenme (diyastol sonu) geometrisinde değerlendirilir; eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Anatomik kesit simülatörüdür: gerçek B-mod, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE probu kalbi saran şematik elipsoid bir göğüs yüzeyine oturur ve kaydırmada bu yüzeyde kalır; kaburga, interkostal aralık ve akustik pencere yoktur, kontroller interkostal yerleşimi temsil etmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; fleksiyon 2 cm uzunluğundaki distal segmenti büker ve uç lümen sınırında durur (temas kuvveti modellenmez); multiplan açısı ucu oynatmaz. Derinlik gerçek santimetre değildir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlas, proje sahibinin özgün tasarımıdır. ICE kateteri IVC\'den sağ atriyuma uzanan şematik düz bir şaft ve bükülebilir şematik bir distal segmentten oluşur; transdüser bu segmentin ucunda ve görüntü düzlemi aynı poz modelinden hesaplanır. Rotasyon transdüser yüzünü şaft çevresinde çevirir; büküm düğmeleri kateterin kendi yönüne göre (home pozisyonunda ön ve sol) adlandırılır, rotasyondan sonra da kateterle birlikte döner. Damar duvarı ve temas modellenmez. Hazır pozların kaynaktaki manevradan ayrıldığı yerler görünümün yanında belirtilir.'
+    limits: 'Geri bildirim dinlenme (diyastol sonu) geometrisinde değerlendirilir; eşikler uzman kalibrasyonu yapılmamış öğretim değerleridir. Anatomik kesit simülatörüdür: eko görüntüsü atlas kesitinden türetilmiş bir benzetimdir (kan koyu, duvar ve doku benekli gri; duvar kalınlıkları tipik değerlerdir); gerçek B-mod kaydı, Doppler veya ölçüm yoktur. Kesit atlas yüzeylerinden hesaplanır; açık konturlar çizgi olarak gösterilir, doku kalınlığı uydurulmaz. TTE probu kalbi saran şematik elipsoid bir göğüs yüzeyine oturur ve kaydırmada bu yüzeyde kalır; kaburga, interkostal aralık ve akustik pencere yoktur, kontroller interkostal yerleşimi temsil etmez. TEE yolu sol atriyumun arkasına yerleştirilmiş şematik özofagus-midedir; fleksiyon 2 cm uzunluğundaki distal segmenti büker ve uç lümen sınırında durur (temas kuvveti modellenmez); multiplan açısı ucu oynatmaz. Derinlik atlas ölçeğinden (yaklaşık 3,7 cm/birim) türetilmiş yaklaşık santimetredir. Hazır pozlar bu atlasta otomatik ayarlanmıştır; ekokardiyografi uzmanı onayı yoktur. Atlas, proje sahibinin özgün tasarımıdır. ICE kateteri IVC\'den sağ atriyuma uzanan şematik düz bir şaft ve bükülebilir şematik bir distal segmentten oluşur; transdüser bu segmentin ucunda ve görüntü düzlemi aynı poz modelinden hesaplanır. Rotasyon transdüser yüzünü şaft çevresinde çevirir; büküm düğmeleri kateterin kendi yönüne göre (home pozisyonunda ön ve sol) adlandırılır, rotasyondan sonra da kateterle birlikte döner. Damar duvarı ve temas modellenmez. Hazır pozların kaynaktaki manevradan ayrıldığı yerler görünümün yanında belirtilir.'
   },
   en: {
     heading: 'ECHOCARDIOGRAPHY · ANATOMICAL SECTION', tte: 'TTE', tee: 'TEE', ice: 'ICE', views: 'Views', iceAdvance: 'Advance / withdraw (in the RA)', iceAdvanceLa: 'Advance / withdraw (from the fossa into the LA)', iceGuideLa: 'Enriquez 2026 left-heart ICE', icePathLa: 'Schematic fossa → LA catheter path', icePathLv: 'Schematic fossa → LA → mitral → LV catheter path', icePosRa: 'Right atrium', icePosLa: 'Left atrium (transseptal)', icePosLv: 'Left ventricle (across the mitral valve)', iceAdvanceLv: 'Advance / withdraw (from the mitral annulus toward the apex)', iceRotation: 'Clockwise rotation (home = 0°)', iceAp: 'Anterior (+) / posterior (−) deflection: tip toward / away from the transducer face', iceLr: 'Left (+) / right (−) deflection: out of the plane', iceMove: 'Manoeuvre', iceAtlas: 'Atlas note', icePrev: '◀ Move to the previous view (animated)', iceNext: 'Move to the next view (animated) ▶', iceRotationLabel: 'Atlas rotation', iceGuide: 'PCR-EAPCI ICE guide', icePath: 'Schematic IVC → right atrium catheter path', reset: 'Back to the view', restart: 'Back to the start', task: 'Find the view', endTask: 'End task', newTask: 'New task',
-    freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', parts: 'LV segments and leaflets', partsSeen: 'In the cut', quickLabels: 'Labels', quickParts: 'Segments', quickHint: 'With labels off, point at a contour to see its name', sector: 'Sector width', depth: 'Depth (relative)',
+    freeze: 'Freeze', play: 'Play', look: 'Face the plane', style: 'Image', anatomy: 'Anatomical colour', gray: 'Schematic grey', labels: 'Structure labels', parts: 'LV segments and leaflets', partsSeen: 'In the cut', quickLabels: 'Labels', quickParts: 'Segments', quickHint: 'With labels off, point at a contour to see its name', sector: 'Sector width', depth: 'Depth', gain: 'Gain',
     rotation: 'Rotation', tilt: 'Tilt', rock: 'Rock (in plane)', slideLateral: 'Slide (marker side)', slideElevation: 'Slide (across)',
     advance: 'Advance / withdraw (relative)', shaft: 'Shaft rotation (right +)', flexion: 'Anteflexion (+) / retroflexion (−)', lateralFlexion: 'Left (+) / right (−) flexion', omega: 'Multiplane angle',
     probe: 'Probe motions', display: 'Display', feedback: 'Feedback', target: 'Target', done: 'Task done: the target view’s model criteria were met once.', atlasAngle: 'Atlas starting angle', guideline: 'ASE/SCA approximate range', teePath: 'Schematic oesophagus-stomach path', current: 'Current cut', enlarge: 'Enlarge', shrink: 'Reduce',
     window: { parasternal: 'Parasternal window', apical: 'Apical window', subcostal: 'Subcostal window' },
-    limits: 'The feedback is judged on the rest (end-diastolic) geometry; thresholds are teaching values without expert calibration. An anatomical section simulator: no real B-mode, Doppler or measurement. The section is computed from the atlas surfaces; open contours are drawn as lines, no tissue thickness is invented. The TTE probe sits on a schematic ellipsoid chest surface around the heart and stays on it while sliding; there are no ribs, intercostal spaces or acoustic windows, and the controls do not represent intercostal placement. The TEE path is a schematic oesophagus and stomach placed behind the left atrium; flexion bends a 2 cm distal section and the tip stops at the lumen wall (no contact force is modelled); the multiplane angle does not move the tip. Depth is not real centimetres. Presets were tuned automatically on this atlas; no echocardiographer has reviewed them. The atlas is an original design by the project owner. The ICE catheter is a schematic straight shaft from the IVC into the right atrium with a schematic deflectable distal segment; the transducer sits at its end and the image plane comes from the same pose model. Rotation turns the transducer face about the shaft; the deflection knobs are named for the catheter (anterior and left at the home position) and turn with it after a rotation. No vessel wall or contact is modelled. Where a preset departs from the source manoeuvre, the view says so.'
+    limits: 'The feedback is judged on the rest (end-diastolic) geometry; thresholds are teaching values without expert calibration. An anatomical section simulator: the echo image is a simulation derived from the atlas section (dark blood, speckled grey walls and tissue; wall thicknesses are typical values); there is no recorded B-mode, Doppler or measurement. The section is computed from the atlas surfaces; open contours are drawn as lines, no tissue thickness is invented. The TTE probe sits on a schematic ellipsoid chest surface around the heart and stays on it while sliding; there are no ribs, intercostal spaces or acoustic windows, and the controls do not represent intercostal placement. The TEE path is a schematic oesophagus and stomach placed behind the left atrium; flexion bends a 2 cm distal section and the tip stops at the lumen wall (no contact force is modelled); the multiplane angle does not move the tip. Depth is in approximate centimetres from the atlas scale (about 3.7 cm per unit). Presets were tuned automatically on this atlas; no echocardiographer has reviewed them. The atlas is an original design by the project owner. The ICE catheter is a schematic straight shaft from the IVC into the right atrium with a schematic deflectable distal segment; the transducer sits at its end and the image plane comes from the same pose model. Rotation turns the transducer face about the shaft; the deflection knobs are named for the catheter (anterior and left at the home position) and turn with it after a rotation. No vessel wall or contact is modelled. Where a preset departs from the source manoeuvre, the view says so.'
   }
 };
 const MAX_DEPTH = 6;
+// Studio layout only: the "In this image" list and the orientation line.
+const STUDIO_T = {
+  tr: { side: { left: 'sol', centre: 'orta', right: 'sağ' }, empty: 'Sektörde yapı yok', axis: { left: 'hasta solu', right: 'hasta sağı', cranial: 'kranial', caudal: 'kaudal', anterior: 'anterior', posterior: 'posterior' }, anatomy: 'Bu düzlemdeki anatomi: renkli kesit' },
+  en: { side: { left: 'left', centre: 'centre', right: 'right' }, empty: 'No structure in the sector', axis: { left: 'patient left', right: 'patient right', cranial: 'cranial', caudal: 'caudal', anterior: 'anterior', posterior: 'posterior' }, anatomy: 'Anatomy in this plane: coloured section' }
+};
+const MODALITY_NAME = { tte: 'TTE', tee: 'TEE', ice: 'ICE' };
 
 /**
  * @param {HTMLElement} mount
@@ -101,10 +108,14 @@ export function createEchoPanel(mount, handlers) {
     const t = len ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len)) : 0;
     return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
   };
-  canvas.addEventListener('pointermove', (event) => {
-    const r = canvas.getBoundingClientRect(), p = [event.clientX - r.left, event.clientY - r.top];
+  // Studio layout: a second sector with the coloured anatomy of the same plane.
+  const slots = handlers.slots || null;
+  const anatomyCanvas = slots?.anatomy ? el('canvas', 'echo-canvas echo-anatomy-canvas', { role: 'img' }) : null;
+  let anatomyHits = [];
+  const showTip = (target, list) => (event) => {
+    const r = target.getBoundingClientRect(), p = [event.clientX - r.left, event.clientY - r.top];
     let best = null;
-    for (const h of hits) for (let i = 1; i < h.points.length; i++) {
+    for (const h of list()) for (let i = 1; i < h.points.length; i++) {
       // A part (segment, leaflet) wins over its structure contour at the same place.
       const d = segmentDistance(p, h.points[i - 1], h.points[i]) - (h.part ? 1.5 : 0);
       if (d < 8 && (!best || d < best.d)) best = { d, h };
@@ -115,8 +126,11 @@ export function createEchoPanel(mount, handlers) {
     tip.style.left = `${event.clientX + 12}px`;
     tip.style.top = `${event.clientY + 12}px`;
     tip.hidden = false;
-  });
+  };
+  canvas.addEventListener('pointermove', showTip(canvas, () => hits));
   canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
+  anatomyCanvas?.addEventListener('pointermove', showTip(anatomyCanvas, () => anatomyHits));
+  anatomyCanvas?.addEventListener('pointerleave', () => { tip.hidden = true; });
   const feedback = el('div', 'echo-feedback', { 'aria-live': 'polite' });
   const taskRow = el('div', 'echo-task-row echo-toolbar', { role: 'toolbar' });
   const resetBtn = el('button', '', { type: 'button', 'data-echo-action': 'reset' });
@@ -133,11 +147,11 @@ export function createEchoPanel(mount, handlers) {
   taskRow.append(resetBtn, taskBtn, freezeBtn, lookBtn, sizeBtn);
   // A past success (the task) and the current cut are separate states.
   const taskStatus = el('p', 'echo-task-status', { 'aria-live': 'polite' });
-  const probeBox = el('details', 'echo-controls'); probeBox.open = true;
+  const probeBox = el('details', 'echo-controls', { 'data-echo-box': 'probe' }); probeBox.open = true;
   const probeSummary = el('summary');
   const probeSliders = el('div', 'echo-sliders');
   probeBox.append(probeSummary, probeSliders);
-  const displayBox = el('details', 'echo-controls');
+  const displayBox = el('details', 'echo-controls', { 'data-echo-box': 'display' });
   const displaySummary = el('summary');
   const displayBody = el('div', 'echo-sliders');
   displayBox.append(displaySummary, displayBody);
@@ -148,7 +162,28 @@ export function createEchoPanel(mount, handlers) {
   // The action buttons sit over the sector's top-right corner as an icon toolbar.
   const sector = el('div', 'echo-sector');
   sector.append(canvas, taskRow);
-  root.append(heading, modality, viewRow, title, quickRow, viewCaveat, sector, reference.element, tip, probeBox, iceSweep, taskStatus, feedback, partsLine, mitralMap, septalMap, sub, iceInfo, tsBox, displayBox, limits);
+  // Studio: the "In this image" list, the orientation line and the probe widgets get their own places.
+  const structureList = el('ul', 'echo-structure-list', { 'data-echo-structures': '' });
+  const orientation = el('p', 'echo-orientation', { 'data-echo-orientation': '' });
+  const widgetHolder = el('div', 'echo-probe-widget-holder');
+  // Studio: depth and gain sit with the handle controls, outside the display fold.
+  const imagingRow = el('div', 'echo-sliders echo-imaging');
+  if (slots) {
+    slots.modality?.append(modality);
+    slots.echo.append(viewCaveat, sector, quickRow);
+    slots.anatomy.append(anatomyCanvas);
+    slots.anatomyFoot?.append(orientation);
+    slots.views.append(viewRow, title, iceSweep, tsBox, taskStatus);
+    slots.probe.append(widgetHolder, mitralMap, septalMap);
+    slots.handle.append(probeSliders, imagingRow, displayBox);
+    slots.list.append(structureList);
+    slots.info.append(sub, iceInfo, feedback, partsLine);
+    slots.reference?.append(reference.element);
+    slots.limits?.append(limits);
+    root.append(heading, tip);
+  } else {
+    root.append(heading, modality, viewRow, title, quickRow, viewCaveat, sector, reference.element, tip, probeBox, iceSweep, taskStatus, feedback, partsLine, mitralMap, septalMap, sub, iceInfo, tsBox, displayBox, limits);
+  }
   mount.append(root);
 
   // Probe sliders are rebuilt when the modality changes.
@@ -162,7 +197,8 @@ export function createEchoPanel(mount, handlers) {
   };
   let builtFor = null;
   const sliders = new Map();
-  const format = (value, unit) => unit === '%' ? `${Math.round(value * 100)}%` : unit === '°' ? `${Math.round(value)}°` : Number(value).toFixed(2);
+  const format = (value, unit) => unit === '%' ? `${Math.round(value * 100)}%` : unit === '°' ? `${Math.round(value)}°` : unit === 'dB' ? `${value > 0 ? '+' : ''}${Math.round(value)} dB` : unit === 'depth' ? `${(value * CM_PER_UNIT).toFixed(1)} cm` : Number(value).toFixed(2);
+  const DISPLAY_KEYS = ['sectorAngle', 'depth', 'gain'];
   // A control row: short name (long description as its tooltip), value, − / + steppers
   // around the range, and a faint mark at the view's preset (free mode). Double-clicking
   // the name returns that motion to the preset.
@@ -190,12 +226,12 @@ export function createEchoPanel(mount, handlers) {
   function buildProbe(kind) {
     if (builtFor === kind) return;
     builtFor = kind;
-    for (const key of [...sliders.keys()]) if (!['sectorAngle', 'depth'].includes(key)) sliders.delete(key);
+    for (const key of [...sliders.keys()]) if (!DISPLAY_KEYS.includes(key)) sliders.delete(key);
     probeSliders.replaceChildren();
     const rows = el('div', 'echo-probe-rows');
     for (const [key, labelKey, min, max, step, unit] of sliderDefs[kind]) slider(rows, key, labelKey, min, max, step, unit, v => handlers.onControl('probe', key, v));
     widgets = createProbeWidgets(kind, sliders);
-    probeSliders.append(widgets.element, rows);
+    if (slots) { widgetHolder.replaceChildren(widgets.element); probeSliders.append(rows); } else probeSliders.append(widgets.element, rows);
     labelSliders();
   }
   // Display options.
@@ -217,14 +253,15 @@ export function createEchoPanel(mount, handlers) {
   partsRow.append(partsName, partsBox);
   displayBody.append(styleRow, labelsRow, partsRow);
   slider(displayBody, 'sectorAngle', 'sector', 60, 90, 1, '°', v => handlers.onControl('display', 'sectorAngle', (v * Math.PI) / 180));
-  slider(displayBody, 'depth', 'depth', 2.5, MAX_DEPTH, 0.1, 'depth', v => handlers.onControl('display', 'depth', v));
-  sliders.get('depth').unit = 'depth';
+  slider(slots ? imagingRow : displayBody, 'depth', 'depth', 2.5, MAX_DEPTH, 0.1, 'depth', v => handlers.onControl('display', 'depth', v));
+  // Gain: only the studio's echo image uses it.
+  if (slots) slider(imagingRow, 'gain', 'gain', -15, 15, 1, 'dB', v => handlers.onControl('display', 'gain', v));
 
   function labelSliders() {
     const t = T[lang];
     const short = SHORT_LABELS[lang]?.[builtFor] || {};
     for (const [key, s] of sliders) {
-      const isProbe = !['sectorAngle', 'depth'].includes(key);
+      const isProbe = !DISPLAY_KEYS.includes(key);
       s.name.textContent = (isProbe && short[key]) || t[s.labelKey];
       s.name.title = t[s.labelKey];
       s.minus.setAttribute('aria-label', `${t[s.labelKey]} −`);
@@ -293,11 +330,11 @@ export function createEchoPanel(mount, handlers) {
     if (state.modality === 'ice' && advanceSlider) advanceSlider.name.title = T[lang][{ la: 'iceAdvanceLa', lv: 'iceAdvanceLv' }[icePosition(view)] || 'iceAdvance'];
     const probe = state[state.modality];
     for (const [key, s] of sliders) {
-      const value = key === 'sectorAngle' ? (state.sectorAngle * 180) / Math.PI : key === 'depth' ? state.depth : probe[key];
+      const value = key === 'sectorAngle' ? (state.sectorAngle * 180) / Math.PI : key === 'depth' ? state.depth : key === 'gain' ? state.gain : probe[key];
       if (value === undefined) continue;
       if (doc.activeElement !== s.input) s.input.value = String(value);
       // Depth in atlas units (not cm): a percentage of the slider maximum read as 42% at the low end.
-      setText(s.out, s.unit === 'depth' ? value.toFixed(1) : format(value, s.unit));
+      setText(s.out, format(value, s.unit));
     }
     // Preset marks (free mode only: in a task they would give the answer).
     presetPose = state.task ? null : preset || null;
@@ -339,6 +376,10 @@ export function createEchoPanel(mount, handlers) {
     tsText.hidden = hasFossa && !state.transseptal;
     setText(tsLimits, ts.limits);
     canvas.setAttribute('aria-label', `${view.title[lang]}: ${lang === 'en' ? 'anatomical section, not an ultrasound image' : 'anatomik kesit, ultrason görüntüsü değil'}`);
+    // Studio: the echo card names the modality and the view (not the target during a task).
+    if (slots?.echoTitle) setText(slots.echoTitle, `${MODALITY_NAME[state.modality]} · ${state.task ? t.task : view.title[lang]}`);
+    anatomyCanvas?.setAttribute('aria-label', `${view.title[lang]}: ${STUDIO_T[lang].anatomy}`);
+    styleRow.hidden = Boolean(slots);
     taskStatus.hidden = !state.task?.done;
     setText(taskStatus, state.task?.done ? `✓ ${t.done}` : '');
     feedback.dataset.state = limited ? 'limited' : result.achieved ? 'ok' : 'hint';
@@ -369,7 +410,33 @@ export function createEchoPanel(mount, handlers) {
   }
 
   return {
-    element: root, canvas, render, mitralMap, septalMap,
+    element: root, canvas, anatomyCanvas, render, mitralMap, septalMap,
+    setAnatomyHits(list) { anatomyHits = list || []; },
+    /** Studio list: [{ id, side, near, far }] with the structure names and colours. */
+    setStructures(list, structureInfo = {}) {
+      const s = STUDIO_T[lang];
+      const key = `${lang}|${(list || []).map(r => `${r.id}:${r.side}:${r.near.toFixed(1)}:${r.far.toFixed(1)}`).join()}`;
+      if (structureList.dataset.key === key) return;
+      structureList.dataset.key = key;
+      if (!list?.length) { const li = el('li', 'echo-structure-empty'); li.textContent = s.empty; structureList.replaceChildren(li); return; }
+      structureList.replaceChildren(...list.map(r => {
+        const info = structureInfo[r.id] || {};
+        const li = el('li', '', { 'data-echo-structure': r.id });
+        const dot = el('span', 'echo-structure-dot', { 'aria-hidden': 'true' });
+        dot.style.background = info.color || '#9fb3aa';
+        const name = el('span', 'echo-structure-name');
+        name.textContent = info.name?.[lang] || info.label?.[lang] || r.id;
+        const where = el('span', 'echo-structure-where');
+        where.textContent = `${s.side[r.side]} · ${r.near.toFixed(1)}–${r.far.toFixed(1)} cm`;
+        li.append(dot, name, where);
+        return li;
+      }));
+    },
+    /** Orientation line: { right: words, down: words } (echo-image-summary.js planeOrientation). */
+    setOrientation(o) {
+      const axis = STUDIO_T[lang].axis, words = list => (list?.length ? list.map(w => axis[w]).join(' + ') : '·');
+      setText(orientation, o ? `→ ${words(o.right)}   ↓ ${words(o.down)}` : '');
+    },
     pauseReference: reference.pause,
     setSeptalMapVisible(show) { if (septalMap.hidden === show) { septalMap.hidden = !show; septalMap.setAttribute('aria-label', lang === 'en' ? 'Fossa ovalis seen from the right atrium with its sectors and the current cut line' : 'Sağ atriyumdan bakılan fossa ovalis, sektörleri ve kesit çizgisi'); } },
     setMitralMapVisible(show) { if (mitralMap.hidden === show) { mitralMap.hidden = !show; mitralMap.setAttribute('aria-label', lang === 'en' ? 'Mitral valve seen from the left atrium with the current cut line' : 'Sol atriyumdan bakılan mitral kapak ve kesit çizgisi'); } },

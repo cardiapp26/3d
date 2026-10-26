@@ -8,6 +8,10 @@
  * 2D image: x along the lateral axis (screen right), y along the beam
  * (depth from the transducer). Meshes with a per-vertex part table
  * (`userData.parts`: LV segments, leaflets) give each contour point its part.
+ * Each contour also carries, per segment, the in-plane direction of its
+ * triangle's normal (the atlas winding points out of the wall tissue) and,
+ * when the mesh has `userData.echoFacing` (echo-cavity.js), whether that
+ * side faces a cavity: the echo image uses both to place blood and walls.
  */
 
 const WELD_QUANTUM = 1e4;          // vertices closer than 1e-4 units are one vertex
@@ -96,6 +100,8 @@ function cutMesh(item, frame) {
   };
   const idx = item.index;
   const triangles = idx ? idx.length / 3 : count / 3;
+  const facing = item.mesh?.userData?.echoFacing || null;
+  const sides = [];                  // per segment: [normal x, normal y, faces a cavity (0/1)]
   for (let t = 0; t < triangles; t++) {
     const a = idx ? idx[3 * t] : 3 * t, b = idx ? idx[3 * t + 1] : 3 * t + 1, c = idx ? idx[3 * t + 2] : 3 * t + 2;
     const sa = dist[a] > 0, sb = dist[b] > 0, sc = dist[c] > 0;
@@ -104,9 +110,16 @@ function cutMesh(item, frame) {
     if (sa !== sb) cuts.push(cutPoint(a, b));
     if (sb !== sc) cuts.push(cutPoint(b, c));
     if (sc !== sa) cuts.push(cutPoint(c, a));
-    if (cuts.length === 2 && cuts[0] !== cuts[1]) segments.push(cuts);
+    if (cuts.length !== 2 || cuts[0] === cuts[1]) continue;
+    segments.push(cuts);
+    // Triangle normal (winding) in the image plane.
+    const ux = world[3 * b] - world[3 * a], uy = world[3 * b + 1] - world[3 * a + 1], uz = world[3 * b + 2] - world[3 * a + 2];
+    const vx = world[3 * c] - world[3 * a], vy = world[3 * c + 1] - world[3 * a + 1], vz = world[3 * c + 2] - world[3 * a + 2];
+    const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];
+    const nx = n[0] * lx + n[1] * ly + n[2] * lz, ny = n[0] * bx + n[1] * by + n[2] * bz, len = Math.hypot(nx, ny) || 1;
+    sides.push([nx / len, ny / len, facing ? (facing[a] + facing[b] + facing[c] >= 2 ? 1 : 0) : 0]);
   }
-  return { points, segments, triangles, partOf };
+  return { points, segments, triangles, partOf, sides };
 }
 
 function isIdentity(m) {
@@ -115,7 +128,7 @@ function isIdentity(m) {
 }
 
 /** Join segments into chains; a chain whose ends meet is closed. Branch points end chains. */
-function joinSegments(points, segments, partOf = null) {
+function joinSegments(points, segments, partOf = null, sides = null) {
   const links = new Map();
   segments.forEach(([a, b], i) => {
     if (!links.has(a)) links.set(a, []);
@@ -125,9 +138,11 @@ function joinSegments(points, segments, partOf = null) {
   const used = new Uint8Array(segments.length);
   const walk = (start, first) => {
     const chain = [start];
+    chain.segs = [];
     let at = start, seg = first;
     while (seg !== undefined && !used[seg]) {
       used[seg] = 1;
+      chain.segs.push(seg);
       const [a, b] = segments[seg];
       at = a === at ? b : a;
       chain.push(at);
@@ -149,7 +164,10 @@ function joinSegments(points, segments, partOf = null) {
     const pts = chain.map(k => points.get(k));
     let length = 0;
     for (let i = 1; i < pts.length; i++) length += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-    return partOf ? { points: pts, closed, length, parts: chain.map(k => partOf.get(k) ?? null) } : { points: pts, closed, length };
+    const out = { points: pts, closed, length };
+    if (partOf) out.parts = chain.map(k => partOf.get(k) ?? null);
+    if (sides) out.sides = chain.segs.map(i => sides[i]);   // sides[i] belongs to the segment points[i] -> points[i + 1]
+    return out;
   });
 }
 
@@ -163,10 +181,10 @@ export function sectionMeshes(items, frame, { minLength = 0.01 } = {}) {
   const contours = [];
   const stats = { triangles: 0, segments: 0, closed: 0, open: 0 };
   for (const item of items) {
-    const { points, segments, triangles, partOf } = cutMesh(item, frame);
+    const { points, segments, triangles, partOf, sides } = cutMesh(item, frame);
     stats.triangles += triangles;
     stats.segments += segments.length;
-    for (const contour of joinSegments(points, segments, partOf)) {
+    for (const contour of joinSegments(points, segments, partOf, sides)) {
       if (contour.length < minLength) continue;
       contours.push({ id: item.id, ...contour });
       stats[contour.closed ? 'closed' : 'open']++;

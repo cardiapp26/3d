@@ -20,44 +20,65 @@
       </div>
     </header>
 
-    <main class="echo-workspace" data-echo-workspace>
-      <!-- Left: 3D Heart Simulation, Probe Geometry & Imaging Plane -->
-      <section class="echo-viewport-container" aria-label="3D Kalp ve Ultrason Prob Modeli">
-        <div id="viewport" class="echo-viewport" role="region" aria-label="3D Heart Model with Ultrasound Probe"></div>
-        
-        <!-- Viewport Floating Controls Bar -->
-        <div class="echo-viewport-toolbar">
-          <div class="echo-cycle-bar">
-            <button type="button" id="beat" class="echo-tool-btn echo-beat-btn" aria-pressed="true" title="Kalp atımını durdur / başlat">⏸ Durdur</button>
-            <input type="range" id="cycle-slider" min="0" max="1" step="0.01" value="0" aria-label="Kardiyak siklus fazı" />
-            <span id="cycle-label" class="echo-cycle-phase">%0</span>
-          </div>
-          <div class="echo-cam-presets" role="group" aria-label="Kamera Açıları">
-            <button type="button" class="echo-cam-btn" data-cam="anterior">Ant</button>
-            <button type="button" class="echo-cam-btn" data-cam="posterior">Post</button>
-            <button type="button" class="echo-cam-btn" data-cam="rao">RAO</button>
-            <button type="button" class="echo-cam-btn" data-cam="lao">LAO</button>
-            <button type="button" class="echo-cam-btn echo-cam-look" data-echo-action="look" title="Görüntüleme düzlemine dik bak">🎯 Düzleme Bak</button>
-          </div>
+    <main class="echo-studio echo-panel" id="echo-panel" data-echo-studio>
+      <div class="es-toolbar">
+        <div class="es-slot-modality" data-echo-slot="modality"></div>
+        <p class="es-hint" data-echo-text="hint"></p>
+        <div class="echo-cycle-bar">
+          <button type="button" id="beat" class="echo-tool-btn echo-beat-btn" aria-pressed="true">⏸ Durdur</button>
+          <input type="range" id="cycle-slider" min="0" max="1" step="0.01" value="0" aria-label="Kardiyak siklus fazı" />
+          <span id="cycle-label" class="echo-cycle-phase">%0</span>
         </div>
-
-        <!-- Hidden compatibility hooks for automated test harnesses -->
-        <nav id="mode-nav" style="display:none;" aria-hidden="true">
-          <button type="button" data-mode="echo">TTE</button>
-          <button type="button" data-mode="tee">TEE</button>
-          <button type="button" data-mode="ice">ICE</button>
-          <button type="button" data-mode="anatomy">Anatomi</button>
-        </nav>
-      </section>
-
-      <div class="panel-resizer echo-resizer" data-echo-resizer role="separator" aria-orientation="vertical" tabindex="0">
-        <div class="resizer-handle"></div>
       </div>
 
-      <!-- Right: Dedicated Ultrasound Monitor & Probe Control Console -->
-      <aside class="echo-panel-container" aria-label="Ekokardiyografi Konsolu ve 2D Sektör">
-        <div id="echo-panel" class="echo-panel-mount"></div>
-      </aside>
+      <!-- Three views of one plane: the 3D heart with the probe, the echo sector and the anatomy of the plane. -->
+      <div class="es-stage">
+        <section class="es-card es-card-3d">
+          <header class="es-card-head">
+            <h2 data-echo-text="anatomy3d">3D anatomi</h2>
+            <div class="echo-cam-presets" role="group" aria-label="Kamera açıları">
+              <button type="button" class="echo-cam-btn" data-cam="anterior">Ant</button>
+              <button type="button" class="echo-cam-btn" data-cam="posterior">Post</button>
+              <button type="button" class="echo-cam-btn" data-cam="rao">RAO</button>
+              <button type="button" class="echo-cam-btn" data-cam="lao">LAO</button>
+              <button type="button" class="echo-cam-btn echo-cam-look" data-echo-action="look">Düzleme bak</button>
+            </div>
+          </header>
+          <div class="es-card-body echo-viewport-container">
+            <div id="viewport" class="echo-viewport" role="region" aria-label="3D kalp ve prob"></div>
+          </div>
+        </section>
+        <section class="es-card es-card-echo">
+          <header class="es-card-head"><h2 data-echo-slot="echoTitle">Eko</h2></header>
+          <div class="es-card-body" data-echo-slot="echo"></div>
+        </section>
+        <section class="es-card es-card-plane">
+          <header class="es-card-head"><h2 data-echo-text="plane">Bu düzlemdeki anatomi</h2></header>
+          <div class="es-card-body" data-echo-slot="anatomy"></div>
+          <footer class="es-card-foot" data-echo-slot="anatomyFoot"></footer>
+        </section>
+      </div>
+
+      <div class="es-controls">
+        <section class="es-card"><h3 class="es-card-title" data-echo-text="views">Görünümler</h3><div data-echo-slot="views"></div></section>
+        <section class="es-card"><h3 class="es-card-title" data-echo-text="probe">Prob konumu</h3><div data-echo-slot="probe"></div></section>
+        <section class="es-card"><h3 class="es-card-title" data-echo-text="handle">Kumanda</h3><div data-echo-slot="handle"></div></section>
+        <section class="es-card"><h3 class="es-card-title" data-echo-text="inImage">Bu görüntüde</h3><div data-echo-slot="list"></div></section>
+      </div>
+
+      <div class="es-info">
+        <section class="es-card"><h3 class="es-card-title" data-echo-text="thisView">Bu görünüm</h3><div data-echo-slot="info"></div></section>
+        <section class="es-card"><h3 class="es-card-title" data-echo-text="reference">Gerçek eko kaydı</h3><div data-echo-slot="reference"></div></section>
+        <section class="es-card"><h3 class="es-card-title" data-echo-text="limits">Model sınırları</h3><div data-echo-slot="limits"></div></section>
+      </div>
+
+      <!-- Hidden compatibility hooks for automated test harnesses -->
+      <nav id="mode-nav" style="display:none;" aria-hidden="true">
+        <button type="button" data-mode="echo">TTE</button>
+        <button type="button" data-mode="tee">TEE</button>
+        <button type="button" data-mode="ice">ICE</button>
+        <button type="button" data-mode="anatomy">Anatomi</button>
+      </nav>
     </main>
 
     <footer class="ecg-footer" data-echo-disclaimer></footer>

@@ -22,6 +22,7 @@ const TEXT = {
     gray: { tr: 'Şematik kesit · gerçek ultrason değil', en: 'Schematic section · not real ultrasound' }
   },
   depth: { tr: 'Derinlik göreli', en: 'Relative depth' },
+  depthCm: { tr: 'Derinlik cm (atlas ölçeği, yaklaşık)', en: 'Depth cm (atlas scale, approximate)' },
   frozen: { tr: 'DONDURULDU', en: 'FROZEN' },
   empty: { tr: 'Kesitte yapı yok', en: 'No structure in the section' }
 };
@@ -169,7 +170,7 @@ function tracePath(ctx, geo, points, close) {
   if (close) ctx.closePath();
 }
 
-function drawFrame(ctx, width, height, geo, h, depth, lang) {
+function drawFrame(ctx, width, height, geo, h, depth, lang, cmPerUnit = 0) {
   ctx.fillStyle = '#050807';
   ctx.fillRect(0, 0, width, height);
   sectorPath(ctx, geo, h);
@@ -178,17 +179,20 @@ function drawFrame(ctx, width, height, geo, h, depth, lang) {
   ctx.strokeStyle = '#2c3a35';
   ctx.lineWidth = 1;
   ctx.stroke();
-  // Depth ticks on the right edge, labelled as a fraction of the shown depth.
+  // Depth ticks on the right edge: a fraction of the shown depth, or centimetres
+  // (every 2 cm) when the atlas scale is given.
   const dir = [Math.sin(h), Math.cos(h)];
   const out = [Math.cos(h), -Math.sin(h)];
   ctx.font = '9px ui-monospace, monospace';
   ctx.fillStyle = '#6f8a80';
   ctx.beginPath();
-  for (let k = 1; k <= Math.floor(depth + 1e-9); k++) {
-    const [x, y] = geo.toScreen([dir[0] * k, dir[1] * k]);
+  const step = cmPerUnit > 0 ? 2 / cmPerUnit : 1;
+  for (let k = 1; k * step <= depth + 1e-9; k++) {
+    const r = k * step;
+    const [x, y] = geo.toScreen([dir[0] * r, dir[1] * r]);
     ctx.moveTo(x, y);
     ctx.lineTo(x + out[0] * 5, y + out[1] * 5);
-    ctx.fillText(`${Math.round((k / depth) * 100)}%`, x + out[0] * 7 + 1, y + out[1] * 7 + 3);
+    ctx.fillText(cmPerUnit > 0 ? String(2 * k) : `${Math.round((k / depth) * 100)}%`, x + out[0] * 7 + 1, y + out[1] * 7 + 3);
   }
   ctx.stroke();
   const [mx, my] = geo.toScreen([dir[0] * depth * 0.1, dir[1] * depth * 0.1]);
@@ -199,7 +203,7 @@ function drawFrame(ctx, width, height, geo, h, depth, lang) {
   ctx.textAlign = 'right';
   ctx.fillStyle = '#6f8a80';
   // One line above the watermark, so the two never meet on a narrow canvas.
-  ctx.fillText(pick(TEXT.depth, lang), width - 6, height - 19);
+  ctx.fillText(pick(cmPerUnit > 0 ? TEXT.depthCm : TEXT.depth, lang), width - 6, height - 19);
   ctx.textAlign = 'left';
 }
 
@@ -340,7 +344,7 @@ export function drawEchoSector(canvas, section, opts = {}) {
   ctx.clearRect(0, 0, width, height);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  drawFrame(ctx, width, height, geo, h, depth, lang);
+  drawFrame(ctx, width, height, geo, h, depth, lang, Number(o.cmPerUnit) || 0);
   // Fills use the whole ring, so clip them (and the strokes) to the fan.
   ctx.save();
   sectorPath(ctx, geo, h);
