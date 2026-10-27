@@ -8,7 +8,9 @@ export const CASES = Object.freeze([
   { id: 'equal', name: { tr: 'Çakışan eşikler', en: 'Coincident thresholds' }, description: { tr: 'Output testi belirgin bir morfoloji geçişi göstermeyebilir.', en: 'An output test may not reveal a distinct morphology transition.' } },
   { id: 'scar', name: { tr: 'Heterojen septum', en: 'Heterogeneous septum' }, description: { tr: 'Yüksek miyokard eşiği ve erişilemeyen ileti dokusu birlikte modellenir.', en: 'A raised myocardial threshold coexists with unavailable conduction tissue.' } },
 ]);
-export const DEFAULTS = Object.freeze({ caseId: 'baseline', entry: .5, angle: 8, depth: .88, output: 2, pulseWidth: .4, polarity: 'uni', rate: 70, pacing: true, s2: null });
+// level: site along the His-apex line (0 His, 1 apex); offset: away from the septum (-1 anterior free wall .. +1 posterior).
+// Both shape the paced morphology (limb-lead axis, V1 notch, free-wall width); `entry` keeps the conduction access.
+export const DEFAULTS = Object.freeze({ caseId: 'baseline', entry: .5, angle: 8, depth: .88, output: 2, pulseWidth: .4, polarity: 'uni', rate: 70, pacing: true, s2: null, level: .35, offset: 0 });
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 function number(value, fallback, lo, hi) {
   const n = typeof value === 'number' ? value : typeof value === 'string' && value.trim() ? Number(value) : NaN;
@@ -25,6 +27,7 @@ export function normalize(options = {}) {
     polarity: o.polarity === 'bi' ? 'bi' : 'uni', rate: number(o.rate, DEFAULTS.rate, 40, 140),
     pacing: typeof o.pacing === 'boolean' ? o.pacing : DEFAULTS.pacing,
     s2: s2Value == null || s2Value === '' ? null : number(s2Value, null, 180, 450),
+    level: number(o.level, DEFAULTS.level, 0, 1), offset: number(o.offset, DEFAULTS.offset, -1, 1),
   };
 }
 function tissue(s) {
@@ -65,12 +68,24 @@ function parameters(s, c) {
   const slow = s.caseId === 'slow' ? 24 : 0;
   let onset = 8, width = 145, xPeak = 88, zPeak = 112;
   if (c.type === 'off') { onset = 0; width = 105 + slow; xPeak = 48 + slow; zPeak = 32 + slow; }
-  else if (c.conduction) { onset = c.muscle ? 5 : 22; width = (c.muscle ? 111 : 96) + slow; xPeak = 67 + slow; zPeak = 96 + slow; }
+  else if (c.conduction) { onset = c.muscle ? 5 : 22; width = (c.muscle ? 111 : 96) + slow; xPeak = 58 + slow; zPeak = 110 + slow; }   // early V6 R, late V1 r': interpeak beyond 44 ms
   else if (s.depth >= .78) { width = 128 + slow; xPeak = 83 + slow; zPeak = 106 + slow; }
   else if (s.depth >= .35) { width = 144 + slow; xPeak = 95 + slow; zPeak = 116 + slow; }
+  // Off the septum (RV free wall): a wide, late beat without the septal notch.
+  const freeWall = c.type === 'rv' && Math.abs(s.offset) > .5;
+  if (freeWall) { width += 40; xPeak += 22; zPeak += 18; }
   if (s.caseId === 'scar') { width += 28; xPeak += 15; zPeak += 12; }
   if (c.anodal) { width -= 9; xPeak -= 7; zPeak -= 17; }
-  return { hasBeat, reference: c.type === 'off' ? 80 : 50, onset, width, xPeak, zPeak };
+  // Limb-lead axis by level: basal septum inferior (II, III positive), apical superior (II, III negative).
+  const axis = 1 - 2 * clamp((s.level - .1) / .6, 0, 1);
+  // V1: the septal pace map has a mid-QRS notch (a W) that moves to the end of the QRS as the tip
+  // goes deeper, where it becomes the terminal r'. No notch on the free wall or without a paced beat.
+  const notch = c.type === 'off' || freeWall ? 0 : .3;
+  const notchAt = .38 + .5 * clamp(s.depth / .8, 0, 1);
+  // Terminal V1 vector: negative (QS) from the RV septum, turning positive (r') as the tip nears the LV side.
+  const deepShare = c.conduction || c.type === 'off' ? 1 : c.type === 'rv' ? 0 : clamp((s.depth - .5) / .3, 0, 1);
+  const terminal = -.5 + 1.35 * deepShare;
+  return { hasBeat, reference: c.type === 'off' ? 80 : 50, onset, width, xPeak, zPeak, axis, notch, notchAt, freeWall, terminal };
 }
 function causalBandpass(values, hp = 30, lp = 250) {
   const highAlpha = 1 / (1 + 2 * Math.PI * hp / 1000);
@@ -103,13 +118,15 @@ export function simulate(options = {}) {
   const leads = Object.fromEntries(Object.keys(PROJECTIONS).map(key => [key, []]));
   const unfiltered = [];
   const coi = state.depth >= 1 ? 0 : Math.max(0, 1 - Math.abs(state.depth - .85) / .85) * t.contact * 1.6;
+  const yAxis = capture.type === 'off' ? .62 : 1.5 * p.axis;   // intrinsic beat keeps its own axis
   for (const time of times) {
     const r = time - p.reference;
     const start = p.onset, end = p.onset + p.width;
     const window = r > start && r < end ? Math.sin(Math.PI * (r - start) / p.width) ** .4 : 0;
     const x = p.hasBeat ? window * (-.22 * bump(r, start + 14, 14) + 1.35 * bump(r, p.xPeak, 33) - .27 * bump(r, end - 11, 15)) : 0;
-    const y = p.hasBeat ? window * (.62 * bump(r, p.xPeak - 6, 40) - .18 * bump(r, end - 14, 19)) : 0;
-    const z = p.hasBeat ? window * (-.62 * bump(r, start + 35, 28) + (capture.type === 'rv' ? -.5 : .85) * bump(r, p.zPeak, 25)) : 0;
+    const y = p.hasBeat ? window * (yAxis * bump(r, p.xPeak - 6, 40) - .18 * bump(r, end - 14, 19)) : 0;
+    const z = p.hasBeat ? window * (-(p.freeWall ? .9 : .62) * bump(r, start + 35, 28) + p.terminal * bump(r, p.zPeak, 25)
+      + p.notch * bump(r, start + p.width * p.notchAt, 8)) : 0;
     // Stimulus itself is a common vector projected exactly as QRS is.
     const stimulus = state.pacing ? .08 * state.output * bump(time, 50, 1.3) : 0;
     for (const [key, v] of Object.entries(PROJECTIONS)) leads[key].push(v[0] * (x + stimulus) + v[1] * y + v[2] * stimulus + v[2] * z);
