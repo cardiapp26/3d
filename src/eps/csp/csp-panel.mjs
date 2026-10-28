@@ -3,6 +3,7 @@ import { initialProcedure, modelOf, act, stageOf, criteria, confirmation, accept
 import { createRecorder, advance, beatFromResult, drawSweep, LAYOUTS, SPEEDS } from './csp-live.mjs';
 import { drawFluoro, levelAt, createFluoroState, tickFluoro, isLive, moved, puff, contrastOf } from './csp-fluoro.mjs';
 import { createFinishPanel } from './csp-finish-panel.mjs';
+import { createSpin, advanceSpin, displayDepth, phaseOf, pacingPaused } from './csp-spin.mjs';
 import { trendPoint, pushTrend, drawTrends } from './csp-trends.mjs';
 import { coaching } from './csp-coaching.mjs';
 import { TEXT } from './csp-text.mjs';
@@ -34,6 +35,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   let recorder = createRecorder(50), pendingEscape = false, shownBeats = -1;
   let log = [], trend = [];                 // event log; per-turn trend points
   let fx = createFluoroState(), sites = 1, complications = 0, caseSeed = 1;
+  let spin = null, spinQueue = [];          // helix turn in progress; turns asked for meanwhile
   const ui = { active: false, page: 'implant', projection: 'rao', instructor: true, blind: false, frozen: false, layout: 'all', ecgGain: 1, egmGain: 1, guides: true, target: false,
     playing: false, cursor: 50, caliper: false, marks: [], zoom: 1, scale: 4, selected: -1, testKind: null, answer: null, revealed: false };
   let liveFrame = null, liveLast = null, reviewFrame = null, reviewLast = null, plotted = null, history = [], storageStatus = '', dragging = false;
@@ -174,8 +176,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
 
   // Control bar.
   const bar = el('div', 'csp-controlbar');
-  const rotate1 = button(() => c().controls.rotate, () => doAct({ type: 'rotate', turns: 1 }), { 'data-csp-rotate': 1 });
-  const rotate3 = button(() => c().controls.rapid, () => doAct({ type: 'rotate', turns: 3 }), { 'data-csp-rotate': 3 });
+  const rotate1 = button(() => c().controls.rotate, () => requestTurns(1), { 'data-csp-rotate': 1 });
+  const rotate3 = button(() => c().controls.rapid, () => requestTurns(3), { 'data-csp-rotate': 3 });
   const unscrew = button(() => c().controls.unscrew, () => doAct({ type: 'unscrew' }), { 'data-csp-unscrew': '' });
   const reposition = button(() => c().controls.reposition, () => doAct({ type: 'reposition' }), { 'data-csp-reposition': '' });
   const leadField = el('label'); const leadSelect = el('select', '', { 'data-csp-control': 'lead' });
@@ -291,8 +293,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     if (!ui.active || ui.page !== 'implant' || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(doc.activeElement?.tagName)) return;
     const key = event.key.toLowerCase();
-    if (key === 'r') doAct({ type: 'rotate', turns: event.shiftKey ? 3 : 1 });
-    else if (key === 'u') doAct({ type: 'unscrew' });
+    if (key === 'r') requestTurns(event.shiftKey ? 3 : 1);
+    else if (key === 'u') { if (!spin) doAct({ type: 'unscrew' }); }
     else if (event.key === 'ArrowLeft') doAct({ type: 'torque', delta: 5 });
     else if (event.key === 'ArrowRight') doAct({ type: 'torque', delta: -5 });
     else if (event.key === 'ArrowUp') setOutput(proc.output + .25);
@@ -333,16 +335,43 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
       if (COMPLICATIONS.includes(e.type)) complications++;
     }
   }
-  function doAct(action) {
+  function doAct(action, { trendNow = true } = {}) {
     const out = act(proc, action);
     proc = out.proc; apply(out.events);
     if (MOVES.includes(action.type)) { moved(fx, now()); fx.dirty = true; }
+    if (action.type === 'reposition') clearSpin();
     if (action.type === 'rotate' || action.type === 'unscrew' || action.type === 'reposition') { test = null; lastTest = null; }   // test evidence belongs to one position
     compute();
-    if (action.type === 'rotate' || action.type === 'unscrew') trend = pushTrend(trend, trendPoint(proc, result));
+    if (trendNow && (action.type === 'rotate' || action.type === 'unscrew')) trend = pushTrend(trend, trendPoint(proc, result));
     else if (action.type === 'reposition') trend = [];
     render();
   }
+  // ---- Animated turns ----
+  /** A turn from the console: applied now, shown over time; extra turns wait in a queue. */
+  function requestTurns(n) {
+    if (spin) { spinQueue = [...spinQueue, n].slice(0, 12); render(); return; }
+    startSpin(n);
+  }
+  function startSpin(n) {
+    const fromDepth = proc.depthMm, before = proc.turns;
+    doAct({ type: 'rotate', turns: n }, { trendNow: false });
+    const turns = proc.turns - before;
+    spin = createSpin({ fromDepth, toDepth: proc.depthMm, turns, lead: proc.lead });
+    if (pacingPaused(spin)) addLog('spinPause');
+    ensureLoop(); render();
+  }
+  function stepSpin(dt) {
+    if (!spin) return;
+    moved(fx, now());
+    spin = advanceSpin(spin, dt);
+    if (spin) return;
+    compute(); trend = pushTrend(trend, trendPoint(proc, result));   // the trend reads the recording once pacing resumes
+    const next = spinQueue[0]; spinQueue = spinQueue.slice(1);
+    if (next) startSpin(next); else render();
+  }
+  function clearSpin() { spin = null; spinQueue = []; }
+  /** The procedure as drawn: during a turn the tip is between the old and the new depth. */
+  const shownProc = () => (spin ? { ...proc, depthMm: displayDepth(spin) } : proc);
   function moveSite(event) {
     const r = fluoro.getBoundingClientRect();
     doAct({ type: 'site', level: levelAt(event.clientX - r.left, event.clientY - r.top, r.width, r.height) });
@@ -353,7 +382,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function loadCase(caseId, keepLog = false, seed = proc.seed ?? Date.now()) {
     const keep = { heart: proc.heart, lead: proc.lead };   // the lab setup survives a new case
     proc = initialProcedure(caseId, seed, keep); s2 = null; rows = []; reference = null; test = null; lastTest = null; trend = [];
-    fx = { ...createFluoroState(), auto: fx.auto }; sites = 1; complications = 0; caseSeed = Number(seed) || 1; finishPanel.reset();
+    fx = { ...createFluoroState(), auto: fx.auto }; sites = 1; complications = 0; caseSeed = Number(seed) || 1; finishPanel.reset(); clearSpin();
     Object.assign(ui, { selected: -1, testKind: null, answer: null, revealed: false, marks: [], playing: false, cursor: 50 });
     if (!keepLog) log = [];
     addLog('case', { name: CASES.find(k => k.id === proc.caseId).name[lang()] });
@@ -387,7 +416,10 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   }
 
   // ---- Live beats ----
-  function liveOptions() { return { ...modelOf(proc), s2: null, ...(test && !test.done ? { output: test.output, pacing: true } : {}) }; }
+  function liveOptions() {
+    if (pacingPaused(spin)) return { ...modelOf(proc), s2: null, pacing: false };   // lumenless lead off the clips while it turns
+    return { ...modelOf(proc), s2: null, ...(test && !test.done ? { output: test.output, pacing: true } : {}) };
+  }
   function nextBeat() {
     const options = liveOptions();
     const interval = 60000 / options.rate, intrinsicInterval = 60000 / paramsOf(options).intrinsicRate;
@@ -417,7 +449,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     liveFrame = null;
     if (!ui.active || ui.page !== 'implant') { liveLast = null; return; }
     const dt = liveLast == null ? 16 : Math.min(250, time - liveLast); liveLast = time;
-    const frame = tickFluoro(fx, now(), dt, proc);
+    stepSpin(dt);
+    const frame = tickFluoro(fx, now(), dt, shownProc());
     if (frame) drawFluoroCanvas();
     if (!ui.frozen) {   // freeze stops the recording, not the fluoroscopy
       advance(recorder, dt, nextBeat);
@@ -434,7 +467,9 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     phaseNodes.forEach((n, i) => n.setAttribute('aria-current', i === stage ? 'step' : 'false'));
     const list = criteria(result, proc, lastTest);
     const g = guidance(proc, result, list, lastTest);
-    guide.textContent = c().guide[g.key] || ''; guide.dataset.tone = g.tone;
+    const key = spin ? (pacingPaused(spin) ? 'spinning' : 'spinningStylet') : g.key;
+    const queued = spin && spinQueue.length ? ` ${fill(c().guide.spinQueued, { queued: spinQueue.length })}` : '';
+    guide.textContent = `${c().guide[key] || ''}${queued}`; guide.dataset.tone = spin ? 'info' : g.tone;
     // Readouts: the live paced beat when a test is running, else the current position.
     const shown = test && !test.done && recorder.last ? recorder.last.result : result;
     const m = shown.metrics, outputV = test && !test.done ? test.output : proc.output;
@@ -452,8 +487,10 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     logList.replaceChildren(...log.map(e => { const li = el('li'); const time = el('time'); time.textContent = e.time; li.append(time, ` ${eventText(e)}`); return li; }));
     sheathOut.textContent = `${Math.round(proc.sheath)}°`;   // signed: negative anterior (clockwise), positive posterior
     const locked = proc.depthMm > .05;
-    ccw.disabled = cw.disabled = locked; unscrew.disabled = !locked; rotate3.disabled = !rapidAllowed(proc);
-    accept.disabled = stage < 3 || result.capture.type === 'perforation';
+    ccw.disabled = cw.disabled = locked || Boolean(spin); unscrew.disabled = !locked || Boolean(spin); reposition.disabled = Boolean(spin);
+    rotate3.disabled = !rapidAllowed(proc) || Boolean(spin);
+    accept.disabled = stage < 3 || result.capture.type === 'perforation' || Boolean(spin);
+    implant.dataset.spinning = String(Boolean(spin));
     thresholdBtn.setAttribute('aria-pressed', String(Boolean(test && !test.done)));
     warning.textContent = result.capture.type === 'perforation' ? t().warning : '';
     if (proc.accepted) {
@@ -548,7 +585,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     if (wantReview && reviewFrame === null) { reviewLast = null; reviewFrame = globalThis.requestAnimationFrame?.(reviewTick) ?? null; }
     if (!wantReview && reviewFrame !== null) { globalThis.cancelAnimationFrame?.(reviewFrame); reviewFrame = null; }
   }
-  function context(canvas, background = '#0a1411') {
+  function context(canvas, background = '#0b0e12') {
     const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return null; const ctx = canvas.getContext?.('2d'); if (!ctx) return null;
     const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
     if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
@@ -557,7 +594,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function drawFluoroCanvas() {
     const k = context(fluoro); if (!k) return;
     const t0 = now();
-    drawFluoro(k.ctx, k.w, k.h, ui.projection, proc, { guides: ui.guides, target: ui.target && ui.instructor && !ui.blind, badge: !ui.blind, text: c().fluoro,
+    drawFluoro(k.ctx, k.w, k.h, ui.projection, shownProc(), { spin: spin ? phaseOf(spin) : null, guides: ui.guides, target: ui.target && ui.instructor && !ui.blind, badge: !ui.blind, text: c().fluoro,
       contrast: contrastOf(fx, t0), fx: { live: isLive(fx, t0), seconds: fx.seconds, shownDepth: fx.shownDepth } });
   }
   function drawTrendsCanvas() {
@@ -565,7 +602,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     drawTrends(k.ctx, k.w, k.h, trend, { labels: c().trends, emptyText: c().trendsEmpty });
   }
   function drawLive() {
-    const k = context(live, '#060b09'); if (!k) return;
+    const k = context(live, '#07090c'); if (!k) return;
     const labels = { TIP: c().tip, COI: c().coi }, colors = { V1: '#f4cb75', V6: '#f4cb75', TIP: '#65c9bb', COI: '#8fd3ff' };
     drawSweep(k.ctx, k.w, k.h, recorder, { rows: LAYOUTS[ui.layout], ecgGain: ui.ecgGain, egmGain: ui.egmGain, labels, colors });
   }
@@ -573,21 +610,21 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const k = context(strip); if (!k) return; const { ctx, w, h } = k;
     const left = 70, right = w - 10, top = 22, bottom = h - 24, from = Math.max(0, Math.min(500 - 500 / ui.zoom, ui.cursor - 250 / ui.zoom)), to = from + 500 / ui.zoom;
     plotted = { left, right, from, to }; const x = ms => left + (ms - from) / (to - from) * (right - left);
-    for (let ms = Math.ceil(from / 10) * 10; ms <= to; ms += 10) { ctx.strokeStyle = ms % 50 === 0 ? '#294036' : '#16281f'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x(ms), top); ctx.lineTo(x(ms), bottom); ctx.stroke(); if (ms % 50 === 0 && ms < to - 15) { ctx.fillStyle = '#839d8d'; ctx.fillText(String(ms), x(ms) - 5, h - 7); } }
-    ctx.fillStyle = '#839d8d'; ctx.fillText('ms', w - 25, h - 7); ctx.fillText('mV', 8, 14);
+    for (let ms = Math.ceil(from / 10) * 10; ms <= to; ms += 10) { ctx.strokeStyle = ms % 50 === 0 ? '#232c38' : '#151b23'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x(ms), top); ctx.lineTo(x(ms), bottom); ctx.stroke(); if (ms % 50 === 0 && ms < to - 15) { ctx.fillStyle = '#8d99a8'; ctx.fillText(String(ms), x(ms) - 5, h - 7); } }
+    ctx.fillStyle = '#8d99a8'; ctx.fillText('ms', w - 25, h - 7); ctx.fillText('mV', 8, 14);
     const series = [...LEADS.map(id => ({ id, data: result.leads[id], ref: reference?.leads[id] })), { id: 'EGM F', data: result.egm.filtered, ref: reference?.egm.filtered }, { id: 'EGM U', data: result.egm.unfiltered, ref: reference?.egm.unfiltered }];
     const row = (bottom - top) / series.length;
     series.forEach(({ id, data, ref }, r) => {
-      const y = top + (r + .5) * row; ctx.fillStyle = ['V1', 'V6'].includes(id) ? '#f4cb75' : '#b9cec0'; ctx.fillText(id, 8, y + 3);
+      const y = top + (r + .5) * row; ctx.fillStyle = ['V1', 'V6'].includes(id) ? '#f4cb75' : '#c3ccd7'; ctx.fillText(id, 8, y + 3);
       ctx.save(); ctx.beginPath(); ctx.rect(left, top + r * row, right - left, row); ctx.clip();
-      for (const [values, color] of [[ref, '#637169'], [data, ['V1', 'V6'].includes(id) ? '#f4cb75' : r > 11 ? '#65c9bb' : '#c5d8ca']]) {
+      for (const [values, color] of [[ref, '#5c6673'], [data, ['V1', 'V6'].includes(id) ? '#f4cb75' : r > 11 ? '#65c9bb' : '#d3dae3']]) {
         if (!values) continue; ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.beginPath();
         for (let i = Math.max(0, Math.floor(from)); i < result.times.length && result.times[i] <= to; i++) { const yy = y - values[i] * row / ui.scale; if (i === Math.floor(from)) ctx.moveTo(x(result.times[i]), yy); else ctx.lineTo(x(result.times[i]), yy); }
         ctx.stroke();
       }
       ctx.restore();
     });
-    for (const [ms, color] of [[ui.cursor, '#9cb6a4'], ...ui.marks.map(ms => [ms, '#e9be65'])]) { if (ms < from || ms > to) continue; ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(x(ms), top); ctx.lineTo(x(ms), bottom); ctx.stroke(); }
+    for (const [ms, color] of [[ui.cursor, '#8d99a8'], ...ui.marks.map(ms => [ms, '#e9be65'])]) { if (ms < from || ms > to) continue; ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(x(ms), top); ctx.lineTo(x(ms), bottom); ctx.stroke(); }
   }
   function draw() {
     if (!ui.active) return;
@@ -613,13 +650,16 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
       }
     },
     getState: () => ({ ...state, ui: { ...ui, marks: [...ui.marks] }, procedure: { ...proc }, liveTime: recorder.time, trend: trend.map(p => ({ ...p })),
-      fluoro: { on: fx.on, auto: fx.auto, live: isLive(fx, now()), seconds: fx.seconds, contrast: contrastOf(fx, now()), shownDepth: fx.shownDepth }, sites, complications }),
+      fluoro: { on: fx.on, auto: fx.auto, live: isLive(fx, now()), seconds: fx.seconds, contrast: contrastOf(fx, now()), shownDepth: fx.shownDepth }, sites, complications, spin: { active: Boolean(spin), queued: spinQueue.length, pacingPaused: pacingPaused(spin) } }),
     loadCase: (caseId, seed) => loadCase(caseId, false, seed),
     getResult: () => result, getReference: () => reference, getRows: () => rows,
     getHistory: () => history.map(x => ({ ...x })),
     getCriteria: () => criteria(result, proc, lastTest), getTest: () => test || lastTest,
     act: action => doAct(action),
     /** Advance the live recording by `ms` at once (tests): beats, the threshold test and the log run as in real time. */
-    tick(ms) { for (let left = ms; left > 0; left -= 250) { advance(recorder, Math.min(250, left), nextBeat); tickFluoro(fx, now(), Math.min(250, left), proc); } shownBeats = recorder.beats; render(); }
+    tick(ms) {
+      for (let left = ms; left > 0; left -= 250) { const dt = Math.min(250, left); stepSpin(dt); advance(recorder, dt, nextBeat); tickFluoro(fx, now(), dt, shownProc()); }
+      shownBeats = recorder.beats; render();
+    }
   };
 }
