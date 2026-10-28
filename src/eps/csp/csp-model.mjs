@@ -2,28 +2,55 @@
  * Capture fields are simulation ground truth, never a patient diagnosis.
  * No device, proprietary simulator, or validated clinical classifier is reproduced.
  */
+// group: 'case' (a patient) or 'trap' (one situation where a single criterion misleads).
 export const CASES = Object.freeze([
-  { id: 'baseline', name: { tr: 'Ayrı eşikler', en: 'Separate thresholds' }, description: { tr: 'Aynı konumda output azaltılır; iki dokunun ayrı eşikleri karşılaştırılır.', en: 'Reduce output at one position and compare independent tissue thresholds.' } },
-  { id: 'slow', name: { tr: 'Yavaş ileti ve refrakterlik', en: 'Slow conduction and refractoriness' }, description: { tr: 'İleti gecikmesi ve farklı ERP değerleri programlı uyarımla karşılaştırılır.', en: 'Compare conduction delay and different ERPs using programmed stimulation.' } },
-  { id: 'equal', name: { tr: 'Çakışan eşikler', en: 'Coincident thresholds' }, description: { tr: 'Output testi belirgin bir morfoloji geçişi göstermeyebilir.', en: 'An output test may not reveal a distinct morphology transition.' } },
-  { id: 'scar', name: { tr: 'Heterojen septum', en: 'Heterogeneous septum' }, description: { tr: 'Yüksek miyokard eşiği ve erişilemeyen ileti dokusu birlikte modellenir.', en: 'A raised myocardial threshold coexists with unavailable conduction tissue.' } },
+  { id: 'baseline', group: 'case', name: { tr: 'Tam AV blok, ayrı eşikler', en: 'Complete AV block, separate thresholds' }, description: { tr: 'Aynı konumda output azaltılır; iki dokunun ayrı eşikleri karşılaştırılır.', en: 'Reduce output at one position and compare independent tissue thresholds.' } },
+  { id: 'random', group: 'case', name: { tr: 'Rastgele hasta', en: 'Random patient' }, description: { tr: 'Septum kalınlığı, sol dal seviyesi, eşikler ve ileti hızı her yüklemede yeniden çekilir.', en: 'Septal thickness, left bundle level, thresholds and conduction speed are drawn anew on every load.' } },
+  { id: 'slow', group: 'trap', name: { tr: 'Yavaş ileti ve refrakterlik', en: 'Slow conduction and refractoriness' }, description: { tr: 'İleti gecikmesi ve farklı ERP değerleri programlı uyarımla karşılaştırılır.', en: 'Compare conduction delay and different ERPs using programmed stimulation.' } },
+  { id: 'equal', group: 'trap', name: { tr: 'Çakışan eşikler', en: 'Coincident thresholds' }, description: { tr: 'Output testi belirgin bir morfoloji geçişi göstermeyebilir.', en: 'An output test may not reveal a distinct morphology transition.' } },
+  { id: 'scar', group: 'trap', name: { tr: 'Heterojen septum', en: 'Heterogeneous septum' }, description: { tr: 'Yüksek miyokard eşiği ve erişilemeyen ileti dokusu birlikte modellenir.', en: 'A raised myocardial threshold coexists with unavailable conduction tissue.' } },
+  { id: 'selective', group: 'trap', name: { tr: 'Selektif yakalanma maskeli', en: 'Selective capture unmasked' }, description: { tr: 'Miyokard eşiği yüksek, ileti eşiği düşük: geniş bir çıkış aralığında yalnız selektif yakalanma vardır ve yakalanma kaybı sanılabilir.', en: 'High myocardial, low conduction threshold: a wide output range captures only the conduction system and can be mistaken for loss of capture.' } },
+  { id: 'invertedErp', group: 'trap', name: { tr: 'Ters refrakterlik', en: 'Inverted refractoriness' }, description: { tr: 'Miyokardın ERP’si ileti dokusundan uzun: S2 önce miyokardı düşürür, selektif LBBP çıkar.', en: 'Myocardial ERP longer than the conduction tissue: S2 drops the myocardium first and unmasks selective LBBP.' } },
+  { id: 'dilated', group: 'trap', name: { tr: 'Dilate LV, sınırda V6RWPT', en: 'Dilated LV, borderline V6RWPT' }, description: { tr: 'Süre ölçümleri gri bölgede kalır; kanıt yalnız geçişle gelir.', en: 'Timing stays in the grey band; proof comes only from a transition.' } },
+  { id: 'lbbHigh', group: 'trap', name: { tr: 'LBB eşiği miyokard eşiğinin üstünde', en: 'LBB threshold above muscle threshold' }, description: { tr: 'Azalan çıkışta nonselektiften LV septale düşüş; çıkış LBB eşiğinin 2 katına ayarlanmalı.', en: 'Decremental output drops from nonselective to LV septal capture; the output must be set to twice the LBB threshold.' } },
+  { id: 'stall', group: 'trap', name: { tr: 'Mid-septal skar: heliks takılır', en: 'Mid-septal scar stall' }, description: { tr: 'Septumun ortasında skar adası: tur atılır, derinlik ilerlemez. Birkaç mm apikale yeniden konumlanır.', en: 'A scar island mid-septum: turns advance nothing. Reposition a few mm apically.' } }
 ]);
 /**
  * Tissue parameters per teaching case (synthetic). scar: myocardial threshold multiplier;
  * access: conduction tissue reachable at all; ratio: conduction threshold as a fraction of the
  * myocardial one (null: the model's own, about .5); slowMs: conduction delay; ERPs in ms;
- * v6Offset: extra Stim-V6RWPT (dilated LV); muscleERP > conductionERP inverts the S2 order.
+ * v6Offset: extra Stim-V6RWPT (dilated LV); interpeakShift narrows the V6-V1 interpeak;
+ * muscleERP > conductionERP inverts the S2 order. `random` draws its own set (options.params).
  */
+const BASE = { scar: 1, access: true, ratio: null, slowMs: 0, muscleERP: 235, conductionERP: 285, v6Offset: 0, conductionFactor: 1, interpeakShift: 0 };
 export const CASE_PARAMS = Object.freeze({
-  baseline: { scar: 1, access: true, ratio: null, slowMs: 0, muscleERP: 235, conductionERP: 285, v6Offset: 0 },
-  slow: { scar: 1, access: true, ratio: null, slowMs: 24, muscleERP: 235, conductionERP: 340, v6Offset: 0, conductionFactor: 1.15, interpeakShift: -8 },
-  equal: { scar: 1, access: true, ratio: 1, slowMs: 0, muscleERP: 235, conductionERP: 285, v6Offset: 0 },
-  scar: { scar: 2.4, access: false, ratio: null, slowMs: 0, muscleERP: 265, conductionERP: 285, v6Offset: 0 }
+  baseline: { ...BASE },
+  random: { ...BASE },
+  slow: { ...BASE, slowMs: 24, conductionERP: 340, conductionFactor: 1.15, interpeakShift: -8 },
+  equal: { ...BASE, ratio: 1 },
+  scar: { ...BASE, scar: 2.4, access: false, muscleERP: 265 },
+  selective: { ...BASE, scar: 1.6, ratio: .25 },
+  invertedErp: { ...BASE, muscleERP: 275, conductionERP: 215 },
+  dilated: { ...BASE, v6Offset: 20, interpeakShift: -6 },
+  lbbHigh: { ...BASE, ratio: 1.6 },
+  stall: { ...BASE }
 });
-const caseParams = id => CASE_PARAMS[id] || CASE_PARAMS.baseline;
+const PARAM_RANGES = Object.freeze({ scar: [1, 3], ratio: [.2, 2], slowMs: [0, 40], muscleERP: [200, 320], conductionERP: [200, 380], v6Offset: [0, 30], conductionFactor: [.8, 1.5], interpeakShift: [-15, 15] });
+/** A custom parameter set (random patient), every field bounded; null when nothing usable was given. */
+export function sanitizeParams(params) {
+  if (!params || typeof params !== 'object') return null;
+  const out = { ...BASE };
+  for (const [key, [lo, hi]] of Object.entries(PARAM_RANGES)) {
+    if (key === 'ratio' && params.ratio === null) { out.ratio = null; continue; }
+    if (Number.isFinite(params[key])) out[key] = clamp(params[key], lo, hi);
+  }
+  if (typeof params.access === 'boolean') out.access = params.access;
+  return Object.freeze(out);
+}
+const caseParams = s => s.params || CASE_PARAMS[s.caseId] || CASE_PARAMS.baseline;
 // level: site along the His-apex line (0 His, 1 apex); offset: away from the septum (-1 anterior free wall .. +1 posterior).
 // Both shape the paced morphology (limb-lead axis, V1 notch, free-wall width); `entry` keeps the conduction access.
-export const DEFAULTS = Object.freeze({ caseId: 'baseline', entry: .5, angle: 8, depth: .88, output: 2, pulseWidth: .4, polarity: 'uni', rate: 70, pacing: true, s2: null, level: .35, offset: 0 });
+export const DEFAULTS = Object.freeze({ caseId: 'baseline', entry: .5, angle: 8, depth: .88, output: 2, pulseWidth: .4, polarity: 'uni', rate: 70, pacing: true, s2: null, level: .35, offset: 0, params: null });
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 export const COI_MAX = 15;   // mV at the best position (synthetic teaching scale)
 function number(value, fallback, lo, hi) {
@@ -42,10 +69,11 @@ export function normalize(options = {}) {
     pacing: typeof o.pacing === 'boolean' ? o.pacing : DEFAULTS.pacing,
     s2: s2Value == null || s2Value === '' ? null : number(s2Value, null, 180, 450),
     level: number(o.level, DEFAULTS.level, 0, 1), offset: number(o.offset, DEFAULTS.offset, -1, 1),
+    params: sanitizeParams(o.params),
   };
 }
 function tissue(s) {
-  const cp = caseParams(s.caseId);
+  const cp = caseParams(s);
   const contact = Math.max(.12, Math.cos(s.angle * Math.PI / 180)) * (1 - .6 * Math.abs(s.entry - .5));
   const conductionAccess = s.depth >= .82 && s.depth < .98 && Math.abs(s.entry - .5) <= .21 && s.angle <= 32 && cp.access;
   const muscleThreshold = .65 * (1 + .18 / s.pulseWidth) * cp.scar / contact;
@@ -79,7 +107,7 @@ const PROJECTIONS = Object.freeze({
 });
 function parameters(s, c) {
   const hasBeat = c.type === 'off' || c.muscle || c.conduction || c.anodal;
-  const cp = caseParams(s.caseId);
+  const cp = caseParams(s);
   const slow = cp.slowMs + (c.type === 'off' ? 0 : cp.v6Offset);
   let onset = 8, width = 145, xPeak = 88, zPeak = 112;
   if (c.type === 'off') { onset = 0; width = 105 + slow; xPeak = 48 + slow; zPeak = 32 + slow; }

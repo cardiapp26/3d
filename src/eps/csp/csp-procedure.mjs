@@ -10,15 +10,38 @@
  * a unipolar output or S2 transition, Stim-V6RWPT at or under 74 ms, or a V6-V1 interpeak
  * over 44 ms. The grey bands (75-85 ms, 33-44 ms) are supportive only.
  */
-import { normalize, simulate } from './csp-model.mjs';
+import { normalize, simulate, sanitizeParams } from './csp-model.mjs';
 
 // Per teaching case: septal thickness and where the left bundle lies on the His-apex line (0 His, 1 apex).
+// stall: a scar island (depth ratio band at the left bundle level) where the helix spins without advancing.
 export const ANATOMY = Object.freeze({
   baseline: { septumMm: 12, lbb: .3 },
+  random: { septumMm: 12, lbb: .3 },
   slow: { septumMm: 13, lbb: .32 },
   equal: { septumMm: 11, lbb: .28 },
-  scar: { septumMm: 14, lbb: .3 }
+  scar: { septumMm: 14, lbb: .3 },
+  selective: { septumMm: 12, lbb: .29 },
+  invertedErp: { septumMm: 12, lbb: .31 },
+  dilated: { septumMm: 11, lbb: .34 },
+  lbbHigh: { septumMm: 12, lbb: .3 },
+  stall: { septumMm: 12, lbb: .3, stall: { from: .4, to: .62, half: .06 } }
 });
+const STALL_GRIP = .05;
+
+/** Deterministic pseudo-random numbers for the random patient (mulberry32). */
+function rng(seed) {
+  let a = (Number(seed) >>> 0) || 1;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const between = (r, lo, hi, digits = 2) => Math.round((lo + r() * (hi - lo)) * 10 ** digits) / 10 ** digits;
+/** A random patient: its tissue parameters and anatomy from one seed (reproducible). */
+export function randomPatient(seed) {
+  const r = rng(seed);
+  const ratio = r() < .3 ? between(r, 1.1, 1.7) : r() < .2 ? null : between(r, .3, .9);
+  const params = sanitizeParams({ scar: between(r, 1, 1.5), ratio, slowMs: between(r, 0, 18, 0), muscleERP: between(r, 215, 275, 0), conductionERP: between(r, 215, 330, 0), v6Offset: between(r, 0, 16, 0), interpeakShift: between(r, -6, 4, 0), access: r() > .1 });
+  const anatomy = Object.freeze({ septumMm: between(r, 10, 14, 0), lbb: between(r, .26, .36) });
+  return { params, anatomy };
+}
 export const HIS_APEX_MM = 70;          // His to RV apex along the RAO line
 export const FREE_WALL_MM = 5;          // RV free wall: a lead screwed in there perforates early
 export const MM_PER_TURN = 1.4;         // full engagement, sheath perpendicular
@@ -37,7 +60,7 @@ const SITE_WINDOW = .08;                // level distance from the LBB with full
 const LOCKED_MM = .05;                  // screwed in: site and sheath no longer move
 
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
-const anatomyOf = proc => ANATOMY[proc.caseId] || ANATOMY.baseline;
+export const anatomyOf = proc => proc.anatomy || ANATOMY[proc.caseId] || ANATOMY.baseline;
 
 /** Off the septum: sheath torqued too far clockwise (anterior free wall) or counter-clockwise (posterior). */
 export function offsetOf(sheath) {
@@ -55,17 +78,20 @@ export function modelOf(proc) {
   const access = Math.max(0, Math.abs(proc.level - lbb) - SITE_WINDOW) * 1.3 + Math.abs(offset) * .6;
   return normalize({
     caseId: proc.caseId, entry: .5 + clamp(access, 0, .5), angle: Math.min(90, Math.abs(proc.sheath)),
-    depth: depthRatio(proc), level: proc.level, offset,
+    depth: depthRatio(proc), level: proc.level, offset, params: proc.params || null,
     output: proc.output, pulseWidth: proc.pulseWidth, polarity: proc.polarity, rate: proc.rate, pacing: proc.pacing, s2: null
   });
 }
 
-export function initialProcedure(caseId = 'baseline') {
+/** @param {number} [seed] random patient only: the draw to reproduce */
+export function initialProcedure(caseId = 'baseline', seed = 1) {
+  const id = ANATOMY[caseId] ? caseId : 'baseline';
+  const patient = id === 'random' ? randomPatient(seed) : {};
   return {
-    caseId: ANATOMY[caseId] ? caseId : 'baseline',
+    caseId: id, seed: id === 'random' ? seed : null, params: patient.params || null, anatomy: patient.anatomy || null,
     level: .55, sheath: -50, depthMm: 0, turns: 0,         // start: mid RV, sheath anterior (on the free wall)
     output: 2.5, pulseWidth: .5, polarity: 'uni', rate: 90, pacing: true,
-    accepted: false, fixation: 0, rbbbFixation: false
+    accepted: false, fixation: 0, rbbbFixation: false, stalls: 0
   };
 }
 
@@ -104,15 +130,19 @@ export function act(proc, action) {
       const n = action.turns === 3 && rapidAllowed(proc) ? 3 : 1;
       const angle = Math.abs(proc.sheath);
       const drilling = angle > DRILL_ANGLE;
-      const grip = (drilling ? .1 : Math.cos((angle * Math.PI) / 180) ** 2) * (proc.caseId === 'scar' ? .55 : 1);
+      const before = proc.depthMm / thickness;
+      const { lbb, stall } = anatomyOf(proc);
+      const stalled = Boolean(stall) && Math.abs(proc.level - lbb) < stall.half && before >= stall.from && before < stall.to;
+      const grip = (drilling ? .1 : Math.cos((angle * Math.PI) / 180) ** 2) * (proc.caseId === 'scar' ? .55 : 1) * (stalled ? STALL_GRIP : 1);
       const depthMm = proc.depthMm + n * MM_PER_TURN * grip;
-      const before = proc.depthMm / thickness, after = depthMm / thickness;
+      const after = depthMm / thickness;
       const events = [event('rotate', { turns: n, depthMm })];
-      if (drilling || grip < .3) events.push(event('drilling'));
+      if (stalled) events.push(event('stall'));
+      else if (drilling || grip < .3) events.push(event('drilling'));
       // Ectopy from the helix working through the septum: beats pending for the live recording.
       const fixation = after > .35 && after < 1 ? proc.fixation + n : proc.fixation;
       if (after >= 1 && before < 1) events.push(event('perforation'));
-      return { proc: { ...proc, depthMm, turns: proc.turns + n, fixation, accepted: false }, events };
+      return { proc: { ...proc, depthMm, turns: proc.turns + n, fixation, accepted: false, stalls: stalled ? proc.stalls + n : 0 }, events };
     }
     case 'consumeFixation': {
       // A fixation beat was recorded; near the left bundle it carries the RBBB pattern.
@@ -129,7 +159,7 @@ export function act(proc, action) {
       return { proc: { ...proc, depthMm, turns: Math.max(0, proc.turns - .5), fixation: 0, rbbbFixation: false, accepted: false }, events };
     }
     case 'reposition':
-      return { proc: { ...proc, depthMm: 0, turns: 0, fixation: 0, rbbbFixation: false, accepted: false }, events: [event('reposition')] };
+      return { proc: { ...proc, depthMm: 0, turns: 0, fixation: 0, rbbbFixation: false, accepted: false, stalls: 0 }, events: [event('reposition')] };
     case 'pacing':
       return { proc: { ...proc, pacing: Boolean(action.on) }, events: [event(action.on ? 'pacingOn' : 'pacingOff')] };
     case 'output': {
@@ -199,6 +229,15 @@ export function transitionsOf(rows, polarity = 'uni') {
   for (let i = 1; i < rows.length; i++) { const t = classifyTransition(rows[i - 1], rows[i], polarity); if (t) out.push(t); }
   return out;
 }
+/**
+ * Conduction-system threshold read from a decremental test: the output above a drop to LV septal
+ * capture; with a selective tail it equals the capture threshold itself. Null without a threshold.
+ */
+export function lbbThresholdOf(test) {
+  if (!test || test.kind !== 'threshold' || test.threshold == null) return null;
+  const drop = (test.transitions || []).find(t => t.kind === 'toLvsp');
+  return drop ? drop.from : test.threshold;
+}
 /** A finished test from sweep rows (analysis page): the same shape as the live threshold test. */
 export function testFromRows(kind, rows, polarity = 'uni') {
   const captured = rows.filter(r => r.metrics.qrsDuration != null);
@@ -243,8 +282,9 @@ export function acceptCheck(proc, list, test) {
   if (proc.polarity !== 'uni') reasons.push('polarity');
   if (test?.threshold == null) reasons.push('threshold');
   else {
-    if (test.threshold > CUTOFFS.thresholdMax) reasons.push('thresholdHigh');
-    if (proc.output < CUTOFFS.outputMargin * test.threshold) reasons.push('margin');
+    const lbb = lbbThresholdOf(test) ?? test.threshold;   // the margin protects conduction-system capture, not just capture
+    if (lbb > CUTOFFS.thresholdMax) reasons.push('thresholdHigh');
+    if (proc.output < CUTOFFS.outputMargin * lbb) reasons.push('margin');
   }
   if (!confirmation(list).definitive) reasons.push('proof');
   return reasons;
@@ -268,6 +308,7 @@ export function guidance(proc, result, list, test = null) {
     return { key: 'paceMapOk', tone: 'ok' };
   }
   if (result.metrics.impedance < CUTOFFS.impedanceMin) return { key: 'impedanceDrop', tone: 'warn' };
+  if (proc.stalls >= 2) return { key: 'stall', tone: 'warn' };
   if (Math.abs(proc.sheath) > DRILL_ANGLE) return { key: 'drilling', tone: 'warn' };
   if (ratio < .5) return { key: 'keepTurning', tone: 'info' };
   if (ratio < LV_DEPTH) return { key: 'watchV1', tone: 'info' };
@@ -311,7 +352,7 @@ export function summary(proc, result, list, test) {
   const met = id => list.find(c => c.id === id)?.status === 'met';
   return {
     capture: result.capture.type, turns: proc.turns, depthMm: Math.round(proc.depthMm * 10) / 10,
-    threshold: test?.threshold ?? null, proof: conf.by.length, by: conf.by, perforated: ratio >= 1,
+    threshold: test?.threshold ?? null, lbbThreshold: lbbThresholdOf(test), proof: conf.by.length, by: conf.by, perforated: ratio >= 1,
     verdict: ratio >= 1 ? 'perforated' : conf.definitive ? 'lbbp' : met('terminalR') ? 'lvsp' : 'septal'
   };
 }

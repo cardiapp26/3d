@@ -2,15 +2,18 @@
 // site, sheath and turns map onto the signal model; the criteria read the recording.
 import assert from 'node:assert/strict';
 import { simulate } from '../../src/eps/csp/csp-model.mjs';
-import { initialProcedure, act, modelOf, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, offsetOf, thicknessOf, fromModel, rapidAllowed, ANATOMY, CUTOFFS } from '../../src/eps/csp/csp-procedure.mjs';
+import { initialProcedure, act, modelOf, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, lbbThresholdOf, summary, offsetOf, thicknessOf, fromModel, rapidAllowed, anatomyOf, ANATOMY, CUTOFFS } from '../../src/eps/csp/csp-procedure.mjs';
 import { programmedSweep, thresholdSweep } from '../../src/eps/csp/csp-model.mjs';
+import { coaching } from '../../src/eps/csp/csp-coaching.mjs';
+import { trendPoint, pushTrend, trendDelta } from '../../src/eps/csp/csp-trends.mjs';
 import { createRecorder, advance, beatFromResult } from '../../src/eps/csp/csp-live.mjs';
 
 let passed = 0;
 const test = (name, fn) => { fn(); passed++; console.log(`PASS ${name}`); };
 const run = (proc, actions) => actions.reduce((p, a) => act(p, a).proc, proc);
 const status = (list, id) => list.find(c => c.id === id).status;
-const onTarget = caseId => run(initialProcedure(caseId), [...Array(5).fill({ type: 'torque', delta: 10 }), { type: 'site', level: ANATOMY[caseId].lbb }]);
+const onTarget = (caseId, seed) => { const p0 = initialProcedure(caseId, seed); return run(p0, [...Array(5).fill({ type: 'torque', delta: 10 }), { type: 'site', level: anatomyOf(p0).lbb }]); };
+const screwIn = (caseId, turns = 8, seed) => run(onTarget(caseId, seed), Array(turns).fill({ type: 'rotate', turns: 1 }));
 
 test('start: tip on the anterior free wall, wide QRS, guidance to torque counter-clockwise', () => {
   const p = initialProcedure();
@@ -147,6 +150,66 @@ test('teaching cases differ: scar never reaches conduction tissue, equal thresho
   let t = startThreshold(equal);
   for (let i = 0; i < 300 && !t.done; i++) t = thresholdBeat(t, modelOf(equal)).test;
   assert.equal(t.transitions.length, 0);
+});
+test('trap cases: selective unmasked, inverted refractoriness, dilated grey band, LBB threshold above muscle', () => {
+  const sel = screwIn('selective'), selTest = runThreshold(sel).t;
+  const selRows = selTest.rows.filter(r => r.capture.type === 'selective');
+  assert.ok(selRows.length >= 8, 'a wide selective range'); assert.ok(selTest.transitions.some(x => x.kind === 'toSelective' && x.proof));
+  const inv = screwIn('invertedErp');
+  const s2 = testFromRows('s2', programmedSweep(modelOf(inv)), 'uni');
+  assert.ok(s2.transitions.some(x => x.kind === 'toSelective' && x.proof), 'S2 drops the myocardium first');
+  const dil = screwIn('dilated', 7), dilList = criteria(simulate(modelOf(dil)), dil);   // 11 mm septum: nonselective at 7 turns
+  assert.equal(status(dilList, 'v6Rwpt'), 'likely'); assert.equal(status(dilList, 'interpeak'), 'likely'); assert.equal(confirmation(dilList).definitive, false);
+  const dilTest = runThreshold(dil).t;
+  assert.ok(confirmation(criteria(simulate(modelOf(dil)), dil, dilTest)).definitive, 'the transition proves it');
+  const high = screwIn('lbbHigh'), highTest = runThreshold(high).t;
+  const drop = highTest.transitions.find(x => x.kind === 'toLvsp');
+  assert.ok(drop && drop.proof); assert.ok(drop.dv6 >= CUTOFFS.deltaV6Lvsp);
+  assert.ok(lbbThresholdOf(highTest) > highTest.threshold, 'the conduction threshold sits above the capture threshold');
+  const highList = criteria(simulate(modelOf(high)), high, highTest);
+  assert.ok(acceptCheck(high, highList, highTest).includes('margin'));
+  assert.deepEqual(acceptCheck({ ...high, output: 2 * lbbThresholdOf(highTest) }, highList, highTest), []);
+});
+test('mid-septal scar stall: turns advance nothing at the target level, a few mm apically they do', () => {
+  let p = onTarget('stall'); const events = [];
+  for (let i = 0; i < 6; i++) { const o = act(p, { type: 'rotate', turns: 1 }); p = o.proc; events.push(...o.events.map(e => e.type)); }
+  assert.ok(events.filter(e => e === 'stall').length >= 2); assert.ok(p.depthMm < 6.5); assert.ok(p.stalls >= 2);
+  assert.equal(guidance(p, simulate(modelOf(p)), criteria(simulate(modelOf(p)), p)).key, 'stall');
+  const moved = run(act(p, { type: 'reposition' }).proc, [{ type: 'site', level: ANATOMY.stall.lbb + .07 }, ...Array(8).fill({ type: 'rotate', turns: 1 })]);
+  assert.equal(moved.stalls, 0); assert.equal(simulate(modelOf(moved)).capture.type, 'nonselective');
+});
+test('random patient: reproducible from its seed, different between seeds, always bounded', () => {
+  const a = initialProcedure('random', 7), b = initialProcedure('random', 7), c = initialProcedure('random', 8);
+  assert.deepEqual(a, b); assert.notDeepEqual(a.params, c.params);
+  assert.equal(a.seed, 7); assert.equal(initialProcedure('baseline').seed, null);
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const p = initialProcedure('random', seed);
+    assert.ok(p.anatomy.septumMm >= 10 && p.anatomy.septumMm <= 14); assert.ok(p.anatomy.lbb >= .26 && p.anatomy.lbb <= .36);
+    assert.ok(p.params.scar >= 1 && p.params.scar <= 1.5);
+    const r = simulate(modelOf(screwIn('random', 8, seed)));
+    assert.ok(Object.values(r.leads).every(v => v.every(Number.isFinite)));
+  }
+});
+test('coaching reads the state: checklist before fixation, trends and next step after it', () => {
+  const start = initialProcedure('baseline'), r0 = simulate(modelOf(start));
+  const first = coaching(start, r0, criteria(r0, start));
+  assert.equal(first[0].key, 'offAnterior'); assert.equal(first.at(-1).key, 'nextFix');
+  assert.ok(first.some(i => i.key === 'paceMap' && i.params.qrs > 160));
+  const ready = onTarget('baseline'), r1 = simulate(modelOf(ready));
+  const list = coaching(ready, r1, criteria(r1, ready));
+  assert.deepEqual(list.map(i => i.key), ['sheathOk', 'siteOk', 'paceMap', 'nextRotate']);
+  let p = ready, trend = [];
+  for (let i = 0; i < 8; i++) { p = act(p, { type: 'rotate', turns: 1 }).proc; trend = pushTrend(trend, trendPoint(p, simulate(modelOf(p)))); }
+  const r = simulate(modelOf(p)), deep = coaching(p, r, criteria(r, p), null, trend);
+  assert.ok(deep.some(i => i.key === 'impedanceTrend' && i.params.to > i.params.from));
+  assert.ok(deep.some(i => i.key === 'proof')); assert.equal(deep.at(-1).key, 'runThreshold');
+  assert.equal(trendDelta(trend, 'impedance').delta > 0, true); assert.equal(trendDelta([], 'coi'), null);
+  const { t } = runThreshold(p);
+  assert.equal(coaching(p, r, criteria(r, p, t), t, trend).at(-1).key, 'accept');
+  const stuck = run(onTarget('stall'), Array(5).fill({ type: 'rotate', turns: 1 }));
+  const stuckTrend = [trendPoint({ ...stuck, depthMm: stuck.depthMm - .05 }, r), trendPoint(stuck, simulate(modelOf(stuck)))];
+  assert.ok(coaching(stuck, simulate(modelOf(stuck)), criteria(simulate(modelOf(stuck)), stuck), null, stuckTrend).some(i => i.key === 'noProgress'));
+  assert.deepEqual(coaching({ ...p, accepted: true }, r, criteria(r, p)).map(i => i.key), ['accepted']);
 });
 test('instructor values map back onto the physical state', () => {
   const p = fromModel(onTarget('baseline'), { depth: .5, angle: 20, level: .4 });

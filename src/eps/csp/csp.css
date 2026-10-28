@@ -38,10 +38,17 @@
 .csp-small h3 { margin:0 6px 0 0; }
 .csp-fluoro-canvas { width:100%; aspect-ratio:1/1; display:block; border-radius:6px; touch-action:none; cursor:crosshair; }
 .csp-check { display:flex!important; align-items:center; gap:5px; font-size:11px; }
-.csp-live-canvas { width:100%; flex:1; min-height:520px; display:block; border-radius:6px; }
+.csp-live-wrap { flex:1; min-height:520px; position:relative; }
+.csp-live-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; border-radius:6px; }
 .csp-analyser h3 { margin:2px 0; font-size:12px; color:#cfe5d7; }
 .csp-readouts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px 10px; margin:0; font-size:11px; }
 .csp-readouts dt { color:#8eab97; } .csp-readouts dd { margin:0 0 4px; font:600 14px ui-monospace,monospace; color:#e6f3ea; }
+.csp-trends-canvas { width:100%; height:150px; display:block; border-radius:6px; }
+.csp-coach { margin:0; padding:0; list-style:none; font-size:11px; display:grid; gap:3px; }
+.csp-coach li { padding:3px 6px 3px 8px; border-left:3px solid #3d5d49; background:#13281c; border-radius:0 4px 4px 0; }
+.csp-coach li[data-tone=check] { border-left-color:#f1a85c; background:#2a2014; color:#f6dcb5; }
+.csp-coach li[data-tone=ok] { border-left-color:#5fe0a0; color:#c9f5dc; }
+.csp-coach li[data-tone=next] { border-left-color:#9fd7ff; background:#12222b; color:#d6ecff; }
 .csp-criteria h4 { margin:6px 0 2px; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:#8eab97; }
 .csp-criterion summary { cursor:pointer; font-size:12px; list-style:none; display:flex; gap:6px; align-items:baseline; }
 .csp-criterion summary::-webkit-details-marker { display:none; }
@@ -50,7 +57,7 @@
 .csp-criterion[data-status=met] .csp-badge { background:#2f8f5c; color:#effff5; }
 .csp-criterion[data-status=likely] .csp-badge { background:#806a1f; color:#fff5d4; }
 .csp-criterion[data-status=not] .csp-badge { background:#5a2a24; color:#ffd9d2; }
-.csp-log { margin:0; padding:0 0 0 2px; list-style:none; max-height:180px; overflow:auto; font-size:11px; }
+.csp-log { margin:0; padding:0 0 0 2px; list-style:none; height:180px; overflow:auto; font-size:11px; }   /* fixed: beats must not shift the control bar */
 .csp-log li { padding:2px 0; border-bottom:1px solid #1b3024; } .csp-log time { font-family:ui-monospace,monospace; color:#76d7a5; }
 .csp-controlbar { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; padding:8px; border:1px solid #2e4a37; border-radius:8px; background:#0f2017; }
 .csp-group { display:flex; flex-wrap:wrap; gap:5px; align-items:center; padding-right:10px; border-right:1px solid #24392c; }
@@ -63,5 +70,5 @@
 .csp-summary { margin-top:10px; padding:10px 12px; border:1px solid #5fe0a0; border-radius:8px; background:#10281b; }
 .csp-verdict { font-size:15px; font-weight:700; color:#c9f5dc; }
 @media(max-width:1250px){ .csp-work{grid-template-columns:minmax(220px,1fr) minmax(320px,1.6fr)} .csp-analyser{grid-column:1/-1} }
-@media(max-width:760px){ .csp-work{grid-template-columns:minmax(0,1fr)} .csp-live-canvas{min-height:440px} .csp-group{border-right:0;padding-right:0} .csp-range{grid-template-columns:1fr} }
+@media(max-width:760px){ .csp-work{grid-template-columns:minmax(0,1fr)} .csp-live-wrap{min-height:440px} .csp-group{border-right:0;padding-right:0} .csp-range{grid-template-columns:1fr} }
 .csp-summary p { margin:2px 0; } .csp-summary h3 { margin:0 0 4px; }

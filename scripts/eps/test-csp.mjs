@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { CASES, DEFAULTS, normalize, simulate, thresholdSweep, programmedSweep, evidence } from '../../src/eps/csp/csp-model.mjs';
+import { CASES, CASE_PARAMS, DEFAULTS, normalize, sanitizeParams, simulate, thresholdSweep, programmedSweep, evidence } from '../../src/eps/csp/csp-model.mjs';
 
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log(`PASS ${name}`); }
@@ -15,8 +15,17 @@ test('normalization bounds malformed and nonfinite inputs without throwing', () 
   assert.equal(normalize({ couplingMs: 200 }).s2, 200);
   assert.equal(normalize({ s2: null, couplingMs: 200 }).s2, null);
 });
-test('all four examples produce deterministic finite sampled arrays', () => {
-  assert.equal(CASES.length, 4);
+test('every case produces deterministic finite sampled arrays; custom parameters are bounded', () => {
+  assert.equal(CASES.length, 10);
+  assert.deepEqual(CASES.map(c => c.id).sort(), Object.keys(CASE_PARAMS).sort());
+  assert.ok(CASES.every(c => ['case', 'trap'].includes(c.group)));
+  assert.equal(sanitizeParams(null), null);
+  const p = sanitizeParams({ scar: 9, ratio: .05, slowMs: -3, muscleERP: 'x', access: false, interpeakShift: 40 });
+  assert.equal(p.scar, 3); assert.equal(p.ratio, .2); assert.equal(p.slowMs, 0); assert.equal(p.muscleERP, 235); assert.equal(p.access, false); assert.equal(p.interpeakShift, 15);
+  assert.equal(sanitizeParams({ ratio: null }).ratio, null);
+  assert.equal(simulate({ params: { access: false }, output: 8 }).capture.conduction, false);
+  assert.equal(simulate({ params: { ratio: 1.6 }, output: 1 }).capture.type, 'lvsp');
+  assert.equal(simulate({ params: { ratio: 1.6 }, output: 2 }).capture.type, 'nonselective');
   for (const { id } of CASES) {
     const a = simulate({ caseId: id });
     assert.deepEqual(a, simulate({ caseId: id }));

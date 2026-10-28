@@ -20,7 +20,7 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   for(let i=0;i<10;i++)await page.locator('[data-csp-torque=ccw]').click();
   assert.equal((await state()).procedure.sheath,0);
   // 2. RAO: drag the tip along the His-apex line to about 30 % (21 mm from the His).
-  const box=await page.locator('[data-csp-anatomy]').boundingBox();
+  await page.locator('[data-csp-anatomy]').scrollIntoViewIfNeeded();const box=await page.locator('[data-csp-anatomy]').boundingBox();
   const at=f=>[box.x+box.width*(.36+.38*f),box.y+box.height*(.3+.5*f)];
   await page.mouse.move(...at(.6));await page.mouse.down();await page.mouse.move(...at(.45),{steps:4});await page.mouse.move(...at(.3),{steps:4});await page.mouse.up();
   assert.ok(Math.abs((await state()).procedure.level-.3)<.03,'dragged level');
@@ -33,6 +33,9 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   await page.locator('[data-csp-torque=ccw]').isDisabled().then(v=>assert.equal(v,true,'sheath locked once screwed in'));
   await page.locator('[data-csp-rotate="3"]').isDisabled().then(v=>assert.equal(v,true,'no triple turn from the LV septum'));
   await page.locator('[data-csp-accept]').click();assert.match(await page.locator('[data-csp-log]').textContent(),/Kabul edilemez: eşik ölçülmedi/);
+  assert.equal((await state()).trend.length,8,'one trend point per turn');
+  assert.equal(await page.locator('[data-csp-coach-item=runThreshold]').count(),1,'coaching asks for the threshold test');
+  assert.ok((await page.locator('[data-csp-trends]').boundingBox()).height>100,'trend charts drawn');
   const t0=await csp(()=>window.epsLab.panel.csp.getState().liveTime);await page.waitForTimeout(300);
   assert.ok(await csp(()=>window.epsLab.panel.csp.getState().liveTime)>t0,'live sweep runs');
   // 4. Live threshold test (fast-forwarded), then accept.
@@ -83,6 +86,16 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   await page.reload();await page.locator('[data-csp]').waitFor({state:'visible'});assert.equal(await csp(()=>window.epsLab.panel.csp.getHistory().length),1);
   await set('angle',8);await set('depth',1.1);assert.equal(await capture(),'perforation');assert.notEqual(await page.locator('[data-csp-warning]').textContent(),'');
   assert.match(await page.locator('[data-csp-guide]').textContent(),/Perforasyon|Perforation/);
+
+  // 9b. Trap case: LBB threshold above the muscle threshold refuses acceptance until the output margin is set.
+  await page.locator('[data-csp-page=implant]').click();await set('caseId','lbbHigh');
+  await csp(()=>{const p=window.epsLab.panel.csp;for(let i=0;i<10;i++)p.act({type:'torque',delta:5});p.act({type:'site',level:.3});for(let i=0;i<8;i++)p.act({type:'rotate',turns:1});});
+  await page.locator('[data-csp-test=threshold]').click();await csp(()=>window.epsLab.panel.csp.tick(60000));
+  assert.match(await page.locator('[data-csp-log]').textContent(),/nonselektif → LV septal/);
+  await page.locator('[data-csp-accept]').click();assert.match(await page.locator('[data-csp-log]').textContent(),/çıkış eşiğin 2 katından az/);
+  await set('output',3.5);await page.locator('[data-csp-accept]').click();assert.match(await page.locator('[data-csp-summary]').textContent(),/Sol dal alanı pacing/);
+  await csp(()=>window.epsLab.panel.csp.loadCase('random',7));const seeded=(await state()).procedure;assert.equal(seeded.seed,7);assert.ok(seeded.params&&seeded.anatomy);
+  await page.locator('[data-csp-reseed]').click();assert.notEqual((await state()).procedure.seed,7,'a new patient has a new seed');
 
   // 10. Phone width, direct route, storage failure.
   await page.setViewportSize({width:390,height:844});

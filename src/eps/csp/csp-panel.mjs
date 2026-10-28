@@ -2,6 +2,8 @@ import { CASES, simulate, thresholdSweep, programmedSweep } from './csp-model.mj
 import { initialProcedure, modelOf, act, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, fromModel, thicknessOf, rapidAllowed } from './csp-procedure.mjs';
 import { createRecorder, advance, beatFromResult, drawSweep, LAYOUTS, SPEEDS } from './csp-live.mjs';
 import { drawFluoro, levelAt } from './csp-fluoro.mjs';
+import { trendPoint, pushTrend, drawTrends } from './csp-trends.mjs';
+import { coaching } from './csp-coaching.mjs';
 import { TEXT } from './csp-text.mjs';
 import { CONSOLE_TEXT } from './csp-console-text.mjs';
 
@@ -26,7 +28,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   let state = { ...modelOf(proc), s2 }, result = simulate(state), rows = [], reference = null;
   let test = null, lastTest = null;    // live threshold test
   let recorder = createRecorder(50), pendingEscape = false, shownBeats = -1;
-  let log = [];
+  let log = [], trend = [];                 // event log; per-turn trend points
   const ui = { active: false, page: 'implant', projection: 'rao', instructor: true, blind: false, frozen: false, layout: 'all', ecgGain: 1, egmGain: 1, guides: true, target: false,
     playing: false, cursor: 50, caliper: false, marks: [], zoom: 1, scale: 4, selected: -1, testKind: null, answer: null, revealed: false };
   let liveFrame = null, liveLast = null, reviewFrame = null, reviewLast = null, plotted = null, history = [], storageStatus = '', dragging = false;
@@ -82,14 +84,17 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const caseRow = el('div', 'csp-case-row');
   const caseField = el('label', 'csp-case');
   const caseSelect = el('select', '', { 'data-csp-control': 'caseId' });
-  for (const k of CASES) caseSelect.append(txt(el('option', '', { value: k.id }), () => k.name[lang()]));
+  const caseGroups = Object.fromEntries(['case', 'trap'].map(g => [g, el('optgroup')]));
+  for (const k of CASES) caseGroups[k.group].append(txt(el('option', '', { value: k.id }), () => k.name[lang()]));
+  caseSelect.append(...Object.values(caseGroups));
   caseField.append(txt(el('span'), () => t().case), caseSelect);
   caseSelect.addEventListener('change', () => loadCase(caseSelect.value));
+  const reseed = button(() => c().newPatient, () => loadCase('random', false, Date.now()), { 'data-csp-reseed': '' });
   const patient = el('p', 'csp-patient');
   const teacherBtn = button(() => t().instructor, () => { ui.instructor = !ui.instructor; if (ui.instructor) ui.blind = false; render(); }, { 'data-csp-instructor': '' });
   const blindBtn = button(() => t().blind, () => { ui.blind = !ui.blind; if (ui.blind) { ui.instructor = false; ui.projection = 'rao'; } ui.answer = null; ui.revealed = false; render(); }, { 'data-csp-blind': '' });
   const resetBtn = button(() => t().reset, () => loadCase(proc.caseId, true), { 'data-csp-reset': '' });
-  caseRow.append(caseField, patient, el('span', 'csp-spacer'), teacherBtn, blindBtn, resetBtn);
+  caseRow.append(caseField, reseed, patient, el('span', 'csp-spacer'), teacherBtn, blindBtn, resetBtn);
 
   const work = el('div', 'csp-work');
   // Fluoroscopy card.
@@ -133,14 +138,18 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   };
   liveBar.append(txt(el('h3'), () => c().live), play, speed, layout, gainSelect('ecgGain', () => c().ecgGain), gainSelect('egmGain', () => c().egmGain));
   const live = el('canvas', 'csp-live-canvas', { role: 'img', 'data-csp-live': '' });
-  liveCard.append(liveBar, live);
+  const liveWrap = el('div', 'csp-live-wrap'); liveWrap.append(live);   // the canvas bitmap size must not feed back into the layout
+  liveCard.append(liveBar, liveWrap);
 
   // Analyser card: readouts, criteria, event log.
   const analyser = el('section', 'csp-card csp-analyser');
   const readouts = el('dl', 'csp-readouts', { 'data-csp-readouts': '' });
+  const trends = el('canvas', 'csp-trends-canvas', { role: 'img', 'data-csp-trends': '' });
+  const coach = el('ul', 'csp-coach', { 'data-csp-coach': '', 'aria-live': 'polite' });
   const criteriaBox = el('div', 'csp-criteria', { 'data-csp-criteria': '' });
   const logList = el('ol', 'csp-log', { 'data-csp-log': '' });
-  analyser.append(txt(el('h3'), () => c().analyser), readouts, txt(el('h3'), () => c().criteriaTitle), criteriaBox, txt(el('h3'), () => c().log), logList);
+  analyser.append(txt(el('h3'), () => c().analyser), readouts, txt(el('h3'), () => c().trendsTitle), trends, txt(el('h3'), () => c().coachTitle), coach,
+    txt(el('h3'), () => c().criteriaTitle), criteriaBox, txt(el('h3'), () => c().log), logList);
   work.append(fluoroCard, liveCard, analyser);
 
   // Control bar.
@@ -285,7 +294,10 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const out = act(proc, action);
     proc = out.proc; apply(out.events);
     if (action.type === 'rotate' || action.type === 'unscrew' || action.type === 'reposition') { test = null; lastTest = null; }   // test evidence belongs to one position
-    recompute();
+    compute();
+    if (action.type === 'rotate' || action.type === 'unscrew') trend = pushTrend(trend, trendPoint(proc, result));
+    else if (action.type === 'reposition') trend = [];
+    render();
   }
   function moveSite(event) {
     const r = fluoro.getBoundingClientRect();
@@ -294,15 +306,16 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function setOutput(v) { const out = act(proc, { type: 'output', value: v }); proc = out.proc; recompute(); }
   function setSetting(values) { proc = act(proc, { type: 'set', values }).proc; change(); }
   function setPhysical(values) { proc = fromModel(proc, values); change(); }
-  function loadCase(caseId, keepLog = false) {
-    proc = initialProcedure(caseId); s2 = null; rows = []; reference = null; test = null; lastTest = null;
+  function loadCase(caseId, keepLog = false, seed = proc.seed ?? Date.now()) {
+    proc = initialProcedure(caseId, seed); s2 = null; rows = []; reference = null; test = null; lastTest = null; trend = [];
     Object.assign(ui, { selected: -1, testKind: null, answer: null, revealed: false, marks: [], playing: false, cursor: 50 });
     if (!keepLog) log = [];
     addLog('case', { name: CASES.find(k => k.id === proc.caseId).name[lang()] });
     recompute();
   }
   function change() { s2 = null; rows = []; lastTest = null; ui.testKind = null; ui.selected = -1; ui.answer = null; ui.revealed = false; ui.marks = []; recompute(); }
-  function recompute() { state = { ...modelOf(proc), s2 }; result = simulate(state); render(); }
+  function compute() { state = { ...modelOf(proc), s2 }; result = simulate(state); }
+  function recompute() { compute(); render(); }
   function clearTest() { rows = []; ui.testKind = null; s2 = null; ui.selected = -1; ui.answer = null; ui.revealed = false; ui.marks = []; reference = null; recompute(); }
   function runTest(kind) {
     ui.marks = []; ui.answer = null; ui.revealed = false; ui.testKind = kind; ui.selected = -1; ui.page = 'analysis';
@@ -345,7 +358,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
       const out = thresholdBeat(test, modelOf(proc));
       test = out.test;
       for (const e of out.events) {
-        if (e.type === 'transition') addLog('transition', { from: e.from, to: e.to, dv6: e.dv6 });
+        if (e.type === 'transition') addLog('transition', { from: e.from, to: e.to, dv6: e.dv6, kind: e.kind });
         if (e.type === 'thresholdDone') {
           addLog(e.threshold == null ? 'thresholdNone' : 'thresholdDone', { v: e.threshold });
           lastTest = test; rows = test.rows; ui.testKind = 'threshold'; ui.selected = -1; reference = result;
@@ -378,6 +391,11 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
       ['v6Rwpt', `${VALUE(m.v6Rwpt, 0)} ms`], ['interpeak', list[2].value == null ? '·' : `${VALUE(m.interpeak, 0)} ms`], ['qrsDuration', `${VALUE(m.qrsDuration, 0)} ms`],
       ['turns', String(proc.turns)], ['depth', ui.blind ? '?' : `${proc.depthMm.toFixed(1)} / ${thicknessOf(proc)} mm`]];
     readouts.replaceChildren(...items.flatMap(([k, v]) => { const dt = el('dt'); dt.textContent = c().readouts[k]; const dd = el('dd', '', { 'data-csp-readout': k }); dd.textContent = v; return [dt, dd]; }));
+    coach.replaceChildren(...coaching(proc, result, list, lastTest, trend).map(i => {
+      const li = el('li', '', { 'data-tone': i.tone, 'data-csp-coach-item': i.key });
+      const params = { ...i.params, reasons: Array.isArray(i.params.reasons) ? i.params.reasons.map(r => c().acceptReasons[r] || r).join(', ') : '' };
+      li.textContent = fill(c().coach[i.key] || i.key, params); return li;
+    }));
     renderCriteria(list);
     logList.replaceChildren(...log.map(e => { const li = el('li'); const time = el('time'); time.textContent = e.time; li.append(time, ` ${eventText(e)}`); return li; }));
     sheathOut.textContent = `${Math.round(proc.sheath)}°`;   // signed: negative anterior (clockwise), positive posterior
@@ -435,7 +453,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     implant.hidden = ui.page !== 'implant';
     analysis.hidden = ui.page !== 'analysis' && ui.page !== 'quiz';
     quiz.hidden = !['quiz', 'analysis'].includes(ui.page); historyBox.hidden = ui.page !== 'history';
-    caseSelect.value = proc.caseId; caseField.hidden = ui.blind;
+    caseSelect.value = proc.caseId; caseField.hidden = ui.blind; reseed.hidden = ui.blind || proc.caseId !== 'random';
+    for (const g of ['case', 'trap']) caseGroups[g].label = c().caseGroups[g];
     patient.textContent = ui.blind ? '' : c().patient[proc.caseId];
     teacherBtn.setAttribute('aria-pressed', String(ui.instructor)); blindBtn.setAttribute('aria-pressed', String(ui.blind));
     teacher.hidden = !ui.instructor || ui.blind;
@@ -484,6 +503,10 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const k = context(fluoro); if (!k) return;
     drawFluoro(k.ctx, k.w, k.h, ui.projection, proc, { guides: ui.guides, target: ui.target && ui.instructor && !ui.blind, text: c().fluoro });
   }
+  function drawTrendsCanvas() {
+    const k = context(trends); if (!k) return;
+    drawTrends(k.ctx, k.w, k.h, trend, { labels: c().trends, emptyText: c().trendsEmpty });
+  }
   function drawLive() {
     const k = context(live, '#060b09'); if (!k) return;
     const labels = { TIP: c().tip, COI: c().coi }, colors = { V1: '#f4cb75', V6: '#f4cb75', TIP: '#65c9bb', COI: '#8fd3ff' };
@@ -513,7 +536,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     if (!ui.active) return;
     time.value = String(Math.round(ui.cursor)); clock.textContent = `${Math.round(ui.cursor)} ms`;
     caliperText.textContent = ui.marks.length === 2 ? `Δt = ${Math.abs(ui.marks[1] - ui.marks[0])} ms` : ui.marks.length ? `t₁ = ${ui.marks[0]} ms` : '';
-    if (ui.page === 'implant') { drawFluoroCanvas(); drawLive(); } else drawStrip();
+    if (ui.page === 'implant') { drawFluoroCanvas(); drawLive(); drawTrendsCanvas(); } else drawStrip();
   }
   function reviewTick(now) {
     reviewFrame = null; if (!ui.active || !ui.playing) return;
@@ -521,7 +544,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     reviewLast = now; draw(); reviewFrame = globalThis.requestAnimationFrame?.(reviewTick) ?? null;
   }
 
-  loadCase('baseline');
+  loadCase('baseline', false, 1);
   return {
     element: root, render, draw,
     setActive(active) {
@@ -532,7 +555,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
         liveFrame = reviewFrame = null; liveLast = reviewLast = null;
       }
     },
-    getState: () => ({ ...state, ui: { ...ui, marks: [...ui.marks] }, procedure: { ...proc }, liveTime: recorder.time }),
+    getState: () => ({ ...state, ui: { ...ui, marks: [...ui.marks] }, procedure: { ...proc }, liveTime: recorder.time, trend: trend.map(p => ({ ...p })) }),
+    loadCase: (caseId, seed) => loadCase(caseId, false, seed),
     getResult: () => result, getReference: () => reference, getRows: () => rows,
     getHistory: () => history.map(x => ({ ...x })),
     getCriteria: () => criteria(result, proc, lastTest), getTest: () => test || lastTest,
