@@ -41,14 +41,17 @@ export const CONSOLE_TEXT = {
       fixAccept: 'Kabul için: {reasons}.', accept: 'Sonraki: lead’i kabul et.', oneTurn: 'Sonraki: tek tur, sonra kaydı oku.',
       accepted: 'Lead kabul edildi.',
       fusion: 'Füzyon: sinüs {sinus}/dk, pacing {rate}/dk. Süre ölçümleri okunmaz; hızı sinüsün 10–20 üstüne çıkar.',
-      bumped: 'Sağ dal travması: LBBB üstüne RBBB, tam blok. Pacing açık kalmalı; kaçış 30/dk geniş.'
+      bumped: 'Sağ dal travması: LBBB üstüne RBBB, tam blok. Pacing açık kalmalı; kaçış 30/dk geniş.',
+      noSupport: 'Stilet lead: ileri destek kapalı, heliks yarım ilerler.',
+      withdraw: 'Sonraki: kılıfı çek, eşikleri yeniden ölç.', slit: 'Sonraki: kılıfı yar.', breath: 'Sonraki: slack’i seç, derin nefesle kontrol et.', finish: 'Sonraki: olguyu bitir, puanı ve takip kliniğini gör.'
     },
     views: { rao: 'RAO 30°', lao: 'LAO 40°', septum: 'Septum kesiti' },
-    fluoro: { fromHis: "His'ten", drag: "Ucu His–apeks hattı boyunca sürükle", apex: 'Apeks', angle: 'Septal normale açı', lbb: 'Sol dal' },
+    fluoro: { fromHis: "His'ten", drag: "Ucu His–apeks hattı boyunca sürükle", apex: 'Apeks', angle: 'Kılıf açısı', lbb: 'Sol dal', hud: 'Floro', lih: 'son görüntü', ideal: 'dik açı', badge: { ok: 'septuma dik', warn: 'delme riski', bad: 'septuma dik değil' } },
+    fluoroBtn: 'Floro (basılı tut)', contrast: 'Kontrast', autoFluoro: 'Otomatik floro', heart: 'Kalp', hearts: { horizontal: 'Yatay kalp', compact: 'Kompakt kalp', vertical: 'Dikey kalp' },
     guides: 'His–apeks hattı', target: 'Hedef bölge',
     live: 'Canlı kayıt', freeze: 'Dondur', run: 'Devam', speed: 'Hız', layout: 'Görünüm', layouts: { all: '12 derivasyon + EGM', focus: 'II, III, V1, V6 + EGM' },
     ecgGain: 'EKG ×', egmGain: 'EGM ×', tip: 'Uç EGM', coi: 'Uç (COI)',
-    analyser: 'Analizör · unipolar uç', readouts: { output: 'Çıkış', impedance: 'Empedans', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Tur', depth: 'Derinlik' },
+    analyser: 'Analizör · unipolar uç', readouts: { rWave: 'R dalgası', output: 'Çıkış', impedance: 'Empedans', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Tur', depth: 'Derinlik' },
     criteriaTitle: 'Yakalanma kriterleri (EHRA 2023 / ESC 2025)',
     groups: { depth: 'Derinlik (önkoşul)', proof: 'İleti sistemi kanıtı: biri kesin olunca yeterli', support: 'Destekleyici', safety: 'Güvenlik' },
     status: { met: 'kesin', likely: 'olası', not: 'yok', untested: 'bakılmadı', na: 'yararsız' },
@@ -83,11 +86,18 @@ export const CONSOLE_TEXT = {
       bumpedOff: 'Sağ dal zedelendi, tam blok: kaçış 30/dk ve geniş. Pacing’i aç.',
       deepRbbb: 'Bazal RBBB: V1’deki r′ derinlik göstermez. V6RWPT, empedans ve COI’ye bak; eşik testi yap.',
       perforation: 'Perforasyon: yakalanma kaybı ve ani empedans düşüşü. Geri çöz.',
-      accepted: 'Lead kabul edildi. Özet aşağıda.'
+      noSupport: 'Stilet lead ileri destek olmadan ilerlemez: ileri desteği aç.',
+      accepted: 'Lead kabul edildi. Özet aşağıda.',
+      withdrawSheath: 'Lead kabul edildi. Kılıfı çek; unipolar ve bipolar eşikleri yeniden ölç.',
+      slitSheath: 'Kılıf çekildi, eşikler ölçüldü. Kılıfı yar (slit).',
+      checkSlack: 'Slack’i ayarla ve derin nefesle kontrol et.',
+      finished: 'Olgu tamam. Puanı gör ve takip kliniğine geç.'
     },
     events: {
       case: 'Olgu yüklendi: {name}', rotate: 'Tur ×{n}: derinlik {d} mm', drilling: 'Helix ilerlemiyor (kılıf açısı büyük)', stall: 'Helix takıldı: skar adası',
       rbbBump: 'Komplikasyon: sağ dal travması, tam AV blok (kaçış 30/dk)',
+      noSupport: 'Stilet lead ileri destek olmadan: yarım ilerleme', rWave: 'R dalgası {v} mV', sheathOut: 'Kılıf çekildi: unipolar {uni} V, bipolar {bi} V', slit: 'Kılıf yarıldı',
+      contrast: 'Kontrast verildi', slackOk: 'Derin nefes: slack uygun', slackLittle: 'Derin nefes: slack az, uç gergin', slackMuch: 'Derin nefes: slack fazla',
       perforation: 'Septum aşıldı: empedans düştü, yakalanma kayboldu', withdrawn: 'Uç yeniden septum içinde', unscrew: 'Yarım tur geri: {d} mm',
       reposition: 'Lead geri çekildi; yeni yer seçilebilir', locked: 'Lead vidalı: yer veya kılıf değiştirmek için önce yeniden konumla',
       pacingOn: 'Pacing açık', pacingOff: 'Pacing kapalı', fixation: 'Fiksasyon atımı', fixationRbbb: 'Fiksasyon atımı, V1’de RBBB paterni',
@@ -100,8 +110,21 @@ export const CONSOLE_TEXT = {
     log: 'Olay günlüğü',
     controls: {
       lead: 'Lead', rotate: 'Tur ×1', rapid: 'Tur ×3', unscrew: 'Yarım tur geri', reposition: 'Yeniden konumla',
+      leadType: 'Lead tipi', leads: { lumenless: 'Lumensiz 4.1F', stylet: 'Stiletli 5.6F' }, support: 'İleri destek',
       sheath: 'Kılıf', ccw: '↺ Saat yönü tersi', cw: 'Saat yönü ↻', pacing: 'Pacing', tests: 'Testler', accept: 'Kabul et',
-      keys: 'Klavye: R tur, Shift+R üç tur, U geri, ← → kılıf'
+      keys: 'Klavye: R tur, Shift+R üç tur, U geri, ← → kılıf, Space floro, C kontrast, T eşik testi, S S1–S2, P pacing, F dondur, V projeksiyon, ↑ ↓ çıkış'
+    },
+    finish: {
+      title: 'Bitirme', steps: { withdraw: 'Kılıfı çek', slit: 'Kılıfı yar', breath: 'Derin nefes' },
+      slack: { label: 'Slack', little: 'az', right: 'uygun', much: 'fazla' }, finishCase: 'Olguyu bitir', score: 'Puan (öğretim amaçlı)',
+      items: { proof: 'Kesin ileti sistemi kanıtı', uniThreshold: 'Kılıf sonrası unipolar eşik ≤ 1,5 V', biThreshold: 'Bipolar eşik ölçüldü', margin: 'Çıkış ≥ 2× sol dal eşiği', rWave: 'R dalgası ≥ 4 mV', slit: 'Kılıf yarıldı', slack: 'Slack derin nefesle doğrulandı', complications: 'Komplikasyon yok', sites: 'En fazla 2 bölge', fluoro: 'Floro ≤ 2 dk (s)', turns: 'Tur ≤ 10' },
+      clinic: {
+        title: 'Takip kliniği', day1: 'Gün 1', week6: '6. hafta',
+        readings: { programmed: 'Programlanan çıkış', device: 'Cihaz eşiği', noCapture: 'yakalanma yok', rWave: 'R dalgası', impedance: 'Empedans', reference: 'İmplant referansı (uni eşik · V6RWPT)', deltaV6: 'ΔV6RWPT (bugün − implant)' },
+        q1: '1. Programlanan çıkışta ne yakalanıyor?', q1Options: { conduction: 'İleti sistemi (LBBAP)', myocardium: 'Yalnız miyokard (LV septal / derin septal)', none: 'Hiçbiri (yakalanma kaybı)' },
+        q2: '2. Ne yaparsın?', q2Options: { keep: 'Ayarları koru', increase: 'Çıkışı artır (≥ 2× sol dal eşiği)', revise: 'Lead revizyonu planla' },
+        check: 'Kontrol et', correct: 'Doğru.', wrong: 'Yanlış. Doğrusu:', dislodged: { micro: 'Mikro-dislodgement: sol dal eşiği yükseldi.', macro: 'Makro-dislodgement: uç septumdan çıktı.' }
+      }
     },
     teacher: 'Eğitmen ayarları (doğrudan)', teacherLabels: { level: 'His → apeks (0–1)', angle: 'Septal normale açı (°)', depth: 'Septum kalınlığına göre derinlik', rate: 'Hız (bpm)' },
     summary: 'Olgu özeti', verdict: { lbbp: 'Sol dal alanı pacing: ileti sistemi kanıtı var', lvsp: 'LV septal pacing: ileti sistemi kanıtı yok', septal: 'Derin septal / RV septal pacing', perforated: 'Perforasyon' },
@@ -148,14 +171,17 @@ export const CONSOLE_TEXT = {
       fixAccept: 'To accept: {reasons}.', accept: 'Next: accept the lead.', oneTurn: 'Next: one turn, then read the recording.',
       accepted: 'Lead accepted.',
       fusion: 'Fusion: sinus {sinus} bpm, pacing {rate} bpm. Timing cannot be read; pace 10–20 bpm above sinus.',
-      bumped: 'Right bundle injured: RBBB on top of LBBB, complete block. Keep pacing on; the escape is 30 bpm and wide.'
+      bumped: 'Right bundle injured: RBBB on top of LBBB, complete block. Keep pacing on; the escape is 30 bpm and wide.',
+      noSupport: 'Stylet-driven lead: forward support off, the helix advances half as much.',
+      withdraw: 'Next: withdraw the sheath, measure the thresholds again.', slit: 'Next: slit the sheath.', breath: 'Next: choose the slack, check it with a deep breath.', finish: 'Next: finish the case, see the score and the follow-up clinic.'
     },
     views: { rao: 'RAO 30°', lao: 'LAO 40°', septum: 'Septal section' },
-    fluoro: { fromHis: 'from the His', drag: 'Drag the tip along the His–apex line', apex: 'Apex', angle: 'Angle to septal normal', lbb: 'Left bundle' },
+    fluoro: { fromHis: 'from the His', drag: 'Drag the tip along the His–apex line', apex: 'Apex', angle: 'Sheath angle', lbb: 'Left bundle', hud: 'Fluoro', lih: 'last image hold', ideal: 'perpendicular', badge: { ok: 'perpendicular to the septum', warn: 'drill risk', bad: 'not perpendicular' } },
+    fluoroBtn: 'Fluoro (hold)', contrast: 'Contrast', autoFluoro: 'Auto-fluoro', heart: 'Heart', hearts: { horizontal: 'Horizontal heart', compact: 'Compact heart', vertical: 'Vertical heart' },
     guides: 'His–apex line', target: 'Target zone',
     live: 'Live recording', freeze: 'Freeze', run: 'Run', speed: 'Speed', layout: 'Layout', layouts: { all: '12-lead + EGM', focus: 'II, III, V1, V6 + EGM' },
     ecgGain: 'ECG ×', egmGain: 'EGM ×', tip: 'Tip EGM', coi: 'Tip (COI)',
-    analyser: 'Analyser · unipolar tip', readouts: { output: 'Output', impedance: 'Impedance', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Turns', depth: 'Depth' },
+    analyser: 'Analyser · unipolar tip', readouts: { rWave: 'R wave', output: 'Output', impedance: 'Impedance', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Turns', depth: 'Depth' },
     criteriaTitle: 'Capture criteria (EHRA 2023 / ESC 2025)',
     groups: { depth: 'Depth (prerequisite)', proof: 'Conduction-system proof: any one definitive criterion', support: 'Supportive', safety: 'Safety' },
     status: { met: 'definitive', likely: 'likely', not: 'no', untested: 'not checked', na: 'not useful' },
@@ -190,11 +216,18 @@ export const CONSOLE_TEXT = {
       bumpedOff: 'Right bundle injured, complete block: the escape is 30 bpm and wide. Turn pacing on.',
       deepRbbb: 'Baseline RBBB: the r′ in V1 does not show depth. Check V6RWPT, impedance and COI; run a threshold test.',
       perforation: 'Perforation: loss of capture and a sudden impedance drop. Unscrew.',
-      accepted: 'Lead accepted. Summary below.'
+      noSupport: 'A stylet-driven lead does not advance without forward support: turn it on.',
+      accepted: 'Lead accepted. Summary below.',
+      withdrawSheath: 'Lead accepted. Withdraw the sheath; measure the unipolar and bipolar thresholds again.',
+      slitSheath: 'Sheath withdrawn, thresholds measured. Slit the sheath.',
+      checkSlack: 'Set the slack and check it with a deep breath.',
+      finished: 'Case complete. See the score and go to the follow-up clinic.'
     },
     events: {
       case: 'Case loaded: {name}', rotate: 'Turn ×{n}: depth {d} mm', drilling: 'Helix not advancing (sheath angle too large)', stall: 'Helix stuck: scar island',
       rbbBump: 'Complication: right bundle injury, complete AV block (escape 30 bpm)',
+      noSupport: 'Stylet-driven lead without forward support: half the advance', rWave: 'R wave {v} mV', sheathOut: 'Sheath withdrawn: unipolar {uni} V, bipolar {bi} V', slit: 'Sheath slit',
+      contrast: 'Contrast puff', slackOk: 'Deep breath: slack fine', slackLittle: 'Deep breath: too little slack, the tip pulls', slackMuch: 'Deep breath: too much slack',
       perforation: 'Septum crossed: impedance fell, capture lost', withdrawn: 'Tip back inside the septum', unscrew: 'Half turn back: {d} mm',
       reposition: 'Lead withdrawn; a new site can be chosen', locked: 'Lead fixed: reposition before changing the site or the sheath',
       pacingOn: 'Pacing on', pacingOff: 'Pacing off', fixation: 'Fixation beat', fixationRbbb: 'Fixation beat, RBBB pattern in V1',
@@ -207,8 +240,21 @@ export const CONSOLE_TEXT = {
     log: 'Event log',
     controls: {
       lead: 'Lead', rotate: 'Turn ×1', rapid: 'Turn ×3', unscrew: 'Half turn back', reposition: 'Reposition',
+      leadType: 'Lead type', leads: { lumenless: 'Lumenless 4.1F', stylet: 'Stylet-driven 5.6F' }, support: 'Forward support',
       sheath: 'Sheath', ccw: '↺ CCW', cw: 'CW ↻', pacing: 'Pacing', tests: 'Tests', accept: 'Accept',
-      keys: 'Keys: R turn, Shift+R three turns, U back, ← → sheath'
+      keys: 'Keys: R turn, Shift+R three turns, U back, ← → sheath, Space fluoro, C contrast, T threshold test, S S1–S2, P pacing, F freeze, V projection, ↑ ↓ output'
+    },
+    finish: {
+      title: 'Finish', steps: { withdraw: 'Withdraw sheath', slit: 'Slit sheath', breath: 'Deep breath' },
+      slack: { label: 'Slack', little: 'little', right: 'right', much: 'much' }, finishCase: 'Finish case', score: 'Score (teaching only)',
+      items: { proof: 'Definitive conduction-system proof', uniThreshold: 'Unipolar threshold after the sheath ≤ 1.5 V', biThreshold: 'Bipolar threshold measured', margin: 'Output ≥ 2× the left bundle threshold', rWave: 'R wave ≥ 4 mV', slit: 'Sheath slit', slack: 'Slack checked with a deep breath', complications: 'No complications', sites: 'At most 2 sites', fluoro: 'Fluoro ≤ 2 min (s)', turns: 'Turns ≤ 10' },
+      clinic: {
+        title: 'Follow-up clinic', day1: 'Day 1', week6: '6 weeks',
+        readings: { programmed: 'Programmed output', device: 'Device threshold', noCapture: 'no capture', rWave: 'R wave', impedance: 'Impedance', reference: 'Implant reference (uni threshold · V6RWPT)', deltaV6: 'ΔV6RWPT (today − implant)' },
+        q1: '1. At the programmed output, what is captured?', q1Options: { conduction: 'Conduction system (LBBAP)', myocardium: 'Myocardium only (LV septal / deep septal)', none: 'Nothing (loss of capture)' },
+        q2: '2. What do you do?', q2Options: { keep: 'Keep the settings', increase: 'Increase the output (≥ 2× the left bundle threshold)', revise: 'Plan lead revision' },
+        check: 'Check', correct: 'Correct.', wrong: 'Wrong. The answer:', dislodged: { micro: 'Micro-dislodgement: the left bundle threshold rose.', macro: 'Macro-dislodgement: the tip left the septum.' }
+      }
     },
     teacher: 'Instructor settings (direct)', teacherLabels: { level: 'His → apex (0–1)', angle: 'Angle to septal normal (°)', depth: 'Depth relative to septal thickness', rate: 'Rate (bpm)' },
     summary: 'Case summary', verdict: { lbbp: 'Left bundle branch area pacing: conduction-system proof present', lvsp: 'LV septal pacing: no conduction-system proof', septal: 'Deep septal / RV septal pacing', perforated: 'Perforation' },

@@ -1,7 +1,8 @@
 import { CASES, simulate, thresholdSweep, programmedSweep, paramsOf } from './csp-model.mjs';
-import { initialProcedure, modelOf, act, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, fromModel, thicknessOf, rapidAllowed } from './csp-procedure.mjs';
+import { initialProcedure, modelOf, act, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, fromModel, thicknessOf, rapidAllowed, HEARTS, LEAD_TYPES } from './csp-procedure.mjs';
 import { createRecorder, advance, beatFromResult, drawSweep, LAYOUTS, SPEEDS } from './csp-live.mjs';
-import { drawFluoro, levelAt } from './csp-fluoro.mjs';
+import { drawFluoro, levelAt, createFluoroState, tickFluoro, isLive, moved, puff, contrastOf } from './csp-fluoro.mjs';
+import { createFinishPanel } from './csp-finish-panel.mjs';
 import { trendPoint, pushTrend, drawTrends } from './csp-trends.mjs';
 import { coaching } from './csp-coaching.mjs';
 import { TEXT } from './csp-text.mjs';
@@ -21,6 +22,9 @@ const HISTORY_KEY = 'cardia.csp.prototype.history.v1';
 const FIXATION_CHANCE = .55;
 const LOG_SIZE = 40;
 const fill = (template, params) => template.replace(/\{(\w+)\}/g, (_, k) => (params[k] ?? ''));
+const MOVES = Object.freeze(['site', 'torque', 'rotate', 'unscrew', 'reposition']);   // actions that auto-fluoro screens
+const COMPLICATIONS = Object.freeze(['perforation', 'rbbBump']);
+const now = () => globalThis.performance?.now?.() ?? Date.now();
 
 export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {}) {
   let proc = initialProcedure('baseline');
@@ -29,6 +33,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   let test = null, lastTest = null;    // live threshold test
   let recorder = createRecorder(50), pendingEscape = false, shownBeats = -1;
   let log = [], trend = [];                 // event log; per-turn trend points
+  let fx = createFluoroState(), sites = 1, complications = 0, caseSeed = 1;
   const ui = { active: false, page: 'implant', projection: 'rao', instructor: true, blind: false, frozen: false, layout: 'all', ecgGain: 1, egmGain: 1, guides: true, target: false,
     playing: false, cursor: 50, caliper: false, marks: [], zoom: 1, scale: 4, selected: -1, testKind: null, answer: null, revealed: false };
   let liveFrame = null, liveLast = null, reviewFrame = null, reviewLast = null, plotted = null, history = [], storageStatus = '', dragging = false;
@@ -110,8 +115,23 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   targetInput.addEventListener('change', () => { ui.target = targetInput.checked; drawFluoroCanvas(); });
   targetBox.append(targetInput, txt(el('span'), () => c().target));
   fluoroOpts.append(guidesBox, targetBox);
+  const fluoroBar = el('div', 'csp-actions csp-small');
+  const fluoroBtn = button(() => c().fluoroBtn, () => {}, { 'data-csp-fluoro': '' });
+  const holdOn = event => { event.preventDefault?.(); fx.on = true; fx.dirty = true; ensureLoop(); };
+  const holdOff = () => { if (fx.on) { fx.on = false; fx.dirty = true; } };
+  fluoroBtn.addEventListener('pointerdown', holdOn);
+  for (const type of ['pointerup', 'pointerleave', 'pointercancel']) fluoroBtn.addEventListener(type, holdOff);
+  const contrastBtn = button(() => c().contrast, () => { puff(fx, now()); addLog('contrast'); renderConsole(); ensureLoop(); }, { 'data-csp-contrast': '' });
+  const autoBox = el('label', 'csp-check'); const autoInput = el('input', '', { type: 'checkbox', 'data-csp-auto-fluoro': '' });
+  autoInput.addEventListener('change', () => { fx.auto = autoInput.checked; });
+  autoBox.append(autoInput, txt(el('span'), () => c().autoFluoro));
+  const heartField = el('label'); const heartSelect = el('select', '', { 'data-csp-control': 'heart' });
+  for (const id of Object.keys(HEARTS)) heartSelect.append(txt(el('option', '', { value: id }), () => c().hearts[id]));
+  heartSelect.addEventListener('change', () => setSetting({ heart: heartSelect.value }));
+  heartField.append(txt(el('span'), () => c().heart), heartSelect);
+  fluoroBar.append(fluoroBtn, contrastBtn, autoBox, heartField);
   const groundTruth = el('p', 'csp-truth', { 'data-csp-truth': '' });
-  fluoroCard.append(views, fluoro, fluoroOpts, groundTruth);
+  fluoroCard.append(views, fluoro, fluoroBar, fluoroOpts, groundTruth);
   fluoro.addEventListener('pointerdown', event => {
     if (ui.projection !== 'rao') return;
     dragging = true; fluoro.setPointerCapture?.(event.pointerId); moveSite(event);
@@ -158,6 +178,13 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const rotate3 = button(() => c().controls.rapid, () => doAct({ type: 'rotate', turns: 3 }), { 'data-csp-rotate': 3 });
   const unscrew = button(() => c().controls.unscrew, () => doAct({ type: 'unscrew' }), { 'data-csp-unscrew': '' });
   const reposition = button(() => c().controls.reposition, () => doAct({ type: 'reposition' }), { 'data-csp-reposition': '' });
+  const leadField = el('label'); const leadSelect = el('select', '', { 'data-csp-control': 'lead' });
+  for (const id of LEAD_TYPES) leadSelect.append(txt(el('option', '', { value: id }), () => c().controls.leads[id]));
+  leadSelect.addEventListener('change', () => setSetting({ lead: leadSelect.value }));
+  leadField.append(txt(el('span'), () => c().controls.leadType), leadSelect);
+  const supportBox = el('label', 'csp-check'); const supportInput = el('input', '', { type: 'checkbox', 'data-csp-support': '' });
+  supportInput.addEventListener('change', () => setSetting({ forwardSupport: supportInput.checked }));
+  supportBox.append(supportInput, txt(el('span'), () => c().controls.support));
   const ccw = button(() => c().controls.ccw, () => doAct({ type: 'torque', delta: 5 }), { 'data-csp-torque': 'ccw' });
   const cw = button(() => c().controls.cw, () => doAct({ type: 'torque', delta: -5 }), { 'data-csp-torque': 'cw' });
   const sheathOut = el('output', 'csp-angle', { 'data-csp-sheath': '' });
@@ -181,7 +208,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const s2Btn = button(() => t().programmed, () => runTest('s2'), { 'data-csp-test': 's2' });
   const accept = button(() => c().controls.accept, () => doAct({ type: 'accept', reasons: acceptCheck(proc, criteria(result, proc, lastTest), lastTest) }), { 'data-csp-accept': '' });
   bar.append(
-    group(() => c().controls.lead, rotate1, rotate3, unscrew, reposition),
+    group(() => c().controls.lead, rotate1, rotate3, unscrew, reposition, leadField, supportBox),
     group(() => c().controls.sheath, ccw, sheathOut, cw),
     group(() => c().controls.pacing, pace, outputMinus, outputRange, outputPlus, widthRange, rateRange, polarity),
     group(() => c().controls.tests, thresholdBtn, s2Btn, accept)
@@ -200,7 +227,11 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   );
   teacher.append(teacherSummary, teacherGrid);
   const summaryBox = el('section', 'csp-summary', { 'data-csp-summary': '' });
-  implant.append(phases, guide, caseRow, work, bar, keys, warning, teacher, summaryBox);
+  const finishPanel = createFinishPanel(doc, {
+    text: () => c(), onAct: action => doAct(action),
+    context: () => ({ proc, list: criteria(result, proc, lastTest), test: lastTest, extras: { fluoroSec: fx.seconds, sites, complications }, seed: caseSeed })
+  });
+  implant.append(phases, guide, caseRow, work, bar, keys, warning, teacher, summaryBox, finishPanel.element);
 
   // ---- Analysis: single-beat review, test rows ----
   const analysis = el('section', 'csp-analysis', { 'data-csp-analysis': '' });
@@ -264,9 +295,19 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     else if (key === 'u') doAct({ type: 'unscrew' });
     else if (event.key === 'ArrowLeft') doAct({ type: 'torque', delta: 5 });
     else if (event.key === 'ArrowRight') doAct({ type: 'torque', delta: -5 });
+    else if (event.key === 'ArrowUp') setOutput(proc.output + .25);
+    else if (event.key === 'ArrowDown') setOutput(proc.output - .25);
+    else if (event.key === ' ') { if (!event.repeat) holdOn(event); }
+    else if (key === 'c') contrastBtn.click();
+    else if (key === 't') startLiveThreshold();
+    else if (key === 's') runTest('s2');
+    else if (key === 'p') doAct({ type: 'pacing', on: !proc.pacing });
+    else if (key === 'f') { ui.frozen = !ui.frozen; render(); }
+    else if (key === 'v') { ui.projection = ui.projection === 'rao' ? 'lao' : 'rao'; render(); }
     else return;
     event.preventDefault();
   });
+  doc.addEventListener?.('keyup', event => { if (event.key === ' ') holdOff(); });
 
   // ---- State changes ----
   function addLog(key, params = {}) {
@@ -287,12 +328,15 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
       if (e.type === 'rotate') addLog('rotate', { n: e.turns, d: e.depthMm });
       else if (e.type === 'unscrew') addLog('unscrew', { d: e.depthMm });
       else if (e.type === 'acceptRefused') addLog('acceptRefused', { reasons: e.reasons });
-      else if (e.type !== 'torque') addLog(e.type);
+      else if (e.type !== 'torque') { const { type, ...params } = e; addLog(type, params); }
+      if (e.type === 'reposition') sites++;
+      if (COMPLICATIONS.includes(e.type)) complications++;
     }
   }
   function doAct(action) {
     const out = act(proc, action);
     proc = out.proc; apply(out.events);
+    if (MOVES.includes(action.type)) { moved(fx, now()); fx.dirty = true; }
     if (action.type === 'rotate' || action.type === 'unscrew' || action.type === 'reposition') { test = null; lastTest = null; }   // test evidence belongs to one position
     compute();
     if (action.type === 'rotate' || action.type === 'unscrew') trend = pushTrend(trend, trendPoint(proc, result));
@@ -307,7 +351,9 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function setSetting(values) { proc = act(proc, { type: 'set', values }).proc; change(); }
   function setPhysical(values) { proc = fromModel(proc, values); change(); }
   function loadCase(caseId, keepLog = false, seed = proc.seed ?? Date.now()) {
-    proc = initialProcedure(caseId, seed); s2 = null; rows = []; reference = null; test = null; lastTest = null; trend = [];
+    const keep = { heart: proc.heart, lead: proc.lead };   // the lab setup survives a new case
+    proc = initialProcedure(caseId, seed, keep); s2 = null; rows = []; reference = null; test = null; lastTest = null; trend = [];
+    fx = { ...createFluoroState(), auto: fx.auto }; sites = 1; complications = 0; caseSeed = Number(seed) || 1; finishPanel.reset();
     Object.assign(ui, { selected: -1, testKind: null, answer: null, revealed: false, marks: [], playing: false, cursor: 50 });
     if (!keepLog) log = [];
     addLog('case', { name: CASES.find(k => k.id === proc.caseId).name[lang()] });
@@ -367,15 +413,20 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     }
     return beatFromResult(r, interval, { kind: 'paced' });
   }
-  function liveLoop(now) {
+  function liveLoop(time) {
     liveFrame = null;
-    if (!ui.active || ui.frozen || ui.page !== 'implant') { liveLast = null; return; }
-    const dt = liveLast == null ? 16 : now - liveLast; liveLast = now;
-    advance(recorder, dt, nextBeat);
-    drawLive();
-    if (recorder.beats !== shownBeats) { shownBeats = recorder.beats; renderConsole(); }
+    if (!ui.active || ui.page !== 'implant') { liveLast = null; return; }
+    const dt = liveLast == null ? 16 : Math.min(250, time - liveLast); liveLast = time;
+    const frame = tickFluoro(fx, now(), dt, proc);
+    if (frame) drawFluoroCanvas();
+    if (!ui.frozen) {   // freeze stops the recording, not the fluoroscopy
+      advance(recorder, dt, nextBeat);
+      drawLive();
+      if (recorder.beats !== shownBeats) { shownBeats = recorder.beats; renderConsole(); }
+    }
     liveFrame = globalThis.requestAnimationFrame?.(liveLoop) ?? null;
   }
+  function ensureLoop() { if (ui.active && ui.page === 'implant' && liveFrame === null) { liveLast = null; liveFrame = globalThis.requestAnimationFrame?.(liveLoop) ?? null; } }
 
   // ---- Rendering ----
   function renderConsole() {
@@ -389,7 +440,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const m = shown.metrics, outputV = test && !test.done ? test.output : proc.output;
     const items = [['output', `${VALUE(outputV, 2)} V`], ['impedance', `${VALUE(m.impedance, 0)} Ω`], ['coi', `${VALUE(m.coi, 1)} mV`],
       ['v6Rwpt', `${VALUE(m.v6Rwpt, 0)} ms`], ['interpeak', list[2].value == null ? '·' : `${VALUE(m.interpeak, 0)} ms`], ['qrsDuration', `${VALUE(m.qrsDuration, 0)} ms`],
-      ['turns', String(proc.turns)], ['depth', ui.blind ? '?' : `${proc.depthMm.toFixed(1)} / ${thicknessOf(proc)} mm`]];
+      ['turns', String(proc.turns)], ['depth', ui.blind ? '?' : `${proc.depthMm.toFixed(1)} / ${thicknessOf(proc)} mm`],
+      ...(proc.rWave != null ? [['rWave', `${VALUE(proc.rWave, 1)} mV`]] : [])];
     readouts.replaceChildren(...items.flatMap(([k, v]) => { const dt = el('dt'); dt.textContent = c().readouts[k]; const dd = el('dd', '', { 'data-csp-readout': k }); dd.textContent = v; return [dt, dd]; }));
     coach.replaceChildren(...coaching(proc, result, list, lastTest, trend).map(i => {
       const li = el('li', '', { 'data-tone': i.tone, 'data-csp-coach-item': i.key });
@@ -468,6 +520,9 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     }
     controlNodes.depth.label.hidden = ui.blind;
     polarity.value = proc.polarity;
+    heartSelect.value = proc.heart; leadSelect.value = proc.lead; supportInput.checked = proc.forwardSupport; supportBox.hidden = proc.lead !== 'stylet';
+    autoInput.checked = fx.auto; heartSelect.disabled = leadSelect.disabled = proc.depthMm > .05;
+    finishPanel.render();
     viewButtons.forEach(b => { const id = b.dataset.cspProjection; b.hidden = id === 'septum' && (ui.blind || !ui.instructor); b.setAttribute('aria-pressed', String(id === ui.projection)); });
     if (ui.projection === 'septum' && (ui.blind || !ui.instructor)) ui.projection = 'rao';
     groundTruth.hidden = (!ui.instructor || ui.blind) && !ui.revealed; groundTruth.textContent = `${t().capture}: ${t().types[result.capture.type]}`;
@@ -486,7 +541,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     schedule();
   }
   function schedule() {
-    const wantLive = ui.active && !ui.frozen && ui.page === 'implant';
+    const wantLive = ui.active && ui.page === 'implant';
     if (wantLive && liveFrame === null) { liveLast = null; liveFrame = globalThis.requestAnimationFrame?.(liveLoop) ?? null; }
     if (!wantLive && liveFrame !== null) { globalThis.cancelAnimationFrame?.(liveFrame); liveFrame = null; }
     const wantReview = ui.active && ui.playing;
@@ -501,7 +556,9 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   }
   function drawFluoroCanvas() {
     const k = context(fluoro); if (!k) return;
-    drawFluoro(k.ctx, k.w, k.h, ui.projection, proc, { guides: ui.guides, target: ui.target && ui.instructor && !ui.blind, text: c().fluoro });
+    const t0 = now();
+    drawFluoro(k.ctx, k.w, k.h, ui.projection, proc, { guides: ui.guides, target: ui.target && ui.instructor && !ui.blind, badge: !ui.blind, text: c().fluoro,
+      contrast: contrastOf(fx, t0), fx: { live: isLive(fx, t0), seconds: fx.seconds, shownDepth: fx.shownDepth } });
   }
   function drawTrendsCanvas() {
     const k = context(trends); if (!k) return;
@@ -555,13 +612,14 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
         liveFrame = reviewFrame = null; liveLast = reviewLast = null;
       }
     },
-    getState: () => ({ ...state, ui: { ...ui, marks: [...ui.marks] }, procedure: { ...proc }, liveTime: recorder.time, trend: trend.map(p => ({ ...p })) }),
+    getState: () => ({ ...state, ui: { ...ui, marks: [...ui.marks] }, procedure: { ...proc }, liveTime: recorder.time, trend: trend.map(p => ({ ...p })),
+      fluoro: { on: fx.on, auto: fx.auto, live: isLive(fx, now()), seconds: fx.seconds, contrast: contrastOf(fx, now()), shownDepth: fx.shownDepth }, sites, complications }),
     loadCase: (caseId, seed) => loadCase(caseId, false, seed),
     getResult: () => result, getReference: () => reference, getRows: () => rows,
     getHistory: () => history.map(x => ({ ...x })),
     getCriteria: () => criteria(result, proc, lastTest), getTest: () => test || lastTest,
     act: action => doAct(action),
     /** Advance the live recording by `ms` at once (tests): beats, the threshold test and the log run as in real time. */
-    tick(ms) { for (let left = ms; left > 0; left -= 250) advance(recorder, Math.min(250, left), nextBeat); shownBeats = recorder.beats; render(); }
+    tick(ms) { for (let left = ms; left > 0; left -= 250) { advance(recorder, Math.min(250, left), nextBeat); tickFluoro(fx, now(), Math.min(250, left), proc); } shownBeats = recorder.beats; render(); }
   };
 }

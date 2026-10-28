@@ -33,6 +33,14 @@ export const ANATOMY = Object.freeze({
   bump: { septumMm: 13, lbb: .32 }
 });
 const STALL_GRIP = .05;
+// Heart position: shifts the left bundle level and the sheath angle that is perpendicular to the septum (ideal, degrees).
+export const HEARTS = Object.freeze({
+  horizontal: { lbbShift: -.03, ideal: 15, septumShift: 1 },
+  compact: { lbbShift: 0, ideal: 0, septumShift: 0 },
+  vertical: { lbbShift: .03, ideal: -10, septumShift: -1 }
+});
+export const LEAD_TYPES = Object.freeze(['lumenless', 'stylet']);
+const NO_SUPPORT_GRIP = .5;  // stylet-driven lead without forward support
 const BUMP_LEVEL = .05;      // manipulation this much basal of the left bundle level (toward the His) can bump the right bundle
 const BUMPED = Object.freeze({ rhythm: 'escapeWide', intrinsicRate: 30 });   // after the bump: complete block, slow wide escape
 export const FUSION_LIMIT = .2;   // beyond this share the timing criteria are not readable
@@ -71,7 +79,16 @@ const SITE_WINDOW = .08;                // level distance from the LBB with full
 const LOCKED_MM = .05;                  // screwed in: site and sheath no longer move
 
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
-export const anatomyOf = proc => proc.anatomy || ANATOMY[proc.caseId] || ANATOMY.baseline;
+/** Anatomy of the case or random patient, adjusted for the heart position. */
+export function anatomyOf(proc) {
+  const base = proc.anatomy || ANATOMY[proc.caseId] || ANATOMY.baseline;
+  const heart = HEARTS[proc.heart] || HEARTS.compact;
+  return { ...base, septumMm: base.septumMm + heart.septumShift, lbb: clamp(base.lbb + heart.lbbShift, .1, .6), ideal: heart.ideal };
+}
+/** Sheath angle perpendicular to this heart's septum (degrees). */
+export const idealAngleOf = proc => (HEARTS[proc.heart] || HEARTS.compact).ideal;
+/** Sheath angle relative to the septal normal: 0 is perpendicular, negative clockwise (anterior). */
+export const relAngle = proc => proc.sheath - idealAngleOf(proc);
 
 /** Off the septum: sheath torqued too far clockwise (anterior free wall) or counter-clockwise (posterior). */
 export function offsetOf(sheath) {
@@ -79,7 +96,7 @@ export function offsetOf(sheath) {
   if (sheath > 45) return clamp((sheath - 45) / 25, 0, 1);
   return 0;
 }
-export const thicknessOf = proc => (Math.abs(offsetOf(proc.sheath)) > .5 ? FREE_WALL_MM : anatomyOf(proc).septumMm);
+export const thicknessOf = proc => (Math.abs(offsetOf(relAngle(proc))) > .5 ? FREE_WALL_MM : anatomyOf(proc).septumMm);
 export const depthRatio = proc => proc.depthMm / thicknessOf(proc);
 
 /** Tissue parameters in force: the case's or the random patient's, with the bumped right bundle applied. */
@@ -90,24 +107,27 @@ export function paramsFor(proc) {
 /** Signal-model options for the current physical state. */
 export function modelOf(proc) {
   const { lbb } = anatomyOf(proc);
-  const offset = offsetOf(proc.sheath);
+  const offset = offsetOf(relAngle(proc));
   const access = Math.max(0, Math.abs(proc.level - lbb) - SITE_WINDOW) * 1.3 + Math.abs(offset) * .6;
   return normalize({
-    caseId: proc.caseId, entry: .5 + clamp(access, 0, .5), angle: Math.min(90, Math.abs(proc.sheath)),
+    caseId: proc.caseId, entry: .5 + clamp(access, 0, .5), angle: Math.min(90, Math.abs(relAngle(proc))),
     depth: depthRatio(proc), level: proc.level, offset, params: paramsFor(proc),
     output: proc.output, pulseWidth: proc.pulseWidth, polarity: proc.polarity, rate: proc.rate, pacing: proc.pacing, s2: null
   });
 }
 
 /** @param {number} [seed] random patient only: the draw to reproduce */
-export function initialProcedure(caseId = 'baseline', seed = 1) {
+export function initialProcedure(caseId = 'baseline', seed = 1, { heart = 'compact', lead = 'lumenless' } = {}) {
   const id = ANATOMY[caseId] ? caseId : 'baseline';
   const patient = id === 'random' ? randomPatient(seed) : {};
+  const ideal = (HEARTS[heart] || HEARTS.compact).ideal;
   return {
     caseId: id, seed: id === 'random' ? seed : null, params: patient.params || null, anatomy: patient.anatomy || null,
-    level: .55, sheath: -50, depthMm: 0, turns: 0,         // start: mid RV, sheath anterior (on the free wall)
+    heart: HEARTS[heart] ? heart : 'compact', lead: LEAD_TYPES.includes(lead) ? lead : 'lumenless', forwardSupport: true,
+    level: .55, sheath: ideal - 50, depthMm: 0, turns: 0,   // start: mid RV, sheath anterior (on the free wall)
     output: 2.5, pulseWidth: .5, polarity: 'uni', rate: 90, pacing: true,
-    accepted: false, fixation: 0, rbbbFixation: false, stalls: 0, bumped: false
+    accepted: false, fixation: 0, rbbbFixation: false, stalls: 0, bumped: false,
+    thresholds: null, rWave: null, slack: 'right', finish: {}
   };
 }
 /** Basal manipulation in a trauma case injures the right bundle: one event, then complete block. */
@@ -122,8 +142,8 @@ function bumpOf(proc, events) {
 export function stageOf(proc) {
   if (proc.accepted) return 4;
   if (proc.depthMm > LOCKED_MM) return depthRatio(proc) >= LV_DEPTH ? 3 : 2;
-  const { lbb } = anatomyOf(proc);
-  return offsetOf(proc.sheath) !== 0 || Math.abs(proc.sheath) > 25 || Math.abs(proc.level - lbb) > .15 ? 0 : 1;
+  const { lbb } = anatomyOf(proc), angle = relAngle(proc);
+  return offsetOf(angle) !== 0 || Math.abs(angle) > 25 || Math.abs(proc.level - lbb) > .15 ? 0 : 1;
 }
 
 /** Three turns at once are a shallow-wall shortcut: from the deep septum the helix must go one turn at a time. */
@@ -152,17 +172,19 @@ export function act(proc, action) {
     }
     case 'rotate': {
       const n = action.turns === 3 && rapidAllowed(proc) ? 3 : 1;
-      const angle = Math.abs(proc.sheath);
+      const angle = Math.abs(relAngle(proc));
       const drilling = angle > DRILL_ANGLE;
       const before = proc.depthMm / thickness;
       const { lbb, stall } = anatomyOf(proc);
       const stalled = Boolean(stall) && Math.abs(proc.level - lbb) < stall.half && before >= stall.from && before < stall.to;
-      const grip = (drilling ? .1 : Math.cos((angle * Math.PI) / 180) ** 2) * (proc.caseId === 'scar' ? .55 : 1) * (stalled ? STALL_GRIP : 1);
+      const unsupported = proc.lead === 'stylet' && !proc.forwardSupport;
+      const grip = (drilling ? .1 : Math.cos((angle * Math.PI) / 180) ** 2) * (proc.caseId === 'scar' ? .55 : 1) * (stalled ? STALL_GRIP : 1) * (unsupported ? NO_SUPPORT_GRIP : 1);
       const depthMm = proc.depthMm + n * MM_PER_TURN * grip;
       const after = depthMm / thickness;
       const events = [event('rotate', { turns: n, depthMm })];
       if (stalled) events.push(event('stall'));
       else if (drilling || grip < .3) events.push(event('drilling'));
+      else if (unsupported) events.push(event('noSupport'));
       // Ectopy from the helix working through the septum: beats pending for the live recording.
       const fixation = after > .35 && after < 1 ? proc.fixation + n : proc.fixation;
       if (after >= 1 && before < 1) events.push(event('perforation'));
@@ -184,14 +206,38 @@ export function act(proc, action) {
     }
     case 'reposition':
       return { proc: { ...proc, depthMm: 0, turns: 0, fixation: 0, rbbbFixation: false, accepted: false, stalls: 0 }, events: [event('reposition')] };
-    case 'pacing':
-      return { proc: { ...proc, pacing: Boolean(action.on) }, events: [event(action.on ? 'pacingOn' : 'pacingOff')] };
+    case 'pacing': {
+      // Pacing off with the lead fixed records the intrinsic R wave on the tip.
+      const rWave = !action.on && locked && depthRatio(proc) < 1 ? Math.round((3 + 8 * Math.min(1, depthRatio(proc))) * 10) / 10 : proc.rWave;
+      const events = [event(action.on ? 'pacingOn' : 'pacingOff')];
+      if (rWave !== proc.rWave) events.push(event('rWave', { v: rWave }));
+      return { proc: { ...proc, pacing: Boolean(action.on), rWave }, events };
+    }
+    case 'withdrawSheath': {
+      if (!proc.accepted || proc.finish.withdraw) return { proc, events: [] };
+      const uni = action.threshold;
+      const thresholds = uni == null ? null : { uni: Math.round((uni + .1) * 100) / 100, bi: Math.round((uni + .3) * 100) / 100 };
+      return { proc: { ...proc, finish: { ...proc.finish, withdraw: true }, thresholds }, events: [event('sheathOut', thresholds || {})] };
+    }
+    case 'slit':
+      if (!proc.finish.withdraw || proc.finish.slit) return { proc, events: [] };
+      return { proc: { ...proc, finish: { ...proc.finish, slit: true } }, events: [event('slit')] };
+    case 'slack':
+      return SLACKS.includes(action.value) ? { proc: { ...proc, slack: action.value, finish: { ...proc.finish, breath: false } }, events: [] } : { proc, events: [] };
+    case 'breath':
+      if (!proc.finish.slit) return { proc, events: [] };
+      return { proc: { ...proc, finish: { ...proc.finish, breath: true } }, events: [event(proc.slack === 'right' ? 'slackOk' : proc.slack === 'little' ? 'slackLittle' : 'slackMuch')] };
     case 'output': {
       const output = Math.round(clamp(Number(action.value), 0, 8) * 100) / 100;
       return Number.isFinite(output) ? { proc: { ...proc, output }, events: [] } : { proc, events: [] };
     }
-    case 'set':   // instructor shortcuts and console settings (already validated by the caller)
-      return { proc: { ...proc, ...action.values }, events: [] };
+    case 'set': {  // instructor shortcuts and console settings (already validated by the caller)
+      const values = { ...action.values };
+      if ('heart' in values && !HEARTS[values.heart]) delete values.heart;
+      if ('lead' in values && !LEAD_TYPES.includes(values.lead)) delete values.lead;
+      if (('heart' in values || 'lead' in values) && locked) return { proc, events: [event('locked')] };
+      return { proc: { ...proc, ...values }, events: [] };
+    }
     case 'accept': {
       const ratio = proc.depthMm / thickness;
       const reasons = [...new Set([...(ratio >= 1 || ratio < LV_DEPTH ? ['depth'] : []), ...(Array.isArray(action.reasons) ? action.reasons : [])])];
@@ -203,10 +249,12 @@ export function act(proc, action) {
   }
 }
 
+const SLACKS = Object.freeze(['little', 'right', 'much']);
+
 /** Physical state back from model values set directly (instructor sliders). */
 export function fromModel(proc, values) {
   const out = { ...proc };
-  if (Number.isFinite(values.angle)) out.sheath = (proc.sheath < 0 ? -1 : 1) * clamp(values.angle, 0, 80);
+  if (Number.isFinite(values.angle)) out.sheath = idealAngleOf(proc) + (relAngle(proc) < 0 ? -1 : 1) * clamp(values.angle, 0, 80);
   if (Number.isFinite(values.depth)) out.depthMm = Math.max(0, values.depth) * thicknessOf(out);
   if (Number.isFinite(values.level)) out.level = clamp(values.level, 0, 1);
   return out;
@@ -320,26 +368,27 @@ export function acceptCheck(proc, list, test) {
 
 /** One line of guidance for the current state (key into the console text). */
 export function guidance(proc, result, list, test = null) {
-  const ratio = depthRatio(proc);
-  const offset = offsetOf(proc.sheath);
+  const ratio = depthRatio(proc), angle = relAngle(proc);
+  const offset = offsetOf(angle);
   const { lbb } = anatomyOf(proc);
   const conf = confirmation(list);
   const met = id => list.find(c => c.id === id)?.status === 'met';
   if (result.capture.type === 'perforation') return { key: 'perforation', tone: 'warn' };
-  if (proc.accepted) return { key: 'accepted', tone: 'ok' };
+  if (proc.accepted) return { key: proc.finish.breath ? 'finished' : proc.finish.slit ? 'checkSlack' : proc.finish.withdraw ? 'slitSheath' : 'withdrawSheath', tone: 'ok' };
   if (proc.bumped && !proc.pacing) return { key: 'bumpedOff', tone: 'warn' };
   if ((result.metrics.fusion || 0) > FUSION_LIMIT) return { key: 'fusion', tone: 'warn' };
   if (proc.depthMm <= LOCKED_MM) {
     if (offset < 0) return { key: 'offAnterior', tone: 'warn' };
     if (offset > 0) return { key: 'offPosterior', tone: 'warn' };
-    if (Math.abs(proc.sheath) > 25) return { key: proc.sheath < 0 ? 'turnCcw' : 'turnCw', tone: 'info' };
+    if (Math.abs(angle) > 25) return { key: angle < 0 ? 'turnCcw' : 'turnCw', tone: 'info' };
     if (proc.level < lbb - .15) return { key: 'tooHigh', tone: 'info' };
     if (proc.level > lbb + .15) return { key: 'tooLow', tone: 'info' };
     return { key: 'paceMapOk', tone: 'ok' };
   }
   if (result.metrics.impedance < CUTOFFS.impedanceMin) return { key: 'impedanceDrop', tone: 'warn' };
   if (proc.stalls >= 2) return { key: 'stall', tone: 'warn' };
-  if (Math.abs(proc.sheath) > DRILL_ANGLE) return { key: 'drilling', tone: 'warn' };
+  if (Math.abs(angle) > DRILL_ANGLE) return { key: 'drilling', tone: 'warn' };
+  if (proc.lead === 'stylet' && !proc.forwardSupport) return { key: 'noSupport', tone: 'warn' };
   if (ratio < .5) return { key: 'keepTurning', tone: 'info' };
   if (ratio < LV_DEPTH) return { key: 'watchV1', tone: 'info' };
   if (conf.definitive) return { key: test?.threshold != null ? (acceptCheck(proc, list, test).length ? 'fixSettings' : 'acceptable') : 'confirmTest', tone: 'ok' };

@@ -44,6 +44,20 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   assert.equal(await criterion('transition'),'met');assert.match(await page.locator('[data-csp-log]').textContent(),/Eşik testi bitti/);
   await page.locator('[data-csp-accept]').click();
   assert.match(await page.locator('[data-csp-summary]').textContent(),/Sol dal alanı pacing/);
+  // 4b. Finish: R wave with pacing off, withdraw, slit, deep breath; score and the follow-up clinic.
+  assert.equal(await page.locator('[data-csp-finish]').isVisible(),true);
+  await page.locator('[data-csp-pacing]').click();await page.locator('[data-csp-pacing]').click();
+  assert.ok((await state()).procedure.rWave>4);assert.match(await page.locator('[data-csp-readouts]').textContent(),/R dalgası/);
+  assert.equal(await page.locator('[data-csp-finish-step=slit]').isDisabled(),true,'slit waits for the withdrawal');
+  await page.locator('[data-csp-finish-step=withdraw]').click();assert.match(await page.locator('[data-csp-log]').textContent(),/Kılıf çekildi: unipolar/);
+  await page.locator('[data-csp-finish-step=slit]').click();await page.locator('[data-csp-finish-step=breath]').click();
+  assert.match(await page.locator('[data-csp-guide]').textContent(),/Olgu tamam/);
+  await page.locator('[data-csp-finish-case]').click();
+  assert.match(await page.locator('[data-csp-score]').textContent(),/Puan \(öğretim amaçlı\): \d+ \/ 100/);
+  assert.equal(await page.locator('[data-csp-score-item=proof][data-ok=true]').count(),1);
+  await page.locator('[data-csp-visit=week6]').click();assert.match(await page.locator('[data-csp-clinic-readings]').textContent(),/Cihaz eşiği/);
+  await page.locator('[data-csp-q1=conduction]').click();await page.locator('[data-csp-q2=keep]').click();await page.locator('[data-csp-clinic-check]').click();
+  assert.match(await page.locator('[data-csp-clinic-feedback]').textContent(),/Doğru|Yanlış/);
   // 5. Freeze stops the sweep; a hidden panel stops it too.
   await page.locator('[data-csp-play]').click();const frozen=await csp(()=>window.epsLab.panel.csp.getState().liveTime);
   await page.waitForTimeout(150);assert.equal(await csp(()=>window.epsLab.panel.csp.getState().liveTime),frozen,'freeze');
@@ -103,6 +117,18 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   assert.match(await page.locator('[data-csp-log]').textContent(),/sağ dal travması/);assert.equal(await page.locator('[data-csp-coach-item=bumped]').count(),1);
   await page.locator('[data-csp-pacing]').click();assert.match(await page.locator('[data-csp-guide]').textContent(),/Pacing’i aç/);await page.locator('[data-csp-pacing]').click();
 
+  // 4c. Fluoroscopy: holding the button screens (timer runs), contrast puffs, the heart and lead are chosen before fixation.
+  await page.locator('[data-csp-reset]').click();
+  const f0=(await state()).fluoro.seconds;const fb=await page.locator('[data-csp-fluoro]').boundingBox();
+  await page.mouse.move(fb.x+fb.width/2,fb.y+fb.height/2);await page.mouse.down();await page.waitForTimeout(600);
+  assert.equal((await state()).fluoro.live,true);await page.mouse.up();
+  assert.ok((await state()).fluoro.seconds>f0+.3,'fluoro timer counts while screening');
+  await page.locator('[data-csp-auto-fluoro]').uncheck();await page.waitForTimeout(1700);assert.equal((await state()).fluoro.live,false,'last image hold');
+  await page.locator('[data-csp-contrast]').click();assert.ok((await state()).fluoro.contrast>.5);await page.locator('[data-csp-auto-fluoro]').check();
+  await set('heart','vertical');assert.equal((await state()).procedure.heart,'vertical');
+  await set('lead','stylet');assert.equal(await page.locator('[data-csp-support]').isVisible(),true);
+  await page.locator('[data-csp-support]').uncheck();assert.equal((await state()).procedure.forwardSupport,false);
+  await set('lead','lumenless');await set('heart','compact');
   // 10. Phone width, direct route, storage failure.
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.locator('[data-csp]').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,'mobile no horizontal overflow in the CSP panel');

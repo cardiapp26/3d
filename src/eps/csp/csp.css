@@ -73,3 +73,10 @@
 @media(max-width:1250px){ .csp-work{grid-template-columns:minmax(220px,1fr) minmax(320px,1.6fr)} .csp-analyser{grid-column:1/-1} }
 @media(max-width:760px){ .csp-work{grid-template-columns:minmax(0,1fr)} .csp-live-wrap{min-height:440px} .csp-group{border-right:0;padding-right:0} .csp-range{grid-template-columns:1fr} }
 .csp-summary p { margin:2px 0; } .csp-summary h3 { margin:0 0 4px; }
+/* Finish section (csp-finish-panel.mjs): sheath and slack steps, score, follow-up clinic. */
+.csp-finish { margin-top:10px; padding:10px 12px; border:1px solid #2e4a37; border-radius:8px; background:#0f2017; display:grid; gap:8px; }
+.csp-finish h3 { margin:0; }
+.csp-score-list { margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:3px 12px; font-size:12px; }
+.csp-score-list li[data-ok=true] { color:#c9f5dc; } .csp-score-list li[data-ok=false] { color:#f6c2b5; }
+.csp-clinic { border-top:1px solid #24392c; padding-top:8px; display:grid; gap:6px; }
+.csp-clinic-feedback { min-height:18px; margin:0; color:#f1c77c; }

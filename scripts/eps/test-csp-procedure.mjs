@@ -2,7 +2,7 @@
 // site, sheath and turns map onto the signal model; the criteria read the recording.
 import assert from 'node:assert/strict';
 import { simulate } from '../../src/eps/csp/csp-model.mjs';
-import { initialProcedure, act, modelOf, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, lbbThresholdOf, summary, offsetOf, thicknessOf, fromModel, rapidAllowed, anatomyOf, ANATOMY, CUTOFFS } from '../../src/eps/csp/csp-procedure.mjs';
+import { initialProcedure, act, modelOf, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, lbbThresholdOf, summary, offsetOf, thicknessOf, fromModel, rapidAllowed, anatomyOf, relAngle, ANATOMY, CUTOFFS, HEARTS } from '../../src/eps/csp/csp-procedure.mjs';
 import { programmedSweep, thresholdSweep } from '../../src/eps/csp/csp-model.mjs';
 import { coaching } from '../../src/eps/csp/csp-coaching.mjs';
 import { trendPoint, pushTrend, trendDelta } from '../../src/eps/csp/csp-trends.mjs';
@@ -209,7 +209,7 @@ test('coaching reads the state: checklist before fixation, trends and next step 
   const stuck = run(onTarget('stall'), Array(5).fill({ type: 'rotate', turns: 1 }));
   const stuckTrend = [trendPoint({ ...stuck, depthMm: stuck.depthMm - .05 }, r), trendPoint(stuck, simulate(modelOf(stuck)))];
   assert.ok(coaching(stuck, simulate(modelOf(stuck)), criteria(simulate(modelOf(stuck)), stuck), null, stuckTrend).some(i => i.key === 'noProgress'));
-  assert.deepEqual(coaching({ ...p, accepted: true }, r, criteria(r, p)).map(i => i.key), ['accepted']);
+  assert.deepEqual(coaching({ ...p, accepted: true }, r, criteria(r, p)).map(i => i.key), ['accepted', 'withdraw']);
 });
 test('rhythm cases: RBBB makes the r′ row useless, LBBB uses the 80 ms cut-off, fusion blocks the timing until the rate rises', () => {
   const rb = screwIn('rbbb'), rbList = criteria(simulate(modelOf(rb)), rb);
@@ -242,6 +242,45 @@ test('right bundle bump: basal manipulation in the trauma case gives complete bl
   assert.ok(coaching(hit.proc, simulate(modelOf(hit.proc)), criteria(simulate(modelOf(hit.proc)), hit.proc)).some(i => i.key === 'bumped'));
   assert.equal(criteria(simulate(modelOf(hit.proc)), hit.proc).find(c => c.id === 'v6Rwpt').cutoff, 80, 'wide escape: 80 ms cut-off');
   assert.equal(act(hit.proc, { type: 'rotate', turns: 1 }).events.some(e => e.type === 'rbbBump'), false, 'bumped once');
+});
+test('heart position moves the ideal sheath angle and the target; lead type and forward support change the advance', () => {
+  for (const [heart, h] of Object.entries(HEARTS)) {
+    const p0 = initialProcedure('baseline', 1, { heart });
+    assert.equal(relAngle(p0), -50, 'every heart starts on the anterior free wall');
+    const p = run(p0, [...Array(10).fill({ type: 'torque', delta: 5 }), { type: 'site', level: anatomyOf(p0).lbb }]);
+    assert.equal(p.sheath, h.ideal); assert.equal(relAngle(p), 0); assert.equal(stageOf(p), 1);
+  }
+  const vertical = initialProcedure('baseline', 1, { heart: 'vertical' });
+  assert.ok(anatomyOf(vertical).septumMm < anatomyOf(initialProcedure('baseline')).septumMm);
+  assert.equal(offsetOf(relAngle({ ...vertical, sheath: 0 })), 0, 'the compact heart perpendicular is 10° off on a vertical heart');
+  const stylet = run(initialProcedure('baseline', 1, { lead: 'stylet' }), [...Array(10).fill({ type: 'torque', delta: 5 }), { type: 'site', level: .3 }]);
+  const supported = act(stylet, { type: 'rotate', turns: 1 }), loose = act({ ...stylet, forwardSupport: false }, { type: 'rotate', turns: 1 });
+  assert.ok(Math.abs(supported.proc.depthMm - 1.4) < 1e-9); assert.ok(Math.abs(loose.proc.depthMm - .7) < 1e-9);
+  assert.ok(loose.events.some(e => e.type === 'noSupport'));
+  assert.equal(guidance(loose.proc, simulate(modelOf(loose.proc)), criteria(simulate(modelOf(loose.proc)), loose.proc)).key, 'noSupport');
+  assert.equal(act(supported.proc, { type: 'set', values: { heart: 'vertical' } }).events[0].type, 'locked', 'no heart change once screwed in');
+  assert.equal(act(stylet, { type: 'set', values: { lead: 'bogus' } }).proc.lead, 'stylet');
+});
+test('finishing: R wave with pacing off, sheath withdrawal re-measures thresholds, slit, slack and deep breath in order', () => {
+  let p = screwIn('baseline');
+  const { t } = runThreshold(p);
+  const list = criteria(simulate(modelOf(p)), p, t);
+  p = act(p, { type: 'accept', reasons: acceptCheck(p, list, t) }).proc;
+  assert.equal(guidance(p, simulate(modelOf(p)), list, t).key, 'withdrawSheath');
+  const off = act(p, { type: 'pacing', on: false });
+  assert.ok(off.proc.rWave > 4); assert.ok(off.events.some(e => e.type === 'rWave'));
+  p = act(off.proc, { type: 'pacing', on: true }).proc;
+  assert.deepEqual(act(p, { type: 'slit' }).proc.finish, {}, 'no slit before withdrawal');
+  const out = act(p, { type: 'withdrawSheath', threshold: t.threshold });
+  assert.equal(out.events[0].type, 'sheathOut'); assert.ok(out.proc.thresholds.bi > out.proc.thresholds.uni);
+  p = act(out.proc, { type: 'slit' }).proc;
+  assert.equal(guidance(p, simulate(modelOf(p)), list, t).key, 'checkSlack');
+  assert.equal(act(p, { type: 'slack', value: 'bogus' }).proc.slack, 'right');
+  const little = act(act(p, { type: 'slack', value: 'little' }).proc, { type: 'breath' });
+  assert.equal(little.events[0].type, 'slackLittle');
+  const fine = act(p, { type: 'breath' });
+  assert.equal(fine.events[0].type, 'slackOk'); assert.equal(guidance(fine.proc, simulate(modelOf(fine.proc)), list, t).key, 'finished');
+  assert.equal(act(fine.proc, { type: 'slack', value: 'much' }).proc.finish.breath, false, 'a new slack needs a new breath');
 });
 test('instructor values map back onto the physical state', () => {
   const p = fromModel(onTarget('baseline'), { depth: .5, angle: 20, level: .4 });

@@ -3,7 +3,7 @@
  * where tone is 'check' (something to fix), 'ok' (confirmed) or 'next' (what to do now).
  * Keys map to CONSOLE_TEXT.coach. Original teaching heuristics, not a clinical algorithm.
  */
-import { offsetOf, depthRatio, mmFromHis, confirmation, acceptCheck, anatomyOf, LV_DEPTH, CUTOFFS, HIS_APEX_MM, FUSION_LIMIT } from './csp-procedure.mjs';
+import { offsetOf, depthRatio, mmFromHis, confirmation, acceptCheck, anatomyOf, relAngle, LV_DEPTH, CUTOFFS, HIS_APEX_MM, FUSION_LIMIT } from './csp-procedure.mjs';
 import { paramsOf } from './csp-model.mjs';
 import { trendDelta } from './csp-trends.mjs';
 
@@ -24,11 +24,12 @@ function polarity(result, lead) {
 
 function beforeFixation(proc, result, list) {
   const items = [];
-  const offset = offsetOf(proc.sheath), angle = Math.abs(proc.sheath);
+  const rel = relAngle(proc), offset = offsetOf(rel), angle = Math.abs(rel);
   if (offset < 0) items.push(item('check', 'offAnterior'));
   else if (offset > 0) items.push(item('check', 'offPosterior'));
   else if (angle > SHEATH_MAX) items.push(item('check', 'sheathAngle', { angle: Math.round(proc.sheath) }));
   else items.push(item('ok', 'sheathOk', { angle: Math.round(proc.sheath) }));
+  if (proc.lead === 'stylet' && !proc.forwardSupport) items.push(item('check', 'noSupport'));
   const target = anatomyOf(proc).lbb * HIS_APEX_MM, mm = mmFromHis(proc);
   if (mm < target - SITE_HALF_MM) items.push(item('check', 'siteHigh', { mm }));
   else if (mm > target + SITE_HALF_MM) items.push(item('check', 'siteLow', { mm }));
@@ -80,7 +81,10 @@ function afterFixation(proc, result, list, test, trend) {
  * @param {object[]} trend per-turn points (csp-trends)
  */
 export function coaching(proc, result, list, test = null, trend = []) {
-  if (proc.accepted) return [item('ok', 'accepted')];
+  if (proc.accepted) {
+    const f = proc.finish || {};
+    return [item('ok', 'accepted'), item('next', f.breath ? 'finish' : f.slit ? 'breath' : f.withdraw ? 'slit' : 'withdraw')];
+  }
   const first = [];
   if (proc.bumped) first.push(item('check', 'bumped', { pacing: proc.pacing ? 1 : 0 }));
   if ((result.metrics.fusion || 0) > FUSION_LIMIT) first.push(item('check', 'fusion', { rate: proc.rate, sinus: paramsOf(result.state).intrinsicRate }));
