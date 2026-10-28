@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { CASES, DEFAULTS, normalize, simulate, thresholdSweep, programmedSweep, evidence } from '../../src/eps/csp/csp-model.mjs';
+import { CASES, CASE_PARAMS, DEFAULTS, normalize, sanitizeParams, simulate, thresholdSweep, programmedSweep, evidence } from '../../src/eps/csp/csp-model.mjs';
 
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log(`PASS ${name}`); }
@@ -15,8 +15,17 @@ test('normalization bounds malformed and nonfinite inputs without throwing', () 
   assert.equal(normalize({ couplingMs: 200 }).s2, 200);
   assert.equal(normalize({ s2: null, couplingMs: 200 }).s2, null);
 });
-test('all four examples produce deterministic finite sampled arrays', () => {
-  assert.equal(CASES.length, 4);
+test('every case produces deterministic finite sampled arrays; custom parameters are bounded', () => {
+  assert.equal(CASES.length, 16);
+  assert.deepEqual(CASES.map(c => c.id).sort(), Object.keys(CASE_PARAMS).sort());
+  assert.ok(CASES.every(c => ['case', 'trap'].includes(c.group)));
+  assert.equal(sanitizeParams(null), null);
+  const p = sanitizeParams({ scar: 9, ratio: .05, slowMs: -3, muscleERP: 'x', access: false, interpeakShift: 40 });
+  assert.equal(p.scar, 3); assert.equal(p.ratio, .2); assert.equal(p.slowMs, 0); assert.equal(p.muscleERP, 235); assert.equal(p.access, false); assert.equal(p.interpeakShift, 15);
+  assert.equal(sanitizeParams({ ratio: null }).ratio, null);
+  assert.equal(simulate({ params: { access: false }, output: 8 }).capture.conduction, false);
+  assert.equal(simulate({ params: { ratio: 1.6 }, output: 1 }).capture.type, 'lvsp');
+  assert.equal(simulate({ params: { ratio: 1.6 }, output: 2 }).capture.type, 'nonselective');
   for (const { id } of CASES) {
     const a = simulate({ caseId: id });
     assert.deepEqual(a, simulate({ caseId: id }));
@@ -104,6 +113,35 @@ test('causal EGM filter attenuates sustained injury component', () => {
   const r = simulate();
   assert.ok(Math.abs(mean(r.egm.filtered.slice(130, 200))) < Math.abs(mean(r.egm.unfiltered.slice(130, 200))) * .15);
   assert.notDeepEqual(r.egm.filtered, r.egm.unfiltered);
+});
+test('impedance rises as the helix engages and drops by over 200 ohm on perforation; COI on a mV scale', () => {
+  const at = depth => simulate({ depth, angle: 0, entry: .5 }).metrics;
+  assert.ok(at(.3).impedance > at(0).impedance && at(.8).impedance > at(.3).impedance && at(.95).impedance > at(.8).impedance);
+  assert.ok(at(.95).impedance - at(1).impedance > 200); assert.ok(at(1).impedance < 450);
+  assert.ok(at(.85).coi > 9 && at(.85).coi <= 15); assert.ok(at(.1).coi < 3); assert.equal(at(1).coi, 0);
+  assert.ok(at(.85).coi > at(.5).coi && at(.5).coi > at(.2).coi);
+});
+test('latency to the local EGM separates selective from nonselective capture', () => {
+  const ns = simulate({ output: 2 }).metrics, s = simulate({ output: .7 }).metrics, muscle = simulate({ depth: .6 }).metrics;
+  assert.ok(ns.latency != null && s.latency - ns.latency >= 12);
+  assert.ok(Math.abs(muscle.latency - ns.latency) < 8);
+  assert.equal(simulate({ pacing: false }).metrics.latency, null); assert.equal(simulate({ output: 0 }).metrics.latency, null);
+});
+test('intrinsic rhythm templates: P waves with sinus, LBBB and RBBB shapes, wide escape after a bump; fusion', () => {
+  const off = id => simulate({ caseId: id, pacing: false });
+  const peak = (v, a, b) => Math.max(...v.slice(a, b)), trough = (v, a, b) => Math.min(...v.slice(a, b));
+  assert.ok(peak(off('snd').leads.II, 40, 150) > .08, 'P wave before the QRS'); assert.ok(peak(off('baseline').leads.II, 40, 150) < .02, 'no P wave in complete block');
+  assert.ok(off('snd').metrics.qrsDuration < 100);
+  const lbbb = off('lbbb'); assert.ok(lbbb.metrics.qrsDuration >= 140); assert.ok(trough(lbbb.leads.V1, 230, 420) < -.8 && peak(lbbb.leads.V1, 300, 420) < .15, 'V1 QS');
+  const rbbb = off('rbbb'); assert.ok(peak(rbbb.leads.V1, 300, 420) > .6, 'late r′ in V1'); assert.ok(trough(rbbb.leads.I, 300, 420) < -.3, 'broad S in I');
+  const wide = simulate({ caseId: 'lbbb', pacing: false, params: { rhythm: 'escapeWide', intrinsicRate: 30 } });
+  assert.ok(wide.metrics.qrsDuration >= 150); assert.ok(peak(wide.leads.II, 40, 150) < .02);
+  assert.equal(simulate({ caseId: 'rbbb', depth: .3 }).capture.type, 'rv'); assert.ok(peak(simulate({ caseId: 'rbbb', depth: .3 }).leads.V1, 130, 200) > .3, 'RBBB keeps an r′ at RV depth');
+  const fused = simulate({ caseId: 'fusion', depth: .3, rate: 90 }), clean = simulate({ caseId: 'fusion', depth: .3, rate: 110 });
+  assert.ok(fused.metrics.fusion > .4); assert.equal(clean.metrics.fusion, 0);
+  assert.ok(fused.metrics.v6Rwpt < clean.metrics.v6Rwpt - 15, 'fusion fakes a short V6RWPT');
+  assert.equal(simulate({ caseId: 'baseline', rate: 60 }).metrics.fusion, 0, 'no fusion in complete block');
+  assert.equal(simulate({ caseId: 'fusion', depth: .3, rate: 90, s2: 300 }).metrics.fusion, 0, 'no fusion on an S2');
 });
 test('pacing off and noncapture have distinct signal behavior', () => {
   const intrinsic = simulate({ pacing: false });
