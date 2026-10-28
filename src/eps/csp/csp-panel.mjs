@@ -1,4 +1,4 @@
-import { CASES, simulate, thresholdSweep, programmedSweep } from './csp-model.mjs';
+import { CASES, simulate, thresholdSweep, programmedSweep, paramsOf } from './csp-model.mjs';
 import { initialProcedure, modelOf, act, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, fromModel, thicknessOf, rapidAllowed } from './csp-procedure.mjs';
 import { createRecorder, advance, beatFromResult, drawSweep, LAYOUTS, SPEEDS } from './csp-live.mjs';
 import { drawFluoro, levelAt } from './csp-fluoro.mjs';
@@ -173,6 +173,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const outputPlus = button(() => '+', () => setOutput(proc.output + .25), { 'aria-label': 'output +' });
   const outputRange = range('output', 0, 8, .05, v => setOutput(v));
   const widthRange = range('pulseWidth', .2, 1, .1, v => setSetting({ pulseWidth: v }));
+  const rateRange = range('rate', 60, 140, 5, v => setSetting({ rate: v }));
   const polarity = el('select', '', { 'data-csp-control': 'polarity' });
   for (const v of ['uni', 'bi']) polarity.append(txt(el('option', '', { value: v }), () => t()[v]));
   polarity.addEventListener('change', () => setSetting({ polarity: polarity.value }));
@@ -182,7 +183,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   bar.append(
     group(() => c().controls.lead, rotate1, rotate3, unscrew, reposition),
     group(() => c().controls.sheath, ccw, sheathOut, cw),
-    group(() => c().controls.pacing, pace, outputMinus, outputRange, outputPlus, widthRange, polarity),
+    group(() => c().controls.pacing, pace, outputMinus, outputRange, outputPlus, widthRange, rateRange, polarity),
     group(() => c().controls.tests, thresholdBtn, s2Btn, accept)
   );
   const keys = txt(el('p', 'csp-note'), () => c().controls.keys);
@@ -195,8 +196,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   teacherGrid.append(
     range('level', 0, 1, .01, v => setPhysical({ level: v })),
     range('angle', 0, 85, 1, v => setPhysical({ angle: v })),
-    range('depth', 0, 1.15, .01, v => setPhysical({ depth: v })),
-    range('rate', 40, 140, 1, v => setSetting({ rate: v }))
+    range('depth', 0, 1.15, .01, v => setPhysical({ depth: v }))
   );
   teacher.append(teacherSummary, teacherGrid);
   const summaryBox = el('section', 'csp-summary', { 'data-csp-summary': '' });
@@ -344,14 +344,14 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function liveOptions() { return { ...modelOf(proc), s2: null, ...(test && !test.done ? { output: test.output, pacing: true } : {}) }; }
   function nextBeat() {
     const options = liveOptions();
-    const interval = 60000 / options.rate;
-    if (pendingEscape) { pendingEscape = false; return beatFromResult(sim({ ...options, pacing: false }), interval * .8, { stimulus: false, kind: 'intrinsic' }); }
+    const interval = 60000 / options.rate, intrinsicInterval = 60000 / paramsOf(options).intrinsicRate;
+    if (pendingEscape) { pendingEscape = false; return beatFromResult(sim({ ...options, pacing: false }), intrinsicInterval, { stimulus: false, kind: 'intrinsic' }); }
     if (proc.fixation > 0 && Math.random() < FIXATION_CHANCE) {
       const out = act(proc, { type: 'consumeFixation' });   // the observed beat is what sets the RBBB flag
       proc = out.proc; apply(out.events);
       return beatFromResult(sim({ ...options, output: 8, pacing: true }), interval * .75, { stimulus: false, kind: 'fixation' });
     }
-    if (!options.pacing) return beatFromResult(sim(options), 1100, { stimulus: false, kind: 'intrinsic' });
+    if (!options.pacing) return beatFromResult(sim(options), intrinsicInterval, { stimulus: false, kind: 'intrinsic' });
     const r = sim(options);
     if (r.metrics.qrsDuration == null) pendingEscape = true;
     if (test && !test.done) {
@@ -427,7 +427,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     for (const item of list) {
       const node = criterionNodes.get(item.id), [name, explain] = c().criteria[item.id];
       node.d.dataset.status = item.status;
-      node.badge.textContent = c().status[item.status]; node.name.textContent = name; node.p.textContent = explain;
+      node.badge.textContent = c().status[item.status]; node.name.textContent = fill(name, { cutoff: item.cutoff ?? '' }); node.p.textContent = explain;
       criterionNodes.get(`group:${item.group}`).textContent = c().groups[item.group];
     }
   }

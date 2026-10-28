@@ -3,7 +3,8 @@
  * where tone is 'check' (something to fix), 'ok' (confirmed) or 'next' (what to do now).
  * Keys map to CONSOLE_TEXT.coach. Original teaching heuristics, not a clinical algorithm.
  */
-import { offsetOf, depthRatio, mmFromHis, confirmation, acceptCheck, anatomyOf, LV_DEPTH, CUTOFFS, HIS_APEX_MM } from './csp-procedure.mjs';
+import { offsetOf, depthRatio, mmFromHis, confirmation, acceptCheck, anatomyOf, LV_DEPTH, CUTOFFS, HIS_APEX_MM, FUSION_LIMIT } from './csp-procedure.mjs';
+import { paramsOf } from './csp-model.mjs';
 import { trendDelta } from './csp-trends.mjs';
 
 const SITE_HALF_MM = 6;     // acceptable distance from the left bundle level along the His-apex line
@@ -80,6 +81,9 @@ function afterFixation(proc, result, list, test, trend) {
  */
 export function coaching(proc, result, list, test = null, trend = []) {
   if (proc.accepted) return [item('ok', 'accepted')];
+  const first = [];
+  if (proc.bumped) first.push(item('check', 'bumped', { pacing: proc.pacing ? 1 : 0 }));
+  if ((result.metrics.fusion || 0) > FUSION_LIMIT) first.push(item('check', 'fusion', { rate: proc.rate, sinus: paramsOf(result.state).intrinsicRate }));
   const items = proc.depthMm > .05 ? afterFixation(proc, result, list, test, trend) : beforeFixation(proc, result, list);
-  return items.slice(0, MAX_ITEMS);
+  return [...first, ...items].slice(0, MAX_ITEMS);
 }

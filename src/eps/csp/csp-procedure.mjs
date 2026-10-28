@@ -10,7 +10,7 @@
  * a unipolar output or S2 transition, Stim-V6RWPT at or under 74 ms, or a V6-V1 interpeak
  * over 44 ms. The grey bands (75-85 ms, 33-44 ms) are supportive only.
  */
-import { normalize, simulate, sanitizeParams } from './csp-model.mjs';
+import { normalize, simulate, sanitizeParams, paramsOf, v6CutoffsOf, CASE_PARAMS } from './csp-model.mjs';
 
 // Per teaching case: septal thickness and where the left bundle lies on the His-apex line (0 His, 1 apex).
 // stall: a scar island (depth ratio band at the left bundle level) where the helix spins without advancing.
@@ -24,9 +24,18 @@ export const ANATOMY = Object.freeze({
   invertedErp: { septumMm: 12, lbb: .31 },
   dilated: { septumMm: 11, lbb: .34 },
   lbbHigh: { septumMm: 12, lbb: .3 },
-  stall: { septumMm: 12, lbb: .3, stall: { from: .4, to: .62, half: .06 } }
+  stall: { septumMm: 12, lbb: .3, stall: { from: .4, to: .62, half: .06 } },
+  snd: { septumMm: 12, lbb: .3 },
+  lbbb: { septumMm: 13, lbb: .33 },
+  lbbbScar: { septumMm: 14, lbb: .32 },
+  rbbb: { septumMm: 12, lbb: .3 },
+  fusion: { septumMm: 12, lbb: .3 },
+  bump: { septumMm: 13, lbb: .32 }
 });
 const STALL_GRIP = .05;
+const BUMP_LEVEL = .05;      // manipulation this much basal of the left bundle level (toward the His) can bump the right bundle
+const BUMPED = Object.freeze({ rhythm: 'escapeWide', intrinsicRate: 30 });   // after the bump: complete block, slow wide escape
+export const FUSION_LIMIT = .2;   // beyond this share the timing criteria are not readable
 
 /** Deterministic pseudo-random numbers for the random patient (mulberry32). */
 function rng(seed) {
@@ -38,7 +47,9 @@ const between = (r, lo, hi, digits = 2) => Math.round((lo + r() * (hi - lo)) * 1
 export function randomPatient(seed) {
   const r = rng(seed);
   const ratio = r() < .3 ? between(r, 1.1, 1.7) : r() < .2 ? null : between(r, .3, .9);
-  const params = sanitizeParams({ scar: between(r, 1, 1.5), ratio, slowMs: between(r, 0, 18, 0), muscleERP: between(r, 215, 275, 0), conductionERP: between(r, 215, 330, 0), v6Offset: between(r, 0, 16, 0), interpeakShift: between(r, -6, 4, 0), access: r() > .1 });
+  const rhythm = ['escape', 'sinus', 'lbbb', 'rbbb'][Math.floor(r() * 4)];
+  const intrinsicRate = rhythm === 'escape' ? between(r, 32, 48, 0) : between(r, 48, 80, 0);
+  const params = sanitizeParams({ scar: between(r, 1, 1.5), ratio, slowMs: between(r, 0, 18, 0), muscleERP: between(r, 215, 275, 0), conductionERP: between(r, 215, 330, 0), v6Offset: between(r, 0, 16, 0), interpeakShift: between(r, -6, 4, 0), access: r() > .1, rhythm, intrinsicRate });
   const anatomy = Object.freeze({ septumMm: between(r, 10, 14, 0), lbb: between(r, .26, .36) });
   return { params, anatomy };
 }
@@ -71,6 +82,11 @@ export function offsetOf(sheath) {
 export const thicknessOf = proc => (Math.abs(offsetOf(proc.sheath)) > .5 ? FREE_WALL_MM : anatomyOf(proc).septumMm);
 export const depthRatio = proc => proc.depthMm / thicknessOf(proc);
 
+/** Tissue parameters in force: the case's or the random patient's, with the bumped right bundle applied. */
+export function paramsFor(proc) {
+  const base = proc.params || CASE_PARAMS[proc.caseId] || CASE_PARAMS.baseline;
+  return proc.bumped ? sanitizeParams({ ...base, ...BUMPED }) : proc.params || null;
+}
 /** Signal-model options for the current physical state. */
 export function modelOf(proc) {
   const { lbb } = anatomyOf(proc);
@@ -78,7 +94,7 @@ export function modelOf(proc) {
   const access = Math.max(0, Math.abs(proc.level - lbb) - SITE_WINDOW) * 1.3 + Math.abs(offset) * .6;
   return normalize({
     caseId: proc.caseId, entry: .5 + clamp(access, 0, .5), angle: Math.min(90, Math.abs(proc.sheath)),
-    depth: depthRatio(proc), level: proc.level, offset, params: proc.params || null,
+    depth: depthRatio(proc), level: proc.level, offset, params: paramsFor(proc),
     output: proc.output, pulseWidth: proc.pulseWidth, polarity: proc.polarity, rate: proc.rate, pacing: proc.pacing, s2: null
   });
 }
@@ -91,8 +107,15 @@ export function initialProcedure(caseId = 'baseline', seed = 1) {
     caseId: id, seed: id === 'random' ? seed : null, params: patient.params || null, anatomy: patient.anatomy || null,
     level: .55, sheath: -50, depthMm: 0, turns: 0,         // start: mid RV, sheath anterior (on the free wall)
     output: 2.5, pulseWidth: .5, polarity: 'uni', rate: 90, pacing: true,
-    accepted: false, fixation: 0, rbbbFixation: false, stalls: 0
+    accepted: false, fixation: 0, rbbbFixation: false, stalls: 0, bumped: false
   };
+}
+/** Basal manipulation in a trauma case injures the right bundle: one event, then complete block. */
+function bumpOf(proc, events) {
+  const cp = proc.params || CASE_PARAMS[proc.caseId] || CASE_PARAMS.baseline;
+  if (!cp.trauma || proc.bumped || proc.level >= anatomyOf(proc).lbb - BUMP_LEVEL) return proc;
+  events.push(event('rbbBump'));
+  return { ...proc, bumped: true };
 }
 
 /** Procedure step: 0 target, 1 pace map, 2 penetrate, 3 confirm, 4 accepted. */
@@ -124,7 +147,8 @@ export function act(proc, action) {
     case 'torque': {
       if (locked) return { proc, events: [event('locked')] };
       const sheath = clamp(proc.sheath + Number(action.delta || 0), -80, 80);
-      return { proc: { ...proc, sheath }, events: [event('torque', { sheath })] };
+      const events = [event('torque', { sheath })];
+      return { proc: bumpOf({ ...proc, sheath }, events), events };
     }
     case 'rotate': {
       const n = action.turns === 3 && rapidAllowed(proc) ? 3 : 1;
@@ -142,7 +166,7 @@ export function act(proc, action) {
       // Ectopy from the helix working through the septum: beats pending for the live recording.
       const fixation = after > .35 && after < 1 ? proc.fixation + n : proc.fixation;
       if (after >= 1 && before < 1) events.push(event('perforation'));
-      return { proc: { ...proc, depthMm, turns: proc.turns + n, fixation, accepted: false, stalls: stalled ? proc.stalls + n : 0 }, events };
+      return { proc: bumpOf({ ...proc, depthMm, turns: proc.turns + n, fixation, accepted: false, stalls: stalled ? proc.stalls + n : 0 }, events), events };
     }
     case 'consumeFixation': {
       // A fixation beat was recorded; near the left bundle it carries the RBBB pattern.
@@ -251,16 +275,20 @@ export function testFromRows(kind, rows, polarity = 'uni') {
  */
 export function criteria(result, proc, test = null) {
   const m = result.metrics;
-  const paced = proc.pacing && m.qrsDuration != null;
+  const rhythm = paramsOf(result.state).rhythm, cut = v6CutoffsOf(result.state);
+  const fused = (m.fusion || 0) > FUSION_LIMIT;   // fusion with intrinsic conduction: the timing reads nothing
+  const paced = proc.pacing && m.qrsDuration != null && !fused;
   const rPrime = paced ? terminalR(result) : null;
-  const v6 = !paced || m.v6Rwpt == null ? 'untested' : m.v6Rwpt <= CUTOFFS.v6Met ? 'met' : m.v6Rwpt <= CUTOFFS.v6Likely ? 'likely' : 'not';
-  const ip = !rPrime || m.interpeak == null ? 'untested' : m.interpeak > CUTOFFS.interpeakMet ? 'met' : m.interpeak >= CUTOFFS.interpeakLikely ? 'likely' : 'not';
+  // Baseline RBBB: the late right ventricle gives an r' at any depth, so the row is not useful (na).
+  const depthRow = rhythm === 'rbbb' ? 'na' : paced ? (rPrime ? 'met' : 'not') : 'untested';
+  const v6 = !paced || m.v6Rwpt == null ? 'untested' : m.v6Rwpt <= cut.met ? 'met' : m.v6Rwpt <= cut.likely ? 'likely' : 'not';
+  const ip = !rPrime || rhythm === 'rbbb' || m.interpeak == null ? 'untested' : m.interpeak > CUTOFFS.interpeakMet ? 'met' : m.interpeak >= CUTOFFS.interpeakLikely ? 'likely' : 'not';
   const transition = !test?.done ? 'untested' : test.polarity !== 'uni' ? 'untested' : (test.transitions || []).some(t => t.proof) ? 'met' : 'not';
   const ratio = depthRatio(proc);
   const safety = proc.depthMm <= LOCKED_MM ? 'untested' : m.impedance < CUTOFFS.impedanceMin || (ratio > .5 && m.coi < CUTOFFS.coiMin) ? 'not' : 'met';
   return [
-    { id: 'terminalR', group: 'depth', status: paced ? (rPrime ? 'met' : 'not') : 'untested' },
-    { id: 'v6Rwpt', group: 'proof', status: v6, value: m.v6Rwpt, unit: 'ms' },
+    { id: 'terminalR', group: 'depth', status: depthRow },
+    { id: 'v6Rwpt', group: 'proof', status: v6, value: m.v6Rwpt, unit: 'ms', cutoff: cut.met },
     { id: 'interpeak', group: 'proof', status: ip, value: rPrime ? m.interpeak : null, unit: 'ms' },
     { id: 'transition', group: 'proof', status: transition, value: (test?.transitions || []).filter(t => t.proof).length },
     { id: 'fixation', group: 'support', status: proc.rbbbFixation ? 'met' : 'untested' },
@@ -299,6 +327,8 @@ export function guidance(proc, result, list, test = null) {
   const met = id => list.find(c => c.id === id)?.status === 'met';
   if (result.capture.type === 'perforation') return { key: 'perforation', tone: 'warn' };
   if (proc.accepted) return { key: 'accepted', tone: 'ok' };
+  if (proc.bumped && !proc.pacing) return { key: 'bumpedOff', tone: 'warn' };
+  if ((result.metrics.fusion || 0) > FUSION_LIMIT) return { key: 'fusion', tone: 'warn' };
   if (proc.depthMm <= LOCKED_MM) {
     if (offset < 0) return { key: 'offAnterior', tone: 'warn' };
     if (offset > 0) return { key: 'offPosterior', tone: 'warn' };
@@ -314,6 +344,7 @@ export function guidance(proc, result, list, test = null) {
   if (ratio < LV_DEPTH) return { key: 'watchV1', tone: 'info' };
   if (conf.definitive) return { key: test?.threshold != null ? (acceptCheck(proc, list, test).length ? 'fixSettings' : 'acceptable') : 'confirmTest', tone: 'ok' };
   if (conf.supportive.length) return { key: 'likelyTest', tone: 'info' };
+  if (list.find(c => c.id === 'terminalR')?.status === 'na') return { key: 'deepRbbb', tone: 'info' };
   if (met('terminalR')) return { key: 'lvsp', tone: 'info' };
   return { key: 'deepNoProof', tone: 'info' };
 }

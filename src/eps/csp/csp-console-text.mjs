@@ -14,7 +14,13 @@ export const CONSOLE_TEXT = {
       invertedErp: '72 y: miyokardın refrakter süresi ileti dokusundan uzun. Çıkış testi geçiş göstermezse S1–S2 dene.',
       dilated: '69 y, dilate LV: Stim–V6RWPT ve interpeak gri bölgede kalır. Kanıt için geçiş gerekir.',
       lbbHigh: '77 y: sol dal eşiği miyokard eşiğinin üstünde. Azalan çıkışta önce ileti kaybolur; programlanan çıkış sol dal eşiğinin 2 katı olmalı.',
-      stall: '65 y, mid-septal skar adası: hedef seviyede heliks ilerlemez. Birkaç mm apikale yeniden konumla.'
+      stall: '65 y, mid-septal skar adası: hedef seviyede heliks ilerlemez. Birkaç mm apikale yeniden konumla.',
+      snd: '78 y, semptomatik sinüs duraklamaları, intakt AV ileti, QRS 86 ms. Pacing kapalıyken P dalgalı sinüs bradikardisi görülür.',
+      lbbb: '64 y, LBBB 160 ms, HFrEF (EF %30). CRT endikasyonu; LBBAP ile düzeltme hedeflenir, V6RWPT kesimi 80 ms.',
+      lbbbScar: '71 y, LBBB ve septal skar: miyokard eşiği yüksek, heliks zor ilerler, ileti dokusu daha derinde.',
+      rbbb: '69 y, bazal RBBB: V1’deki r′ derinlik göstermez. Derinliği V6RWPT, empedans ve COI ile izle.',
+      fusion: '58 y, sinüs 86/dk, intakt AV ileti. Pacing 90/dk ile füzyon: QRS dar, V6RWPT yalancı kısa. Hızı sinüsün 10–20 üstüne çıkar.',
+      bump: '66 y, LBBB 150 ms. Bazal septumda (His’e yakın) manipülasyon sağ dalı zedeler: tam blok, 30/dk geniş kaçış. Pacing açık kalmalı.'
     },
     caseGroups: { case: 'Olgular', trap: 'Öğretim tuzakları' }, newPatient: 'Yeni hasta çek',
     trendsTitle: 'Tur trendleri', trends: { impedance: 'Empedans', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', qrsDuration: 'QRS' }, trendsEmpty: 'tur yok',
@@ -33,7 +39,9 @@ export const CONSOLE_TEXT = {
       proof: 'Kesin kanıt: {n} kriter.', greyBand: 'Ölçümler gri bölgede (V6RWPT {v6} ms, interpeak {interpeak} ms).',
       unipolar: 'Test bipolar yapıldı: unipolar tekrarla.', runThreshold: 'Sonraki: unipolar eşik testi.',
       fixAccept: 'Kabul için: {reasons}.', accept: 'Sonraki: lead’i kabul et.', oneTurn: 'Sonraki: tek tur, sonra kaydı oku.',
-      accepted: 'Lead kabul edildi.'
+      accepted: 'Lead kabul edildi.',
+      fusion: 'Füzyon: sinüs {sinus}/dk, pacing {rate}/dk. Süre ölçümleri okunmaz; hızı sinüsün 10–20 üstüne çıkar.',
+      bumped: 'Sağ dal travması: LBBB üstüne RBBB, tam blok. Pacing açık kalmalı; kaçış 30/dk geniş.'
     },
     views: { rao: 'RAO 30°', lao: 'LAO 40°', septum: 'Septum kesiti' },
     fluoro: { fromHis: "His'ten", drag: "Ucu His–apeks hattı boyunca sürükle", apex: 'Apeks', angle: 'Septal normale açı', lbb: 'Sol dal' },
@@ -43,10 +51,10 @@ export const CONSOLE_TEXT = {
     analyser: 'Analizör · unipolar uç', readouts: { output: 'Çıkış', impedance: 'Empedans', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Tur', depth: 'Derinlik' },
     criteriaTitle: 'Yakalanma kriterleri (EHRA 2023 / ESC 2025)',
     groups: { depth: 'Derinlik (önkoşul)', proof: 'İleti sistemi kanıtı: biri kesin olunca yeterli', support: 'Destekleyici', safety: 'Güvenlik' },
-    status: { met: 'kesin', likely: 'olası', not: 'yok', untested: 'bakılmadı' },
+    status: { met: 'kesin', likely: 'olası', not: 'yok', untested: 'bakılmadı', na: 'yararsız' },
     criteria: {
-      terminalR: ['V1’de terminal r′ (Qr, rSR′)', 'Derinlik önkoşulu; her turdan sonra bakılır. Tek başına ileti sistemi kanıtı değildir.'],
-      v6Rwpt: ['Stim–V6RWPT ≤ 74 ms', 'Dar QRS veya izole RBBB için kesin sınır. 75–85 ms gri bölgedir: destekler, kanıtlamaz.'],
+      terminalR: ['V1’de terminal r′ (Qr, rSR′)', 'Derinlik önkoşulu; her turdan sonra bakılır. Tek başına ileti sistemi kanıtı değildir. Bazal RBBB’de her derinlikte vardır, yararsızdır.'],
+      v6Rwpt: ['Stim–V6RWPT ≤ {cutoff} ms', 'Dar QRS veya izole RBBB için 74 ms, LBBB ve geniş kaçış için 80 ms. Üstündeki gri bölge destekler, kanıtlamaz. Füzyonda okunmaz.'],
       interpeak: ['V6–V1 interpeak > 44 ms', 'Kesin sınır. 33–44 ms gri bölge. V1’de terminal r′ yoksa ölçülmez.'],
       transition: ['Unipolar geçiş: azalan çıkış veya S1–S2', 'ns-LBBP → s-LBBP (V6RWPT sabit, izoelektrik aralık eklenir) ya da ns-LBBP → LVSP (V6RWPT ≥ 10 ms uzar). Bipolar test sayılmaz.'],
       fixation: ['Vidalamada RBBB paternli fiksasyon atımları', 'Kayıtta görülen atımdan işaretlenir; uç geri çözülünce silinir. Destekleyici bulgu.'],
@@ -71,11 +79,15 @@ export const CONSOLE_TEXT = {
       impedanceDrop: 'Empedans düşüyor: perforasyona yakınsın. Tur atmayı bırak, gerekirse yarım tur geri çöz.',
       drilling: 'Helix dönüyor ama ilerlemiyor: kılıf açısı çok büyük.',
       stall: 'Heliks mid-septumda takıldı (skar adası): tur atmak ilerletmiyor. Yeniden konumla, birkaç mm apikale.',
+      fusion: 'Füzyon: intrinsik ileti paced QRS’e karışıyor, V6RWPT yalancı kısa. Pacing hızını sinüs hızının 10–20 üstüne çıkar.',
+      bumpedOff: 'Sağ dal zedelendi, tam blok: kaçış 30/dk ve geniş. Pacing’i aç.',
+      deepRbbb: 'Bazal RBBB: V1’deki r′ derinlik göstermez. V6RWPT, empedans ve COI’ye bak; eşik testi yap.',
       perforation: 'Perforasyon: yakalanma kaybı ve ani empedans düşüşü. Geri çöz.',
       accepted: 'Lead kabul edildi. Özet aşağıda.'
     },
     events: {
       case: 'Olgu yüklendi: {name}', rotate: 'Tur ×{n}: derinlik {d} mm', drilling: 'Helix ilerlemiyor (kılıf açısı büyük)', stall: 'Helix takıldı: skar adası',
+      rbbBump: 'Komplikasyon: sağ dal travması, tam AV blok (kaçış 30/dk)',
       perforation: 'Septum aşıldı: empedans düştü, yakalanma kayboldu', withdrawn: 'Uç yeniden septum içinde', unscrew: 'Yarım tur geri: {d} mm',
       reposition: 'Lead geri çekildi; yeni yer seçilebilir', locked: 'Lead vidalı: yer veya kılıf değiştirmek için önce yeniden konumla',
       pacingOn: 'Pacing açık', pacingOff: 'Pacing kapalı', fixation: 'Fiksasyon atımı', fixationRbbb: 'Fiksasyon atımı, V1’de RBBB paterni',
@@ -91,7 +103,7 @@ export const CONSOLE_TEXT = {
       sheath: 'Kılıf', ccw: '↺ Saat yönü tersi', cw: 'Saat yönü ↻', pacing: 'Pacing', tests: 'Testler', accept: 'Kabul et',
       keys: 'Klavye: R tur, Shift+R üç tur, U geri, ← → kılıf'
     },
-    teacher: 'Eğitmen ayarları (doğrudan)', teacherLabels: { level: 'His → apeks (0–1)', angle: 'Septal normale açı (°)', depth: 'Septum kalınlığına göre derinlik', rate: 'Pacing hızı (bpm)' },
+    teacher: 'Eğitmen ayarları (doğrudan)', teacherLabels: { level: 'His → apeks (0–1)', angle: 'Septal normale açı (°)', depth: 'Septum kalınlığına göre derinlik', rate: 'Hız (bpm)' },
     summary: 'Olgu özeti', verdict: { lbbp: 'Sol dal alanı pacing: ileti sistemi kanıtı var', lvsp: 'LV septal pacing: ileti sistemi kanıtı yok', septal: 'Derin septal / RV septal pacing', perforated: 'Perforasyon' },
     summaryRows: { turns: 'Tur', depthMm: 'Derinlik (mm)', threshold: 'Eşik (V)', proof: 'Kesin kanıt kriteri' },
     review: 'Atım incelemesi (seçili test atımı)'
@@ -109,7 +121,13 @@ export const CONSOLE_TEXT = {
       invertedErp: '72 y: the myocardial refractory period is longer than the conduction tissue’s. If the output test shows no transition, try S1–S2.',
       dilated: '69 y, dilated LV: Stim–V6RWPT and the interpeak stay in the grey band. Proof needs a transition.',
       lbbHigh: '77 y: the left bundle threshold is above the myocardial one. On decremental output conduction is lost first; the programmed output must be twice the left bundle threshold.',
-      stall: '65 y, mid-septal scar island: at the target level the helix does not advance. Reposition a few mm apically.'
+      stall: '65 y, mid-septal scar island: at the target level the helix does not advance. Reposition a few mm apically.',
+      snd: '78 y, symptomatic sinus pauses, intact AV conduction, QRS 86 ms. Pacing off shows sinus bradycardia with P waves.',
+      lbbb: '64 y, LBBB 160 ms, HFrEF (EF 30 %). CRT indication; LBBAP aims at correction, V6RWPT cut-off 80 ms.',
+      lbbbScar: '71 y, LBBB with septal scar: high myocardial threshold, the helix advances poorly, conduction tissue sits deeper.',
+      rbbb: '69 y, baseline RBBB: the r′ in V1 does not show depth. Follow depth on V6RWPT, impedance and COI.',
+      fusion: '58 y, sinus 86 bpm, intact AV conduction. Pacing at 90 bpm fuses: narrow QRS, falsely short V6RWPT. Pace 10–20 bpm above sinus.',
+      bump: '66 y, LBBB 150 ms. Manipulation on the basal septum (near the His) injures the right bundle: complete block, slow wide escape at 30 bpm. Keep pacing on.'
     },
     caseGroups: { case: 'Cases', trap: 'Teaching traps' }, newPatient: 'Draw a new patient',
     trendsTitle: 'Trends per turn', trends: { impedance: 'Impedance', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', qrsDuration: 'QRS' }, trendsEmpty: 'no turns yet',
@@ -128,7 +146,9 @@ export const CONSOLE_TEXT = {
       proof: 'Definitive proof: {n} criteria.', greyBand: 'Timing in the grey band (V6RWPT {v6} ms, interpeak {interpeak} ms).',
       unipolar: 'The test was bipolar: repeat it unipolar.', runThreshold: 'Next: unipolar threshold test.',
       fixAccept: 'To accept: {reasons}.', accept: 'Next: accept the lead.', oneTurn: 'Next: one turn, then read the recording.',
-      accepted: 'Lead accepted.'
+      accepted: 'Lead accepted.',
+      fusion: 'Fusion: sinus {sinus} bpm, pacing {rate} bpm. Timing cannot be read; pace 10–20 bpm above sinus.',
+      bumped: 'Right bundle injured: RBBB on top of LBBB, complete block. Keep pacing on; the escape is 30 bpm and wide.'
     },
     views: { rao: 'RAO 30°', lao: 'LAO 40°', septum: 'Septal section' },
     fluoro: { fromHis: 'from the His', drag: 'Drag the tip along the His–apex line', apex: 'Apex', angle: 'Angle to septal normal', lbb: 'Left bundle' },
@@ -138,10 +158,10 @@ export const CONSOLE_TEXT = {
     analyser: 'Analyser · unipolar tip', readouts: { output: 'Output', impedance: 'Impedance', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Turns', depth: 'Depth' },
     criteriaTitle: 'Capture criteria (EHRA 2023 / ESC 2025)',
     groups: { depth: 'Depth (prerequisite)', proof: 'Conduction-system proof: any one definitive criterion', support: 'Supportive', safety: 'Safety' },
-    status: { met: 'definitive', likely: 'likely', not: 'no', untested: 'not checked' },
+    status: { met: 'definitive', likely: 'likely', not: 'no', untested: 'not checked', na: 'not useful' },
     criteria: {
-      terminalR: ['Terminal r′ in V1 (Qr, rSR′)', 'Depth prerequisite; check after every turn. Not proof of conduction-system capture on its own.'],
-      v6Rwpt: ['Stim–V6RWPT ≤ 74 ms', 'Definitive cut-off for narrow QRS or isolated RBBB. 75–85 ms is a grey band: supportive, not proof.'],
+      terminalR: ['Terminal r′ in V1 (Qr, rSR′)', 'Depth prerequisite; check after every turn. Not proof of conduction-system capture on its own. With baseline RBBB it is present at any depth, so not useful.'],
+      v6Rwpt: ['Stim–V6RWPT ≤ {cutoff} ms', '74 ms for a narrow QRS or isolated RBBB, 80 ms for LBBB and a wide escape. The grey band above supports, does not prove. Unreadable with fusion.'],
       interpeak: ['V6–V1 interpeak > 44 ms', 'Definitive cut-off. 33–44 ms is a grey band. Not measured without a terminal r′ in V1.'],
       transition: ['Unipolar transition: decremental output or S1–S2', 'ns-LBBP → s-LBBP (V6RWPT unchanged, an isoelectric interval appears) or ns-LBBP → LVSP (V6RWPT prolongs ≥ 10 ms). A bipolar test does not count.'],
       fixation: ['RBBB-pattern fixation beats while screwing', 'Marked from a beat seen in the recording; cleared when the tip is backed out. Supportive.'],
@@ -166,11 +186,15 @@ export const CONSOLE_TEXT = {
       impedanceDrop: 'Impedance is falling: you are close to perforation. Stop rotating; unscrew half a turn if needed.',
       drilling: 'The helix spins without advancing: the sheath angle is too large.',
       stall: 'The helix is stuck mid-septum (scar island): turning advances nothing. Reposition a few mm apically.',
+      fusion: 'Fusion: intrinsic conduction blends into the paced QRS, V6RWPT is falsely short. Pace 10–20 bpm above the sinus rate.',
+      bumpedOff: 'Right bundle injured, complete block: the escape is 30 bpm and wide. Turn pacing on.',
+      deepRbbb: 'Baseline RBBB: the r′ in V1 does not show depth. Check V6RWPT, impedance and COI; run a threshold test.',
       perforation: 'Perforation: loss of capture and a sudden impedance drop. Unscrew.',
       accepted: 'Lead accepted. Summary below.'
     },
     events: {
       case: 'Case loaded: {name}', rotate: 'Turn ×{n}: depth {d} mm', drilling: 'Helix not advancing (sheath angle too large)', stall: 'Helix stuck: scar island',
+      rbbBump: 'Complication: right bundle injury, complete AV block (escape 30 bpm)',
       perforation: 'Septum crossed: impedance fell, capture lost', withdrawn: 'Tip back inside the septum', unscrew: 'Half turn back: {d} mm',
       reposition: 'Lead withdrawn; a new site can be chosen', locked: 'Lead fixed: reposition before changing the site or the sheath',
       pacingOn: 'Pacing on', pacingOff: 'Pacing off', fixation: 'Fixation beat', fixationRbbb: 'Fixation beat, RBBB pattern in V1',
@@ -186,7 +210,7 @@ export const CONSOLE_TEXT = {
       sheath: 'Sheath', ccw: '↺ CCW', cw: 'CW ↻', pacing: 'Pacing', tests: 'Tests', accept: 'Accept',
       keys: 'Keys: R turn, Shift+R three turns, U back, ← → sheath'
     },
-    teacher: 'Instructor settings (direct)', teacherLabels: { level: 'His → apex (0–1)', angle: 'Angle to septal normal (°)', depth: 'Depth relative to septal thickness', rate: 'Pacing rate (bpm)' },
+    teacher: 'Instructor settings (direct)', teacherLabels: { level: 'His → apex (0–1)', angle: 'Angle to septal normal (°)', depth: 'Depth relative to septal thickness', rate: 'Rate (bpm)' },
     summary: 'Case summary', verdict: { lbbp: 'Left bundle branch area pacing: conduction-system proof present', lvsp: 'LV septal pacing: no conduction-system proof', septal: 'Deep septal / RV septal pacing', perforated: 'Perforation' },
     summaryRows: { turns: 'Turns', depthMm: 'Depth (mm)', threshold: 'Threshold (V)', proof: 'Definitive proof criteria' },
     review: 'Beat review (selected test beat)'

@@ -96,6 +96,12 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   await set('output',3.5);await page.locator('[data-csp-accept]').click();assert.match(await page.locator('[data-csp-summary]').textContent(),/Sol dal alanı pacing/);
   await csp(()=>window.epsLab.panel.csp.loadCase('random',7));const seeded=(await state()).procedure;assert.equal(seeded.seed,7);assert.ok(seeded.params&&seeded.anatomy);
   await page.locator('[data-csp-reseed]').click();assert.notEqual((await state()).procedure.seed,7,'a new patient has a new seed');
+  // 9c. Fusion: the coaching flags it until the pacing rate rises; the bump case logs the complication.
+  await set('caseId','fusion');assert.equal(await page.locator('[data-csp-coach-item=fusion]').count(),1);assert.match(await page.locator('[data-csp-guide]').textContent(),/Füzyon/);
+  await set('rate',110);assert.equal((await state()).rate,110);assert.equal(await page.locator('[data-csp-coach-item=fusion]').count(),0,'rate 110 removes fusion');
+  await set('caseId','bump');await csp(()=>{const p=window.epsLab.panel.csp;for(let i=0;i<10;i++)p.act({type:'torque',delta:5});p.act({type:'site',level:.2});p.act({type:'rotate',turns:1});});
+  assert.match(await page.locator('[data-csp-log]').textContent(),/sağ dal travması/);assert.equal(await page.locator('[data-csp-coach-item=bumped]').count(),1);
+  await page.locator('[data-csp-pacing]').click();assert.match(await page.locator('[data-csp-guide]').textContent(),/Pacing’i aç/);await page.locator('[data-csp-pacing]').click();
 
   // 10. Phone width, direct route, storage failure.
   await page.setViewportSize({width:390,height:844});

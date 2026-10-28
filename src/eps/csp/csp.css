@@ -57,6 +57,7 @@
 .csp-criterion[data-status=met] .csp-badge { background:#2f8f5c; color:#effff5; }
 .csp-criterion[data-status=likely] .csp-badge { background:#806a1f; color:#fff5d4; }
 .csp-criterion[data-status=not] .csp-badge { background:#5a2a24; color:#ffd9d2; }
+.csp-criterion[data-status=na] .csp-badge { background:#2b3340; color:#c2cbd8; }
 .csp-log { margin:0; padding:0 0 0 2px; list-style:none; height:180px; overflow:auto; font-size:11px; }   /* fixed: beats must not shift the control bar */
 .csp-log li { padding:2px 0; border-bottom:1px solid #1b3024; } .csp-log time { font-family:ui-monospace,monospace; color:#76d7a5; }
 .csp-controlbar { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; padding:8px; border:1px solid #2e4a37; border-radius:8px; background:#0f2017; }

@@ -211,6 +211,38 @@ test('coaching reads the state: checklist before fixation, trends and next step 
   assert.ok(coaching(stuck, simulate(modelOf(stuck)), criteria(simulate(modelOf(stuck)), stuck), null, stuckTrend).some(i => i.key === 'noProgress'));
   assert.deepEqual(coaching({ ...p, accepted: true }, r, criteria(r, p)).map(i => i.key), ['accepted']);
 });
+test('rhythm cases: RBBB makes the r′ row useless, LBBB uses the 80 ms cut-off, fusion blocks the timing until the rate rises', () => {
+  const rb = screwIn('rbbb'), rbList = criteria(simulate(modelOf(rb)), rb);
+  assert.equal(status(rbList, 'terminalR'), 'na'); assert.equal(status(rbList, 'interpeak'), 'untested'); assert.equal(status(rbList, 'v6Rwpt'), 'met');
+  const shallow = screwIn('rbbb', 3), shallowList = criteria(simulate(modelOf(shallow)), shallow);
+  assert.equal(status(shallowList, 'terminalR'), 'na');
+  const seven = screwIn('rbbb', 7), sevenResult = simulate(modelOf(seven)), sevenList = criteria(sevenResult, seven);
+  assert.equal(guidance(seven, sevenResult, sevenList).key, 'likelyTest', 'the grey band comes first');
+  const noTiming = sevenList.map(c => (c.group === 'proof' ? { ...c, status: 'not' } : c));
+  assert.equal(guidance(seven, sevenResult, noTiming).key, 'deepRbbb');
+  const lb = screwIn('lbbb'), lbResult = simulate(modelOf(lb)), lbList = criteria(lbResult, lb);
+  assert.equal(lbList.find(c => c.id === 'v6Rwpt').cutoff, 80); assert.equal(status(lbList, 'v6Rwpt'), 'met');
+  const fu = screwIn('fusion'), fuResult = simulate(modelOf(fu)), fuList = criteria(fuResult, fu);
+  assert.ok(fuResult.metrics.fusion > .4); assert.equal(status(fuList, 'v6Rwpt'), 'untested'); assert.equal(status(fuList, 'terminalR'), 'untested');
+  assert.equal(guidance(fu, fuResult, fuList).key, 'fusion');
+  assert.ok(coaching(fu, fuResult, fuList).some(i => i.key === 'fusion' && i.params.sinus === 86));
+  const fast = { ...fu, rate: 110 }, fastResult = simulate(modelOf(fast));
+  assert.equal(fastResult.metrics.fusion, 0); assert.equal(status(criteria(fastResult, fast), 'v6Rwpt'), 'met');
+});
+test('right bundle bump: basal manipulation in the trauma case gives complete block with a slow wide escape', () => {
+  const p = run(initialProcedure('bump'), Array(10).fill({ type: 'torque', delta: 5 }));
+  assert.equal(p.bumped, false);
+  const safe = act({ ...p, level: ANATOMY.bump.lbb }, { type: 'rotate', turns: 1 });
+  assert.equal(safe.proc.bumped, false);
+  const hit = act({ ...p, level: ANATOMY.bump.lbb - .1 }, { type: 'rotate', turns: 1 });
+  assert.ok(hit.events.some(e => e.type === 'rbbBump')); assert.equal(hit.proc.bumped, true);
+  const off = { ...hit.proc, pacing: false }, r = simulate(modelOf(off));
+  assert.ok(r.metrics.qrsDuration >= 150); assert.equal(modelOf(off).params.intrinsicRate, 30);
+  assert.equal(guidance(off, r, criteria(r, off)).key, 'bumpedOff');
+  assert.ok(coaching(hit.proc, simulate(modelOf(hit.proc)), criteria(simulate(modelOf(hit.proc)), hit.proc)).some(i => i.key === 'bumped'));
+  assert.equal(criteria(simulate(modelOf(hit.proc)), hit.proc).find(c => c.id === 'v6Rwpt').cutoff, 80, 'wide escape: 80 ms cut-off');
+  assert.equal(act(hit.proc, { type: 'rotate', turns: 1 }).events.some(e => e.type === 'rbbBump'), false, 'bumped once');
+});
 test('instructor values map back onto the physical state', () => {
   const p = fromModel(onTarget('baseline'), { depth: .5, angle: 20, level: .4 });
   const m = modelOf(p);
