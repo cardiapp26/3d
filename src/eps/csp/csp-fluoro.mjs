@@ -96,7 +96,7 @@ function drawLao(ctx, w, h, proc, opts) {
     ctx.setLineDash([]);
   }
   ctx.fillStyle = '#f4f1e6'; ctx.font = '600 11px ui-monospace, monospace';
-  ctx.fillText(`${opts.text.angle}: ${Math.round(Math.abs(proc.sheath))}°`, 10, h - 12);
+  ctx.fillText(`${opts.text.angle}: ${Math.round(proc.sheath)}°`, 10, h - 12);
 }
 
 function drawSection(ctx, w, h, proc, opts) {

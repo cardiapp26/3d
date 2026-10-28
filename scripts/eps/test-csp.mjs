@@ -105,6 +105,19 @@ test('causal EGM filter attenuates sustained injury component', () => {
   assert.ok(Math.abs(mean(r.egm.filtered.slice(130, 200))) < Math.abs(mean(r.egm.unfiltered.slice(130, 200))) * .15);
   assert.notDeepEqual(r.egm.filtered, r.egm.unfiltered);
 });
+test('impedance rises as the helix engages and drops by over 200 ohm on perforation; COI on a mV scale', () => {
+  const at = depth => simulate({ depth, angle: 0, entry: .5 }).metrics;
+  assert.ok(at(.3).impedance > at(0).impedance && at(.8).impedance > at(.3).impedance && at(.95).impedance > at(.8).impedance);
+  assert.ok(at(.95).impedance - at(1).impedance > 200); assert.ok(at(1).impedance < 450);
+  assert.ok(at(.85).coi > 9 && at(.85).coi <= 15); assert.ok(at(.1).coi < 3); assert.equal(at(1).coi, 0);
+  assert.ok(at(.85).coi > at(.5).coi && at(.5).coi > at(.2).coi);
+});
+test('latency to the local EGM separates selective from nonselective capture', () => {
+  const ns = simulate({ output: 2 }).metrics, s = simulate({ output: .7 }).metrics, muscle = simulate({ depth: .6 }).metrics;
+  assert.ok(ns.latency != null && s.latency - ns.latency >= 12);
+  assert.ok(Math.abs(muscle.latency - ns.latency) < 8);
+  assert.equal(simulate({ pacing: false }).metrics.latency, null); assert.equal(simulate({ output: 0 }).metrics.latency, null);
+});
 test('pacing off and noncapture have distinct signal behavior', () => {
   const intrinsic = simulate({ pacing: false });
   assert.equal(intrinsic.capture.type, 'off'); assert.equal(intrinsic.metrics.v6Rwpt, null);

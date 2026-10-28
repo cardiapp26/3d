@@ -31,6 +31,8 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   assert.equal((await state()).procedure.turns,8);assert.equal(await capture(),'nonselective');
   assert.equal(await criterion('v6Rwpt'),'met');assert.equal(await criterion('interpeak'),'met');assert.equal(await criterion('transition'),'untested');
   await page.locator('[data-csp-torque=ccw]').isDisabled().then(v=>assert.equal(v,true,'sheath locked once screwed in'));
+  await page.locator('[data-csp-rotate="3"]').isDisabled().then(v=>assert.equal(v,true,'no triple turn from the LV septum'));
+  await page.locator('[data-csp-accept]').click();assert.match(await page.locator('[data-csp-log]').textContent(),/Kabul edilemez: eşik ölçülmedi/);
   const t0=await csp(()=>window.epsLab.panel.csp.getState().liveTime);await page.waitForTimeout(300);
   assert.ok(await csp(()=>window.epsLab.panel.csp.getState().liveTime)>t0,'live sweep runs');
   // 4. Live threshold test (fast-forwarded), then accept.

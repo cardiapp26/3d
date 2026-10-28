@@ -2,7 +2,8 @@
 // site, sheath and turns map onto the signal model; the criteria read the recording.
 import assert from 'node:assert/strict';
 import { simulate } from '../../src/eps/csp/csp-model.mjs';
-import { initialProcedure, act, modelOf, stageOf, criteria, guidance, startThreshold, thresholdBeat, summary, offsetOf, thicknessOf, fromModel, ANATOMY } from '../../src/eps/csp/csp-procedure.mjs';
+import { initialProcedure, act, modelOf, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, offsetOf, thicknessOf, fromModel, rapidAllowed, ANATOMY, CUTOFFS } from '../../src/eps/csp/csp-procedure.mjs';
+import { programmedSweep, thresholdSweep } from '../../src/eps/csp/csp-model.mjs';
 import { createRecorder, advance, beatFromResult } from '../../src/eps/csp/csp-live.mjs';
 
 let passed = 0;
@@ -31,15 +32,45 @@ test('torque and site bring the pace map: stage 1, septal level sets the limb-le
 });
 test('turns advance the helix, the V1 notch becomes a terminal r′ and LBB capture meets the criteria', () => {
   let p = onTarget('baseline');
-  const seen = [];
-  for (let i = 0; i < 8; i++) { p = act(p, { type: 'rotate', turns: 1 }).proc; seen.push(simulate(modelOf(p)).capture.type); }
+  const seen = [], rPrime = [];
+  for (let i = 0; i < 8; i++) {
+    p = act(p, { type: 'rotate', turns: 1 }).proc;
+    const r = simulate(modelOf(p)); seen.push(r.capture.type); rPrime.push(status(criteria(r, p), 'terminalR'));
+  }
   assert.equal(seen[0], 'rv'); assert.equal(seen.at(-1), 'nonselective');
   assert.ok(seen.includes('deep'));
+  // The terminal r' appears with the LV septal layer, not with the mid-QRS notch of the deep septum.
+  assert.deepEqual(rPrime.map((s, i) => [seen[i], s]).filter(([type]) => type === 'deep').map(([, s]) => s), rPrime.filter((_, i) => seen[i] === 'deep').map(() => 'not'));
+  assert.equal(rPrime.at(-1), 'met');
   const r = simulate(modelOf(p)), list = criteria(r, p);
-  for (const id of ['terminalR', 'v6Rwpt', 'interpeak', 'safety', 'fixation']) assert.equal(status(list, id), 'met', id);
+  for (const id of ['terminalR', 'v6Rwpt', 'interpeak', 'safety']) assert.equal(status(list, id), 'met', id);
   assert.equal(status(list, 'transition'), 'untested');
+  assert.equal(status(list, 'fixation'), 'untested', 'no fixation beat was recorded yet');
+  assert.ok(confirmation(list).definitive);
   assert.equal(guidance(p, r, list).key, 'confirmTest');
   assert.equal(stageOf(p), 3);
+  assert.equal(rapidAllowed(p), false);
+  assert.equal(act(p, { type: 'rotate', turns: 3 }).proc.turns, 9, 'three turns at once collapse to one from the LV septum');
+});
+test('fixation beats are evidence only once recorded, and backing out clears them', () => {
+  const p = run(onTarget('baseline'), Array(7).fill({ type: 'rotate', turns: 1 }));
+  assert.equal(p.rbbbFixation, false); assert.ok(p.fixation > 0, 'beats pending');
+  const seen = act(p, { type: 'consumeFixation' });
+  assert.equal(seen.events[0].type, 'fixationRbbb'); assert.equal(seen.proc.rbbbFixation, true);
+  assert.equal(status(criteria(simulate(modelOf(seen.proc)), seen.proc), 'fixation'), 'met');
+  assert.equal(act(seen.proc, { type: 'unscrew' }).proc.rbbbFixation, false);
+  const shallow = act(run(onTarget('baseline'), Array(4).fill({ type: 'rotate', turns: 1 })), { type: 'consumeFixation' });
+  assert.equal(shallow.events[0].type, 'fixation'); assert.equal(shallow.proc.rbbbFixation, false);
+});
+test('slow conduction stays in the grey band: supportive, not definitive, no accept', () => {
+  const p = run(onTarget('slow'), Array(8).fill({ type: 'rotate', turns: 1 }));
+  const r = simulate(modelOf(p)), list = criteria(r, p);
+  assert.equal(r.capture.type, 'nonselective');
+  assert.equal(status(list, 'v6Rwpt'), 'likely'); assert.equal(status(list, 'interpeak'), 'likely');
+  assert.equal(confirmation(list).definitive, false); assert.deepEqual(confirmation(list).supportive, ['v6Rwpt', 'interpeak']);
+  assert.equal(guidance(p, r, list).key, 'likelyTest');
+  assert.equal(summary(p, r, list, null).verdict, 'lvsp');
+  assert.ok(acceptCheck(p, list, null).includes('proof'));
 });
 test('one turn too many perforates; unscrewing comes back into the septum', () => {
   let p = run(onTarget('baseline'), Array(9).fill({ type: 'rotate', turns: 1 }));
@@ -57,16 +88,56 @@ test('screwed in: site and sheath are locked; a large sheath angle drills in pla
   const out = act(skewed, { type: 'rotate', turns: 1 });
   assert.ok(out.events.some(e => e.type === 'drilling')); assert.ok(out.proc.depthMm < .3);
 });
-test('live threshold test steps down, logs the transition and finds the threshold', () => {
+const runThreshold = p => { let t = startThreshold(p); const events = []; for (let i = 0; i < 300 && !t.done; i++) { const o = thresholdBeat(t, modelOf(p)); t = o.test; events.push(...o.events); } return { t, events }; };
+test('live threshold test steps down, classifies the transition and finds the threshold', () => {
   const p = run(onTarget('baseline'), Array(8).fill({ type: 'rotate', turns: 1 }));
-  let t = startThreshold(p); const events = [];
-  for (let i = 0; i < 300 && !t.done; i++) { const o = thresholdBeat(t, modelOf(p)); t = o.test; events.push(...o.events); }
+  const { t, events } = runThreshold(p);
   assert.ok(t.done); assert.ok(t.rows.length > 5);
-  assert.ok(events.some(e => e.type === 'transition'));
+  assert.equal(t.polarity, 'uni');
+  const transition = events.find(e => e.type === 'transition');
+  assert.equal(transition.kind, 'toSelective'); assert.ok(transition.proof); assert.ok(transition.dLatency >= CUTOFFS.latencyStep); assert.ok(Math.abs(transition.dv6) < CUTOFFS.deltaV6Lvsp);
   assert.ok(t.threshold > 0 && t.threshold < 1.5);
   const r = simulate(modelOf(p)), list = criteria(r, p, t);
   assert.equal(status(list, 'transition'), 'met');
-  assert.equal(summary(act(p, { type: 'accept' }).proc, r, list, t).verdict, 'lbbp');
+  assert.deepEqual(acceptCheck(p, list, t), []);
+  const accepted = act(p, { type: 'accept', reasons: acceptCheck(p, list, t) });
+  assert.equal(accepted.events[0].type, 'accepted');
+  assert.equal(summary(accepted.proc, r, list, t).verdict, 'lbbp');
+  assert.equal(guidance(p, r, list, t).key, 'acceptable');
+});
+test('a bipolar test proves nothing: anodal to cathodal is not a transition, acceptance asks for unipolar', () => {
+  const p = { ...run(onTarget('baseline'), Array(8).fill({ type: 'rotate', turns: 1 })), polarity: 'bi', output: 5 };
+  const { t } = runThreshold(p);
+  const anodal = t.transitions.find(x => x.from > 4);
+  assert.ok(anodal); assert.equal(anodal.kind, 'other'); assert.equal(anodal.proof, false);
+  assert.ok(t.transitions.every(x => !x.proof));
+  const list = criteria(simulate(modelOf(p)), p, t);
+  assert.equal(status(list, 'transition'), 'untested');
+  assert.ok(acceptCheck(p, list, t).includes('polarity'));
+  assert.equal(guidance(p, simulate(modelOf(p)), list, t).key, 'fixSettings');
+});
+test('sweeps from the analysis page count as tests: S2 drops the slow case to LV septal capture', () => {
+  const slow = { ...initialProcedure('slow'), sheath: 8, level: .32 };
+  slow.depthMm = .88 * thicknessOf(slow);
+  const s2 = testFromRows('s2', programmedSweep(modelOf(slow)), 'uni');
+  assert.equal(s2.done, true); assert.equal(s2.threshold, null);
+  const drop = s2.transitions.find(x => x.kind === 'toLvsp');
+  assert.ok(drop && drop.proof); assert.ok(drop.dv6 >= CUTOFFS.deltaV6Lvsp);
+  assert.ok(confirmation(criteria(simulate(modelOf(slow)), slow, s2)).definitive);
+  const p = run(onTarget('baseline'), Array(8).fill({ type: 'rotate', turns: 1 }));
+  const sweep = testFromRows('threshold', thresholdSweep(modelOf(p)), 'uni');
+  assert.ok(sweep.threshold > 0 && sweep.threshold < 1.5); assert.ok(sweep.transitions.some(x => x.kind === 'toSelective' && x.proof));
+});
+test('acceptance gate: depth, unipolar, threshold, output margin and definitive proof', () => {
+  const p = run(onTarget('baseline'), Array(8).fill({ type: 'rotate', turns: 1 }));
+  const list = criteria(simulate(modelOf(p)), p);
+  assert.deepEqual(acceptCheck(p, list, null), ['threshold']);
+  assert.equal(act(p, { type: 'accept', reasons: acceptCheck(p, list, null) }).events[0].type, 'acceptRefused');
+  const { t } = runThreshold(p);
+  assert.ok(acceptCheck({ ...p, output: t.threshold * 1.5 }, list, t).includes('margin'));
+  assert.ok(acceptCheck(p, list, { ...t, threshold: 2 }).includes('thresholdHigh'));
+  const shallow = run(onTarget('baseline'), Array(6).fill({ type: 'rotate', turns: 1 }));
+  assert.ok(acceptCheck(shallow, criteria(simulate(modelOf(shallow)), shallow), t).includes('depth'));
 });
 test('teaching cases differ: scar never reaches conduction tissue, equal thresholds show no transition', () => {
   const scar = run(onTarget('scar'), Array(14).fill({ type: 'rotate', turns: 1 }));

@@ -1,5 +1,5 @@
-import { CASES, simulate, thresholdSweep, programmedSweep, evidence } from './csp-model.mjs';
-import { initialProcedure, modelOf, act, stageOf, criteria, guidance, startThreshold, thresholdBeat, summary, fromModel, thicknessOf } from './csp-procedure.mjs';
+import { CASES, simulate, thresholdSweep, programmedSweep } from './csp-model.mjs';
+import { initialProcedure, modelOf, act, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, fromModel, thicknessOf, rapidAllowed } from './csp-procedure.mjs';
 import { createRecorder, advance, beatFromResult, drawSweep, LAYOUTS, SPEEDS } from './csp-live.mjs';
 import { drawFluoro, levelAt } from './csp-fluoro.mjs';
 import { TEXT } from './csp-text.mjs';
@@ -169,7 +169,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   polarity.addEventListener('change', () => setSetting({ polarity: polarity.value }));
   const thresholdBtn = button(() => t().threshold, startLiveThreshold, { 'data-csp-test': 'threshold' });
   const s2Btn = button(() => t().programmed, () => runTest('s2'), { 'data-csp-test': 's2' });
-  const accept = button(() => c().controls.accept, () => doAct({ type: 'accept' }), { 'data-csp-accept': '' });
+  const accept = button(() => c().controls.accept, () => doAct({ type: 'accept', reasons: acceptCheck(proc, criteria(result, proc, lastTest), lastTest) }), { 'data-csp-accept': '' });
   bar.append(
     group(() => c().controls.lead, rotate1, rotate3, unscrew, reposition),
     group(() => c().controls.sheath, ccw, sheathOut, cw),
@@ -268,21 +268,23 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const ev = c().events, f = v => (Number.isFinite(v) ? v.toFixed(v < 10 ? 2 : 0).replace(/\.?0+$/, '') : '·');
     const params = { ...e.params };
     if ('d' in params) params.d = Number(params.d).toFixed(1);
-    if ('from' in params) { params.from = f(params.from); params.to = f(params.to); params.dv6 = Number.isFinite(e.params.dv6) ? e.params.dv6 : '·'; }
+    if ('from' in params) { params.from = f(params.from); params.to = f(params.to); params.dv6 = Number.isFinite(e.params.dv6) ? e.params.dv6 : '·'; params.kind = c().kinds[params.kind] || params.kind; }
     if ('v' in params) params.v = f(params.v);
+    if (Array.isArray(params.reasons)) params.reasons = params.reasons.map(r => c().acceptReasons[r] || r).join(', ');
     return fill(ev[e.key] || e.key, params);
   }
   function apply(events) {
     for (const e of events) {
       if (e.type === 'rotate') addLog('rotate', { n: e.turns, d: e.depthMm });
       else if (e.type === 'unscrew') addLog('unscrew', { d: e.depthMm });
+      else if (e.type === 'acceptRefused') addLog('acceptRefused', { reasons: e.reasons });
       else if (e.type !== 'torque') addLog(e.type);
     }
   }
   function doAct(action) {
     const out = act(proc, action);
     proc = out.proc; apply(out.events);
-    if (action.type === 'rotate' || action.type === 'unscrew' || action.type === 'reposition') { test = null; }
+    if (action.type === 'rotate' || action.type === 'unscrew' || action.type === 'reposition') { test = null; lastTest = null; }   // test evidence belongs to one position
     recompute();
   }
   function moveSite(event) {
@@ -299,13 +301,14 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     addLog('case', { name: CASES.find(k => k.id === proc.caseId).name[lang()] });
     recompute();
   }
-  function change() { s2 = null; rows = []; ui.testKind = null; ui.selected = -1; ui.answer = null; ui.revealed = false; ui.marks = []; recompute(); }
+  function change() { s2 = null; rows = []; lastTest = null; ui.testKind = null; ui.selected = -1; ui.answer = null; ui.revealed = false; ui.marks = []; recompute(); }
   function recompute() { state = { ...modelOf(proc), s2 }; result = simulate(state); render(); }
   function clearTest() { rows = []; ui.testKind = null; s2 = null; ui.selected = -1; ui.answer = null; ui.revealed = false; ui.marks = []; reference = null; recompute(); }
   function runTest(kind) {
     ui.marks = []; ui.answer = null; ui.revealed = false; ui.testKind = kind; ui.selected = -1; ui.page = 'analysis';
     proc = { ...proc, pacing: true }; s2 = null; state = { ...modelOf(proc), s2 }; result = simulate(state);
     rows = kind === 'threshold' ? thresholdSweep(state) : programmedSweep(state);
+    lastTest = testFromRows(kind === 'threshold' ? 'threshold' : 's2', rows, proc.polarity);   // the sweep counts as evidence like the live test
     reference = result; render();
   }
   function startLiveThreshold() {
@@ -315,7 +318,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function addMark(ms) { if (!ui.caliper) return; if (ui.marks.length === 2) ui.marks = []; ui.marks.push(Math.round(ms)); ui.playing = false; render(); }
   function expected() {
     if (['none', 'off', 'perforation'].includes(result.capture.type)) return result.capture.type;
-    return rows.length && evidence(rows).hasTransition ? result.capture.type : 'insufficient';
+    return confirmation(criteria(result, proc, lastTest)).definitive ? result.capture.type : 'insufficient';
   }
   function save() {
     const item = { date: new Date().toISOString(), caseId: proc.caseId, capture: result.capture.type, answer: ui.answer, output: proc.output, pulseWidth: proc.pulseWidth, test: ui.testKind };
@@ -331,8 +334,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const interval = 60000 / options.rate;
     if (pendingEscape) { pendingEscape = false; return beatFromResult(sim({ ...options, pacing: false }), interval * .8, { stimulus: false, kind: 'intrinsic' }); }
     if (proc.fixation > 0 && Math.random() < FIXATION_CHANCE) {
-      proc = act(proc, { type: 'consumeFixation' }).proc;
-      addLog(proc.rbbbFixation ? 'fixationRbbb' : 'fixation');
+      const out = act(proc, { type: 'consumeFixation' });   // the observed beat is what sets the RBBB flag
+      proc = out.proc; apply(out.events);
       return beatFromResult(sim({ ...options, output: 8, pacing: true }), interval * .75, { stimulus: false, kind: 'fixation' });
     }
     if (!options.pacing) return beatFromResult(sim(options), 1100, { stimulus: false, kind: 'intrinsic' });
@@ -366,7 +369,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const stage = stageOf(proc);
     phaseNodes.forEach((n, i) => n.setAttribute('aria-current', i === stage ? 'step' : 'false'));
     const list = criteria(result, proc, lastTest);
-    const g = guidance(proc, result, list);
+    const g = guidance(proc, result, list, lastTest);
     guide.textContent = c().guide[g.key] || ''; guide.dataset.tone = g.tone;
     // Readouts: the live paced beat when a test is running, else the current position.
     const shown = test && !test.done && recorder.last ? recorder.last.result : result;
@@ -377,9 +380,9 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     readouts.replaceChildren(...items.flatMap(([k, v]) => { const dt = el('dt'); dt.textContent = c().readouts[k]; const dd = el('dd', '', { 'data-csp-readout': k }); dd.textContent = v; return [dt, dd]; }));
     renderCriteria(list);
     logList.replaceChildren(...log.map(e => { const li = el('li'); const time = el('time'); time.textContent = e.time; li.append(time, ` ${eventText(e)}`); return li; }));
-    sheathOut.textContent = `${Math.round(Math.abs(proc.sheath))}°`;
+    sheathOut.textContent = `${Math.round(proc.sheath)}°`;   // signed: negative anterior (clockwise), positive posterior
     const locked = proc.depthMm > .05;
-    ccw.disabled = cw.disabled = locked; unscrew.disabled = !locked;
+    ccw.disabled = cw.disabled = locked; unscrew.disabled = !locked; rotate3.disabled = !rapidAllowed(proc);
     accept.disabled = stage < 3 || result.capture.type === 'perforation';
     thresholdBtn.setAttribute('aria-pressed', String(Boolean(test && !test.done)));
     warning.textContent = result.capture.type === 'perforation' ? t().warning : '';

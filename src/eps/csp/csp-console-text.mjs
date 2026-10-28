@@ -17,15 +17,15 @@ export const CONSOLE_TEXT = {
     ecgGain: 'EKG ×', egmGain: 'EGM ×', tip: 'Uç EGM', coi: 'Uç (COI)',
     analyser: 'Analizör · unipolar uç', readouts: { output: 'Çıkış', impedance: 'Empedans', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Tur', depth: 'Derinlik' },
     criteriaTitle: 'Yakalanma kriterleri (EHRA 2023 / ESC 2025)',
-    groups: { depth: 'Derinlik', proof: 'İleti sistemi kanıtı (biri yeterli)', support: 'Destekleyici', safety: 'Güvenlik' },
-    status: { met: 'var', likely: 'olası', not: 'yok', untested: 'bakılmadı' },
+    groups: { depth: 'Derinlik (önkoşul)', proof: 'İleti sistemi kanıtı: biri kesin olunca yeterli', support: 'Destekleyici', safety: 'Güvenlik' },
+    status: { met: 'kesin', likely: 'olası', not: 'yok', untested: 'bakılmadı' },
     criteria: {
-      terminalR: ['V1’de terminal r′ (Qr, rSR′)', 'Derinliği gösterir; her turdan sonra bakılır. Tek başına ileti sistemi kanıtı değildir.'],
-      v6Rwpt: ['Stim–V6RWPT < 75 ms', 'Dar QRS veya izole RBBB için; 75–85 ms olası kabul edilir.'],
-      interpeak: ['V6–V1 interpeak > 44 ms', '33–44 ms olası. V1’de terminal r′ yoksa ölçülmez.'],
-      transition: ['Azalan çıkışta QRS geçişi', 'Eşik testinde ns-LBBP → s-LBBP veya → LVSP geçişi.'],
-      fixation: ['Vidalamada RBBB paternli fiksasyon atımları', 'Uç sol dala yaklaşırken görülebilir; destekleyici bulgu.'],
-      safety: ['Empedans ≥ 450 Ω, COI mevcut', 'Ani empedans düşüşü veya COI kaybı perforasyon uyarısıdır.']
+      terminalR: ['V1’de terminal r′ (Qr, rSR′)', 'Derinlik önkoşulu; her turdan sonra bakılır. Tek başına ileti sistemi kanıtı değildir.'],
+      v6Rwpt: ['Stim–V6RWPT ≤ 74 ms', 'Dar QRS veya izole RBBB için kesin sınır. 75–85 ms gri bölgedir: destekler, kanıtlamaz.'],
+      interpeak: ['V6–V1 interpeak > 44 ms', 'Kesin sınır. 33–44 ms gri bölge. V1’de terminal r′ yoksa ölçülmez.'],
+      transition: ['Unipolar geçiş: azalan çıkış veya S1–S2', 'ns-LBBP → s-LBBP (V6RWPT sabit, izoelektrik aralık eklenir) ya da ns-LBBP → LVSP (V6RWPT ≥ 10 ms uzar). Bipolar test sayılmaz.'],
+      fixation: ['Vidalamada RBBB paternli fiksasyon atımları', 'Kayıtta görülen atımdan işaretlenir; uç geri çözülünce silinir. Destekleyici bulgu.'],
+      safety: ['Empedans ≥ 450 Ω, COI ≥ 3 mV', 'Empedans heliks girdikçe yükselir; perforasyonda 200 Ω’dan fazla düşer ve COI kaybolur.']
     },
     guide: {
       offAnterior: 'Uç septumda değil, RV serbest duvarında: geniş QRS, V1’de çentik yok. LAO’da kılıfı saat yönü tersine çevir.',
@@ -39,8 +39,10 @@ export const CONSOLE_TEXT = {
       watchV1: 'Derinleşiyor: çentik QRS sonuna yaklaştı. Tek tur at, sonra kayda bak.',
       lvsp: 'V1’de terminal r′ var: LV septumundasın (LVSP), ileti sistemi kanıtı henüz yok. Tek tur daha dikkatle düşünülebilir.',
       deepNoProof: 'Derin septumdasın ama V1’de terminal r′ yok. Kayda bak; gerekirse yarım tur ilerle.',
-      confirmTest: 'V6RWPT kısa, interpeak uzun: sol dal yakalanması olası. Doğrulamak için eşik testi yap.',
-      acceptable: 'Kanıt yeterli: azalan çıkışta geçiş görüldü. Lead’i kabul edebilirsin.',
+      confirmTest: 'Kesin kanıt var. Eşik testi yap: eşiği ölç ve azalan çıkışta geçişi gör.',
+      likelyTest: 'Ölçümler gri bölgede, kesin değil. Eşik testi veya S1–S2 ile geçiş ara; yoksa tek tur daha düşünülebilir.',
+      acceptable: 'Kanıt kesin, eşik ölçüldü. Lead’i kabul edebilirsin.',
+      fixSettings: 'Kanıt kesin ama kabul koşulu eksik: unipolar, eşik ≤ 1,5 V ve çıkış eşiğin en az 2 katı olmalı.',
       impedanceDrop: 'Empedans düşüyor: perforasyona yakınsın. Tur atmayı bırak, gerekirse yarım tur geri çöz.',
       drilling: 'Helix dönüyor ama ilerlemiyor: kılıf açısı çok büyük.',
       perforation: 'Perforasyon: yakalanma kaybı ve ani empedans düşüşü. Geri çöz.',
@@ -51,10 +53,12 @@ export const CONSOLE_TEXT = {
       perforation: 'Septum aşıldı: empedans düştü, yakalanma kayboldu', withdrawn: 'Uç yeniden septum içinde', unscrew: 'Yarım tur geri: {d} mm',
       reposition: 'Lead geri çekildi; yeni yer seçilebilir', locked: 'Lead vidalı: yer veya kılıf değiştirmek için önce yeniden konumla',
       pacingOn: 'Pacing açık', pacingOff: 'Pacing kapalı', fixation: 'Fiksasyon atımı', fixationRbbb: 'Fiksasyon atımı, V1’de RBBB paterni',
-      thresholdStart: 'Eşik testi başladı: her 3 atımda çıkış azalır', transition: 'Eşik testi: {from} → {to} V morfoloji geçişi (ΔV6RWPT {dv6} ms)',
+      thresholdStart: 'Eşik testi başladı: her 3 atımda çıkış azalır', transition: 'Eşik testi: {from} → {to} V geçiş, {kind} (ΔV6RWPT {dv6} ms)',
       thresholdDone: 'Eşik testi bitti: eşik {v} V', thresholdNone: 'Eşik testi bitti: 0,1 V’de de yakalanma sürüyor',
-      accepted: 'Lead kabul edildi', acceptRefused: 'Kabul edilemez: uç yeterince derin değil ya da septum aşılmış', output: 'Çıkış {v} V'
+      accepted: 'Lead kabul edildi', acceptRefused: 'Kabul edilemez: {reasons}', output: 'Çıkış {v} V'
     },
+    kinds: { toSelective: 'nonselektif → selektif', toLvsp: 'nonselektif → LV septal', other: 'morfoloji değişti, kanıt değil' },
+    acceptReasons: { depth: 'uç LV septal derinlikte değil ya da septum aşılmış', polarity: 'kayıt unipolar değil', threshold: 'eşik ölçülmedi', thresholdHigh: 'eşik 1,5 V üzerinde', margin: 'çıkış eşiğin 2 katından az', proof: 'kesin ileti sistemi kanıtı yok' },
     log: 'Olay günlüğü',
     controls: {
       lead: 'Lead', rotate: 'Tur ×1', rapid: 'Tur ×3', unscrew: 'Yarım tur geri', reposition: 'Yeniden konumla',
@@ -63,7 +67,7 @@ export const CONSOLE_TEXT = {
     },
     teacher: 'Eğitmen ayarları (doğrudan)', teacherLabels: { level: 'His → apeks (0–1)', angle: 'Septal normale açı (°)', depth: 'Septum kalınlığına göre derinlik', rate: 'Pacing hızı (bpm)' },
     summary: 'Olgu özeti', verdict: { lbbp: 'Sol dal alanı pacing: ileti sistemi kanıtı var', lvsp: 'LV septal pacing: ileti sistemi kanıtı yok', septal: 'Derin septal / RV septal pacing', perforated: 'Perforasyon' },
-    summaryRows: { turns: 'Tur', depthMm: 'Derinlik (mm)', threshold: 'Eşik (V)', proof: 'Kanıt kriteri' },
+    summaryRows: { turns: 'Tur', depthMm: 'Derinlik (mm)', threshold: 'Eşik (V)', proof: 'Kesin kanıt kriteri' },
     review: 'Atım incelemesi (seçili test atımı)'
   },
   en: {
@@ -82,15 +86,15 @@ export const CONSOLE_TEXT = {
     ecgGain: 'ECG ×', egmGain: 'EGM ×', tip: 'Tip EGM', coi: 'Tip (COI)',
     analyser: 'Analyser · unipolar tip', readouts: { output: 'Output', impedance: 'Impedance', coi: 'COI', v6Rwpt: 'Stim–V6RWPT', interpeak: 'V6–V1 interpeak', qrsDuration: 'QRS', turns: 'Turns', depth: 'Depth' },
     criteriaTitle: 'Capture criteria (EHRA 2023 / ESC 2025)',
-    groups: { depth: 'Depth', proof: 'Conduction-system proof (any one)', support: 'Supportive', safety: 'Safety' },
-    status: { met: 'yes', likely: 'likely', not: 'no', untested: 'not checked' },
+    groups: { depth: 'Depth (prerequisite)', proof: 'Conduction-system proof: any one definitive criterion', support: 'Supportive', safety: 'Safety' },
+    status: { met: 'definitive', likely: 'likely', not: 'no', untested: 'not checked' },
     criteria: {
-      terminalR: ['Terminal r′ in V1 (Qr, rSR′)', 'Shows depth; check after every turn. Not proof of conduction-system capture on its own.'],
-      v6Rwpt: ['Stim–V6RWPT < 75 ms', 'For narrow QRS or isolated RBBB; 75–85 ms counts as likely.'],
-      interpeak: ['V6–V1 interpeak > 44 ms', '33–44 ms likely. Not measured without a terminal r′ in V1.'],
-      transition: ['QRS transition on decremental output', 'ns-LBBP → s-LBBP or → LVSP during the threshold test.'],
-      fixation: ['RBBB-pattern fixation beats while screwing', 'May appear as the tip nears the left bundle; supportive.'],
-      safety: ['Impedance ≥ 450 Ω, COI present', 'A sudden impedance drop or loss of COI warns of perforation.']
+      terminalR: ['Terminal r′ in V1 (Qr, rSR′)', 'Depth prerequisite; check after every turn. Not proof of conduction-system capture on its own.'],
+      v6Rwpt: ['Stim–V6RWPT ≤ 74 ms', 'Definitive cut-off for narrow QRS or isolated RBBB. 75–85 ms is a grey band: supportive, not proof.'],
+      interpeak: ['V6–V1 interpeak > 44 ms', 'Definitive cut-off. 33–44 ms is a grey band. Not measured without a terminal r′ in V1.'],
+      transition: ['Unipolar transition: decremental output or S1–S2', 'ns-LBBP → s-LBBP (V6RWPT unchanged, an isoelectric interval appears) or ns-LBBP → LVSP (V6RWPT prolongs ≥ 10 ms). A bipolar test does not count.'],
+      fixation: ['RBBB-pattern fixation beats while screwing', 'Marked from a beat seen in the recording; cleared when the tip is backed out. Supportive.'],
+      safety: ['Impedance ≥ 450 Ω, COI ≥ 3 mV', 'Impedance rises as the helix engages; perforation drops it by more than 200 Ω and the COI is lost.']
     },
     guide: {
       offAnterior: 'The tip is on the RV free wall, not the septum: wide QRS, no notch in V1. Torque the sheath counter-clockwise in LAO.',
@@ -104,8 +108,10 @@ export const CONSOLE_TEXT = {
       watchV1: 'Getting deep: the notch is near the end of the QRS. One turn, then read the recording.',
       lvsp: 'Terminal r′ in V1: you are in the LV septum (LVSP), no conduction-system proof yet. One more careful turn may be considered.',
       deepNoProof: 'Deep in the septum but no terminal r′ in V1. Read the recording; advance half a turn if needed.',
-      confirmTest: 'Short V6RWPT, long interpeak: left bundle capture is likely. Run a threshold test to confirm.',
-      acceptable: 'Enough evidence: a transition on decremental output. You can accept the lead.',
+      confirmTest: 'Definitive proof present. Run a threshold test: measure the threshold and watch the transition on decremental output.',
+      likelyTest: 'Timing in the grey band, not definitive. Look for a transition with a threshold test or S1–S2; otherwise one more turn may be considered.',
+      acceptable: 'Proof definitive, threshold measured. You can accept the lead.',
+      fixSettings: 'Proof definitive but an acceptance condition is missing: unipolar, threshold ≤ 1.5 V and output at least 2× the threshold.',
       impedanceDrop: 'Impedance is falling: you are close to perforation. Stop rotating; unscrew half a turn if needed.',
       drilling: 'The helix spins without advancing: the sheath angle is too large.',
       perforation: 'Perforation: loss of capture and a sudden impedance drop. Unscrew.',
@@ -116,10 +122,12 @@ export const CONSOLE_TEXT = {
       perforation: 'Septum crossed: impedance fell, capture lost', withdrawn: 'Tip back inside the septum', unscrew: 'Half turn back: {d} mm',
       reposition: 'Lead withdrawn; a new site can be chosen', locked: 'Lead fixed: reposition before changing the site or the sheath',
       pacingOn: 'Pacing on', pacingOff: 'Pacing off', fixation: 'Fixation beat', fixationRbbb: 'Fixation beat, RBBB pattern in V1',
-      thresholdStart: 'Threshold test started: output steps down every 3 beats', transition: 'Threshold test: {from} → {to} V morphology transition (ΔV6RWPT {dv6} ms)',
+      thresholdStart: 'Threshold test started: output steps down every 3 beats', transition: 'Threshold test: {from} → {to} V transition, {kind} (ΔV6RWPT {dv6} ms)',
       thresholdDone: 'Threshold test done: threshold {v} V', thresholdNone: 'Threshold test done: still capturing at 0.1 V',
-      accepted: 'Lead accepted', acceptRefused: 'Cannot accept: the tip is not deep enough or the septum is crossed', output: 'Output {v} V'
+      accepted: 'Lead accepted', acceptRefused: 'Cannot accept: {reasons}', output: 'Output {v} V'
     },
+    kinds: { toSelective: 'nonselective → selective', toLvsp: 'nonselective → LV septal', other: 'morphology changed, not proof' },
+    acceptReasons: { depth: 'tip not at LV septal depth or septum crossed', polarity: 'recording not unipolar', threshold: 'threshold not measured', thresholdHigh: 'threshold above 1.5 V', margin: 'output below 2× the threshold', proof: 'no definitive conduction-system proof' },
     log: 'Event log',
     controls: {
       lead: 'Lead', rotate: 'Turn ×1', rapid: 'Turn ×3', unscrew: 'Half turn back', reposition: 'Reposition',
@@ -128,7 +136,7 @@ export const CONSOLE_TEXT = {
     },
     teacher: 'Instructor settings (direct)', teacherLabels: { level: 'His → apex (0–1)', angle: 'Angle to septal normal (°)', depth: 'Depth relative to septal thickness', rate: 'Pacing rate (bpm)' },
     summary: 'Case summary', verdict: { lbbp: 'Left bundle branch area pacing: conduction-system proof present', lvsp: 'LV septal pacing: no conduction-system proof', septal: 'Deep septal / RV septal pacing', perforated: 'Perforation' },
-    summaryRows: { turns: 'Turns', depthMm: 'Depth (mm)', threshold: 'Threshold (V)', proof: 'Proof criteria' },
+    summaryRows: { turns: 'Turns', depthMm: 'Depth (mm)', threshold: 'Threshold (V)', proof: 'Definitive proof criteria' },
     review: 'Beat review (selected test beat)'
   }
 };
