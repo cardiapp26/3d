@@ -16,6 +16,7 @@ export default defineConfig({
         ecg: page('./ecg/index.html'),
         angio: page('./angio/index.html'),
         echo: page('./echo/index.html'),
+        cardiacMr: page('./cardiac-mr/index.html'),
         exam: page('./exam/index.html'),
         hemo: page('./hemo/index.html'),
         epAnatomy: page('./eps/anatomy/index.html'),

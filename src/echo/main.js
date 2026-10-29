@@ -6,6 +6,7 @@ import { createPersonalNotes } from '../personal-notes.js';
 import { createEchoMode } from '../echo-mode.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { linkToLastRoute } from '../entry-route.js';
+import { createPathologyPanel } from './echo-pathology-panel.js';
 import './echo-studio.css';
 
 const params = new URLSearchParams(location.search);
@@ -31,7 +32,7 @@ const TEXTS = {
     beatPause: '⏸ Durdur',
     beatPlay: '▶ Oynat',
     look: 'Düzleme bak',
-    labels: { hint: 'Üç görünüm aynı düzlemi gösterir: 3D kalp ve prob, eko sektörü ve bu düzlemin anatomisi.', anatomy3d: '3D anatomi', plane: 'Bu düzlemdeki anatomi', views: 'Görünümler', probe: 'Prob ve kateter konumu', handle: 'Kumanda', inImage: 'Bu görüntüde', thisView: 'Bu görünüm', reference: 'Gerçek eko kaydı', limits: 'Model sınırları' },
+    labels: { hint: 'Üç görünüm aynı düzlemi gösterir: 3D kalp ve prob, eko sektörü ve bu düzlemin anatomisi.', anatomy3d: '3D anatomi', plane: 'Bu düzlemdeki anatomi', views: 'Görünümler', probe: 'Prob ve kateter konumu', handle: 'Kumanda', inImage: 'Bu görüntüde', pathology: 'Kapak patolojisi', thisView: 'Bu görünüm', reference: 'Gerçek eko kaydı', limits: 'Model sınırları' },
     disclaimer: 'Eğitim ve simülasyon amaçlıdır. EACVI/ASE kılavuzları (Lang 2015, Hahn 2013) ve PCR-EAPCI ICE konsensusu temel alınarak TTE (transtorasik), TEE (transözofajiyal multiplan) ve ICE (intrakardiyak ekokardiyografi) kesitleri 3D kalp geometrisinden anlık düzlem kesme algoritmasıyla modellenmiştir. Klinik tanı ve tedavi için uzman kardiyolog değerlendirmesi şarttır.'
   },
   en: {
@@ -39,7 +40,7 @@ const TEXTS = {
     beatPause: '⏸ Freeze',
     beatPlay: '▶ Play',
     look: 'Face the plane',
-    labels: { hint: 'All three views show one plane: the 3D heart with the probe, the echo sector and the anatomy of this plane.', anatomy3d: '3D anatomy', plane: 'Anatomy in this plane', views: 'Views', probe: 'Probe and catheter position', handle: 'Handle', inImage: 'In this image', thisView: 'This view', reference: 'Recorded echo', limits: 'Model limits' },
+    labels: { hint: 'All three views show one plane: the 3D heart with the probe, the echo sector and the anatomy of this plane.', anatomy3d: '3D anatomy', plane: 'Anatomy in this plane', views: 'Views', probe: 'Probe and catheter position', handle: 'Handle', inImage: 'In this image', pathology: 'Valve pathology', thisView: 'This view', reference: 'Recorded echo', limits: 'Model limits' },
     disclaimer: 'For educational and simulation purposes. Modeled after EACVI/ASE standards (Lang 2015, Hahn 2013) and the PCR-EAPCI ICE consensus. TTE, multiplane TEE, and ICE sections are rendered in real time from dynamic 3D cardiac surfaces via planar geometric clipping. Clinical decisions require licensed specialist assessment.'
   }
 };
@@ -82,6 +83,10 @@ if (heart && echoMount) {
   window.cardiaEcho = echoMode;
 }
 
+// Severe valve lesions: lesion on the echo image, colour and spectral Doppler, quantification.
+const pathologyMount = document.querySelector('[data-echo-pathology]');
+const pathology = pathologyMount && echoMode ? createPathologyPanel(pathologyMount, { echo: echoMode, heart, getLang: () => lang }) : null;
+
 // Myocardium opacity and fullscreen / zoom / reset over the 3D viewport.
 const viewControls = createEchoViewControls({
   container: document.querySelector('.echo-viewport-container'),
@@ -100,6 +105,7 @@ function renderShell() {
   mountSiteHeader(document.querySelector('.site-header'), lang);
   notes?.refresh();
   linkToLastRoute(document);
+  pathology?.render();
   text('[data-echo-disclaimer]', t.disclaimer);
   document.querySelectorAll('[data-echo-text]').forEach(node => { node.textContent = t.labels[node.dataset.echoText] || node.textContent; });
 
@@ -136,6 +142,7 @@ function updateCycleUI(cycleState) {
 if (heart) {
   heart.subscribeCycle(state => {
     echoMode?.tick(state);
+    pathology?.tick(state);
     updateCycleUI(state);
   });
 }

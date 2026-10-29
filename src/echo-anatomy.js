@@ -31,6 +31,9 @@ export const ECHO_STRUCTURES = Object.freeze([
   { id: 'tricuspid', ids: ['tricuspid'], color: '#d9ead3', name: { tr: 'Triküspit kapak', en: 'Tricuspid valve' }, label: { tr: 'TV', en: 'TV' } },
   { id: 'aortic-valve', ids: ['lcc', 'rcc', 'ncc'], color: '#fce5cd', name: { tr: 'Aort kapağı', en: 'Aortic valve' }, label: { tr: 'AV', en: 'AV' } },
   { id: 'pulmonary-valve', ids: ['pulmonary-valve'], color: '#d9d2e9', name: { tr: 'Pulmoner kapak', en: 'Pulmonary valve' }, label: { tr: 'PuV', en: 'PuV' } },
+  { id: 'mitral-annulus', ids: ['mitral-annulus'], color: '#ffe599', name: { tr: 'Mitral anulus', en: 'Mitral annulus' }, label: { tr: 'MA', en: 'MA' } },
+  // Schematic chordae: no atlas node; echo-mode adds the item (echo-mitral-apparatus.js).
+  { id: 'mitral-chordae', ids: [], color: '#fff7e0', name: { tr: 'Korda tendinea', en: 'Chordae tendineae' }, label: { tr: 'Korda', en: 'Chordae' } },
   { id: 'lv-papillary', ids: ['lv-papillary'], color: '#f4cccc', name: { tr: 'LV papiller kas', en: 'LV papillary muscle' }, label: { tr: 'PM', en: 'PM' } },
   { id: 'rv-papillary', ids: ['rv-papillary'], color: '#ead1dc', name: { tr: 'RV papiller kas', en: 'RV papillary muscle' }, label: { tr: 'RV PM', en: 'RV PM' } },
   { id: 'moderator-band', ids: ['moderator-band'], color: '#e69138', name: { tr: 'Moderatör bant', en: 'Moderator band' }, label: { tr: 'MB', en: 'MB' } }

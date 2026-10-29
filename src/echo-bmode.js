@@ -1,6 +1,8 @@
 import { sectorGeometry, clipToSector } from './echo-renderer.js';
 import { drawPaths } from './echo-renderer-paths.js';
 import { CM_PER_UNIT } from './echo-image-summary.js';
+import { drawColorJet } from './echo-color-doppler.js';
+import { acquireEchoImage } from './echo-acquire.js';
 
 /*
  * Echo-like image of the current plane for the echo studio: a simulation
@@ -12,8 +14,8 @@ import { CM_PER_UNIT } from './echo-image-summary.js';
  * the cavity side of the cavity-facing lines (the lumen side for the vessel
  * tubes), bounded by every line and wall band and by a reach that keeps a
  * fill from leaking far through an orifice. Everything else is grey tissue.
- * Speckle, depth attenuation, a near-field band, a beam-edge falloff and the
- * gain are then applied per pixel.
+ * The image is then formed along the scan lines (echo-acquire.js: speckle,
+ * attenuation and shadowing, PSF, log compression, sector scan conversion).
  */
 const WALL_CM = Object.freeze({
   // typical adult wall thickness in cm, for the band brightness (the atlas gives the real gap between the surfaces)
@@ -22,10 +24,13 @@ const WALL_CM = Object.freeze({
 });
 const CHAMBERS = new Set(['lv', 'rv', 'la', 'laa', 'ra']);
 const VESSELS = new Set(['aorta', 'pa', 'svc', 'lspv', 'lipv', 'rspv', 'ripv', 'cs']);
-const VALVES = new Set(['mitral', 'tricuspid', 'aortic-valve', 'pulmonary-valve']);
+const VALVES = new Set(['mitral', 'mitral-annulus', 'tricuspid', 'aortic-valve', 'pulmonary-valve']);
+// Chordae: thin bright lines drawn after the blood fill, so they never split a cavity.
+const CHORDS = new Set(['mitral-chordae']);
 const INSIDE = new Set(['lv-papillary', 'rv-papillary', 'moderator-band']);
 const LEVEL = Object.freeze({ tissue: 0.34, wall: 0.58, ventricle: 0.64, line: 0.72, inside: 0.55, valve: 0.95, blood: 0.03 });
 const VALVE_CM = 0.12;
+const CHORD_CM = 0.05;
 const BAND_CM = 0.3;           // papillary or moderator band seen as an open line
 const REACH_CM = 3.4;          // blood fill reach from a cavity-facing wall
 const GAP_CM = 4.0;            // open ends closer than this are joined for the fill (orifices: mitral, caval, vessel ends)
@@ -38,40 +43,6 @@ const TEXT = {
   frozen: { tr: 'DONDURULDU', en: 'FROZEN' }
 };
 const pick = (o, lang) => (lang === 'en' ? o.en : o.tr);
-
-// Speckle: two fixed Rayleigh fields, smoothed more across the beam than along it
-// (speckle cells are longer laterally), cross-faded slowly so the image is not static.
-const speckleCache = new Map();
-function speckleField(w, h, seed) {
-  let a = seed >>> 0;
-  const rand = () => { a = (a + 0x6d2b79f5) >>> 0; let t = Math.imul(a ^ (a >>> 15), a | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  const raw = new Float32Array(w * h);
-  for (let i = 0; i < raw.length; i++) raw[i] = Math.sqrt(-2 * Math.log(1 - rand() * 0.999999));
-  const out = new Float32Array(w * h);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    let s = 0, n = 0;
-    for (let dx = -2; dx <= 2; dx++) for (let dy = -1; dy <= 0; dy++) {
-      const xx = x + dx, yy = y + dy;
-      if (xx < 0 || yy < 0 || xx >= w) continue;
-      s += raw[yy * w + xx]; n++;
-    }
-    out[y * w + x] = s / n;
-  }
-  let mean = 0;
-  for (let i = 0; i < out.length; i++) mean += out[i];
-  mean /= out.length;
-  // Re-sharpened around the mean so the smoothed field keeps a speckle contrast.
-  for (let i = 0; i < out.length; i++) out[i] = Math.max(0, 1 + (out[i] / mean - 1) * 1.9);
-  return out;
-}
-function speckle(w, h) {
-  const key = `${w}x${h}`;
-  if (!speckleCache.has(key)) {
-    speckleCache.clear();
-    speckleCache.set(key, [speckleField(w, h, 17), speckleField(w, h, 91)]);
-  }
-  return speckleCache.get(key);
-}
 
 function trace(ctx, geo, points, close) {
   ctx.beginPath();
@@ -101,7 +72,7 @@ function oneSidedBand(ctx, geo, c, px, dir) {
  * Walls, lines, valves and the intracavitary structures on the overlay canvas
  * (grey levels, transparent elsewhere); its pixels also bound the blood fill.
  */
-function drawStructures(ctx, geo, contours, w, h) {
+function drawStructures(ctx, geo, contours, w, h, valveStyle = null) {
   const px = cm => Math.max(1.5, (cm / CM_PER_UNIT) * geo.scale);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, w, h);
@@ -125,9 +96,14 @@ function drawStructures(ctx, geo, contours, w, h) {
     trace(ctx, geo, c.points, c.closed);
     if (c.closed) ctx.fill(); else ctx.stroke();
   }
-  ctx.strokeStyle = grey(LEVEL.valve);
-  ctx.lineWidth = px(VALVE_CM);
-  for (const c of contours.filter(k => VALVES.has(k.id))) { trace(ctx, geo, c.points, c.closed); ctx.stroke(); }
+  // A diseased valve (valveStyle): thicker leaflets, brighter with calcification.
+  for (const c of contours.filter(k => VALVES.has(k.id))) {
+    const sick = valveStyle?.ids?.includes(c.id);
+    ctx.strokeStyle = grey(sick ? Math.min(1, LEVEL.valve + 0.05 * (1 + valveStyle.calcification)) : LEVEL.valve);
+    ctx.lineWidth = px(VALVE_CM * (sick ? 1 + 3.2 * (valveStyle.thickening || 0) : 1));
+    trace(ctx, geo, c.points, c.closed);
+    ctx.stroke();
+  }
 }
 
 /**
@@ -196,9 +172,26 @@ function fillBlood(contours, geo, barrier, w, h) {
   return blood;
 }
 
+/** Chordae over the filled image: thin bright lines from the papillary heads to the leaflets. */
+function drawChords(ctx, geo, contours, w, h, raw) {
+  const chords = contours.filter(c => CHORDS.has(c.id));
+  if (!chords.length) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = grey(LEVEL.valve * 0.85);
+  ctx.lineWidth = Math.max(1.1, (CHORD_CM / CM_PER_UNIT) * geo.scale);
+  for (const c of chords) { trace(ctx, geo, c.points, c.closed); ctx.stroke(); }
+  const over = ctx.getImageData(0, 0, w, h).data;
+  for (let i = 0; i < raw.length; i++) {
+    const a = over[4 * i + 3] / 255;
+    if (a > 0) raw[i] = raw[i] * (1 - a) + (over[4 * i] / 255) * a;
+  }
+}
+
 /** Echogenicity (0 black .. 1 white) per pixel, lightly blurred. */
-function echogenicity(ctx, geo, contours, w, h) {
-  drawStructures(ctx, geo, contours, w, h);
+function echogenicity(ctx, geo, contours, w, h, valveStyle = null) {
+  drawStructures(ctx, geo, contours, w, h, valveStyle);
   const over = ctx.getImageData(0, 0, w, h).data;
   const barrier = new Uint8Array(w * h);
   for (let i = 0; i < barrier.length; i++) barrier[i] = over[4 * i + 3] > 40 ? 1 : 0;
@@ -210,6 +203,7 @@ function echogenicity(ctx, geo, contours, w, h) {
     const base = blood[i] ? LEVEL.blood : LEVEL.tissue;
     raw[i] = base * (1 - a) + (over[4 * i] / 255) * a;
   }
+  drawChords(ctx, geo, contours, w, h, raw);
   // 3x3 box blur: interfaces as soft as the speckle.
   const out = new Float32Array(w * h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -220,30 +214,6 @@ function echogenicity(ctx, geo, contours, w, h) {
       s += raw[yy * w + xx]; n++;
     }
     out[y * w + x] = s / n;
-  }
-  return out;
-}
-
-/** Per pixel: echogenicity x speckle x depth and beam-edge falloff x gain, plus the near-field band. */
-function shade(echo, w, h, geo, half, gain, mix) {
-  const [s1, s2] = speckle(w, h);
-  const out = new Uint8ClampedArray(w * h * 4);
-  const [ax, ay] = geo.apex, R = geo.radius;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const i = y * w + x, dx = x - ax, dy = y - ay, r = Math.hypot(dx, dy);
-    const o = i * 4;
-    out[o + 3] = 255;
-    if (r > R || dy <= 0) continue;
-    const angle = Math.abs(Math.atan2(dx, dy));
-    if (angle > half) continue;
-    const depth = r / R;
-    const edge = 1 - 0.35 * (angle / half) ** 4;
-    const attenuation = 1.05 - 0.4 * depth;
-    const near = 0.5 * Math.exp(-depth / 0.035);
-    const s = s1[i] * mix + s2[i] * (1 - mix);
-    const v = (echo[i] * attenuation + near) * edge * gain * s;
-    const g = 255 * Math.min(1, v) ** 0.85;
-    out[o] = g; out[o + 1] = g; out[o + 2] = g * 1.02;
   }
   return out;
 }
@@ -280,21 +250,22 @@ export function drawEchoImage(canvas, section, opts = {}) {
   const work = (canvas._echoWork ||= canvas.ownerDocument.createElement('canvas'));
   if (work.width !== w || work.height !== h) { work.width = w; work.height = h; }
   const wctx = work.getContext('2d', { willReadFrequently: true });
-  const echo = echogenicity(wctx, geo, contours, w, h);
-  const gain = 10 ** ((Number(opts.gainDb) || 0) / 20);
-  const mix = 0.5 + 0.5 * Math.sin((opts.time ?? 0) / 900);
-  wctx.putImageData(new ImageData(shade(echo, w, h, geo, half, gain, mix), w, h), 0, 0);
+  const echo = echogenicity(wctx, geo, contours, w, h, opts.pathology?.valveStyle || null);
+  // Acquisition: scan lines through the map, speckle, attenuation, PSF, log compression (echo-acquire.js).
+  wctx.putImageData(new ImageData(acquireEchoImage(echo, w, h, geo, half, Number(opts.gainDb) || 0, opts.time ?? 0), w, h), 0, 0);
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(work, 0, 0, canvas.width, canvas.height);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Schematic overlays (transseptal needle), clipped to the fan.
-  drawPaths(ctx, geo, opts.paths, () => {
+  // Schematic overlays (transseptal needle, colour Doppler), clipped to the fan.
+  const fan = () => {
     ctx.beginPath(); ctx.moveTo(geo.apex[0], geo.apex[1]);
     ctx.arc(geo.apex[0], geo.apex[1], geo.radius, Math.PI / 2 - half, Math.PI / 2 + half); ctx.closePath();
-  });
+  };
+  drawPaths(ctx, geo, opts.paths, fan);
+  for (const jet of opts.pathology?.jets || []) drawColorJet(ctx, geo, contours, jet, { time: opts.time, clip: fan, lang });
 
   // Depth ruler in centimetres on the right edge, the index-side dot at the fan's top right.
   const depthCm = depth * CM_PER_UNIT;
