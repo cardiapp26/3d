@@ -17,12 +17,13 @@ const CORE = [
   './exam/index.html',
   './hemo/index.html',
   './cardiac-mr/index.html',
+  './ct/index.html',
   './eps/anatomy/index.html',
   './angio/3d/index.html'
 ];
 
 /** Keep navigation fallbacks inside the page that owns the requested path (deepest page first). */
-const PAGES = ['eps/anatomy', 'angio/3d', 'angio/physiology', 'angio/ivus', 'angio/carotid', 'angio/peripheral', 'cardiac-mr', 'exam', 'hemo', 'eps', 'pharmacology', 'ecg', 'angio', 'echo'];
+const PAGES = ['eps/anatomy', 'angio/3d', 'angio/physiology', 'angio/ivus', 'angio/carotid', 'angio/peripheral', 'cardiac-mr', 'ct', 'exam', 'hemo', 'eps', 'pharmacology', 'ecg', 'angio', 'echo'];
 const shellFor = (pathname) => {
   const page = PAGES.find(prefix => new RegExp(`^/${prefix}(/|$)`).test(pathname));
   return page ? `./${page}/index.html` : './index.html';

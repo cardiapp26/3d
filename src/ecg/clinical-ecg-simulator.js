@@ -2193,8 +2193,9 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
   const st = {
     mode: 'simulator', // 'simulator' | '12lead' | 'study' | 'skillstat' | 'compass'
     collapsed: Boolean(initialCollapsed),
-    catId: 'ischemia',
-    condId: 'anterior_stemi',
+    // Opens on normal sinus rhythm; lessons that teach a finding select it (guyton-studio.js).
+    catId: 'arrhythmia',
+    condId: 'normal_sinus',
     activeLead: 'II',
     running: true,
     blindMode: false, // "Read It Yourself" (ECGSweep feature)
