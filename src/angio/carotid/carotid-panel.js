@@ -12,7 +12,59 @@ import {
   tortuosityClass,
   viewStructures
 } from './carotid-data.js';
+import { createAngioDevice } from '../angio-device.js';
 import { renderCarotidSvg } from './carotid-svg.js';
+import { renderCarotidFluoro, hitTestCarotid } from './carotid-fluoro.js';
+
+const FLUO_W = 540;
+const FLUO_H = 440;
+
+const imagingCopy = {
+  tr: {
+    title: 'Skopi / DSA', anatomy: 'Anatomi şeması', dsa: 'DSA görünümü', fluoro: 'Nativ skopi',
+    contrast: 'Kontrast dolumu', alpha: 'RAO / LAO', beta: 'Kaudal / Kraniyal', reset: 'AP sıfırla',
+    note: 'Özgün şematik 3B damar projeksiyonu; hasta görüntüsü ve radyografik doku simülasyonu değildir. Kemik, kateter ve gerçek kontrast geçişi modellenmez. Anatomi şemasının projeksiyonu bağımsızdır.',
+    label: 'Karotis skopi simülasyonu'
+  },
+  en: {
+    title: 'Fluoroscopy / DSA', anatomy: 'Anatomy schematic', dsa: 'DSA view', fluoro: 'Native fluoroscopy',
+    contrast: 'Contrast filling', alpha: 'RAO / LAO', beta: 'Caudal / Cranial', reset: 'Reset AP',
+    note: 'Original schematic 3D vessel projection; not patient imaging or a radiographic tissue simulation. Bones, catheters and actual contrast transit are not modeled. The anatomy schematic has an independent projection.',
+    label: 'Carotid fluoroscopy simulation'
+  }
+};
+
+function imagingMarkup(state, lang) {
+  const t = imagingCopy[lang];
+  return `<section class="carotid-imaging" aria-label="${t.label}">
+    <div class="carotid-imaging-head"><h3>${t.title}</h3><div role="group" aria-label="${t.title}">${['dsa', 'fluoro'].map(mode => `<button type="button" class="carotid-chip" data-fluo-mode="${mode}" aria-pressed="${state.imagingMode === mode}">${t[mode]}</button>`).join('')}</div></div>
+    <canvas data-carotid-fluo width="540" height="440" role="img" aria-label="${t.label}"></canvas>
+    <p class="control-explain" data-fluo-note>${t.note}</p>
+  </section>`;
+}
+
+function controlsMarkup(state, lang) {
+  const t = imagingCopy[lang];
+  const tr = lang === 'tr';
+  return `<section class="carotid-studio-controls angio-card">
+    <div class="angio-carm-box"><h3>${tr ? '3B C-Arm Gantri' : '3D C-Arm Gantry'}</h3>
+      <div class="angio-device-viewport" data-carotid-device></div>
+      <div class="angio-device-legend"><span>🔵 ${tr ? 'Detektör' : 'Detector'}</span><span>🟠 ${tr ? 'X-ışını tüpü' : 'X-ray tube'}</span><label><input type="checkbox" data-carotid-beam ${state.beam ? 'checked' : ''}> ${tr ? 'Işın geometrisi' : 'Beam geometry'}</label></div>
+      <p class="angio-device-note">${tr ? 'Şematik cihaz modeli. Sürükleyerek cihazı inceleyin; projeksiyonu açı kumandası değiştirir.' : 'Schematic device model. Drag to inspect the device; angle controls drive the projection.'}</p>
+    </div>
+    <div class="angio-pad-box"><h3>${tr ? 'C-Arm Açı Kumandası' : 'C-Arm Angle Pad'}</h3>
+      <div class="carotid-angle-pad" data-carotid-pad aria-label="${tr ? 'C-arm açı alanı; klavye için aşağıdaki kaydırıcıları kullanın' : 'C-arm angle pad; use sliders below for keyboard control'}">
+        <span class="carotid-pad-top">CRA</span><span class="carotid-pad-bottom">CAU</span><span class="carotid-pad-left">RAO</span><span class="carotid-pad-right">LAO</span><span class="carotid-pad-puck" data-carotid-puck></span>
+      </div>
+    <div class="carotid-imaging-controls">
+      <label>${t.alpha} <output data-fluo-alpha-value></output><input type="range" aria-label="${t.alpha}" min="-90" max="90" step="1" value="${state.alpha}" data-fluo-alpha></label>
+      <label>${t.beta} <output data-fluo-beta-value></output><input type="range" aria-label="${t.beta}" min="-40" max="40" step="1" value="${state.beta}" data-fluo-beta></label>
+      <label>${t.contrast} <output data-fluo-contrast-value></output><input type="range" aria-label="${t.contrast}" min="0" max="100" step="1" value="${state.contrast * 100}" data-fluo-contrast></label>
+      <div class="chip-row"><button type="button" class="carotid-chip" data-fluo-preset="0">${t.reset}</button><button type="button" class="carotid-chip" data-fluo-preset="-30">RAO 30°</button><button type="button" class="carotid-chip" data-fluo-preset="30">LAO 30°</button><button type="button" class="carotid-chip" data-fluo-preset="90">LAO 90°</button></div>
+    </div>
+    </div>
+  </section>`;
+}
 
 const copy = {
   tr: {
@@ -38,7 +90,7 @@ const copy = {
     nearOption: 'Tama yakın oklüzyon (distal kollaps)',
     ecst: 'ECST tahmini orijinal bulbus çapını kullanır: NASCET %50 ≈ ECST %75, NASCET %70 ≈ ECST %85; yaklaşık dönüşüm ECST ≈ 0,6 × NASCET + 40.',
     angle: 'Düz eksenden sapma', geometry: 'Weibel-Fields geometrisi', coilOption: 'Koil (halka), 360° seyir', device: 'Cihaz planlama notu',
-    deviceNote: 'Distal İKA tortüözitesi veya tip III/bovin arkta proksimal koruma, akım tersine çevirme, TCAR veya KEA düşünülebilir. Semptomatik %50–99 darlıkta ve ≥70 yaşta ESVS 2023 çoğunlukla KEA’yı CAS’a tercih eder. Bu şema tedavi önerisi değildir.',
+    deviceNote: 'Distal İKA tortüözitesi veya tip III/bovin arkta proksimal koruma, akım tersine çevirme, TCAR veya KEA düşünülebilir. ESVS 2023: semptomatik NASCET %50–99 darlıkta revaskülarizasyon, tercihen 14 gün içinde; ≥70 yaşta KEA CAS’a tercih edilir, <70 yaşta CAS alternatiftir. Asemptomatik %60–99 darlıkta ortalama cerrahi riskte ve en az bir görüntüleme veya klinik yüksek risk özelliği varsa KEA düşünülür. AHA/ASA 2021: semptomatik %70–99 darlıkta KEA; %50–69’da hasta özelliklerine göre. Bu şema tedavi önerisi değildir.',
     standard: 'Standart anatomi', selected: 'Seçili', structures: 'seçilebilir yapı'
   },
   en: {
@@ -64,7 +116,7 @@ const copy = {
     nearOption: 'Near-occlusion (distal collapse)',
     ecst: 'ECST uses the estimated original bulb: NASCET 50% ≈ ECST 75%, NASCET 70% ≈ ECST 85%; approximate conversion ECST ≈ 0.6 × NASCET + 40.',
     angle: 'Deviation from straight axis', geometry: 'Weibel-Fields geometry', coilOption: 'Coil/loop, 360° course', device: 'Device planning note',
-    deviceNote: 'With distal ICA tortuosity or a type III/bovine arch, consider proximal protection, flow reversal, TCAR, or CEA. ESVS 2023 generally favors CEA over CAS for symptomatic 50–99% stenosis and in patients aged ≥70. This schematic is not treatment advice.',
+    deviceNote: 'With distal ICA tortuosity or a type III/bovine arch, consider proximal protection, flow reversal, TCAR, or CEA. ESVS 2023: revascularise symptomatic NASCET 50–99% stenosis, preferably within 14 days; CEA is preferred over CAS at age ≥70, and CAS is an alternative below 70. For asymptomatic 60–99% stenosis, consider CEA at average surgical risk when at least one imaging or clinical high-risk feature is present. AHA/ASA 2021: CEA for symptomatic 70–99%, and for 50–69% depending on patient factors. This schematic is not treatment advice.',
     standard: 'Standard anatomy', selected: 'Selected', structures: 'selectable structures'
   }
 };
@@ -146,10 +198,41 @@ function referencesMarkup(lang) {
 export function createCarotidPanel({ mount, getLang }) {
   const state = {
     view: 'arch', selected: null, archType: 'I', archVariant: 'normal', projection: 'lateral',
-    residual: 1.2, distal: 4, nearOcclusion: false, angle: 25, coil: false
+    residual: 1.2, distal: 4, nearOcclusion: false, angle: 25, coil: false,
+    alpha: 0, beta: 0, contrast: 1, imagingMode: 'dsa', anatomyOpen: false, beam: true
   };
+  let hitRegions = [];
+  let device = null;
+
+  // Back the 540 x 440 logical detector with device pixels so vessels stay sharp on HiDPI screens.
+  function sizeDetector(canvas) {
+    const cssWidth = canvas.getBoundingClientRect().width || FLUO_W;
+    const ratio = Math.min(4, Math.max(1, (window.devicePixelRatio || 1) * cssWidth / FLUO_W));
+    const width = Math.round(FLUO_W * ratio), height = Math.round(FLUO_H * ratio);
+    if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+    return width / FLUO_W;
+  }
+
+  function drawFluoro() {
+    const canvas = mount.querySelector('[data-carotid-fluo]');
+    if (!canvas) return;
+    const result = renderCarotidFluoro(canvas, { ...state, lang: getLang(), pixelRatio: sizeDetector(canvas) });
+    hitRegions = result.hitRegions;
+    device?.setAngles(state.alpha, state.beta);
+    const puck = mount.querySelector('[data-carotid-puck]');
+    puck.style.left = `${(state.alpha + 90) / 180 * 100}%`;
+    puck.style.top = `${(40 - state.beta) / 80 * 100}%`;
+    mount.querySelector('[data-fluo-alpha]').value = state.alpha;
+    mount.querySelector('[data-fluo-beta]').value = state.beta;
+    mount.querySelector('[data-fluo-alpha-value]').textContent = state.alpha === 0 ? 'AP 0°' : `${state.alpha < 0 ? 'RAO' : 'LAO'} ${Math.abs(state.alpha)}°`;
+    mount.querySelector('[data-fluo-beta-value]').textContent = `${state.beta < 0 ? 'CAU' : 'CRA'} ${Math.abs(state.beta)}°`;
+    mount.querySelector('[data-fluo-contrast-value]').textContent = `${Math.round(state.contrast * 100)}%`;
+    mount.querySelectorAll('[data-fluo-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.fluoMode === state.imagingMode)));
+  }
 
   function render() {
+    const retainedDeviceMount = device ? mount.querySelector('[data-carotid-device]') : null;
+    retainedDeviceMount?.remove();
     const lang = getLang();
     const shell = SHELL_TEXT[lang];
     const t = copy[lang];
@@ -163,14 +246,30 @@ export function createCarotidPanel({ mount, getLang }) {
     <nav class="carotid-tabs" aria-label="${shell.tabs}">${VIEW_DEFS.map(view => `<button type="button" class="carotid-tab ${view.id === state.view ? 'active' : ''}" data-view-tab="${view.id}" aria-selected="${view.id === state.view}"><span>${localize(view.short, lang)}</span><small>${localize(view.label, lang)}</small></button>`).join('')}</nav>
     <section class="view-heading"><div><span>0${VIEW_DEFS.indexOf(current) + 1}</span><h2>${localize(current.label, lang)}</h2></div><p>${t.viewIntro[state.view]}</p><small>${count} ${t.structures}</small></section>
     <div class="carotid-grid" data-render-view="${state.view}">
-      <section class="visual-card">
-        <div class="svg-wrap">${renderCarotidSvg(state.view, state, lang)}<div class="hover-label" data-hover-label role="status" aria-live="polite"></div></div>
-        <div class="view-controls">${viewControls(state.view, state, lang)}</div>
-      </section>
-      <aside class="detail-card" aria-label="${shell.detail}"><div class="detail-head"><span>${shell.detail}</span><span class="detail-count">${count}</span></div><div data-structure-detail>${detailMarkup(STRUCTURES.find(item => item.id === state.selected), lang)}</div></aside>
+      <div class="carotid-detector-column">
+        <section class="visual-card">${imagingMarkup(state, lang)}</section>
+        <aside class="detail-card" aria-label="${shell.detail}"><div class="detail-head"><span>${shell.detail}</span><span class="detail-count">${count}</span></div><div data-structure-detail>${detailMarkup(STRUCTURES.find(item => item.id === state.selected), lang)}</div></aside>
+        <details class="visual-card carotid-anatomy" data-carotid-anatomy ${state.anatomyOpen ? 'open' : ''}>
+          <summary>${imagingCopy[lang].anatomy}</summary>
+          <div class="svg-wrap">${renderCarotidSvg(state.view, state, lang)}<div class="hover-label" data-hover-label role="status" aria-live="polite"></div></div>
+        </details>
+      </div>
+      <div class="carotid-control-column">${controlsMarkup(state, lang)}
+        <section class="visual-card view-controls">${viewControls(state.view, state, lang)}</section>
+      </div>
     </div>
     ${referencesMarkup(lang)}`;
+    const deviceMount = mount.querySelector('[data-carotid-device]');
+    try {
+      if (retainedDeviceMount) deviceMount.replaceWith(retainedDeviceMount);
+      else device = createAngioDevice(deviceMount);
+      device.setBeam(state.beam);
+    } catch (error) {
+      deviceMount.textContent = lang === 'tr' ? '3B cihaz görüntüsü kullanılamıyor; açı kumandaları çalışmaya devam eder.' : '3D device view unavailable; angle controls remain available.';
+      console.warn('Carotid C-arm device unavailable', error);
+    }
     bindEvents();
+    drawFluoro();
   }
 
   function selectStructure(id) {
@@ -180,6 +279,7 @@ export function createCarotidPanel({ mount, getLang }) {
     mount.querySelectorAll('.carotid-structure').forEach(node => node.classList.toggle('selected', node.dataset.structure === id));
     const detail = mount.querySelector('[data-structure-detail]');
     if (detail) detail.innerHTML = detailMarkup(item, getLang());
+    drawFluoro();
   }
 
   function updateNascet() {
@@ -195,9 +295,51 @@ export function createCarotidPanel({ mount, getLang }) {
         ? nascetCategory(pct, lang, true)
         : `${formatNascetPercent(pct)}% · ${nascetCategory(pct, lang)}`;
     output.innerHTML = `<span>${t.result}</span><strong>${result}</strong>`;
+    drawFluoro();
   }
 
   function bindEvents() {
+    mount.querySelector('[data-carotid-anatomy]').addEventListener('toggle', event => { state.anatomyOpen = event.currentTarget.open; });
+    mount.querySelector('[data-carotid-beam]').addEventListener('change', event => {
+      state.beam = event.target.checked;
+      device?.setBeam(state.beam);
+    });
+    const pad = mount.querySelector('[data-carotid-pad]');
+    const movePad = event => {
+      const rect = pad.getBoundingClientRect();
+      state.alpha = Math.round(Math.max(-90, Math.min(90, (event.clientX - rect.left) / rect.width * 180 - 90)));
+      state.beta = Math.round(Math.max(-40, Math.min(40, 40 - (event.clientY - rect.top) / rect.height * 80)));
+      drawFluoro();
+    };
+    pad.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      pad.setPointerCapture(event.pointerId);
+      movePad(event);
+    });
+    pad.addEventListener('pointermove', event => { if (pad.hasPointerCapture(event.pointerId)) movePad(event); });
+    pad.addEventListener('pointerup', event => { if (pad.hasPointerCapture(event.pointerId)) pad.releasePointerCapture(event.pointerId); });
+    for (const key of ['alpha', 'beta', 'contrast']) {
+      mount.querySelector(`[data-fluo-${key}]`).addEventListener('input', event => {
+        state[key] = Number(event.target.value) / (key === 'contrast' ? 100 : 1);
+        drawFluoro();
+      });
+    }
+    mount.querySelectorAll('[data-fluo-mode]').forEach(button => button.addEventListener('click', () => {
+      state.imagingMode = button.dataset.fluoMode;
+      drawFluoro();
+    }));
+    mount.querySelectorAll('[data-fluo-preset]').forEach(button => button.addEventListener('click', () => {
+      state.alpha = Number(button.dataset.fluoPreset);
+      state.beta = 0;
+      mount.querySelector('[data-fluo-alpha]').value = state.alpha;
+      mount.querySelector('[data-fluo-beta]').value = 0;
+      drawFluoro();
+    }));
+    mount.querySelector('[data-carotid-fluo]').addEventListener('click', event => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const id = hitTestCarotid(hitRegions, (event.clientX - rect.left) * 540 / rect.width, (event.clientY - rect.top) * 440 / rect.height);
+      if (id) selectStructure(id);
+    });
     mount.querySelectorAll('[data-view-tab]').forEach(button => button.addEventListener('click', () => {
       state.view = button.dataset.viewTab;
       state.selected = null;
@@ -206,7 +348,34 @@ export function createCarotidPanel({ mount, getLang }) {
     mount.querySelectorAll('[data-arch-type]').forEach(button => button.addEventListener('click', () => { state.archType = button.dataset.archType; render(); }));
     mount.querySelectorAll('[data-arch-variant]').forEach(button => button.addEventListener('click', () => { state.archVariant = button.dataset.archVariant; state.selected = null; render(); }));
     mount.querySelectorAll('[data-projection]').forEach(button => button.addEventListener('click', () => { state.projection = button.dataset.projection; render(); }));
+    bindStructures();
+    const residual = mount.querySelector('[data-nascet-residual]');
+    const distal = mount.querySelector('[data-nascet-distal]');
+    residual?.addEventListener('input', () => { state.residual = residual.value; updateNascet(); });
+    distal?.addEventListener('input', () => { state.distal = distal.value; updateNascet(); });
+    mount.querySelector('[data-near-occlusion]')?.addEventListener('change', event => { state.nearOcclusion = event.target.checked; updateNascet(); });
+    // Update in place: a full render would replace the range input mid-drag and drop the pointer.
+    mount.querySelector('[data-ica-angle]')?.addEventListener('input', event => { state.angle = Number(event.target.value); updateGeometry(); });
+    mount.querySelector('[data-coil-course]')?.addEventListener('change', event => { state.coil = event.target.checked; updateGeometry(); });
+  }
+
+  function updateGeometry() {
+    const lang = getLang();
+    const angleValue = mount.querySelector('[data-angle-value]');
+    if (angleValue) angleValue.textContent = `${state.angle}°`;
+    const geometry = mount.querySelector('[data-tortuosity-class]');
+    if (geometry) geometry.textContent = tortuosityClass(state.angle, lang, state.coil);
+    const wrap = mount.querySelector('.carotid-anatomy .svg-wrap');
+    if (wrap) {
+      wrap.innerHTML = `${renderCarotidSvg(state.view, state, lang)}<div class="hover-label" data-hover-label role="status" aria-live="polite"></div>`;
+      bindStructures();
+    }
+    drawFluoro();
+  }
+
+  function bindStructures() {
     mount.querySelectorAll('.carotid-structure').forEach(node => {
+      node.classList.toggle('selected', node.dataset.structure === state.selected);
       node.addEventListener('click', () => selectStructure(node.dataset.structure));
       node.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectStructure(node.dataset.structure); }
@@ -218,15 +387,23 @@ export function createCarotidPanel({ mount, getLang }) {
       });
       node.addEventListener('pointerleave', () => mount.querySelector('[data-hover-label]')?.classList.remove('visible'));
     });
-    const residual = mount.querySelector('[data-nascet-residual]');
-    const distal = mount.querySelector('[data-nascet-distal]');
-    residual?.addEventListener('input', () => { state.residual = residual.value; updateNascet(); });
-    distal?.addEventListener('input', () => { state.distal = distal.value; updateNascet(); });
-    mount.querySelector('[data-near-occlusion]')?.addEventListener('change', event => { state.nearOcclusion = event.target.checked; updateNascet(); });
-    mount.querySelector('[data-ica-angle]')?.addEventListener('input', event => { state.angle = Number(event.target.value); render(); });
-    mount.querySelector('[data-coil-course]')?.addEventListener('change', event => { state.coil = event.target.checked; render(); });
   }
 
+  // Layout or zoom changes alter the detector's CSS size; redraw at the new backing resolution.
+  const onResize = () => drawFluoro();
+  window.addEventListener('resize', onResize);
+
   render();
-  return { render, getState: () => ({ ...state }) };
+  return {
+    render,
+    getState: () => ({ ...state }),
+    getDeviceState: () => device?.getState() ?? null,
+    getHitRegions: () => hitRegions.map(region => ({ id: region.id, points: region.points.map(p => ({ ...p })), width: region.width })),
+    dispose: () => {
+      window.removeEventListener('resize', onResize);
+      device?.dispose();
+      device = null;
+      mount.replaceChildren();
+    }
+  };
 }

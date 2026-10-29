@@ -90,6 +90,21 @@
 }
 
 .visual-card { padding: 12px; }
+.carotid-image-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.carotid-imaging { min-width: 0; display: grid; gap: 10px; }
+.carotid-imaging-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.carotid-imaging-head h3, .carotid-anatomy-title { margin: 0; font-size: 14px; }
+.carotid-anatomy-title { padding: 10px 0; }
+.carotid-imaging-head [role="group"] { display: flex; flex-wrap: wrap; gap: 5px; }
+.carotid-imaging button[aria-pressed="true"] { border-color: var(--carotid-accent); background: #153e50; }
+[data-carotid-fluo] { display: block; width: 100%; height: auto; border-radius: 12px; cursor: crosshair; }
+.carotid-imaging-controls { display: grid; gap: 9px; }
+.carotid-imaging-controls label { display: block; font-size: 12px; color: var(--carotid-muted); }
+.carotid-imaging-controls output { float: right; color: var(--carotid-text); font-family: ui-monospace, monospace; }
+.carotid-imaging-controls input { display: block; width: 100%; accent-color: var(--carotid-accent); }
+.carotid-image-pair .carotid-svg { height: auto; min-height: 0; aspect-ratio: 420 / 360; }
+.carotid-imaging input:focus-visible, .carotid-imaging button:focus-visible { outline: 2px solid var(--carotid-accent); outline-offset: 3px; }
+@media (max-width: 1100px) { .carotid-image-pair { grid-template-columns: minmax(0, 1fr); } }
 .svg-wrap { position: relative; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 13px; background: #e7ece9; }
 .carotid-svg { display: block; width: 100%; height: min(56vw, 530px); min-height: 390px; }
 .svg-bg { fill: url(#anatomyPaper); stroke: #d1dad4; }
@@ -290,4 +305,45 @@
   .detail-card:has(.detail-content) .detail-head { position: sticky; top: 0; z-index: 1; background: inherit; }
   .detail-empty { min-height: 0; padding: 14px; }
   .carotid-chip { min-height: 36px; min-width: 36px; }
+}
+
+/* Match the coronary studio: detector first, gantry and projection controls beside it. */
+.carotid-grid { grid-template-columns: minmax(0, 1.9fr) minmax(340px, 1fr); }
+.carotid-detector-column, .carotid-control-column { min-width: 0; display: grid; gap: 14px; align-content: start; }
+.carotid-studio-controls { padding: 14px; min-width: 0; }
+.carotid-studio-controls h3 { margin: 0 0 12px; font-size: 14px; }
+.carotid-anatomy summary { cursor: pointer; padding: 8px; font-size: 13px; font-weight: 700; }
+.carotid-anatomy .carotid-svg { height: auto; min-height: 0; aspect-ratio: 420 / 360; }
+.carotid-anatomy .svg-wrap { margin-top: 10px; }
+.carotid-angle-pad { position: relative; width: 160px; height: 160px; margin: 24px auto; border: 1px solid #36536a; border-radius: 12px; background: linear-gradient(90deg, transparent 49.5%, #36536a 49.5%, #36536a 50.5%, transparent 50.5%), linear-gradient(transparent 49.5%, #36536a 49.5%, #36536a 50.5%, transparent 50.5%), #081321; touch-action: none; cursor: crosshair; }
+.carotid-angle-pad > span { position: absolute; font: 10px ui-monospace, monospace; color: #94a3b8; pointer-events: none; }
+.carotid-pad-top { top: 6px; left: 40%; } .carotid-pad-bottom { bottom: 6px; left: 40%; }
+.carotid-pad-left { left: 6px; top: 45%; } .carotid-pad-right { right: 6px; top: 45%; }
+.carotid-angle-pad .carotid-pad-puck { width: 16px; height: 16px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 15px #38bdf870; transform: translate(-50%, -50%); }
+.carotid-studio-controls input:focus-visible, .carotid-studio-controls button:focus-visible { outline: 2px solid var(--carotid-accent); outline-offset: 3px; }
+.carotid-detector-column .detail-card { position: static; max-height: none; }
+@media (max-width: 1000px) { .carotid-grid { grid-template-columns: minmax(0, 1fr); } }
+.carotid-detector-column .detail-empty { min-height: 0; padding: 16px; }
+.carotid-detector-column .detail-empty p { max-width: none; margin: 0; }
+.carotid-hero { padding: 14px 18px; gap: 14px; border-radius: 12px; }
+.carotid-hero h1 { font-size: clamp(22px, 2vw, 26px); margin: 5px 0; }
+.carotid-hero p { font-size: 13px; line-height: 1.4; max-width: 900px; }
+.carotid-eyebrow { font-size: 10px; }
+.carotid-workspace { padding-top: 12px; }
+[data-carotid-fluo] { width: min(100%, 577px); max-height: 470px; margin-inline: auto; }
+@media (max-width: 1000px) {
+  .carotid-detector-column { display: contents; }
+  .carotid-detector-column > .visual-card:not(.carotid-anatomy) { order: 1; }
+  .carotid-control-column { order: 2; }
+  .carotid-detector-column > .carotid-anatomy { order: 3; }
+  /* Last in the grid so the bottom dock below holds for taps on the detector and on the schematic. */
+  .carotid-detector-column > .detail-card { order: 4; }
+  /* Phones and tablets: a tapped vessel's card docks to the viewport bottom while the grid is in view. */
+  .carotid-detector-column > .detail-card:has(.detail-content) {
+    position: sticky; bottom: 0; top: auto; z-index: 6;
+    max-height: 42vh; overflow-y: auto; overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.55);
+    background: #0b1220;
+  }
 }

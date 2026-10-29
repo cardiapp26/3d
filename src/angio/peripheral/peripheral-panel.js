@@ -24,6 +24,7 @@ const LEGEND = ['artery', 'branch', 'safe', 'risk', 'variant', 'vein', 'bone'];
 
 const STUDIO_COPY = {
   tr: {
+    anatomyTitle: 'Şematik anatomi ve bölge rehberi',
     liveTag: '● CANLI C-ARM DSA & FLOROSKOPİ STÜDYOSU',
     injectBtn: '💉 Kontrast Ver (Bolus)',
     injectingBtn: '💉 Bolus İlerliyor...',
@@ -60,6 +61,7 @@ const STUDIO_COPY = {
     optViewBadge: 'Optimal Çalışma Açısı:'
   },
   en: {
+    anatomyTitle: 'Schematic anatomy and territory guide',
     liveTag: '● LIVE C-ARM DSA & FLUOROSCOPY STUDIO',
     injectBtn: '💉 Inject Contrast (Bolus)',
     injectingBtn: '💉 Bolus Chasing...',
@@ -233,8 +235,6 @@ export function createPeripheralPanel({ mount, getLang }) {
       <div class="peri-tabs" role="tablist" data-peri-tabs></div>
       <h1 data-peri-title></h1>
       <p class="peri-lead" data-peri-lead></p>
-      <p class="peri-view-pearl" data-peri-view-pearl></p>
-      <div class="peri-modes" data-peri-modes></div>
 
       <div class="peri-stage">
         <div class="peri-left-col">
@@ -247,13 +247,6 @@ export function createPeripheralPanel({ mount, getLang }) {
               <button type="button" class="peri-inject-btn" data-peri-inject></button>
               <button type="button" class="peri-cine-btn" data-peri-cine></button>
             </div>
-          </div>
-
-          <div class="peri-canvas">
-            <div class="peri-svg-host" data-peri-svg></div>
-            <p class="peri-scale-note" data-peri-scale-note></p>
-            <p class="peri-legend-label" data-peri-legend-label></p>
-            <ul class="peri-legend" data-peri-legend></ul>
           </div>
 
           <section class="peri-fluoro-card" aria-label="C-Arm Fluoroscopy & DSA">
@@ -280,10 +273,21 @@ export function createPeripheralPanel({ mount, getLang }) {
               </div>
             </div>
           </section>
+          <aside class="peri-card" data-peri-card></aside>
         </div>
 
         <div class="peri-right-col">
-          <aside class="peri-card" data-peri-card></aside>
+          <section class="peri-device-box">
+            <div class="peri-device-head">
+              <span class="peri-subcard-title" data-peri-device-title></span>
+              <span class="peri-device-sub" data-peri-device-sub></span>
+            </div>
+            <div class="peri-device-viewport" data-peri-device></div>
+            <label class="peri-toggle-chip peri-beam-chip">
+              <input type="checkbox" checked data-peri-beam />
+              <span data-peri-beam-label></span>
+            </label>
+          </section>
 
           <section class="peri-pad-box" aria-label="C-Arm Joystick">
             <div class="peri-pad-header">
@@ -345,19 +349,18 @@ export function createPeripheralPanel({ mount, getLang }) {
             </div>
             <div class="peri-lesion-card" data-peri-lesion-card hidden></div>
           </section>
-
-          <section class="peri-device-box">
-            <div class="peri-device-head">
-              <span class="peri-subcard-title" data-peri-device-title></span>
-              <span class="peri-device-sub" data-peri-device-sub></span>
-            </div>
-            <div class="peri-device-viewport" data-peri-device></div>
-            <label class="peri-toggle-chip peri-beam-chip">
-              <input type="checkbox" checked data-peri-beam />
-              <span data-peri-beam-label></span>
-            </label>
-          </section>
         </div>
+        <details class="peri-anatomy" data-peri-anatomy>
+          <summary data-peri-anatomy-title></summary>
+          <p class="peri-view-pearl" data-peri-view-pearl></p>
+          <div class="peri-modes" data-peri-modes></div>
+          <div class="peri-canvas">
+            <div class="peri-svg-host" data-peri-svg></div>
+            <p class="peri-scale-note" data-peri-scale-note></p>
+            <p class="peri-legend-label" data-peri-legend-label></p>
+            <ul class="peri-legend" data-peri-legend></ul>
+          </div>
+        </details>
       </div>
 
       <section class="peri-abi-box" data-peri-abi-section>
@@ -566,6 +569,8 @@ export function createPeripheralPanel({ mount, getLang }) {
       return `<button type="button" role="tab" data-peri-tab="${entry.id}" aria-selected="${on}" class="${on ? 'is-on' : ''}">${esc(loc(entry.tab, lang))}</button>`;
     }).join('');
 
+    mount.querySelector('[data-peri-anatomy-title]').textContent = st.anatomyTitle;
+    mount.querySelector('[data-peri-fluo-canvas]').setAttribute('aria-label', st.dsaTitle);
     mount.querySelector('[data-peri-title]').textContent = loc(view.title, lang);
     mount.querySelector('[data-peri-lead]').textContent = loc(view.lead, lang);
     mount.querySelector('[data-peri-view-pearl]').textContent = loc(view.pearl, lang);

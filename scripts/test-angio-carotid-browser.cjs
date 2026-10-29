@@ -30,9 +30,65 @@ async function clickPathMidpoint(page, structure, id) {
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     const errors = [];
+    const contextWarnings = [];
+    page.on('console', message => { if (/Too many active WebGL contexts|CONTEXT_LOST_WEBGL/i.test(message.text())) contextWarnings.push(message.text()); });
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${baseUrl}/angio/carotid/?lang=tr`, { waitUntil: 'networkidle' });
     await page.locator('[data-render-view="arch"]').waitFor();
+
+    const originalDevice = await page.locator('[data-carotid-device] canvas').elementHandle();
+    await page.evaluate(() => { for (let i = 0; i < 25; i++) window.carotidAngio.render(); });
+    assert.equal(await originalDevice.evaluate(canvas => canvas === document.querySelector('[data-carotid-device] canvas')), true, 'rerenders retain WebGL canvas and inspection state');
+    const detector = page.locator('[data-carotid-fluo]');
+    await detector.waitFor({ state: 'visible' });
+    const detectorImage = () => detector.evaluate(canvas => canvas.toDataURL());
+    const detectorPixels = () => detector.evaluate(canvas => {
+      // Exclude text readouts: an angle label alone must not satisfy this test.
+      const pixels = canvas.getContext('2d').getImageData(30, 70, canvas.width - 60, canvas.height - 140).data;
+      let hash = 2166136261;
+      for (const value of pixels) hash = Math.imul(hash ^ value, 16777619);
+      return hash >>> 0;
+    });
+    assert.equal(await page.locator('[data-carotid-anatomy]').getAttribute('open'), null, 'anatomy starts secondary and collapsed');
+    const detectorBounds = await detector.boundingBox();
+    const deviceBounds = await page.locator('[data-carotid-device]').boundingBox();
+    assert.ok(detectorBounds.width > 500 && detectorBounds.height <= 471, 'primary detector remains large without excessive upscaling');
+    assert.ok(deviceBounds.x > detectorBounds.x + detectorBounds.width, 'gantry is beside the detector');
+    const pad = await page.locator('[data-carotid-pad]').boundingBox();
+    await page.mouse.click(pad.x + pad.width * .75, pad.y + pad.height * .25);
+    assert.deepEqual(await page.evaluate(() => [window.carotidAngio.getState().alpha, window.carotidAngio.getState().beta]), [45, 20], 'angle pad drives both axes');
+    assert.deepEqual(await page.evaluate(() => window.carotidAngio.getDeviceState()), {alpha: 45, beta: 20, beam: true}, 'gantry follows detector angles');
+    await page.locator('[data-carotid-beam]').uncheck();
+    assert.equal(await page.evaluate(() => window.carotidAngio.getDeviceState().beam), false);
+    await page.locator('[data-fluo-preset="0"]').click();
+    assert.equal(await page.locator('[data-fluo-alpha]').inputValue(), '0', 'AP preset resets angle');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.screenshot({ path: '/tmp/card-carotid-after.png' });
+    await page.locator('[data-carotid-anatomy] > summary').click();
+    const initialDetector = await detectorPixels();
+    await page.locator('[data-fluo-alpha]').fill('40');
+    assert.notEqual(await detectorPixels(), initialDetector, 'C-arm rotation changes vessel pixels');
+    await page.locator('[data-fluo-beta]').fill('20');
+    const obliqueDetector = await detectorPixels();
+    await page.locator('[data-fluo-contrast]').fill('0');
+    assert.notEqual(await detectorPixels(), obliqueDetector, 'contrast changes visible vessels');
+    await page.locator('[data-fluo-contrast]').fill('100');
+    await page.locator('[data-fluo-mode="fluoro"]').click();
+    assert.notEqual(await detectorPixels(), obliqueDetector, 'native skopi changes detector display');
+    assert.equal(await page.locator('[data-fluo-mode="fluoro"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-fluo-mode="dsa"]').click();
+
+    const { buildCarotidModel, projectCarotidPoint } = await import('../src/angio/carotid/carotid-fluoro.js');
+    const rcca = buildCarotidModel({ view: 'arch' }).vessels.find(vessel => vessel.id === 'rcca');
+    const end = rcca.points.at(-1), start = rcca.points.at(-2);
+    const target = projectCarotidPoint(start.map((value, axis) => value * .25 + end[axis] * .75), 40, 20);
+    await detector.scrollIntoViewIfNeeded();
+    const box = await detector.boundingBox();
+    const unselected = await detectorPixels();
+    await page.mouse.click(box.x + (270 + target.u * 118.8) * box.width / 540, box.y + (220 + target.v * 118.8) * box.height / 440);
+    assert.equal(await page.locator('[data-detail-id]').getAttribute('data-detail-id'), 'rcca', 'detector vessel click opens matching detail');
+    assert.notEqual(await detectorPixels(), unselected, 'selected detector vessel has visible highlight');
 
     assert.equal((await page.locator('[data-site-badge]').textContent()).trim(), 'KAROTİS ANJİYOGRAFİ');
     assert.match(await page.locator('h1').textContent(), /Karotis ve serebral/);
@@ -42,6 +98,8 @@ async function clickPathMidpoint(page, structure, id) {
     for (const view of views) {
       await page.locator(`[data-view-tab="${view}"]`).click();
       await page.locator(`[data-render-view="${view}"]`).waitFor();
+      assert.equal(await page.locator('[data-fluo-alpha]').inputValue(), '40', 'angle survives view switch');
+      assert.ok((await detectorImage()).length > 3000, `${view} has rendered skopi image`);
       const structures = page.locator('.carotid-structure');
       const count = await structures.count();
       assert.ok(count >= 3, `${view} renders selectable structures`);
@@ -101,6 +159,9 @@ async function clickPathMidpoint(page, structure, id) {
     await page.screenshot({ path: '/tmp/angio-carotid-desktop.png', fullPage: true });
 
     await page.locator('[data-carotid-lang="en"]').click();
+    assert.equal(await page.locator('[data-fluo-alpha]').inputValue(), '40', 'TR/EN retains C-arm angle');
+    assert.match(await page.locator('[data-fluo-note]').textContent(), /schematic/i);
+    assert.equal(await page.evaluate(() => window.carotidAngio.getDeviceState().beam), false, 'beam choice survives rerenders and language switch');
     assert.equal((await page.locator('[data-site-badge]').textContent()).trim(), 'CAROTID ANGIOGRAPHY');
     assert.match(await page.locator('h1').textContent(), /Carotid and cerebral/);
     assert.match(await page.locator('[data-nascet-output]').textContent(), /moderate/);
@@ -109,9 +170,15 @@ async function clickPathMidpoint(page, structure, id) {
     await page.waitForTimeout(150);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
     assert.equal(overflow, false, '390px viewport has no horizontal page overflow');
+    const mobileControls = await page.locator('.carotid-control-column').boundingBox();
+    const mobileAnatomy = await page.locator('[data-carotid-anatomy]').boundingBox();
+    const mobileDetector = await detector.boundingBox();
+    assert.ok(mobileControls.y >= mobileDetector.y + mobileDetector.height, 'mobile controls follow detector');
+    assert.ok(mobileAnatomy.y >= mobileControls.y + mobileControls.height, 'mobile anatomy follows controls');
     await page.screenshot({ path: '/tmp/angio-carotid-mobile.png', fullPage: true });
 
     assert.deepEqual(errors, [], 'page has no runtime errors');
+    assert.deepEqual(contextWarnings, [], 'rerenders do not exhaust WebGL contexts');
     console.log('PASS carotid browser: badge, 5 views, all SVG structures clickable, keyboard access, redraw controls, NASCET, TR/EN, 390px overflow');
     console.log('Screenshots: /tmp/angio-carotid-desktop.png, /tmp/angio-carotid-mobile.png');
   } finally {
