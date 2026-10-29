@@ -2,7 +2,7 @@
 // text; the root entry loads the welcome router; the anatomy menu link carries a 3D route.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { DOMAINS, HOME_MODULES, BADGES, HOME_TEXT } from '../src/home/home-data.js';
+import { DOMAINS, HOME_MODULES, BADGES, HOME_TEXT, DRTR_APPS } from '../src/home/home-data.js';
 import { SITE_MODULES } from '../src/site-modules.js';
 
 const root = new URL('../', import.meta.url);
@@ -38,6 +38,30 @@ DOMAINS.forEach((d) => bilingual(d.label, `domain ${d.id}`));
 for (const key of ['title', 'heroTitle', 'heroLead', 'heroCta', 'howTitle', 'disclaimer']) bilingual(HOME_TEXT[key], key);
 HOME_TEXT.faq.forEach((f, i) => { bilingual(f.q, `faq ${i}.q`); bilingual(f.a, `faq ${i}.a`); });
 
+// DRTR platform links: the home page first, then every app; https on drtr.uk, bilingual text,
+// a small local thumbnail.
+assert.equal(DRTR_APPS.length, 14, 'DRTR platform lists 14 entries');
+assert.equal(new URL(DRTR_APPS[0].url).host, 'drtr.uk', 'the drtr.uk home page comes first');
+for (const key of ['navDrtr', 'drtrTitle', 'drtrLead', 'drtrNewTab']) bilingual(HOME_TEXT[key], key);
+const appIds = new Set();
+const appHosts = new Set();
+for (const app of DRTR_APPS) {
+  assert.ok(!appIds.has(app.id), `duplicate DRTR app ${app.id}`);
+  appIds.add(app.id);
+  const url = new URL(app.url);
+  assert.equal(url.protocol, 'https:', `${app.id}: https`);
+  assert.match(url.host, /^([a-z0-9-]+\.)?drtr\.uk$/, `${app.id}: on drtr.uk`);
+  assert.ok(!appHosts.has(url.host), `${app.id}: unique host`);
+  appHosts.add(url.host);
+  if (typeof app.name === 'string') assert.ok(app.name.trim(), `${app.id}: name`);
+  else bilingual(app.name, `${app.id}.name`);
+  bilingual(app.description, `${app.id}.description`);
+  for (const l of ['tr', 'en']) assert.ok(app.description[l].length <= 90, `${app.id}.description.${l} is short`);
+  const thumb = new URL(`src/home/apps/${app.thumb}.webp`, root);
+  assert.ok(fs.existsSync(thumb), `${app.id}: thumbnail exists`);
+  assert.ok(fs.statSync(thumb).size < 60_000, `${app.id}: thumbnail is small`);
+}
+
 const html = fs.readFileSync(new URL('index.html', root), 'utf8');
 assert.match(html, /src="\/src\/home\/home\.js"/, 'root loads the welcome router');
 assert.match(html, /<div id="app"><\/div>/, 'root keeps the 3D mount point');
@@ -46,4 +70,4 @@ assert.match(router, /import\('\.\.\/main\.js'\)/, '3D shell is loaded lazily');
 for (const file of ['src/home/home.js', 'src/home/home-data.js', 'src/home/home.css', 'index.html']) {
   assert.ok(!fs.readFileSync(new URL(file, root), 'utf8').includes('\u2014'), `${file} has no em dash`);
 }
-console.log(`PASS welcome page: ${HOME_MODULES.length} module cards with thumbnails and pages, 3D routes kept, bilingual text`);
+console.log(`PASS welcome page: ${HOME_MODULES.length} module cards with thumbnails and pages, ${DRTR_APPS.length} DRTR platform links, 3D routes kept, bilingual text`);

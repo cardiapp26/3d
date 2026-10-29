@@ -197,3 +197,14 @@ Local end-to-end test: Cardia at `http://127.0.0.1:5199`, Cardi at
 `http://127.0.0.1:5205`, then `npm run test:notes-transfer`.
 Production fixture check: build both projects, then `npm run test:notes-transfer-production`.
 It serves both deployed origins from local build files and does not send live notes.
+
+### Cardiac MR
+
+`/cardiac-mr/` opens the independent Cardiac MR learning module, also linked from
+main navigation and the welcome page. Turkish and English controls compare SAX,
+2CH, 3CH and 4CH planning schematics and the purposes of cine bSSFP, LGE,
+T1/T2 mapping, phase-contrast and perfusion sequences. Original schematics are
+educational illustrations, not acquired MR images or a DICOM viewer.
+Source: [SCMR standardized CMR protocols (2020)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7038611/).
+Run `npm run test:cardiac-mr`; with Vite running, use
+`APP_URL=http://127.0.0.1:5198 npm run test:cardiac-mr-browser`.

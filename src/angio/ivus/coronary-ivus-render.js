@@ -2,6 +2,7 @@
 // Pure Canvas 2D and SVG rendering functions for intravascular ultrasound simulation.
 
 import { clamp, findTransducerMode } from './coronary-ivus-sim.js';
+import { drawAcquiredConsole, drawAcquiredFeature } from './ivus-acquire.js';
 
 const pick = (obj, lang) => (obj && typeof obj === 'object' ? (obj[lang === 'en' ? 'en' : 'tr'] ?? obj.tr ?? '') : String(obj ?? ''));
 
@@ -155,6 +156,9 @@ export function renderIvusCrossSectionCanvas(canvas, slice, caseObj, state = {},
   ctx.fillStyle = radialGradient;
   ctx.fillRect(0, 0, W, H);
 
+  // Acquired-looking frame by default (ivus-acquire.js); state.renderStyle 'vector' keeps the drawing.
+  const acquired = state.renderStyle !== 'vector';
+  if (!acquired) {
   // 2. Surrounding perivascular / adventitial speckle texture
   const numSpeckles = txMode.freqMhz >= 60 ? 520 : 380;
   for (let i = 0; i < numSpeckles; i += 1) {
@@ -168,6 +172,7 @@ export function renderIvusCrossSectionCanvas(canvas, slice, caseObj, state = {},
     ctx.fillRect(sx, sy, 2.2, 2.2);
   }
 
+  }
   // Compute EEM and Lumen contours across 96 polar angles
   const N = 96;
   const eemRx = (slice.eemDiamMm / 2) * pxPerMm;
@@ -215,6 +220,9 @@ export function renderIvusCrossSectionCanvas(canvas, slice, caseObj, state = {},
     lumPts.push({ x: lx, y: ly, a });
   }
 
+  if (acquired) {
+    drawAcquiredConsole(ctx, { cx, cy, pxPerMm, size: W, fovPx: 204, slice, state, mhz: txMode.freqMhz, eemPts, mediaInnerPts, lumPts, lumCx, lumCy, plaqueCenterAng, time: (globalThis.performance?.now?.() ?? 0) });
+  } else {
   // 3. Optional Myocardial Bridge "Half-Moon" echolucent halo outside adventitia
   if (slice.halfMoonBridge) {
     ctx.save();
@@ -458,6 +466,7 @@ export function renderIvusCrossSectionCanvas(canvas, slice, caseObj, state = {},
     ctx.restore();
   }
 
+  }
   // 12. Calibration Millimeter Grid Rings (1 mm intervals)
   ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
   ctx.lineWidth = 0.8;
@@ -467,7 +476,8 @@ export function renderIvusCrossSectionCanvas(canvas, slice, caseObj, state = {},
     ctx.stroke();
   }
 
-  // 13. Central IVUS Catheter & Ring-Down Zone
+  // 13. Central IVUS Catheter & Ring-Down Zone (the acquired frame has its own)
+  if (!acquired) {
   if (state.stasisActive || txMode.id === 'phased-20') {
     ctx.beginPath();
     ctx.arc(cx, cy, state.stasisActive ? 22 : 16, 0, Math.PI * 2);
@@ -483,6 +493,7 @@ export function renderIvusCrossSectionCanvas(canvas, slice, caseObj, state = {},
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
+  }
   // 14. Planimetry Overlays (EEM Trace, Lumen Trace, Diameters, Calcium Arc)
   if (state.showEemOverlay) {
     ctx.beginPath();
@@ -743,6 +754,14 @@ export function renderIvusFeaturePreviewCanvas(canvas, featureId, isFixed = fals
 
   const cx = W / 2;
   const cy = H / 2;
+  // Acquired-looking card image (ivus-acquire.js); the label stays on top.
+  if (globalThis.__ivusVectorPreview !== true) {
+    drawAcquiredFeature(ctx, W, H, featureId, isFixed, globalThis.performance?.now?.() ?? 0);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillText(isFixed ? (lang === 'tr' ? 'DÜZELTİLDİ' : 'CORRECTED') : featureId.toUpperCase(), 10, 18);
+    return;
+  }
   ctx.fillStyle = '#06090f';
   ctx.fillRect(0, 0, W, H);
 

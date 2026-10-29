@@ -1,7 +1,8 @@
 /**
  * Welcome page in the browser: the bare root shows the module cards with thumbnails, a card
  * opens its module, the module brand returns to the welcome page, a 3D route boots the 3D
- * shell on the same page and Back returns to the welcome page; no overflow on a phone.
+ * shell on the same page and Back returns to the welcome page; the DRTR platform section links
+ * the other apps in new tabs; no overflow on a phone.
  */
 const { chromium, devices } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const assert = require('node:assert/strict');
@@ -23,6 +24,24 @@ const APP = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '');
     await page.waitForTimeout(400);
     const broken = await page.evaluate(() => [...document.querySelectorAll('.home-thumb img')].filter((i) => !(i.complete && i.naturalWidth > 0)).length);
     assert.equal(broken, 0, 'every thumbnail loads');
+
+    // DRTR platform section: 14 external links in new tabs, thumbnails load, nav anchor leaves no hash.
+    const apps = await page.$$eval('#home-drtr a.home-app', (as) => as.map((a) => ({
+      href: a.href, target: a.target, rel: a.rel, name: a.textContent.replace(/\s+/g, ' ').trim(),
+      img: (() => { const i = a.querySelector('img'); return i && i.loading === 'lazy' && i.complete && i.naturalWidth > 0; })()
+    })));
+    assert.equal(apps.length, 14, `DRTR links (${apps.length})`);
+    for (const a of apps) {
+      assert.match(a.href, /^https:\/\/([a-z0-9-]+\.)?drtr\.uk\//, `DRTR link ${a.href}`);
+      assert.equal(a.target, '_blank', `${a.href}: new tab`);
+      assert.match(a.rel, /\bnoopener\b/, `${a.href}: rel noopener`);
+      assert.ok(a.name.length > 10, `${a.href}: accessible name`);
+      assert.ok(a.img, `${a.href}: lazy thumbnail loads after scrolling`);
+    }
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.click('.home-links a[href="#home-drtr"]');
+    await page.waitForFunction(() => document.getElementById('home-drtr').getBoundingClientRect().top < innerHeight / 2);
+    assert.equal(new URL(page.url()).hash, '', 'DRTR anchor leaves no hash');
 
     // Card -> module -> brand -> welcome page.
     await page.click('[data-home-card="angio-ivus"]');
@@ -59,8 +78,17 @@ const APP = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '');
     const phone = await browser.newPage({ ...devices['iPhone 13'] });
     await phone.goto(`${APP}/?lang=tr`, { waitUntil: 'networkidle' });
     assert.ok(await phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal overflow on a phone');
+    const phoneApps = await phone.evaluate(() => {
+      const grid = document.querySelector('#home-drtr .home-apps');
+      const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+      const box = grid.getBoundingClientRect();
+      const inside = [...grid.querySelectorAll('.home-app')].every((a) => { const r = a.getBoundingClientRect(); return r.left >= box.left - 1 && r.right <= box.right + 1; });
+      return { cols, inside, right: box.right, width: innerWidth };
+    });
+    assert.equal(phoneApps.cols, 2, 'DRTR cards in two columns on a phone');
+    assert.ok(phoneApps.inside && phoneApps.right <= phoneApps.width, 'DRTR cards stay inside the phone width');
     assert.deepEqual(errors, []);
-    console.log(`PASS welcome page browser: ${cards} cards with thumbnails, card -> module -> brand -> home, 3D route and Back, deep link, TR/EN, phone`);
+    console.log(`PASS welcome page browser: ${cards} cards with thumbnails, ${apps.length} DRTR links in new tabs, card -> module -> brand -> home, 3D route and Back, deep link, TR/EN, phone`);
   } finally {
     await browser.close();
   }

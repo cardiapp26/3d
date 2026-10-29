@@ -148,7 +148,7 @@ body.home-page #app {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: clamp(24px, 5vw, 72px);
-  align-items: end;
+  align-items: center;
   padding: clamp(40px, 8vw, 96px) clamp(16px, 4vw, 48px) clamp(32px, 5vw, 56px);
   max-width: 1440px;
   margin: 0 auto;
@@ -156,9 +156,9 @@ body.home-page #app {
 
 .home-hero h1 {
   margin: 0;
-  font-size: clamp(48px, 8.4vw, 112px);
-  line-height: 0.96;
-  letter-spacing: -0.035em;
+  font-size: clamp(34px, 4.6vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
   font-weight: 700;
 }
 
@@ -183,7 +183,8 @@ body.home-page #app {
 
 .home-modules,
 .home-how,
-.home-faq {
+.home-faq,
+.home-drtr {
   max-width: 1440px;
   margin: 0 auto;
   padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 48px);
@@ -395,6 +396,121 @@ body.home-page #app {
   margin-top: 8px;
 }
 
+/* DRTR platform: smaller, quieter link cards to the other apps (external sites). */
+.home-drtr {
+  border-top: 1px solid var(--home-line);
+}
+
+.home-drtr h2 {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 2.6vw, 32px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.home-drtr-lead {
+  margin: 0 0 20px;
+  max-width: 640px;
+  color: var(--home-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.home-apps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+
+.home-app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 8px 8px 12px;
+  border: 1px solid var(--home-line);
+  border-radius: 12px;
+  background: #141a17;
+  text-decoration: none;
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+
+.home-app:hover,
+.home-app:focus-visible {
+  border-color: #3a4640;
+  transform: translateY(-2px);
+}
+
+.home-app-thumb {
+  display: block;
+  overflow: hidden;
+  border-radius: 7px;
+  aspect-ratio: 16 / 10;
+  background: #1b221e;
+}
+
+.home-app-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0.88;
+  transition: opacity 0.18s ease;
+}
+
+.home-app:hover .home-app-thumb img {
+  opacity: 1;
+}
+
+.home-app-name {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin: 10px 4px 4px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.home-app-arrow {
+  flex-shrink: 0;
+  color: var(--home-muted);
+  font-size: 13px;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.home-app:hover .home-app-arrow {
+  color: var(--home-accent);
+  transform: translate(2px, -2px);
+}
+
+.home-app-desc {
+  margin: 0 4px 10px;
+  color: #c3ccc6;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.home-app-host {
+  margin: auto 4px 0;
+  color: var(--home-muted);
+  font: 12px ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.home-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .home-footer {
   display: flex;
   flex-wrap: wrap;
@@ -432,14 +548,30 @@ body.home-page #app {
     font-size: 13px;
   }
   .home-hero h1 {
-    font-size: clamp(44px, 13vw, 64px);
+    font-size: clamp(30px, 8.6vw, 40px);
+  }
+  .home-apps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .home-app-name {
+    font-size: 14px;
+  }
+  .home-app-desc {
+    font-size: 12.5px;
+  }
+  .home-app-host {
+    font-size: 11px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .home-card,
   .home-thumb img,
-  .home-arrow {
+  .home-arrow,
+  .home-app,
+  .home-app-thumb img,
+  .home-app-arrow {
     transition: none;
   }
 }

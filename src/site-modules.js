@@ -9,6 +9,7 @@ export const SITE_MODULES = Object.freeze([
   { id: 'exam', path: './exam/', label: word('Fizik muayene', 'Physical exam') },
   { id: 'hemo', path: './hemo/', label: word('Hemodinami', 'Hemodynamics') },
   { id: 'echo', path: './echo/', label: word('Eko', 'Echo') },
+  { id: 'cardiac-mr', path: './cardiac-mr/', label: word('Kardiyak MR', 'Cardiac MR') },
   {
     id: 'angio', path: './angio/', label: word('Anjiyografi', 'Angiography'),
     pages: [
@@ -47,6 +48,7 @@ export const SITE_BADGES = Object.freeze({
   exam: word('FİZİK MUAYENE', 'PHYSICAL EXAMINATION'),
   hemo: word('KATETERİZASYON VE HEMODİNAMİ', 'CATHETERIZATION & HEMODYNAMICS'),
   echo: word('EKOKARDİYOGRAFİ', 'ECHOCARDIOGRAPHY'),
+  'cardiac-mr': word('KARDİYAK MR', 'CARDIAC MR'),
   angio: word('KORONER ANJİYOGRAFİ', 'CORONARY ANGIOGRAPHY'),
   'angio-3d': word('KORONER ANJİYOGRAFİ', 'CORONARY ANGIOGRAPHY'),
   'angio-physiology': word('KORONER FİZYOLOJİ', 'CORONARY PHYSIOLOGY'),

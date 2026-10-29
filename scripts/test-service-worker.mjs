@@ -76,4 +76,7 @@ assert.ok((await request('/eps/', 'navigate')).ok, 'EPS page precached at instal
 assert.equal(await (await request('/pharmacology/?lang=en', 'navigate')).text(), `fresh:${origin}/pharmacology/index.html`, 'pharmacology offline shell');
 assert.equal(await (await request('/pharmacology', 'navigate')).text(), `fresh:${origin}/pharmacology/index.html`);
 assert.equal(await (await request('/pharmacology-extra', 'navigate')).text(), `fresh:${origin}/index.html`, 'pharmacology prefix stops at path segment');
+assert.equal(await (await request('/cardiac-mr/?lang=en', 'navigate')).text(), `fresh:${origin}/cardiac-mr/index.html`, 'Cardiac MR has its own offline shell');
+assert.equal(await (await request('/cardiac-mr', 'navigate')).text(), `fresh:${origin}/cardiac-mr/index.html`);
+assert.equal(await (await request('/cardiac-mr-extra', 'navigate')).text(), `fresh:${origin}/index.html`, 'MR prefix stops at path segment');
 console.log('PASS service-worker: fixed names revalidate, hashed assets cache, offline fallback per page (simulator, EPS, pharmacology), isolated cache ownership');

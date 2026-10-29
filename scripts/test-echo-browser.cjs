@@ -34,8 +34,10 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5173').replace(/\/$/, '');
 
     // 2. Check header navigation links
     const modulesNav = page.locator('.site-modules');
+    // The shared order comes from site-modules.js, so a new module does not break this check.
+    const { SITE_MODULES } = await import('../src/site-modules.js');
     assert.deepEqual(await modulesNav.locator('a').evaluateAll(links => links.map(a => a.dataset.siteLink)),
-      ['anatomy', 'exam', 'hemo', 'echo', 'angio', 'ecg', 'eps', 'pharmacology'], 'every module linked in the shared order');
+      SITE_MODULES.map(m => m.id), 'every module linked in the shared order');
     assert.equal(await modulesNav.locator('[aria-current="page"]').textContent(), 'Eko');
 
     // 3. Modality tab switching (TTE -> TEE -> ICE)

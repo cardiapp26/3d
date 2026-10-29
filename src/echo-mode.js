@@ -13,6 +13,8 @@ import { measureCavityFacing } from './echo-cavity.js';
 import { transseptalGeometry } from './echo-transseptal.js';
 import { createEchoPanel } from './echo-panel.js';
 import { imageStructures, planeOrientation, CM_PER_UNIT } from './echo-image-summary.js';
+import { measureMitralApparatus, createMitralApparatus } from './echo-mitral-apparatus.js';
+import { pathologyOverlay } from './echo-pathology-overlay.js';
 
 /*
  * Echocardiography mode (research/TTE_TEE_ENTEGRASYON_RAPORU.md): the probe
@@ -36,7 +38,7 @@ const MIN_SECTION_INTERVAL = 30;   // ms between sections while the heart beats
 // Visible parts by structure for the panel line: LV segments in number order, leaflets by name.
 // TTE views start from the window with the probe at rest (echo-views.js windows).
 const TTE_HOME = Object.freeze({ rotation: 0, tilt: 0, rock: 0, slideLateral: 0, slideElevation: 0 });
-const PART_ORDER = ['lv', 'rv', 'mitral', 'tricuspid', 'aortic-valve', 'pulmonary-valve'];
+const PART_ORDER = ['lv', 'rv', 'mitral', 'mitral-chordae', 'lv-papillary', 'tricuspid', 'aortic-valve', 'pulmonary-valve'];
 function partGroups(parts, lang) {
   const by = new Map();
   for (const { id, part } of parts || []) {
@@ -56,6 +58,7 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
   let icePaths = { ra: null, la: null, lv: null };
   let mitralMap = null;   // TEE mitral scallop map (echo-mitral-map.js), measured at rest
   let septal = null;      // fossa frame and the landmarks around it (echo-septal-map.js)
+  let chordae = null;     // mitral apparatus: schematic papillary muscles and chordae (echo-mitral-apparatus.js)
   const VIEWS = { tte: TTE_VIEWS, tee: TEE_VIEWS, ice: ICE_VIEWS };
   const modalityOf = view => (TTE_VIEWS.includes(view) ? 'tte' : TEE_VIEWS.includes(view) ? 'tee' : 'ice');
   const state = {
@@ -66,7 +69,9 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
     gain: 0,   // studio echo image gain, dB
     task: null,  // { target: viewId, done: boolean, start: probe pose at the start }
     frozen: false,  // stopped with the panel's freeze button (the badge says so)
-    transseptal: null  // ICE septal view: schematic transseptal stage (echo-transseptal.js)
+    transseptal: null,  // ICE septal view: schematic transseptal stage (echo-transseptal.js)
+    pathology: 'normal',  // valve lesion shown on the echo image (echo-valve-disease.js)
+    colorDoppler: false   // schematic colour Doppler over the echo image
   };
   let sweepRaf = 0, needle = null;
   let lastSection = 0, lastResult = null;
@@ -108,6 +113,19 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
     // At rest: the LA/LAA split and the vertex welds are cached from this pose.
     items = heart.withRestPose(() => {
       const list = echoItems(getMeshes);
+      // Mitral apparatus: papillary heads (AL/PM labels) and the schematic chordae tendineae.
+      const apparatus = measureMitralApparatus({
+        leaflets: getMeshes('mitral'),
+        lv: getMeshes('lv'),
+        frame: getMeshes('mitral-annulus')[0]?.userData.frame,
+        septum: new THREE.Vector3(...(meshCentre(getMeshes('rv')) || [0, 0, 0]))
+      });
+      if (apparatus) {
+        // The atlas papillary mesh (one band to the apex) gives way to the two schematic muscles.
+        chordae = createMitralApparatus(apparatus);
+        for (let i = list.length - 1; i >= 0; i--) if (list[i].id === 'lv-papillary') list.splice(i, 1);
+        list.push(...chordae.items);
+      }
       sectionMeshes(list, { origin: [0, 0, 0], beam: [0, 0, 1], lateral: [1, 0, 0], normal: [0, 1, 0] });
       return list;
     });
@@ -138,6 +156,7 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
     needle.userData.tip = needleTip;
     needle.visible = false;
     overlay.group.add(needle);
+    if (chordae) overlay.group.add(chordae.group);
     overlay.group.visible = active;
     heart.addOverlay(overlay.group);
     return true;
@@ -228,7 +247,7 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
     if (key !== judged.key) {
       const label = id => STRUCTURE_INFO[id]?.label[lang] || id;
       let rest = null;
-      const result = heart.withRestPose(() => evaluateView(rest = sectionMeshes(items, frame), view, { sectorAngle: state.sectorAngle, depth: state.depth, frame, anatomy, label, lang }));
+      const result = heart.withRestPose(() => evaluateView(rest = (chordae?.update(), sectionMeshes(items, frame)), view, { sectorAngle: state.sectorAngle, depth: state.depth, frame, anatomy, label, lang }));
       // The studio list is read from the same rest geometry: it does not flicker with the beat.
       judged = { key, result, structures: imageStructures(rest, state.sectorAngle, state.depth) };
     }
@@ -331,6 +350,7 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
     if (trailing) { clearTimeout(trailing); trailing = null; }
     lastSection = now;
     const frame = currentFrame();
+    chordae?.update();
     const section = sectionMeshes(items, frame);
     const lang = getLang();
     const view = viewById(state.task ? state.task.target : state.view);
@@ -357,7 +377,7 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
     };
     // Studio: the echo card shows the echo-like image, the anatomy card the coloured section with its labels.
     const drawn = studio
-      ? drawEchoImage(panel.canvas, section, { ...sectorOptions, gainDb: state.gain, labels: state.labels, time: now })
+      ? drawEchoImage(panel.canvas, section, { ...sectorOptions, gainDb: state.gain, labels: state.labels, time: now, pathology: pathologyOverlay(state.pathology, heart.getCycleState().phase, { color: state.colorDoppler, lang }) })
       : drawEchoSector(panel?.canvas, section, { ...sectorOptions, style: state.style });
     if (studio) {
       const anatomyDrawn = drawEchoSector(panel.anatomyCanvas, section, { ...sectorOptions, style: 'anatomy', hideLabels: false });
@@ -474,6 +494,13 @@ export function createEchoMode({ heart, mount, getLang, slots = null }) {
     getSection: () => lastResult?.section || null,
     getAnatomy: () => anatomy, getIcePath: (position = 'ra') => icePaths[position] || null,
     sweep, setTransseptal(stage) { state.transseptal = stage; refresh(true); },
+    /** Valve lesion on the echo image and the colour Doppler switch (echo-pathology-overlay.js). */
+    setPathology(lesionId, { color } = {}) {
+      state.pathology = lesionId || 'normal';
+      if (color !== undefined) state.colorDoppler = Boolean(color);
+      refresh(true);
+    },
+    getPathology: () => ({ lesion: state.pathology, color: state.colorDoppler }),
     selectView, startTask, isActive: () => active
   };
 }
