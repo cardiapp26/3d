@@ -1,0 +1,445 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+
+/* Cardia welcome page (src/home/home.js). Scoped to body.home-page and #home so the 3D shell,
+   which boots on the same page for #/mode routes, is not affected. */
+:root {
+  --home-bg: #0f1311;
+  --home-ink: #f1f3ef;
+  --home-muted: #a8b2ab;
+  --home-line: #26302b;
+  --home-accent: #7fd1ae;
+  --home-cta: #e9f5ee;
+  --home-cta-ink: #10231b;
+}
+
+body.home-page {
+  margin: 0;
+  background: var(--home-bg);
+  color: var(--home-ink);
+  font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.home-page #app {
+  display: none;
+}
+
+#home {
+  min-height: 100vh;
+}
+
+#home *,
+#home *::before,
+#home *::after {
+  box-sizing: border-box;
+}
+
+#home a {
+  color: inherit;
+}
+
+.home-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px clamp(16px, 4vw, 48px);
+  background: rgba(15, 19, 17, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--home-line);
+}
+
+.home-brand {
+  text-decoration: none;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.home-brand strong {
+  font-size: 16px;
+  letter-spacing: 3px;
+}
+
+.home-links {
+  display: flex;
+  gap: 22px;
+  margin-left: auto;
+}
+
+.home-links a {
+  color: var(--home-muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.home-links a:hover,
+.home-links a:focus-visible {
+  color: var(--home-ink);
+}
+
+.home-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-lang {
+  display: flex;
+  border: 1px solid var(--home-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.home-lang button {
+  min-width: 38px;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--home-muted);
+  font: 600 12px 'DM Sans', system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.home-lang button[aria-pressed='true'] {
+  background: var(--home-ink);
+  color: var(--home-bg);
+}
+
+.home-nav-cta,
+.home-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: var(--home-cta);
+  color: var(--home-cta-ink) !important;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.home-cta {
+  min-height: 48px;
+  padding: 12px 20px;
+  font-size: 15px;
+}
+
+.home-cta.ghost {
+  background: transparent;
+  color: var(--home-ink) !important;
+  border: 1px solid #3a4640;
+}
+
+.home-nav-cta:hover,
+.home-cta:hover {
+  filter: brightness(1.06);
+}
+
+#home :focus-visible {
+  outline: 2px solid var(--home-accent);
+  outline-offset: 3px;
+}
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 72px);
+  align-items: end;
+  padding: clamp(40px, 8vw, 96px) clamp(16px, 4vw, 48px) clamp(32px, 5vw, 56px);
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.home-hero h1 {
+  margin: 0;
+  font-size: clamp(48px, 8.4vw, 112px);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+
+.home-hero-side p {
+  margin: 0 0 22px;
+  font-size: clamp(16px, 1.5vw, 19px);
+  line-height: 1.6;
+  color: #d3dad5;
+}
+
+.home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.home-hero-side small {
+  color: var(--home-muted);
+  font-size: 13px;
+}
+
+.home-modules,
+.home-how,
+.home-faq {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 48px);
+}
+
+.home-modules h2,
+.home-how h2,
+.home-faq h2 {
+  margin: 0 0 22px;
+  font-size: clamp(28px, 3.6vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.home-count {
+  margin-left: 8px;
+  font-size: 0.5em;
+  font-weight: 600;
+  color: var(--home-muted);
+  vertical-align: middle;
+}
+
+.home-group {
+  margin-top: 26px;
+}
+
+.home-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #dfe5e1;
+}
+
+.home-group-title .home-count {
+  font-size: 12px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 14px;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 10px 10px 16px;
+  border-radius: 14px;
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.home-card:hover,
+.home-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+}
+
+.home-thumb {
+  display: block;
+  overflow: hidden;
+  border-radius: 9px;
+  aspect-ratio: 16 / 10;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.home-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.home-card:hover .home-thumb img {
+  transform: scale(1.04);
+}
+
+.home-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 14px 6px 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.home-badge {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+
+.home-points {
+  margin: 0 6px 16px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.45;
+  opacity: 0.86;
+}
+
+.home-points li + li {
+  margin-top: 4px;
+}
+
+.home-card-name {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  margin: auto 6px 0;
+  font-size: clamp(22px, 2vw, 27px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.home-arrow {
+  transition: transform 0.18s ease;
+}
+
+.home-card:hover .home-arrow {
+  transform: translateX(4px);
+}
+
+/* #home prefix: wins over `#home a { color: inherit }`. */
+#home .tone-sand { background: #d8d2c4; color: #1d1c18; }
+#home .tone-moss { background: #1f3a30; color: #e6f1ea; }
+#home .tone-slate { background: #1c2740; color: #e2e8f5; }
+#home .tone-rose { background: #efd5d3; color: #3a1a1c; }
+#home .tone-amber { background: #e9d9b0; color: #2b2412; }
+#home .home-card.tone-moss .home-kicker { color: #9fd9bb; }
+#home .home-card.tone-slate .home-kicker { color: #a9c1ff; }
+
+.home-how {
+  border-top: 1px solid var(--home-line);
+}
+
+.home-principles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.home-principles article {
+  padding: 20px;
+  border: 1px solid var(--home-line);
+  border-radius: 14px;
+  background: #141a17;
+}
+
+.home-num {
+  color: var(--home-accent);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.home-principles h3 {
+  margin: 8px 0;
+  font-size: 19px;
+}
+
+.home-principles p,
+.home-faq p {
+  margin: 0;
+  color: #c3ccc6;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.home-faq {
+  border-top: 1px solid var(--home-line);
+}
+
+.home-faq-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+}
+
+.home-faq details {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--home-line);
+}
+
+.home-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  list-style-position: outside;
+}
+
+.home-faq details p {
+  margin-top: 8px;
+}
+
+.home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px clamp(16px, 4vw, 48px) 36px;
+  border-top: 1px solid var(--home-line);
+  color: var(--home-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 960px) {
+  .home-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .home-principles,
+  .home-faq-list {
+    grid-template-columns: 1fr;
+  }
+  .home-links {
+    display: none;
+  }
+  .home-nav-actions {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .home-nav {
+    gap: 10px;
+  }
+  .home-nav-cta {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .home-hero h1 {
+    font-size: clamp(44px, 13vw, 64px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-card,
+  .home-thumb img,
+  .home-arrow {
+    transition: none;
+  }
+}

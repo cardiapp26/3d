@@ -21,7 +21,7 @@ const ROOT = path.join(__dirname, '..');
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage();
-    await page.goto(`${APP}/`);
+    await page.goto(`${APP}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     const audit = await page.evaluate(async () => {
       const { measureEchoAnatomy, echoItems, surfaceExit, chestSurface, ECHO_STRUCTURES } = await import('/src/echo-anatomy.js');

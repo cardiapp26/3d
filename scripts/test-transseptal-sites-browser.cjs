@@ -13,7 +13,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.goto(`${APP}/`);
+    await page.goto(`${APP}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.locator('[data-mode=transseptal]').dispatchEvent('click');
     await page.waitForTimeout(800);

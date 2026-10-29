@@ -7,7 +7,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5173').replace(/\/$/, '');
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
-    await page.goto(APP);
+    await page.goto(`${APP}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.locator('[data-mode=cath]:not([data-mode-step])').dispatchEvent('click');
     const click = sel => page.locator(sel).first().click();

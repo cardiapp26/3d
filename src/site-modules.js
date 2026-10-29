@@ -5,7 +5,7 @@ const word = (tr, en) => ({ tr, en });
 
 /** Module menu, in display order. A sub-page lists under its module (and in its ▾ menu, with its lessons). */
 export const SITE_MODULES = Object.freeze([
-  { id: 'anatomy', path: './', label: word('3D Anatomi', '3D Anatomy') },
+  { id: 'anatomy', path: './#/mode/anatomy', label: word('3D Anatomi', '3D Anatomy') },
   { id: 'exam', path: './exam/', label: word('Fizik muayene', 'Physical exam') },
   { id: 'hemo', path: './hemo/', label: word('Hemodinami', 'Hemodynamics') },
   { id: 'echo', path: './echo/', label: word('Eko', 'Echo') },
