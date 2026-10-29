@@ -8,7 +8,7 @@ const fs = require('node:fs');
     const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     const url = process.env.APP_URL || 'http://127.0.0.1:5173';
-    await page.goto(url);
+    await page.goto(`${url.replace(/\/$/, '')}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
 
     fs.mkdirSync('research/screenshots', { recursive: true });

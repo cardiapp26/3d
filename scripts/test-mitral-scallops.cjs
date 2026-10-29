@@ -17,7 +17,7 @@ const openDrawer = async (page, id) => {
     await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(APP);
+    await page.goto(`${String(APP).replace(/\/$/, '')}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.locator('[data-view=mitral]').click();
     await page.waitForSelector('#viewport[data-camera-settled=true]');

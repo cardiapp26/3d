@@ -27,7 +27,14 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   assert.match(await page.locator('[data-csp-guide]').textContent(),/Pace map uygun/);
   // 3. Eight turns from the keyboard; the live recording runs.
   await page.locator('[data-csp-live]').click();
-  for(let i=0;i<8;i++)await page.keyboard.press('r');
+  await page.keyboard.press('r');
+  const spinning=await state();assert.equal(spinning.spin.active,true);assert.equal(spinning.spin.pacingPaused,true,'lumenless lead: pacing paused while turning');
+  assert.equal(spinning.procedure.turns,1,'the turn is applied at once');assert.equal(await page.locator('[data-csp-rotate="1"]').isEnabled(),true,'more turns can be queued');
+  assert.match(await page.locator('[data-csp-guide]').textContent(),/pacing duraklatıldı/);
+  for(let i=0;i<7;i++)await page.keyboard.press('r');
+  assert.equal((await state()).spin.queued,7,'seven turns wait in the queue');
+  await csp(()=>window.epsLab.panel.csp.tick(8*1000+1000));
+  assert.equal((await state()).spin.active,false);assert.equal((await state()).spin.queued,0);
   assert.equal((await state()).procedure.turns,8);assert.equal(await capture(),'nonselective');
   assert.equal(await criterion('v6Rwpt'),'met');assert.equal(await criterion('interpeak'),'met');assert.equal(await criterion('transition'),'untested');
   await page.locator('[data-csp-torque=ccw]').isDisabled().then(v=>assert.equal(v,true,'sheath locked once screwed in'));

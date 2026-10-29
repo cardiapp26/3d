@@ -155,6 +155,7 @@ export const REFERENCES = [
   'Gibo H, Carver CC, Rhoton AL Jr, Lenkey C, Mitchell RJ. Microsurgical anatomy of the middle cerebral artery. J Neurosurg. 1981;54:151–169.',
   'North American Symptomatic Carotid Endarterectomy Trial Collaborators. Beneficial effect of carotid endarterectomy in symptomatic patients with high-grade carotid stenosis. N Engl J Med. 1991;325:445–453.',
   'Naylor R, et al. ESVS 2023 Clinical Practice Guidelines on the Management of Atherosclerotic Carotid and Vertebral Artery Disease. Eur J Vasc Endovasc Surg. 2023;65:7–111.',
+  'Kleindorfer DO, et al. 2021 Guideline for the Prevention of Stroke in Patients With Stroke and Transient Ischemic Attack: a guideline from the American Heart Association/American Stroke Association. Stroke. 2021;52:e364–e467.',
   'Mazzolai L, et al. 2024 ESC Guidelines for the management of peripheral arterial and aortic diseases. Eur Heart J. 2024;45:3538–3700. doi:10.1093/eurheartj/ehae179.',
   'Standring S, ed. Gray\'s Anatomy: The Anatomical Basis of Clinical Practice. 42nd ed. Elsevier; 2020.',
   'Casserly IP, Sachar R, Yadav JS. Manual of Peripheral Vascular Intervention. Lippincott Williams & Wilkins; 2005.'

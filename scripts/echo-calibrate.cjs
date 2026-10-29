@@ -17,7 +17,7 @@ const APP = process.env.APP_URL || 'http://127.0.0.1:5173';
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
-    await page.goto(`${APP}/`);
+    await page.goto(`${APP}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     const result = await page.evaluate(async only => {
       const { measureEchoAnatomy, echoItems, surfaceExit, chestSurface } = await import('/src/echo-anatomy.js');

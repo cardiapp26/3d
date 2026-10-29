@@ -84,6 +84,15 @@ function lead(ctx, points, tip, color = '#151817') {
   ctx.beginPath(); ctx.moveTo(...points[0]); ctx.bezierCurveTo(...points[1], ...points[2], ...tip); ctx.stroke();
   ctx.fillStyle = color; ctx.beginPath(); ctx.arc(...tip, 4, 0, Math.PI * 2); ctx.fill();
 }
+/** The helix turning: a radio-opaque mark orbiting the tip (phase in turns), seen obliquely. */
+function spinMark(ctx, tip, phase) {
+  if (phase == null) return;
+  const a = phase * Math.PI * 2;
+  ctx.strokeStyle = 'rgba(21, 24, 23, .9)'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.ellipse(tip[0], tip[1], 7, 3, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#151817';
+  ctx.beginPath(); ctx.arc(tip[0] + 7 * Math.cos(a), tip[1] + 3 * Math.sin(a), 2.2, 0, Math.PI * 2); ctx.fill();
+}
 
 function hud(ctx, w, h, view, fx, text) {
   ctx.fillStyle = '#f4f1e6'; ctx.font = '600 10px ui-monospace, monospace';
@@ -116,11 +125,12 @@ function drawRao(ctx, w, h, proc, opts) {
   if (opts.target) {
     const { lbb } = anatomyOf(proc);
     const a = lerp(his, apex, lbb - .08), b = lerp(his, apex, lbb + .08);
-    ctx.strokeStyle = 'rgba(118, 215, 165, .75)'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(90, 169, 230, .7)'; ctx.lineWidth = 9; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
   }
   const tip = raoTip(proc, w, h);
   lead(ctx, [[w * .2, 0], [w * .16, h * .32], [w * .3, h * .5], [tip[0] - w * .06, tip[1] - h * .02]], tip);
+  spinMark(ctx, tip, opts.spin);
   ctx.fillStyle = '#f4f1e6'; ctx.font = '600 11px ui-monospace, monospace';
   ctx.fillText(`${mmFromHis(proc)} mm ${text.fromHis}`, 10, h - 12);
   if (proc.depthMm <= .05) { ctx.fillStyle = 'rgba(244, 241, 230, .75)'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(text.drag, 10, h - 28); }
@@ -154,6 +164,7 @@ function drawLao(ctx, w, h, proc, opts) {
   const tip = [entry[0] + dir[0] * depthPx, entry[1] + dir[1] * depthPx];
   const back = [entry[0] - dir[0] * w * .3, entry[1] - dir[1] * w * .3];
   lead(ctx, [[w * .05, h * .1], [w * .08, h * .4], lerp(back, entry, .3), entry], tip);
+  spinMark(ctx, tip, opts.spin);
   if (opts.guides) {
     ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(255, 238, 170, .7)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(mid[0] - into[0] * w * .25, mid[1] - into[1] * w * .25); ctx.lineTo(mid[0] + into[0] * w * .12, mid[1] + into[1] * w * .12); ctx.stroke();
@@ -172,38 +183,39 @@ function drawLao(ctx, w, h, proc, opts) {
 }
 
 function drawSection(ctx, w, h, proc, opts) {
-  ctx.fillStyle = '#0d1813'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#0b0e12'; ctx.fillRect(0, 0, w, h);
   const left = w * .22, right = w * .78, top = h * .1, bottom = h * .86;
   const thickness = thicknessOf(proc);
   ctx.fillStyle = '#5b3a35'; ctx.fillRect(left, top, right - left, bottom - top);
   // Left bundle fan near the LV side (the conduction access band of the model).
-  ctx.fillStyle = 'rgba(118, 215, 165, .55)';
+  ctx.fillStyle = 'rgba(90, 169, 230, .5)';
   ctx.fillRect(left + (right - left) * .82, top, (right - left) * .16, bottom - top);
-  ctx.fillStyle = '#d9e5dc'; ctx.font = '600 11px system-ui, sans-serif';
+  ctx.fillStyle = '#dfe5ec'; ctx.font = '600 11px system-ui, sans-serif';
   ctx.fillText('RV', left - 26, top + 14); ctx.fillText('LV', right + 8, top + 14);
   ctx.fillText(opts.text.lbb, left + (right - left) * .78, bottom + 16);
   for (let mm = 0; mm <= thickness; mm += 2) {
     const x = left + (mm / thickness) * (right - left);
-    ctx.fillStyle = '#9fb8a8'; ctx.fillRect(x, top - 6, 1, 5);
+    ctx.fillStyle = '#9aa6b4'; ctx.fillRect(x, top - 6, 1, 5);
     ctx.font = '9px ui-monospace, monospace'; ctx.fillText(String(mm), x - 3, top - 9);
   }
   const depth = opts.fx ? opts.fx.shownDepth : proc.depthMm;
   const y = top + (bottom - top) * .45, tip = left + (depth / thickness) * (right - left);
   ctx.strokeStyle = '#e8c06a'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(4, y - 10); ctx.lineTo(left, y); ctx.lineTo(tip, y); ctx.stroke();
-  // Helix turns behind the tip.
+  // Helix turns behind the tip; while turning they scroll forward with the phase.
   ctx.lineWidth = 1.5;
-  for (let k = 0; k < 4; k++) { const x = tip - 4 - k * 4; ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x - 2, y + 5); ctx.stroke(); }
+  const shift = opts.spin == null ? 0 : (opts.spin % 1) * 4;
+  for (let k = 0; k < 4; k++) { const x = tip - 4 - k * 4 + shift; ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x - 2, y + 5); ctx.stroke(); }
   ctx.fillStyle = '#f4f1e6'; ctx.font = '600 11px ui-monospace, monospace';
   ctx.fillText(`${proc.depthMm.toFixed(1)} / ${thickness} mm`, 10, h - 8);
 }
 
 /**
  * @param {'rao'|'lao'|'septum'} view
- * @param {object} opts { guides, target, badge, contrast (0..1), fx: { live, seconds, shownDepth } | null, text }
+ * @param {object} opts { guides, target, badge, contrast (0..1), spin (helix phase in turns, or null), fx: { live, seconds, shownDepth } | null, text }
  */
 export function drawFluoro(ctx, w, h, view, proc, opts) {
-  const o = { contrast: 0, fx: null, badge: false, ...opts };
+  const o = { contrast: 0, fx: null, badge: false, spin: null, ...opts };
   if (view === 'septum') drawSection(ctx, w, h, proc, o);
   else if (view === 'lao') drawLao(ctx, w, h, proc, o);
   else drawRao(ctx, w, h, proc, o);

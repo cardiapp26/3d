@@ -26,7 +26,7 @@ const assert = require('node:assert/strict');
       };
       window.addEventListener('error', e => { if (/ResizeObserver/.test(e.message)) window.resizeErrors.push({ message: e.message, recent }); });
     });
-    await page.goto(url);
+    await page.goto(`${url.replace(/\/$/, '')}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     for (const size of [{ width: 390, height: 844 }, { width: 640, height: 800 }, { width: 1300, height: 900 }]) {
       await page.setViewportSize(size);

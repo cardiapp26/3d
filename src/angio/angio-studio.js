@@ -630,6 +630,23 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
                 ` : ''}
               </div>
             ` : ''}
+
+            <div class="angio-physiology-cta">
+              <div class="angio-physiology-cta-copy">
+                <strong>${isTr ? 'İnvaziv Koroner Fizyoloji & IVUS Laboratuvarları' : 'Invasive Coronary Physiology & IVUS Labs'}</strong>
+                <span>${isTr
+                  ? 'FFR, iFR, PPG, termodilüsyon (CFR, IMR, Rμ) ve 20–60 MHz Koroner IVUS (EEM/MLA planimetri, kalsiyum skoru, ULTIMATE/Kang stent optimizasyonu).'
+                  : 'FFR, iFR, PPG, thermodilution (CFR, IMR, Rμ), and 20–60 MHz Coronary IVUS (EEM/MLA planimetry, calcium score, ULTIMATE/Kang stent optimization).'}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <a class="angio-physiology-cta-link" href="./physiology/" data-angio-physiology-link>
+                  ${isTr ? 'Fizyoloji Lab →' : 'Physiology Lab →'}
+                </a>
+                <a class="angio-physiology-cta-link" href="./ivus/" data-angio-ivus-link>
+                  ${isTr ? 'Koroner IVUS Lab →' : 'Coronary IVUS Lab →'}
+                </a>
+              </div>
+            </div>
           </div>
         </section>
       </div>

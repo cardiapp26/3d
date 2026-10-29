@@ -5,7 +5,7 @@ const word = (tr, en) => ({ tr, en });
 
 /** Module menu, in display order. A sub-page lists under its module (and in its ▾ menu, with its lessons). */
 export const SITE_MODULES = Object.freeze([
-  { id: 'anatomy', path: './', label: word('3D Anatomi', '3D Anatomy') },
+  { id: 'anatomy', path: './#/mode/anatomy', label: word('3D Anatomi', '3D Anatomy') },
   { id: 'exam', path: './exam/', label: word('Fizik muayene', 'Physical exam') },
   { id: 'hemo', path: './hemo/', label: word('Hemodinami', 'Hemodynamics') },
   { id: 'echo', path: './echo/', label: word('Eko', 'Echo') },
@@ -14,6 +14,8 @@ export const SITE_MODULES = Object.freeze([
     pages: [
       { id: 'angio', path: './angio/', label: word('C-kol stüdyosu', 'C-arm studio') },
       { id: 'angio-3d', path: './angio/3d/', label: word('3D koroner anatomi', '3D coronary anatomy') },
+      { id: 'angio-physiology', path: './angio/physiology/', label: word('Koroner fizyoloji', 'Coronary physiology') },
+      { id: 'angio-ivus', path: './angio/ivus/', label: word('Koroner IVUS', 'Coronary IVUS') },
       { id: 'angio-carotid', path: './angio/carotid/', label: word('Karotis', 'Carotid') },
       { id: 'angio-peripheral', path: './angio/peripheral/', label: word('Periferik', 'Peripheral') }
     ]
@@ -47,6 +49,8 @@ export const SITE_BADGES = Object.freeze({
   echo: word('EKOKARDİYOGRAFİ', 'ECHOCARDIOGRAPHY'),
   angio: word('KORONER ANJİYOGRAFİ', 'CORONARY ANGIOGRAPHY'),
   'angio-3d': word('KORONER ANJİYOGRAFİ', 'CORONARY ANGIOGRAPHY'),
+  'angio-physiology': word('KORONER FİZYOLOJİ', 'CORONARY PHYSIOLOGY'),
+  'angio-ivus': word('KORONER IVUS', 'CORONARY IVUS'),
   'angio-carotid': word('KAROTİS ANJİYOGRAFİ', 'CAROTID ANGIOGRAPHY'),
   'angio-peripheral': word('PERİFERİK ANJİYOGRAFİ', 'PERIPHERAL ANGIOGRAPHY'),
   ecg: word('EKG FİZYOLOJİSİ', 'ECG PHYSIOLOGY'),

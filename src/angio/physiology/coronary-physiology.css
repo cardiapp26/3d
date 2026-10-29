@@ -1,0 +1,1202 @@
+/* Coronary Physiology Lab · Cath-Lab Workstation Styling */
+
+.phys-workspace {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 16px 20px 36px;
+  box-sizing: border-box;
+  color: #e2e8f0;
+}
+
+.phys-lab {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.phys-lab *,
+.phys-lab *::before,
+.phys-lab *::after {
+  box-sizing: border-box;
+}
+
+.phys-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, #111824 0%, #0b1018 100%);
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+}
+
+.phys-kicker {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #14b8a6;
+  margin-bottom: 3px;
+}
+
+.phys-hero-title h1 {
+  margin: 0;
+  font-size: clamp(19px, 2.4vw, 26px);
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.2;
+}
+
+.phys-mode-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: #070a0f;
+  border: 1px solid #1e293b;
+  border-radius: 999px;
+}
+
+.phys-mode-btn {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.phys-mode-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.phys-mode-btn.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+/* 4 Modality Tabs */
+.phys-modtabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.phys-modtab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 11px 14px;
+  text-align: left;
+  background: #111722;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.phys-modtab strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.phys-modtab span {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.phys-modtab:hover {
+  border-color: #14b8a6;
+}
+
+.phys-modtab.active {
+  background: linear-gradient(180deg, rgba(20, 184, 166, 0.16) 0%, #111722 100%);
+  border-color: #14b8a6;
+  box-shadow: inset 0 -3px 0 #14b8a6;
+}
+
+.phys-mod-summary {
+  margin: -4px 0 0;
+  padding: 9px 14px;
+  background: #0b1018;
+  border: 1px solid #1e293b;
+  border-left: 4px solid #14b8a6;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+/* Main 2-Column Workstation Grid */
+.phys-workstation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(340px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.phys-console-col,
+.phys-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.phys-console-card,
+.phys-subcard,
+.phys-vessel-card,
+.phys-proc-card,
+.phys-case-card {
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.phys-status-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  padding: 9px 14px;
+  background: #080c12;
+  border-bottom: 1px solid #1e293b;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.phys-status-banner.is-warn {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fde68a;
+}
+
+.phys-cuff-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Control Bars */
+.phys-bars {
+  display: flex;
+  flex-direction: column;
+  background: #0b1017;
+  border-bottom: 1px solid #1e293b;
+}
+
+.phys-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-top: 1px solid #151e2b;
+}
+
+.phys-bar:first-child {
+  border-top: 0;
+}
+
+.phys-bar-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+  min-width: 74px;
+}
+
+.phys-select,
+.phys-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #283548;
+  background: #151d2a;
+  color: #e2e8f0;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.phys-select {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.phys-select.phys-select-sm {
+  flex: 0 1 auto;
+}
+
+.phys-btn:hover {
+  background: #1e293b;
+  border-color: #38bdf8;
+}
+
+.phys-btn.primary,
+.phys-btn.active {
+  background: #0f766e;
+  border-color: #14b8a6;
+  color: #ffffff;
+}
+
+.phys-btn.is-done {
+  border-color: rgba(52, 211, 153, 0.55);
+  color: #6ee7b7;
+}
+
+.phys-sensor-slider {
+  flex: 1 1 90px;
+  min-width: 70px;
+  accent-color: #f59e0b;
+}
+
+/* Pressure Monitor Canvas & Readouts */
+.phys-monitor-wrap {
+  background: #05080d;
+  border-bottom: 1px solid #1e293b;
+}
+
+.phys-pressure-canvas,
+.phys-detail-canvas,
+.phys-sim-canvas,
+.phys-spot-canvas,
+.phys-pit-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.phys-pressure-canvas {
+  height: 230px;
+}
+
+.phys-detail-canvas {
+  height: 205px;
+}
+
+.phys-readouts {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: #1e293b;
+}
+
+.phys-ro {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: #090d14;
+}
+
+.phys-ro-k {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.phys-ro-v {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 19px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.phys-ro-v small {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.phys-ro-v.pa { color: #f1f5f9; }
+.phys-ro-v.pd { color: #38bdf8; }
+.phys-ro-v.ratio { color: #f59e0b; }
+.phys-ro-v.ok, .ok { color: #34d399; }
+.phys-ro-v.warn, .warn { color: #fbbf24; }
+.phys-ro-v.bad, .bad { color: #f87171; }
+
+/* Secondary Modality Card */
+.phys-subcard {
+  padding: 14px 16px;
+}
+
+.phys-subcard-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.phys-subcard-head h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.phys-subcard-head p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.phys-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.phys-pill.ok {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.phys-pill.warn {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.phys-pill.bad {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.phys-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.phys-canvas-box {
+  background: #060a10;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.phys-metrics-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.phys-metric-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.phys-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+
+.phys-tile-k {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.phys-tile-v {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 17px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.phys-tile-v small,
+.phys-tile-ref {
+  font-size: 10.5px;
+  color: #64748b;
+}
+
+/* PPG Scale Bar */
+.phys-ppg-bar-wrap {
+  padding: 12px 10px 6px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+
+.phys-ppg-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6 0%, #a855f7 55%, #f59e0b 100%);
+  margin: 8px 0 6px;
+}
+
+.phys-ppg-cut {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: #f8fafc;
+}
+
+.phys-ppg-cut em {
+  position: absolute;
+  top: -15px;
+  left: -12px;
+  font-style: normal;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: #cbd5e1;
+}
+
+.phys-ppg-dot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #090d14;
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.phys-ppg-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* Virtual PCI Box */
+.phys-vpci-box {
+  padding: 10px 12px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+
+.phys-vpci-box h4 {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: #38bdf8;
+}
+
+.phys-vpci-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phys-check-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #131b26;
+  border: 1px solid #283548;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.phys-note-box {
+  margin: 0;
+  padding: 8px 10px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Bolus & Continuous strips */
+.phys-tmn-strip,
+.phys-cont-livebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+.phys-tmn-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.phys-tmn-chip {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #131c29;
+  border: 1px solid #283548;
+  font-family: ui-monospace, monospace;
+  font-size: 11.5px;
+}
+
+.phys-cont-livebar > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 140px;
+}
+
+.phys-cont-livebar span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.phys-cont-livebar strong {
+  font-family: ui-monospace, monospace;
+  font-size: 15px;
+  color: #f8fafc;
+}
+
+/* ACh Table */
+.phys-ach-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.phys-ach-table th,
+.phys-ach-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #16202e;
+  text-align: left;
+}
+
+.phys-ach-table th {
+  color: #94a3b8;
+  font-weight: 600;
+  background: #0d141f;
+}
+
+.phys-ach-table tr.is-active {
+  background: rgba(20, 184, 166, 0.14);
+}
+
+/* Right Column: Open Vessel Cutaway, Checklist & Case Card */
+.phys-vessel-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+}
+
+.phys-blood-stream {
+  animation: physFlowDash 0.8s linear infinite;
+}
+
+@keyframes physFlowDash {
+  to { stroke-dashoffset: -18; }
+}
+
+.phys-vessel-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #090d14;
+  border-top: 1px solid #1e293b;
+}
+
+.phys-vessel-tip {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.phys-proc-card,
+.phys-case-card {
+  padding: 13px 15px;
+}
+
+.phys-proc-card h3,
+.phys-case-card h3 {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.phys-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.phys-step-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: #090d14;
+  border: 1px solid #16202e;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.phys-step-list li.is-done {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.phys-step-icon {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.phys-step-list li.is-pending .phys-step-icon {
+  color: #f59e0b;
+}
+
+.phys-case-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.phys-case-head h3 {
+  margin: 0;
+}
+
+.phys-case-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #0f766e;
+  color: #ffffff;
+  font-family: ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.phys-case-brief {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.45;
+}
+
+.phys-case-hint {
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.1);
+  border-left: 3px solid #38bdf8;
+  font-size: 12.5px;
+  color: #bae6fd;
+}
+
+.phys-case-takeaway {
+  padding: 9px 11px;
+  border-radius: 6px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  font-size: 12.5px;
+  color: #cbd5e1;
+}
+
+.phys-case-takeaway strong {
+  color: #14b8a6;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.phys-case-takeaway p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Simulator Workspace */
+.phys-sim-section,
+.phys-pitfalls-section,
+.phys-calc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.phys-sim-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+}
+
+.phys-sim-top h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.phys-sim-top p {
+  margin: 0;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.phys-sim-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.phys-sim-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.phys-sim-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+}
+
+.phys-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.phys-slider-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.phys-slider-head strong {
+  font-family: ui-monospace, monospace;
+  color: #38bdf8;
+}
+
+.phys-sim-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.phys-sim-canvas {
+  height: 260px;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+
+.phys-endo-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-left: 5px solid #34d399;
+}
+
+.phys-endo-banner.warn { border-left-color: #fbbf24; }
+.phys-endo-banner.bad { border-left-color: #f87171; }
+
+.phys-mod4-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.phys-mod4-card {
+  padding: 10px 12px;
+  background: #090d14;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+
+.phys-mod4-card h4 {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: #cbd5e1;
+}
+
+.phys-mod4-vals {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.phys-mod4-vals > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  border-bottom: 1px solid #141c27;
+  padding-bottom: 3px;
+}
+
+.phys-mod4-vals strong {
+  font-family: ui-monospace, monospace;
+}
+
+/* Pitfalls & Spot-the-Artifact */
+.phys-spot-card {
+  padding: 14px 16px;
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+}
+
+.phys-spot-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.phys-spot-head h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+}
+
+.phys-spot-head p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.phys-spot-canvas {
+  height: 150px;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.phys-spot-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phys-btn.is-correct {
+  border-color: #34d399;
+  background: rgba(52, 211, 153, 0.16);
+  color: #34d399;
+}
+
+.phys-btn.is-wrong {
+  border-color: #f87171;
+  background: rgba(248, 113, 113, 0.16);
+  color: #f87171;
+}
+
+.phys-spot-feedback {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #090d14;
+  font-size: 13px;
+}
+
+.phys-pitfalls-grid,
+.phys-calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 410px), 1fr));
+  gap: 12px;
+}
+
+.phys-pit-card,
+.phys-calc-card {
+  padding: 14px 16px;
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.phys-pit-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.phys-pit-top h4,
+.phys-calc-card h3 {
+  margin: 0;
+  font-size: 15.5px;
+  color: #f8fafc;
+}
+
+.phys-pit-canvas {
+  height: 135px;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+
+.phys-pit-dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 10px;
+  margin: 4px 0 0;
+  font-size: 12.5px;
+}
+
+.phys-pit-dl dt {
+  font-weight: 700;
+  color: #14b8a6;
+}
+
+.phys-pit-dl dd {
+  margin: 0;
+  color: #cbd5e1;
+}
+
+/* Calculator */
+.phys-calc-cat {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #14b8a6;
+}
+
+.phys-calc-eq {
+  padding: 7px 10px;
+  background: #080c12;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: #f59e0b;
+  overflow-wrap: anywhere;
+}
+
+.phys-calc-norm {
+  margin: 0;
+  font-size: 12px;
+  color: #34d399;
+}
+
+.phys-calc-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.phys-calc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.phys-calc-field input {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #283548;
+  background: #090d14;
+  color: #f8fafc;
+  font-family: ui-monospace, monospace;
+  font-size: 13.5px;
+  min-width: 0;
+}
+
+.phys-calc-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #1e293b;
+}
+
+.phys-calc-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.phys-calc-row strong {
+  font-family: ui-monospace, monospace;
+}
+
+.phys-refs-box {
+  padding: 12px 16px;
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+}
+
+.phys-refs-box summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  color: #14b8a6;
+}
+
+.phys-refs-list {
+  margin: 10px 0 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  color: #cbd5e1;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1120px) {
+  .phys-workstation-grid,
+  .phys-sim-grid,
+  .phys-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .phys-mod4-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .phys-workspace {
+    padding: 10px 10px 28px;
+  }
+  .phys-modtabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .phys-readouts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .phys-metric-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .phys-mod4-grid,
+  .phys-calc-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .phys-pit-dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 440px) {
+  .phys-modtabs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .phys-readouts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Angiographic view (coronary-physiology-fluoro-view.js): first card of the lab column, so it
+   leads on phones too. The canvas sizes itself to this box. */
+.phys-fluoro-card {
+  background: #0d131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+}
+.phys-fluoro-head,
+.phys-fluoro-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 12px;
+}
+.phys-fluoro-head h3 { margin: 0; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: #cbd5e1; }
+.phys-fluoro-views,
+.phys-fluoro-proj { display: flex; flex-wrap: wrap; gap: 6px; }
+.phys-chip {
+  min-height: 32px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #283548;
+  background: #151d2a;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.phys-chip.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.16); color: #e0f2fe; }
+.phys-chip:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.phys-fluoro-stage { padding: 0 12px; }
+.phys-fluoro-canvas {
+  display: block;
+  width: 100%;
+  height: 380px;
+  border-radius: 8px;
+  background: #8f969a;
+  cursor: grab;
+  touch-action: none;
+}
+.phys-fluoro-canvas:active { cursor: grabbing; }
+.phys-fluoro-canvas:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.phys-fluoro-tip { font-size: 11.5px; color: #94a3b8; }
+@media (max-width: 760px) {
+  .phys-fluoro-canvas { height: 300px; }
+}

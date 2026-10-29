@@ -31,7 +31,7 @@ const openDrawer = async (page, id) => {
       localStorage.setItem('cardia_lang_explicit', '1');
     });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
-    await page.goto(url);
+    await page.goto(`${url.replace(/\/$/, '')}/#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     fs.mkdirSync(shotDir, { recursive: true });
@@ -604,7 +604,7 @@ const openDrawer = async (page, id) => {
       const geoPage = await context.newPage();
       const geoErrors = [];
       geoPage.on('pageerror', error => geoErrors.push(error.message));
-      await geoPage.goto(url);
+      await geoPage.goto(`${url.replace(/\/$/, '')}/#/mode/anatomy`);
       await geoPage.waitForSelector('#lang-btn');
       const expected = country === 'TR' ? 'TR' : 'EN';
       const label = country === 'TR' ? 'Hakkında ve kaynaklar' : 'About and sources';

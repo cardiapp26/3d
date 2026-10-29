@@ -1,5 +1,13 @@
 # Cardia: cardiac anatomy studio
 
+## Vascular angiography displays
+
+`/angio/peripheral/` opens the existing C-arm fluoroscopy/DSA detector before the anatomy schematic. Its angle joystick, contrast bolus, roadmap and vessel selection remain available.
+
+`/angio/carotid/` pairs the anatomy schematic with an original 3D centerline projection for all five views. It provides RAO/LAO and cranial/caudal controls, AP/oblique/lateral presets, contrast filling, DSA/native display styles and vessel picking. Angle, contrast and display settings survive view and TR/EN switches; selecting a different view clears the selected vessel. The anatomy schematic has an independent projection. These are teaching projections, not acquired radiographs: tissue attenuation, bones, devices and actual contrast transit are not simulated. Primitive intracranial variants and distal collapse in near-occlusion are explicitly excluded from the detector model. No patient videos were added.
+
+Run `npm run test:angio-vascular` and, against a running development server, `APP_URL=http://127.0.0.1:5198 npm run test:angio-vascular-browser`.
+
 ## Pharmacology page (`/pharmacology/`)
 
 An independent visual module beside EPS in the header. Nine bilingual chapters cover PK/PD, antihypertensives, diuretics, heart failure, antiarrhythmics, antianginals, antithrombotics, lipid lowering and interactions. Explore an organ target map, ventricular/nodal action-potential phases and drug classes, and a first-order half-life curve. Search class cards, compare two classes across chapters, and answer six mechanism/safety questions. Each card links to its source record. Deep link: `/pharmacology/#/antiarrhythmics`. The 3D, EPS and pharmacology pages share the explicit language choice and offline worker.

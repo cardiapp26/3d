@@ -55,12 +55,12 @@ export function advance(recorder, dt, nextBeat) {
 export function drawSweep(ctx, w, h, recorder, { rows = CHANNELS, ecgGain = 1, egmGain = 1, labels = {}, colors = {} } = {}) {
   const left = 46, right = w - 8, top = 8, bottom = h - 18, span = right - left;
   const row = (bottom - top) / rows.length;
-  ctx.fillStyle = '#060b09';
+  ctx.fillStyle = '#07090c';
   ctx.fillRect(0, 0, w, h);
   // Grid: 200 ms major, 40 ms minor.
   for (let ms = 0; ms <= recorder.window; ms += 40) {
     const x = left + (ms / recorder.window) * span;
-    ctx.strokeStyle = ms % 200 === 0 ? '#1d3127' : '#101d17';
+    ctx.strokeStyle = ms % 200 === 0 ? '#1c2430' : '#11161d';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke();
   }
@@ -69,12 +69,12 @@ export function drawSweep(ctx, w, h, recorder, { rows = CHANNELS, ecgGain = 1, e
     const mid = top + (r + .5) * row;
     const egm = id === 'TIP' || id === 'COI';
     const scale = (row * .42) * (egm ? egmGain : ecgGain);
-    ctx.fillStyle = colors[id] || '#9fb8a8';
+    ctx.fillStyle = colors[id] || '#a9b4c2';
     ctx.font = '600 10px ui-monospace, monospace';
     ctx.fillText(labels[id] || id, 6, mid + 3);
     ctx.save();
     ctx.beginPath(); ctx.rect(left, top + r * row, span, row); ctx.clip();
-    ctx.strokeStyle = colors[id] || '#c9dccf';
+    ctx.strokeStyle = colors[id] || '#d3dae3';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     const buffer = recorder.buffers[id];
@@ -95,9 +95,9 @@ export function drawSweep(ctx, w, h, recorder, { rows = CHANNELS, ecgGain = 1, e
     ctx.restore();
   });
   // Erase bar.
-  ctx.fillStyle = 'rgba(118, 215, 165, .18)';
+  ctx.fillStyle = 'rgba(90, 169, 230, .18)';
   ctx.fillRect(left + head * span, top, Math.max(2, (ERASE_MS / recorder.window) * span), bottom - top);
-  ctx.fillStyle = '#6f8c7c';
+  ctx.fillStyle = '#6b7787';
   ctx.font = '10px ui-monospace, monospace';
   ctx.fillText(`${recorder.speed} mm/s`, right - 60, h - 5);
   return { head };

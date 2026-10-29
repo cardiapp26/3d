@@ -17,7 +17,7 @@ export function rememberRoute(hash, storage) {
   }
 }
 
-/** The 3D page address with the last route, or `base` alone when none is stored. */
+/** The 3D page address with the last route, or its anatomy route when none is stored (the bare root is the welcome page). */
 export function simulatorHref(base = '../', storage) {
   let route = null;
   try {
@@ -25,7 +25,7 @@ export function simulatorHref(base = '../', storage) {
   } catch {
     /* private storage */
   }
-  return route && ROUTE_RE.test(route) ? `${base}${route}` : base;
+  return route && ROUTE_RE.test(route) ? `${base}${route}` : `${base}#/mode/anatomy`;
 }
 
 /** Point every link to the 3D page (`href="../"`) at the last route. */

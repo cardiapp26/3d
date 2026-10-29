@@ -41,7 +41,7 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5189').replace(/\/$/, '');
     await page.locator('.phys-guide').scrollIntoViewIfNeeded();
     const overflow=async()=>page.locator('.phys-guide').evaluate(el=>el.scrollWidth>el.clientWidth+1);
     assert.equal(await overflow(),false,'pharmacology guide mobile overflow');
-    await page.goto(`${APP}/?lang=tr`);
+    await page.goto(`${APP}/?lang=tr#/mode/anatomy`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.locator('[data-mode=cath]:not([data-mode-step])').dispatchEvent('click');
     await page.locator('[data-hemo-view=physiology]').click();

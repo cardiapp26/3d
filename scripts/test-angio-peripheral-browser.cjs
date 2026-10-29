@@ -55,6 +55,25 @@ async function clickStructure(page, id) {
     await page.locator('[data-site-badge]').waitFor({ state: 'attached', timeout: 30000 });
     await page.locator('[data-structure]').first().waitFor({ state: 'attached' });
 
+    const studioLayout = await page.evaluate(() => {
+      const image = document.querySelector('.peri-fluoro-card').getBoundingClientRect();
+      const device = document.querySelector('.peri-device-box').getBoundingClientRect();
+      const pad = document.querySelector('.peri-pad-box').getBoundingClientRect();
+      const detail = document.querySelector('[data-peri-card]').getBoundingClientRect();
+      return {
+        imageRight: image.right, deviceLeft: device.left,
+        deviceBottom: device.bottom, padTop: pad.top,
+        imageBottom: image.bottom, detailTop: detail.top,
+        anatomyOpen: document.querySelector('[data-peri-anatomy]').open
+      };
+    });
+    assert.ok(studioLayout.deviceLeft > studioLayout.imageRight, 'C-arm sits right of the primary image');
+    assert.ok(studioLayout.padTop >= studioLayout.deviceBottom, 'angle controls follow the C-arm device');
+    assert.ok(studioLayout.detailTop >= studioLayout.imageBottom, 'selected vessel details follow the image');
+    assert.equal(studioLayout.anatomyOpen, false, 'teaching atlas starts collapsed');
+    await page.locator('[data-peri-anatomy-title]').click();
+    assert.ok(await page.locator('[data-peri-svg]').isVisible(), 'anatomy remains available on demand');
+
     assert.equal(errors.length, 0, `pageerror on load: ${errors.join(' | ')}`);
     assert.match(await page.locator('[data-site-badge]').textContent(), /PERİFERİK ANJİYOGRAFİ/);
     assert.equal(
@@ -147,6 +166,8 @@ async function clickStructure(page, id) {
     assert.match(await page.locator('[data-site-badge]').textContent(), /PERIPHERAL ANGIOGRAPHY/);
     assert.match(await page.locator('[data-peri-tab="femoral"]').textContent(), /Femoral/);
     assert.match(await page.locator('[data-peri-disclaimer]').textContent(), /schematic teaching drawing/i);
+    assert.match(await page.locator('[data-peri-anatomy-title]').textContent(), /Schematic anatomy/);
+    assert.equal(await page.locator('[data-peri-anatomy]').evaluate(el => el.open), true, 'language and territory changes preserve expanded anatomy');
     assert.match(await page.locator('[data-card-pearl-h]').textContent(), /Angiographic relevance/);
     assert.notEqual(
       (await page.locator('[data-card-name]').innerText()).trim(),
@@ -155,6 +176,14 @@ async function clickStructure(page, id) {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(200);
+    const mobileOrder = await page.evaluate(() => ({
+      image: document.querySelector('.peri-fluoro-card').getBoundingClientRect().top,
+      device: document.querySelector('.peri-device-box').getBoundingClientRect().top,
+      pad: document.querySelector('.peri-pad-box').getBoundingClientRect().top,
+      anatomy: document.querySelector('[data-peri-anatomy]').getBoundingClientRect().top
+    }));
+    assert.ok(mobileOrder.image < mobileOrder.device && mobileOrder.device < mobileOrder.pad && mobileOrder.pad < mobileOrder.anatomy,
+      'mobile order keeps primary image and C-arm controls before optional anatomy');
     const overflow = await page.evaluate(() => {
       const doc = document.documentElement;
       let worst = null;

@@ -788,3 +788,52 @@
 /* Hover name over the 3D anatomy and the fluoroscopy. */
 .angio-atlas-viewport { position: relative; }
 .angio-atlas-tip { position: absolute; z-index: 5; pointer-events: none; max-width: 260px; padding: 4px 8px; border-radius: 6px; background: rgba(8, 18, 28, .9); color: #f1f5f2; font: 600 12px/1.35 system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+
+.angio-physiology-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.28);
+}
+
+.angio-physiology-cta-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.angio-physiology-cta-copy strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--angio-text, #0f172a);
+}
+
+.angio-physiology-cta-copy span {
+  font-size: 11.5px;
+  color: var(--angio-muted, #475569);
+  line-height: 1.4;
+}
+
+.angio-physiology-cta-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 7px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.angio-physiology-cta-link:hover {
+  background: #0369a1;
+}

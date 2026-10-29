@@ -1,0 +1,883 @@
+/* Coronary IVUS Lab · Dark Cath-Lab Console Stylesheet */
+
+.ivus-workspace {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 14px 16px 36px;
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.ivus-lab {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ivus-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0b111b 0%, #111b2a 100%);
+  border: 1px solid #1e293b;
+}
+
+.ivus-hero-title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ivus-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.ivus-hero h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.ivus-mode-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ivus-mode-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #131c2b;
+  color: #cbd5e1;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ivus-mode-btn:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+.ivus-mode-btn.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.ivus-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #0d1420;
+  border: 1px solid #1e293b;
+}
+
+.ivus-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ivus-field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.ivus-select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid #334155;
+  background: #131c2b;
+  color: #f1f5f9;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ivus-quick-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ivus-btn {
+  padding: 8px 11px;
+  border-radius: 7px;
+  border: 1px solid #334155;
+  background: #162032;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ivus-btn:hover {
+  background: #1e2d44;
+}
+
+.ivus-btn.primary {
+  border-color: #f43f5e;
+  color: #fda4af;
+}
+
+.ivus-btn.accent {
+  background: #0369a1;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.ivus-btn.ok {
+  background: #14532d;
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
+
+.ivus-btn.bad {
+  background: #7f1d1d;
+  border-color: #f43f5e;
+  color: #fecdd3;
+}
+
+.ivus-console-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.ivus-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: #0d1420;
+  border: 1px solid #1e293b;
+  min-width: 0;
+}
+
+.ivus-right-col {
+  display: grid;
+  gap: 14px;
+}
+
+.ivus-subbox {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1e293b;
+  min-width: 0;
+}
+
+.ivus-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ivus-card-head h2,
+.ivus-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.ivus-card-head p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.ivus-badge,
+.ivus-pill {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+}
+
+.ivus-pill.ok {
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.ivus-pill.warn {
+  background: rgba(250, 204, 21, 0.14);
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.4);
+}
+
+.ivus-bmode-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+  background: #05070b;
+  border-radius: 10px;
+  padding: 6px;
+  border: 1px solid #1e293b;
+}
+
+.ivus-cross-canvas {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  display: block;
+}
+
+.ivus-overlay-toggles,
+.ivus-pci-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.ivus-chip-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: #131c2b;
+  border: 1px solid #263548;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.ivus-readout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ivus-tile {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #111927;
+  border: 1px solid #1e293b;
+  display: grid;
+  gap: 3px;
+}
+
+.ivus-tile-k {
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.ivus-tile-v {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ivus-tile-v.ok,
+.ok {
+  color: #4ade80;
+}
+
+.ivus-tile-v.warn,
+.warn {
+  color: #facc15;
+}
+
+.ivus-tile-v.bad,
+.bad {
+  color: #fb7185;
+}
+
+.ivus-coreg-svg,
+.ivus-long-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  cursor: pointer;
+}
+
+.ivus-slider-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.ivus-pos-slider {
+  width: 100%;
+  accent-color: #facc15;
+  direction: rtl;
+}
+
+.ivus-sizing-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.ivus-size-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #111927;
+  border: 1px solid #1e293b;
+  display: grid;
+  gap: 3px;
+}
+
+.ivus-size-item span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.ivus-size-item strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ivus-teaching-box {
+  padding: 12px;
+  border-radius: 9px;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  display: grid;
+  gap: 6px;
+}
+
+.ivus-teaching-box p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+
+.ivus-section {
+  display: grid;
+  gap: 14px;
+}
+
+.ivus-section-head h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.ivus-section-head p {
+  margin: 0;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.ivus-morph-grid,
+.ivus-calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 14px;
+}
+
+.ivus-morph-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.ivus-preview-canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  display: block;
+}
+
+.ivus-morph-body {
+  display: grid;
+  gap: 6px;
+}
+
+.ivus-morph-body h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.ivus-morph-body p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.ivus-quiz-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.ivus-quiz-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ivus-quiz-feedback {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #111927;
+  border: 1px solid #1e293b;
+  font-size: 12.5px;
+}
+
+.ivus-calc-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.ivus-calc-head {
+  display: grid;
+  gap: 4px;
+}
+
+.ivus-calc-head h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.ivus-formula {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #070a10;
+  border: 1px solid #1e293b;
+  color: #38bdf8;
+  font-size: 11px;
+  overflow-x: auto;
+}
+
+.ivus-thresholds {
+  margin: 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.ivus-calc-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 8px;
+}
+
+.ivus-calc-field {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.ivus-calc-field input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #131c2b;
+  color: #f8fafc;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ivus-calc-results {
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #1e293b;
+}
+
+.ivus-calc-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ivus-refs-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+@media (max-width: 1080px) {
+  .ivus-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .ivus-console-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .ivus-workspace {
+    padding: 10px 10px 28px;
+  }
+  .ivus-readout-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ivus-quiz-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 3D vessel & stent model (ivus-model-view.js) */
+.ivus-model {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.im-bar {
+  display: grid;
+  gap: 10px;
+}
+
+.im-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.im-brief {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.im-chip {
+  min-height: 32px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: #131c2b;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.im-chip.active {
+  border-color: #38bdf8;
+  color: #ffffff;
+  background: #0c4a6e;
+}
+
+.im-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.im-mhz {
+  width: auto;
+}
+
+.im-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: 12px;
+}
+
+.im-stage-card {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.im-stage {
+  position: relative;
+  height: 560px;
+  touch-action: none;
+}
+
+.ivus3d-canvas {
+  display: block;
+}
+
+.ivus3d-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ivus3d-label {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(6, 9, 15, 0.72);
+  color: #e2e8f0;
+  font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+
+.ivus3d-label.probe {
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
+.ivus3d-fallback {
+  padding: 24px;
+  color: #fca5a5;
+}
+
+.im-tip {
+  position: absolute;
+  z-index: 3;
+  max-width: 220px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: rgba(6, 9, 15, 0.92);
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.im-legend {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: rgba(6, 9, 15, 0.75);
+  font-size: 11.5px;
+  color: #cbd5e1;
+  pointer-events: none;
+}
+
+.im-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.im-side {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.im-cross {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #020305;
+  touch-action: none;
+}
+
+.im-cross:focus-visible,
+.im-long:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.im-rows {
+  display: grid;
+  gap: 4px;
+}
+
+.im-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  border-bottom: 1px solid #1e293b;
+  font-size: 12.5px;
+}
+
+.im-row span {
+  color: #94a3b8;
+}
+
+.im-row strong {
+  text-align: right;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.im-row strong.ok { color: #4ade80; }
+.im-row strong.warn { color: #fbbf24; }
+.im-row strong.bad { color: #f87171; }
+
+.im-long-card {
+  display: grid;
+  gap: 8px;
+}
+
+.im-long {
+  width: 100%;
+  height: 150px;
+  border-radius: 8px;
+  touch-action: none;
+  cursor: ew-resize;
+}
+
+.im-lower {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+}
+
+.im-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: end;
+  margin: 10px 0;
+}
+
+.im-controls label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.im-controls label.im-check {
+  display: inline-flex;
+  color: #e2e8f0;
+}
+
+.im-controls select {
+  padding: 7px 9px;
+  border-radius: 7px;
+  border: 1px solid #334155;
+  background: #131c2b;
+  color: #f1f5f9;
+}
+
+.im-controls output {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.im-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.im-pop {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.im-mla-card .ivus-card-head {
+  flex-wrap: wrap;
+}
+
+.im-table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.im-table th,
+.im-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #1e293b;
+  text-align: right;
+}
+
+.im-table th:first-child,
+.im-table td:first-child {
+  text-align: left;
+}
+
+.im-table th {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.im-table tbody tr {
+  cursor: pointer;
+}
+
+.im-table tbody tr:hover,
+.im-table tbody tr.active {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.im-note {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+@media (max-width: 1080px) {
+  .im-grid {
+    grid-template-columns: 1fr;
+  }
+  .im-stage {
+    height: 460px;
+  }
+  .im-side {
+    grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .im-stage {
+    height: 380px;
+  }
+  .im-side {
+    grid-template-columns: 1fr;
+  }
+  .im-table {
+    font-size: 11px;
+  }
+}

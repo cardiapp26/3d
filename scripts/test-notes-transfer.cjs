@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
   try {
     const context = await browser.newContext();
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:5199/?lang=tr');
+    await page.goto('http://127.0.0.1:5199/?lang=tr#/mode/anatomy');
     await page.locator('#notes-toggle').click();
     await page.waitForSelector('#personal-notes-send');
     const notes = [{ section: 'anatomy', title: 'Anatomi', text: 'Anatomi notum <script>\nİkinci satır' }, { section: 'angiography', title: 'Anjiyografi', text: 'İkinci bölüm notum' }];

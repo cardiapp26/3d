@@ -131,11 +131,14 @@
 
 .peri-stage {
   display: grid;
-  grid-template-columns: minmax(0, 1.38fr) minmax(300px, 0.95fr);
+  grid-template-columns: minmax(0, 1.9fr) minmax(340px, 1fr);
+  grid-template-rows: auto 1fr;
   gap: 16px;
   min-width: 0;
   align-items: start;
 }
+
+.peri-right-col { grid-column: 2; grid-row: 1 / span 2; }
 
 .peri-left-col,
 .peri-right-col {
@@ -296,7 +299,8 @@
 
 #peri-fluo-canvas {
   display: block;
-  width: 100%;
+  margin-inline: auto;
+  width: min(100%, 577px);
   max-width: 100%;
   height: auto;
   cursor: crosshair;
@@ -1061,8 +1065,9 @@
 
 .peri-tip[hidden] { display: none; }
 
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
   .peri-stage { grid-template-columns: minmax(0, 1fr); }
+  .peri-right-col { grid-column: auto; grid-row: auto; }
   .peri-abi-grid { grid-template-columns: minmax(0, 1fr); }
   .peri-scale-grid { grid-template-columns: minmax(0, 1fr); }
   .peri-page h1 { font-size: 22px; }
@@ -1084,7 +1089,24 @@
   .peri-tabs button { font-size: 12px; padding: 8px 2px; }
 }
 
-@media (max-width: 860px) {
+/* Match the coronary studio hierarchy: image, controls, then optional teaching atlas. */
+.peri-intro { font-size: 12px; margin-bottom: 6px; }
+.peri-lead { font-size: 12px; margin-bottom: 10px; }
+.peri-page h1 { font-size: 22px; margin-bottom: 4px; }
+.peri-tabs { margin-bottom: 10px; }
+.peri-anatomy { min-width: 0; grid-column: 1; border-top: 1px solid #334155; }
+.peri-anatomy > summary { padding: 12px 0; cursor: pointer; color: #7dd3fc; font-size: 12px; }
+.peri-anatomy > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 3px; }
+
+/* Single-column layouts: the selected-structure card goes last in the stage and docks to the viewport
+   bottom once a vessel is chosen, so a tap on the detector or on the schematic atlas shows it on screen. */
+@media (max-width: 1100px) {
+  .peri-left-col { display: contents; }
+  .peri-console-head { order: 1; }
+  .peri-fluoro-card { order: 2; }
+  .peri-right-col { order: 3; }
+  .peri-anatomy { order: 4; }
+  .peri-card { order: 5; }
   .peri-card:has([data-card-pearl]:not(:empty)) {
     position: sticky; bottom: 0; z-index: 6;
     max-height: 42vh; overflow-y: auto; overscroll-behavior: contain;

@@ -23,8 +23,17 @@ const cutControls = (page) => page.evaluate(() => {
   return out;
 });
 
-async function tapVesselShowsCard(page, path, structure, hit, card) {
+const cardOnScreen = async (page, path, card, where) => {
+  const box = await page.locator(card).boundingBox();
+  const vh = await page.evaluate(() => innerHeight);
+  assert.ok(box && box.y < vh - 60 && box.y + box.height > 60, `${path}: detail card on screen after a ${where} tap (top ${box && Math.round(box.y)}, viewport ${vh})`);
+};
+
+// The schematic anatomy now sits in a collapsible <details> below the detector view; open it before tapping.
+async function tapVesselShowsCard(page, path, structure, hit, card, anatomy) {
   await page.goto(`${APP}${path}?lang=tr`, { waitUntil: 'networkidle' });
+  await page.locator(`${anatomy} > summary`).tap();
+  await page.waitForTimeout(150);
   for (let j = 0; j < 3; j++) {
     const pt = await page.evaluate(([s, h, j]) => {
       const node = document.querySelectorAll(s)[j], line = node.querySelector(h);
@@ -34,10 +43,22 @@ async function tapVesselShowsCard(page, path, structure, hit, card) {
     }, [structure, hit, j]);
     await page.touchscreen.tap(pt.x, pt.y);
     await page.waitForTimeout(250);
-    const box = await page.locator(card).boundingBox();
-    const vh = await page.evaluate(() => innerHeight);
-    assert.ok(box && box.y < vh - 60 && box.y + box.height > 60, `${path}: detail card on screen after a tap (top ${box && Math.round(box.y)}, viewport ${vh})`);
+    await cardOnScreen(page, path, card, 'schematic');
   }
+}
+
+// Carotid detector (fluoroscopy canvas): tap the middle of a projected vessel from the panel's hit regions.
+async function tapDetectorShowsCard(page) {
+  await page.goto(`${APP}/angio/carotid/?lang=tr`, { waitUntil: 'networkidle' });
+  const canvas = page.locator('[data-carotid-fluo]');
+  await canvas.scrollIntoViewIfNeeded();
+  const box = await canvas.boundingBox();
+  const region = await page.evaluate(() => window.carotidAngio.getHitRegions().find((r) => r.id === 'rcca'));
+  const p = region.points[Math.floor(region.points.length / 2)];
+  await page.touchscreen.tap(box.x + p.x * box.width / 540, box.y + p.y * box.height / 440);
+  await page.waitForTimeout(250);
+  assert.equal(await page.locator('[data-detail-id]').getAttribute('data-detail-id'), 'rcca', 'detector tap selects the vessel');
+  await cardOnScreen(page, '/angio/carotid/', '.detail-card', 'detector');
 }
 
 (async () => {
@@ -89,10 +110,11 @@ async function tapVesselShowsCard(page, path, structure, hit, card) {
     assert.equal(await page.locator('#cycle-collapse').getAttribute('aria-expanded'), 'true', 'chevron expands the cycle panel');
     assert.notEqual(await page.locator('.ecg-strip').evaluate((e) => getComputedStyle(e).display), 'none', 'expanded panel shows the ECG strip');
 
-    await tapVesselShowsCard(page, '/angio/carotid/', '.carotid-structure', '.vessel-hit', '.detail-card');
-    await tapVesselShowsCard(page, '/angio/peripheral/', '[data-structure]', '.peri-hitstroke', '[data-peri-card]');
+    await tapDetectorShowsCard(page);
+    await tapVesselShowsCard(page, '/angio/carotid/', '.carotid-structure', '.vessel-hit', '.detail-card', '[data-carotid-anatomy]');
+    await tapVesselShowsCard(page, '/angio/peripheral/', '[data-structure]', '.peri-hitstroke', '[data-peri-card]', '[data-peri-anatomy]');
     assert.deepEqual(errors, []);
-    console.log(`PASS mobile layout: ${sections} EPS sections fit 390 px, echo probe row uncovered, 3D pages open with the model on half the screen and a collapsible cycle panel, carotid and peripheral cards dock on screen after a tap`);
+    console.log(`PASS mobile layout: ${sections} EPS sections fit 390 px, echo probe row uncovered, 3D pages open with the model on half the screen and a collapsible cycle panel, carotid and peripheral cards dock on screen after a detector or schematic tap`);
   } finally {
     await browser.close();
   }

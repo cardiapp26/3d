@@ -817,8 +817,8 @@ export const PERIPHERAL_LESIONS = [
     pct: 100,
     posFraction: 0.65,
     isCto: true,
-    name: { tr: 'SFA Hunter Kanalı Kronik Total Oklüzyon (%100 CTO · TASC C)', en: 'SFA Hunter Canal Chronic Total Occlusion (100% CTO · TASC C)' },
-    tasc: 'TASC C',
+    name: { tr: 'SFA Hunter Kanalı Kronik Total Oklüzyon (%100 CTO · 12 cm · TASC B)', en: 'SFA Hunter Canal Chronic Total Occlusion (100% CTO · 12 cm · TASC B)' },
+    tasc: 'TASC B',
     rutherford: 'I/3 (Fontaine IIb)',
     abiPreset: { ankle: 62, brachial: 122, toe: 45 },
     access: { tr: 'Karşıdan crossover uzun kılıf veya antegrad CFA (+ gerekirse retrograde pedal/popliteal)', en: 'Contralateral crossover sheath or antegrade CFA (+ retrograde pedal if needed)' },
@@ -832,8 +832,8 @@ export const PERIPHERAL_LESIONS = [
       labelEn: 'Genicular collateral bridge (P1 reconstitution)'
     },
     desc: {
-      tr: 'Addüktör (Hunter) kanalında uzun SFA tam tıkanıklığı. Popliteal P1 segmenti inen geniküler ve profunda kollateralleri üzerinden gecikmeli olarak yeniden dolar.',
-      en: 'Long SFA occlusion within the adductor (Hunter) canal. The popliteal P1 segment reconstitutes on delayed bolus-chase frames via descending genicular and profunda collaterals.'
+      tr: 'Addüktör (Hunter) kanalında 12 cm\'lik tek SFA tam tıkanıklığı (TASC II B: ≤15 cm, diz altı popliteal tutulumu yok; toplamı >15 cm çoklu lezyonlar TASC C olurdu). Popliteal P1 segmenti inen geniküler ve profunda kollateralleri üzerinden gecikmeli olarak yeniden dolar.',
+      en: 'Single 12 cm SFA occlusion within the adductor (Hunter) canal (TASC II B: ≤15 cm, infrageniculate popliteal spared; multiple lesions totalling >15 cm would be TASC C). The popliteal P1 segment reconstitutes on delayed bolus-chase frames via descending genicular and profunda collaterals.'
     }
   },
   {
@@ -1115,16 +1115,17 @@ export function computeAbiTbi({ ankle = 124, brachial = 120, toe = 90 } = {}) {
   let status = 'normal';
   let labelTr = 'Normal (1.00–1.40)';
   let labelEn = 'Normal (1.00–1.40)';
-  let stageTr = 'Rutherford 0 · Fontaine I (Normal akım)';
-  let stageEn = 'Rutherford 0 · Fontaine I (Normal flow)';
+  // Rutherford and Fontaine are clinical (symptom-based) grades; ABI alone cannot assign them.
+  let stageTr = 'İstirahatte hemodinamik PAH yok; semptom varsa egzersiz ABI';
+  let stageEn = 'No haemodynamic PAD at rest; exercise ABI if symptoms suggest PAD';
 
   if (abi > 1.4) {
     status = 'noncompressible';
     labelTr = 'Sıkıştırılamaz Damar (>1.40 · Medyal Kalsinozis)';
     labelEn = 'Noncompressible (>1.40 · Medial Calcinosis)';
-    if (tbi !== null && tbi < 0.3) {
-      stageTr = `TBI ${tbi.toFixed(2)} (<0.30) · Kritik Ekstremite İskemisi (Rutherford 4–6)`;
-      stageEn = `TBI ${tbi.toFixed(2)} (<0.30) · Critical Limb Ischemia (Rutherford 4–6)`;
+    if (tbi !== null && tbi < 0.7 && t < 30) {
+      stageTr = `TBI ${tbi.toFixed(2)} (<0.70) · ayak parmağı basıncı <30 mmHg; istirahat ağrısı veya doku kaybıyla KTİ lehine`;
+      stageEn = `TBI ${tbi.toFixed(2)} (<0.70) · toe pressure <30 mmHg; supports CLTI with rest pain or tissue loss`;
     } else if (tbi !== null && tbi < 0.7) {
       stageTr = `TBI ${tbi.toFixed(2)} (<0.70) · PAH Doğrulandı (TBI Kriteri)`;
       stageEn = `TBI ${tbi.toFixed(2)} (<0.70) · PAD Confirmed by TBI`;
@@ -1144,20 +1145,20 @@ export function computeAbiTbi({ ankle = 124, brachial = 120, toe = 90 } = {}) {
     status = 'mild';
     labelTr = 'Hafif PAH (0.70–0.90)';
     labelEn = 'Mild PAD (0.70–0.90)';
-    stageTr = 'Rutherford I/1–2 · Fontaine IIa (Hafif-orta klodikasyon)';
-    stageEn = 'Rutherford I/1–2 · Fontaine IIa (Mild-moderate claudication)';
+    stageTr = 'PAH tanısı (ABI ≤0.90); Rutherford/Fontaine evresi semptomla belirlenir';
+    stageEn = 'PAD confirmed (ABI ≤0.90); Rutherford/Fontaine stage is set by symptoms';
   } else if (abi > 0.4) {
     status = 'moderate';
     labelTr = 'Orta PAH (0.41–0.69)';
     labelEn = 'Moderate PAD (0.41–0.69)';
-    stageTr = 'Rutherford I/2–3 · Fontaine IIb (<200 m klodikasyon)';
-    stageEn = 'Rutherford I/2–3 · Fontaine IIb (<200 m claudication)';
+    stageTr = 'PAH tanısı (ABI ≤0.90); Rutherford/Fontaine evresi semptomla belirlenir';
+    stageEn = 'PAD confirmed (ABI ≤0.90); Rutherford/Fontaine stage is set by symptoms';
   } else {
     status = 'severe';
-    labelTr = 'Ağır PAH / Kritik İskemi (≤0.40)';
-    labelEn = 'Severe PAD / Critical Ischemia (≤0.40)';
-    stageTr = 'Rutherford II/4–III/6 · Fontaine III–IV (İstirahat ağrısı / Doku kaybı)';
-    stageEn = 'Rutherford II/4–III/6 · Fontaine III–IV (Rest pain / Tissue loss)';
+    labelTr = 'Ağır PAH (≤0.40)';
+    labelEn = 'Severe PAD (≤0.40)';
+    stageTr = 'Ağır PAH; KTİ tanısı istirahat ağrısı veya doku kaybı ile ayak bileği <50 ya da parmak <30 mmHg gerektirir';
+    stageEn = 'Severe PAD; CLTI needs rest pain or tissue loss with ankle <50 or toe <30 mmHg';
   }
 
   return {
@@ -1525,17 +1526,28 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    for (const reg of clickRegions) {
+    // Active (selected/hovered) labels are placed first so they always win; others are nudged
+    // vertically to avoid overlapping an earlier label and skipped when no free slot is near.
+    const placed = [];
+    const overlaps = (x, y, w, h) => placed.some(r => Math.abs(r.x - x) * 2 < r.w + w && Math.abs(r.y - y) * 2 < r.h + h + 2);
+    const isActive = reg => reg.branch.id === selectedId || reg.branch.id === hoveredId;
+    const ordered = [...clickRegions.filter(isActive), ...clickRegions.filter(reg => !isActive(reg))];
+    for (const reg of ordered) {
       const b = reg.branch;
       const pt = reg.midPoint;
       if (!pt) continue;
-      const isAct = b.id === selectedId || b.id === hoveredId;
+      const isAct = isActive(reg);
       const shortLabel = (isTr ? b.nameTr : b.nameEn).split(' (')[0];
       const tw = ctx.measureText(shortLabel).width;
       const pw = tw + 10;
       const ph = 15;
       const rx = Math.max(pw / 2 + 10, Math.min(W - pw / 2 - 10, pt.x + 12));
-      const ry = Math.max(ph / 2 + 58, Math.min(H - ph / 2 - 14, pt.y - 8));
+      const baseY = Math.max(ph / 2 + 58, Math.min(H - ph / 2 - 14, pt.y - 8));
+      const slot = [0, -1, 1, -2, 2].map(k => baseY + k * (ph + 3))
+        .find(y => y >= ph / 2 + 58 && y <= H - ph / 2 - 14 && !overlaps(rx, y, pw, ph));
+      if (slot === undefined && !isAct) continue;
+      const ry = slot ?? baseY;
+      placed.push({ x: rx, y: ry, w: pw, h: ph });
 
       ctx.fillStyle = isAct ? 'rgba(3, 105, 161, 0.92)' : 'rgba(15, 23, 42, 0.78)';
       ctx.strokeStyle = isAct ? '#38bdf8' : 'rgba(226, 232, 240, 0.45)';
