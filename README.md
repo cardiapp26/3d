@@ -208,3 +208,17 @@ educational illustrations, not acquired MR images or a DICOM viewer.
 Source: [SCMR standardized CMR protocols (2020)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7038611/).
 Run `npm run test:cardiac-mr`; with Vite running, use
 `APP_URL=http://127.0.0.1:5198 npm run test:cardiac-mr-browser`.
+
+### Cardiac CT
+
+`/ct/` opens the Cardiac CT studio. The first tab shows a real contrast-enhanced chest CT
+(TAVI planning study) with axial, coronal and sagittal MPR, HU windows, thick-slab MIP and a
+20-structure segmentation (heart chambers, myocardium, aorta, pulmonary artery, IVC, five lung
+lobes, trachea, esophagus, liver, bones). The other tabs are schematic teaching models
+(MPR/CPR and CT-FFR, CAD-RADS 2.0, TAVI and LAA planning, artifacts and calculators).
+
+Real CT data: case s0019 of the TotalSegmentator dataset v1.0
+([Zenodo 10.5281/zenodo.6802614](https://doi.org/10.5281/zenodo.6802614), CC BY 4.0);
+Wasserthal J et al., Radiol Artif Intell 2023;5(5):e230024. `scripts/ct/prepare-totalseg-case.py`
+crops the thorax and writes `public/ct-data/s0019/` (companded 8-bit HU, gzip). Run
+`npm run test:ct`; with Vite running, `APP_URL=http://localhost:5173 npm run test:ct-browser`.

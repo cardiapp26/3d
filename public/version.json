@@ -1,7 +1,7 @@
 {
-  "version": "1.16.0",
-  "build": "v16",
+  "version": "1.17.0",
+  "build": "v17",
   "date": "2026-10-29",
   "name": "Cardia 3D",
-  "description": "Acquired-looking IVUS and echo images, echo valve pathology, cardiac MR planning and sequences, DRTR platform links"
+  "description": "Cardiac CT studio with a real segmented chest CT, CT clinical fixes, ECG opens on sinus rhythm, smaller home title"
 }

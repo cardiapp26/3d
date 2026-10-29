@@ -81,6 +81,12 @@ export const HOME_MODULES = Object.freeze([
     points: [w('Kısa ve uzun eksen düzlemleri', 'Short- and long-axis planes'), w('Cine, LGE, haritalama, akım ve perfüzyon', 'Cine, LGE, mapping, flow and perfusion')]
   },
   {
+    id: 'ct', domain: 'imaging', path: './ct/', thumb: 'ct', badge: 'new',
+    kicker: w('Koroner BTA, CAD-RADS 2.0 ve TAVI', 'Coronary CTA, CAD-RADS 2.0 and TAVI'),
+    name: w('Kardiyak BT', 'Cardiac CT'),
+    points: [w('Aksiyel MPR, CPR ve CT-FFR', 'Axial MPR, CPR and CT-FFR'), w('CAD-RADS 2.0, Agatston CAC ve yüksek riskli plak', 'CAD-RADS 2.0, Agatston CAC and high-risk plaque'), w('TAVI anülüs planimetrisi ve koplanar S-eğrisi', 'TAVI annulus planimetry and coplanar S-curve')]
+  },
+  {
     id: 'angio-ivus', domain: 'imaging', path: './angio/ivus/', thumb: 'angio-ivus', badge: 'new',
     kicker: w('İntravasküler ultrason', 'Intravascular ultrasound'),
     name: w('Koroner IVUS', 'Coronary IVUS'),

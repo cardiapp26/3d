@@ -1,0 +1,140 @@
+{
+ "case": "s0019",
+ "dims": {
+  "x": 221,
+  "y": 211,
+  "z": 131
+ },
+ "spacingMm": {
+  "x": 1.5,
+  "y": 1.5,
+  "z": 1.5
+ },
+ "order": "x fastest, then y, then z; x patient right to left, y anterior to posterior, z cranial to caudal",
+ "huKnots": [
+  [
+   -1024,
+   0
+  ],
+  [
+   -200,
+   40
+  ],
+  [
+   500,
+   220
+  ],
+  [
+   2000,
+   255
+  ]
+ ],
+ "labels": [
+  {
+   "id": 1,
+   "key": "lv",
+   "voxels": 34672
+  },
+  {
+   "id": 2,
+   "key": "rv",
+   "voxels": 41773
+  },
+  {
+   "id": 3,
+   "key": "la",
+   "voxels": 26838
+  },
+  {
+   "id": 4,
+   "key": "ra",
+   "voxels": 15015
+  },
+  {
+   "id": 5,
+   "key": "myocardium",
+   "voxels": 38931
+  },
+  {
+   "id": 6,
+   "key": "aorta",
+   "voxels": 53090
+  },
+  {
+   "id": 7,
+   "key": "pulmonary-artery",
+   "voxels": 14517
+  },
+  {
+   "id": 8,
+   "key": "ivc",
+   "voxels": 4957
+  },
+  {
+   "id": 9,
+   "key": "lung-rul",
+   "voxels": 166811
+  },
+  {
+   "id": 10,
+   "key": "lung-rml",
+   "voxels": 51150
+  },
+  {
+   "id": 11,
+   "key": "lung-rll",
+   "voxels": 169414
+  },
+  {
+   "id": 12,
+   "key": "lung-lul",
+   "voxels": 112889
+  },
+  {
+   "id": 13,
+   "key": "lung-lll",
+   "voxels": 131733
+  },
+  {
+   "id": 14,
+   "key": "trachea",
+   "voxels": 7935
+  },
+  {
+   "id": 15,
+   "key": "esophagus",
+   "voxels": 12401
+  },
+  {
+   "id": 16,
+   "key": "liver",
+   "voxels": 205428
+  },
+  {
+   "id": 17,
+   "key": "ribs",
+   "voxels": 81025
+  },
+  {
+   "id": 18,
+   "key": "vertebrae",
+   "voxels": 89549
+  },
+  {
+   "id": 19,
+   "key": "clavicles",
+   "voxels": 11255
+  },
+  {
+   "id": 20,
+   "key": "scapulae",
+   "voxels": 62378
+  }
+ ],
+ "source": {
+  "dataset": "TotalSegmentator dataset v1.0 (Zenodo 10.5281/zenodo.6802614)",
+  "license": "CC BY 4.0",
+  "citation": "Wasserthal J, Breit HC, Meyer MT, et al. TotalSegmentator: robust segmentation of 104 anatomic structures in CT images. Radiol Artif Intell. 2023;5(5):e230024.",
+  "study": "contrast-enhanced CT angiography for TAVI planning (study type \"ct aortic valve\")"
+ }
+}
