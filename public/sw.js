@@ -4,7 +4,7 @@
 //   - Vite content-hashed assets: cache-first
 //   - Every page (3D lesson pages, EPS, pharmacology, ECG, angiography, echo):
 //     an offline navigation falls back to the shell of its own page
-const VERSION = 'v15';
+const VERSION = 'v16';
 const CACHE = `cardia-${VERSION}`;
 
 const CORE = [

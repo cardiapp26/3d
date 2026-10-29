@@ -1,7 +1,7 @@
 {
-  "version": "1.15.0",
-  "build": "v15",
+  "version": "1.16.0",
+  "build": "v16",
   "date": "2026-10-29",
   "name": "Cardia 3D",
-  "description": "Welcome page with module cards; coronary physiology (FFR/iFR, thermodilution, angiographic sensor view) and coronary IVUS labs with a 3D vessel and stent model, normal MLA by segment; carotid C-arm convention, phone detail cards and PAD staging fixes; CSP helix animation"
+  "description": "Acquired-looking IVUS and echo images, echo valve pathology, cardiac MR planning and sequences, DRTR platform links"
 }
