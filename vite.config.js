@@ -20,6 +20,8 @@ export default defineConfig({
         hemo: page('./hemo/index.html'),
         epAnatomy: page('./eps/anatomy/index.html'),
         angio3d: page('./angio/3d/index.html'),
+        angioPhysiology: page('./angio/physiology/index.html'),
+        angioIvus: page('./angio/ivus/index.html'),
         angioCarotid: page('./angio/carotid/index.html'),
         angioPeripheral: page('./angio/peripheral/index.html')
       },
