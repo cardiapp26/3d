@@ -1,7 +1,7 @@
 {
-  "version": "1.14.0",
-  "build": "v14",
-  "date": "2026-10-25",
+  "version": "1.15.0",
+  "build": "v15",
+  "date": "2026-10-29",
   "name": "Cardia 3D",
-  "description": "Live Wiggers left/right/both; carotid and peripheral angiography with C-arm simulation; coronary hover names and venous phase; PA root and middle cardiac vein joined; echo reference media and TTE probe; camera keeps the module framing; mobile layout"
+  "description": "Welcome page with module cards; coronary physiology (FFR/iFR, thermodilution, angiographic sensor view) and coronary IVUS labs with a 3D vessel and stent model, normal MLA by segment; carotid C-arm convention, phone detail cards and PAD staging fixes; CSP helix animation"
 }
