@@ -13,7 +13,7 @@ import { EMAP_TEXT } from './emap-text.js';
  * the likely reasons when they differ) and the experiments to try.
  */
 
-const BG = '#0e1815', MUTED = '#9fc7b6', NO_DATA = '#2b3b35';
+const BG = '#0b101b', MUTED = '#9fabc7', NO_DATA = '#1e2a48';
 const MARK = { truth: '#22c55e', firstSharp: '#facc15', maxPeak: '#f97316', unipolar: '#60a5fa' };
 
 function voltageColor(v, lo, hi) {
@@ -146,7 +146,7 @@ export function createMappingBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     const electrode = (sign, radius, fill) => {
       const x = state.site[0] + sign * dir[0] * cat.spacing / 2, y = state.site[1] + sign * dir[1] * cat.spacing / 2;
       ctx.beginPath(); ctx.arc(ox + mm(x), oy + mm(y), Math.max(2, mm(radius)), 0, Math.PI * 2);
-      ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = '#0b1210'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = '#080c15'; ctx.lineWidth = 1; ctx.stroke();
     };
     electrode(-1, cat.ring, 'rgba(203, 213, 225, 0.9)');
     electrode(1, cat.tip, 'rgba(255, 255, 255, 0.95)');
@@ -173,9 +173,9 @@ export function createMappingBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     const peak = Math.max(...rec.unipolar.map(Math.abs), ...rec.bipolar.map(Math.abs), 0.5);
     const gain = ((height - 50) * 0.22) / peak;
     for (const lane of lanes) {
-      ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(159,171,199, 0.18)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x0, lane.y); ctx.lineTo(x0 + w, lane.y); ctx.stroke();
-      ctx.fillStyle = '#c8f0dc'; ctx.fillText(lane.name, 6, lane.y + 4);
+      ctx.fillStyle = '#c8d9f0'; ctx.fillText(lane.name, 6, lane.y + 4);
       ctx.strokeStyle = lane.color; ctx.lineWidth = 1.4; ctx.beginPath();
       for (let i = 0; i * bin <= end && i < n; i++) { const yy = lane.y - lane.data[i] * gain; if (i === 0) ctx.moveTo(x(i * bin), yy); else ctx.lineTo(x(i * bin), yy); }
       ctx.stroke();

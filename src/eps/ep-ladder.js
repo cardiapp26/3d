@@ -178,7 +178,7 @@ export function inferLadderEvents(events, { mechanism = null } = {}) {
 export const LADDER_STYLE = Object.freeze({
   fast: { color: '#4ade80', dash: [] },
   slow: { color: '#fb923c', dash: [] },
-  hps: { color: '#c9d6cf', dash: [] },
+  hps: { color: '#c9cdd6', dash: [] },
   ap: { color: '#c084fc', dash: [] },
   'retro-fast': { color: '#4ade80', dash: [4, 3] },
   'retro-slow': { color: '#fb923c', dash: [4, 3] },
@@ -206,7 +206,7 @@ export function drawLadder(canvas, ladder, axis, { lang = 'tr' } = {}) {
   const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#0e1815';
+  ctx.fillStyle = '#0b101b';
   ctx.fillRect(0, 0, width, height);
   const top = 14, rowA = (height - top) * 0.22, rowAv = (height - top) * 0.56;
   const yA = top + rowA, yV = yA + rowAv;
@@ -214,13 +214,13 @@ export function drawLadder(canvas, ladder, axis, { lang = 'tr' } = {}) {
   const x = (t) => axis.plotLeft + ((t - axis.from) / (axis.to - axis.from)) * axis.plotW;
   const inside = (t) => t >= axis.from - 400 && t <= axis.to + 400;
   // Rows and their names.
-  ctx.strokeStyle = 'rgba(120, 170, 150, 0.35)';
+  ctx.strokeStyle = 'rgba(120,135,170, 0.35)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (const yy of [top, yA, yV, height - 1]) { ctx.moveTo(axis.plotLeft, yy + 0.5); ctx.lineTo(axis.plotLeft + axis.plotW, yy + 0.5); }
   ctx.stroke();
   ctx.font = '10px ui-monospace, monospace';
-  ctx.fillStyle = '#9fc7b6';
+  ctx.fillStyle = '#9fabc7';
   ctx.textBaseline = 'middle';
   ctx.fillText('A', 6, top + rowA / 2);
   ctx.fillText(lang === 'en' ? 'AV' : 'AV', 6, yA + rowAv / 2);
@@ -233,11 +233,11 @@ export function drawLadder(canvas, ladder, axis, { lang = 'tr' } = {}) {
   // Activation ticks in the A and V rows.
   ctx.lineWidth = 2;
   for (const a of ladder.atria.filter((b) => inside(b.t))) {
-    ctx.strokeStyle = RETRO_NODAL[a.origin] || AP_ORIGINS.has(a.origin) ? '#fcd34d' : '#e8f3ee';
+    ctx.strokeStyle = RETRO_NODAL[a.origin] || AP_ORIGINS.has(a.origin) ? '#fcd34d' : '#e8ebf3';
     ctx.beginPath(); ctx.moveTo(x(a.t), top + 3); ctx.lineTo(x(a.t), yA); ctx.stroke();
   }
   for (const v of ladder.ventricles.filter((b) => inside(b.t))) {
-    ctx.strokeStyle = '#e8f3ee';
+    ctx.strokeStyle = '#e8ebf3';
     ctx.beginPath(); ctx.moveTo(x(v.t), yV); ctx.lineTo(x(v.t), height - 3); ctx.stroke();
   }
   // Conduction lines; a block ends with a short bar.
@@ -258,7 +258,7 @@ export function drawLadder(canvas, ladder, axis, { lang = 'tr' } = {}) {
   for (const [kind, name] of [...LEGEND[lang === 'en' ? 'en' : 'tr']].reverse()) {
     const w = ctx.measureText(name)?.width || name.length * 5.5;
     lx -= w;
-    ctx.fillStyle = '#9fc7b6';
+    ctx.fillStyle = '#9fabc7';
     ctx.fillText(name, lx, 10);
     lx -= 14;
     ctx.strokeStyle = LADDER_STYLE[kind].color;

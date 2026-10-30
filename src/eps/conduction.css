@@ -1,0 +1,98 @@
+/* Conduction system lesson (conduction-panel.js): same dark look as the recording lesson. */
+.cond-lab { height: 100%; min-height: 0; overflow: auto; overflow-x: hidden; padding: 14px 18px 28px; background: #0b1530; color: #e2e8f5; }
+.cond-header { padding-bottom: 12px; }
+.cond-header > div { max-width: 900px; }
+.cond-header h2 { margin: 2px 0 6px; font-size: clamp(19px, 2vw, 27px); font-weight: 650; letter-spacing: -.5px; }
+.cond-header p { margin: 0; color: #a9b8d6; line-height: 1.55; }
+.cond-eyebrow { color: #7fb2ff; font-size: 10px; letter-spacing: 2px; font-weight: 700; }
+.cond-lab button, .cond-lab select { border: 1px solid #33497a; background: #16244a; color: inherit; border-radius: 6px; min-height: 34px; padding: 6px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.cond-lab button:hover { background: #1f3263; }
+.cond-lab button[aria-pressed=true] { border-color: #8ab8ff; color: #cfe0ff; background: #1e3466; }
+.cond-lab button:focus-visible, .cond-lab select:focus-visible { outline: 2px solid #8ab8ff; outline-offset: 2px; }
+.cond-lab a { color: #9cc2ff; text-underline-offset: 3px; }
+
+.cond-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
+.cond-visual { min-width: 0; display: grid; gap: 8px; }
+.cond-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cond-group { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.cond-stage { position: relative; height: min(62vh, 620px); min-height: 340px; border: 1px solid #22335e; border-radius: 8px; background: radial-gradient(circle at 50% 40%, #14244a, #0a1228 70%); overflow: hidden; }
+.cond-atlas, .cond-webgl { position: absolute; inset: 0; }
+.cond-webgl canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.cond-labels { position: absolute; inset: 0; pointer-events: none; }
+.cond-pin { position: absolute; transform: translate(-50%, -150%); padding: 1px 6px; border-radius: 10px; font: 600 10.5px var(--mono, ui-monospace, monospace); color: #e8f3ee; background: rgba(8, 16, 40, .78); border: 1px solid rgba(201, 164, 71, .45); white-space: nowrap; }
+/* Pins near the AV junction and the fascicles step aside so the short names do not overlap. */
+.cond-pin[data-structure=avn], .cond-pin[data-structure=rbb] { transform: translate(-112%, -50%); }
+.cond-pin[data-structure=his], .cond-pin[data-structure=lbb] { transform: translate(12%, -115%); }
+.cond-pin[data-structure=laf] { transform: translate(12%, -120%); }
+.cond-pin[data-structure=lpf] { transform: translate(12%, 15%); }
+.cond-pin.is-selected { color: #1c1300; background: #ffe27a; border-color: #ffe27a; z-index: 2; }
+.cond-diagram { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8px; }
+.cond-diagram svg { width: 100%; height: 100%; max-width: 640px; }
+.cond-status { position: absolute; left: 12px; top: 10px; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgba(8, 16, 40, .88); color: #f3d68a; font-size: 12px; max-width: calc(100% - 24px); }
+.cond-hint { position: absolute; right: 10px; bottom: 6px; margin: 0; font-size: 10.5px; color: #7d8db0; pointer-events: none; }
+.cond-legend { margin: 0; font-size: 12px; color: #b8c5e0; }
+.cond-playbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.cond-lab .cond-play { background: #7fb2ff; color: #0a1a3a; border-color: #7fb2ff; font-weight: 650; min-width: 140px; }
+.cond-lab .cond-play:hover { background: #a3c6ff; }
+.cond-speed { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: #a9b8d6; }
+.cond-phase { margin: 0; flex: 1 1 220px; min-width: 0; font-size: 12.5px; color: #f3d68a; }
+.cond-trace { display: block; width: 100%; height: 190px; border-radius: 6px; border: 1px solid #22335e; }
+.cond-intervals { display: flex; flex-wrap: wrap; gap: 6px; }
+.cond-interval { display: inline-flex; gap: 6px; align-items: baseline; padding: 4px 9px; border: 1px solid #2a3d6b; border-radius: 6px; background: #111d3d; font-size: 12px; }
+.cond-interval em { font-style: normal; color: #93a6cc; }
+.cond-interval strong { font: 600 12.5px var(--mono, ui-monospace, monospace); }
+.cond-note, .cond-muted { margin: 0; font-size: 11.5px; color: #8b9cc0; line-height: 1.5; }
+
+.cond-console { display: grid; gap: 10px; min-width: 0; }
+.cond-small-title { margin: 0; font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #7fb2ff; font-weight: 700; }
+.cond-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+.cond-list button { text-align: left; font-size: 12px; line-height: 1.25; }
+.cond-card { padding: 12px 14px; border: 1px solid #2a3d6b; border-left: 3px solid #f2c14b; border-radius: 8px; background: #111d3d; }
+.cond-card h3 { margin: 0 0 8px; font-size: 16px; }
+.cond-card dl { margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 6px 10px; font-size: 12.5px; line-height: 1.5; }
+.cond-card dt { color: #93a6cc; }
+.cond-card dd { margin: 0; color: #e2e8f5; min-width: 0; overflow-wrap: anywhere; }
+.cond-arteries { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 3px; }
+.cond-artery { display: inline-flex; align-items: center; gap: 4px; font: 600 11px var(--mono, ui-monospace, monospace); }
+.cond-artery i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.cond-correction { margin: 10px 0 0; padding: 8px 10px; border-radius: 6px; background: #14214a; border: 1px solid #3a5590; font-size: 12px; line-height: 1.5; color: #d8e2f7; }
+.cond-whatif { margin-top: 10px; }
+.cond-whatif button { width: 100%; text-align: left; }
+.cond-lab .cond-whatif button[aria-pressed=true] { border-color: #ff8a7a; color: #ffd0c8; background: #3a1d1a; }
+.cond-scenario { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid #2a3d6b; border-radius: 8px; background: #0e1936; font-size: 12.5px; }
+.cond-scenario p { margin: 0; color: #b8c5e0; line-height: 1.5; }
+.cond-scenario.is-abnormal { border-color: #7a3a32; background: #1d1412; }
+.cond-scenario button { justify-self: start; }
+.cond-steps { margin: 0; padding-left: 20px; display: grid; gap: 3px; font-size: 12px; line-height: 1.45; color: #a2b1d1; }
+.cond-steps li.is-now { color: #ffe27a; font-weight: 600; }
+
+.cond-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 22px; padding-top: 18px; }
+.cond-sections section { min-width: 0; }
+.cond-sections h3 { margin: 0 0 6px; font-size: 14px; color: #d3dcf0; }
+.cond-sections ol, .cond-sections ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.6; color: #b8c5e0; }
+.cond-corrections { padding: 10px 12px; border: 1px solid #3a5590; border-radius: 8px; background: #101c3a; }
+.cond-table-box, .cond-sources { grid-column: 1 / -1; }
+.cond-table-scroll { overflow-x: auto; max-width: 100%; border: 1px solid #22335e; border-radius: 6px; }
+.cond-table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 12px; line-height: 1.45; }
+.cond-table th, .cond-table td { padding: 6px 8px; border-bottom: 1px solid #1c2b52; text-align: left; vertical-align: top; }
+.cond-table thead th { color: #7fb2ff; font-size: 11px; background: #111d3d; }
+.cond-table tbody th { color: #f2d27a; white-space: nowrap; }
+.cond-table td:nth-child(3), .cond-table td:nth-child(4) { white-space: nowrap; }
+.cond-sources ol { font-size: 12px; }
+
+@media (max-width: 1100px) {
+  .cond-grid { grid-template-columns: minmax(0, 1fr); }
+  .cond-sections { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .cond-lab { padding: 10px 10px 24px; }
+  .cond-stage { height: 58vh; min-height: 300px; }
+  .cond-list { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .cond-card dl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .cond-card dd { margin-bottom: 6px; }
+  .cond-trace { height: 170px; }
+  .cond-pin { font-size: 9.5px; }
+}
+
+/* While the lesson is open the page behind it is navy too (the rest of the EPS lab keeps its theme). */
+body:has(.cond-lab:not([hidden])), body:has(.cond-lab:not([hidden])) .app-workspace { background: #0a1228; }

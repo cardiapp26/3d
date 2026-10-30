@@ -4,7 +4,7 @@
 // workstation, activation mapping, pace mapping, the electrogram basics,
 // SVT, WPW and VES localization, ep-panel.js) and the
 // site notice. The open tab lives in the address (#/live, #/diagnosis,
-// #/maneuver, #/treatment, #/mapping, #/pacemap, #/basics, #/svt, #/wpw, #/ves); #/clip/<id> opens
+// #/maneuver, #/treatment, #/mapping, #/pacemap, #/basics, #/svt, #/wpw, #/ves, #/conduction); #/clip/<id> opens
 // one recording (the 3D ablation lesson links to its clips this way).
 import './style.css';
 import { mountSiteHeader } from '../site-header.js';
@@ -13,6 +13,7 @@ import './lesson.css';
 import './ves-loc.css';
 import './recording.css';
 import './csp/csp.css';
+import './conduction.css';
 import { APP_TEXT, LANGS, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
 import { createEpPanel, EP_VIEWS } from './ep-panel.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
@@ -92,6 +93,7 @@ function spaceTarget() {
   }
   if (view === 'recording') return panel.recording.element.querySelector('[data-recording-play]');
   if (view === 'csp') return panel.csp.element.querySelector('[data-csp-play]');
+  if (view === 'conduction') return panel.conduction.element.querySelector('[data-cond-play]');
   if (view === 'afmap') {
     const play = panel.afmap.element.querySelector('[data-afmap-play]');
     return play && !play.parentElement?.hidden ? play : null;

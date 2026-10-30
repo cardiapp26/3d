@@ -94,7 +94,7 @@ export function drawEcg12(canvas, sampled, { lang = 'tr', title = '', gain = 1 }
   const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#0e1815';
+  ctx.fillStyle = '#0b101b';
   ctx.fillRect(0, 0, width, height);
   const head = 16, foot = 14;
   const cellW = width / 4;
@@ -104,11 +104,11 @@ export function drawEcg12(canvas, sampled, { lang = 'tr', title = '', gain = 1 }
   const scale = (cellH * 0.42) / peak * gain;
   ctx.font = '10px ui-monospace, monospace';
   ctx.textBaseline = 'top';
-  ctx.fillStyle = '#9fc7b6';
+  ctx.fillStyle = '#9fabc7';
   if (title) ctx.fillText(title, 6, 3);
   LAYOUT.forEach((row, r) => row.forEach((lead, c) => {
     const x0 = c * cellW + 4, y0 = head + r * cellH, mid = y0 + cellH / 2;
-    ctx.strokeStyle = 'rgba(120, 170, 150, 0.18)';
+    ctx.strokeStyle = 'rgba(120,135,170, 0.18)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x0, mid);
@@ -123,17 +123,17 @@ export function drawEcg12(canvas, sampled, { lang = 'tr', title = '', gain = 1 }
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.stroke();
-    ctx.fillStyle = '#d7f5e4';
+    ctx.fillStyle = '#d7e3f5';
     ctx.fillText(lead, x0 + 2, y0 + 2);
   }));
   // Time bar: 100 ms, bottom left. Amplitude is scaled to the largest deflection (relative, not in mV).
   const barMs = 100;
   const barX = 6 + (barMs / span) * (cellW - 8);
-  ctx.strokeStyle = '#d7f5e4';
+  ctx.strokeStyle = '#d7e3f5';
   ctx.beginPath();
   ctx.moveTo(6, height - 6);
   ctx.lineTo(barX, height - 6);
   ctx.stroke();
-  ctx.fillStyle = '#d7f5e4';
+  ctx.fillStyle = '#d7e3f5';
   ctx.fillText('100 ms', barX + 4, height - foot + 2);
 }

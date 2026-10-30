@@ -16,7 +16,7 @@ import { PMAP_TEXT } from './pmap-text.js';
  * strategy outcome and the lesson.
  */
 
-const BG = '#0e1815', GRID_TEXT = '#9fc7b6', SCAR_GREY = '#55534d';
+const BG = '#0b101b', GRID_TEXT = '#9fabc7', SCAR_GREY = '#55534d';
 const TEMPLATE_COLOR = '#22c55e', PACED_COLOR = '#facc15', UNIPOLAR_COLOR = '#60a5fa';
 const ECG_LEADS = [0, 1, 2, 6, 8, 11];   // I, II, III, V1, V3, V6
 const LEAD_NAMES = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
@@ -247,9 +247,9 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
     ctx.setLineDash([]);
     const lanes = [{ name: 'II', y: 20 + (height - 40) * 0.2 }, { name: 'ABL bi', y: 20 + (height - 40) * 0.55 }, { name: 'ABL uni', y: 20 + (height - 40) * 0.86 }];
     for (const lane of lanes) {
-      ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(159,171,199, 0.18)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x0, lane.y); ctx.lineTo(x0 + w, lane.y); ctx.stroke();
-      ctx.fillStyle = '#c8f0dc'; ctx.fillText(lane.name, 6, lane.y + 4);
+      ctx.fillStyle = '#c8d9f0'; ctx.fillText(lane.name, 6, lane.y + 4);
     }
     const lane = (values, y, gain, color, lw) => {
       ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath();
@@ -290,9 +290,9 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
     for (let n = 0; n <= 2; n++) { const a = e.lead + n * e.tcl; if (a < e.length) ctx.fillRect(x(a), y0, x(Math.min(e.length, a + e.duration)) - x(a), h); }
     const lanes = [{ name: 'II', y: y0 + h * 0.28, data: e.leadII, gain: h * 0.2, color: TEMPLATE_COLOR }, { name: 'ABL bi', y: y0 + h * 0.74, data: e.bipolar, gain: (h * 0.2) / Math.max(0.3, ...Array.from(e.bipolar, Math.abs)), color: '#f8fafc' }];   // scaled to the signal; its voltage is in the reading
     for (const lane of lanes) {
-      ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(159,171,199, 0.18)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x0, lane.y); ctx.lineTo(x0 + w, lane.y); ctx.stroke();
-      ctx.fillStyle = '#c8f0dc'; ctx.fillText(lane.name, 6, lane.y + 4);
+      ctx.fillStyle = '#c8d9f0'; ctx.fillText(lane.name, 6, lane.y + 4);
       ctx.strokeStyle = lane.color; ctx.lineWidth = 1.4; ctx.beginPath();
       lane.data.forEach((v, ms) => { const yy = Math.max(y0, Math.min(y0 + h, lane.y - v * lane.gain)); if (ms === 0) ctx.moveTo(x(ms), yy); else ctx.lineTo(x(ms), yy); });
       ctx.stroke();
@@ -332,9 +332,9 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
       const col = Math.floor(n / rows), r = n % rows;
       const x0 = 4 + col * cellW + 30, w = cellW - 40, yMid = top + r * cellH + cellH / 2;
       const x = (ms) => x0 + ((ms + pre) / span) * w;
-      ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(159,171,199, 0.18)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x0, yMid); ctx.lineTo(x0 + w, yMid); ctx.stroke();
-      ctx.fillStyle = '#c8f0dc'; ctx.fillText(LEAD_NAMES[li], 4 + col * cellW, yMid + 3);
+      ctx.fillStyle = '#c8d9f0'; ctx.fillText(LEAD_NAMES[li], 4 + col * cellW, yMid + 3);
       const trace = (q, color, lw) => {
         ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath();
         for (let ms = -pre; ms <= span - pre; ms++) {

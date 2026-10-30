@@ -47,12 +47,12 @@ export function drawActivationMap(canvas, sequence, { lang = 'tr' } = {}) {
   canvas.height = Math.floor(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#0e1815';
+  ctx.fillStyle = '#0b101b';
   ctx.fillRect(0, 0, width, height);
   const left = 64, right = width - 44, top = 18, rowH = (height - top - 6) / sequence.length;
   const max = Math.max(10, ...sequence.map((r) => r.rel));
   ctx.font = '10px ui-monospace, monospace';
-  ctx.fillStyle = '#9fc7b6';
+  ctx.fillStyle = '#9fabc7';
   ctx.fillText(lang === 'en' ? 'Local A after the earliest (ms)' : 'En erkene göre lokal A (ms)', left, 12);
   sequence.forEach((r, i) => {
     const y = top + i * rowH;
@@ -61,7 +61,7 @@ export function drawActivationMap(canvas, sequence, { lang = 'tr' } = {}) {
     const hue = 0 + (r.rel / max) * 230;
     ctx.fillStyle = `hsl(${hue}, 70%, 55%)`;
     ctx.fillRect(left, y + rowH * 0.2, w, rowH * 0.6);
-    ctx.fillStyle = '#d7f5e4';
+    ctx.fillStyle = '#d7e3f5';
     ctx.textBaseline = 'middle';
     ctx.fillText(r.label, 6, y + rowH / 2);
     ctx.fillText(String(r.rel), left + w + 4, y + rowH / 2);

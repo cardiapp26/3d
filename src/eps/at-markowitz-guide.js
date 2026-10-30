@@ -119,16 +119,16 @@ function drawStepSvg(doc, svg, step, labelText) {
   // Base RA (left) and LA (right) 3-ring topological outlines.
   const base = s(doc, 'g', { 'aria-hidden': 'true' });
   base.append(
-    s(doc, 'path', { d: 'M50 10 L50 31 A42 42 0 0 0 50 111 L50 132 L80 132 L80 111 A42 42 0 0 0 80 31 L80 10 Z', fill: '#13221d' }),
-    s(doc, 'path', { d: 'M50 10 L50 31 A42 42 0 0 0 50 111 L50 132', fill: 'none', stroke: '#d6e8df', 'stroke-width': 2 }),
-    s(doc, 'path', { d: 'M80 10 L80 31 A42 42 0 0 1 80 111 L80 132', fill: 'none', stroke: '#d6e8df', 'stroke-width': 2 }),
-    s(doc, 'circle', { cx: 65, cy: 71, r: 15.5, fill: '#0b1411', stroke: '#d6e8df', 'stroke-width': 2 }),
-    s(doc, 'path', { d: 'M150 26 Q226 42 302 26 L302 98 C267 98 256 116 226 116 C196 116 185 98 150 98 Z', fill: '#13221d' }),
-    s(doc, 'path', { d: 'M150 26 Q226 42 302 26', fill: 'none', stroke: '#d6e8df', 'stroke-width': 2 }),
-    s(doc, 'path', { d: 'M150 98 C185 98 196 116 226 116 C256 116 267 98 302 98', fill: 'none', stroke: '#d6e8df', 'stroke-width': 2 }),
-    s(doc, 'path', { d: 'M150 50 C169 50 169 76 150 76', fill: 'none', stroke: '#d6e8df', 'stroke-width': 2 }),
-    s(doc, 'path', { d: 'M302 50 C283 50 283 76 302 76', fill: 'none', stroke: '#d6e8df', 'stroke-width': 2 }),
-    s(doc, 'ellipse', { cx: 226, cy: 76, rx: 22, ry: 15.5, fill: '#0b1411', stroke: '#d6e8df', 'stroke-width': 2 })
+    s(doc, 'path', { d: 'M50 10 L50 31 A42 42 0 0 0 50 111 L50 132 L80 132 L80 111 A42 42 0 0 0 80 31 L80 10 Z', fill: '#0f1626' }),
+    s(doc, 'path', { d: 'M50 10 L50 31 A42 42 0 0 0 50 111 L50 132', fill: 'none', stroke: '#d6dbe8', 'stroke-width': 2 }),
+    s(doc, 'path', { d: 'M80 10 L80 31 A42 42 0 0 1 80 111 L80 132', fill: 'none', stroke: '#d6dbe8', 'stroke-width': 2 }),
+    s(doc, 'circle', { cx: 65, cy: 71, r: 15.5, fill: '#090d16', stroke: '#d6dbe8', 'stroke-width': 2 }),
+    s(doc, 'path', { d: 'M150 26 Q226 42 302 26 L302 98 C267 98 256 116 226 116 C196 116 185 98 150 98 Z', fill: '#0f1626' }),
+    s(doc, 'path', { d: 'M150 26 Q226 42 302 26', fill: 'none', stroke: '#d6dbe8', 'stroke-width': 2 }),
+    s(doc, 'path', { d: 'M150 98 C185 98 196 116 226 116 C256 116 267 98 302 98', fill: 'none', stroke: '#d6dbe8', 'stroke-width': 2 }),
+    s(doc, 'path', { d: 'M150 50 C169 50 169 76 150 76', fill: 'none', stroke: '#d6dbe8', 'stroke-width': 2 }),
+    s(doc, 'path', { d: 'M302 50 C283 50 283 76 302 76', fill: 'none', stroke: '#d6dbe8', 'stroke-width': 2 }),
+    s(doc, 'ellipse', { cx: 226, cy: 76, rx: 22, ry: 15.5, fill: '#090d16', stroke: '#d6dbe8', 'stroke-width': 2 })
   );
   svg.append(base);
 
@@ -169,18 +169,18 @@ function drawStepSvg(doc, svg, step, labelText) {
     );
   } else {
     const step4 = step === 4;
-    const nonAnatColor = step4 ? '#090d0b' : '#ef4444';
+    const nonAnatColor = step4 ? '#060910' : '#ef4444';
     const nonAnatStroke = step4 ? '#94a3b8' : '#fca5a5';
     const lineColor = step4 ? '#94a3b8' : '#ef4444';
     // Obstacles present in Steps 2, 3 and 4
     g.append(
       // RA anchored anatomical obstacle (top-left)
-      s(doc, 'ellipse', { cx: 53, cy: 34, rx: 6.5, ry: 9.5, fill: '#090d0b', stroke: '#94a3b8', 'stroke-width': 1.5 }),
+      s(doc, 'ellipse', { cx: 53, cy: 34, rx: 6.5, ry: 9.5, fill: '#060910', stroke: '#94a3b8', 'stroke-width': 1.5 }),
       // RA unanchored block line (left) & patchy scar (bottom-right)
       s(doc, 'line', { x1: 35, y1: 68, x2: 42, y2: 83, stroke: lineColor, 'stroke-width': 3.8, 'stroke-linecap': 'round' }),
       s(doc, 'circle', { cx: 83, cy: 88, r: 7, fill: nonAnatColor, stroke: nonAnatStroke, 'stroke-width': 1.2 }),
       // LA anchored obstacles (connected to MA)
-      s(doc, 'ellipse', { cx: 198, cy: 57, rx: 13, ry: 5.5, transform: 'rotate(38 198 57)', fill: '#090d0b', stroke: '#94a3b8', 'stroke-width': 1.5 }),
+      s(doc, 'ellipse', { cx: 198, cy: 57, rx: 13, ry: 5.5, transform: 'rotate(38 198 57)', fill: '#060910', stroke: '#94a3b8', 'stroke-width': 1.5 }),
       s(doc, 'line', { x1: 245, y1: 84, x2: 266, y2: 95, stroke: '#94a3b8', 'stroke-width': 3.5, 'stroke-linecap': 'round' }),
       // LA unanchored block line (left) & patchy scar (top-right)
       s(doc, 'line', { x1: 178, y1: 70, x2: 186, y2: 88, stroke: lineColor, 'stroke-width': 3.8, 'stroke-linecap': 'round' }),

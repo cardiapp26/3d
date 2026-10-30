@@ -7,11 +7,11 @@
 import { EVENT_MS, ADC_FULL_SCALE, bipolarAmplitudeByAngle } from './recording-model.js';
 
 const C = {
-  bg: '#0a1512', tissue: '#132b23', grid: '#214438', axis: '#2b4439', axisMinor: '#192e25',
-  text: '#b4c8bf', dim: '#9aac9f', wave: '#64d6ad', electrode: '#f5ca70', faded: '#a48468',
-  warn: '#ef8f7a', amber: '#e5c990', blue: '#9fbaff', light: '#e2ede7'
+  bg: '#090d16', tissue: '#121a2c', grid: '#1d2a48', axis: '#202e4f', axisMinor: '#151e32',
+  text: '#b4bac8', dim: '#9a9fac', wave: '#64d6ad', electrode: '#f5ca70', faded: '#a48468',
+  warn: '#ef8f7a', amber: '#e5c990', blue: '#9fbaff', light: '#e2e5ed'
 };
-const TRACE_COLORS = ['#b4c8bf', '#76d9b1', '#f5ca70', '#9fbaff'];
+const TRACE_COLORS = ['#b4bac8', '#76d9b1', '#f5ca70', '#9fbaff'];
 const CV = 0.5; // mm/ms, same synthetic planar speed as the model
 
 export function prepare(canvas) {
@@ -64,18 +64,18 @@ export function drawPipeline(c, s, r, t) {
   const compact = boxW < 105;
   stages.forEach((stage, i) => {
     const x = 12 + i * (boxW + gap);
-    ctx.fillStyle = stage.bad ? '#3a1d17' : stage.off ? '#141c18' : '#16291f';
-    ctx.strokeStyle = stage.bad ? C.warn : stage.off ? '#2b3a33' : '#3b6b57';
+    ctx.fillStyle = stage.bad ? '#3a1d17' : stage.off ? '#0e1422' : '#121a2d';
+    ctx.strokeStyle = stage.bad ? C.warn : stage.off ? '#1d2a48' : '#3b496b';
     ctx.lineWidth = stage.bad ? 2 : 1;
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(x, y, boxW, boxH, 6); else ctx.rect(x, y, boxW, boxH);
     ctx.fill(); ctx.stroke();
     ctx.font = `600 ${compact ? 10 : 12}px system-ui`;
-    label(ctx, stage.title, x + 7, y + 18, stage.off ? '#6d7f76' : C.light);
+    label(ctx, stage.title, x + 7, y + 18, stage.off ? '#5e6d8e' : C.light);
     ctx.font = `${compact ? 10 : 11}px system-ui`;
     label(ctx, stage.sub, x + 7, y + 36, stage.bad ? '#ffb4a2' : C.text);
     if (stage.note) label(ctx, stage.note, x + 7, y + 53, stage.bad ? C.warn : C.dim);
-    if (i < stages.length - 1) arrow(ctx, x + boxW + 1, y + boxH / 2, x + boxW + gap - 1, y + boxH / 2, '#3b6b57', 1);
+    if (i < stages.length - 1) arrow(ctx, x + boxW + 1, y + boxH / 2, x + boxW + gap - 1, y + boxH / 2, '#3b496b', 1);
   });
   ctx.font = '11px system-ui';
   label(ctx, L ? 'Signal path: every block can change the waveform' : 'Sinyal yolu: her blok dalga şeklini değiştirebilir', 12, 16, C.dim);
@@ -98,24 +98,24 @@ export function drawAmplifier(c, s, r, t) {
   };
   coupling(in1, 1); coupling(in2, 1 - s.mismatch);
   // Electrode inputs
-  ctx.strokeStyle = '#7f988c'; ctx.lineWidth = 2;
+  ctx.strokeStyle = '#7482a3'; ctx.lineWidth = 2;
   line(ctx, w * 0.2, in1, ampX - 30, in1); line(ctx, w * 0.2, in2, ampX - 30, in2);
   dot(ctx, w * 0.2, in1, 7, C.electrode); dot(ctx, w * 0.2, in2, 7, s.mismatch > 0 ? C.faded : C.electrode);
   ctx.font = '12px system-ui';
   label(ctx, 'U1 (+)', w * 0.2 - 50, in1 + 4); label(ctx, 'U2 (−)', w * 0.2 - 50, in2 + 4);
   if (s.mismatch > 0) label(ctx, L ? `imbalance ${s.mismatch.toFixed(2)}` : `dengesizlik ${s.mismatch.toFixed(2)}`, w * 0.22, in2 + 22, C.warn);
   // Amplifier triangle
-  ctx.fillStyle = '#16291f'; ctx.strokeStyle = '#76d9b1'; ctx.lineWidth = 2;
+  ctx.fillStyle = '#121a2d'; ctx.strokeStyle = '#76d9b1'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(ampX - 30, midY - 58); ctx.lineTo(ampX - 30, midY + 58); ctx.lineTo(ampX + 60, midY); ctx.closePath(); ctx.fill(); ctx.stroke();
   label(ctx, '+', ampX - 22, in1 + 4, C.light); label(ctx, '−', ampX - 22, in2 + 4, C.light);
   ctx.font = '600 11px system-ui'; label(ctx, 'U1 − U2', ampX - 8, midY + 4, C.light);
   // Output and notch
   const outX = ampX + 60;
-  ctx.strokeStyle = '#7f988c'; ctx.lineWidth = 2; line(ctx, outX, midY, w - 140, midY);
-  ctx.fillStyle = s.notch ? '#2a2414' : '#141c18'; ctx.strokeStyle = s.notch ? C.amber : '#2b3a33';
+  ctx.strokeStyle = '#7482a3'; ctx.lineWidth = 2; line(ctx, outX, midY, w - 140, midY);
+  ctx.fillStyle = s.notch ? '#2a2414' : '#0e1422'; ctx.strokeStyle = s.notch ? C.amber : '#1d2a48';
   ctx.beginPath(); ctx.rect(w - 140, midY - 20, 70, 40); ctx.fill(); ctx.stroke();
-  ctx.font = '11px system-ui'; label(ctx, s.notch ? `notch ${s.notch}` : 'notch –', w - 132, midY + 4, s.notch ? C.amber : '#6d7f76');
-  arrow(ctx, w - 70, midY, w - 18, midY, '#7f988c', 2);
+  ctx.font = '11px system-ui'; label(ctx, s.notch ? `notch ${s.notch}` : 'notch –', w - 132, midY + 4, s.notch ? C.amber : '#5e6d8e');
+  arrow(ctx, w - 70, midY, w - 18, midY, '#7482a3', 2);
   const residual = r.metrics.noiseRms;
   label(ctx, `${L ? 'differential noise' : 'farka geçen gürültü'}: ${residual.toFixed(3)} mV RMS`, outX + 6, midY - 14, residual > 0.01 ? C.warn : '#76d9b1');
 }
@@ -238,7 +238,7 @@ export function drawSignals(c, s, r, lesson, t, plotRef) {
     ctx.strokeStyle = C.axis; line(ctx, left, y0, right, y0);
     ctx.font = '11px system-ui';
     wrapLabel(ctx, t.traces[key], 8, y0 - 4, left - 14, TRACE_COLORS[i % 4]);
-    label(ctx, `${s.display} mV`, 8, y0 + row * 0.38, '#6f8578');
+    label(ctx, `${s.display} mV`, 8, y0 + row * 0.38, '#627092');
     if (lesson.id === 'omni' && !r.meta.omniAvailable) { label(ctx, '∅', left + 12, y0, C.amber); return; }
     ctx.save(); ctx.beginPath(); ctx.rect(left, top + i * row + 1, right - left, row - 2); ctx.clip();
     ctx.strokeStyle = TRACE_COLORS[i % 4]; ctx.lineWidth = 1.3; ctx.beginPath();
@@ -269,7 +269,7 @@ export function drawSignals(c, s, r, lesson, t, plotRef) {
       }
     }
   });
-  for (const [ms, color] of [[s.cursor, '#a6bcb0'], ...s.marks.map((m) => [m, C.electrode])]) {
+  for (const [ms, color] of [[s.cursor, '#a6adbc'], ...s.marks.map((m) => [m, C.electrode])]) {
     if (ms < from || ms > to) continue;
     ctx.strokeStyle = color; ctx.lineWidth = 1; line(ctx, x(ms), top, x(ms), bottom);
   }
@@ -316,7 +316,7 @@ function drawAdc(c, s, r, t) {
   for (let tm = Math.ceil(from / 10) * 10; tm <= to; tm += 10) label(ctx, String(tm), X(tm) - 9, h - 6, C.dim);
   const clip = ADC_FULL_SCALE / s.gain;
   for (const v of [clip, -clip]) if (v > lo && v < hi) { ctx.strokeStyle = C.warn; ctx.setLineDash([4, 4]); line(ctx, left, Y(v), right, Y(v)); ctx.setLineDash([]); label(ctx, t.lang === 'en' ? 'ADC limit' : 'ADC sınırı', right - 70, Y(v) - 4, C.warn); }
-  ctx.strokeStyle = 'rgba(180,200,191,.55)'; ctx.lineWidth = 1.2; ctx.beginPath();
+  ctx.strokeStyle = 'rgba(180,186,200,.55)'; ctx.lineWidth = 1.2; ctx.beginPath();
   idx.forEach((i, k) => { const px = X(r.times[i]), py = Y(r.traces.raw[i]); if (k) ctx.lineTo(px, py); else ctx.moveTo(px, py); });
   ctx.stroke();
   ctx.strokeStyle = '#76d9b1'; ctx.lineWidth = 1.6; ctx.beginPath();
