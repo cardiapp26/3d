@@ -4,6 +4,7 @@
 // a decision rule. Calipers are measured from the events at draw time.
 
 import { EP_CHANNELS, measure, resolveRef } from './ep-cases.js';
+import { channelEvents, waveValue, wavePeaks } from './ep-waveform.js';
 
 // Channel colours: His magenta, CS blue, ABL purple; surface leads green.
 const COLORS = {
@@ -39,16 +40,19 @@ const CHANNEL_BY_ID = new Map(EP_CHANNELS.map((ch) => [ch.id, ch]));
 const LABEL_W = 58;
 const HEADER_H = 18;
 const FOOTER_H = 16;
+// Surface leads get taller rows and more gain (as on a recording system), so the P and T waves read.
+const SURFACE_ROW = 1.55;
+const SURFACE_GAIN = 0.55;
+const EGM_GAIN = 0.42;
+function rowLayout(channels, total) {
+  const weights = channels.map((ch) => (ch.surface && channels.length > 2 ? SURFACE_ROW : 1));
+  const unit = total / weights.reduce((a, b) => a + b, 0);
+  const heights = weights.map((w) => w * unit);
+  const tops = heights.map((_, i) => HEADER_H + heights.slice(0, i).reduce((a, b) => a + b, 0));
+  return { tops, heights };
+}
 const FONT = '10px ui-monospace, monospace';
 
-// Derivative-of-Gaussian spike, normalised so the peak equals amp; mono events
-// (P wave, delta) are plain Gaussian bumps.
-function spike(t, e) {
-  const x = (t - e.t) / e.sigma;
-  if (Math.abs(x) > 6) return 0;
-  if (e.mono) return e.amp * Math.exp(-0.5 * x * x);
-  return -e.amp * x * Math.exp(0.5 - 0.5 * x * x);
-}
 
 // Deterministic baseline: sums of sines, seeded by channel index.
 function baseline(t, seed, rf) {
@@ -72,7 +76,8 @@ export function egmSample(recording, channelId, tMs) {
   const rf = Boolean(recording.rf) && channelId === 'abl-d';
   // t0: absolute time of the window start (live monitor), so the baseline noise stays put while the strip sweeps.
   let value = baseline(t + (recording.t0 || 0), index, rf);
-  for (const e of list || []) value += spike(t, e);
+  if (!list && !channelId.startsWith('ecg-')) return value;
+  for (const e of channelEvents(recording, channelId)) value += waveValue(t, e, channelId);
   return value;
 }
 
@@ -117,7 +122,7 @@ function drawCalipers(ctx, recording, geo, rows) {
     if (!a || !b || rowIndex === undefined || !inside(a.t) || !inside(b.t)) continue;
     const level = used.get(rowIndex) || 0;
     used.set(rowIndex, level + 1);
-    const y = geo.rowTop(rowIndex) + geo.rowH - 6 - level * 15;
+    const y = geo.rowTop(rowIndex) + geo.rowHeight(rowIndex) - 6 - level * 15;
     bracket(ctx, geo.x(a.t), geo.x(b.t), y, `${caliper.label} ${measure(recording, caliper)}`, '#ffeca8', level > 0);
     ends.push(...[a.t, b.t].map((t) => ({ x: geo.x(t), rowIndex, y })));
   }
@@ -127,7 +132,7 @@ function drawCalipers(ctx, recording, geo, rows) {
     const top = geo.rowTop(rowIndex);
     polyline(ctx, [[x, top + 2], [x, y]], 'rgba(255, 236, 168, 0.45)', 1, [2, 2]);
     ctx.fillStyle = '#ffeca8';
-    ctx.beginPath(); ctx.arc(x, top + geo.rowH / 2, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, top + geo.rowHeight(rowIndex) / 2, 2, 0, Math.PI * 2); ctx.fill();
   }
 }
 
@@ -177,7 +182,7 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
   ctx.textBaseline = 'middle';
   channels.forEach((ch, i) => {
     ctx.fillStyle = COLORS[ch.id] || '#c9d6cf';
-    ctx.fillText(ch.label, 6, geo.rowTop(i) + geo.rowH / 2);
+    ctx.fillText(ch.label, 6, geo.mid(i));
   });
   ctx.textBaseline = 'alphabetic';
   if (width >= 520 && title) {
@@ -204,7 +209,7 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
  * signals are lower case (a, v); fibrillatory f waves are not named.
  */
 export function waveLabel(e, surface) {
-  if (surface) return { P: 'P', V: 'QRS', delta: 'δ', F: 'F' }[e.type] || null;
+  if (surface) return { P: 'P', V: 'QRS', delta: 'δ', F: 'F', T: 'T' }[e.type] || null;
   if (e.type === 'f') return null;
   const name = { A: 'A', H: 'H', V: 'V', S: 'S', AP: 'AP', PV: 'PV', RB: 'RB', P1: 'P1', P2: 'P2', Pk: 'Pk', U: 'U' }[e.type] || null;
   return name && e.far ? name.toLowerCase() : name;
@@ -213,13 +218,13 @@ export function waveLabel(e, surface) {
 // Wave names above each deflection. Near-field names are placed first and
 // far-field ones only where they do not overlap a placed name; on a dense
 // strip a name that would overlap is left out.
-function drawWaveLabels(ctx, recording, geo, channels, gain) {
+function drawWaveLabels(ctx, recording, geo, channels) {
   ctx.font = '9px ui-monospace, monospace';
   ctx.textAlign = 'center';
   channels.forEach((ch, i) => {
-    const mid = geo.rowTop(i) + geo.rowH / 2;
+    const mid = geo.mid(i), gain = geo.gain(i);
     const placed = [];   // [left, right] of the names written on this row
-    const named = (recording.events[ch.id] || [])
+    const named = channelEvents(recording, ch.id).filter((e) => !e.part)
       .filter((e) => e.t >= geo.from && e.t <= geo.to)
       .map((e) => ({ e, name: waveLabel(e, ch.surface) }))
       .filter((x) => x.name)
@@ -242,10 +247,10 @@ function drawWaveLabels(ctx, recording, geo, channels, gain) {
 // conduction lines between them in the ladder's colours.
 const GROUP_COLORS = { A: 'rgba(96, 165, 250, 0.85)', V: 'rgba(248, 113, 113, 0.8)' };
 function drawStripLinks(ctx, geo, rows, links, styles) {
-  const y = (ch) => geo.rowTop(rows.get(ch)) + geo.rowH / 2;
+  const y = (ch) => geo.mid(rows.get(ch));
   const shown = (p) => rows.has(p.ch) && p.t >= geo.from - 200 && p.t <= geo.to + 200;
   ctx.save();
-  ctx.beginPath(); ctx.rect(geo.x(geo.from), HEADER_H, geo.x(geo.to) - geo.x(geo.from), rows.size * geo.rowH); ctx.clip();
+  ctx.beginPath(); ctx.rect(geo.x(geo.from), HEADER_H, geo.x(geo.to) - geo.x(geo.from), geo.rowTop(rows.size) - HEADER_H); ctx.clip();
   for (const g of links.groups) {
     const pts = g.points.filter(shown).sort((a, b) => rows.get(a.ch) - rows.get(b.ch));
     if (!pts.length) continue;
@@ -261,7 +266,7 @@ function drawStripLinks(ctx, geo, rows, links, styles) {
     const style = styles[c.kind];
     const [x0, y0, x1, y1] = [geo.x(c.from.t), y(c.from.ch), geo.x(c.to.t), y(c.to.ch)];
     // On one channel (A to H on the His catheter) the line bridges over the signal.
-    const lift = geo.rowH * 0.38;
+    const lift = geo.rowHeight(rows.get(c.from.ch)) * 0.38;
     const path = c.from.ch === c.to.ch && !c.block ? [[x0, y0], [x0, y0 - lift], [x1, y1 - lift], [x1, y1]] : [[x0, y0], [x1, y1]];
     polyline(ctx, path, style.color, 1.8, style.dash);
     if (c.block) polyline(ctx, [[x1 - 6, y1 - 4], [x1 + 6, y1 + 4]], style.color, 2);
@@ -284,8 +289,8 @@ export function sampleTimes(recording, channelId, from, to, plotW) {
   const times = [from];
   for (let t = first; t < to; t += step) times.push(t);
   times.push(to);
-  for (const e of recording?.events?.[channelId] || []) {
-    for (const t of e.mono ? [e.t] : [e.t - e.sigma, e.t, e.t + e.sigma]) if (t > from && t < to) times.push(t);
+  for (const e of recording?.events ? channelEvents(recording, channelId) : []) {
+    for (const t of wavePeaks(e)) if (t > from && t < to) times.push(t);
   }
   return times.sort((a, b) => a - b);
 }
@@ -301,7 +306,7 @@ export function sampleTimes(recording, channelId, from, to, plotW) {
  *   caliper: user caliper lines (ms) drawn across every channel; waves: wave names (A, H, V, P, QRS ...);
  *   channels: the rows to draw (default: the recording's list); zoom/pan: time window;
  *   links: the ladder on the channels (stripLinks), drawn in linkStyles (LADDER_STYLE)
- * @returns {{ from: number, to: number, plotLeft: number, plotW: number, rowTop: number, rowH: number, rows: string[] }|undefined}
+ * @returns {{ from: number, to: number, plotLeft: number, plotW: number, rowTop: number, rowH: number, tops: number[], heights: number[], rows: string[] }|undefined}
  *   the drawn time window and channel rows
  */
 export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null, waves = false, links = null, linkStyles = null } = {}) {
@@ -318,19 +323,25 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
   if (!channels.length) return;
   const rows = new Map(channels.map((ch, i) => [ch.id, i]));
   const plotW = Math.max(1, width - LABEL_W - 6);
-  const rowH = (height - HEADER_H - FOOTER_H) / channels.length;
+  const { tops, heights } = rowLayout(channels, height - HEADER_H - FOOTER_H);
   const { from, to } = timeWindow(recording, zoom, pan);
-  const geo = { rowH, from, to, rowTop: (i) => HEADER_H + i * rowH, x: (t) => LABEL_W + ((t - from) / (to - from)) * plotW };
+  const geo = {
+    from, to,
+    rowTop: (i) => tops[i] ?? tops.at(-1) + heights.at(-1),
+    rowHeight: (i) => heights[i],
+    mid: (i) => tops[i] + heights[i] / 2,
+    gain: (i) => heights[i] * (channels[i].surface ? SURFACE_GAIN : EGM_GAIN),
+    x: (t) => LABEL_W + ((t - from) / (to - from)) * plotW
+  };
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
   drawFrame(ctx, width, height, recording, lang, geo, channels, title);
   drawMarkers(ctx, recording, geo, lang, height);
 
-  const gain = rowH * 0.42;
   ctx.lineWidth = 1.3;
   ctx.lineJoin = 'round';
   channels.forEach((ch, i) => {
-    const mid = geo.rowTop(i) + rowH / 2;
+    const mid = geo.mid(i), gain = geo.gain(i);
     ctx.strokeStyle = COLORS[ch.id] || '#c9d6cf';
     ctx.beginPath();
     sampleTimes(recording, ch.id, from, to, plotW).forEach((t, s) => {
@@ -341,7 +352,7 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
     ctx.stroke();
   });
   if (links && linkStyles) drawStripLinks(ctx, geo, rows, links, linkStyles);
-  if (waves) drawWaveLabels(ctx, recording, geo, channels, gain);
+  if (waves) drawWaveLabels(ctx, recording, geo, channels);
   drawCalipers(ctx, recording, geo, rows);
 
   const cursorAt = Number.isFinite(cursorMs) ? cursorMs
@@ -351,7 +362,7 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
     polyline(ctx, [[x, HEADER_H], [x, height - FOOTER_H]], 'rgba(255, 236, 168, 0.85)', 1.2);
   }
   if (caliper) drawUserCaliper(ctx, geo, caliper, height);
-  return { from, to, plotLeft: LABEL_W, plotW, rowTop: HEADER_H, rowH, rows: channels.map((ch) => ch.id) };
+  return { from, to, plotLeft: LABEL_W, plotW, rowTop: HEADER_H, rowH: heights[0], tops, heights, rows: channels.map((ch) => ch.id) };
 }
 
 /** Time (ms) under a canvas x coordinate for the drawn window, or null outside the plot. */
@@ -363,8 +374,10 @@ export function timeAtX(x, drawn) {
 /** Channel id of the row under a canvas y coordinate, or null. */
 export function channelAtY(y, drawn) {
   if (!drawn?.rows) return null;
-  const i = Math.floor((y - drawn.rowTop) / drawn.rowH);
-  return i >= 0 && i < drawn.rows.length ? drawn.rows[i] : null;
+  const tops = drawn.tops || drawn.rows.map((_, i) => drawn.rowTop + i * drawn.rowH);
+  const heights = drawn.heights || drawn.rows.map(() => drawn.rowH);
+  const i = tops.findIndex((top, k) => y >= top && y < top + heights[k]);
+  return i >= 0 ? drawn.rows[i] : null;
 }
 
 /** Events within `radius` ms of t on each channel (the inspection readout). */

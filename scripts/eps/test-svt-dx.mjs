@@ -113,7 +113,7 @@ class Node {
   replaceChildren(...kids) { this.children = [...kids]; }
   addEventListener(type, fn) { this.listeners[type] = fn; }
 }
-const doc = { createElement: (tag) => new Node(tag) };
+const doc = { createElement: (tag) => new Node(tag), createElementNS: (ns, tag) => new Node(tag) };
 const walk = (n, out = []) => { out.push(n); n.children.forEach((c) => walk(c, out)); return out; };
 const panel = createSvtDxPanel(doc, { getLang: () => 'tr' });
 panel.setActive(true);
