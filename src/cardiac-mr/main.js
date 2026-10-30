@@ -7,6 +7,7 @@ import { sectionSvg } from './cmr-sections.js';
 import { cineSvg, lgeSvg, t1Svg, t2Svg } from './cmr-seq-tissue.js';
 import { pcSvg, perfusionSvg, mraSvg } from './cmr-seq-flow.js';
 import { escapeText as esc } from './cmr-svg.js';
+import { createCmrRealViewer } from './cmr-real-viewer.js';
 import './cardiac-mr.css';
 
 const DEFAULT_STATE = Object.freeze({ step: STEPS[0].id, section: 'sax', sequence: 'cine', lgePattern: 'subendo', labels: true });
@@ -14,6 +15,21 @@ const params = new URLSearchParams(location.search);
 let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : initialLanguage();
 let state = { ...DEFAULT_STATE };
 const mount = document.querySelector('[data-cmr-root]');
+// The real cine viewer keeps its own state and canvases, so it lives in one host node that is
+// moved into each freshly rendered page instead of being rebuilt.
+let realHost = null;
+let realViewer = null;
+
+function attachRealViewer(languageChanged) {
+  const slot = mount.querySelector('[data-cmr-real-slot]');
+  if (!slot) return;
+  if (!realHost) {
+    realHost = document.createElement('div');
+    realHost.className = 'cmr-real';
+    realViewer = createCmrRealViewer({ mount: realHost, getLang: () => lang });
+  } else if (languageChanged) realViewer.render();
+  slot.replaceWith(realHost);
+}
 
 const SCHEMATICS = {
   cine: cineSvg, lge: l => lgeSvg(l, state.lgePattern), t1: t1Svg, t2: t2Svg, pc: pcSvg, perfusion: perfusionSvg, mra: mraSvg
@@ -92,14 +108,15 @@ function footer(t) {
   </section>`;
 }
 
-function render(focusSelector) {
+function render(focusSelector, languageChanged = false) {
   const t = UI[lang];
   document.documentElement.lang = lang;
   document.title = `Cardia · ${t.title}`;
   mountSiteHeader(document.querySelector('.site-header'), lang);
   document.querySelectorAll('[data-cmr-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cmrLang === lang)));
   mount.innerHTML = `<section class="cmr-hero"><div><span class="cmr-eyebrow">${t.eyebrow}</span><h1>${t.title}</h1><p>${t.intro}</p></div><span class="cmr-badge">${t.badge}</span></section>
-    ${planningPanel(t)}${sectionsPanel(t)}${sequencePanel(t)}${footer(t)}`;
+    <div data-cmr-real-slot></div>${planningPanel(t)}${sectionsPanel(t)}${sequencePanel(t)}${footer(t)}`;
+  attachRealViewer(languageChanged);
   if (focusSelector) mount.querySelector(focusSelector)?.focus({ preventScroll: true });
 }
 
@@ -128,7 +145,7 @@ document.querySelectorAll('[data-cmr-lang]').forEach(button => button.addEventLi
   const url = new URL(location.href);
   url.searchParams.delete('lang');
   history.replaceState(null, '', url);
-  render();
+  render(undefined, true);
 }));
 
 render();
@@ -136,7 +153,8 @@ window.cardiacMR = {
   getState: () => ({ ...state, lang }),
   steps: () => STEPS.map(s => s.id),
   sequences: () => SEQUENCES.map(s => s.id),
-  sections: () => SECTIONS.map(s => s.id)
+  sections: () => SECTIONS.map(s => s.id),
+  getRealViewer: () => realViewer
 };
 
 if ('serviceWorker' in navigator) {

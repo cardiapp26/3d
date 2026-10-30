@@ -1,0 +1,44 @@
+{
+ "id": "patient085",
+ "group": "RV",
+ "dims": {
+  "cols": 137,
+  "rows": 137,
+  "slices": 15,
+  "frames": 30
+ },
+ "spacingMm": {
+  "col": 1.2152800559997559,
+  "row": 1.2152800559997559,
+  "slice": 5.0
+ },
+ "edFrame": 0,
+ "esFrame": 8,
+ "heightCm": 172.0,
+ "weightKg": 61.0,
+ "crop": {
+  "row0": 86,
+  "col0": 19,
+  "fullRows": 288,
+  "fullCols": 184
+ },
+ "labels": [
+  "rv",
+  "myocardium",
+  "lv"
+ ],
+ "sheet": {
+  "file": "cine.webp",
+  "tileRows": "slice",
+  "tileCols": "frame",
+  "quality": 90
+ },
+ "source": {
+  "dataset": "ACDC (Automated Cardiac Diagnosis Challenge, MICCAI 2017), training set",
+  "license": "CC BY-NC-SA 4.0",
+  "terms": "Non-commercial scientific and educational use only",
+  "citation": "Bernard O, Lalande A, Zotti C, Cervenansky F, et al. Deep Learning Techniques for Automatic MRI Cardiac Multi-structures Segmentation and Diagnosis: Is the Problem Solved? IEEE Trans Med Imaging 2018;37(11):2514-2525. doi:10.1109/TMI.2018.2837502",
+  "url": "https://www.creatis.insa-lyon.fr/Challenge/acdc/",
+  "changes": "Cropped around the heart, windowed to 8-bit display values and stored as a lossy WebP sheet (quality 90); labels unchanged."
+ }
+}

@@ -59,6 +59,46 @@ async function walk(page, tag, { checkOverflow = false } = {}) {
   assert.equal(purposes.size, 7, 'seven distinct purposes');
 }
 
+async function realViewer(page, tag) {
+  await page.waitForFunction(() => window.cardiacMR.getRealViewer()?.getState().loaded === 'patient061', null, { timeout: 30000 });
+  const v = () => page.evaluate(() => window.cardiacMR.getRealViewer().getState());
+  const colour = () => page.evaluate(() => {
+    const d = document.querySelector('[data-cmrv-canvas]').getContext('2d').getImageData(0, 0, 512, 512).data;
+    let grey = 0, tinted = 0;
+    for (let i = 0; i < d.length; i += 4) { if (d[i] > 20) grey++; if (Math.abs(d[i] - d[i + 2]) > 40) tinted++; }
+    return { grey, tinted };
+  });
+  assert.equal(await page.locator('[data-cmrv-case]').count(), 5, 'five ACDC cases');
+  assert.equal(await page.locator('[data-cmrv-slice] canvas').count(), 9, 'one thumbnail per slice');
+  // Cine plays unless the user prefers reduced motion.
+  const f0 = (await v()).frame;
+  await page.waitForTimeout(400);
+  assert.notEqual((await v()).frame, f0, 'cine advances');
+  await page.locator('[data-cmrv-play]').click();
+  await page.locator('[data-cmrv-jump="ed"]').click();
+  assert.equal(await page.locator('[data-cmrv-phase]').innerText(), 'ED');
+  const ed = await colour();
+  assert.ok(ed.grey > 50000 && ed.tinted > 2000, `ED frame shows the image and the expert contours (${ed.tinted})`);
+  await page.locator('[data-cmrv-overlay="off"]').click();
+  assert.ok((await colour()).tinted < ed.tinted / 10, 'contours off');
+  await page.locator('[data-cmrv-overlay="phase"]').click();
+  assert.match(await page.locator('[data-cmrv-lvef]').innerText(), /^6\d$/, 'normal LVEF');
+  assert.equal(await page.locator('[data-cmrv-criteria] li.is-met').count(), 0, 'normal case meets no disease definition');
+  assert.equal(await page.locator('[data-cmrv-ring] svg path').count(), 6, 'six-sector thickening ring');
+  // Keyboard: next slice.
+  const s0 = (await v()).slice;
+  await page.locator('[data-cmrv-canvas]').focus();
+  await page.keyboard.press('ArrowDown');
+  assert.equal((await v()).slice, s0 + 1, 'arrow key moves to the next slice');
+  // HCM case.
+  await page.locator('[data-cmrv-case="patient034"]').click();
+  await page.waitForFunction(() => window.cardiacMR.getRealViewer().getState().loaded === 'patient034', null, { timeout: 30000 });
+  assert.equal(await page.locator('[data-cmrv-criteria] li.is-met').getAttribute('data-group'), 'HCM', 'HCM definition met');
+  if (SHOTS) await page.locator('.cmrv').screenshot({ path: path.join(SHOTS, `${tag}-real-hcm.png`) });
+  await page.locator('[data-cmrv-case="patient061"]').click();
+  await page.waitForFunction(() => window.cardiacMR.getRealViewer().getState().loaded === 'patient061');
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
@@ -73,7 +113,10 @@ async function walk(page, tag, { checkOverflow = false } = {}) {
     assert.equal(await page.locator('a[href*="PMC7038611"]').count(), 1, 'SCMR 2020 source link');
     assert.match(await page.locator('[data-cmr-disclaimer]').innerText(), /hasta MR görüntüsü değildir/);
 
+    await realViewer(page, 'desktop-tr');
+    const canvasBefore = await page.locator('[data-cmrv-canvas]').elementHandle();
     await walk(page, 'desktop-tr');
+    assert.ok(await canvasBefore.evaluate(n => n.isConnected), 'real viewer survives page re-renders');
 
     // Sections and the labels toggle.
     for (const [id, ids] of Object.entries(REQUIRED)) {
@@ -109,6 +152,7 @@ async function walk(page, tag, { checkOverflow = false } = {}) {
     const state = await page.evaluate(() => window.cardiacMR.getState());
     assert.equal(state.step, 'sax-stack'); assert.equal(state.sequence, 'lge'); assert.equal(state.lang, 'en');
     assert.match(await page.locator('[data-cmr-section-view]').innerHTML(), /Lateral/);
+    assert.match(await page.locator('#cmrv-title').innerText(), /Real cine MR/, 'real viewer translates');
     await walk(page, 'desktop-en');
 
     // iPhone 13.
@@ -117,6 +161,10 @@ async function walk(page, tag, { checkOverflow = false } = {}) {
     await phone.goto(`${APP}/cardiac-mr/?lang=tr`, { waitUntil: 'domcontentloaded' });
     await phone.locator('[data-cmr-step]').first().waitFor();
     await noOverflow(phone, 'initial mobile');
+    await phone.waitForFunction(() => window.cardiacMR.getRealViewer()?.getState().loaded === 'patient061', null, { timeout: 30000 });
+    await noOverflow(phone, 'real cine viewer on the phone');
+    const frameBox = await phone.locator('.cmrv-frame').boundingBox();
+    assert.ok(frameBox.width > 300 && frameBox.x + frameBox.width <= 390 + 1, 'cine fits the phone');
     await walk(phone, 'mobile-tr', { checkOverflow: true });
     const widest = await phone.evaluate(() => Math.max(...[...document.querySelectorAll('.cmr-svg')].map(s => s.getBoundingClientRect().right)));
     assert.ok(widest <= 390 + 1, 'schematics fit the phone width');
@@ -125,7 +173,7 @@ async function walk(page, tag, { checkOverflow = false } = {}) {
     assert.deepEqual({ step: reset.step, section: reset.section, sequence: reset.sequence, labels: reset.labels }, { step: 'axial-2ch', section: 'sax', sequence: 'cine', labels: true }, 'reset');
 
     assert.deepEqual(errors, [], 'no browser errors');
-    console.log('PASS cardiac MR browser: 4 planning steps, 4 labelled sections, 7 sequence schematics, LGE patterns, TR/EN state, iPhone 13 layout');
+    console.log('PASS cardiac MR browser: real ACDC cine (play, ED contours, slices, HCM), 4 planning steps, 4 labelled sections, 7 sequence schematics, LGE patterns, TR/EN state, iPhone 13 layout');
   } finally {
     await browser.close();
   }
