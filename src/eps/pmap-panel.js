@@ -13,7 +13,7 @@ import { PMAP_TEXT } from './pmap-text.js';
 
 const TEMPLATE_COLOR = '#22c55e';
 const PACED_COLOR = '#facc15';
-const TISSUE = { wall: '#2b3b35', pap: '#4f7a66', cavity: '#0b1210', scar: '#55534d', channel: '#b07a3f' };
+const TISSUE = { wall: '#1e2a48', pap: '#4f5c7a', cavity: '#080c15', scar: '#55534d', channel: '#b07a3f' };
 // Match map bands (%): red best ... purple worst.
 const BANDS = [97, 94, 90, 85, 80, 70];
 const bandOf = (score) => { const i = BANDS.findIndex((b) => score >= b); return i < 0 ? 6 : i; };
@@ -111,7 +111,7 @@ export function createPaceMapPanel(doc, { getLang = () => 'tr' } = {}) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#0e1815'; ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#0b101b'; ctx.fillRect(0, 0, width, height);
     return { ctx, width, height };
   }
 
@@ -154,7 +154,7 @@ export function createPaceMapPanel(doc, { getLang = () => 'tr' } = {}) {
     // Segment and base / apex labels.
     const tt = T();
     ctx.font = `600 ${Math.max(9, Math.min(12, Math.floor(cs * 0.6)))}px ui-monospace, monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#9fc7b6';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#9fabc7';
     for (const seg of SEGMENTS) ctx.fillText(tt.segments[seg.id], px((seg.from + seg.to + 1) / 2), oy - 9);
     ctx.save(); ctx.translate(ox - 12, py(1.5)); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'right'; ctx.fillText(tt.base, 0, 0); ctx.restore();
     ctx.save(); ctx.translate(ox - 12, py(GRID.h - 1.5)); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'left'; ctx.fillText(tt.apex, 0, 0); ctx.restore();
@@ -211,14 +211,14 @@ export function createPaceMapPanel(doc, { getLang = () => 'tr' } = {}) {
     const peak = Math.max(...tpl.leads.flat().map(Math.abs)) || 1;
     const gain = (cellH * 0.42) / peak;
     ctx.font = '10px ui-monospace, monospace';
-    ctx.fillStyle = '#9fc7b6'; ctx.fillText(narrow ? T().ecgTitleShort : T().ecgTitle, 6, 11);
+    ctx.fillStyle = '#9fabc7'; ctx.fillText(narrow ? T().ecgTitleShort : T().ecgTitle, 6, 11);
     LEADS.forEach((name, i) => {
       const col = Math.floor(i / rows), r = i % rows;
       const x0 = 4 + col * cellW + 34, w = cellW - 44, yMid = top + r * cellH + cellH / 2;
       const x = (ms) => x0 + ((ms + pre) / span) * w;
-      ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(159,171,199, 0.18)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x0, yMid); ctx.lineTo(x0 + w, yMid); ctx.stroke();
-      ctx.fillStyle = '#c8f0dc'; ctx.textAlign = 'left'; ctx.fillText(name, 4 + col * cellW, yMid + 3);
+      ctx.fillStyle = '#c8d9f0'; ctx.textAlign = 'left'; ctx.fillText(name, 4 + col * cellW, yMid + 3);
       const trace = (q, color, lw) => {
         ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath();
         for (let ms = -pre; ms <= span - pre; ms++) {
@@ -235,7 +235,7 @@ export function createPaceMapPanel(doc, { getLang = () => 'tr' } = {}) {
         ctx.strokeStyle = PACED_COLOR; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(x(-paced.onset), yMid - cellH * 0.38); ctx.lineTo(x(-paced.onset), yMid + cellH * 0.38); ctx.stroke();
         const rr = result.perLead[i];
-        ctx.fillStyle = rr >= 0.9 ? '#9fc7b6' : '#fca5a5'; ctx.textAlign = 'right';
+        ctx.fillStyle = rr >= 0.9 ? '#9fabc7' : '#fca5a5'; ctx.textAlign = 'right';
         ctx.fillText(rr.toFixed(2), x0 + w + 8, yMid - cellH / 2 + 10);
       }
     });

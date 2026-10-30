@@ -9,7 +9,7 @@ import { channelEvents, waveValue, wavePeaks } from './ep-waveform.js';
 // Channel colours: His magenta, CS blue, ABL purple; surface leads green.
 const COLORS = {
   'ecg-i': '#8fdc9f', 'his-3': '#e9a0fa', 'his-2': '#e38ff7', 'abl-p': '#d8b4fe',
-  'ecg-ii': '#8fdc9f', 'ecg-v1': '#6fc48b', hra: '#c9d6cf', 'his-p': '#f0abfc', 'his-d': '#e879f9',
+  'ecg-ii': '#8fdc9f', 'ecg-v1': '#6f88c4', hra: '#c9cdd6', 'his-p': '#f0abfc', 'his-d': '#e879f9',
   'cs-910': '#7fb2ff', 'cs-78': '#74a6f2', 'cs-56': '#699ae6', 'cs-34': '#6090dd', 'cs-12': '#5b8cff',
   rv: '#ffd28a', 'abl-d': '#b99bff', 'abl-uni': '#d8c7ff',
   rb: '#fca5a5', 'lv-sep-b': '#fcd34d', 'lv-sep-a': '#fbbf24', pv: '#c084fc',
@@ -85,7 +85,7 @@ const pick = (obj, lang) => (obj && typeof obj === 'object' ? (lang === 'en' ? o
 
 function tag(ctx, text, x, y, color) {
   const w = ctx.measureText(text)?.width || text.length * 6;
-  ctx.fillStyle = 'rgba(14, 24, 21, 0.85)';
+  ctx.fillStyle = 'rgba(11,16,27, 0.85)';
   ctx.fillRect(x - 2, y - 9, w + 4, 11);
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
@@ -166,10 +166,10 @@ function drawMarkers(ctx, recording, geo, lang, height) {
 }
 
 function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
-  ctx.fillStyle = '#0e1815';
+  ctx.fillStyle = '#0b101b';
   ctx.fillRect(0, 0, width, height);
   // Faint grid: one vertical line every 100 ms.
-  ctx.strokeStyle = 'rgba(120, 170, 150, 0.14)';
+  ctx.strokeStyle = 'rgba(120,135,170, 0.14)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let t = Math.ceil(geo.from / 100) * 100; t <= geo.to; t += 100) {
@@ -181,20 +181,20 @@ function drawFrame(ctx, width, height, recording, lang, geo, channels, title) {
   ctx.font = FONT;
   ctx.textBaseline = 'middle';
   channels.forEach((ch, i) => {
-    ctx.fillStyle = COLORS[ch.id] || '#c9d6cf';
+    ctx.fillStyle = COLORS[ch.id] || '#c9cdd6';
     ctx.fillText(ch.label, 6, geo.mid(i));
   });
   ctx.textBaseline = 'alphabetic';
   if (width >= 520 && title) {
-    ctx.fillStyle = '#9fc7b6';
+    ctx.fillStyle = '#9fabc7';
     ctx.fillText(title, LABEL_W, 13);
   }
   // The teaching-data notice lives once, at the foot of the site.
   // Scale bar: 100 ms, bottom left.
   const y = height - 5;
-  polyline(ctx, [[geo.x(geo.from), y], [geo.x(geo.from + 100), y]], '#d7f5e4', 1.5);
+  polyline(ctx, [[geo.x(geo.from), y], [geo.x(geo.from + 100), y]], '#d7e3f5', 1.5);
   ctx.font = FONT;
-  ctx.fillStyle = '#d7f5e4';
+  ctx.fillStyle = '#d7e3f5';
   ctx.fillText('100 ms', geo.x(geo.from + 100) + 6, y + 3);
   if (geo.to - geo.from < recording.windowMs - 1) {
     ctx.textAlign = 'right';
@@ -235,7 +235,7 @@ function drawWaveLabels(ctx, recording, geo, channels) {
       if (placed.some(([l, r]) => x - half < r + 1 && x + half > l - 1)) continue;
       placed.push([x - half, x + half]);
       const y = Math.max(geo.rowTop(i) + 8, mid - Math.abs(e.amp) * gain - 3);
-      ctx.fillStyle = e.far ? 'rgba(201, 214, 207, 0.55)' : 'rgba(236, 246, 241, 0.92)';
+      ctx.fillStyle = e.far ? 'rgba(201,205,214, 0.55)' : 'rgba(236,239,246, 0.92)';
       ctx.fillText(name, x, y);
     }
   });
@@ -342,7 +342,7 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
   ctx.lineJoin = 'round';
   channels.forEach((ch, i) => {
     const mid = geo.mid(i), gain = geo.gain(i);
-    ctx.strokeStyle = COLORS[ch.id] || '#c9d6cf';
+    ctx.strokeStyle = COLORS[ch.id] || '#c9cdd6';
     ctx.beginPath();
     sampleTimes(recording, ch.id, from, to, plotW).forEach((t, s) => {
       const y = mid - egmSample(recording, ch.id, t) * gain;

@@ -17,7 +17,7 @@ import { functionalAt, vectorAt, ENTRANCE, LANDMARKS } from '../koch-sp-function
  */
 
 const SVG = 'http://www.w3.org/2000/svg';
-const COLORS = { uni: '#e8f3ee', bip: '#facc15', far: '#93c5fd', raw: 'rgba(159, 199, 182, 0.45)', good: '#4ade80', bad: '#f87171', slow: '#fb923c' };
+const COLORS = { uni: '#e8ebf3', bip: '#facc15', far: '#93c5fd', raw: 'rgba(159,171,199, 0.45)', good: '#4ade80', bad: '#f87171', slow: '#fb923c' };
 // Frontal (AP) schematic, patient right on the viewer's left. `at` is the button on each catheter's
 // recording end; `shaft` is its course: HRA, His and RVA from the IVC, the CS from the SVC into the
 // CS ostium (posteroseptal RA, below the His) and along the posterior left AV groove.
@@ -82,7 +82,7 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#0e1815'; ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#0b101b'; ctx.fillRect(0, 0, width, height);
     return { ctx, width, height };
   }
   const line = (ctx, pts, color, w = 1.4, dash = []) => {
@@ -113,7 +113,7 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     const zoneH = height * 0.36;
     const xe = width * 0.42, ye = zoneH * 0.55, mm = 6;
     // Tissue strip, the wavefront and the two poles.
-    ctx.fillStyle = '#25322d'; ctx.fillRect(16, ye - 15, width - 32, 30);
+    ctx.fillStyle = '#19243e'; ctx.fillRect(16, ye - 15, width - 32, 30);
     const px = xe + SPEED * state.phase;
     ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2.5;
     if (state.source === 'origin') {
@@ -123,10 +123,10 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
       line(ctx, [[px, ye - 15], [px, ye + 15]], '#facc15', 2.5);
     }
     const a = (state.angle * Math.PI) / 180, p2 = [xe + state.spacing * mm * Math.cos(a), ye - state.spacing * mm * Math.sin(a)];
-    line(ctx, [[xe, ye], p2], 'rgba(232, 243, 238, 0.5)', 1);
+    line(ctx, [[xe, ye], p2], 'rgba(232,235,243, 0.5)', 1);
     for (const [i, p] of [[1, [xe, ye]], [2, p2]]) {
       ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(p[0], p[1], 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#9fc7b6'; ctx.font = '10px ui-monospace, monospace'; ctx.fillText(String(i), p[0] - 3, p[1] - 8);
+      ctx.fillStyle = '#9fabc7'; ctx.font = '10px ui-monospace, monospace'; ctx.fillText(String(i), p[0] - 3, p[1] - 8);
     }
     if (state.far) {
       const glow = Math.exp(-0.5 * ((state.phase - 45) / 18) ** 2);
@@ -139,9 +139,9 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     [[t.unipolar, pair.uni, COLORS.uni, 0], [t.bipolar, pair.bip, COLORS.bip, 1]].forEach(([name, values, color, i]) => {
       const mid = zoneH + 10 + rowH * (i + 0.5), gain = rowH * 0.36;
       ctx.fillStyle = color; ctx.font = '10px ui-monospace, monospace'; ctx.textAlign = 'left'; ctx.fillText(name, 8, mid + 3);
-      line(ctx, [[xt(-80), mid], [xt(80), mid]], 'rgba(159, 199, 182, 0.18)', 1);
+      line(ctx, [[xt(-80), mid], [xt(80), mid]], 'rgba(159,171,199, 0.18)', 1);
       const all = pair.times.map((ms, k) => [xt(ms), mid - (state.far ? values[k] : (i ? pair.bipLocal : pair.uniLocal)[k]) * gain]);
-      line(ctx, all, 'rgba(159, 199, 182, 0.22)', 1);
+      line(ctx, all, 'rgba(159,171,199, 0.22)', 1);
       const upto = all.filter((_, k) => pair.times[k] <= state.phase);
       if (upto.length > 1) line(ctx, upto, color, 1.8);
     });
@@ -182,7 +182,7 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     const f = filterBeat({ hp: state.hp, lp: state.lp });
     const left = 10, plotW = width - 20, mid = height * 0.62;
     const x = (i) => left + (i / (f.view.length - 1)) * plotW, y = (v) => mid - v * height * 0.42;
-    line(ctx, [[left, y(0)], [left + plotW, y(0)]], 'rgba(159, 199, 182, 0.18)', 1);
+    line(ctx, [[left, y(0)], [left + plotW, y(0)]], 'rgba(159,171,199, 0.18)', 1);
     line(ctx, f.rawView.map((v, i) => [x(i), y(v)]), COLORS.raw, 1);
     line(ctx, f.view.map((v, i) => [x(i), y(v)]), COLORS.uni, 1.8);
     line(ctx, [[x(f.beatIndex), 6], [x(f.beatIndex), height - 6]], 'rgba(255, 236, 168, 0.35)', 1, [3, 3]);
@@ -402,8 +402,8 @@ export function createEgmBasicsPanel(doc, { getLang = () => 'tr' } = {}) {
     const curve = ahCurve({ dual: state.dual });
     const left = 40, right = 12, top = 14, bottom = 26, w = width - left - right, h = height - top - bottom, maxAh = 460;
     const x = (v) => left + ((A1A2_RANGE[0] - v) / (A1A2_RANGE[0] - A1A2_RANGE[1] + 10)) * w, y = (v) => top + h - (Math.min(v, maxAh) / maxAh) * h;
-    ctx.font = '10px ui-monospace, monospace'; ctx.fillStyle = '#9fc7b6';
-    for (const v of [100, 200, 300, 400]) { line(ctx, [[left, y(v)], [left + w, y(v)]], 'rgba(159, 199, 182, 0.14)', 1); ctx.fillText(String(v), 8, y(v) + 3); }
+    ctx.font = '10px ui-monospace, monospace'; ctx.fillStyle = '#9fabc7';
+    for (const v of [100, 200, 300, 400]) { line(ctx, [[left, y(v)], [left + w, y(v)]], 'rgba(159,171,199, 0.14)', 1); ctx.fillText(String(v), 8, y(v) + 3); }
     for (const v of [600, 500, 400, 300]) ctx.fillText(String(v), x(v) - 9, height - 8);
     ctx.fillText('AH', 8, 10);
     // The node's own refractory period and the curve (fast green, slow orange).
