@@ -119,7 +119,7 @@ assert.ok(sampleSkillStatLeadIIMv('R26', 0.24) > 0.8, 'SkillStat Paced Ventricul
 assert.equal(CARDIAC_CHANNELOPATHY_NODES.length, 7, '7 Phase 0-4 transmembrane ion currents in Cardiac Channelopathies Atlas');
 assert.equal(CHANNELOPATHY_ACRONYMS.length, 10, '10 syndrome & gene acronyms in Cardiac Channelopathies legend');
 const chanConds = CLINICAL_CONDITIONS.filter(c => c.cat === 'channelopathy');
-assert.equal(chanConds.length, 11, '11 inherited channelopathy & genetic syndromes in Clinical ECG Simulator');
+assert.equal(chanConds.length, 12, '12 inherited channelopathy & genetic syndromes in Clinical ECG Simulator (Brugada type 2 added)');
 const apSvg = buildChannelopathyApSvg('phase3_ikr', true);
 assert.ok(apSvg.includes('SCN5A') && apSvg.includes('KCNH2') && apSvg.includes('KCNQ1') && apSvg.includes('KCNJ2') && apSvg.includes('-85 mV'), 'Phase 0-4 Channelopathy SVG renders all genes and -85 mV resting potential');
 const lqt2Cond = CLINICAL_CONDITIONS.find(c => c.id === 'lqt2_kcnh2');

@@ -475,6 +475,151 @@ export const CLINICAL_CONDITIONS = [
     morph: { stV1V4: 0.22, tallT: 0.42 },
     pearlTr: 'Kokain: Sempatomimetik alfa-adrenerjik koroner vazospazm (geçici STEMI) + Sınıf I benzeri Na+ kanal bloğu (QRS genişlemesi). Kokain ilişkili göğüs ağrısında saf Beta-blokerlerden kaçınılır (karşılanmamış alfa-vazospazm); Benzodiazepin + Nitrat kullanılır.',
     pearlEn: 'Cocaine induces alpha-adrenergic coronary vasospasm (transient STEMI) plus Na+ channel blockade. Treat with benzodiazepines and nitrates; avoid pure beta-blockers.'
+  },
+  // Added after a gap analysis against a 27-chapter ECG atlas (original wording and parameters).
+  {
+    id: 'rv_mi', cat: 'ischemia', color: '#be123c',
+    tr: 'İnferior STEMI + Sağ Ventrikül Enfarktüsü (Proksimal RCA)', en: 'Inferior STEMI with Right Ventricular Infarction (Proximal RCA)',
+    hr: 58, pr: 180, qrs: 92, qt: 410, axis: 75, culprit: 'RCA',
+    affectedLeads: ['II', 'III', 'aVF', 'V1'], reciprocalLeads: ['I', 'aVL'],
+    morph: { stInf: 0.28, stLat: -0.14, rvMi: true },
+    pearlTr: 'III’te ST elevasyonu II’den büyük ve V1’de ST elevasyonu: proksimal RCA ile sağ ventrikül tutulumu. Sağ göğüs derivasyonları (V4R ≥ 1 mm) çekilir; nitrat ve diüretik hipotansiyonu ağırlaştırabilir, sıvı yüklemesi gerekebilir.',
+    pearlEn: 'ST elevation larger in III than in II, plus ST elevation in V1: proximal RCA with right ventricular involvement. Record right-sided leads (V4R ≥ 1 mm); nitrates and diuretics can worsen hypotension, which may need fluids.'
+  },
+  {
+    id: 'focal_at', cat: 'arrhythmia', color: '#0ea5e9',
+    tr: 'Fokal Atriyal Taşikardi (Alçak Atriyal Odak)', en: 'Focal Atrial Tachycardia (Low Atrial Focus)',
+    hr: 150, pr: 140, qrs: 88, qt: 300, axis: 60, culprit: 'None',
+    affectedLeads: ['II', 'III', 'aVF'], reciprocalLeads: [],
+    morph: { focalAt: true },
+    pearlTr: 'Düzenli dar QRS taşikardi; her QRS’ten önce sinüs dışı biçimli bir P var: II, III ve aVF’de negatif P alçak atriyal odağı gösterir. P dalgasının biçimi odağın yerini verir; RP uzun, PR kısadır.',
+    pearlEn: 'Regular narrow-QRS tachycardia with a non-sinus P wave before every QRS: a negative P in II, III and aVF points to a low atrial focus. The P-wave shape localizes the focus; the RP is long, the PR short.'
+  },
+  {
+    id: 'mat', cat: 'arrhythmia', color: '#06b6d4',
+    tr: 'Multifokal Atriyal Taşikardi (MAT)', en: 'Multifocal Atrial Tachycardia (MAT)',
+    hr: 115, pr: 150, qrs: 88, qt: 330, axis: 70, culprit: 'None',
+    affectedLeads: ['II', 'V1'], reciprocalLeads: [],
+    morph: { mat: true, irregular: true },
+    pearlTr: 'Düzensiz ritim, hız > 100/dk ve en az üç farklı P dalgası biçimi; P’ler arasında izoelektrik taban vardır (AF’den farkı). Çoğu zaman ağır akciğer hastalığı, hipoksi veya hipomagnezemi ile birliktedir.',
+    pearlEn: 'Irregular rhythm above 100/min with at least three P-wave shapes and an isoelectric baseline between them (unlike AF). Usually with severe lung disease, hypoxia or hypomagnesemia.'
+  },
+  {
+    id: 'aflutter_reverse', cat: 'arrhythmia', color: '#7c3aed',
+    tr: 'Ters Tipik (Saat Yönünde) Atriyal Flutter', en: 'Reverse Typical (Clockwise) Atrial Flutter',
+    hr: 75, pr: 160, qrs: 88, qt: 390, axis: 60, culprit: 'None',
+    affectedLeads: ['II', 'III', 'aVF', 'V1'], reciprocalLeads: [],
+    morph: { flutter: true, flutterReverse: true, flutterWaves: 4 },
+    pearlTr: 'Aynı kavotriküspit istmus devresi ters yönde döner: inferior derivasyonlarda pozitif, V1’de negatif flutter dalgaları. 4:1 iletimde ventrikül hızı yaklaşık 75/dk.',
+    pearlEn: 'The same cavotricuspid isthmus circuit turning the other way: positive flutter waves in the inferior leads, negative in V1. With 4:1 conduction the ventricular rate is about 75/min.'
+  },
+  {
+    id: 'pvc_bigeminy', cat: 'arrhythmia', color: '#f43f5e',
+    tr: 'Ventriküler Bigemine (Çıkış Yolu Kaynaklı PVC)', en: 'Ventricular Bigeminy (Outflow-Tract PVCs)',
+    hr: 76, pr: 160, qrs: 140, qt: 400, axis: 80, culprit: 'None',
+    affectedLeads: ['II', 'III', 'aVF', 'V1'], reciprocalLeads: [],
+    morph: { bigeminy: true },
+    pearlTr: 'Her sinüs atımını erken, geniş, öncesinde P olmayan bir ventriküler atım izler. İnferior aks ve V1’de LBBB benzeri biçim çıkış yolu (RVOT/LVOT) kaynağını düşündürür; T dalgası QRS’e zıttır.',
+    pearlEn: 'Every sinus beat is followed by an early, wide ventricular beat with no P wave before it. An inferior axis and an LBBB-like V1 suggest an outflow-tract (RVOT/LVOT) origin; the T wave is opposite the QRS.'
+  },
+  {
+    id: 'pvc_couplet', cat: 'arrhythmia', color: '#e11d48',
+    tr: 'Ventriküler Kuplet', en: 'Ventricular Couplet',
+    hr: 78, pr: 160, qrs: 140, qt: 400, axis: 80, culprit: 'None',
+    affectedLeads: ['II', 'III', 'aVF', 'V1'], reciprocalLeads: [],
+    morph: { couplet: true },
+    pearlTr: 'Arka arkaya iki PVC. Üç ve üzeri ardışık PVC 100/dk üzerinde ventriküler taşikardi (≥ 30 sn sürerse sürekli VT) sayılır.',
+    pearlEn: 'Two PVCs in a row. Three or more in a row above 100/min is ventricular tachycardia (sustained if it lasts 30 s or more).'
+  },
+  {
+    id: 'lpfb', cat: 'conduction', color: '#14b8a6',
+    tr: 'Sol Posterior Fasiküler Blok (LPFB)', en: 'Left Posterior Fascicular Block (LPFB)',
+    hr: 72, pr: 160, qrs: 96, qt: 390, axis: 115, culprit: 'None',
+    affectedLeads: ['I', 'aVL', 'II', 'III', 'aVF'], reciprocalLeads: [],
+    morph: {},
+    pearlTr: 'Sağ aks (+90° ile +180°), I ve aVL’de rS, III ve aVF’de qR, QRS < 120 ms. Tanı dışlama tanısıdır: RVH, lateral MI, ince yapı ve PE önce düşünülmelidir.',
+    pearlEn: 'Right axis (+90° to +180°), rS in I and aVL, qR in III and aVF, QRS under 120 ms. A diagnosis of exclusion: RVH, lateral MI, a slender build and PE come first.'
+  },
+  {
+    id: 'avb_high_grade', cat: 'conduction', color: '#0d9488',
+    tr: 'Yüksek Dereceli AV Blok (3:1)', en: 'High-Grade AV Block (3:1)',
+    hr: 90, pr: 180, qrs: 96, qt: 420, axis: 60, culprit: 'None',
+    affectedLeads: ['II', 'V1'], reciprocalLeads: [],
+    morph: { highGrade: 3 },
+    pearlTr: 'Üç P’den yalnız biri iletilir; iletilen atımların PR’ı sabittir. Arka arkaya iki ve üzeri P’nin iletilmemesi yüksek dereceli bloktur; genellikle His altı hastalıktır ve kalıcı pacing gerektirir.',
+    pearlEn: 'Only one P wave in three is conducted, with a constant PR in the conducted beats. Two or more consecutive non-conducted P waves is high-grade block; usually infra-Hisian and an indication for permanent pacing.'
+  },
+  {
+    id: 'brugada_2', cat: 'channelopathy', color: '#a855f7',
+    tr: 'Brugada Tip 2 (Eyer Sırtı) Paterni', en: 'Brugada Type 2 (Saddleback) Pattern',
+    hr: 70, pr: 170, qrs: 100, qt: 390, axis: 60, culprit: 'None',
+    affectedLeads: ['V1', 'V2'], reciprocalLeads: [],
+    morph: { brugada2: true },
+    pearlTr: 'V1–V2’de r′ ardından ≥ 0,5 mm yükselmiş, konkav ST ve pozitif T (eyer sırtı). Tek başına tanı koydurmaz; yalnız tip 1 (kubbe) paterni tanısaldır. V1–V2 bir üst interkostal aralıktan çekilir veya sodyum kanal blokeri ile test edilir.',
+    pearlEn: 'In V1–V2 an r′ followed by a concave ST elevated by 0.5 mm or more and a positive T wave (saddleback). Not diagnostic on its own; only the coved type 1 pattern is. Record V1–V2 one intercostal space higher or test with a sodium-channel blocker.'
+  },
+  {
+    id: 'rvh', cat: 'structural', color: '#22c55e',
+    tr: 'Sağ Ventrikül Hipertrofisi (Strain ile)', en: 'Right Ventricular Hypertrophy (with Strain)',
+    hr: 84, pr: 160, qrs: 96, qt: 380, axis: 120, culprit: 'None',
+    affectedLeads: ['V1', 'V2', 'V5', 'V6', 'I'], reciprocalLeads: [],
+    morph: { rvh: true, rbbb: false },
+    pearlTr: 'Sağ aks, V1’de baskın R (R/S > 1, R ≥ 7 mm), V5–V6’da derin S ve V1–V3’te T negatifliği (sağ strain). Pulmoner hipertansiyon, pulmoner stenoz ve kronik akciğer hastalığında görülür.',
+    pearlEn: 'Right axis, a dominant R in V1 (R/S above 1, R 7 mm or more), deep S in V5–V6 and T inversion in V1–V3 (right strain). Seen with pulmonary hypertension, pulmonary stenosis and chronic lung disease.'
+  },
+  {
+    id: 'takotsubo', cat: 'structural', color: '#f472b6',
+    tr: 'Takotsubo Sendromu (Subakut Faz)', en: 'Takotsubo Syndrome (Subacute Phase)',
+    hr: 92, pr: 160, qrs: 90, qt: 480, axis: 50, culprit: 'None',
+    affectedLeads: ['I', 'II', 'aVL', 'aVF', 'V2', 'V3', 'V4', 'V5', 'V6'], reciprocalLeads: [],
+    morph: { takotsubo: true },
+    pearlTr: 'Akut fazda resiprokal değişikliği az ST elevasyonu, günler içinde yaygın derin T negatifliği ve uzun QT. aVR’de ST çökmesi ve V1’de ST elevasyonunun olmaması anterior STEMI’den ayırmaya yardım eder; kesin ayrım koroner anjiyografiyle yapılır.',
+    pearlEn: 'ST elevation with little reciprocal change in the acute phase, then widespread deep T inversion with a long QT over days. ST depression in aVR and no ST elevation in V1 help separate it from anterior STEMI; coronary angiography decides.'
+  },
+  {
+    id: 'pericarditis_late', cat: 'structural', color: '#34d399',
+    tr: 'Akut Perikardit, Evre 3 (Yaygın T Negatifliği)', en: 'Acute Pericarditis, Stage 3 (Diffuse T Inversion)',
+    hr: 88, pr: 150, qrs: 88, qt: 380, axis: 55, culprit: 'None',
+    affectedLeads: ['I', 'II', 'aVL', 'aVF', 'V2', 'V3', 'V4', 'V5', 'V6'], reciprocalLeads: [],
+    morph: { pericarditisLate: true },
+    pearlTr: 'Evre 1’deki yaygın konkav ST elevasyonu ve PR çökmesi düzeldikten sonra (evre 2: ST taban çizgisine döner) T dalgaları yaygın olarak negatifleşir (evre 3); haftalar içinde normale döner (evre 4).',
+    pearlEn: 'After the diffuse concave ST elevation and PR depression of stage 1 settle (stage 2: ST back to baseline), the T waves invert widely (stage 3) and normalize over weeks (stage 4).'
+  },
+  {
+    id: 'amyloid', cat: 'structural', color: '#84cc16',
+    tr: 'Kardiyak Amiloidoz (Düşük Voltaj, Psödoenfarkt)', en: 'Cardiac Amyloidosis (Low Voltage, Pseudo-Infarct)',
+    hr: 82, pr: 210, qrs: 104, qt: 420, axis: 30, culprit: 'None',
+    affectedLeads: ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3'], reciprocalLeads: [],
+    morph: { lowVoltage: true, pseudoInfarct: true },
+    pearlTr: 'Ekokardiyografide kalın duvara karşın düşük QRS voltajı (ekstremitelerde < 5 mm), V1–V3’te psödoenfarkt QS paterni ve sıklıkla uzun PR veya AF. Duvar kalınlığı ile voltaj arasındaki bu uyumsuzluk amiloidi düşündürür.',
+    pearlEn: 'Low QRS voltage (under 5 mm in the limb leads) despite thick walls on echocardiography, a pseudo-infarct QS pattern in V1–V3, often a long PR or AF. This mismatch between wall thickness and voltage suggests amyloid.'
+  },
+  {
+    id: 'apical_hcm', cat: 'structural', color: '#65a30d',
+    tr: 'Apikal Hipertrofik Kardiyomiyopati (Yamaguchi)', en: 'Apical Hypertrophic Cardiomyopathy (Yamaguchi)',
+    hr: 68, pr: 160, qrs: 96, qt: 430, axis: 40, culprit: 'None',
+    affectedLeads: ['V3', 'V4', 'V5', 'I', 'aVL'], reciprocalLeads: [],
+    morph: { lvh: true, giantTInv: true },
+    pearlTr: 'Yüksek sol prekordiyal voltaj ve V3–V5’te dev negatif T dalgaları (genellikle > 10 mm). Ekoda apeks gözden kaçabilir; kontrastlı eko veya kardiyak MR tanıyı koydurur.',
+    pearlEn: 'High left precordial voltage with giant negative T waves in V3–V5 (often over 10 mm). Echocardiography can miss the apex; contrast echo or cardiac MR makes the diagnosis.'
+  },
+  {
+    id: 'hypothermia', cat: 'pharmacology', color: '#38bdf8',
+    tr: 'Hipotermi (Osborn J Dalgası)', en: 'Hypothermia (Osborn J Wave)',
+    hr: 44, pr: 210, qrs: 104, qt: 500, axis: 60, culprit: 'None',
+    affectedLeads: ['II', 'III', 'aVF', 'V3', 'V4', 'V5', 'V6'], reciprocalLeads: [],
+    morph: { osborn: true, shiver: true },
+    pearlTr: 'QRS sonunda pozitif Osborn (J) dalgası, sinüs bradikardisi, uzun PR, QRS ve QT; titreme artefaktı. J dalgası vücut ısısı düştükçe büyür; ısınınca kaybolur. AF ve VF riski artar.',
+    pearlEn: 'A positive Osborn (J) wave at the end of the QRS, sinus bradycardia, long PR, QRS and QT, and shivering artifact. The J wave grows as body temperature falls and disappears with rewarming. AF and VF become more likely.'
+  },
+  {
+    id: 'lithium', cat: 'pharmacology', color: '#94a3b8',
+    tr: 'Lityum: Sinüs Düğümü Disfonksiyonu ve Düz T', en: 'Lithium: Sinus Node Dysfunction and Flat T Waves',
+    hr: 46, pr: 170, qrs: 90, qt: 420, axis: 60, culprit: 'None',
+    affectedLeads: ['II', 'V4', 'V5', 'V6'], reciprocalLeads: [],
+    morph: { lithium: true },
+    pearlTr: 'Terapötik düzeyde bile yaygın T düzleşmesi; toksisitede sinüs bradikardisi, sinoatriyal blok ve QT uzaması. Bradikardi ve senkopta lityum düzeyi ölçülür.',
+    pearlEn: 'Widespread T flattening even at therapeutic levels; with toxicity sinus bradycardia, sinoatrial block and QT prolongation. Measure the lithium level in bradycardia or syncope.'
   }
 ];
 
@@ -882,8 +1027,9 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     const fAmp = lead === 'V1' || lead === 'II' ? 0.062 : 0.036;
     v += fAmp * (Math.sin(fTheta * 5) + 0.55 * Math.cos(fTheta * 8));
   } else if (m.flutter) {
-    const saw = ((phase * 4) % 1);
-    const fSign = ['II', 'III', 'aVF'].includes(lead) ? -1 : lead === 'V1' ? 1 : -0.4;
+    const saw = ((phase * (m.flutterWaves || 4)) % 1);
+    let fSign = ['II', 'III', 'aVF'].includes(lead) ? -1 : lead === 'V1' ? 1 : -0.4;
+    if (m.flutterReverse) fSign = -fSign;   // reverse typical (clockwise): positive flutter waves inferiorly
     v += fSign * (0.16 * (saw - 0.5));
   } else if (m.chb) {
     // Dissociated P waves marching through at independent rate
@@ -891,18 +1037,33 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     const pPol = lead === 'aVR' ? -1 : 1;
     v += gauss(pPhase, 0.2, 0.025, 0.14 * pPol);
   } else if (!m.avnrt && !m.vt) {
-    const pPol = lead === 'aVR' ? -1 : lead === 'V1' ? 0.4 : 1;
+    let pPol = lead === 'aVR' ? -1 : lead === 'V1' ? 0.4 : 1;
+    let pAmp = 0.13;
+    if (m.focalAt) pPol = ['II', 'III', 'aVF'].includes(lead) ? -0.9 : lead === 'aVR' ? 0.6 : 0.5;   // low atrial focus: P negative inferiorly
+    if (m.mat) {   // at least three P-wave shapes from beat to beat
+      const k = beatIndex % 3;
+      pAmp = [0.13, 0.07, 0.18][k];
+      if (k === 1 && ['II', 'III', 'aVF'].includes(lead)) pPol = -pPol;
+    }
     let pMu = pCenter;
     if (m.mobitz1) {
       const cycle = beatIndex % 4;
       pMu = Math.max(0.05, 0.17 - cycle * 0.035);
     }
-    v += gauss(phase, pMu, 0.024, 0.13 * pPol);
+    v += gauss(phase, pMu, 0.024, pAmp * pPol);
     if (lead === 'V1') v += gauss(phase, pMu + 0.022, 0.018, -0.07);
   }
 
+  // Premature ventricular complexes: bigeminy (every other beat) or a couplet (two in a row in seven).
+  // Outflow-tract origin: wide, inferior axis, LBBB-like in V1, with a discordant T wave.
+  const pvc = (m.bigeminy && beatIndex % 2 === 1) || (m.couplet && [3, 4].includes(beatIndex % 7));
+  if (pvc) {
+    const pol = ['II', 'III', 'aVF', 'V5', 'V6'].includes(lead) ? 1 : lead === 'aVR' || lead === 'aVL' || lead === 'V1' || lead === 'V2' ? -1 : 0.4;
+    return gauss(phase, 0.27, 0.034, 1.05 * pol) + gauss(phase, 0.52, 0.06, -0.34 * pol);
+  }
+
   // Dropped QRS check for Mobitz I (every 4th beat) or Mobitz II (every 3rd beat)
-  if ((m.mobitz1 && (beatIndex % 4 === 3)) || (m.mobitz2 && (beatIndex % 3 === 2))) {
+  if ((m.mobitz1 && (beatIndex % 4 === 3)) || (m.mobitz2 && (beatIndex % 3 === 2)) || (m.highGrade && beatIndex % m.highGrade !== 0)) {
     return v;
   }
 
@@ -918,6 +1079,8 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     qrsScale = (beatIndex % 2 === 0) ? 0.82 : 0.42;
   } else if (m.lvh && ['V1', 'V2', 'V5', 'V6', 'I', 'aVL'].includes(lead)) {
     qrsScale = 1.65;
+  } else if (m.lowVoltage) {
+    qrsScale = 0.35;
   }
 
   // WPW Delta wave slurred upstroke
@@ -976,6 +1139,17 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
         v += gauss(phase, qrsCenter - 0.015, 0.013, -0.38);
         v += gauss(phase, qrsCenter + 0.004, 0.013, 0.62);
       }
+    } else if (m.rvh && ['V1', 'V2'].includes(lead)) {
+      // Right ventricular hypertrophy: tall R in V1-V2
+      v += gauss(phase, qrsCenter, 0.015, 0.95);
+      v += gauss(phase, qrsCenter + 0.02, 0.011, -0.18);
+    } else if (m.rvh && ['I', 'V5', 'V6'].includes(lead)) {
+      // ...and a deep S laterally (rS)
+      v += gauss(phase, qrsCenter - 0.008, 0.011, 0.28);
+      v += gauss(phase, qrsCenter + 0.012, 0.015, -0.72);
+    } else if (m.pseudoInfarct && ['V1', 'V2', 'V3'].includes(lead)) {
+      // Amyloid: low-voltage QS (pseudo-infarct) in the right precordial leads
+      v += gauss(phase, qrsCenter, 0.017, -0.34);
     } else if (m.arvcHcm && ['I', 'aVL', 'V5', 'V6'].includes(lead)) {
       // Deep narrow "dagger Q" in lateral leads
       v += gauss(phase, qrsCenter - 0.016, 0.009, -0.52);
@@ -1014,14 +1188,27 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     }
   }
 
+  // Hypothermia: Osborn (J) wave at the QRS end, and shivering artifact.
+  if (m.osborn && ['II', 'III', 'aVF', 'V3', 'V4', 'V5', 'V6'].includes(lead)) v += gauss(phase, qrsCenter + 0.03, 0.012, 0.3);
+  if (m.shiver) v += 0.025 * Math.sin((beatIndex + phase) * 6.283 * 37) * Math.sin((beatIndex + phase) * 6.283 * 3.1);
+
   // 3. ST Segment & T Wave
   let stShift = 0;
   if (m.stV1V4 && ['V1', 'V2', 'V3', 'V4'].includes(lead)) stShift = m.stV1V4;
   if (m.stInf && ['II', 'III', 'aVF'].includes(lead)) stShift = m.stInf;
   if (m.stLat && ['I', 'aVL', 'V5', 'V6'].includes(lead)) stShift = m.stLat;
   if (m.stAvr && lead === 'aVR') stShift = m.stAvr;
+  if (m.rvMi && lead === 'III') stShift = (m.stInf || 0) * 1.3;   // RV infarction: STE in III greater than in II
+  if (m.rvMi && lead === 'V1') stShift = 0.12;                     // ...and in V1 (V4R in practice)
   if (m.pericarditis) {
     stShift = (lead === 'aVR' || lead === 'V1') ? -0.14 : 0.18;
+  }
+  if (m.brugada2 && (lead === 'V1' || lead === 'V2')) {
+    // Type 2 (saddleback): r' then an elevated, concave ST trough and a positive T wave; not diagnostic alone
+    v += gauss(phase, qrsCenter + 0.03, 0.012, 0.24);
+    v += gauss(phase, 0.38, 0.05, 0.1);
+    v += gauss(phase, 0.5, 0.04, 0.26);
+    return v;
   }
   if (m.brugada && (lead === 'V1' || lead === 'V2')) {
     // Coved STE descending into inverted T
@@ -1086,7 +1273,19 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     tAmp = 0.54 * Math.sign(proj || 1);
   }
 
-  if (m.hyperT && ['V1', 'V2', 'V3', 'V4'].includes(lead)) {
+  if (m.osborn) { tCenter = 0.57; tWidth = 0.05; }
+  if (m.giantTInv && ['V3', 'V4', 'V5'].includes(lead)) {
+    // Apical hypertrophic cardiomyopathy: giant negative T waves in the mid-precordial leads
+    tAmp = -0.78; tWidth = 0.05;
+  } else if (m.giantTInv && ['I', 'aVL', 'V6'].includes(lead)) {
+    tAmp = -0.3;
+  } else if (m.takotsubo) {
+    // Takotsubo (subacute): widespread deep T inversion with a long QT, upright in aVR
+    tCenter = 0.58; tWidth = 0.06; tAmp = lead === 'aVR' ? 0.3 : lead === 'V1' ? -0.1 : -0.42;
+  } else if (m.pericarditisLate) {
+    // Pericarditis, stage 3: ST back to baseline, diffuse T inversion
+    tAmp = lead === 'aVR' || lead === 'V1' ? 0.16 : -0.24;
+  } else if (m.hyperT && ['V1', 'V2', 'V3', 'V4'].includes(lead)) {
     tAmp = 0.58;
     tWidth = 0.045;
   } else if (m.deWinter && ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'].includes(lead)) {
@@ -1107,7 +1306,7 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     v += gauss(phase, 0.59, 0.038, 0.22 * Math.sign(proj || 1));
   } else if (m.postMi && ['V1', 'V2', 'V3'].includes(lead)) {
     tAmp = 0.38;
-  } else if ((m.pe || m.arvcHcm || m.rbbb) && ['V1', 'V2', 'V3'].includes(lead)) {
+  } else if ((m.pe || m.arvcHcm || m.rbbb || m.rvh) && ['V1', 'V2', 'V3'].includes(lead)) {
     tAmp = -0.28;
   } else if (m.lvh && ['I', 'aVL', 'V5', 'V6'].includes(lead)) {
     v += gauss(phase, 0.40, 0.04, -0.14);
@@ -1118,6 +1317,7 @@ export function sampleConditionLeadMv(cond, lead, phase, beatIndex = 0, hrOverri
     v += gauss(phase, 0.39, 0.05, ['V1', 'V2', 'V3'].includes(lead) ? 0.16 : -0.14);
   }
 
+  if (m.lithium) tAmp *= 0.22;   // lithium: flattened T waves
   v += gauss(phase, tCenter, tWidth, tAmp);
   return v;
 }
