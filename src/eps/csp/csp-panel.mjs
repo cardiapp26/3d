@@ -1,8 +1,9 @@
 import { CASES, simulate, thresholdSweep, programmedSweep, paramsOf } from './csp-model.mjs';
-import { initialProcedure, modelOf, act, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, fromModel, thicknessOf, rapidAllowed, HEARTS, LEAD_TYPES } from './csp-procedure.mjs';
+import { initialProcedure, modelOf, act, timingReadable, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, summary, fromModel, thicknessOf, rapidAllowed, HEARTS, LEAD_TYPES } from './csp-procedure.mjs';
 import { createRecorder, advance, beatFromResult, drawSweep, LAYOUTS, SPEEDS } from './csp-live.mjs';
-import { drawFluoro, levelAt, createFluoroState, tickFluoro, isLive, moved, puff, contrastOf } from './csp-fluoro.mjs';
+import { drawFluoro, levelAt, loadAtlasImages, createFluoroState, tickFluoro, isLive, moved, puff, contrastOf } from './csp-fluoro.mjs';
 import { createFinishPanel } from './csp-finish-panel.mjs';
+import { createCtFluoro, ctGeometry, clampCarm, carmLabel, CARM_PRESETS, CARM_RANGE } from './csp-ct-xray.mjs';
 import { createSpin, advanceSpin, displayDepth, phaseOf, pacingPaused } from './csp-spin.mjs';
 import { trendPoint, pushTrend, drawTrends } from './csp-trends.mjs';
 import { coaching } from './csp-coaching.mjs';
@@ -26,6 +27,27 @@ const fill = (template, params) => template.replace(/\{(\w+)\}/g, (_, k) => (par
 const MOVES = Object.freeze(['site', 'torque', 'rotate', 'unscrew', 'reposition']);   // actions that auto-fluoro screens
 const COMPLICATIONS = Object.freeze(['perforation', 'rbbBump']);
 const now = () => globalThis.performance?.now?.() ?? Date.now();
+const CARM_TEXT = Object.freeze({
+  tr: { carm: 'C-kolu', ct: 'Gerçek BT skopisi', loading: 'BT yükleniyor', failed: 'BT skopisi açılamadı, atlas görüntüsü',
+    hintRao: 'Ucu sürükle: septal seviye · Shift + sürükle: C-kolunu döndür', hintLao: 'Yatay sürükle: kılıf torku (sola saat yönü tersi) · Shift + sürükle: C-kolu',
+    hintLocked: 'Lead vidalı: konum ve kılıf kilitli · Shift + sürükle: C-kolu',
+    leads: { lumenless: ['Kılıfla yönlendirilir, sabit heliks', 'Vidalarken pacing durur'], stylet: ['Stiletle yönlendirilir, uzatılabilir heliks', 'Sürekli pace eder; ileri destek ister'] } },
+  en: { carm: 'C-arm', ct: 'Real CT fluoroscopy', loading: 'Loading CT', failed: 'CT fluoroscopy unavailable, atlas image',
+    hintRao: 'Drag the tip: septal level · Shift + drag: rotate the C-arm', hintLao: 'Drag sideways: sheath torque (left counter-clockwise) · Shift + drag: C-arm',
+    hintLocked: 'Lead screwed in: site and sheath locked · Shift + drag: C-arm',
+    leads: { lumenless: ['Sheath-delivered, fixed helix', 'Pacing pauses while turning'], stylet: ['Stylet-driven, extendable helix', 'Paces throughout; needs forward support'] } }
+});
+const TORQUE_PX = 12;         // LAO drag: one 5 degree torque step per this many pixels
+const CARM_PX = 3;            // shift-drag: one C-arm degree per this many pixels
+// Lead pictograms: a thin lead with a fixed helix, a thicker lead with a stylet inside.
+const LEAD_ICON = Object.freeze({
+  lumenless: '<svg viewBox="0 0 60 16" aria-hidden="true"><path d="M2 8H44" stroke="currentColor" stroke-width="2.2" fill="none"/><path d="M44 8c2-5 3 5 5 0s3 5 5 0 3 5 4 0" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>',
+  stylet: '<svg viewBox="0 0 60 16" aria-hidden="true"><path d="M2 8H44" stroke="currentColor" stroke-width="4" fill="none"/><path d="M2 8H42" stroke="#0e1116" stroke-width="1" stroke-dasharray="3 2" fill="none"/><path d="M44 8c2-5 3 5 5 0s3 5 5 0 3 5 4 0" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>'
+});
+const FOCUS_GAIN = .3;
+const LABEL_PX = 46;          // lead-name column of the live recording (drawSweep left margin)
+const UI_BACK = Object.freeze({ tr: 'Tüm derivasyonlara dönmek için tıkla', en: 'Click to return to all leads' });
+const CARM_STEP = 5;          // keyboard step; the slider moves by 1 degree
 
 export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {}) {
   let proc = initialProcedure('baseline');
@@ -35,9 +57,13 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   let recorder = createRecorder(50), pendingEscape = false, shownBeats = -1;
   let log = [], trend = [];                 // event log; per-turn trend points
   let fx = createFluoroState(), sites = 1, complications = 0, caseSeed = 1;
+  const atlas = doc.createElement ? loadAtlasImages(doc, () => { fx.dirty = true; drawFluoroCanvas(); }) : { images: {}, ready: () => false };
+  // Live fluoroscopy of the real chest CT (WebGL2); loaded the first time the console opens.
+  const ct = doc.createElement && globalThis.WebGL2RenderingContext ? createCtFluoro(doc, { onReady: () => { fx.dirty = true; render(); } }) : null;
+  const ctReady = () => ct?.status === 'ready';
   let spin = null, spinQueue = [];          // helix turn in progress; turns asked for meanwhile
-  const ui = { active: false, page: 'implant', projection: 'rao', instructor: true, blind: false, frozen: false, layout: 'all', ecgGain: 1, egmGain: 1, guides: true, target: false,
-    playing: false, cursor: 50, caliper: false, marks: [], zoom: 1, scale: 4, selected: -1, testKind: null, answer: null, revealed: false };
+  const ui = { active: false, page: 'implant', projection: 'rao', carm: CARM_PRESETS.rao, instructor: true, blind: false, frozen: false, layout: 'all', ecgGain: 1, egmGain: 1, guides: true, target: false,
+    focusLead: null, playing: false, cursor: 50, caliper: false, marks: [], zoom: 1, scale: 4, selected: -1, testKind: null, answer: null, revealed: false };
   let liveFrame = null, liveLast = null, reviewFrame = null, reviewLast = null, plotted = null, history = [], storageStatus = '', dragging = false;
   const lang = () => (getLang() === 'en' ? 'en' : 'tr');
   const t = () => TEXT[lang()];
@@ -75,7 +101,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const pageButtons = pages.map(page => {
     const b = button(() => t()[page], () => {
       ui.page = page;
-      if (page === 'quiz') { ui.blind = true; ui.instructor = false; ui.projection = 'rao'; ui.revealed = false; ui.answer = null; }
+      if (page === 'quiz') { ui.blind = true; ui.instructor = false; setProjection('rao'); ui.revealed = false; ui.answer = null; }
       render();
     }, { 'data-csp-page': page });
     nav.append(b); return b;
@@ -99,7 +125,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const reseed = button(() => c().newPatient, () => loadCase('random', false, Date.now()), { 'data-csp-reseed': '' });
   const patient = el('p', 'csp-patient');
   const teacherBtn = button(() => t().instructor, () => { ui.instructor = !ui.instructor; if (ui.instructor) ui.blind = false; render(); }, { 'data-csp-instructor': '' });
-  const blindBtn = button(() => t().blind, () => { ui.blind = !ui.blind; if (ui.blind) { ui.instructor = false; ui.projection = 'rao'; } ui.answer = null; ui.revealed = false; render(); }, { 'data-csp-blind': '' });
+  const blindBtn = button(() => t().blind, () => { ui.blind = !ui.blind; if (ui.blind) { ui.instructor = false; setProjection('rao'); } ui.answer = null; ui.revealed = false; render(); }, { 'data-csp-blind': '' });
   const resetBtn = button(() => t().reset, () => loadCase(proc.caseId, true), { 'data-csp-reset': '' });
   caseRow.append(caseField, reseed, patient, el('span', 'csp-spacer'), teacherBtn, blindBtn, resetBtn);
 
@@ -107,7 +133,15 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   // Fluoroscopy card.
   const fluoroCard = el('section', 'csp-card csp-fluoro');
   const views = el('div', 'csp-tabs');
-  const viewButtons = ['rao', 'lao', 'septum'].map(id => { const b = button(() => c().views[id], () => { ui.projection = id; render(); }, { 'data-csp-projection': id }); views.append(b); return b; });
+  const viewButtons = ['rao', 'lao', 'septum'].map(id => { const b = button(() => c().views[id], () => { setProjection(id); render(); }, { 'data-csp-projection': id }); views.append(b); return b; });
+  // C-arm angle (real CT fluoroscopy only): RAO 45 .. LAO 60.
+  const carmField = el('label', 'csp-carm', { 'data-csp-carm': '' });
+  const carmInput = el('input', '', { type: 'range', min: CARM_RANGE[0], max: CARM_RANGE[1], step: 1, 'data-csp-carm-input': '' });
+  const carmValue = el('output', 'csp-carm-value');
+  carmInput.addEventListener('input', () => { setCarm(Number(carmInput.value)); render(); });
+  carmField.append(txt(el('span'), () => CARM_TEXT[lang()].carm), carmInput, carmValue);
+  const ctNote = el('span', 'csp-ct-note', { 'data-csp-ct-note': '' });
+  const fluoroHint = el('span', 'csp-fluoro-hint', { 'data-csp-fluoro-hint': '' });
   const fluoro = el('canvas', 'csp-fluoro-canvas', { role: 'img', 'data-csp-anatomy': '' });
   const fluoroOpts = el('div', 'csp-actions csp-small');
   const guidesBox = el('label', 'csp-check'); const guidesInput = el('input', '', { type: 'checkbox' });
@@ -133,14 +167,30 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   heartField.append(txt(el('span'), () => c().heart), heartSelect);
   fluoroBar.append(fluoroBtn, contrastBtn, autoBox, heartField);
   const groundTruth = el('p', 'csp-truth', { 'data-csp-truth': '' });
-  fluoroCard.append(views, fluoro, fluoroBar, fluoroOpts, groundTruth);
+  fluoroCard.append(views, carmField, fluoro, fluoroHint, fluoroBar, fluoroOpts, ctNote, groundTruth);
+  // Pointer on the fluoroscopy: RAO side drags the tip along the septum, LAO side drags sideways to
+  // torque the sheath, shift-drag rotates the C-arm (real CT fluoroscopy).
+  let drag = null;
   fluoro.addEventListener('pointerdown', event => {
-    if (ui.projection !== 'rao') return;
-    dragging = true; fluoro.setPointerCapture?.(event.pointerId); moveSite(event);
+    const mode = event.shiftKey && ctReady() && ui.projection !== 'septum' ? 'carm' : siteDraggable() ? 'site' : torqueDraggable() ? 'torque' : null;
+    if (!mode) return;
+    drag = { mode, x: event.clientX, carm: ui.carm, torque: 0 }; dragging = mode === 'site';
+    fluoro.setPointerCapture?.(event.pointerId);
+    if (mode === 'site') moveSite(event);
   });
-  fluoro.addEventListener('pointermove', event => { if (dragging) moveSite(event); });
-  fluoro.addEventListener('pointerup', () => { dragging = false; });
-  fluoro.addEventListener('pointercancel', () => { dragging = false; });
+  fluoro.addEventListener('pointermove', event => {
+    if (!drag) return;
+    const dx = event.clientX - drag.x;
+    if (drag.mode === 'site') moveSite(event);
+    else if (drag.mode === 'carm') { setCarm(drag.carm + dx / CARM_PX); render(); }
+    else {
+      const steps = Math.trunc(dx / TORQUE_PX) - drag.torque;
+      if (steps) { drag.torque += steps; doAct({ type: 'torque', delta: -5 * steps }); }
+    }
+  });
+  const endDrag = () => { drag = null; dragging = false; };
+  fluoro.addEventListener('pointerup', endDrag);
+  fluoro.addEventListener('pointercancel', endDrag);
 
   // Live recording card.
   const liveCard = el('section', 'csp-card csp-live');
@@ -151,7 +201,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   speed.addEventListener('change', () => { recorder = createRecorder(Number(speed.value)); render(); });
   const layout = el('select', '', { 'data-csp-layout': '' });
   const layoutOptions = Object.keys(LAYOUTS).map(v => { const o = txt(el('option', '', { value: v }), () => c().layouts[v]); layout.append(o); return o; });
-  layout.addEventListener('change', () => { ui.layout = layout.value; drawLive(); });
+  layout.addEventListener('change', () => { ui.layout = layout.value; ui.focusLead = null; drawLive(); });
   const gainSelect = (key, label) => {
     const field = el('label'); const s = el('select', '', { [`data-csp-${key}`]: '' });
     for (const v of [.5, 1, 2]) { const o = el('option', '', { value: v }); o.textContent = String(v); s.append(o); }
@@ -160,7 +210,10 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   };
   liveBar.append(txt(el('h3'), () => c().live), play, speed, layout, gainSelect('ecgGain', () => c().ecgGain), gainSelect('egmGain', () => c().egmGain));
   const live = el('canvas', 'csp-live-canvas', { role: 'img', 'data-csp-live': '' });
-  const liveWrap = el('div', 'csp-live-wrap'); liveWrap.append(live);   // the canvas bitmap size must not feed back into the layout
+  const liveWrap = el('div', 'csp-live-wrap'); liveWrap.append(live);
+  // Clicking a lead name (or double-clicking its row) shows that lead alone, large; again to go back.
+  live.addEventListener('click', event => { if (ui.focusLead || event.clientX - live.getBoundingClientRect().left < LABEL_PX) toggleFocus(liveRowAt(event.clientY)); });
+  live.addEventListener('dblclick', event => { if (!ui.focusLead) toggleFocus(liveRowAt(event.clientY)); });   // the canvas bitmap size must not feed back into the layout
   liveCard.append(liveBar, liveWrap);
 
   // Analyser card: readouts, criteria, event log.
@@ -180,10 +233,17 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const rotate3 = button(() => c().controls.rapid, () => requestTurns(3), { 'data-csp-rotate': 3 });
   const unscrew = button(() => c().controls.unscrew, () => doAct({ type: 'unscrew' }), { 'data-csp-unscrew': '' });
   const reposition = button(() => c().controls.reposition, () => doAct({ type: 'reposition' }), { 'data-csp-reposition': '' });
-  const leadField = el('label'); const leadSelect = el('select', '', { 'data-csp-control': 'lead' });
-  for (const id of LEAD_TYPES) leadSelect.append(txt(el('option', '', { value: id }), () => c().controls.leads[id]));
-  leadSelect.addEventListener('change', () => setSetting({ lead: leadSelect.value }));
-  leadField.append(txt(el('span'), () => c().controls.leadType), leadSelect);
+  // Lead type: two cards (pictogram, name, delivery and behaviour in the console); locked once screwed in.
+  const leadField = el('div', 'csp-leads', { role: 'radiogroup', 'data-csp-leads': '' });
+  const leadCards = LEAD_TYPES.map(id => {
+    const card = el('button', 'csp-lead-card', { type: 'button', role: 'radio', 'data-csp-lead': id });
+    const icon = el('span', 'csp-lead-icon'); icon.innerHTML = LEAD_ICON[id];
+    const words = el('span', 'csp-lead-words');
+    words.append(txt(el('b'), () => c().controls.leads[id]), txt(el('small'), () => CARM_TEXT[lang()].leads[id][0]), txt(el('small'), () => CARM_TEXT[lang()].leads[id][1]));
+    card.append(icon, words);
+    card.addEventListener('click', () => { if (proc.lead !== id) setSetting({ lead: id }); });
+    leadField.append(card); return card;
+  });
   const supportBox = el('label', 'csp-check'); const supportInput = el('input', '', { type: 'checkbox', 'data-csp-support': '' });
   supportInput.addEventListener('change', () => setSetting({ forwardSupport: supportInput.checked }));
   supportBox.append(supportInput, txt(el('span'), () => c().controls.support));
@@ -210,7 +270,7 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   const s2Btn = button(() => t().programmed, () => runTest('s2'), { 'data-csp-test': 's2' });
   const accept = button(() => c().controls.accept, () => doAct({ type: 'accept', reasons: acceptCheck(proc, criteria(result, proc, lastTest), lastTest) }), { 'data-csp-accept': '' });
   bar.append(
-    group(() => c().controls.lead, rotate1, rotate3, unscrew, reposition, leadField, supportBox),
+    group(() => c().controls.lead, leadField, rotate1, rotate3, unscrew, reposition, supportBox),
     group(() => c().controls.sheath, ccw, sheathOut, cw),
     group(() => c().controls.pacing, pace, outputMinus, outputRange, outputPlus, widthRange, rateRange, polarity),
     group(() => c().controls.tests, thresholdBtn, s2Btn, accept)
@@ -305,7 +365,8 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     else if (key === 's') runTest('s2');
     else if (key === 'p') doAct({ type: 'pacing', on: !proc.pacing });
     else if (key === 'f') { ui.frozen = !ui.frozen; render(); }
-    else if (key === 'v') { ui.projection = ui.projection === 'rao' ? 'lao' : 'rao'; render(); }
+    else if (key === 'v') { setProjection(ui.projection === 'rao' ? 'lao' : 'rao'); render(); }
+    else if ((key === ',' || key === '.') && ctReady() && ui.projection !== 'septum') { setCarm(ui.carm + (key === ',' ? -CARM_STEP : CARM_STEP)); render(); }
     else return;
     event.preventDefault();
   });
@@ -372,9 +433,25 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function clearSpin() { spin = null; spinQueue = []; }
   /** The procedure as drawn: during a turn the tip is between the old and the new depth. */
   const shownProc = () => (spin ? { ...proc, depthMm: displayDepth(spin) } : proc);
+  /** RAO / LAO buttons are C-arm presets; the septal section is the instructor's view. */
+  function setProjection(id) {
+    ui.projection = id;
+    if (id === 'rao' || id === 'lao') ui.carm = CARM_PRESETS[id];
+    fx.dirty = true;
+  }
+  function setCarm(angle) {
+    ui.carm = clampCarm(angle);
+    ui.projection = ui.carm > 0 ? 'lao' : 'rao';
+    fx.dirty = true;
+  }
+  // The tip is dragged along the septum where the His-apex line is seen in profile (RAO side, up to AP).
+  const locked = () => proc.depthMm > .05;
+  const siteDraggable = () => !locked() && (ctReady() ? ui.projection !== 'septum' && ui.carm <= 0 : ui.projection === 'rao');
+  const torqueDraggable = () => !locked() && ui.projection === 'lao';
   function moveSite(event) {
     const r = fluoro.getBoundingClientRect();
-    doAct({ type: 'site', level: levelAt(event.clientX - r.left, event.clientY - r.top, r.width, r.height) });
+    const mode = ctReady() ? ui.carm : atlas.ready();
+    doAct({ type: 'site', level: levelAt(event.clientX - r.left, event.clientY - r.top, r.width, r.height, mode) });
   }
   function setOutput(v) { const out = act(proc, { type: 'output', value: v }); proc = out.proc; recompute(); }
   function setSetting(values) { proc = act(proc, { type: 'set', values }).proc; change(); }
@@ -474,9 +551,10 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     const shown = test && !test.done && recorder.last ? recorder.last.result : result;
     const m = shown.metrics, outputV = test && !test.done ? test.output : proc.output;
     const items = [['output', `${VALUE(outputV, 2)} V`], ['impedance', `${VALUE(m.impedance, 0)} Ω`], ['coi', `${VALUE(m.coi, 1)} mV`],
-      ['v6Rwpt', `${VALUE(m.v6Rwpt, 0)} ms`], ['interpeak', list[2].value == null ? '·' : `${VALUE(m.interpeak, 0)} ms`], ['qrsDuration', `${VALUE(m.qrsDuration, 0)} ms`],
+      ['v6Rwpt', timingReadable(m) ? `${VALUE(m.v6Rwpt, 0)} ms` : '·'], ['interpeak', list[2].value == null ? '·' : `${VALUE(m.interpeak, 0)} ms`], ['qrsDuration', `${VALUE(m.qrsDuration, 0)} ms`],
       ['turns', String(proc.turns)], ['depth', ui.blind ? '?' : `${proc.depthMm.toFixed(1)} / ${thicknessOf(proc)} mm`],
-      ...(proc.rWave != null ? [['rWave', `${VALUE(proc.rWave, 1)} mV`]] : [])];
+      ...(proc.rWave != null ? [['rWave', `${VALUE(proc.rWave, 1)} mV`]] : []),
+      ...(proc.lbbPotential != null ? [['lbbPotential', `${proc.lbbPotential} ms`]] : [])];
     readouts.replaceChildren(...items.flatMap(([k, v]) => { const dt = el('dt'); dt.textContent = c().readouts[k]; const dd = el('dd', '', { 'data-csp-readout': k }); dd.textContent = v; return [dt, dd]; }));
     coach.replaceChildren(...coaching(proc, result, list, lastTest, trend).map(i => {
       const li = el('li', '', { 'data-tone': i.tone, 'data-csp-coach-item': i.key });
@@ -557,11 +635,18 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     }
     controlNodes.depth.label.hidden = ui.blind;
     polarity.value = proc.polarity;
-    heartSelect.value = proc.heart; leadSelect.value = proc.lead; supportInput.checked = proc.forwardSupport; supportBox.hidden = proc.lead !== 'stylet';
-    autoInput.checked = fx.auto; heartSelect.disabled = leadSelect.disabled = proc.depthMm > .05;
+    heartSelect.value = proc.heart; supportInput.checked = proc.forwardSupport; supportBox.hidden = proc.lead !== 'stylet';
+    autoInput.checked = fx.auto; heartSelect.disabled = proc.depthMm > .05;
+    leadCards.forEach(card => { const on = card.dataset.cspLead === proc.lead; card.setAttribute('aria-checked', String(on)); card.classList?.toggle('is-on', on); card.disabled = proc.depthMm > .05 && !on; });
     finishPanel.render();
     viewButtons.forEach(b => { const id = b.dataset.cspProjection; b.hidden = id === 'septum' && (ui.blind || !ui.instructor); b.setAttribute('aria-pressed', String(id === ui.projection)); });
-    if (ui.projection === 'septum' && (ui.blind || !ui.instructor)) ui.projection = 'rao';
+    if (ui.projection === 'septum' && (ui.blind || !ui.instructor)) setProjection('rao');
+    carmField.hidden = !ctReady() || ui.projection === 'septum';
+    if (doc.activeElement !== carmInput) carmInput.value = String(ui.carm);
+    carmValue.textContent = carmLabel(ui.carm);
+    ctNote.textContent = ct ? (ct.status === 'ready' ? `${CARM_TEXT[lang()].ct}: TotalSegmentator s0019 (CC BY 4.0)` : ct.status === 'failed' ? CARM_TEXT[lang()].failed : CARM_TEXT[lang()].loading) : '';
+    fluoro.classList?.toggle('is-draggable', siteDraggable() || torqueDraggable());
+    fluoroHint.textContent = ui.projection === 'septum' ? '' : locked() ? CARM_TEXT[lang()].hintLocked : ui.projection === 'lao' ? CARM_TEXT[lang()].hintLao : CARM_TEXT[lang()].hintRao;
     groundTruth.hidden = (!ui.instructor || ui.blind) && !ui.revealed; groundTruth.textContent = `${t().capture}: ${t().types[result.capture.type]}`;
     reviewPlay.setAttribute('aria-pressed', String(ui.playing)); caliper.setAttribute('aria-pressed', String(ui.caliper)); mark.disabled = !ui.caliper;
     zoom.value = String(ui.zoom); scale.value = String(ui.scale);
@@ -594,8 +679,10 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function drawFluoroCanvas() {
     const k = context(fluoro); if (!k) return;
     const t0 = now();
-    drawFluoro(k.ctx, k.w, k.h, ui.projection, shownProc(), { spin: spin ? phaseOf(spin) : null, guides: ui.guides, target: ui.target && ui.instructor && !ui.blind, badge: !ui.blind, text: c().fluoro,
-      contrast: contrastOf(fx, t0), fx: { live: isLive(fx, t0), seconds: fx.seconds, shownDepth: fx.shownDepth } });
+    const contrast = contrastOf(fx, t0);
+    const image = ctReady() && ui.projection !== 'septum' ? ct.image(ui.carm, contrast) : null;
+    drawFluoro(k.ctx, k.w, k.h, ui.projection, shownProc(), { images: atlas.images, ct: image ? { image, geo: ctGeometry(ui.carm) } : null, spin: spin ? phaseOf(spin) : null, guides: ui.guides, target: ui.target && ui.instructor && !ui.blind, badge: !ui.blind, text: c().fluoro,
+      contrast, fx: { live: isLive(fx, t0), seconds: fx.seconds, shownDepth: fx.shownDepth } });
   }
   function drawTrendsCanvas() {
     const k = context(trends); if (!k) return;
@@ -604,8 +691,18 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
   function drawLive() {
     const k = context(live, '#07090c'); if (!k) return;
     const labels = { TIP: c().tip, COI: c().coi }, colors = { V1: '#f4cb75', V6: '#f4cb75', TIP: '#65c9bb', COI: '#8fd3ff' };
-    drawSweep(k.ctx, k.w, k.h, recorder, { rows: LAYOUTS[ui.layout], ecgGain: ui.ecgGain, egmGain: ui.egmGain, labels, colors });
+    const rows = ui.focusLead ? [ui.focusLead] : LAYOUTS[ui.layout];
+    const focus = ui.focusLead ? FOCUS_GAIN : 1;   // one tall row: keep the complexes inside it
+    drawSweep(k.ctx, k.w, k.h, recorder, { rows, ecgGain: ui.ecgGain * focus, egmGain: ui.egmGain * focus, labels, colors });
+    if (ui.focusLead) { k.ctx.fillStyle = '#6b7787'; k.ctx.font = '10px system-ui, sans-serif'; k.ctx.fillText(UI_BACK[lang()], 52, 18); }
   }
+  /** Channel under a pointer y in the live canvas (same row layout as drawSweep). */
+  function liveRowAt(clientY) {
+    const r = live.getBoundingClientRect(), rows = LAYOUTS[ui.layout];
+    const i = Math.floor(((clientY - r.top - 8) / (r.height - 26)) * rows.length);
+    return rows[Math.max(0, Math.min(rows.length - 1, i))];
+  }
+  function toggleFocus(id) { ui.focusLead = ui.focusLead ? null : id; live.setAttribute('aria-label', `${c().live}${ui.focusLead ? `: ${ui.focusLead}` : ''}`); drawLive(); }
   function drawStrip() {
     const k = context(strip); if (!k) return; const { ctx, w, h } = k;
     const left = 70, right = w - 10, top = 22, bottom = h - 24, from = Math.max(0, Math.min(500 - 500 / ui.zoom, ui.cursor - 250 / ui.zoom)), to = from + 500 / ui.zoom;
@@ -643,14 +740,14 @@ export function createCspPanel(doc, { getLang = () => 'tr', storage = null } = {
     element: root, render, draw,
     setActive(active) {
       ui.active = Boolean(active); root.hidden = !ui.active;
-      if (ui.active) render();
+      if (ui.active) { ct?.start(); render(); }
       else {
         for (const f of [liveFrame, reviewFrame]) if (f !== null) globalThis.cancelAnimationFrame?.(f);
         liveFrame = reviewFrame = null; liveLast = reviewLast = null;
       }
     },
     getState: () => ({ ...state, ui: { ...ui, marks: [...ui.marks] }, procedure: { ...proc }, liveTime: recorder.time, trend: trend.map(p => ({ ...p })),
-      fluoro: { on: fx.on, auto: fx.auto, live: isLive(fx, now()), seconds: fx.seconds, contrast: contrastOf(fx, now()), shownDepth: fx.shownDepth }, sites, complications, spin: { active: Boolean(spin), queued: spinQueue.length, pacingPaused: pacingPaused(spin) } }),
+      fluoro: { on: fx.on, auto: fx.auto, live: isLive(fx, now()), seconds: fx.seconds, contrast: contrastOf(fx, now()), shownDepth: fx.shownDepth }, sites, complications, atlasFluoro: atlas.ready(), ctFluoro: ct?.status || 'none', carm: ui.carm, spin: { active: Boolean(spin), queued: spinQueue.length, pacingPaused: pacingPaused(spin) } }),
     loadCase: (caseId, seed) => loadCase(caseId, false, seed),
     getResult: () => result, getReference: () => reference, getRows: () => rows,
     getHistory: () => history.map(x => ({ ...x })),

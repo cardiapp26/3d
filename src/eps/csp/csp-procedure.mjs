@@ -10,16 +10,17 @@
  * a unipolar output or S2 transition, Stim-V6RWPT at or under 74 ms, or a V6-V1 interpeak
  * over 44 ms. The grey bands (75-85 ms, 33-44 ms) are supportive only.
  */
-import { normalize, simulate, sanitizeParams, paramsOf, v6CutoffsOf, CASE_PARAMS } from './csp-model.mjs';
+import { normalize, simulate, sanitizeParams, paramsOf, v6CutoffsOf, CASE_PARAMS, LV_SEPTAL_DEPTH, IMPEDANCE } from './csp-model.mjs';
 
 // Per teaching case: septal thickness and where the left bundle lies on the His-apex line (0 His, 1 apex).
 // stall: a scar island (depth ratio band at the left bundle level) where the helix spins without advancing.
+// grip: advance per turn as a share of the full engagement (scarred septum: the helix bites poorly).
 export const ANATOMY = Object.freeze({
   baseline: { septumMm: 12, lbb: .3 },
   random: { septumMm: 12, lbb: .3 },
   slow: { septumMm: 13, lbb: .32 },
   equal: { septumMm: 11, lbb: .28 },
-  scar: { septumMm: 14, lbb: .3 },
+  scar: { septumMm: 14, lbb: .3, grip: .55 },
   selective: { septumMm: 12, lbb: .29 },
   invertedErp: { septumMm: 12, lbb: .31 },
   dilated: { septumMm: 11, lbb: .34 },
@@ -27,7 +28,7 @@ export const ANATOMY = Object.freeze({
   stall: { septumMm: 12, lbb: .3, stall: { from: .4, to: .62, half: .06 } },
   snd: { septumMm: 12, lbb: .3 },
   lbbb: { septumMm: 13, lbb: .33 },
-  lbbbScar: { septumMm: 14, lbb: .32 },
+  lbbbScar: { septumMm: 14, lbb: .32, grip: .7 },
   rbbb: { septumMm: 12, lbb: .3 },
   fusion: { septumMm: 12, lbb: .3 },
   bump: { septumMm: 13, lbb: .32 }
@@ -64,7 +65,9 @@ export function randomPatient(seed) {
 export const HIS_APEX_MM = 70;          // His to RV apex along the RAO line
 export const FREE_WALL_MM = 5;          // RV free wall: a lead screwed in there perforates early
 export const MM_PER_TURN = 1.4;         // full engagement, sheath perpendicular
-export const LV_DEPTH = .78;            // depth ratio of the LV septal layer: terminal r', LV septal capture, confirm stage
+export const LV_DEPTH = LV_SEPTAL_DEPTH; // depth ratio of the LV septal layer: terminal r', LV septal capture, confirm stage
+export const NEXT_TURN_MAX = .97;       // one more turn is suggested only if it keeps the tip short of this depth ratio
+export const SEPTAL_POS_SPAN = 35;      // sheath degrees from the perpendicular that move the tip from mid to anterior/posterior septum
 export const RAPID_LIMIT = .5;          // three turns at once only above this much wall left
 export const CUTOFFS = Object.freeze({
   v6Met: 74, v6Likely: 85,              // Stim-V6RWPT (ms), narrow QRS or isolated RBBB
@@ -72,7 +75,10 @@ export const CUTOFFS = Object.freeze({
   deltaV6Lvsp: 10,                      // V6RWPT prolongation that marks a drop to LV septal capture
   latencyStep: 12,                      // isoelectric interval gained when capture becomes selective
   thresholdMax: 1.5, outputMargin: 2,   // acceptance: threshold (V at .5 ms) and programmed output over it
-  impedanceMin: 450, coiMin: 3          // safety (ohm, mV)
+  impedanceMin: 450, coiMin: 3,         // safety (ohm, mV); the COI floor applies beyond half the wall
+  coiFromRatio: .5,
+  impedanceFall: 100,                   // ohm below the highest impedance of this position: the tip nears the LV side
+  potentialMatch: 10                    // ms: LBB potential-V6RWPT equal to the paced Stim-V6RWPT within this
 });
 const DRILL_ANGLE = 55;                 // beyond this the helix spins in place
 const SITE_WINDOW = .08;                // level distance from the LBB with full access
@@ -99,6 +105,9 @@ export function offsetOf(sheath) {
 export const thicknessOf = proc => (Math.abs(offsetOf(relAngle(proc))) > .5 ? FREE_WALL_MM : anatomyOf(proc).septumMm);
 export const depthRatio = proc => proc.depthMm / thicknessOf(proc);
 
+/** Where the tip meets the septum: -1 anterior (sheath clockwise) .. +1 posterior; 0 off the septum. */
+export const septalPosOf = proc => (offsetOf(relAngle(proc)) !== 0 ? 0 : clamp(relAngle(proc) / SEPTAL_POS_SPAN, -1, 1));
+
 /** Tissue parameters in force: the case's or the random patient's, with the bumped right bundle applied. */
 export function paramsFor(proc) {
   const base = proc.params || CASE_PARAMS[proc.caseId] || CASE_PARAMS.baseline;
@@ -111,7 +120,7 @@ export function modelOf(proc) {
   const access = Math.max(0, Math.abs(proc.level - lbb) - SITE_WINDOW) * 1.3 + Math.abs(offset) * .6;
   return normalize({
     caseId: proc.caseId, entry: .5 + clamp(access, 0, .5), angle: Math.min(90, Math.abs(relAngle(proc))),
-    depth: depthRatio(proc), level: proc.level, offset, params: paramsFor(proc),
+    depth: depthRatio(proc), level: proc.level, offset, septalPos: septalPosOf(proc), params: paramsFor(proc),
     output: proc.output, pulseWidth: proc.pulseWidth, polarity: proc.polarity, rate: proc.rate, pacing: proc.pacing, s2: null
   });
 }
@@ -126,7 +135,7 @@ export function initialProcedure(caseId = 'baseline', seed = 1, { heart = 'compa
     heart: HEARTS[heart] ? heart : 'compact', lead: LEAD_TYPES.includes(lead) ? lead : 'lumenless', forwardSupport: true,
     level: .55, sheath: ideal - 50, depthMm: 0, turns: 0,   // start: mid RV, sheath anterior (on the free wall)
     output: 2.5, pulseWidth: .5, polarity: 'uni', rate: 90, pacing: true,
-    accepted: false, fixation: 0, rbbbFixation: false, stalls: 0, bumped: false,
+    accepted: false, fixation: 0, rbbbFixation: false, stalls: 0, bumped: false, peakImpedance: 0, lbbPotential: null,
     thresholds: null, rWave: null, slack: 'right', finish: {}
   };
 }
@@ -136,6 +145,19 @@ function bumpOf(proc, events) {
   if (!cp.trauma || proc.bumped || proc.level >= anatomyOf(proc).lbb - BUMP_LEVEL) return proc;
   events.push(event('rbbBump'));
   return { ...proc, bumped: true };
+}
+
+const FIXATION_OUTPUT = 8;   // fixation beats: ectopy from the helix, as strong as a high-output beat
+const gripOf = proc => anatomyOf(proc).grip ?? 1;
+/** Highest impedance seen at this position (a fall from it warns before perforation). */
+function withPeakImpedance(proc) {
+  if (proc.depthMm <= LOCKED_MM || depthRatio(proc) >= 1) return proc;
+  return { ...proc, peakImpedance: Math.max(proc.peakImpedance || 0, simulate(modelOf(proc)).metrics.impedance) };
+}
+/** Depth ratio after one more full turn at this sheath angle. */
+export function nextTurnRatio(proc) {
+  const angle = Math.abs(relAngle(proc)), grip = (angle > DRILL_ANGLE ? .1 : Math.cos((angle * Math.PI) / 180) ** 2) * gripOf(proc);
+  return (proc.depthMm + MM_PER_TURN * grip) / thicknessOf(proc);
 }
 
 /** Procedure step: 0 target, 1 pace map, 2 penetrate, 3 confirm, 4 accepted. */
@@ -178,7 +200,7 @@ export function act(proc, action) {
       const { lbb, stall } = anatomyOf(proc);
       const stalled = Boolean(stall) && Math.abs(proc.level - lbb) < stall.half && before >= stall.from && before < stall.to;
       const unsupported = proc.lead === 'stylet' && !proc.forwardSupport;
-      const grip = (drilling ? .1 : Math.cos((angle * Math.PI) / 180) ** 2) * (proc.caseId === 'scar' ? .55 : 1) * (stalled ? STALL_GRIP : 1) * (unsupported ? NO_SUPPORT_GRIP : 1);
+      const grip = (drilling ? .1 : Math.cos((angle * Math.PI) / 180) ** 2) * gripOf(proc) * (stalled ? STALL_GRIP : 1) * (unsupported ? NO_SUPPORT_GRIP : 1);
       const depthMm = proc.depthMm + n * MM_PER_TURN * grip;
       const after = depthMm / thickness;
       const events = [event('rotate', { turns: n, depthMm })];
@@ -188,12 +210,12 @@ export function act(proc, action) {
       // Ectopy from the helix working through the septum: beats pending for the live recording.
       const fixation = after > .35 && after < 1 ? proc.fixation + n : proc.fixation;
       if (after >= 1 && before < 1) events.push(event('perforation'));
-      return { proc: bumpOf({ ...proc, depthMm, turns: proc.turns + n, fixation, accepted: false, stalls: stalled ? proc.stalls + n : 0 }, events), events };
+      const next = { ...proc, depthMm, turns: proc.turns + n, fixation, accepted: false, stalls: stalled ? proc.stalls + n : 0, lbbPotential: null };
+      return { proc: bumpOf(withPeakImpedance(next), events), events };
     }
     case 'consumeFixation': {
-      // A fixation beat was recorded; near the left bundle it carries the RBBB pattern.
-      const ratio = depthRatio(proc);
-      const rbbb = ratio >= .7 && ratio < 1;
+      // A fixation beat was recorded: it carries the RBBB pattern when that beat shows a terminal r' in V1.
+      const rbbb = depthRatio(proc) < 1 && terminalR(simulate({ ...modelOf(proc), output: FIXATION_OUTPUT, pacing: true })) === true;
       return { proc: { ...proc, fixation: Math.max(0, proc.fixation - 1), rbbbFixation: proc.rbbbFixation || rbbb }, events: [event(rbbb ? 'fixationRbbb' : 'fixation')] };
     }
     case 'unscrew': {
@@ -202,16 +224,19 @@ export function act(proc, action) {
       const events = [event('unscrew', { depthMm })];
       if (proc.depthMm >= thickness && depthMm < thickness) events.push(event('withdrawn'));
       // Backing out leaves the helix in new tissue: the fixation evidence belongs to the old position.
-      return { proc: { ...proc, depthMm, turns: Math.max(0, proc.turns - .5), fixation: 0, rbbbFixation: false, accepted: false }, events };
+      return { proc: { ...proc, depthMm, turns: Math.max(0, proc.turns - .5), fixation: 0, rbbbFixation: false, accepted: false, lbbPotential: null }, events };
     }
     case 'reposition':
-      return { proc: { ...proc, depthMm: 0, turns: 0, fixation: 0, rbbbFixation: false, accepted: false, stalls: 0 }, events: [event('reposition')] };
+      return { proc: { ...proc, depthMm: 0, turns: 0, fixation: 0, rbbbFixation: false, accepted: false, stalls: 0, peakImpedance: 0, lbbPotential: null }, events: [event('reposition')] };
     case 'pacing': {
       // Pacing off with the lead fixed records the intrinsic R wave on the tip.
       const rWave = !action.on && locked && depthRatio(proc) < 1 ? Math.round((3 + 8 * Math.min(1, depthRatio(proc))) * 10) / 10 : proc.rWave;
       const events = [event(action.on ? 'pacingOn' : 'pacingOff')];
       if (rWave !== proc.rWave) events.push(event('rWave', { v: rWave }));
-      return { proc: { ...proc, pacing: Boolean(action.on), rWave }, events };
+      // Pacing off with the tip at the conduction tissue shows the LBB potential before the conducted beat.
+      const potential = !action.on && locked ? simulate({ ...modelOf(proc), pacing: false }).metrics.lbbPotentialV6 : null;
+      if (potential != null) events.push(event('lbbPotential', { v: potential }));
+      return { proc: { ...proc, pacing: Boolean(action.on), rWave, lbbPotential: potential ?? proc.lbbPotential }, events };
     }
     case 'withdrawSheath': {
       if (!proc.accepted || proc.finish.withdraw) return { proc, events: [] };
@@ -319,7 +344,9 @@ export function testFromRows(kind, rows, polarity = 'uni') {
 
 /**
  * Capture criteria read from the current recording and the test log. status: met (definitive),
- * likely (supportive grey band), not, untested.
+ * likely (supportive grey band), not, untested. The depth row is the prerequisite: the timing rows
+ * read the beat only once V1 shows the terminal r' (except with baseline RBBB, where the r' says
+ * nothing about depth). An anodal beat loses the r', so its timing never enters the proof rows.
  */
 export function criteria(result, proc, test = null) {
   const m = result.metrics;
@@ -329,19 +356,37 @@ export function criteria(result, proc, test = null) {
   const rPrime = paced ? terminalR(result) : null;
   // Baseline RBBB: the late right ventricle gives an r' at any depth, so the row is not useful (na).
   const depthRow = rhythm === 'rbbb' ? 'na' : paced ? (rPrime ? 'met' : 'not') : 'untested';
-  const v6 = !paced || m.v6Rwpt == null ? 'untested' : m.v6Rwpt <= cut.met ? 'met' : m.v6Rwpt <= cut.likely ? 'likely' : 'not';
+  const timed = paced && (rhythm === 'rbbb' || rPrime);
+  const v6 = !paced || m.v6Rwpt == null ? 'untested' : m.v6Rwpt <= cut.met && timed ? 'met' : m.v6Rwpt <= cut.likely && timed ? 'likely' : 'not';
   const ip = !rPrime || rhythm === 'rbbb' || m.interpeak == null ? 'untested' : m.interpeak > CUTOFFS.interpeakMet ? 'met' : m.interpeak >= CUTOFFS.interpeakLikely ? 'likely' : 'not';
   const transition = !test?.done ? 'untested' : test.polarity !== 'uni' ? 'untested' : (test.transitions || []).some(t => t.proof) ? 'met' : 'not';
-  const ratio = depthRatio(proc);
-  const safety = proc.depthMm <= LOCKED_MM ? 'untested' : m.impedance < CUTOFFS.impedanceMin || (ratio > .5 && m.coi < CUTOFFS.coiMin) ? 'not' : 'met';
+  const potential = potentialStatus(proc, m, paced, timed);
   return [
     { id: 'terminalR', group: 'depth', status: depthRow },
-    { id: 'v6Rwpt', group: 'proof', status: v6, value: m.v6Rwpt, unit: 'ms', cutoff: cut.met },
+    { id: 'v6Rwpt', group: 'proof', status: v6, value: paced ? m.v6Rwpt : null, unit: 'ms', cutoff: cut.met },
     { id: 'interpeak', group: 'proof', status: ip, value: rPrime ? m.interpeak : null, unit: 'ms' },
     { id: 'transition', group: 'proof', status: transition, value: (test?.transitions || []).filter(t => t.proof).length },
+    { id: 'lbbPotential', group: 'proof', status: potential, value: proc.lbbPotential ?? null, unit: 'ms' },
     { id: 'fixation', group: 'support', status: proc.rbbbFixation ? 'met' : 'untested' },
-    { id: 'safety', group: 'safety', status: safety, value: m.impedance, unit: 'Ω' }
+    { id: 'safety', group: 'safety', status: safetyStatus(proc, m), value: m.impedance, unit: 'Ω' }
   ];
+}
+/** LBB potential-V6RWPT (pacing off) against the paced Stim-V6RWPT at the same position: equal within 10 ms. */
+function potentialStatus(proc, m, paced, timed) {
+  if (proc.lbbPotential == null || !paced || !timed || m.v6Rwpt == null) return 'untested';
+  return Math.abs(m.v6Rwpt - proc.lbbPotential) <= CUTOFFS.potentialMatch ? 'met' : 'not';
+}
+/** Impedance at or over 450 ohm and, beyond half the wall, COI at or over 3 mV. */
+function safetyStatus(proc, m) {
+  if (proc.depthMm <= LOCKED_MM) return 'untested';
+  return m.impedance < CUTOFFS.impedanceMin || (depthRatio(proc) > CUTOFFS.coiFromRatio && m.coi < CUTOFFS.coiMin) ? 'not' : 'met';
+}
+/** Timing (Stim-V6RWPT, interpeak) can be read: not blended with intrinsic conduction. */
+export const timingReadable = metrics => (metrics?.fusion || 0) <= FUSION_LIMIT;
+/** Impedance has fallen this much (ohm) from the highest value at this position, while still in the septum. */
+export function impedanceFallOf(proc, result) {
+  if (!proc.peakImpedance || result.capture.type === 'perforation') return 0;
+  return Math.max(0, proc.peakImpedance - result.metrics.impedance);
 }
 
 /** The single confirmation rule: any definitive proof criterion. */
@@ -386,16 +431,20 @@ export function guidance(proc, result, list, test = null) {
     return { key: 'paceMapOk', tone: 'ok' };
   }
   if (result.metrics.impedance < CUTOFFS.impedanceMin) return { key: 'impedanceDrop', tone: 'warn' };
+  if (impedanceFallOf(proc, result) >= CUTOFFS.impedanceFall) return { key: 'impedanceFalling', tone: 'warn' };
   if (proc.stalls >= 2) return { key: 'stall', tone: 'warn' };
   if (Math.abs(angle) > DRILL_ANGLE) return { key: 'drilling', tone: 'warn' };
   if (proc.lead === 'stylet' && !proc.forwardSupport) return { key: 'noSupport', tone: 'warn' };
   if (ratio < .5) return { key: 'keepTurning', tone: 'info' };
   if (ratio < LV_DEPTH) return { key: 'watchV1', tone: 'info' };
+  // Bipolar high output can capture the ring (anodal): the r' disappears and the timing is not the tip's.
+  if (proc.polarity === 'bi' && !conf.definitive) return { key: 'readUnipolar', tone: 'info' };
   if (conf.definitive) return { key: test?.threshold != null ? (acceptCheck(proc, list, test).length ? 'fixSettings' : 'acceptable') : 'confirmTest', tone: 'ok' };
-  if (conf.supportive.length) return { key: 'likelyTest', tone: 'info' };
+  // Grey band: test first; one more turn only when it cannot reach the far side of this septum.
+  if (conf.supportive.length) return { key: nextTurnRatio(proc) < NEXT_TURN_MAX ? 'likelyTestTurn' : 'likelyTest', tone: 'info' };
   if (list.find(c => c.id === 'terminalR')?.status === 'na') return { key: 'deepRbbb', tone: 'info' };
-  if (met('terminalR')) return { key: 'lvsp', tone: 'info' };
-  return { key: 'deepNoProof', tone: 'info' };
+  if (met('terminalR')) return { key: nextTurnRatio(proc) < NEXT_TURN_MAX ? 'lvsp' : 'lvspNoTurn', tone: 'info' };
+  return { key: nextTurnRatio(proc) < NEXT_TURN_MAX ? 'deepNoProof' : 'deepNoTurn', tone: 'info' };
 }
 
 /** Live threshold test: unipolar output steps down every `beatsPerStep` paced beats. */

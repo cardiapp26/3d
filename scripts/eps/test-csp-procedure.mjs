@@ -2,11 +2,12 @@
 // site, sheath and turns map onto the signal model; the criteria read the recording.
 import assert from 'node:assert/strict';
 import { simulate } from '../../src/eps/csp/csp-model.mjs';
-import { initialProcedure, act, modelOf, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, lbbThresholdOf, summary, offsetOf, thicknessOf, fromModel, rapidAllowed, anatomyOf, relAngle, ANATOMY, CUTOFFS, HEARTS } from '../../src/eps/csp/csp-procedure.mjs';
+import { initialProcedure, act, modelOf, stageOf, criteria, confirmation, acceptCheck, guidance, startThreshold, thresholdBeat, testFromRows, lbbThresholdOf, summary, offsetOf, thicknessOf, fromModel, rapidAllowed, anatomyOf, relAngle, depthRatio, nextTurnRatio, timingReadable, septalPosOf, ANATOMY, CUTOFFS, HEARTS, NEXT_TURN_MAX } from '../../src/eps/csp/csp-procedure.mjs';
 import { programmedSweep, thresholdSweep } from '../../src/eps/csp/csp-model.mjs';
 import { coaching } from '../../src/eps/csp/csp-coaching.mjs';
+import { CONSOLE_TEXT } from '../../src/eps/csp/csp-console-text.mjs';
 import { trendPoint, pushTrend, trendDelta } from '../../src/eps/csp/csp-trends.mjs';
-import { createRecorder, advance, beatFromResult } from '../../src/eps/csp/csp-live.mjs';
+import { createRecorder, advance, beatFromResult, atrialAt } from '../../src/eps/csp/csp-live.mjs';
 
 let passed = 0;
 const test = (name, fn) => { fn(); passed++; console.log(`PASS ${name}`); };
@@ -19,7 +20,7 @@ test('start: tip on the anterior free wall, wide QRS, guidance to torque counter
   const p = initialProcedure();
   assert.ok(offsetOf(p.sheath) < -.5 && thicknessOf(p) === 5);
   const r = simulate(modelOf(p));
-  assert.equal(r.capture.type, 'rv'); assert.ok(r.metrics.qrsDuration > 160);
+  assert.equal(r.capture.type, 'rv'); assert.ok(r.metrics.qrsDuration > 175, 'free wall wider than a septal pace map');
   assert.equal(guidance(p, r, criteria(r, p)).key, 'offAnterior');
   assert.equal(stageOf(p), 0);
 });
@@ -71,7 +72,7 @@ test('slow conduction stays in the grey band: supportive, not definitive, no acc
   assert.equal(r.capture.type, 'nonselective');
   assert.equal(status(list, 'v6Rwpt'), 'likely'); assert.equal(status(list, 'interpeak'), 'likely');
   assert.equal(confirmation(list).definitive, false); assert.deepEqual(confirmation(list).supportive, ['v6Rwpt', 'interpeak']);
-  assert.equal(guidance(p, r, list).key, 'likelyTest');
+  assert.equal(guidance(p, r, list).key, 'likelyTestTurn', '13 mm septum: one more turn stays in the wall');
   assert.equal(summary(p, r, list, null).verdict, 'lvsp');
   assert.ok(acceptCheck(p, list, null).includes('proof'));
 });
@@ -117,7 +118,12 @@ test('a bipolar test proves nothing: anodal to cathodal is not a transition, acc
   const list = criteria(simulate(modelOf(p)), p, t);
   assert.equal(status(list, 'transition'), 'untested');
   assert.ok(acceptCheck(p, list, t).includes('polarity'));
-  assert.equal(guidance(p, simulate(modelOf(p)), list, t).key, 'fixSettings');
+  assert.equal(guidance(p, simulate(modelOf(p)), list, t).key, 'readUnipolar', 'anodal beat: no r′, read unipolar');
+  const anodalBeat = simulate(modelOf(p)), anodalList = criteria(anodalBeat, p);
+  assert.equal(anodalBeat.capture.type, 'anodal');
+  assert.equal(status(anodalList, 'terminalR'), 'not', 'anodal capture removes the terminal r′');
+  for (const id of ['v6Rwpt', 'interpeak']) assert.notEqual(status(anodalList, id), 'met', `anodal ${id} is no proof`);
+  assert.equal(confirmation(anodalList).definitive, false);
 });
 test('sweeps from the analysis page count as tests: S2 drops the slow case to LV septal capture', () => {
   const slow = { ...initialProcedure('slow'), sheath: 8, level: .32 };
@@ -194,16 +200,19 @@ test('coaching reads the state: checklist before fixation, trends and next step 
   const start = initialProcedure('baseline'), r0 = simulate(modelOf(start));
   const first = coaching(start, r0, criteria(r0, start));
   assert.equal(first[0].key, 'offAnterior'); assert.equal(first.at(-1).key, 'nextFix');
-  assert.ok(first.some(i => i.key === 'paceMap' && i.params.qrs > 160));
+  assert.ok(first.some(i => i.key === 'paceMap' && i.params.qrs > 175));
   const ready = onTarget('baseline'), r1 = simulate(modelOf(ready));
   const list = coaching(ready, r1, criteria(r1, ready));
   assert.deepEqual(list.map(i => i.key), ['sheathOk', 'siteOk', 'paceMap', 'nextRotate']);
   let p = ready, trend = [];
   for (let i = 0; i < 8; i++) { p = act(p, { type: 'rotate', turns: 1 }).proc; trend = pushTrend(trend, trendPoint(p, simulate(modelOf(p)))); }
   const r = simulate(modelOf(p)), deep = coaching(p, r, criteria(r, p), null, trend);
-  assert.ok(deep.some(i => i.key === 'impedanceTrend' && i.params.to > i.params.from));
+  // The eighth turn reaches the last tenth of the wall: the impedance turns down before any perforation.
+  assert.ok(deep.some(i => i.key === 'impedanceFalling' && i.params.to < i.params.from));
   assert.ok(deep.some(i => i.key === 'proof')); assert.equal(deep.at(-1).key, 'runThreshold');
-  assert.equal(trendDelta(trend, 'impedance').delta > 0, true); assert.equal(trendDelta([], 'coi'), null);
+  assert.equal(trendDelta(trend, 'impedance').delta < 0, true); assert.equal(trendDelta([], 'coi'), null);
+  const rising = coaching(p, r, criteria(r, p), null, trend.slice(0, -1));
+  assert.ok(rising.some(i => i.key === 'impedanceTrend' && i.params.to > i.params.from), 'rising over the first seven turns');
   const { t } = runThreshold(p);
   assert.equal(coaching(p, r, criteria(r, p, t), t, trend).at(-1).key, 'accept');
   const stuck = run(onTarget('stall'), Array(5).fill({ type: 'rotate', turns: 1 }));
@@ -217,7 +226,7 @@ test('rhythm cases: RBBB makes the r′ row useless, LBBB uses the 80 ms cut-off
   const shallow = screwIn('rbbb', 3), shallowList = criteria(simulate(modelOf(shallow)), shallow);
   assert.equal(status(shallowList, 'terminalR'), 'na');
   const seven = screwIn('rbbb', 7), sevenResult = simulate(modelOf(seven)), sevenList = criteria(sevenResult, seven);
-  assert.equal(guidance(seven, sevenResult, sevenList).key, 'likelyTest', 'the grey band comes first');
+  assert.equal(guidance(seven, sevenResult, sevenList).key, 'likelyTestTurn', 'the grey band comes first');
   const noTiming = sevenList.map(c => (c.group === 'proof' ? { ...c, status: 'not' } : c));
   assert.equal(guidance(seven, sevenResult, noTiming).key, 'deepRbbb');
   const lb = screwIn('lbbb'), lbResult = simulate(modelOf(lb)), lbList = criteria(lbResult, lb);
@@ -296,5 +305,118 @@ test('recorder writes beats back to back with the pacing interval', () => {
   assert.ok(rec.buffers.V6.some(v => Math.abs(v) > .1));
   const fixation = beatFromResult(r, 600, { stimulus: false });
   assert.ok(Math.abs(fixation.channels.I[50]) < Math.abs(beatFromResult(r, 600).channels.I[50]), 'no pacing artefact');
+});
+
+test('review 2: the r′ and the LV septal label start on the same turn; RV and deep septal beats never read as likely (LBBB grey band)', () => {
+  for (const id of ['baseline', 'lbbb', 'slow', 'dilated', 'equal']) {
+    let p = onTarget(id);
+    for (let i = 0; i < 12; i++) {
+      p = act(p, { type: 'rotate', turns: 1 }).proc;
+      const r = simulate(modelOf(p)); if (r.capture.type === 'perforation') break;
+      const list = criteria(r, p);
+      if (['rv', 'deep'].includes(r.capture.type)) {
+        assert.equal(status(list, 'terminalR'), 'not', `${id} turn ${i + 1}: no r′ before the LV septal layer`);
+        assert.equal(status(list, 'v6Rwpt'), 'not', `${id} turn ${i + 1}: ${r.metrics.v6Rwpt} ms is no support from the RV side`);
+      }
+      if (['lvsp', 'nonselective'].includes(r.capture.type)) assert.equal(status(list, 'terminalR'), 'met', `${id} turn ${i + 1}: r′ with ${r.capture.type}`);
+    }
+  }
+});
+test('depth grading: QRS and Stim-V6RWPT shorten turn by turn, never lengthen', () => {
+  let p = onTarget('baseline'), last = null;
+  for (let i = 0; i < 8; i++) {
+    p = act(p, { type: 'rotate', turns: 1 }).proc;
+    const m = simulate(modelOf(p)).metrics;
+    if (last) { assert.ok(m.v6Rwpt <= last.v6Rwpt, `turn ${i + 1} V6RWPT ${m.v6Rwpt} after ${last.v6Rwpt}`); assert.ok(m.qrsDuration <= last.qrsDuration + 1, `turn ${i + 1} QRS`); }
+    last = m;
+  }
+  const at = depth => simulate({ depth, angle: 0, entry: .5, output: 3 }).metrics.qrsDuration;
+  assert.ok(at(.2) >= 150 && at(.2) <= 165, `RV septal ${at(.2)}`); assert.ok(at(.6) >= 135 && at(.6) <= 145, `deep ${at(.6)}`);
+  assert.ok(at(.8) >= 118 && at(.8) <= 130, `LVSP ${at(.8)}`); assert.ok(at(.88) >= 100 && at(.88) <= 115, `ns-LBBP ${at(.88)}`);
+});
+test('sheath torque within the septum moves the tip anterior or posterior and changes lead I and aVL', () => {
+  const p = onTarget('baseline');
+  assert.equal(septalPosOf(p), 0);
+  const peakI = q => Math.max(...simulate(modelOf(q)).leads.I.slice(55, 250));
+  const anterior = { ...p, sheath: -25 }, posterior = { ...p, sheath: 25 };
+  assert.ok(septalPosOf(anterior) < -.5 && septalPosOf(posterior) > .5);
+  assert.equal(offsetOf(relAngle(anterior)), 0); assert.equal(offsetOf(relAngle(posterior)), 0);
+  assert.ok(peakI(anterior) < peakI(p) - .15 && peakI(posterior) > peakI(p) + .15, 'lead I smaller anteriorly, taller posteriorly');
+  assert.equal(septalPosOf({ ...p, sheath: -60 }), 0, 'off the septum the free-wall logic takes over');
+});
+test('review 3: thin septum gets no extra-turn advice; the scarred LBBB septum advances slowly', () => {
+  const dil = screwIn('dilated', 7), r = simulate(modelOf(dil)), list = criteria(r, dil);
+  assert.ok(nextTurnRatio(dil) >= 1, 'one more turn perforates the 11 mm septum');
+  assert.equal(guidance(dil, r, list).key, 'likelyTest');
+  const slow = screwIn('slow', 8);
+  assert.ok(nextTurnRatio(slow) < NEXT_TURN_MAX); assert.equal(guidance(slow, simulate(modelOf(slow)), criteria(simulate(modelOf(slow)), slow)).key, 'likelyTestTurn');
+  const scarTurn = act(onTarget('lbbbScar'), { type: 'rotate', turns: 1 }).proc.depthMm, normalTurn = act(onTarget('lbbb'), { type: 'rotate', turns: 1 }).proc.depthMm;
+  assert.ok(scarTurn < normalTurn * .8, `lbbbScar ${scarTurn} mm per turn against ${normalTurn}`);
+});
+test('review 4: the RBBB fixation label needs a terminal r′ in that beat', () => {
+  const six = screwIn('baseline', 6);
+  assert.ok(depthRatio(six) >= .7 && depthRatio(six) < .78);
+  const seen = act(six, { type: 'consumeFixation' });
+  assert.equal(seen.events[0].type, 'fixation'); assert.equal(seen.proc.rbbbFixation, false);
+  assert.equal(act(screwIn('baseline', 7), { type: 'consumeFixation' }).events[0].type, 'fixationRbbb');
+});
+test('review 5: with fusion the Stim-V6RWPT value is withheld', () => {
+  const fu = screwIn('fusion', 3), r = simulate(modelOf(fu)), list = criteria(r, fu);
+  assert.equal(timingReadable(r.metrics), false);
+  assert.equal(list.find(c => c.id === 'v6Rwpt').value, null); assert.equal(list.find(c => c.id === 'interpeak').value, null);
+  assert.equal(timingReadable(simulate(modelOf({ ...fu, rate: 110 })).metrics), true);
+});
+test('review 7: impedance falls from its peak before perforation; the COI floor applies beyond half the wall', () => {
+  const slow = screwIn('slow', 9), r = simulate(modelOf(slow));
+  assert.notEqual(r.capture.type, 'perforation'); assert.ok(r.metrics.impedance >= CUTOFFS.impedanceMin);
+  assert.ok(slow.peakImpedance - r.metrics.impedance >= CUTOFFS.impedanceFall);
+  assert.equal(guidance(slow, r, criteria(r, slow)).key, 'impedanceFalling');
+  const one = screwIn('baseline', 1), r1 = simulate(modelOf(one));
+  assert.ok(r1.metrics.coi < CUTOFFS.coiMin); assert.equal(status(criteria(r1, one), 'safety'), 'met', 'COI floor only beyond half the wall');
+});
+test('review 9: LBB potential with pacing off; potential-V6RWPT matching the paced Stim-V6RWPT is the third proof path', () => {
+  const p = screwIn('baseline'), off = act(p, { type: 'pacing', on: false });
+  const ev = off.events.find(e => e.type === 'lbbPotential');
+  assert.ok(ev && ev.v > 40 && ev.v < 90, 'potential to V6 R peak measured');
+  const on = act(off.proc, { type: 'pacing', on: true }).proc, list = criteria(simulate(modelOf(on)), on);
+  assert.equal(status(list, 'lbbPotential'), 'met');
+  assert.equal(act(on, { type: 'rotate', turns: 1 }).proc.lbbPotential, null, 'a new position needs a new look');
+  const lb = screwIn('lbbb'); assert.equal(act(lb, { type: 'pacing', on: false }).proc.lbbPotential, null, 'no LBB potential distal to an LBBB');
+  const lvsp = screwIn('baseline', 7); assert.equal(act(lvsp, { type: 'pacing', on: false }).proc.lbbPotential, null, 'not at the LV septal layer short of the bundle');
+  // Dilated: timing grey, no transition looked for, but the potential matches.
+  const dil = screwIn('dilated', 7), dilOn = act(act(dil, { type: 'pacing', on: false }).proc, { type: 'pacing', on: true }).proc;
+  const dilList = criteria(simulate(modelOf(dilOn)), dilOn);
+  assert.equal(status(dilList, 'v6Rwpt'), 'likely'); assert.equal(status(dilList, 'lbbPotential'), 'met'); assert.ok(confirmation(dilList).definitive);
+});
+test('repolarization and atria: discordant T after a wide paced beat, P waves march through complete block in the recorder', () => {
+  const rv = simulate({ depth: .2, output: 3 }), end = 50 + 8 + rv.metrics.qrsDuration;
+  assert.ok(Math.min(...rv.leads.V6.slice(end + 20, 500)) < -.15, 'negative T in V6 after the RV-paced beat');
+  assert.ok(Math.max(...rv.leads.V1.slice(end + 20, 500)) > .1, 'positive T in V1 after a QS');
+  const narrow = simulate({ caseId: 'snd', pacing: false }), nEnd = 190 + narrow.metrics.qrsDuration;
+  assert.ok(Math.max(...narrow.leads.II.slice(nEnd + 15, 500)) > .1, 'upright T in II with a narrow QRS');
+  assert.ok(atrialAt('II', 40) > .08 && atrialAt('TIP', 40) === 0);
+  const rec = createRecorder(50), chb = simulate(modelOf(onTarget('baseline')));
+  advance(rec, 250, () => beatFromResult(chb, 1500)); for (let i = 0; i < 6; i++) advance(rec, 250, () => beatFromResult(chb, 1500));
+  const quiet = Array.from(rec.buffers.II.slice(820, 880)), sinusRec = createRecorder(50), snd = simulate({ caseId: 'snd', pacing: false });
+  assert.ok(Math.max(...quiet) > .08, 'a P wave between ventricular beats in complete block');
+  for (let i = 0; i < 7; i++) advance(sinusRec, 250, () => beatFromResult(snd, 1300));
+  assert.ok(Math.max(...Array.from(sinusRec.buffers.II.slice(820, 880))) < .05, 'no extra P waves with intact AV conduction');
+});
+
+test('review 6: inverted refractoriness also shows an output transition; the S2 order is what differs', () => {
+  const inv = screwIn('invertedErp'), base = screwIn('baseline');
+  assert.ok(runThreshold(inv).t.transitions.some(x => x.kind === 'toSelective'), 'output test: ns to selective here too');
+  const kinds = p => testFromRows('s2', programmedSweep(modelOf(p)), 'uni').transitions.map(x => x.kind);
+  assert.equal(kinds(base)[0], 'toLvsp'); assert.equal(kinds(inv)[0], 'toSelective');
+  for (const lang of ['tr', 'en']) assert.match(CONSOLE_TEXT[lang].patient.invertedErp, /S1–S2/);
+});
+test('review 8: QRS durations written in the case texts match the pacing-off recording', () => {
+  for (const id of ['lbbb', 'bump', 'snd']) {
+    const qrs = simulate({ ...modelOf(initialProcedure(id)), pacing: false }).metrics.qrsDuration;
+    for (const lang of ['tr', 'en']) {
+      const written = Number(CONSOLE_TEXT[lang].patient[id].match(/(\d+) ms/)[1]);
+      assert.ok(Math.abs(written - qrs) <= 3, `${id} ${lang}: text ${written} ms, recording ${qrs} ms`);
+    }
+  }
 });
 console.log(`${passed} procedure tests passed`);

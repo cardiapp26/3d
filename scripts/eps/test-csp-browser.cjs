@@ -21,10 +21,25 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   assert.equal((await state()).procedure.sheath,0);
   // 2. RAO: drag the tip along the His-apex line to about 30 % (21 mm from the His).
   await page.locator('[data-csp-anatomy]').scrollIntoViewIfNeeded();const box=await page.locator('[data-csp-anatomy]').boundingBox();
-  const at=f=>[box.x+box.width*(.36+.38*f),box.y+box.height*(.3+.5*f)];
+  // RAO is live fluoroscopy of the real chest CT: the drag targets are septal sites of that heart projected at RAO 30.
+  await page.waitForFunction(()=>window.epsLab.panel.csp.getState().ctFluoro==='ready',null,{timeout:60000});
+  assert.equal((await state()).carm,-30,'RAO preset is a C-arm angle');
+  assert.equal(await page.locator('[data-csp-carm]').isVisible(),true,'C-arm slider shown with CT fluoroscopy');
+  const sites=await page.evaluate(async()=>{const x=await import('/src/eps/csp/csp-ct-xray.mjs');return Object.fromEntries([.3,.45,.6].map(l=>[l,x.project(-30,x.septalSite(l).rv)]));});
+  const at=f=>[box.x+box.width*sites[f][0],box.y+box.height*sites[f][1]];
   await page.mouse.move(...at(.6));await page.mouse.down();await page.mouse.move(...at(.45),{steps:4});await page.mouse.move(...at(.3),{steps:4});await page.mouse.up();
   assert.ok(Math.abs((await state()).procedure.level-.3)<.03,'dragged level');
   assert.match(await page.locator('[data-csp-guide]').textContent(),/Pace map uygun/);
+  // LAO: a sideways drag torques the sheath (right clockwise), shift-drag rotates the C-arm.
+  await page.locator('[data-csp-projection=lao]').click();assert.equal((await state()).carm,40);
+  const mid=[box.x+box.width*.5,box.y+box.height*.5];
+  await page.mouse.move(...mid);await page.mouse.down();await page.mouse.move(mid[0]+26,mid[1],{steps:4});await page.mouse.up();
+  assert.equal((await state()).procedure.sheath,-10,'drag right: two clockwise steps');
+  await page.mouse.move(...mid);await page.mouse.down();await page.mouse.move(mid[0]-26,mid[1],{steps:4});await page.mouse.up();
+  assert.equal((await state()).procedure.sheath,0,'drag left: back counter-clockwise');
+  await page.keyboard.down('Shift');await page.mouse.move(...mid);await page.mouse.down();await page.mouse.move(mid[0]-30,mid[1],{steps:4});await page.mouse.up();await page.keyboard.up('Shift');
+  assert.equal((await state()).carm,30,'shift-drag rotates the C-arm');assert.equal((await state()).procedure.sheath,0,'C-arm drag leaves the sheath');
+  await page.locator('[data-csp-projection=rao]').click();assert.equal((await state()).carm,-30);
   // 3. Eight turns from the keyboard; the live recording runs.
   await page.locator('[data-csp-live]').click();
   await page.keyboard.press('r');
@@ -133,9 +148,12 @@ const APP=(process.env.EPS_URL || `${(process.env.APP_URL || 'http://127.0.0.1:5
   await page.locator('[data-csp-auto-fluoro]').uncheck();await page.waitForTimeout(1700);assert.equal((await state()).fluoro.live,false,'last image hold');
   await page.locator('[data-csp-contrast]').click();assert.ok((await state()).fluoro.contrast>.5);await page.locator('[data-csp-auto-fluoro]').check();
   await set('heart','vertical');assert.equal((await state()).procedure.heart,'vertical');
-  await set('lead','stylet');assert.equal(await page.locator('[data-csp-support]').isVisible(),true);
+  await page.locator('[data-csp-lead=stylet]').click();assert.equal((await state()).procedure.lead,'stylet');assert.equal(await page.locator('[data-csp-lead=stylet]').getAttribute('aria-checked'),'true');assert.equal(await page.locator('[data-csp-support]').isVisible(),true);
   await page.locator('[data-csp-support]').uncheck();assert.equal((await state()).procedure.forwardSupport,false);
-  await set('lead','lumenless');await set('heart','compact');
+  await page.locator('[data-csp-lead=lumenless]').click();await set('heart','compact');
+  await page.locator('[data-csp-live]').scrollIntoViewIfNeeded();const lbox=await page.locator('[data-csp-live]').boundingBox();
+  await page.mouse.click(lbox.x+20,lbox.y+8+(lbox.height-26)*(6.5/14));assert.equal((await state()).ui.focusLead,'V1','clicking a lead name enlarges it');
+  await page.mouse.click(lbox.x+lbox.width/2,lbox.y+lbox.height/2);assert.equal((await state()).ui.focusLead,null,'click again: all leads');
   // 10. Phone width, direct route, storage failure.
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.locator('[data-csp]').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,'mobile no horizontal overflow in the CSP panel');

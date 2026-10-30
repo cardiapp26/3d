@@ -114,9 +114,11 @@ test('causal EGM filter attenuates sustained injury component', () => {
   assert.ok(Math.abs(mean(r.egm.filtered.slice(130, 200))) < Math.abs(mean(r.egm.unfiltered.slice(130, 200))) * .15);
   assert.notDeepEqual(r.egm.filtered, r.egm.unfiltered);
 });
-test('impedance rises as the helix engages and drops by over 200 ohm on perforation; COI on a mV scale', () => {
+test('impedance rises as the helix engages, falls near the LV side before perforation and drops by over 200 ohm on it; COI on a mV scale', () => {
   const at = depth => simulate({ depth, angle: 0, entry: .5 }).metrics;
-  assert.ok(at(.3).impedance > at(0).impedance && at(.8).impedance > at(.3).impedance && at(.95).impedance > at(.8).impedance);
+  assert.ok(at(.3).impedance > at(0).impedance && at(.8).impedance > at(.3).impedance && at(.9).impedance > at(.8).impedance);
+  assert.ok(at(.97).impedance < at(.9).impedance - 150, 'falling impedance warns before the septum is crossed');
+  assert.ok(at(.97).impedance >= 450, 'still above the safety floor while in the septum');
   assert.ok(at(.95).impedance - at(1).impedance > 200); assert.ok(at(1).impedance < 450);
   assert.ok(at(.85).coi > 9 && at(.85).coi <= 15); assert.ok(at(.1).coi < 3); assert.equal(at(1).coi, 0);
   assert.ok(at(.85).coi > at(.5).coi && at(.5).coi > at(.2).coi);
@@ -132,8 +134,8 @@ test('intrinsic rhythm templates: P waves with sinus, LBBB and RBBB shapes, wide
   const peak = (v, a, b) => Math.max(...v.slice(a, b)), trough = (v, a, b) => Math.min(...v.slice(a, b));
   assert.ok(peak(off('snd').leads.II, 40, 150) > .08, 'P wave before the QRS'); assert.ok(peak(off('baseline').leads.II, 40, 150) < .02, 'no P wave in complete block');
   assert.ok(off('snd').metrics.qrsDuration < 100);
-  const lbbb = off('lbbb'); assert.ok(lbbb.metrics.qrsDuration >= 140); assert.ok(trough(lbbb.leads.V1, 230, 420) < -.8 && peak(lbbb.leads.V1, 300, 420) < .15, 'V1 QS');
-  const rbbb = off('rbbb'); assert.ok(peak(rbbb.leads.V1, 300, 420) > .6, 'late r′ in V1'); assert.ok(trough(rbbb.leads.I, 300, 420) < -.3, 'broad S in I');
+  const lbbb = off('lbbb'); assert.ok(lbbb.metrics.qrsDuration >= 140); assert.ok(trough(lbbb.leads.V1, 190, 380) < -.8 && peak(lbbb.leads.V1, 260, 360) < .15, 'V1 QS');
+  const rbbb = off('rbbb'); assert.ok(peak(rbbb.leads.V1, 260, 380) > .6, 'late r′ in V1'); assert.ok(trough(rbbb.leads.I, 260, 380) < -.3, 'broad S in I');
   const wide = simulate({ caseId: 'lbbb', pacing: false, params: { rhythm: 'escapeWide', intrinsicRate: 30 } });
   assert.ok(wide.metrics.qrsDuration >= 150); assert.ok(peak(wide.leads.II, 40, 150) < .02);
   assert.equal(simulate({ caseId: 'rbbb', depth: .3 }).capture.type, 'rv'); assert.ok(peak(simulate({ caseId: 'rbbb', depth: .3 }).leads.V1, 130, 200) > .3, 'RBBB keeps an r′ at RV depth');
