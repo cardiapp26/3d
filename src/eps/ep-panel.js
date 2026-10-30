@@ -17,6 +17,7 @@ import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, calipe
 import { createSchematic } from './ep-schematic.js';
 import { readFlag, writeFlag } from './view-prefs.js';
 import { buildLadder, drawLadder, inferLadderEvents, LADDER_STYLE } from './ep-ladder.js';
+import { createImpulseView } from './ep-impulse-view.js';
 import { stripLinks } from './ep-strip-links.js';
 import { createMappingPanel } from './amap-panel.js';
 import { AMAP_TEXT } from './amap-text.js';
@@ -141,7 +142,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   const state = { section: 'treatment', caseId: 'avnrt-typical', clipId: 'sinus', evidence: false, origin: false, sim: null, live: false, mapping: false, pacemap: false, substrate: false, mapbasics: false, afmap: false, basics: false, recording: false, csp: false, svt: false, wpw: false, ves: false, practice: null };
   // View state shared with the full-screen view; channel overrides survive clip changes.
   // caliper: user calipers ({ a, b } ms) of `caliperFor`, the recording they were placed on.
-  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links') };
+  const view = { overrides: new Map(), zoom: 1, pan: 0, cursorMs: null, caliperOn: false, caliper: noCaliper(), caliperFor: null, waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links'), impulse: readFlag('impulse', undefined, true) };
 
   const el = (tagName, className) => {
     const node = doc.createElement(tagName);
@@ -305,7 +306,14 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   linksBtn.type = 'button';
   linksBtn.setAttribute('data-ep-links', '');
   linksBtn.addEventListener('click', () => { view.links = !view.links; writeFlag('links', view.links); renderView(); });
-  viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, wavesBtn, ladderBtn, linksBtn, fullBtn);
+  const impulseBtn = el('button', 'ep-size');
+  impulseBtn.type = 'button';
+  impulseBtn.setAttribute('data-ep-impulse', '');
+  impulseBtn.addEventListener('click', () => { view.impulse = !view.impulse; writeFlag('impulse', view.impulse); renderView(); });
+  viewBar.append(channelBox, zoomSelect, panInput, caliperBtn, wavesBtn, ladderBtn, linksBtn, impulseBtn, fullBtn);
+  // The heart that follows the impulse shares the strip cursor (its playback moves the cursor, a click on the strip moves it).
+  const impulse = createImpulseView(doc, { getLang: () => lang, onTime: (ms) => { if (view.caliperOn) return; view.cursorMs = ms; redraw(); showCursor(); } });
+  let impulseFor = null;
   // Ladder diagram under the strip, on the same time axis.
   const ladderCanvas = el('canvas', 'egm-ladder');
   ladderCanvas.setAttribute('role', 'img');
@@ -349,7 +357,10 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const t = stripTime(event);
     if (view.caliperOn) {
       if (t != null) view.caliper = placeCaliper(view.caliper, snapped(t, event));
-    } else view.cursorMs = t == null ? null : Math.round(t);
+    } else {
+      view.cursorMs = t == null ? null : Math.round(t);
+      if (view.cursorMs != null) { impulse.pause(); impulse.setTime(view.cursorMs); }
+    }
     renderView();
   });
   const measures = el('p', 'ep-measures');
@@ -428,7 +439,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   practiceBack.setAttribute('data-ep-practice-back', '');
   practiceBack.addEventListener('click', () => { showView(state.practice === 'ves' ? 'ves' : 'svt'); notifySection(); });
   practiceBar.append(practiceBack);
-  sideCol.append(practiceBar, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
+  sideCol.append(practiceBar, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, impulse.element, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
   root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, mapBasicsPanel.element, afMapPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element, recordingPanel.element, cspPanel.element);
@@ -527,7 +538,27 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
     const show = Boolean(view.ladder && recording && lastDrawn && !ladderLocked());
     ladderCanvas.hidden = !show;
     if (show) drawLadder(ladderCanvas, ladderOf(recording), lastDrawn, { lang });
+    syncImpulse(recording);
     if (fs?.isOpen()) fs.render();
+  }
+
+  // Like the ladder, the impulse names the mechanism: it waits until the reading is open.
+  function syncImpulse(recording) {
+    const show = Boolean(view.impulse && recording && !ladderLocked());
+    impulse.element.hidden = !show;
+    if (!show) { impulse.pause(); return; }
+    if (impulseFor === recording) return;
+    impulseFor = recording;
+    const known = EP_CASES.find((c) => c.id === (recording.caseId || state.caseId));
+    impulse.show({ recording, ladder: ladderOf(recording), mechanism: recording.mechanism || known?.mechanism || null, pathwayZone: known?.pathwayZone || null });
+    if (view.cursorMs != null) impulse.setTime(view.cursorMs);
+  }
+  function showCursor() {
+    const recording = current();
+    if (!recording || view.cursorMs == null) return;
+    const near = eventsNear(recording, view.cursorMs, visibleChannels(recording));
+    const label = (ch) => EP_CHANNELS.find((c) => c.id === ch)?.label || ch;
+    inspect.textContent = `t = ${view.cursorMs} ms${near.length ? `: ${near.slice(0, 6).map((e) => `${label(e.ch)} ${e.type} ${Math.round(e.t)}`).join(' · ')}` : ''}`;
   }
 
   // Case sources: each R number links to its publication, the full citation in the tooltip.
@@ -607,11 +638,12 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
         inspect.textContent = lang === 'en' ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
       }
     }
-    else {
-      const near = eventsNear(recording, view.cursorMs, [...shown]);
-      const label = (ch) => EP_CHANNELS.find((c) => c.id === ch)?.label || ch;
-      inspect.textContent = `t = ${view.cursorMs} ms${near.length ? `: ${near.slice(0, 6).map((e) => `${label(e.ch)} ${e.type} ${Math.round(e.t)}`).join(' · ')}` : ''}`;
-    }
+    else showCursor();
+    impulseBtn.textContent = lang === 'en' ? 'Follow the impulse' : 'Uyarıyı izle';
+    impulseBtn.setAttribute('aria-pressed', String(view.impulse && !locked));
+    impulseBtn.disabled = locked;
+    impulseBtn.title = ladderBtn.title;
+    impulse.render();
     redraw();
   }
 

@@ -424,3 +424,37 @@
 .at-step-caption { margin: 0; font-size: 11.5px; line-height: 1.45; color: #9fd8ff; }
 .at-step-exclusion { margin: 0; font-size: 11.5px; font-weight: 700; color: #fca5a5; }
 
+
+/* Follow the impulse (ep-impulse-view.js): schematic heart beside its steps, synced to the strip time. */
+.impulse-view { display: grid; grid-template-columns: minmax(220px, 330px) minmax(0, 1fr); gap: 12px; align-items: start; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #0e1815; }
+.impulse-heart { display: block; width: 100%; height: auto; }
+.impulse-chamber { fill: #16241f; stroke: #3d5a4f; stroke-width: 1.4; }
+.impulse-vessel { fill: none; stroke: #3d5a4f; stroke-width: 7; stroke-linecap: round; opacity: .7; }
+.impulse-cs { fill: none; stroke: #3d5a4f; stroke-width: 3; stroke-dasharray: 5 4; }
+.impulse-route { fill: none; stroke: rgba(201, 214, 207, .28); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.impulse-route-ap { stroke: rgba(192, 132, 252, .42); stroke-dasharray: 4 3; }
+.impulse-ring { fill: none; stroke: rgba(201, 214, 207, .22); stroke-width: 1.6; stroke-dasharray: 3 4; }
+.impulse-active { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.impulse-head { stroke: #fff; stroke-width: 1; }
+.impulse-block { stroke: #f87171; stroke-width: 3.2; stroke-linecap: round; }
+.impulse-flutter-wake { fill: none; stroke: rgba(251, 191, 36, .75); stroke-width: 4; stroke-linecap: round; }
+.impulse-flutter-head { fill: #fde68a; stroke: #fff; stroke-width: 1; }
+.impulse-node { fill: #fde68a; stroke: #0e1815; stroke-width: 1.2; }
+.impulse-labels text { fill: rgba(215, 245, 228, .62); font: 9px ui-monospace, monospace; pointer-events: none; }
+.impulse-labels .impulse-chamber-label { fill: rgba(215, 245, 228, .32); font-size: 15px; font-weight: 700; }
+.impulse-side { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.impulse-title { margin: 0; font-size: 13px; color: #d7f5e4; }
+.impulse-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.impulse-speed { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); }
+.impulse-caption { margin: 0; min-height: 2.6em; font: 12px/1.35 ui-monospace, monospace; color: #fde68a; }
+.impulse-steps-head { margin: 0; font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+.impulse-steps { margin: 0; padding-left: 20px; display: grid; gap: 2px; color: var(--muted); font-size: 12px; }
+.impulse-step { width: 100%; text-align: left; padding: 3px 6px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #c9d6cf; font-size: 12px; line-height: 1.3; cursor: pointer; }
+.impulse-step:hover { border-color: var(--line); }
+.impulse-step[aria-current=true] { background: rgba(253, 230, 138, .14); border-color: rgba(253, 230, 138, .5); color: #fde68a; }
+.impulse-note { margin: 0; font-size: 11px; color: var(--muted); }
+@media (max-width: 760px) { .impulse-view { grid-template-columns: minmax(0, 1fr); } .impulse-heart { max-width: 360px; margin: 0 auto; } }
+@media (prefers-reduced-motion: reduce) { .impulse-active, .impulse-front { transition: none; } }
+/* Beside the lesson strip the heart sits above its steps. */
+.ep-side .impulse-view { grid-template-columns: minmax(0, 1fr); flex: none; }
+.ep-side .impulse-heart { max-width: 340px; margin: 0 auto; }

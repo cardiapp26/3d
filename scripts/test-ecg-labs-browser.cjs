@@ -39,7 +39,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  assert.equal(await page.locator('[data-channelopathy-atlas]').count(),0,'channelopathy atlas no longer inside chapter 11');
  assert.equal(await page.locator('[data-right-panel]').count(),0,'no right-panel channelopathy tab in the monitor');
  assert.equal(await page.locator('.guyton-tab-ch').count(),0,'no chapter / appendix kickers in the left panel');
- assert.equal(await page.locator('[data-sim-pattern] optgroup[data-sim-cat="channelopathy"] option').count(),11,'11 inherited cardiac channelopathy & genetic syndromes');
+ assert.equal(await page.locator('[data-sim-pattern] optgroup[data-sim-cat="channelopathy"] option').count(),12,'12 inherited cardiac channelopathy & genetic syndromes');
  await page.locator('[data-sim-pattern]').selectOption(await page.locator('[data-sim-pattern] optgroup[data-sim-cat="channelopathy"] option').first().getAttribute('value'));
  assert.equal(await page.locator('#clin-heart-svg-mount .chan-ap-svg').isVisible(),true,'Phase 0-4 Action Potential Channelopathy SVG visible in simulator right panel');
  await page.locator('[data-chan-tab]').click();

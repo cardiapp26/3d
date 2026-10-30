@@ -24,6 +24,36 @@ const assert = require('node:assert/strict');
       assert.equal(await page.locator('[data-svt-mechanism][data-status=possible]').count(), 7);
       assert.ok((await page.locator('[data-svt-interpretation]').textContent()).length > 20);
     }
+    // Follow the impulse: steps of the mechanism, a step moves the strip cursor, play moves both.
+    await page.locator('[data-svt-example-item="avnrt-typ-svt"]').click();
+    const impulse = page.locator('[data-svt-recordings] [data-impulse-view]');
+    assert.ok(await impulse.isVisible());
+    assert.match(await impulse.locator('[data-impulse-steps]').textContent(), /yavaş yoldan aşağı.*Hızlı yoldan yukarı|slow pathway.*fast pathway/s);
+    await impulse.locator('[data-impulse-step="1"]').click();
+    const stepT = Number((await impulse.locator('[data-impulse-caption]').textContent()).match(/t = (\d+)/)[1]);
+    assert.match(await page.locator('[data-svt-inspect]').textContent(), new RegExp(`t = ${stepT} ms`));
+    assert.equal(await impulse.locator('[data-impulse-step="1"]').getAttribute('aria-current'), 'true');
+    assert.ok(await impulse.locator('.impulse-active').count() >= 1, 'a conduction route is drawn at the step');
+    await impulse.locator('[data-impulse-speed]').selectOption('1');
+    await impulse.locator('[data-impulse-play]').click();
+    await page.waitForTimeout(400);
+    await impulse.locator('[data-impulse-play]').click();
+    const played = Number((await page.locator('[data-svt-inspect]').textContent()).match(/t = (\d+)/)[1]);
+    assert.ok(played !== stepT, 'playback moved the strip cursor');
+    assert.match(await impulse.locator('[data-impulse-caption]').textContent(), new RegExp(`t = ${played} ms`));
+    // A click on the strip moves the heart; the pathway shows for an accessory pathway circuit.
+    await page.locator('[data-svt-example-item="ap-ll-svt"]').click();
+    const box = await page.locator('[data-svt-strip]').boundingBox();
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
+    const clicked = Number((await page.locator('[data-svt-inspect]').textContent()).match(/t = (\d+)/)[1]);
+    assert.match(await impulse.locator('[data-impulse-caption]').textContent(), new RegExp(`t = ${clicked} ms`));
+    assert.notEqual(await impulse.locator('.impulse-route-ap').getAttribute('points'), '');
+    await page.locator('[data-svt-example-item="flutter-svt"]').click();
+    await impulse.locator('[data-impulse-step="0"]').click();
+    assert.equal(await impulse.locator('.impulse-flutter-head').count(), 1);
+    await page.locator('[data-svt-display=impulse]').click();
+    assert.equal(await impulse.isVisible(), false);
+    await page.locator('[data-svt-display=impulse]').click();
     await page.locator('[data-svt-example-item="at-microreentry-block"]').click();
     assert.match(await page.locator('[data-svt-measures]').textContent(), /A–A post 300 ms.*V–V post 600 ms.*Fragment span 270 ms/);
     assert.match(await page.locator('[data-svt-localization-source]').getAttribute('href'), /aer.2019.17.2/);
@@ -111,6 +141,6 @@ const assert = require('node:assert/strict');
     assert.match(await page.locator('[data-ep-pvi-energy]').textContent(), /geri dönüşümsüz elektroporasyon/);
     await page.locator('[data-ep-section=svt]').click();
     assert.deepEqual(errors, []);
-    console.log('PASS EPS recordings browser: 41 examples (antidromic AVRT, concealed versus manifest pathway, AV block levels, WCT and scar VT, Mahaim, supernormality), Ector induction and signal definitions, PA/AH/HV, SNRT/cSNRT, PPI/cPPI, localization channels, rendering, findings preservation, toggles, translation, mobile resize, infra-His warning, PFA text');
+    console.log('PASS EPS recordings browser: 41 examples, follow the impulse (steps, strip cursor sync both ways, playback, pathway, flutter ring, toggle) (antidromic AVRT, concealed versus manifest pathway, AV block levels, WCT and scar VT, Mahaim, supernormality), Ector induction and signal definitions, PA/AH/HV, SNRT/cSNRT, PPI/cPPI, localization channels, rendering, findings preservation, toggles, translation, mobile resize, infra-His warning, PFA text');
   } finally { await browser.close(); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });

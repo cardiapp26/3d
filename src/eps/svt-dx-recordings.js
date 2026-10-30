@@ -3,6 +3,7 @@ import { drawEgm, selectableChannels, timeAtX, channelAtY, eventsNear } from './
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, moveCaliper, caliperText } from './ep-user-caliper.js';
 import { buildLadder, inferLadderEvents, drawLadder, LADDER_STYLE } from './ep-ladder.js';
 import { stripLinks } from './ep-strip-links.js';
+import { createImpulseView } from './ep-impulse-view.js';
 import { EP_CLIP_TEXT } from './ep-case-text.js';
 import { AVRT_LOCALIZATIONS, AVRT_LOCALIZATION_SOURCE, avrtLocalizationRecording } from './svt-avrt-localizations.js';
 import { STANDARD_EPS_EXAMPLES, STANDARD_EPS_TEXT, standardEpsRecording, standardEpsMeasurements } from './eps-standard-recordings.js';
@@ -66,7 +67,7 @@ export function createSvtRecordings(doc, getLang) {
     const o = el('option'); o.value = id; select.append(o); return o;
   });
   const controls = el('div', 'amap-toggles');
-  const flags = { waves: true, links: true, ladder: true };
+  const flags = { waves: true, links: true, ladder: true, impulse: true };
   let id = SVT_EXAMPLES[0][0], active = false, lastAxis = null, caliperOn = false, caliper = noCaliper(), cursorMs = null;
   const buttons = Object.keys(flags).map((key) => {
     const b = el('button', 'amap-toggle');
@@ -82,6 +83,9 @@ export function createSvtRecordings(doc, getLang) {
     render();
   });
   controls.append(caliperBtn);
+  // The heart that follows the impulse shares the strip cursor: its playback moves the cursor, a click on the strip moves the heart.
+  const impulse = createImpulseView(doc, { getLang, onTime: (ms) => { if (caliperOn) return; cursorMs = ms; draw(); showInspect(); } });
+  let impulseFor = null;
   const scroll = el('div', 'svt-recording-scroll');
   const strip = el('canvas', 'svt-recording-strip', 'data-svt-strip');
   const ladderCanvas = el('canvas', 'egm-ladder', 'data-svt-ladder');
@@ -112,7 +116,7 @@ export function createSvtRecordings(doc, getLang) {
   const main = el('div', 'svt-recording-main');
   const layout = el('div', 'svt-recording-layout');
   label.append(labelText, select); scroll.append(strip, ladderCanvas);
-  main.append(label, controls, scroll, inspect, readout, interpretation, stages, legend, source, note);
+  main.append(label, controls, impulse.element, scroll, inspect, readout, interpretation, stages, legend, source, note);
   layout.append(list, main);
   root.append(title, layout);
   select.value = id;
@@ -125,12 +129,13 @@ export function createSvtRecordings(doc, getLang) {
   function data() {
     if (!cache.has(id)) {
       const recording = svtExampleRecording(id);
-      const mechanism = recording.mechanism || EP_CASES.find((c) => c.id === recording.caseId)?.mechanism;
+      const known = EP_CASES.find((c) => c.id === recording.caseId);
+      const mechanism = recording.mechanism || known?.mechanism;
       const ladder = buildLadder(inferLadderEvents(recording.events, { mechanism }), { until: recording.windowMs });
       const available = selectableChannels(recording);
       const channels = recording.preserveChannelOrder
         ? [...recording.channels, ...available.filter((ch) => !recording.channels.includes(ch))] : available;
-      cache.set(id, { recording, ladder, links: stripLinks(recording.events, ladder), channels });
+      cache.set(id, { recording, ladder, links: stripLinks(recording.events, ladder), channels, mechanism, pathwayZone: known?.pathwayZone || null });
     }
     return cache.get(id);
   }
@@ -170,7 +175,10 @@ export function createSvtRecordings(doc, getLang) {
     const t = stripTime(event);
     if (caliperOn) {
       if (t != null) caliper = placeCaliper(caliper, snapped(t, event));
-    } else cursorMs = t == null ? null : Math.round(t);
+    } else {
+      cursorMs = t == null ? null : Math.round(t);
+      if (cursorMs != null) { impulse.pause(); impulse.setTime(cursorMs); }
+    }
     render();
   });
   function draw() {
@@ -199,19 +207,16 @@ export function createSvtRecordings(doc, getLang) {
     });
     buttons.forEach((b, i) => {
       const key = Object.keys(flags)[i];
-      b.textContent = (en ? ['Wave names', 'Ladder on channels', 'Ladder diagram'] : ['Dalga adları', 'Kanalda ladder', 'Ladder diyagram'])[i];
+      b.textContent = (en ? ['Wave names', 'Ladder on channels', 'Ladder diagram', 'Follow the impulse'] : ['Dalga adları', 'Kanalda ladder', 'Ladder diyagram', 'Uyarıyı izle'])[i];
       b.setAttribute('aria-pressed', String(flags[key]));
     });
     caliperBtn.textContent = en ? 'Calipers' : 'Kaliper';
     caliperBtn.setAttribute('aria-pressed', String(caliperOn));
-    const { recording, channels } = data();
-    if (caliperOn) inspect.textContent = caliperText(caliper, en ? 'en' : 'tr');
-    else if (cursorMs == null) inspect.textContent = en ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
-    else {
-      const near = eventsNear(recording, cursorMs, channels);
-      const chLabel = (ch) => EP_CHANNELS.find((c) => c.id === ch)?.label || ch;
-      inspect.textContent = `t = ${cursorMs} ms${near.length ? `: ${near.slice(0, 6).map((e) => `${chLabel(e.ch)} ${e.type} ${Math.round(e.t)}`).join(' · ')}` : ''}`;
-    }
+    const { recording, ladder, channels, mechanism, pathwayZone } = data();
+    showInspect();
+    impulse.element.hidden = !flags.impulse;
+    if (!flags.impulse) impulse.pause();
+    if (impulseFor !== id) { impulseFor = id; impulse.show({ recording, ladder, mechanism, pathwayZone }); } else impulse.render();
     root.setAttribute('data-recording', id);
     strip.setAttribute('aria-label', `${options[SVT_EXAMPLES.findIndex((e) => e[0] === id)].textContent}: ${channels.join(', ')}`);
     ladderCanvas.setAttribute('aria-label', en ? 'A, AV and V conduction ladder' : 'A, AV ve V iletim ladder diyagramı');
@@ -239,7 +244,18 @@ export function createSvtRecordings(doc, getLang) {
       : 'Sentetik öğretim kayıtları. Normal EPS örnekleri ölçüm içindir; aşağıdaki SVT bulguları taşikardiye uygulanır. Burada SNRT, sinüs nodu toparlanma süresidir; sinüs nodu reentran taşikardisi değildir. Örnek seçimi bulguları değiştirmez. Ladder yolları örneğin bilinen mekanizmasını gösterir.';
     draw();
   }
+  function showInspect() {
+    const en = getLang() === 'en';
+    const { recording, channels } = data();
+    if (caliperOn) inspect.textContent = caliperText(caliper, en ? 'en' : 'tr');
+    else if (cursorMs == null) inspect.textContent = en ? 'Click the strip to inspect a moment.' : 'Bir anı incelemek için şeride tıklayın.';
+    else {
+      const near = eventsNear(recording, cursorMs, channels);
+      const chLabel = (ch) => EP_CHANNELS.find((c) => c.id === ch)?.label || ch;
+      inspect.textContent = `t = ${cursorMs} ms${near.length ? `: ${near.slice(0, 6).map((e) => `${chLabel(e.ch)} ${e.type} ${Math.round(e.t)}`).join(' · ')}` : ''}`;
+    }
+  }
   const Resize = doc.defaultView?.ResizeObserver;
   if (Resize) new Resize(draw).observe(root);
-  return { element: root, render, setActive(flag) { active = Boolean(flag); if (active) render(); } };
+  return { element: root, render, impulse, setActive(flag) { active = Boolean(flag); if (active) render(); else impulse.pause(); } };
 }

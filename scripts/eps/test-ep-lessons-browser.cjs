@@ -42,7 +42,17 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     const ladderBtn = page.locator('[data-ep-ladder]');
     await page.locator('[data-ep-evidence]').click();   // back to the neutral view
     assert.equal(await ladderBtn.isDisabled(), true, 'ladder locked in the neutral diagnosis');
+    // The impulse heart names the mechanism too: hidden while neutral, beside the strip once open.
+    const heart = page.locator('.ep-side [data-impulse-view]');
+    assert.equal(await page.locator('[data-ep-impulse]').isDisabled(), true, 'impulse locked in the neutral diagnosis');
+    assert.equal(await heart.isVisible(), false);
     await page.locator('[data-ep-evidence]').click();
+    assert.equal(await heart.isVisible(), true, 'impulse heart once the reading is open');
+    assert.match(await heart.locator('[data-impulse-steps]').textContent(), /yavaş yoldan aşağı/);
+    await heart.locator('[data-impulse-step="2"]').click();
+    const hT = (await heart.locator('[data-impulse-caption]').textContent()).match(/t = (\d+)/)[1];
+    assert.match(await page.locator('.ep-strip .ep-inspect').textContent(), new RegExp(`t = ${hT} ms`), 'step moves the strip cursor');
+    assert.ok(await page.evaluate(() => document.scrollingElement.scrollTop === 0), 'no page scroll from the heart');
     await ladderBtn.click();
     assert.equal(await page.locator('[data-ep-ladder-canvas]').isVisible(), true, 'ladder under the strip once the reading is open');
     const lb = await page.locator('[data-ep-ladder-canvas]').boundingBox(), sb = await page.locator('.egm-canvas').boundingBox();
@@ -158,7 +168,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('.ep-lesson').isHidden(), true);
     assert.equal(await page.locator('[data-ep-live]').isVisible(), true);
     assert.deepEqual(errors, []);
-    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder locked until the reading, ladder on the channels, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), pace map tab (source, click, scar sinus vs VT, warnings, match map), EGM basics tab (QS, filter, catheter, HV limit, block level, AH jump), TR/EN, live tab');
+    console.log('PASS ep-lessons-browser: hash tab, strip + side layout, neutral diagnosis then evidence zone, ladder and impulse heart locked until the reading, step to strip cursor, ladder on the channels, delivered maneuver, treatment zone on the schematic, full-screen strip, activation mapping tab (focal, Y > X, De Ponti, region, truth), pace map tab (source, click, scar sinus vs VT, warnings, match map), EGM basics tab (QS, filter, catheter, HV limit, block level, AH jump), TR/EN, live tab');
   } finally {
     await browser.close();
   }

@@ -1,0 +1,54 @@
+/* Chapter labs of the ECG page (Cell, Recording, QT): controls, readouts and ECG-paper canvases.
+   They sit inside .guyton-card and follow the studio's navy and cyan theme. */
+.ecgc-lab { gap: 12px; }
+.ecgc-head h3 { margin: 0; }
+.ecgc-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 16px; align-items: end; }
+.ecgc-field { display: grid; gap: 4px; min-width: 0; }
+.ecgc-label, .ecgc-range > span { font-size: 11px; color: #94a3b8; letter-spacing: .02em; }
+.ecgc-seg { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid rgba(56, 189, 248, .2); border-radius: 8px; background: rgba(2, 6, 23, .5); }
+.ecgc-seg button { flex: 1 1 auto; min-height: 30px; padding: 4px 10px; border: 0; border-radius: 6px; background: transparent; color: #cbd5e1; font: inherit; font-size: 12px; cursor: pointer; }
+.ecgc-seg button:hover { background: rgba(56, 189, 248, .1); }
+.ecgc-seg button[aria-pressed=true] { background: #0ea5e9; color: #04131f; font-weight: 650; }
+.ecgc-range { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
+.ecgc-range > span { grid-column: 1 / -1; }
+.ecgc-range input { width: 100%; accent-color: #38bdf8; }
+.ecgc-range output { font: 600 12px ui-monospace, monospace; color: #e2e8f0; min-width: 64px; text-align: right; }
+.ecgc-checks { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.ecgc-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #cbd5e1; }
+.ecgc-check input { accent-color: #38bdf8; }
+.ecgc-explain { margin: 0; padding: 8px 12px; border-left: 3px solid #38bdf8; background: rgba(14, 165, 233, .08); border-radius: 0 6px 6px 0; color: #e2e8f0; font-size: 13px; }
+.ecgc-note { margin: 0; color: #94a3b8; font-size: 11px; }
+.ecgc-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 10px; }
+.ecgc-stack { display: grid; gap: 10px; grid-template-rows: 1fr auto; }
+.ecgc-canvas { width: 100%; height: 220px; display: block; border-radius: 8px; border: 1px solid rgba(56, 189, 248, .14); }
+.ecgc-tall { height: 340px; }
+.ecgc-short { height: 120px; }
+.ecgc-page { height: 360px; }
+.ecgc-beat { height: 200px; }
+.ecgc-qt-table { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; }
+.ecgc-qt-cell { display: grid; gap: 1px; padding: 6px 10px; border: 1px solid rgba(56, 189, 248, .16); border-radius: 8px; background: rgba(2, 6, 23, .45); }
+.ecgc-qt-cell span { font-size: 10px; color: #94a3b8; }
+.ecgc-qt-cell strong { font: 650 15px ui-monospace, monospace; color: #f1f5f9; }
+.ecgc-qt-cell em { font-style: normal; font-size: 10px; font-weight: 700; }
+.ecgc-qt-cell[data-grade=normal] em { color: #34d399; }
+.ecgc-qt-cell[data-grade=long] { border-color: rgba(251, 191, 36, .55); } .ecgc-qt-cell[data-grade=long] em { color: #fbbf24; }
+.ecgc-qt-cell[data-grade=high] { border-color: rgba(248, 113, 113, .6); } .ecgc-qt-cell[data-grade=high] em { color: #f87171; }
+@media (max-width: 860px) {
+  .ecgc-grid { grid-template-columns: minmax(0, 1fr); }
+  .ecgc-page { height: 300px; }
+  .ecgc-tall { height: 280px; }
+}
+/* Criteria lists (atrial abnormality, hypertrophy) and the NBG code (pacing). */
+.ecgc-criteria { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px; }
+.ecgc-crit-group { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid rgba(56, 189, 248, .16); border-radius: 8px; background: rgba(2, 6, 23, .45); font-size: 12px; color: #94a3b8; }
+.ecgc-crit-group > strong { color: #e2e8f0; font-size: 12px; }
+.ecgc-crit-group[data-met=true] { border-color: rgba(251, 191, 36, .55); }
+.ecgc-crit-group [data-met=true], .ecgc-crit-row[data-met=true] span { color: #fbbf24; }
+.ecgc-crit-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; padding: 7px 10px; border: 1px solid rgba(56, 189, 248, .16); border-radius: 8px; background: rgba(2, 6, 23, .45); font-size: 12px; color: #cbd5e1; }
+.ecgc-crit-row strong { font: 600 12px ui-monospace, monospace; color: #f1f5f9; white-space: nowrap; }
+.ecgc-crit-row[data-met=true] { border-color: rgba(251, 191, 36, .55); }
+.ecgc-nbg { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.ecgc-nbg-cell { display: grid; justify-items: center; gap: 2px; padding: 6px 4px; border: 1px solid rgba(56, 189, 248, .16); border-radius: 8px; background: rgba(2, 6, 23, .45); text-align: center; }
+.ecgc-nbg-cell strong { font: 700 22px ui-monospace, monospace; color: #38bdf8; }
+.ecgc-nbg-cell span { font-size: 10px; color: #94a3b8; }
+@media (max-width: 560px) { .ecgc-nbg { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
