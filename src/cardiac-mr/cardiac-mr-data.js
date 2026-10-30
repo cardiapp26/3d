@@ -6,7 +6,7 @@ export const SOURCE_URL = 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7038611/';
 export const UI = {
   tr: {
     title: 'Kardiyak MR', eyebrow: 'GÖRÜNTÜLEME ÇALIŞMA ALANI',
-    intro: 'SCMR 2020 standart protokolüne göre düzlem planlama, standart kesitler ve temel sekanslar.',
+    intro: 'Gerçek hasta sinema MR vakaları (ACDC) ile SCMR 2020 standart protokolüne göre düzlem planlama, standart kesitler ve temel sekanslar.',
     badge: 'Özgün eğitim şeması',
     planningTitle: 'Düzlem planlama', planningSteps: 'Planlama adımları',
     sourceImg: 'Kaynak görüntü', resultImg: 'Elde edilen kesit', step: 'Adım',
@@ -17,7 +17,7 @@ export const UI = {
     sequencesTitle: 'Sekanslar', sequencesGroup: 'Sekans seçimi',
     purpose: 'Amaç', how: 'Ne zaman ve nasıl', measures: 'Ne ölçer', pitfall: 'Tuzak',
     illustrative: 'Şematik örnek; ölçüm değildir',
-    disclaimer: 'Şemalar hasta MR görüntüsü değildir ve ölçüm ya da tanı üretmez. Sekans seçimi hasta görüntüsü sentezlemez; her sekans için yalnızca özgün bir öğretim şeması gösterilir. Gösterilen sayılar şemadan hesaplanan örneklerdir.',
+    disclaimer: 'Şemalar hasta MR görüntüsü değildir ve ölçüm ya da tanı üretmez. Sekans seçimi hasta görüntüsü sentezlemez; her sekans için yalnızca özgün bir öğretim şeması gösterilir. Gösterilen sayılar şemadan hesaplanan örneklerdir. Gerçek sinema MR bölümündeki görüntüler ise ACDC veri setinden gerçek, anonim hasta görüntüleridir; ölçümler uzman konturlarından hesaplanır ve tanı amaçlı değildir.',
     sourceTitle: 'Kaynak', reference: 'Kramer CM, ve ark. Standart kardiyovasküler MR protokolleri: 2020 güncellemesi. J Cardiovasc Magn Reson 2020;22:17',
     protocolNote: 'Normal değer aralıkları ve kantitatif perfüzyon ayrı SCMR belgelerinde ele alınır; 2025 SCMR belgeleri bu protokolün yerini almaz.',
     reset: 'Başlangıca dön', stack: 'SAX yığını', longAxis: 'Uzun eksen', lvCentre: 'LV merkezi', avCentre: 'Aort kapağı merkezi',
@@ -25,7 +25,7 @@ export const UI = {
   },
   en: {
     title: 'Cardiac MR', eyebrow: 'IMAGING WORKSPACE',
-    intro: 'Plane planning, standard views and core sequences following the SCMR 2020 standardized protocols.',
+    intro: 'Real patient cine MR cases (ACDC) plus plane planning, standard views and core sequences following the SCMR 2020 standardized protocols.',
     badge: 'Original teaching schematic',
     planningTitle: 'Plane planning', planningSteps: 'Planning steps',
     sourceImg: 'Source image', resultImg: 'Resulting view', step: 'Step',
@@ -36,7 +36,7 @@ export const UI = {
     sequencesTitle: 'Sequences', sequencesGroup: 'Sequence selection',
     purpose: 'Purpose', how: 'When and how', measures: 'What it measures', pitfall: 'Pitfall',
     illustrative: 'Illustrative schematic; not a measurement',
-    disclaimer: 'Schematics are not patient MR images and produce no measurements or diagnoses. Selecting a sequence does not synthesize patient images; each sequence shows only an original teaching schematic. Numbers shown are examples computed from the schematic.',
+    disclaimer: 'Schematics are not patient MR images and produce no measurements or diagnoses. Selecting a sequence does not synthesize patient images; each sequence shows only an original teaching schematic. Numbers shown are examples computed from the schematic. The images in the real cine MR section are real, anonymised patient images from the ACDC dataset; measurements are computed from the expert contours and are not for diagnosis.',
     sourceTitle: 'Source', reference: 'Kramer CM, et al. Standardized cardiovascular magnetic resonance imaging (CMR) protocols: 2020 update. J Cardiovasc Magn Reson 2020;22:17',
     protocolNote: 'Reference ranges and quantitative perfusion are covered by separate SCMR documents; the 2025 SCMR documents do not replace this protocol.',
     reset: 'Reset workspace', stack: 'SAX stack', longAxis: 'Long axis', lvCentre: 'LV centre', avCentre: 'Aortic valve centre',

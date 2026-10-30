@@ -78,7 +78,7 @@ export const HOME_MODULES = Object.freeze([
     id: 'cardiac-mr', domain: 'imaging', path: './cardiac-mr/', thumb: 'cardiac-mr', badge: 'new',
     kicker: w('Kardiyovasküler manyetik rezonans', 'Cardiovascular magnetic resonance'),
     name: w('Kardiyak MR', 'Cardiac MR'),
-    points: [w('Kısa ve uzun eksen düzlemleri', 'Short- and long-axis planes'), w('Cine, LGE, haritalama, akım ve perfüzyon', 'Cine, LGE, mapping, flow and perfusion')]
+    points: [w('Gerçek hasta sinema MR\'ı: 5 ACDC vakası, EF ve kütle', 'Real patient cine MR: 5 ACDC cases, EF and mass'), w('Düzlem planlama, LGE, haritalama, akım ve perfüzyon', 'Plane planning, LGE, mapping, flow and perfusion')]
   },
   {
     id: 'ct', domain: 'imaging', path: './ct/', thumb: 'ct', badge: 'new',

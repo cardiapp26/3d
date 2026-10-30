@@ -3,11 +3,23 @@
  * reads the current lead position, so a turn of the helix shows in the next beat. Pure data
  * plus one drawing function; the caller owns the animation frame.
  */
+import { paramsOf, P_LEAD_GAINS, pWaveAt, DISSOCIATED_RHYTHMS, ATRIAL_RATE } from './csp-model.mjs';
+
 export const CHANNELS = Object.freeze(['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'TIP', 'COI']);
 export const LAYOUTS = Object.freeze({ all: CHANNELS, focus: ['II', 'III', 'V1', 'V6', 'TIP', 'COI'] });
 export const SPEEDS = Object.freeze({ 25: 6000, 50: 3000, 100: 1500 });   // mm/s -> window (ms)
 const ERASE_MS = 50;
 const STIM_MS = 50;              // the model's stimulus sits 50 ms into its 0-500 ms beat
+const ATRIAL_MS = 60000 / ATRIAL_RATE;
+const P_CENTRE_MS = 40;          // P wave centre within each atrial cycle
+
+/** Complete heart block: the sinus node keeps firing, so P waves march through at their own rate. */
+const dissociated = beat => Boolean(beat?.result?.state) && DISSOCIATED_RHYTHMS.includes(paramsOf(beat.result.state).rhythm);
+/** Dissociated atrial P wave in a channel at recorder time t (ms); 0 for the EGM rows. */
+export function atrialAt(id, t) {
+  const gain = P_LEAD_GAINS[id];
+  return gain ? gain * pWaveAt((t % ATRIAL_MS) - P_CENTRE_MS) : 0;
+}
 
 /**
  * Beat as sampled channels (1 kHz) from a csp-model result. `stimulus: false` removes the
@@ -41,8 +53,8 @@ export function advance(recorder, dt, nextBeat) {
       recorder.beats++;
       if (recorder.beat.kind === 'paced') recorder.last = recorder.beat;
     }
-    const i = t - recorder.beatStart, slot = t % recorder.window;
-    for (const id of CHANNELS) recorder.buffers[id][slot] = recorder.beat.channels[id][i] || 0;
+    const i = t - recorder.beatStart, slot = t % recorder.window, atria = dissociated(recorder.beat);
+    for (const id of CHANNELS) recorder.buffers[id][slot] = (recorder.beat.channels[id][i] || 0) + (atria ? atrialAt(id, t) : 0);
   }
   recorder.time = end;
   return recorder;

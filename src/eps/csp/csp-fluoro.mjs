@@ -1,5 +1,8 @@
-/** Schematic fluoroscopy for the CSP implant console (original drawings, not CT or physics-based
- * X-ray). RAO 30: the His-apex line, where the lead tip is dragged to choose the septal level.
+/** Fluoroscopy for the CSP implant console. Preferred: live fluoroscopy of a real chest CT at any
+ * C-arm angle (csp-ct-xray.mjs), sheath and lead placed in that heart. Until the CT is ready (or
+ * without WebGL2), RAO 30 and LAO 40 are the app's 3D atlas under fluoroscopy
+ * (scripts/eps/render-csp-fluoro.cjs, csp-xray.mjs); without images, schematic drawings stand in.
+ * RAO 30: the His-apex line, where the lead tip is dragged to choose the septal level.
  * LAO 40: the septum seen end-on, the sheath angle to it and the lead going into it.
  * Septal section (instructor): the lead depth against the septal thickness and the left bundle.
  *
@@ -8,6 +11,8 @@
  * a contrast puff and an LAO angle badge against the heart's ideal sheath angle complete it.
  */
 import { offsetOf, thicknessOf, mmFromHis, anatomyOf, relAngle, idealAngleOf } from './csp-procedure.mjs';
+import { leadPose, project, landmarksOn, levelAtImage, septalSite } from './csp-xray.mjs';
+import { levelAtImage as ctLevelAtImage } from './csp-ct-xray.mjs';
 
 export const FPS = 7.5;
 const AUTO_MS = 1500;         // auto-fluoro screens this long after a movement
@@ -49,8 +54,26 @@ export function tickFluoro(fx, now, dt, proc) {
 }
 export const contrastOf = (fx, now) => Math.max(0, Math.min(1, (fx.contrastUntil - now) / CONTRAST_MS));
 
-/** Level (0 His .. 1 apex) for a pointer at (x, y) in a w x h RAO canvas. */
-export function levelAt(x, y, w, h) {
+/** Atlas fluoroscopy images (RAO, LAO); `ready()` is true once both decoded. Browser only. */
+export function loadAtlasImages(doc, onLoad = () => {}) {
+  const images = {};
+  for (const view of ['rao', 'lao']) {
+    const img = doc.createElement('img');
+    img.decoding = 'async'; img.addEventListener('load', onLoad);
+    img.src = new URL(`../assets/csp-fluoro-${view}.webp`, import.meta.url).href;
+    images[view] = img;
+  }
+  return { images, ready: () => Object.values(images).every(i => i.complete && i.naturalWidth > 0) };
+}
+const atlasImage = (opts, view) => { const img = opts.images?.[view]; return img && img.complete && img.naturalWidth > 0 ? img : null; };
+
+/**
+ * Level (0 His .. 1 apex) for a pointer at (x, y) in a w x h canvas: on the CT septum when `mode`
+ * is a C-arm angle, on the atlas RAO septum when true, on the schematic RAO line otherwise.
+ */
+export function levelAt(x, y, w, h, mode = false) {
+  if (typeof mode === 'number') return ctLevelAtImage(mode, x / w, y / h);
+  if (mode) return levelAtImage('rao', x / w, y / h);
   const a = [RAO.his[0] * w, RAO.his[1] * h], b = [RAO.apex[0] * w, RAO.apex[1] * h];
   const dx = b[0] - a[0], dy = b[1] - a[1];
   return Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy)));
@@ -182,6 +205,93 @@ function drawLao(ctx, w, h, proc, opts) {
   hud(ctx, w, h, 'LAO 40°', fx, text);
 }
 
+/** A smooth curve through points (Catmull-Rom as cubic Beziers). */
+function smooth(ctx, pts) {
+  ctx.beginPath(); ctx.moveTo(...pts[0]);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    ctx.bezierCurveTo(p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]);
+  }
+  ctx.stroke();
+}
+function grain(ctx, w, h) {
+  ctx.fillStyle = 'rgba(255, 255, 255, .1)';
+  for (let i = 0; i < GRAIN * 2; i++) ctx.fillRect(Math.random() * w, Math.random() * h, 1.2, 1.2);
+  ctx.fillStyle = 'rgba(0, 0, 0, .12)';
+  for (let i = 0; i < GRAIN * 2; i++) ctx.fillRect(Math.random() * w, Math.random() * h, 1.2, 1.2);
+}
+/** The atlas geometry (fixed RAO 30 or LAO 40 images) in the interface drawXray uses. */
+function atlasGeometry(view) {
+  return { label: view === 'rao' ? 'RAO 30°' : 'LAO 40°', lao: view === 'lao', atlas: true, project: p => project(view, p), landmarks: () => landmarksOn(view), leadPose, septalSite };
+}
+/** A fluoroscopy image (CT or atlas) with the sheath and lead projected from their 3D position. */
+function drawXray(ctx, w, h, geo, proc, opts, img) {
+  const { fx, text } = opts;
+  const L = geo.landmarks(), px = p => [p[0] * w, p[1] * h];
+  const depth = fx ? fx.shownDepth : proc.depthMm, rel = relAngle(proc);
+  const pose = geo.leadPose({ level: proc.level, rel, depthRatio: depth / thicknessOf(proc) });
+  ctx.save();
+  // Heartbeat and breathing move the whole field (image and lead together).
+  const c = px(L.centre), k = pulse(fx), breath = fx?.live ? Math.sin((fx.seconds * Math.PI * 2) / 4.2) * h * .006 : 0;
+  ctx.translate(c[0], c[1] + breath); ctx.scale(k, k); ctx.translate(-c[0], -c[1]);
+  if (geo.atlas) ctx.filter = 'contrast(1.45) brightness(.9)';
+  ctx.drawImage(img, 0, 0, w, h);
+  ctx.filter = 'none';
+  if (opts.contrast > 0 && L.rvHull) {   // the CT image carries its own contrast puff   // contrast puff: the RV blood pool outlines the septum
+    ctx.fillStyle = `rgba(18, 20, 22, ${.5 * opts.contrast})`;
+    ctx.beginPath(); L.rvHull.forEach((p, i) => (i ? ctx.lineTo(...px(p)) : ctx.moveTo(...px(p)))); ctx.closePath(); ctx.fill();
+  }
+  if (opts.guides) {
+    ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(255, 226, 140, .75)'; ctx.lineWidth = 1.2;
+    if (!geo.lao) smooth(ctx, L.septalLine.map(px));
+    else {   // LAO: the septal normal at the site, the line the sheath should follow
+      const a = px(geo.project(pose.approach)), b = px(geo.project(geo.septalSite(proc.level).lv));
+      ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(b[0] + (b[0] - a[0]) * .6, b[1] + (b[1] - a[1]) * .6); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    const his = px(L.his);
+    ctx.fillStyle = '#ffe28c'; ctx.beginPath(); ctx.arc(...his, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.font = '600 10px system-ui, sans-serif'; ctx.fillText('His', his[0] + 7, his[1] - 5);
+    if (!geo.lao) { const apex = px(L.apex); ctx.fillText(text.apex, apex[0] + 6, apex[1] + 4); }
+  }
+  if (opts.target) {
+    const { lbb } = anatomyOf(proc), zone = [lbb - .08, lbb - .04, lbb, lbb + .04, lbb + .08].map(l => px(geo.project(geo.septalSite(l).rv)));
+    ctx.strokeStyle = 'rgba(90, 169, 230, .55)'; ctx.lineWidth = 9; ctx.lineCap = 'round'; smooth(ctx, zone);
+  }
+  // Sheath (wide, faint) to its end in the RV, then the lead to the tip with ring and tip electrodes.
+  const path = pose.path.map(p => px(geo.project(p))), tip = px(geo.project(pose.tip)), ring = px(geo.project(pose.ring));
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(28, 30, 31, .5)'; ctx.lineWidth = 7; smooth(ctx, path);
+  ctx.strokeStyle = 'rgba(12, 13, 14, .85)'; ctx.lineWidth = 2.6; smooth(ctx, [...path, tip]);
+  ctx.fillStyle = '#0c0d0e';
+  ctx.beginPath(); ctx.arc(...path.at(-1), 3.2, 0, Math.PI * 2); ctx.fill();   // sheath marker band
+  ctx.beginPath(); ctx.arc(...ring, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(...tip, 3.6, 0, Math.PI * 2); ctx.fill();
+  spinMark(ctx, tip, opts.spin);
+  ctx.restore();
+  if (fx?.live) grain(ctx, w, h);
+  // Collimator: the round field darkens toward its edge.
+  const v = ctx.createRadialGradient(w / 2, h / 2, w * .36, w / 2, h / 2, w * .72);
+  v.addColorStop(0, 'rgba(0, 0, 0, 0)'); v.addColorStop(1, 'rgba(0, 0, 0, .55)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#f4f1e6'; ctx.font = '600 11px ui-monospace, monospace';
+  if (!geo.lao) {
+    ctx.fillText(`${mmFromHis(proc)} mm ${text.fromHis}`, 10, h - 12);
+    if (proc.depthMm <= .05) { ctx.fillStyle = 'rgba(244, 241, 230, .8)'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(text.drag, 10, h - 28); }
+  } else {
+    ctx.fillText(`${text.angle}: ${Math.round(proc.sheath)}°`, 10, h - 12);
+    if (opts.badge) badge(ctx, w, h, proc, text);
+  }
+  hud(ctx, w, h, geo.label, fx, text);
+}
+function badge(ctx, w, h, proc, text) {
+  const off = Math.abs(relAngle(proc)), tone = off <= 10 ? 'ok' : off <= 20 ? 'warn' : 'bad';
+  ctx.fillStyle = { ok: 'rgba(47, 143, 92, .85)', warn: 'rgba(128, 106, 31, .9)', bad: 'rgba(132, 52, 44, .9)' }[tone];
+  ctx.fillRect(8, h - 46, w - 16, 20);
+  ctx.fillStyle = '#f4f1e6'; ctx.font = '600 10px ui-monospace, monospace';
+  ctx.fillText(`${text.ideal} ${idealAngleOf(proc)}°  ·  ${text.badge[tone]}`, 14, h - 32);
+}
+
 function drawSection(ctx, w, h, proc, opts) {
   ctx.fillStyle = '#0b0e12'; ctx.fillRect(0, 0, w, h);
   const left = w * .22, right = w * .78, top = h * .1, bottom = h * .86;
@@ -212,11 +322,15 @@ function drawSection(ctx, w, h, proc, opts) {
 
 /**
  * @param {'rao'|'lao'|'septum'} view
- * @param {object} opts { guides, target, badge, contrast (0..1), spin (helix phase in turns, or null), fx: { live, seconds, shownDepth } | null, text }
+ * @param {object} opts { guides, target, badge, contrast (0..1), spin (helix phase in turns, or null), images (loadAtlasImages),
+ *   ct: { image, geo } (a CT fluoroscopy canvas and its csp-ct-xray ctGeometry) | null, fx: { live, seconds, shownDepth } | null, text }
  */
 export function drawFluoro(ctx, w, h, view, proc, opts) {
-  const o = { contrast: 0, fx: null, badge: false, spin: null, ...opts };
+  const o = { contrast: 0, fx: null, badge: false, spin: null, ct: null, ...opts };
+  const img = view === 'septum' || o.ct?.image ? null : atlasImage(o, view);
   if (view === 'septum') drawSection(ctx, w, h, proc, o);
+  else if (o.ct?.image) drawXray(ctx, w, h, o.ct.geo, proc, o, o.ct.image);
+  else if (img) drawXray(ctx, w, h, atlasGeometry(view), proc, o, img);
   else if (view === 'lao') drawLao(ctx, w, h, proc, o);
   else drawRao(ctx, w, h, proc, o);
 }

@@ -10,6 +10,8 @@ import { trendDelta } from './csp-trends.mjs';
 const SITE_HALF_MM = 6;     // acceptable distance from the left bundle level along the His-apex line
 const SHEATH_MAX = 25;      // degrees from the septal normal that still engage
 const MAX_ITEMS = 6;
+const PACE_MAP_QRS_MAX = 175;
+const IMPEDANCE_FALL_STEP = 40;   // ohm per turn: a falling impedance after the rise, the tip near the LV side   // ms: a septal pace map from the RV side; the free wall is wider
 
 const item = (tone, key, params = {}) => ({ tone, key, params });
 const sign = v => (v > .15 ? '+' : v < -.15 ? '−' : '±');
@@ -37,7 +39,7 @@ function beforeFixation(proc, result, list) {
   const qrs = result.metrics.qrsDuration;
   if (qrs != null) {
     const params = { qrs: round(qrs), ii: polarity(result, 'II'), iii: polarity(result, 'III') };
-    items.push(item(offset === 0 && qrs < 160 ? 'ok' : 'check', 'paceMap', params));
+    items.push(item(offset === 0 && qrs < PACE_MAP_QRS_MAX ? 'ok' : 'check', 'paceMap', params));
   }
   const ready = items.every(i => i.tone === 'ok');
   items.push(item('next', ready ? 'nextRotate' : 'nextFix'));
@@ -52,8 +54,9 @@ function afterFixation(proc, result, list, test, trend) {
   if (depth && depth.delta < .3) items.push(item('check', 'noProgress', { angle: Math.round(proc.sheath) }));
   const imp = trendDelta(trend, 'impedance');
   if (imp && imp.delta < -100) items.push(item('check', 'impedanceDrop', { from: round(imp.from), to: round(imp.to) }));
+  else if (imp && imp.delta <= -IMPEDANCE_FALL_STEP) items.push(item('check', 'impedanceFalling', { from: round(imp.from), to: round(imp.to) }));
   else if (imp) items.push(item('ok', 'impedanceTrend', { from: round(imp.from), to: round(imp.to) }));
-  if (ratio > .5 && m.coi < CUTOFFS.coiMin) items.push(item('check', 'coiLow', { coi: round(m.coi, 1) }));
+  if (ratio > CUTOFFS.coiFromRatio && m.coi < CUTOFFS.coiMin) items.push(item('check', 'coiLow', { coi: round(m.coi, 1) }));
   else items.push(item('ok', 'coi', { coi: round(m.coi, 1) }));
   const status = id => list.find(c => c.id === id)?.status;
   const v6 = trendDelta(trend, 'v6Rwpt');

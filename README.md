@@ -204,7 +204,20 @@ It serves both deployed origins from local build files and does not send live no
 main navigation and the welcome page. Turkish and English controls compare SAX,
 2CH, 3CH and 4CH planning schematics and the purposes of cine bSSFP, LGE,
 T1/T2 mapping, phase-contrast and perfusion sequences. Original schematics are
-educational illustrations, not acquired MR images or a DICOM viewer.
+educational illustrations, not acquired MR images.
+
+The first panel is a real cine viewer: five short-axis SSFP cine studies from the ACDC
+training set, one per group (normal, dilated cardiomyopathy, hypertrophic cardiomyopathy,
+previous myocardial infarction, abnormal right ventricle). It plays the cine, shows the slice
+stack from base to apex and draws the expert ED/ES contours. LV and RV volumes, EF, LV mass,
+ED wall thickness and per-slice systolic thickening are computed from those contours and
+checked against the ACDC group definitions (`src/cardiac-mr/cmr-real-data.js`).
+
+Real MR data: ACDC, MICCAI 2017 challenge ([CREATIS](https://www.creatis.insa-lyon.fr/Challenge/acdc/)),
+CC BY-NC-SA 4.0, non-commercial scientific use only; Bernard O et al., IEEE Trans Med Imaging
+2018;37(11):2514-2525, doi:10.1109/TMI.2018.2837502. `scripts/cmr/prepare-acdc-case.py` crops
+each case around the heart and writes `public/cmr-data/<case>/` (cine as one lossy WebP
+sheet, labels gzip, metadata). Run `node scripts/test-cardiac-mr-real.mjs`.
 Source: [SCMR standardized CMR protocols (2020)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7038611/).
 Run `npm run test:cardiac-mr`; with Vite running, use
 `APP_URL=http://127.0.0.1:5198 npm run test:cardiac-mr-browser`.
