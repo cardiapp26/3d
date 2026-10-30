@@ -7,6 +7,7 @@ import { recordElectrodes, trueLeads, recordLeads, addArtifacts, beatMeasures, b
 import { atrialLobes, pMeasures, atrialCriteria, ventricleLobes, qrsVoltages, qrsAxis, hypertrophyCriteria } from '../src/ecg/ecg-structure-model.js';
 import { simulatePacing, pacedMeasures, renderStrip, NBG } from '../src/ecg/ecg-pacing-model.js';
 import { CLINICAL_CONDITIONS, sampleConditionLeadMv } from '../src/ecg/clinical-ecg-simulator.js';
+import { bundleRefractory, avNode, prematureBeat, conductRun, outcomeMap, afRun, renderBeats, qrsWidth, aberrancyClues } from '../src/ecg/ecg-ashman-model.js';
 
 let passed = 0;
 const test = (name, fn) => { fn(); passed++; console.log(`PASS ${name}`); };
@@ -141,5 +142,53 @@ test('clinical simulator: the conditions added from the gap analysis exist and d
   assert.ok(slope('aflutter_reverse') > 0 && slope('aflutter_2to1') < 0, 'reverse flutter: the sawtooth turns over in II');
   assert.ok(range('brugada_2', 'V1', 0, .45, .56).hi > .2, 'Brugada type 2: positive T after the saddle');
   assert.ok(range('takotsubo', 'V3', 0, .45, .75).lo < -.35 && range('takotsubo', 'aVR', 0, .45, .75).hi > .2, 'takotsubo: deep T inversion, upright in aVR');
+});
+test('Ashman: bundle refractoriness grows with the preceding cycle; right longest at slow rates, left at fast rates', () => {
+  for (const b of ['rbb', 'laf', 'lbb']) assert.ok(bundleRefractory(b, 1200).erp > bundleRefractory(b, 600).erp + 50, b);
+  assert.ok(bundleRefractory('rbb', 1000).erp > bundleRefractory('laf', 1000).erp && bundleRefractory('laf', 1000).erp > bundleRefractory('lbb', 1000).erp);
+  assert.ok(bundleRefractory('lbb', 400).erp > bundleRefractory('rbb', 400).erp, 'the lines cross at short cycles');
+  assert.ok(bundleRefractory('rbb', 1000, { diseased: true }).erp > bundleRefractory('rbb', 1000).erp * 1.15);
+  const n = avNode(1000, 330), late = avNode(1000, 600);
+  assert.ok(n.conducts && n.ah > late.ah + 30, 'decremental AV nodal conduction'); assert.equal(avNode(1000, 250).conducts, false);
+});
+test('Ashman: the same early beat is aberrant after a long cycle and narrow after a short one (long-short)', () => {
+  const long = prematureBeat({ cycle: 1000, coupling: 380 }).pac, short = prematureBeat({ cycle: 600, coupling: 380 }).pac;
+  assert.equal(long.pattern, 'rbbb'); assert.equal(short.pattern, 'normal');
+  assert.ok(long.h1h2 < bundleRefractory('rbb', 1000).erp && long.h1h2 > bundleRefractory('lbb', 1000).erp);
+  // AV nodal delay protects the bundles: the P' coupling is inside the RBB ERP, the H1-H2 is not.
+  const protect = prematureBeat({ cycle: 700, coupling: 300 }).pac;
+  assert.ok(protect.pattern === 'normal' && 300 < bundleRefractory('rbb', 700).erp && protect.h1h2 > bundleRefractory('rbb', 700).erp);
+  assert.equal(prematureBeat({ cycle: 1000, coupling: 260 }).pac.pattern, 'blocked-avn');
+  assert.equal(prematureBeat({ cycle: 1000, coupling: 370, brisk: true }).pac.pattern, 'rbbb-lafb');
+  const incomplete = prematureBeat({ cycle: 1000, coupling: 440 }).pac;
+  assert.equal(incomplete.pattern, 'rbbb-incomplete'); assert.ok(qrsWidth('rbbb-incomplete', incomplete.bundles) < qrsWidth('rbbb'));
+  // The sinus node is reset: the cycle after the PAC is about one sinus cycle, not compensatory.
+  const r = prematureBeat({ cycle: 1000, coupling: 380 }), i = r.beats.indexOf(r.pac);
+  assert.equal(r.beats[i + 1].a - r.pac.a, 1000);
+});
+test('Ashman: a blocked bundle is activated late across the septum, so it can stay refractory (linking)', () => {
+  const h = [0, 1200, 2400, 2840, 3200, 3560, 4800];
+  const run = conductRun(h);
+  assert.ok(run[3].pattern.startsWith('rbbb')); assert.notEqual(run[4].pattern, 'normal', 'linking on the next short cycle');
+  assert.equal(run[6].pattern, 'normal', 'a long cycle ends it');
+  let aberrant = 0, linked = 0;
+  for (let seed = 1; seed <= 30; seed++) { const af = afRun({ seed }); aberrant += af.beats.filter(b => b.aberrant).length; linked += af.beats.filter(b => b.linked).length; for (const b of af.beats.filter(x => x.aberrant && !x.linked)) assert.ok(b.cycle < 520, `seed ${seed}: an Ashman beat ends a short cycle`); }
+  assert.ok(aberrant >= 30 && linked >= 5, `AF: ${aberrant} aberrant, ${linked} linked`);
+});
+test('Ashman: aberrant shapes: rsR\u2032 in V1 with wide S in I for RBBB, QS in V1 for LBBB, superior axis with LAFB', () => {
+  const beat = p => renderBeats([{ a: null, v: 100, pattern: p, bundles: null }], 500, ['I', 'aVF', 'V1']);
+  const peak = (L, l, a, z) => { let hi = -9, lo = 9; for (let i = 100 + a; i < 100 + z; i++) { hi = Math.max(hi, L[l][i]); lo = Math.min(lo, L[l][i]); } return { hi, lo }; };
+  const n = beat('normal'), r = beat('rbbb'), l = beat('lbbb'), f = beat('rbbb-lafb');
+  assert.ok(peak(r, 'V1', 70, 140).hi > .5 && peak(n, 'V1', 70, 140).hi < .1, 'late R\u2032 in V1');
+  assert.ok(peak(r, 'I', 70, 140).lo < -.3, 'wide S in I');
+  assert.ok(peak(r, 'V1', 0, 30).hi > .2, 'initial r kept (same septal vector)');
+  assert.ok(peak(l, 'V1', 0, 140).hi < .05 && peak(l, 'V1', 0, 140).lo < -1, 'QS in V1');
+  assert.ok(peak(f, 'aVF', 20, 70).lo < -.6, 'LAFB: negative aVF');
+  const af = renderBeats([], 2000, ['V1'], { fib: true }); assert.ok(Math.max(...af.V1) > .03, 'f waves');
+  const clues = aberrancyClues(prematureBeat({ cycle: 1000, coupling: 380 }));
+  assert.ok(clues.aberrant && clues.clues.every(c => c.met));
+  const map = outcomeMap({ cycles: [600, 1400, 200], couplings: [260, 700, 20] });
+  const flat = map.rows.flatMap(r => r.cells);
+  for (const p of ['normal', 'rbbb', 'blocked-avn']) assert.ok(flat.includes(p), `map has ${p}`);
 });
 console.log(`${passed} ECG chapter tests passed`);
