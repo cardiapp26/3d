@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { createLiveHeart, planTrain, LIVE_SITES, SITE_CHANNEL, LIVE_CHANNELS } from '../../src/eps/ep-live-model.js';
 import { planOverdrive, overdriveStart, analyzeOverdrive, interpretSite } from '../../src/eps/ep-live-maneuvers.js';
 import { ORIGINS } from '../../src/eps/ep-live-substrates.js';
-import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, circuitAngle, segmentSpeeds, circuitAt, circuitClock, flutterAnchors, lastActivation, originSpot, leadIiTrace, normAngle, entrainmentAt } from '../../src/eps/ep-flutter-circuit.js';
+import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, circuitAngle, segmentSpeeds, circuitAt, circuitClock, flutterAnchors, lastActivation, originSpot, leadIiTrace, normAngle, entrainmentAt, blockCheck, pacedSpread, LESION_ANGLE } from '../../src/eps/ep-flutter-circuit.js';
 import { LIVE_TEXT } from '../../src/eps/ep-live-text.js';
 
 // ---- Geometry and time course of one cycle ----
@@ -165,6 +165,75 @@ abl.rfStart('cti', 6000);
 abl.advanceTo(20000);
 assert.equal(circuitAt(abl.events(16000, 20000), 19900), null, 'no circuit after CTI ablation');
 
+// ---- Phase 3: clockwise flutter, the isthmus line and the bidirectional block check ----
+assert.deepEqual(circuitAngle(0, 240, 'cw'), circuitAngle(0), 'clockwise: same His position');
+assert.equal(circuitAngle(ORIGINS['flutter-cw'].hra, 240, 'cw').angle, circuitAngle(ORIGINS.flutter.hra - ORIGINS.flutter['his-d']).angle, 'clockwise HRA at the same catheter');
+assert.equal(Math.round(circuitAngle(ORIGINS['flutter-cw']['cs-910'], 240, 'cw').angle), CIRCUIT_SITES.csOs, 'clockwise CS ostium at the same catheter');
+{
+  let prevA = null;
+  for (let tau = 0; tau < 240; tau += 5) {
+    const a = circuitAngle(tau, 240, 'cw').angle;
+    if (prevA != null) assert.ok(((a - prevA + 540) % 360) - 180 > 0, `clockwise angle increases at ${tau}`);
+    prevA = a;
+  }
+}
+const cw = createLiveHeart('flutter-cw');
+cw.advanceTo(1000);
+cw.stimulate(planTrain({ site: 'hra', start: 1000, s1: 250, n: 8 }));
+cw.advanceTo(9000);
+assert.ok(cw.status().flutterActive && cw.param('flutter.dir') === 'cw', 'clockwise flutter induced');
+const cwEv = cw.events(6000, 9000);
+assert.ok(cwEv['ecg-ii'].filter((e) => e.type === 'F').every((f) => f.amp > 0), 'positive F waves in II');
+const cwClock = circuitClock(cwEv, { dir: 'cw' });
+const cwHis = flutterAnchors(cwEv).at(-3);
+assert.equal(cwClock(cwHis).angle, CIRCUIT_SITES.his);
+const cwHra = cwEv.hra.find((e) => e.type === 'A' && e.origin === 'flutter' && e.t > cwHis).t;
+assert.equal(Math.round(cwClock(cwHra).angle), CIRCUIT_SITES.hra, 'front at the HRA tip when its A is recorded (clockwise)');
+const cwTrace = leadIiTrace(cwEv, cwHis, cwHis + 240, 240, { dir: 'cw' });
+const peak = cwTrace.reduce((m, p) => (p.f > m.f ? p : m));
+assert.ok(['lateral', 'roof'].includes(peak.segment), `positive F peak as the lateral wall climbs (${peak.segment})`);
+for (const [site, verdict] of [['hra', 'inCircuit'], ['cs-prox', 'inCircuit'], ['cti', 'inCircuit'], ['cs-dist', 'outside']]) {
+  const h = createLiveHeart('flutter-cw');
+  h.advanceTo(1000); h.stimulate(planTrain({ site: 'hra', start: 1000, s1: 250, n: 8 })); h.advanceTo(9000);
+  const st = planOverdrive({ site, start: overdriveStart(h.events(0, 9000), 9000, site, 240, 20), tcl: 240, offset: 20, n: 8 });
+  h.stimulate(st); h.advanceTo(st[st.length - 1].t + 2500);
+  assert.equal(interpretSite(analyzeOverdrive(h.events(0, st[st.length - 1].t + 2500), st)), verdict, `clockwise entrainment from ${site}`);
+}
+assert.equal(entrainmentAt(cwEv, 8000, { tcl: 240, ppiExtra: cw.param('flutter.ppiExtra'), dir: 'cw' }), null, 'ring entrainment drawn for the typical circuit only');
+
+// The line: CTI lesion blocks the isthmus; paced from either side the wave goes the long way round.
+const pace = (heart, site, at) => {
+  heart.stimulate(planTrain({ site, start: at, s1: 600, n: 1 }));
+  heart.advanceTo(at + 900);
+  return blockCheck(heart.events(at - 2000, at + 900), at + 900);
+};
+const before = createLiveHeart('flutter-cti');
+before.advanceTo(2000);
+const open = pace(before, 'cs-prox', 2100);
+assert.equal(open.block, false, `isthmus conducts before the line ${JSON.stringify(open)}`);
+assert.ok(open.interval < 40);
+const line = createLiveHeart('flutter-cti');
+line.advanceTo(1000);
+line.stimulate(planTrain({ site: 'hra', start: 1000, s1: 250, n: 8 }));
+line.advanceTo(6000);
+line.rfStart('cti', 6000);
+line.advanceTo(12000);
+assert.ok(line.status().ctiBlock && !line.status().flutterActive, 'line made, flutter over');
+const fromCs = pace(line, 'cs-prox', 12100);
+assert.ok(fromCs.block && fromCs.hraFirst && fromCs.interval >= 100, `CS ostium pacing: lateral isthmus late, high RA first ${JSON.stringify(fromCs)}`);
+const fromLat = pace(line, 'cti', 13600);
+assert.ok(fromLat.block && fromLat.hraFirst && fromLat.interval >= 100, `lateral pacing: CS ostium late ${JSON.stringify(fromLat)}`);
+const latEv = line.events(13500, 14500);
+const latHis = latEv['his-d'].find((e) => e.origin === 'cti').t, latOs = latEv['cs-910'].find((e) => e.origin === 'cti').t;
+assert.ok(latHis < latOs, 'down the septum: His before the CS ostium');
+assert.equal(blockCheck(cwEv, 9000), null, 'no block check during flutter');
+// Drawing: a blocked front stops at the line, an open isthmus lets the fronts meet.
+assert.ok(pacedSpread('cs-prox', 40, { block: true }).some((f) => f.blocked && f.angle === LESION_ANGLE), 'stopped at the line');
+assert.equal(pacedSpread('cs-prox', 40).some((f) => f.blocked), false);
+assert.deepEqual(pacedSpread('cs-prox', 200), [], 'open: the fronts met');
+assert.ok(pacedSpread('cs-prox', 200, { block: true }).length === 2, 'blocked: still going the long way');
+assert.ok(LESION_ANGLE > CIRCUIT_SITES.csOs && LESION_ANGLE < CIRCUIT_SITES.cti, 'line between the CS ostium and ABL d');
+
 // ---- Texts ----
 for (const lang of ['tr', 'en']) {
   const c = LIVE_TEXT[lang].circuit;
@@ -176,9 +245,12 @@ for (const lang of ['tr', 'en']) {
   assert.equal(typeof LIVE_TEXT[lang].sites.cti, 'string');
   for (const fusion of ['concealed', 'manifest', 'none']) assert.match(c.entrainResult({ siteName: 'X', ppi: 245, ppiTcl: 5, verdict: 'inCircuit', fusion }), /PPI−TCL 5 ms/);
   assert.match(c.entraining('X', 220), /220/);
+  for (const id of CIRCUIT_SEGMENTS.map((x) => x.id)) assert.equal(typeof c.segmentsCw[id], 'string');
+  assert.match(c.blockCheck({ siteName: 'X', site: 'cs-prox', interval: 127, hraFirst: true, block: true }), /127 ms/);
+  assert.equal(typeof c.labels.lesion, 'string');
 }
 for (const f of ['ep-flutter-circuit.js', 'ep-flutter-view.js', 'ep-live-text.js', 'ep-live-substrates.js']) {
   assert.ok(!readFileSync(new URL(`../../src/eps/${f}`, import.meta.url), 'utf8').includes(String.fromCharCode(0x2014)), `no em dash in ${f}`);
 }
 
-console.log('PASS ep-flutter-circuit: counterclockwise LAO ring timed from the His A (His and HRA catheters in step), slowest isthmus, lead II limbs (septum and roof descending, nadir at the free wall, lateral positive, isthmus plateau), sinus and paced origins, entrainment from HRA, CS proximal, CTI (concealed fusion, no double activation), mid and distal CS (outside, via the CS ostium) with ring PPI equal to the maneuver and a seamless return, CTI ablation stops the drawn circuit');
+console.log('PASS ep-flutter-circuit: counterclockwise LAO ring timed from the His A (His and HRA catheters in step), slowest isthmus, lead II limbs (septum and roof descending, nadir at the free wall, lateral positive, isthmus plateau), sinus and paced origins, entrainment from HRA, CS proximal, CTI (concealed fusion, no double activation), mid and distal CS (outside, via the CS ostium) with ring PPI equal to the maneuver and a seamless return, CTI ablation stops the drawn circuit; clockwise flutter (positive F, mirrored ring, entrainment by site); isthmus line and bidirectional block check (long way round from the CS ostium and from the lateral isthmus)');

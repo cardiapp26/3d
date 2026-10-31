@@ -15,7 +15,7 @@
  * while given. Designed teaching timings (ms), not patient physiology.
  */
 import { ev, far, mono } from './ep-beats.js';
-import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS, CTI_ENTRAINED } from './ep-live-substrates.js';
+import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS, CTI_ENTRAINED, CTI_BLOCK } from './ep-live-substrates.js';
 
 export { LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS };
 const DRUG_FIELDS = [...new Set(Object.values(DRUGS).flatMap((d) => Object.keys(d)))];
@@ -119,18 +119,29 @@ export function createLiveHeart(caseId = 'normal') {
   const record = (ch, e) => log[ch]?.push(e);
   const ready = (node, t, erp) => t - last[node] >= erp;
 
+  // Flutter sequence of the case: counterclockwise (typical) or clockwise.
+  const flutterOffsets = () => (p.flutter?.dir === 'cw' ? ORIGINS['flutter-cw'] : ORIGINS.flutter);
+  /** Activation sequence of an origin, the long way round once the isthmus is blocked. */
+  function sequenceOf(origin) {
+    const o = originOf(origin);
+    if (!p.ctiBlock || !o) return o;
+    if (origin === 'cti') return CTI_BLOCK.fromLateral;
+    if (origin === 'sinus' || origin === 'hra' || origin === 'af') return o;   // the lateral wall is reached from above anyway
+    return { ...o, 'abl-d': Math.max(o['abl-d'] ?? 0, o.hra + CTI_BLOCK.lateralDelay) };
+  }
+
   function activateAtrium(t, origin, { force = false, offsets = null } = {}) {
     if (!force && !ready('atrium', t, p.aErp)) return false;
     if (!LIVE_SITES.includes(origin)) pacedRun = 0;   // a non-paced activation ends the paced run
     last.atrium = t;
     lastAtrium = { t, origin };
-    const o = offsets || originOf(origin);
+    const o = offsets || sequenceOf(origin);
     const amp = origin === 'af' ? 0.3 : null;
     for (const ch of ATRIAL_CHANNELS) {
       if (o[ch] == null) continue;
       record(ch, ev('A', t + o[ch], amp ?? (ch === 'his-d' ? 0.35 : ch === 'his-p' ? 0.6 : 0.75), origin === 'af' ? 3 : 5, { origin }));
     }
-    if (o.f != null) record('ecg-ii', mono('F', t + o.f, -0.16, 45));   // flutter F wave (also a concealed CTI capture)
+    if (o.f != null) record('ecg-ii', mono('F', t + o.f, o.fAmp ?? -0.16, 45));   // flutter F wave (also a concealed CTI capture)
     else if (origin === 'af') record('ecg-ii', mono('f', t + 20, (rand() - 0.5) * 0.08, 12));
     else if (o.p != null) record('ecg-ii', mono('P', t + o.p, o.pAmp, 10));
     // Another wavefront reaching the sinus node (or an automatic focus) resets it;
@@ -282,7 +293,8 @@ export function createLiveHeart(caseId = 'normal') {
   // From the isthmus the last capture already ran this cycle round the circuit (concealed):
   // only its return into the isthmus is left, then the circuit goes on.
   function scheduleFlutterReturn({ t, site }) {
-    schedule(t + p.flutter.tcl + ppiExtraAt(p.flutter, site) - ORIGINS.flutter[SITE_CHANNEL[site]], site === 'cti' ? 'flutter-rejoin' : 'flutter-fire');
+    const concealed = site === 'cti' && p.flutter.dir !== 'cw';
+    schedule(t + p.flutter.tcl + ppiExtraAt(p.flutter, site) - flutterOffsets()[SITE_CHANNEL[site]], concealed ? 'flutter-rejoin' : 'flutter-fire');
   }
   const flutterPending = () => queue.some((q) => q.kind === 'flutter-fire' || q.kind === 'flutter-rejoin');
 
@@ -306,7 +318,7 @@ export function createLiveHeart(caseId = 'normal') {
       for (const ch of ATRIAL_CHANNELS) log[ch] = log[ch].filter((e) => !(e.origin === 'flutter' && e.t > at));
       log['ecg-ii'] = log['ecg-ii'].filter((e) => !(e.type === 'F' && e.t > at + 20));
     }
-    return activateAtrium(at, site, { force: inCircuit, offsets: site === 'cti' && active.flutter ? CTI_ENTRAINED : null });
+    return activateAtrium(at, site, { force: inCircuit, offsets: site === 'cti' && active.flutter && p.flutter.dir !== 'cw' ? CTI_ENTRAINED : null });
   }
 
   function stim(t, site) {
@@ -332,7 +344,7 @@ export function createLiveHeart(caseId = 'normal') {
     else if (target === 'compact-node') { p.avBlock = true; effect = 'av-block'; }
     else if (target === 'left-lateral' && p.ap?.insertion === 'ap') { p.ap = null; effect = 'ap'; }
     else if (target === 'posteroseptal' && p.ap?.insertion === 'aps') { p.ap = null; effect = 'ap'; }
-    else if (target === 'cti' && p.flutter) { p.flutter = null; active.flutter = false; effect = 'cti'; }
+    else if (target === 'cti') { p.ctiBlock = true; if (p.flutter) { p.flutter = null; active.flutter = false; effect = 'cti'; } }
     else if (target === 'la-focus' && p.at) { p.at = null; active.at = false; effect = 'focus'; }
     else if (target === 'vt-isthmus' && p.vt) { p.vt = null; active.vt = false; effect = 'isthmus'; }
     lesions.push({ target, effect, t: now });
@@ -355,10 +367,10 @@ export function createLiveHeart(caseId = 'normal') {
     },
     escape: (t, d) => { if (last.v === d.token) ventricle(t, { origin: 'escape' }); },
     'at-fire': (t) => { if (!active.at || !p.at) return; activateAtrium(t, p.at.origin); schedule(t + p.at.cl, 'at-fire'); },
-    'flutter-fire': (t) => { if (!active.flutter || !p.flutter) return; activateAtrium(t, 'flutter', { force: true }); schedule(t + p.flutter.tcl, 'flutter-fire'); },
+    'flutter-fire': (t) => { if (!active.flutter || !p.flutter) return; activateAtrium(t, 'flutter', { force: true, offsets: flutterOffsets() }); schedule(t + p.flutter.tcl, 'flutter-fire'); },
     'flutter-rejoin': (t) => {
       if (!active.flutter || !p.flutter) return;
-      record('abl-d', ev('A', t + ORIGINS.flutter['abl-d'], 0.75, 5, { origin: 'flutter' }));
+      record('abl-d', ev('A', t + flutterOffsets()['abl-d'], 0.75, 5, { origin: 'flutter' }));
       schedule(t + p.flutter.tcl, 'flutter-fire');
     },
     'af-fire': (t) => { if (!active.af || !p.af) return; activateAtrium(t, 'af', { force: true, offsets: afOffsets() }); schedule(t + p.af.min + rand() * (p.af.max - p.af.min), 'af-fire'); },
@@ -435,7 +447,7 @@ export function createLiveHeart(caseId = 'normal') {
     status: () => ({
       avBlock: p.avBlock,
       sp: Boolean(p.sp), ap: Boolean(p.ap), at: Boolean(p.at), flutter: Boolean(p.flutter), vt: Boolean(p.vt),
-      atActive: active.at, flutterActive: active.flutter, afActive: active.af, vtActive: active.vt
+      atActive: active.at, flutterActive: active.flutter, afActive: active.af, vtActive: active.vt, ctiBlock: Boolean(p.ctiBlock)
     })
   };
 }

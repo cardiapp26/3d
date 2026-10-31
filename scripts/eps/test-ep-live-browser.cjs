@@ -372,6 +372,39 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     await page.evaluate(() => { window.epsLab.live.setCase('normal'); window.epsLab.live.advance(1200); });
     assert.equal(await page.locator('[data-ep-live-circuit-view]').isVisible(), true, 'shown again on a named case');
     assert.match(await page.locator('[data-ep-live-circuit-front]').textContent(), /^Makro-reentri yok · son atriyal aktivasyon: sinüs düğümü/);
+    // Isthmus line on the ring while RF runs, then the block check from the CS ostium; clockwise flutter.
+    await page.evaluate(() => window.epsLab.live.setCase('flutter-cti'));
+    await page.locator('[data-ep-live-stim=site]').selectOption('hra');
+    await page.locator('[data-ep-live-stim=s1]').fill('250');
+    await page.locator('[data-ep-live-stim=n]').fill('8');
+    await page.locator('[data-ep-live-action=burst]').click();
+    await freezeLive(true);
+    await page.evaluate(() => window.epsLab.live.advance(6000));
+    await page.locator('[data-ep-live-target]').selectOption('cti');
+    await page.locator('[data-ep-live-rf]').click();
+    await freezeLive(true);
+    await page.evaluate(() => window.epsLab.live.advance(2000));
+    assert.equal(await page.locator('.ep-circ-lesion').evaluate((n) => n.style.display !== 'none' && !n.classList.contains('is-done')), true, 'line growing during RF');
+    await page.evaluate(() => window.epsLab.live.advance(3000));
+    assert.equal(await page.locator('.ep-circ-lesion.is-done').count(), 1, 'line complete');
+    assert.equal(await page.evaluate(() => window.epsLab.live.status().ctiBlock), true);
+    await page.locator('[data-ep-live-stim=site]').selectOption('cs-prox');
+    await page.locator('[data-ep-live-stim=s1]').fill('600');
+    await page.locator('[data-ep-live-stim=n]').fill('3');
+    await page.locator('[data-ep-live-action=burst]').click();
+    await freezeLive(true);
+    await page.evaluate(() => window.epsLab.live.advance(2400));
+    assert.match(await page.locator('[data-ep-live-circuit-entrain]').textContent(), /^Blok kontrolü, CS 9-10 \(proksimal\): ABL d \(lateral\) 1\d\d ms, HRA önce → istmus bloklu/);
+    await page.evaluate(() => window.epsLab.live.setCase('flutter-cw'));
+    await page.locator('[data-ep-live-stim=site]').selectOption('hra');
+    await page.locator('[data-ep-live-stim=s1]').fill('250');
+    await page.locator('[data-ep-live-stim=n]').fill('8');
+    await page.locator('[data-ep-live-action=burst]').click();
+    await freezeLive(true);
+    await page.evaluate(() => window.epsLab.live.advance(6000));
+    assert.equal(await page.evaluate(() => window.epsLab.live.circuit().active), true, 'clockwise circuit drawn');
+    assert.match(await page.locator('.ep-circ-legend li').first().textContent(), /yukarıdan aşağı/, 'legend worded for the clockwise direction');
+    assert.equal(await page.locator('.ep-circ-lesion').evaluate((n) => n.style.display), 'none', 'a new case starts without a line');
     await page.locator('[data-ep-live-circuit]').click();
     assert.equal(await page.locator('[data-ep-live-circuit-view]').isVisible(), false, 'ring off');
 
@@ -390,7 +423,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().playing), false, 'DF map: nothing to play');
 
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, auto-decrement S2 from a CS bipole (ERPs) and in AVNRT (jump, echo, induction), continuous pacing with live S1 change and heart rate, per-channel gain, saturating pacing artifact and caliper amplitude, page-by-page review, drugs (isoproterenol) with the coach on an echo-only AVNRT, Space play / pause on the AF map, LAO flutter ring (circuit with coloured lead II in the console, slow replay, CTI entrainment with concealed fusion, EN, locked on a hidden case, sinus origin)');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, auto-decrement S2 from a CS bipole (ERPs) and in AVNRT (jump, echo, induction), continuous pacing with live S1 change and heart rate, per-channel gain, saturating pacing artifact and caliper amplitude, page-by-page review, drugs (isoproterenol) with the coach on an echo-only AVNRT, Space play / pause on the AF map, LAO flutter ring (circuit with coloured lead II in the console, slow replay, CTI entrainment with concealed fusion, isthmus line and block check, clockwise flutter, EN, locked on a hidden case, sinus origin)');
   } finally {
     await browser.close();
   }
