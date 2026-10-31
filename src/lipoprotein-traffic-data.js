@@ -30,7 +30,7 @@ export const LIPOPROTEIN_SOURCES = [
 /** Lipoprotein classes. Sizes and densities are textbook ranges; `apoB` marks one apoB per particle. */
 export const LIPOPROTEINS = [
   {
-    id: 'chylomicron', apoB: 'B-48', inPost: false, color: '#f2b705',
+    id: 'chylomicron', apoB: 'B-48', inPost: false, color: '#009fb7',
     name: t('Şilomikron', 'Chylomicron'),
     size: '75–1200 nm', density: '< 0,95 g/mL',
     cargo: t('Diyet trigliseridi (~%85–90)', 'Dietary triglyceride (~85–90%)'),
@@ -41,7 +41,7 @@ export const LIPOPROTEINS = [
     science: t('Tokluk lipidinin taşıyıcısıdır. ApoB-48 taşır; ApoB ölçümü bu partikülleri de sayar, ancak açlıkta sayıları azdır.', 'Carrier of postprandial fat. It carries apoB-48; an apoB assay counts these too, but they are few in the fasting state.')
   },
   {
-    id: 'vldl', apoB: 'B-100', inPost: true, color: '#8e44d8',
+    id: 'vldl', apoB: 'B-100', inPost: true, color: '#6741d9',
     name: t('VLDL', 'VLDL'),
     size: '30–80 nm', density: '0,95–1,006 g/mL',
     cargo: t('Endojen trigliserid (~%50–60)', 'Endogenous triglyceride (~50–60%)'),
@@ -52,7 +52,7 @@ export const LIPOPROTEINS = [
     science: t('Benzetme yarım kalır: VLDL yükünü boşalttıkça küçülür, IDL ve sonra LDL olur. Yani LDL kamyonu çoğunlukla boşalmış VLDL kamyonudur.', 'The analogy stops half way: as VLDL unloads it shrinks into IDL and then LDL. The LDL truck is mostly an emptied VLDL truck.')
   },
   {
-    id: 'idl', apoB: 'B-100', inPost: false, color: '#c27be8',
+    id: 'idl', apoB: 'B-100', inPost: false, color: '#f08c00',
     name: t('IDL (VLDL kalıntısı)', 'IDL (VLDL remnant)'),
     size: '25–35 nm', density: '1,006–1,019 g/mL',
     cargo: t('TG ve kolesterol esteri karışık', 'Mixed TG and cholesteryl ester'),
@@ -63,7 +63,7 @@ export const LIPOPROTEINS = [
     science: t('Remnant (kalıntı) kolesterol, LDL-C dışında kalan aterojenik kolesterolün önemli kısmıdır; non-HDL-C bunu da içerir.', 'Remnant cholesterol is a large part of the atherogenic cholesterol outside LDL-C; non-HDL-C includes it.')
   },
   {
-    id: 'ldl', apoB: 'B-100', inPost: true, color: '#ff6a00',
+    id: 'ldl', apoB: 'B-100', inPost: true, color: '#d92b2b',
     name: t('LDL', 'LDL'),
     size: '18–25 nm', density: '1,019–1,063 g/mL',
     cargo: t('Kolesterol esteri (ana yük)', 'Cholesteryl ester (main load)'),
@@ -74,7 +74,7 @@ export const LIPOPROTEINS = [
     science: t('Çoğu hücre kolesterolünü kendisi sentezler; LDL kamyonu çoğunlukla karaciğere geri döner. Zarar, kamyonun yol kenarına (intima) girip orada kalmasıdır: giren partikül sayısı ve kalış süresi belirleyicidir.', 'Most cells make their own cholesterol; the LDL truck mostly returns to the liver. Harm comes when trucks enter the roadside (intima) and stay: particle number and exposure time decide.')
   },
   {
-    id: 'lpa', apoB: 'B-100', inPost: true, color: '#d7263d',
+    id: 'lpa', apoB: 'B-100', inPost: true, color: '#b5179e',
     name: t('Lp(a)', 'Lp(a)'),
     size: '~25–30 nm', density: '1,05–1,12 g/mL',
     cargo: t('LDL benzeri çekirdek + okside fosfolipitler', 'LDL-like core + oxidized phospholipids'),
@@ -85,7 +85,7 @@ export const LIPOPROTEINS = [
     science: t('Benzetme iyi: apo(a) plazminojene benzer (antifibrinolitik olası etki), okside fosfolipitler inflamasyonu artırır. Erişkinlikte bir kez ölçülmesi önerilir (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) yüksek kabul edilir.', 'A good analogy: apo(a) resembles plasminogen (possible antifibrinolytic effect) and oxidized phospholipids drive inflammation. Measure once in adulthood (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) is high.')
   },
   {
-    id: 'hdl', apoB: null, inPost: true, color: '#14a35a',
+    id: 'hdl', apoB: null, inPost: true, color: '#0ca678',
     name: t('HDL', 'HDL'),
     size: '5–12 nm', density: '1,063–1,21 g/mL',
     cargo: t('Protein (~%50), fosfolipit, kolesterol', 'Protein (~50%), phospholipid, cholesterol'),

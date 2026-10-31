@@ -28,30 +28,122 @@ export const LIPID_EFFECTS = {
 };
 const RECEPTOR_X = [540, 556, 572, 588, 604, 620];
 const STYLE = {
-  diet: ['#e9b44a', 5.5], chylo: ['#f0d68e', 10], hmg: ['#5f9a5a', 5.5], bile: ['#5f9a2f', 6], pcsk9: ['#c2463c', 5.5], fa: ['#d98a3a', 4.5],
-  vldl: ['#b8923c', 11], idl: ['#d6a73e', 8.5], ldl: ['#e2741e', 7],
+  diet: ['#15aabf', 5.8], chylo: ['#009fb7', 10.5], hmg: ['#e67700', 5.8], bile: ['#5c940d', 6.4], pcsk9: ['#ae3ec9', 6], fa: ['#fd7e14', 5],
+  vldl: ['#6741d9', 11], idl: ['#f08c00', 8.8], ldl: ['#d92b2b', 7.2],
 };
 
-export const LIPID_SCENE = `<defs><marker id="lipid-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#799b8c"/></marker>
-    <pattern id="lipid-villi" width="16" height="22" patternUnits="userSpaceOnUse"><path d="M0 22V8Q8 -4 16 8V22" fill="#ecd3b3" stroke="#d8b892"/></pattern></defs>
-  <rect x="20" y="40" width="160" height="300" rx="40" fill="#f6ead9"/><rect x="118" y="52" width="50" height="276" fill="url(#lipid-villi)" opacity=".9"/>
-  <text x="34" y="34" data-lipid-label="intestine"/><text x="30" y="70" class="lipidlab-small" data-lipid-label="lumen"/>
-  <path d="M280 52Q440 4 636 58Q664 180 496 194Q342 196 280 52Z" fill="#dcb2a9" stroke="#bb867b" stroke-width="2"/>
-  <ellipse cx="470" cy="70" rx="26" ry="18" fill="#c58f86"/><text x="388" y="40" data-lipid-label="liver"/>
-  <rect x="210" y="238" width="482" height="90" rx="44" fill="#ecc8bf" stroke="#cf9d92" stroke-width="2"/><text x="222" y="352" data-lipid-label="blood"/>
-  <rect x="360" y="398" width="280" height="54" rx="18" fill="#f1e2bd"/><text x="380" y="430" data-lipid-label="tissue"/>
+export const LIPID_SCENE = `<defs>
+    <marker id="lipid-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#496a80"/>
+    </marker>
+    <linearGradient id="lipid-intestine-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7cbb0"/><stop offset="0.5" stop-color="#eab08e"/><stop offset="1" stop-color="#d88c66"/>
+    </linearGradient>
+    <linearGradient id="lipid-liver-grad" x1="0.1" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#b5483c"/><stop offset="0.5" stop-color="#8f2d24"/><stop offset="1" stop-color="#661b14"/>
+    </linearGradient>
+    <linearGradient id="lipid-muscle-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9535f"/><stop offset="0.5" stop-color="#b83744"/><stop offset="1" stop-color="#8c222d"/>
+    </linearGradient>
+    <linearGradient id="lipid-plasma-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c9dced"/><stop offset="0.3" stop-color="#e7f0f8"/><stop offset="0.7" stop-color="#e7f0f8"/><stop offset="1" stop-color="#c7dbec"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ORGAN 1: SMALL INTESTINE (Curved duodenal-jejunal C-loop, plicae circulares, sculpted finger-like villi & lacteal) -->
+  <g class="lipidlab-organ-intestine">
+    <!-- Outer convoluted duodenal-jejunal C-loop wall -->
+    <path d="M52 40C22 40 14 68 18 106C22 140 12 174 16 212C20 250 12 288 20 322C28 350 58 358 98 354C144 350 176 332 180 294C184 256 176 216 180 176C184 136 184 86 168 58C152 36 96 40 52 40Z" fill="url(#lipid-intestine-grad)" stroke="#a85732" stroke-width="2.2"/>
+    <!-- Cutaway mucosal lumen -->
+    <path d="M56 50C32 50 26 74 28 108C30 142 24 176 26 212C28 248 24 284 30 314C36 338 62 344 98 340C138 336 164 322 168 290C172 254 166 214 168 176C170 138 170 92 156 66C142 46 92 50 56 50Z" fill="#fff7ef" stroke="#d9936c" stroke-width="1.4"/>
+    <!-- Plicae circulares folds across lumen -->
+    <path d="M34 96Q76 82 118 98M32 134Q76 120 118 136M32 172Q76 158 118 174M32 246Q76 232 118 248M34 284Q76 270 118 286M38 318Q78 306 116 320" fill="none" stroke="#ebb594" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Sculpted finger-like absorptive villi along right mucosal wall + central lacteals -->
+    <path d="M156 64C132 64 120 70 120 78C120 86 134 90 156 92C130 94 118 100 118 109C118 118 134 122 156 124C130 126 118 132 118 141C118 150 134 154 156 156C130 158 118 164 118 173C118 182 134 186 156 188C130 190 118 196 118 205C118 214 134 218 156 220C130 222 118 228 118 237C118 246 134 250 156 252C130 254 118 260 118 269C118 278 134 282 156 284C132 286 120 292 120 300C120 308 134 314 154 316L166 298L168 88Z" fill="#e5956b" stroke="#b55d35" stroke-width="1.3"/>
+    <path d="M128 78H160M126 109H160M126 141H160M126 173H160M126 237H160M126 269H160M128 300H158M160 72V304" fill="none" stroke="#009fb7" stroke-width="2.2" stroke-linecap="round" opacity="0.8"/>
+    <text x="34" y="30" class="lipidlab-organ-title" data-lipid-label="intestine"/>
+    <text x="38" y="74" class="lipidlab-small" data-lipid-label="lumen"/>
+  </g>
+
+  <!-- ORGAN 2: ANATOMICAL WEDGE-SHAPED BILOBED LIVER, GALLBLADDER & HEPATOCYTE POOL -->
+  <g class="lipidlab-organ-liver">
+    <!-- Portal vein (indigo) & hepatic artery (crimson) at porta hepatis -->
+    <path d="M366 206Q376 184 384 168" fill="none" stroke="#5368a6" stroke-width="6" stroke-linecap="round"/>
+    <path d="M378 206Q384 186 390 170" fill="none" stroke="#c92a2a" stroke-width="3" stroke-linecap="round"/>
+    <!-- Anatomical Liver Silhouette: tall domed Right Lobe (left) + falciform notch + tapered wedge Left Lobe (right) -->
+    <path d="M274 96C270 38 318 12 396 12C434 12 458 20 474 26C504 20 558 24 612 40C646 50 662 66 650 88C632 120 584 146 534 164C504 174 484 176 470 168C456 184 426 194 388 194C334 194 292 190 278 160C270 142 276 118 274 96Z" fill="url(#lipid-liver-grad)" stroke="#521510" stroke-width="2.4"/>
+    <!-- Subcapsular diaphragmatic highlight -->
+    <path d="M294 64C322 30 374 20 452 28M488 32C536 30 588 40 628 58" fill="none" stroke="#dc857b" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
+    <!-- Intrahepatic portal & sinusoidal vascular tree -->
+    <path d="M386 168L376 114M376 114L324 80M376 114L424 66M348 96L308 126M484 124L546 92" fill="none" stroke="#e08b82" stroke-width="2" stroke-linecap="round" opacity="0.45"/>
+    <!-- Falciform ligament & round ligament (ligamentum teres) -->
+    <path d="M472 24Q458 94 470 170" fill="none" stroke="#f5dcd6" stroke-width="3.4" stroke-linecap="round" opacity="0.88"/>
+    <path d="M470 168Q472 182 464 194" fill="none" stroke="#e8c5bc" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Pear-shaped Gallbladder in gallbladder fossa & Cystic/Common Bile Duct -->
+    <path d="M312 146C312 128 338 120 360 134C376 144 370 168 350 172C330 176 312 162 312 146Z" fill="#4c8527" stroke="#264a0e" stroke-width="1.8"/>
+    <path d="M324 140C334 134 348 134 356 142" fill="none" stroke="#8ce99a" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M314 148C284 144 252 136 220 134" fill="none" stroke="#5c940d" stroke-width="3.2" stroke-linecap="round" opacity="0.8"/>
+    <!-- Hepatocyte Intracellular Cholesterol Pool inset -->
+    <rect x="520" y="82" width="114" height="52" rx="14" fill="#fcecd2" stroke="#d49b4b" stroke-width="1.8" opacity="0.95"/>
+    <circle cx="598" cy="106" r="13" fill="#f59f00" opacity="0.28" stroke="#e67700" stroke-width="1.4"/>
+    <text x="388" y="38" class="lipidlab-organ-title lipidlab-organ-title-light" data-lipid-label="liver"/>
+  </g>
+
+  <!-- COMPARTMENT 3: SYSTEMIC CIRCULATION / ARTERIAL VESSEL -->
+  <g class="lipidlab-compartment-blood">
+    <!-- Outer Tunica Media + Adventitia arterial wall -->
+    <rect x="206" y="232" width="488" height="102" rx="48" fill="#d88b86" stroke="#8c3b45" stroke-width="2"/>
+    <!-- Arterial Lumen (Plasma) -->
+    <rect x="212" y="240" width="476" height="86" rx="41" fill="url(#lipid-plasma-grad)" stroke="#a6444f" stroke-width="1.6"/>
+    <path d="M244 264H660M244 302H660" stroke="#9ab7cf" stroke-width="1.2" stroke-dasharray="10 14" opacity="0.65"/>
+    <g fill="#d94854" stroke="#a61e2b" stroke-width="0.8" opacity="0.28">
+      <ellipse cx="268" cy="254" rx="8" ry="3.8"/><ellipse cx="364" cy="312" rx="8" ry="3.8"/><ellipse cx="536" cy="254" rx="8" ry="3.8"/><ellipse cx="640" cy="310" rx="8" ry="3.8"/>
+    </g>
+    <text x="220" y="354" class="lipidlab-organ-title" data-lipid-label="blood"/>
+  </g>
+
+  <!-- ORGAN 4: SKELETAL MUSCLE BELLY & ADIPOSE TISSUE LOBULES -->
+  <g class="lipidlab-organ-tissue">
+    <!-- Lobulated Adipose Tissue cluster (right) -->
+    <path d="M510 390C544 382 628 384 652 404C668 418 662 448 632 458C596 466 530 462 508 446C492 432 490 396 510 390Z" fill="#fef3c7" stroke="#d99b26" stroke-width="1.8"/>
+    <g fill="#facc15" stroke="#b47809" stroke-width="1.3">
+      <circle cx="538" cy="414" r="12"/><circle cx="564" cy="410" r="13"/><circle cx="592" cy="412" r="12.5"/><circle cx="618" cy="416" r="11.5"/><circle cx="640" cy="426" r="10"/>
+      <circle cx="526" cy="436" r="11"/><circle cx="552" cy="436" r="12.5"/><circle cx="580" cy="436" r="13"/><circle cx="608" cy="438" r="12"/><circle cx="632" cy="442" r="9.5"/>
+    </g>
+    <g fill="#fef9c3" opacity="0.8">
+      <circle cx="534" cy="410" r="4"/><circle cx="560" cy="406" r="4.5"/><circle cx="588" cy="408" r="4.5"/><circle cx="548" cy="432" r="4.5"/><circle cx="576" cy="432" r="4.5"/>
+    </g>
+    <!-- Fusiform Striated Skeletal Muscle Belly with tendinous ends (left) -->
+    <path d="M332 424L354 412V436Z" fill="#e5d5c5" stroke="#a89078" stroke-width="1.2"/>
+    <path d="M518 424L496 412V436Z" fill="#e5d5c5" stroke="#a89078" stroke-width="1.2"/>
+    <path d="M348 414C374 390 472 390 502 414C512 422 512 430 502 438C472 460 374 460 348 438C340 430 340 422 348 414Z" fill="url(#lipid-muscle-grad)" stroke="#6e1720" stroke-width="2"/>
+    <path d="M356 416C386 404 464 404 494 416M352 426H498M356 436C386 448 464 448 494 436" fill="none" stroke="#f8b4bc" stroke-width="1.3" opacity="0.65"/>
+    <path d="M376 402V448M400 398V452M426 398V452M452 398V452M476 402V448" fill="none" stroke="#fbcfe8" stroke-width="1.1" stroke-dasharray="3 3" opacity="0.55"/>
+    <!-- Capillary bed arch above muscle & adipose where LPL acts -->
+    <path d="M366 396Q496 386 626 396" fill="none" stroke="#c92a2a" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+    <text x="500" y="381" text-anchor="middle" class="lipidlab-organ-title" data-lipid-label="tissue"/>
+  </g>
+
   <path data-lipid-conversion="idl-ldl" d="M484 280H511" stroke="none"/>
-  <g class="lipidlab-arrows"><path d="M402 172V232"/><path d="M180 224H214"/></g>
-  <text x="410" y="270" class="lipidlab-small">VLDL → IDL → LDL</text>
+  <g class="lipidlab-arrows"><path d="M402 188V232"/><path d="M180 224H214"/></g>
+  <text x="410" y="270" class="lipidlab-small lipidlab-cascade-tag">VLDL → IDL → LDL</text>
   <g class="lipidlab-receptors"></g><g class="lipidlab-particles"></g>
   <g data-lipid-site="absorption"><rect x="54" y="186" width="108" height="34"/><text x="72" y="209">NPC1L1</text></g>
   <g data-lipid-site="bile"><rect x="186" y="110" width="118" height="34"/><text x="198" y="133" data-lipid-label="bile"/></g>
-  <g data-lipid-site="synthesis"><rect x="402" y="88" width="120" height="34"/><text x="420" y="111">HMG-CoA</text></g>
+  <g data-lipid-site="synthesis"><rect x="402" y="88" width="114" height="34"/><text x="416" y="111">HMG-CoA</text></g>
   <g data-lipid-site="receptor"><rect x="530" y="200" width="104" height="30"/><text x="556" y="221">LDL-R</text></g>
-  <g data-lipid-site="vldl"><circle cx="402" cy="172" r="15"/><text x="352" y="166" class="lipidlab-small">VLDL</text></g>
+  <g data-lipid-site="vldl"><circle cx="402" cy="172" r="15"/><text x="350" y="166" class="lipidlab-small lipidlab-vldl-label">VLDL</text></g>
   <g data-lipid-site="lpl"><rect x="440" y="326" width="96" height="30"/><text x="470" y="347">LPL</text></g>
-  <text x="526" y="122" class="lipidlab-small" data-lipid-label="pool"/>
-  <text x="212" y="230" class="lipidlab-small" data-lipid-label="chylomicron"/><text x="30" y="404" data-lipid-label="feces"/>
+  <text x="526" y="122" class="lipidlab-small lipidlab-pool-label" data-lipid-label="pool"/>
+  <text x="212" y="226" class="lipidlab-small" data-lipid-label="chylomicron"/><text x="30" y="404" class="lipidlab-organ-title" data-lipid-label="feces"/>
+  <g class="lipidlab-legend" transform="translate(18 432)">
+    <circle cx="8" cy="8" r="5.5" fill="#009fb7" stroke="#fff" stroke-width="1.2"/><text x="18" y="12" class="lipidlab-small">CM</text>
+    <circle cx="54" cy="8" r="5.5" fill="#5c940d" stroke="#fff" stroke-width="1.2"/><text x="64" y="12" class="lipidlab-small">BA</text>
+    <circle cx="98" cy="8" r="6" fill="#6741d9" stroke="#fff" stroke-width="1.2"/><text x="108" y="12" class="lipidlab-small">VLDL</text>
+    <circle cx="154" cy="8" r="5.5" fill="#f08c00" stroke="#fff" stroke-width="1.2"/><text x="164" y="12" class="lipidlab-small">IDL</text>
+    <circle cx="198" cy="8" r="5.5" fill="#d92b2b" stroke="#fff" stroke-width="1.2"/><text x="208" y="12" class="lipidlab-small">LDL</text>
+    <circle cx="246" cy="8" r="5" fill="#ae3ec9" stroke="#fff" stroke-width="1.2"/><text x="256" y="12" class="lipidlab-small">PCSK9</text>
+  </g>
   <g class="lipidlab-plugs"></g>`;
 
 export function createLipidFlow(svg, { reducedMotion = false } = {}) {

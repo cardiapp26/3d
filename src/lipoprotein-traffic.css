@@ -9,28 +9,34 @@
 .lpt button:focus-visible,.lpt input:focus-visible,.lpt summary:focus-visible{outline:3px solid #c2933d;outline-offset:2px}
 .lpt-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;margin-top:14px}
 .lpt-map{min-width:0}
-.lpt svg{width:100%;height:auto;display:block}
-.lpt svg text{font:15px system-ui;fill:#354e44}
-.lpt svg .lpt-small{font-size:12px;fill:#6b7d73}
-.lpt-tag rect{fill:#e8f4ea;stroke:#769c87;stroke-width:1.5}
-.lpt-tag text{font-size:11px !important;font-weight:700}
-.lpt-route{fill:none;stroke:#b9cfc2;stroke-width:1.2;stroke-dasharray:3 5}
-.lpt-endothelium{stroke:#b5786d;stroke-width:2;stroke-dasharray:10 4}
-.lpt-particles circle{stroke:rgba(255,255,255,.9);stroke-width:1.2;transition:opacity .25s}
-.lpt-retained circle{opacity:.85;stroke:#7b3a2c;stroke-width:.8}
-.lpt svg[data-focus] .lpt-particles circle{opacity:.55}
+.lpt svg{width:100%;height:auto;display:block;background:#f2f6f8;border:1px solid #d5e0e6;border-radius:14px}
+.lpt svg text{font:600 14px system-ui;fill:#243b32}
+.lpt svg .lpt-organ-title{font-size:15px;font-weight:800;fill:#2b1e16;paint-order:stroke;stroke:rgba(255,255,255,.82);stroke-width:3px;stroke-linejoin:round}
+.lpt svg .lpt-organ-title-light{fill:#fff8f5;stroke:rgba(68,18,14,.85);stroke-width:3.2px}
+.lpt svg .lpt-small{font-size:12px;font-weight:700;fill:#355066}
+.lpt svg .lpt-zone-tag{paint-order:stroke;stroke:rgba(255,255,255,.88);stroke-width:3px;stroke-linejoin:round}
+.lpt-tag rect{fill:#ffffff;stroke:#3b5c50;stroke-width:1.6}
+.lpt-tag-ldlr rect{stroke:#c92a2a;fill:#fff5f5}
+.lpt-tag-srbi rect{stroke:#0ca678;fill:#e6fcf5}
+.lpt-tag-lpl rect{stroke:#5f3dc4;fill:#f3f0ff}
+.lpt-tag text{font-size:11px !important;font-weight:800;fill:#1f362d}
+.lpt-route{fill:none;stroke:#6c889c;stroke-width:1.4;stroke-dasharray:4 5; opacity:.6}
+.lpt-endothelium{stroke:#9e3d45;stroke-width:2.2;stroke-dasharray:10 5}
+.lpt-particles circle{stroke:#ffffff;stroke-width:1.6;filter:drop-shadow(0 1px 2px rgba(15,28,36,.28));transition:opacity .25s}
+.lpt-retained circle{opacity:.92;stroke:#ffffff;stroke-width:1.2;filter:drop-shadow(0 1px 1.5px rgba(80,30,15,.35))}
+.lpt svg[data-focus] .lpt-particles circle{opacity:.72}
 .lpt svg[data-focus=chylomicron] .lpt-particles [data-kind=chylomicron],
 .lpt svg[data-focus=vldl] .lpt-particles [data-kind=vldl],
 .lpt svg[data-focus=idl] .lpt-particles [data-kind=idl],
 .lpt svg[data-focus=ldl] .lpt-particles [data-kind=ldl],
 .lpt svg[data-focus=lpa] .lpt-particles [data-kind=lpa],
-.lpt svg[data-focus=hdl] .lpt-particles [data-kind=hdl]{opacity:1;stroke:#173a2e;stroke-width:1.6}
-.lpt svg.is-apob .lpt-particles circle.is-apob{opacity:1;stroke:#1f3f8f;stroke-width:2.2}
+.lpt svg[data-focus=hdl] .lpt-particles [data-kind=hdl]{opacity:1;stroke:#102a22;stroke-width:2.5}
+.lpt svg.is-apob .lpt-particles circle.is-apob{opacity:1;stroke:#18347a;stroke-width:2.4}
 .lpt svg.is-apob .lpt-particles [data-kind=hdl]{opacity:.12}
 .lpt-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
 .lpt-chips button{border-color:var(--lpt-dot);background:color-mix(in srgb,var(--lpt-dot) 14%,#fff)}
 .lpt-chips button[aria-pressed=true]{background:var(--lpt-dot);color:#fff;border-color:var(--lpt-dot);text-shadow:0 1px 1px rgba(0,0,0,.35)}
-.lpt-chips button::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:var(--lpt-dot)}
+.lpt-chips button::before{content:"";display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:var(--lpt-dot);box-shadow:0 0 0 1.5px rgba(0,0,0,.18)}
 .lpt-apob{border-color:#7f95c9 !important}
 .lpt-apob[aria-pressed=true]{background:#1f3f8f !important}
 .lpt-count{margin:6px 0 0;color:#61766b}
