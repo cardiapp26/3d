@@ -52,8 +52,16 @@ function knots(tcl) {
   return list;
 }
 
-/** Front position tau ms after the His A of its cycle: { angle (0-360), segment }. */
-export function circuitAngle(tau, tcl = DEFAULT_TCL) {
+/**
+ * Front position tau ms after the His A of its cycle: { angle (0-360), segment }. A clockwise
+ * (reverse typical) circuit runs the same path backwards: its front is where the
+ * counterclockwise one was tau ms before the His.
+ */
+export function circuitAngle(tau, tcl = DEFAULT_TCL, dir = 'ccw') {
+  if (dir === 'cw') return ccwAngle(-tau, tcl);
+  return ccwAngle(tau, tcl);
+}
+function ccwAngle(tau, tcl) {
   const list = knots(tcl);
   const ph = ((tau % tcl) + tcl) % tcl;
   const k = list.find((x) => ph < x.t1) || list[list.length - 1];
@@ -109,7 +117,7 @@ function foreignTimes(events) {
  * @param {Record<string, object[]>} events live model events (absolute times)
  * @param {{ tcl?: number|null }} [opts] cycle length when the events hold a single cycle
  */
-export function circuitClock(events, { tcl = null } = {}) {
+export function circuitClock(events, { tcl = null, dir = 'ccw' } = {}) {
   const anchors = flutterAnchors(events);
   const cl = cycleOf(anchors) ?? tcl;
   const foreign = foreignTimes(events);
@@ -120,7 +128,7 @@ export function circuitClock(events, { tcl = null } = {}) {
     if (his == null || t - his >= cl) return null;
     if (foreign.some((f) => f > his && f <= t)) return null;
     const tau = t - his;
-    return { ...circuitAngle(tau, cl), tau, tcl: cl, his };
+    return { ...circuitAngle(tau, cl, dir), tau, tcl: cl, his, dir };
   };
 }
 
@@ -216,8 +224,8 @@ const mod = (x, m) => ((x % m) + m) % m;
  * @param {number} t
  * @param {{ tcl?: number, ppiExtra?: object|null }} opts ppiExtra: the case's return cycles per site
  */
-export function entrainmentAt(events, t, { tcl = DEFAULT_TCL, ppiExtra = null } = {}) {
-  if (!ppiExtra) return null;
+export function entrainmentAt(events, t, { tcl = DEFAULT_TCL, ppiExtra = null, dir = 'ccw' } = {}) {
+  if (!ppiExtra || dir === 'cw') return null;   // drawn for the typical circuit; the maneuver reads PPI for both
   const all = atrialCaptures(events).filter((c) => c.s <= t);
   if (!all.length) return null;
   const site = all[all.length - 1].site;
@@ -266,5 +274,49 @@ export function entrainmentAt(events, t, { tcl = DEFAULT_TCL, ppiExtra = null } 
     pacing: t - last.s < (pcl ?? tcl) + CAPTURE_MS, returned: hReturn != null && t >= hReturn,
     ppi, ppiTcl, verdict, fusion
   };
+}
+
+// ---- Isthmus line and the bidirectional block check ----
+/** The ablation line across the isthmus (clock degrees), septal to the ABL d catheter. */
+export const LESION_ANGLE = 178;
+const BLOCK_MS = 100;             // CS ostium to the lateral isthmus (or back) at least this long: block
+const SPREAD_SPEED = 1.5;         // degrees per ms of a paced front outside flutter (drawing)
+const CHECK_SITES = Object.freeze({ 'cs-prox': { from: 'cs-910', to: 'abl-d' }, cti: { from: 'abl-d', to: 'cs-910' } });
+
+/**
+ * Block check from the latest paced beat at the CS ostium or the lateral isthmus (ABL d): the
+ * time to the other side of the line and whether the high RA comes first (the wave went the
+ * long way round). Null for other pacing or during flutter.
+ */
+export function blockCheck(events, t) {
+  const caps = atrialCaptures(events).filter((c) => c.s <= t);
+  const last = caps[caps.length - 1];
+  if (!last || !CHECK_SITES[last.site] || flutterAnchors(events).some((a) => a > last.s - DEFAULT_TCL && a <= t)) return null;
+  const { to } = CHECK_SITES[last.site];
+  const reach = (events?.[to] || []).find((e) => e.type === 'A' && e.origin === last.site && e.t > last.s);
+  const hra = (events?.hra || []).find((e) => e.type === 'A' && e.origin === last.site && e.t > last.s);
+  if (!reach || reach.t > t) return { site: last.site, s: last.s, interval: null, block: null };
+  const interval = Math.round(reach.t - last.s);
+  return { site: last.site, s: last.s, interval, hraFirst: Boolean(hra && hra.t < reach.t), block: interval >= BLOCK_MS };
+}
+
+/**
+ * A paced front outside flutter spreading both ways round the annulus from its site, stopped
+ * by a complete isthmus line: [{ angle, blocked }] ms after the activation (empty once both
+ * fronts met or stopped).
+ */
+export function pacedSpread(site, ms, { block = false } = {}) {
+  const start = site === 'cti' ? CIRCUIT_SITES.cti : site === 'hra' ? CIRCUIT_SITES.hra : CIRCUIT_SITES.csOs;
+  const travel = ms * SPREAD_SPEED;
+  // Distance to the line each way (counterclockwise: decreasing angle).
+  const toLine = (dirSign) => { const d = dirSign < 0 ? start - LESION_ANGLE : LESION_ANGLE - start; return ((d % 360) + 360) % 360; };
+  const out = [];
+  let reach = { ccw: travel, cw: travel };
+  if (block) for (const [k, sign] of [['ccw', -1], ['cw', 1]]) reach[k] = Math.min(travel, toLine(sign));
+  if (!block && travel >= 180) return out;                   // the two fronts met opposite the site
+  if (block && reach.ccw + reach.cw >= 360 - 1e-6 && travel > Math.max(toLine(-1), toLine(1))) return out;
+  out.push({ angle: normAngle(start - reach.ccw), blocked: block && reach.ccw < travel });
+  out.push({ angle: normAngle(start + reach.cw), blocked: block && reach.cw < travel });
+  return out;
 }
 

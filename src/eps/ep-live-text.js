@@ -107,6 +107,8 @@ export const LIVE_TEXT = {
       traceAria: 'DII derivasyonu: F dalgası, flutter devresinin bölümlerine göre renkli',
       traceLabel: 'DII · F dalgası renkli',
       segments: { septum: 'Septum: aşağıdan yukarı (CS ağzından His\'e)', roof: 'Üst ön duvar: SVC\'nin önünden geçiş', lateral: 'Lateral duvar: yukarıdan aşağı', cti: 'CTI: yavaş iletim (istmus)' },
+      segmentsCw: { septum: 'Septum: yukarıdan aşağı (His\'ten CS ağzına)', roof: 'Üst ön duvar: SVC\'nin önünden geçiş', lateral: 'Lateral duvar: aşağıdan yukarı', cti: 'CTI: septumdan laterale, yavaş iletim' },
+      blockCheck: (x) => `Blok kontrolü, ${x.siteName}: ${x.site === 'cti' ? 'CS ağzı' : 'ABL d (lateral)'} ${x.interval} ms${x.hraFirst ? ', HRA önce' : ''} → ${x.block ? 'istmus bloklu (bu yönde); öbür yönü de deneyin.' : 'istmus iletiyor.'}`,
       front: (seg) => `Dalga cephesi: ${seg}`,
       noReentry: (origin) => (origin ? `Makro-reentri yok · son atriyal aktivasyon: ${origin}` : 'Makro-reentri yok'),
       origins: { circuit: 'flutter devresi', sinus: 'sinüs düğümü', hra: 'HRA pacing', cti: 'CTI pacing (ABL d)', cs: 'CS (pacing ya da sol atriyum)', septal: 'septum (retrograd)', left: 'sol atriyum', af: 'AF (düzensiz dalgacıklar)', other: 'başka bir odak' },
@@ -117,7 +119,7 @@ export const LIVE_TEXT = {
         manifest: '; manifest füzyon: pacing sırasında yüzey dalgası değişir (antidromik cephe devreden taşar).',
         none: '; dalga devreye CS ağzından girer ve aynı yoldan döner.'
       }[x.fusion] ?? '.'}`,
-      labels: { ta: 'TA', svc: 'SVC', ivc: 'IVC', kt: 'KT', es: 'ÖS', cs: 'CS', his: 'His', hra: 'HRA', abl: 'ABL', septal: 'Septal', lateral: 'Lateral', lao: 'LAO' }
+      labels: { ta: 'TA', svc: 'SVC', ivc: 'IVC', kt: 'KT', es: 'ÖS', cs: 'CS', his: 'His', hra: 'HRA', abl: 'ABL', lesion: 'Hat', septal: 'Septal', lateral: 'Lateral', lao: 'LAO' }
     },
   },
   en: {
@@ -217,6 +219,8 @@ export const LIVE_TEXT = {
       traceAria: 'Lead II: the F wave coloured by the limbs of the flutter circuit',
       traceLabel: 'II · F wave coloured',
       segments: { septum: 'Septum: caudocranial (CS ostium to His)', roof: 'Anterior roof: across in front of the SVC', lateral: 'Lateral wall: craniocaudal', cti: 'CTI: slow conduction (isthmus)' },
+      segmentsCw: { septum: 'Septum: craniocaudal (His to CS ostium)', roof: 'Anterior roof: across in front of the SVC', lateral: 'Lateral wall: caudocranial', cti: 'CTI: septal to lateral, slow conduction' },
+      blockCheck: (x) => `Block check, ${x.siteName}: ${x.site === 'cti' ? 'CS ostium' : 'ABL d (lateral)'} ${x.interval} ms${x.hraFirst ? ', high RA first' : ''} → ${x.block ? 'isthmus blocked (this direction); pace the other side too.' : 'the isthmus conducts.'}`,
       front: (seg) => `Wavefront: ${seg}`,
       noReentry: (origin) => (origin ? `No macro-reentry · latest atrial activation: ${origin}` : 'No macro-reentry'),
       origins: { circuit: 'the flutter circuit', sinus: 'sinus node', hra: 'HRA pacing', cti: 'CTI pacing (ABL d)', cs: 'CS (pacing or left atrium)', septal: 'septum (retrograde)', left: 'left atrium', af: 'AF (disorganized wavelets)', other: 'another focus' },
@@ -227,7 +231,7 @@ export const LIVE_TEXT = {
         manifest: '; manifest fusion: the surface wave changes during pacing (the antidromic front leaves the circuit).',
         none: '; the wave joins the circuit at the CS ostium and comes back the same way.'
       }[x.fusion] ?? '.'}`,
-      labels: { ta: 'TA', svc: 'SVC', ivc: 'IVC', kt: 'CT', es: 'ER', cs: 'CS', his: 'His', hra: 'HRA', abl: 'ABL', septal: 'Septal', lateral: 'Lateral', lao: 'LAO' }
+      labels: { ta: 'TA', svc: 'SVC', ivc: 'IVC', kt: 'CT', es: 'ER', cs: 'CS', his: 'His', hra: 'HRA', abl: 'ABL', lesion: 'Line', septal: 'Septal', lateral: 'Lateral', lao: 'LAO' }
     },
   }
 };
@@ -273,6 +277,10 @@ export const LIVE_CASE_TEXT = {
   'flutter-cti': {
     tr: { name: 'Tipik (CTI bağımlı) atriyal flutter', hints: ['Hızlı atriyal pacing (≤ 260 ms) tipik flutter başlatır: atriyal siklus 240 ms.', '2:1 AV iletim: ventrikül siklusu 480 ms; DII\'de negatif testere dişi F dalgaları.', 'Septum ve CS proksimalden distale önce, yüksek lateral RA His\'ten yaklaşık 75 ms sonra, en son yavaş CTI (saat yönünün tersi); Halka (LAO) görünümü devreyi DII ile birlikte gösterir.', 'CTI ablasyonu flutterı sonlandırır ve yeniden başlatılamaz kılar.', 'Atriyal overdrive (entrainment): CS proksimal ve lateral RA\'da PPI−TCL ≤ 30 ms (devre içi), CS distalde > 100 ms (devre dışı).'] },
     en: { name: 'Typical (CTI-dependent) atrial flutter', hints: ['Rapid atrial pacing (≤ 260 ms) induces typical flutter: atrial cycle 240 ms.', '2:1 AV conduction: ventricular cycle 480 ms; negative saw-tooth F waves in II.', 'Septum and CS proximal to distal first, the high lateral RA about 75 ms after the His, the slow CTI last (counterclockwise); the Ring (LAO) view shows the circuit with lead II.', 'CTI ablation ends the flutter and makes it non-inducible.', 'Atrial overdrive (entrainment): PPI−TCL ≤ 30 ms at the proximal CS and lateral RA (in the circuit), > 100 ms at the distal CS (outside).'] }
+  },
+  'flutter-cw': {
+    tr: { name: 'Ters tipik (saat yönünde) CTI flutter', hints: ['Hızlı atriyal pacing (≤ 260 ms) başlatır: atriyal siklus 240 ms.', 'DII\'de geniş pozitif F dalgaları, V1\'de negatif.', 'His\'ten CS ağzına iner, istmusu septumdan laterale geçer, lateral duvardan yukarı çıkar (Halka görünümünde saat yönünde).', 'Devre aynı: CTI ablasyonu bu flutterı da sonlandırır.', 'CS proksimal, HRA ve CTI\'de PPI−TCL ≤ 30 ms, CS distalde > 100 ms.'] },
+    en: { name: 'Reverse typical (clockwise) CTI flutter', hints: ['Rapid atrial pacing (≤ 260 ms) induces it: atrial cycle 240 ms.', 'Broad positive F waves in II, negative in V1.', 'Down the septum from the His to the CS ostium, across the isthmus septal to lateral, up the lateral wall (clockwise on the Ring view).', 'Same circuit: CTI ablation ends this flutter too.', 'PPI−TCL ≤ 30 ms at the proximal CS, HRA and CTI, > 100 ms at the distal CS.'] }
   },
   'va-block': {
     tr: { name: 'Retrograd VA blok', hints: ['RV pacing ve RV ekstrastimulusta retrograd A yok: VA dissosiyasyon, sinüs P dalgaları kendi hızında sürer.', 'VA iletim yokluğu AVNRT ve ortodromik AVRT olasılığını azaltır, dışlamaz.', 'İzoproterenol altında RV S1 500 ile 1:1 konsantrik VA (~145 ms) ortaya çıkar; daha kısa S2\'de VA blok.', 'Atropin bu modelde retrograd iletimi açmaya yetmez.'] },

@@ -7,7 +7,7 @@
  * front was. Without a flutter cycle the latest atrial activation is shown at its origin.
  * Frozen strips can replay the last cycles slowly. Colours live in style.css.
  */
-import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, circuitClock, circuitAngle, lastActivation, leadIiTrace, entrainmentAt } from './ep-flutter-circuit.js';
+import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, LESION_ANGLE, circuitClock, circuitAngle, lastActivation, leadIiTrace, entrainmentAt, blockCheck, pacedSpread } from './ep-flutter-circuit.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAP = Object.freeze({ w: 300, h: 236, cx: 150, cy: 118, squash: 0.86, rTa: 44, rIn: 52, rMid: 67, rOut: 82 });
@@ -111,14 +111,20 @@ export function createFlutterView(doc, { text }) {
     label('septal', [MAP.w - 6, 14], 'ep-circ-side-label', 'end');
     label('lateral', [6, 14], 'ep-circ-side-label', 'start');
     label('lao', [6, MAP.h - 6], 'ep-circ-side-label', 'start');
-    const arrows = svg('g', { class: 'ep-circ-arrows' }, map);
-    for (const deg of [105, 8, 268, 172]) {
-      const [x, y] = at(deg, MAP.rMid), [x2, y2] = at(deg - 6, MAP.rMid);
-      const ang = (Math.atan2(y2 - y, x2 - x) * 180) / Math.PI;
-      svg('path', { d: 'M-4,-4 L4,0 L-4,4', transform: `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(1)})`, class: 'ep-circ-arrow' }, arrows);
+    // Direction chevrons: counterclockwise (typical) and clockwise sets, one shown at a time.
+    const arrows = { ccw: svg('g', { class: 'ep-circ-arrows' }, map), cw: svg('g', { class: 'ep-circ-arrows' }, map) };
+    for (const [key, step] of [['ccw', -6], ['cw', 6]]) {
+      for (const deg of [105, 8, 268, 172]) {
+        const [x, y] = at(deg, MAP.rMid), [x2, y2] = at(deg + step, MAP.rMid);
+        const ang = (Math.atan2(y2 - y, x2 - x) * 180) / Math.PI;
+        svg('path', { d: 'M-4,-4 L4,0 L-4,4', transform: `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(1)})`, class: 'ep-circ-arrow' }, arrows[key]);
+      }
     }
+    // The isthmus line: grows from the annulus towards the IVC while RF is on.
+    const lesion = svg('line', { class: 'ep-circ-lesion' }, map);
+    const lesionMark = svg('text', { class: 'ep-circ-label ep-circ-lesion-label', 'text-anchor': 'middle' }, map);
     const live = svg('g', { class: 'ep-circ-live' }, map);
-    parts = { map, trace, labels, arrows, live, tips: [['his-d', hisTip], ['hra', hraTip], ['abl-d', ablTip], ...csDots] };
+    parts = { map, trace, labels, arrows, lesion, lesionMark, live, tips: [['his-d', hisTip], ['hra', hraTip], ['abl-d', ablTip], ...csDots] };
     applyText();
     return parts;
   }
@@ -130,13 +136,15 @@ export function createFlutterView(doc, { text }) {
   let frontText = '';
   let entrainText = '';
   let entrainNow = null;       // entrainment at the painted time (ep-flutter-circuit.js entrainmentAt)
+  let blockNow = null;         // block check at the painted time
+  let blockText = '';
 
   /** A front's wake: where it was over the last `span` ms, fading backwards (dir -1: an antidromic front). */
-  function drawWake(live, phase, tcl, span, cls, dir = 1) {
+  function drawWake(live, phase, tcl, span, cls, dir = 1, way = 'ccw') {
     const pieces = Math.max(2, Math.round((WAKE.pieces * span) / (tcl * WAKE.share)));
     const dt = span / pieces;
     for (let k = pieces; k >= 1; k--) {
-      const a = circuitAngle(phase - dir * k * dt, tcl), b = circuitAngle(phase - dir * (k - 1) * dt, tcl);
+      const a = circuitAngle(phase - dir * k * dt, tcl, way), b = circuitAngle(phase - dir * (k - 1) * dt, tcl, way);
       const [x1, y1] = at(a.angle, MAP.rMid), [x2, y2] = at(b.angle, MAP.rMid);
       svg('line', { x1, y1, x2, y2, class: `${cls(b)}`, opacity: (1 - k / (pieces + 1)).toFixed(2) }, live);
     }
@@ -177,31 +185,58 @@ export function createFlutterView(doc, { text }) {
     }
   }
 
+  /** The isthmus line: its length follows the RF time; complete once the lesion is made. */
+  function drawLesion() {
+    const { lesion, lesionMark } = parts;
+    const progress = props.lesion?.progress ?? 0;
+    lesion.style.display = progress > 0 ? '' : 'none';
+    lesionMark.textContent = props.lesion?.done ? text().labels.lesion : '';
+    if (progress <= 0) return;
+    const r0 = MAP.rIn - 3, r1 = r0 + (MAP.rOut - MAP.rIn + 12) * Math.min(1, progress);
+    const [x0, y0] = at(LESION_ANGLE, r0), [x1, y1] = at(LESION_ANGLE, r1), [lx, ly] = at(LESION_ANGLE, MAP.rTa - 8);
+    Object.entries({ x1: x0, y1: y0, x2: x1, y2: y1 }).forEach(([k, v]) => lesion.setAttribute(k, v.toFixed(1)));
+    lesion.classList.toggle('is-done', Boolean(props.lesion?.done));
+    lesionMark.setAttribute('x', lx.toFixed(1)); lesionMark.setAttribute('y', ly.toFixed(1));
+  }
+
   function drawMap(clock, events, t) {
     const { live, arrows, tips } = parts;
     live.replaceChildren();
     const now = clock(t);
+    const way = props.dir === 'cw' ? 'cw' : 'ccw';
+    const showArrows = (on) => { arrows.ccw.style.display = on && way === 'ccw' ? '' : 'none'; arrows.cw.style.display = on && way === 'cw' ? '' : 'none'; };
+    drawLesion();
     for (const [ch, dot] of tips) {
       const hit = (events[ch] || []).some((e) => e.type === 'A' && e.t <= t && t - e.t < HIT_MS);
       dot.classList.toggle('is-hit', hit);
     }
     if (now) {
-      arrows.style.display = '';
-      drawWake(live, now.tau, now.tcl, now.tcl * WAKE.share, (b) => `ep-circ-wake seg-${b.segment}`);
+      showArrows(true);
+      drawWake(live, now.tau, now.tcl, now.tcl * WAKE.share, (b) => `ep-circ-wake seg-${b.segment}`, 1, now.dir);
       drawHead(live, now.angle, `seg-${now.segment}`, true);
       shown = { active: true, segment: now.segment, angle: Math.round(now.angle), origin: 'flutter', spot: 'circuit', entrain: summary(entrainNow) };
       return;
     }
     if (entrainNow && (entrainNow.fronts.length || entrainNow.path != null)) {
-      arrows.style.display = '';
+      showArrows(true);
       drawEntrainment(live, entrainNow, props.tcl || 240);
       const lead = entrainNow.fronts.filter((f) => f.kind === 'ortho').at(-1);
       shown = { active: false, segment: lead?.segment ?? null, angle: lead ? Math.round(lead.angle) : null, origin: entrainNow.site, spot: 'paced', entrain: summary(entrainNow) };
       return;
     }
-    arrows.style.display = 'none';
+    showArrows(false);
     const act = lastActivation(events, t);
-    shown = { active: false, segment: null, angle: null, origin: act?.origin ?? null, spot: act?.spot ?? null, entrain: summary(entrainNow) };
+    shown = { active: false, segment: null, angle: null, origin: act?.origin ?? null, spot: act?.spot ?? null, entrain: summary(entrainNow), block: blockNow };
+    // Block check: the paced front goes round both ways and stops at a complete line.
+    if (act && (act.spot === 'cs' || act.spot === 'cti') && (act.origin === 'cs-prox' || act.origin === 'cti')) {
+      const fronts = pacedSpread(act.origin, t - act.t, { block: Boolean(props.ctiBlock) });
+      for (const fr of fronts) {
+        const [x, y] = at(fr.angle, MAP.rMid);
+        if (fr.blocked) svg('path', { d: `M${x - 6},${y - 6} L${x + 6},${y + 6} M${x + 6},${y - 6} L${x - 6},${y + 6}`, class: 'ep-circ-block' }, live);
+        else drawHead(live, fr.angle, 'ep-circ-anti');
+      }
+      if (fronts.length) return;
+    }
     const spot = act && SPOTS[act.spot];
     if (!spot || t - act.t > PULSE_MS) return;
     const [x, y] = at(...spot), p = (t - act.t) / PULSE_MS;
@@ -213,7 +248,7 @@ export function createFlutterView(doc, { text }) {
     const { trace } = parts;
     trace.replaceChildren();
     const span = (tcl || 240) * 2.5;
-    const samples = leadIiTrace(events, t - span, t, 150, { tcl, ppiExtra: props.ppiExtra });
+    const samples = leadIiTrace(events, t - span, t, 150, { tcl, ppiExtra: props.ppiExtra, dir: props.dir || 'ccw' });
     const x = (s) => TRACE.pad + ((s.t - (t - span)) / span) * (TRACE.w - 2 * TRACE.pad);
     const y = (v) => Math.min(TRACE.h - 2, Math.max(2, TRACE.mid - v * TRACE.mvPx));
     svg('line', { x1: TRACE.pad, y1: TRACE.mid, x2: TRACE.w - TRACE.pad, y2: TRACE.mid, class: 'ep-circ-base' }, trace);
@@ -237,18 +272,23 @@ export function createFlutterView(doc, { text }) {
     if (!props || element.hidden) return;
     build();
     const t = replay ? replay.t : props.t;
-    const clock = circuitClock(props.events, { tcl: props.tcl });
-    entrainNow = entrainmentAt(props.events, t, { tcl: props.tcl || 240, ppiExtra: props.ppiExtra });
+    const clock = circuitClock(props.events, { tcl: props.tcl, dir: props.dir || 'ccw' });
+    entrainNow = entrainmentAt(props.events, t, { tcl: props.tcl || 240, ppiExtra: props.ppiExtra, dir: props.dir || 'ccw' });
+    blockNow = blockCheck(props.events, t);
     drawMap(clock, props.events, t);
     drawTrace(props.events, t, clock(t)?.tcl ?? props.tcl);
     const tx = text();
     const site = entrainNow ? tx.sites[entrainNow.site] ?? entrainNow.site : '';
-    const next = shown.active ? tx.front(tx.segments[shown.segment])
+    const segs = props.dir === 'cw' ? tx.segmentsCw : tx.segments;
+    if (legendKey !== `${tx.title}|${props.dir === 'cw'}`) buildLegend();
+    const next = shown.active ? tx.front(segs[shown.segment])
       : shown.spot === 'paced' ? tx.entraining(site, entrainNow.pcl)
         : tx.noReentry(shown.spot ? tx.origins[shown.spot] ?? tx.origins.other : null);
     if (next !== frontText) { frontText = next; front.textContent = next; }
     const result = entrainNow?.verdict ? tx.entrainResult({ ...entrainNow, siteName: site }) : '';
-    if (result !== entrainText) { entrainText = result; entrainLine.textContent = result; entrainLine.hidden = !result; }
+    const check = blockNow?.interval != null ? tx.blockCheck({ ...blockNow, siteName: tx.sites[blockNow.site] ?? blockNow.site }) : '';
+    const line = [result, check].filter(Boolean).join(' ');
+    if (line !== entrainText) { entrainText = line; entrainLine.textContent = line; entrainLine.hidden = !line; }
     replayBtn.hidden = props.running || !clock(props.t);
     replayBtn.textContent = replay ? tx.replayStop : tx.replay;
     replayBtn.setAttribute('aria-pressed', String(Boolean(replay)));
@@ -277,6 +317,19 @@ export function createFlutterView(doc, { text }) {
   }
   replayBtn.addEventListener('click', () => { if (replay) { stopReplay(); paint(); } else startReplay(); });
 
+  /** Legend of the limbs, worded for the circuit's direction. */
+  let legendKey = '';
+  function buildLegend() {
+    const tx = text(), cw = props?.dir === 'cw';
+    const segs = cw ? tx.segmentsCw : tx.segments;
+    legendKey = `${tx.title}|${cw}`;
+    legend.replaceChildren(...CIRCUIT_SEGMENTS.map((s) => {
+      const li = html('li', `seg-${s.id}`);
+      li.append(html('span', 'ep-circ-swatch'), doc.createTextNode(segs[s.id]));
+      return li;
+    }));
+  }
+
   /** Texts of the built drawing in the current language. */
   function applyText() {
     const tx = text();
@@ -284,11 +337,7 @@ export function createFlutterView(doc, { text }) {
     parts.map.setAttribute('aria-label', tx.aria);
     parts.trace.setAttribute('aria-label', tx.traceAria);
     for (const [key, node] of Object.entries(parts.labels)) node.textContent = tx.labels[key] ?? key;
-    legend.replaceChildren(...CIRCUIT_SEGMENTS.map((s) => {
-      const li = html('li', `seg-${s.id}`);
-      li.append(html('span', 'ep-circ-swatch'), doc.createTextNode(tx.segments[s.id]));
-      return li;
-    }));
+    buildLegend();
     frontText = '';
     entrainText = null;
   }

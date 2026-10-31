@@ -29,11 +29,26 @@ export const ORIGINS = Object.freeze({
   // nadir, as the free wall starts its craniocaudal activation. ep-flutter-circuit.js draws the
   // same timing on the LAO ring.
   flutter: { 'cs-910': 0, 'cs-78': 10, 'cs-56': 20, 'cs-34': 30, 'cs-12': 40, 'his-d': 62, 'his-p': 64, hra: 137, 'abl-d': 205, avj: 50, ap: 40, aps: 0, f: 122, p: null, pAmp: 0 },
+  // Clockwise (reverse typical) flutter, timed from the His A: the front descends the septum to
+  // the CS ostium, crosses the isthmus septal to lateral, climbs the lateral wall to the high RA
+  // and returns over the roof; CS proximal to distal into the left atrium. fAmp: broad positive
+  // F waves in II (negative in V1).
+  'flutter-cw': { 'his-d': 0, 'his-p': 2, 'cs-910': 62, 'cs-78': 72, 'cs-56': 82, 'cs-34': 92, 'cs-12': 102, 'abl-d': 97, hra: 165, avj: 30, ap: 102, aps: 62, f: 175, fAmp: 0.14, p: null, pAmp: 0 },
   // Pacing from the ablation catheter at the mid isthmus: inferior septal origin, negative P in II.
   cti: { 'abl-d': 2, 'cs-910': 16, 'cs-78': 26, 'his-d': 40, 'his-p': 42, 'cs-56': 36, 'cs-34': 46, 'cs-12': 56, hra: 72, avj: 30, ap: 56, aps: 14, p: 8, pAmp: -0.16 }
 });
 
 export const FLUTTER_TCL = 240;
+/**
+ * After a complete isthmus line (bidirectional block) the paced wave goes the long way round:
+ * from the CS ostium it climbs the septum, crosses the roof and descends the lateral wall, so
+ * ABL d on the lateral side of the line is reached after the high RA; from ABL d it climbs the
+ * lateral wall and comes down the septum to the CS ostium last.
+ */
+export const CTI_BLOCK = Object.freeze({
+  lateralDelay: 70,   // ABL d this long after the high RA for a septal or left atrial origin
+  fromLateral: Object.freeze({ 'abl-d': 2, hra: 45, 'his-p': 108, 'his-d': 110, 'cs-910': 140, 'cs-78': 150, 'cs-56': 160, 'cs-34': 170, 'cs-12': 180, avj: 110, ap: 180, aps: 140, p: 8, pAmp: 0.12 })
+});
 /**
  * A capture from the isthmus during flutter: the paced front leaves the isthmus the same way
  * the circuit does (orthodromic), the antidromic one is lost inside it, so the atria and the F
@@ -77,6 +92,8 @@ export const LIVE_CASES = Object.freeze({
   'wpw-left': { ...BASE, ap: { insertion: 'ap', origin: 'ap-left', ante: true, retro: 70, erp: 240, anteDelay: 25 }, af: { triggerCl: 250, triggerCount: 6, min: 130, max: 210 } },
   'at-focal': { ...BASE, fp: fp({ retroErp: 220 }), at: { cl: 380, origin: 'la-focus', triggerCl: 330, triggerCount: 4 } },
   'flutter-cti': { ...BASE, flutter: { tcl: FLUTTER_TCL, triggerCl: 260, triggerCount: 6, ppiExtra: { hra: 20, 'cs-prox': 10, 'cs-dist': 120, cti: 5 } } },
+  // Clockwise (reverse typical) CTI flutter: the same circuit run the other way.
+  'flutter-cw': { ...BASE, flutter: { tcl: FLUTTER_TCL, dir: 'cw', triggerCl: 260, triggerCount: 6, ppiExtra: { hra: 15, 'cs-prox': 10, 'cs-dist': 120, cti: 5 } } },
   'vt-scar': { ...BASE, fp: fp({ retroErp: 1000 }), vt: { cl: 380, triggerCl: 300, ppiExtra: 80, atpCl: 320, atpCaptures: 6 } },
   // No retrograde AV nodal conduction (VA block on ventricular pacing); isoproterenol brings it out at long cycles.
   'va-block': { ...BASE, fp: fp({ retroErp: 700 }) },

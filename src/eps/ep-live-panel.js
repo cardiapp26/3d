@@ -14,7 +14,7 @@
 import { drawEgm, timeAtX, channelAtY } from './ep-egm.js';
 import { withStimArtifacts } from './ep-waveform.js';
 import { EP_CHANNELS } from './ep-cases.js';
-import { LIVE_CASES, LIVE_CHANNELS, LIVE_SITES, ABLATION_TARGETS, DRUGS, createLiveHeart, planTrain, liveIntervals } from './ep-live-model.js';
+import { LIVE_CASES, LIVE_CHANNELS, LIVE_SITES, ABLATION_TARGETS, DRUGS, RF_LESION_MS, createLiveHeart, planTrain, liveIntervals } from './ep-live-model.js';
 import { notesAfterRun, noteForDrug, addNotes } from './ep-live-coach.js';
 import { LIVE_TEXT, LIVE_CASE_TEXT } from './ep-live-text.js';
 import {
@@ -535,6 +535,14 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     return { ...view, row: row >= 0 ? row : null, label: `${Math.abs(b - a)} ms${mv}` };
   }
 
+  /** The isthmus line for the ring: grows while RF runs at the CTI, complete after the lesion. */
+  function lesionState() {
+    const rf = heart.rf();
+    if (heart.status().ctiBlock) return { progress: 1, done: true };
+    if (rf?.target === 'cti') return { progress: Math.min(1, (simNow - rf.token) / RF_LESION_MS), done: false };
+    return null;
+  }
+
   function draw() {
     checkAfterStop();
     const span = spanMs(), end = viewEnd(), from = end - span;
@@ -558,7 +566,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     if (ladderOn && drawn) drawLadder(ladderCanvas, ladder, { ...drawn, from: drawn.from + from, to: drawn.to + from }, { lang: L() });
     // The circuit view names the mechanism too: hidden until a hidden case is answered.
     circuitView.element.hidden = !state.circuit || locked;
-    if (!circuitView.element.hidden) circuitView.update({ events: heart.events(end - 10000, end + 1), t: end, running: state.running, tcl: heart.param('flutter.tcl'), ppiExtra: heart.param('flutter.ppiExtra') });
+    if (!circuitView.element.hidden) circuitView.update({ events: heart.events(end - 10000, end + 1), t: end, running: state.running, tcl: heart.param('flutter.tcl'), ppiExtra: heart.param('flutter.ppiExtra'), dir: heart.param('flutter.dir'), ctiBlock: heart.status().ctiBlock, lesion: lesionState() });
     const iv = liveIntervals(heart.events(end - 2500, end));
     const t = T(), f = (v) => (v == null ? t.none : `${v} ms`);
     const rr = iv.rr ?? iv.pp;
