@@ -68,9 +68,43 @@ function sawtooth(dt, e) {
   return -amp * SAW.plateau * (1 - ease((dt - rise) / (cl - fall - rise)));
 }
 
+/**
+ * Pacing stimulus artifact (live monitor). On the paced bipole the pulse saturates the amplifier
+ * (near: a flat-topped pulse far above the row, then an opposite after-potential that decays
+ * over tens of ms); every other channel and the surface leads pick up a small sharp spike (far).
+ */
+export const STIM_ARTIFACT = Object.freeze({ near: 6, pulse: 2, rise: 0.4, after: -0.4, tau: 14, far: 0.3, surface: 0.2 });
+function stimArtifact(dt, e) {
+  const A = STIM_ARTIFACT;
+  if (e.stim === 'far') return dt < -3 || dt > 5 ? 0 : e.amp * (gauss(dt, 0.6) - 0.45 * gauss(dt - 1.5, 0.8));
+  if (dt < -A.rise || dt > A.pulse + 8 * A.tau) return 0;
+  if (dt < 0) return e.amp * (1 + dt / A.rise);
+  if (dt <= A.pulse) return e.amp;
+  return e.amp * A.after * Math.exp(-(dt - A.pulse) / A.tau);
+}
+
+/**
+ * Event table with the pacing artifacts of its stimuli: the stimulus on the paced channel becomes
+ * the saturating artifact and every other listed channel gets the small far-field spike.
+ */
+export function withStimArtifacts(events, channels = []) {
+  const stims = [];
+  for (const [ch, list] of Object.entries(events || {})) for (const e of list) if (e.type === 'S') stims.push({ ch, t: e.t });
+  if (!stims.length) return events;
+  const out = {};
+  for (const ch of new Set([...Object.keys(events), ...channels])) {
+    const own = (events[ch] || []).map((e) => (e.type === 'S' ? { ...e, amp: STIM_ARTIFACT.near, stim: 'near' } : e));
+    const amp = SURFACE.includes(ch) ? STIM_ARTIFACT.surface : STIM_ARTIFACT.far;
+    const far = stims.filter((s) => s.ch !== ch).map((s) => ({ type: 'S', t: s.t, amp, sigma: 1, stim: 'far', part: 1 }));
+    out[ch] = far.length ? [...own, ...far].sort((a, b) => a.t - b.t) : own;
+  }
+  return out;
+}
+
 /** Value of one event at time t (ms) on a channel. */
 export function waveValue(t, e, channelId) {
   const dt = t - e.t;
+  if (e.stim) return stimArtifact(dt, e);
   if (e.saw) return dt < -SAW.fall * e.saw || dt > (1 - SAW.fall) * e.saw ? 0 : sawtooth(dt, e);
   const reach = e.kind === 'T' ? 5 * e.sigma : e.surfaceQrs ? 45 * kOf(e) : 6 * e.sigma;
   if (Math.abs(dt) > reach) return 0;
@@ -81,6 +115,8 @@ export function waveValue(t, e, channelId) {
 }
 /** Times where an event's shape peaks (so a sub-pixel sampling grid never misses them). */
 export function wavePeaks(e) {
+  if (e.stim === 'near') { const A = STIM_ARTIFACT; return [e.t - A.rise, e.t, e.t + A.pulse, e.t + A.pulse + 0.05]; }
+  if (e.stim) return [e.t, e.t + 1.5];
   if (e.saw) return [e.t, e.t + SAW.rise * e.saw];
   if (e.mono || e.kind === 'T' || e.kind === 'P') return [e.t];
   if (e.surfaceQrs) { const k = kOf(e); return [e.t - 14 * k, e.t, e.t + 15 * k]; }

@@ -4,20 +4,25 @@
  * stimulator (any CS bipole, HRA or RV; S1 × N, S2-S4, burst, pace and pause,
  * continuous pacing, decremental extrastimulus runs read drive by drive with
  * ep-live-stim.js), a live heart rate, DC cardioversion,
- * freeze and review of the last 30 s, sweep speed, interval readout and
- * vertical calipers, RF ablation at a chosen catheter-tip target, and a
+ * freeze and review of the last 30 s (slider or page by page), sweep speed,
+ * per-channel gain, pacing artifacts that saturate the paced bipole, interval
+ * readout and calipers with a time and peak-to-peak reading, isoproterenol and
+ * atropine with a coach commenting on each run (ep-live-coach.js), RF ablation at a chosen catheter-tip target, and a
  * hidden-case diagnosis quiz with expert hints. The strip is drawn by
  * drawEgm on the visible window.
  */
 import { drawEgm, timeAtX, channelAtY } from './ep-egm.js';
-import { LIVE_CASES, LIVE_CHANNELS, LIVE_SITES, ABLATION_TARGETS, createLiveHeart, planTrain, liveIntervals } from './ep-live-model.js';
+import { withStimArtifacts } from './ep-waveform.js';
+import { EP_CHANNELS } from './ep-cases.js';
+import { LIVE_CASES, LIVE_CHANNELS, LIVE_SITES, ABLATION_TARGETS, DRUGS, createLiveHeart, planTrain, liveIntervals } from './ep-live-model.js';
+import { notesAfterRun, noteForDrug, addNotes } from './ep-live-coach.js';
 import { LIVE_TEXT, LIVE_CASE_TEXT } from './ep-live-text.js';
 import {
   tclBefore, atrialCycle, hisPvcTime, analyzeHisPvc, overdriveStart, planOverdrive, atriumEntrained, analyzeOverdrive,
   interpretOverdrive, interpretSite, planProtocol, analyzeStep, summarizeProtocol, analyzeVaLinking
 } from './ep-live-maneuvers.js';
 import { planProgrammed, placeDrive, driveStart, analyzeDrive, driveEnds, markJumps, summarizeProgrammed, STIM_DEFAULTS } from './ep-live-stim.js';
-import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, caliperText } from './ep-user-caliper.js';
+import { CALIPER_SNAP_MS, SATURATION_MV, noCaliper, snapTime, placeCaliper, peakToPeak } from './ep-user-caliper.js';
 import { readFlag, writeFlag } from './view-prefs.js';
 import { buildLadder, drawLadder, LADDER_STYLE } from './ep-ladder.js';
 import { stripLinks, shiftLinks } from './ep-strip-links.js';
@@ -29,6 +34,10 @@ const RATES = [0.25, 0.5, 1, 2, 4]; // playback speed
 const REVIEW_MS = 30000;           // frozen history that can be scrolled back
 const KEEP_MS = 45000;             // event memory kept by the model
 const CONT_AHEAD_MS = 2000;        // continuous pacing: stimuli scheduled this far ahead
+const GAINS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4];   // display gain steps per channel
+const CHANNEL_LABEL = Object.fromEntries(EP_CHANNELS.map((ch) => [ch.id, ch.label]));
+const DRUG_IDS = Object.keys(DRUGS);
+const noDrugs = () => Object.fromEntries(DRUG_IDS.map((d) => [d, false]));
 // Animation frame helpers that also load outside a browser (unit tests).
 const nextFrame = (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : 0);
 const cancelFrame = (id) => { if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id); };
@@ -46,7 +55,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '', waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links'),
     hidden: false, quizOpen: false, answer: null, showHints: false, rfOn: false, rfTarget: 'slow-pathway', lesion: '',
     maneuver: null, maneuverText: '', protocol: null, protocolKind: 'avbcl', protocolRows: [], protocolSummary: '',
-    prog: null, progRows: [], progSummary: null, cont: null };
+    prog: null, progRows: [], progSummary: null, cont: null, gains: {}, gainCh: 'all', caliperCh: null, drugs: noDrugs(), coach: [] };
   let heart = createLiveHeart(state.caseId);
   let simNow = 0, lastWall = null, raf = 0, lastTrim = 0, drawn = null;
 
@@ -75,7 +84,17 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const wavesBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-waves': '' });
   const ladderBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-ladder': '' });
   const linksBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-links': '' });
-  bar.append(runBtn, speedSel, rateSel, review, calBtn, wavesBtn, ladderBtn, linksBtn);
+  const pageBtns = ['first', 'prev', 'next', 'last'].map((dir) => el('button', '', { type: 'button', 'data-ep-live-page': dir }));
+  const pageAt = el('span', 'ep-live-page-at', { 'data-ep-live-page-at': '' });
+  bar.append(runBtn, speedSel, rateSel, pageBtns[0], pageBtns[1], review, pageBtns[2], pageBtns[3], pageAt, calBtn, wavesBtn, ladderBtn, linksBtn);
+  // Display gain of one channel (or all), as the amplitude keys of a recording system.
+  const tools = el('div', 'ep-view ep-live-tools');
+  const gainLabel = el('span');
+  const gainSel = el('select', '', { 'data-ep-live-gain-ch': '' });
+  const gainDown = el('button', '', { type: 'button', 'data-ep-live-gain': 'down' });
+  const gainVal = el('output', 'ep-live-gain-val', { 'data-ep-live-gain-val': '' });
+  const gainUp = el('button', '', { type: 'button', 'data-ep-live-gain': 'up' });
+  tools.append(gainLabel, gainSel, gainDown, gainVal, gainUp);
   // Ladder diagram under the strip, on the same time axis.
   const ladderCanvas = el('canvas', 'ep-live-ladder', { role: 'img', 'data-ep-live-ladder-canvas': '' });
   const readout = el('p', 'ep-live-readout', { 'data-ep-live-intervals': '' });
@@ -103,6 +122,14 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const progList = el('ol', 'ep-live-protocol-rows', { 'data-ep-live-prog-rows': '' });
   const progSum = el('p', 'ep-pace-result', { 'aria-live': 'polite', 'data-ep-live-prog-summary': '' });
   stimBox.append(stimTitle, grid, actions, hint, progList, progSum);
+  // Drugs and the coach's notes on each run.
+  const drugBox = el('section', 'ep-pace ep-live-drugs');
+  const drugTitle = el('h4', 'ep-pace-title');
+  const drugActions = el('div', 'ep-pace-actions');
+  const drugBtns = DRUG_IDS.map((id) => { const b = el('button', 'ep-pace-retry', { type: 'button', 'data-ep-live-drug': id }); drugActions.append(b); return b; });
+  const coachList = el('ul', 'ep-live-hints ep-live-coach', { 'data-ep-live-coach': '', 'aria-live': 'polite' });
+  const coachEmpty = el('p', 'ep-pace-note');
+  drugBox.append(drugTitle, drugActions, coachList, coachEmpty);
   // RF ablation console.
   const ablBox = el('section', 'ep-pace ep-live-ablation');
   const ablTitle = el('h4', 'ep-pace-title');
@@ -131,9 +158,9 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   // Workstation layout: the monitor fills the screen; case, stimulator,
   // maneuvers, protocols and RF sit in the console beside it.
   const monitor = el('div', 'ep-live-monitor');
-  monitor.append(bar, canvas, ladderCanvas, readout, info);
+  monitor.append(bar, tools, canvas, ladderCanvas, readout, info);
   const deck = el('aside', 'ep-live-console');
-  deck.append(caseRow, caseBar, quiz, hintsBox, stimBox, manBox, protoBox, ablBox);
+  deck.append(caseRow, caseBar, quiz, hintsBox, stimBox, drugBox, manBox, protoBox, ablBox);
   root.append(monitor, deck);
 
   const spanMs = () => {
@@ -145,8 +172,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   function setCase(id, { hidden = false } = {}) {
     state.caseId = LIVE_CASES[id] ? id : 'normal';
     heart = createLiveHeart(state.caseId);
-    simNow = 0; lastTrim = 0; state.back = 0; state.caliper = noCaliper(); state.status = '';
-    Object.assign(state, { hidden, quizOpen: false, answer: null, showHints: false, rfOn: false, lesion: '', maneuver: null, maneuverText: '', protocol: null, protocolRows: [], protocolSummary: '', prog: null, progRows: [], progSummary: null, cont: null });
+    simNow = 0; lastTrim = 0; state.back = 0; state.caliper = noCaliper(); state.caliperCh = null; state.status = '';
+    Object.assign(state, { hidden, quizOpen: false, answer: null, showHints: false, rfOn: false, lesion: '', maneuver: null, maneuverText: '', protocol: null, protocolRows: [], protocolSummary: '', prog: null, progRows: [], progSummary: null, cont: null, drugs: noDrugs(), coach: [] });
     advance(2500);   // open on a few sinus beats
     if (!state.running) state.frozenAt = simNow;
     render();
@@ -296,8 +323,13 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   function finishProgrammed(reason = null) {
     if (!state.prog) return;
     state.progSummary = summarizeProgrammed(state.progRows, { reason });
+    if (reason !== 'stopped') {
+      const ctx = { drugs: state.drugs, s1: state.prog.plans[0]?.s1 ?? null, sinusCl: heart.param('sinusCl') };
+      state.coach = addNotes(state.coach, notesAfterRun(markJumps(state.progRows), state.progSummary, ctx));
+    }
     state.prog = null;
     renderProgrammed();
+    renderDrugs();
   }
   function tickProgrammed() {
     const pr = state.prog;
@@ -342,6 +374,32 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     if (state.prog) finishProgrammed('stopped');
   }
 
+  // ---- Review page by page and display gain ----
+  function page(dir) {
+    if (state.running) freeze(true);
+    const span = spanMs(), oldest = Math.max(0, Math.min(REVIEW_MS, state.frozenAt - span));
+    const to = dir === 'first' ? oldest : dir === 'last' ? 0 : state.back + (dir === 'prev' ? span : -span);
+    state.back = Math.round(Math.max(0, Math.min(oldest, to)));
+    state.caliper = noCaliper();
+    render();
+  }
+  const gainOf = (ch) => state.gains[ch] ?? 1;
+  function stepGain(dir) {
+    const chs = state.gainCh === 'all' ? LIVE_CHANNELS : [state.gainCh];
+    const at = (g) => GAINS.reduce((best, v, i) => (Math.abs(v - g) < Math.abs(GAINS[best] - g) ? i : best), 0);
+    const next = {};
+    for (const ch of chs) next[ch] = GAINS[Math.max(0, Math.min(GAINS.length - 1, at(gainOf(ch)) + dir))];
+    state.gains = { ...state.gains, ...next };
+    render();
+  }
+  /** Peak-to-peak amplitude between the calipers on the measured channel (model mV), or null. */
+  function caliperAmp() {
+    const { a, b } = state.caliper, ch = state.caliperCh;
+    if (a == null || b == null || a === b || !ch) return null;
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    return peakToPeak({ events: withStimArtifacts(heart.events(lo - 1500, hi + 500), LIVE_CHANNELS), t0: 0 }, ch, lo, hi);
+  }
+
   function freeze(flag) {
     state.running = !flag;
     state.frozenAt = flag ? simNow : null;
@@ -380,6 +438,10 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   stopBtn.addEventListener('click', () => { stopAllPacing(); state.pauseAt = null; state.status = T().stopped; state.stopCheckAt = simNow + STOP_CHECK_MS; render(); });
   shockBtn.addEventListener('click', () => { if (!state.running) freeze(false); state.cont = null; if (state.prog) finishProgrammed('stopped'); heart.cardiovert(simNow + 50); state.stopCheckAt = null; state.status = T().shocked; render(); });
   runBtn.addEventListener('click', () => freeze(state.running));
+  pageBtns.forEach((b) => b.addEventListener('click', () => page(b.getAttribute('data-ep-live-page'))));
+  gainSel.addEventListener('change', () => { state.gainCh = gainSel.value; render(); });
+  gainDown.addEventListener('click', () => stepGain(-1));
+  gainUp.addEventListener('click', () => stepGain(1));
   speedSel.addEventListener('change', () => { state.speed = Number(speedSel.value) || 25; render(); });
   review.addEventListener('input', () => { state.back = Number(review.value); state.caliper = noCaliper(); draw(); });
   calBtn.addEventListener('click', () => { state.caliperOn = !state.caliperOn; state.caliper = noCaliper(); render(); });
@@ -402,6 +464,13 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     render();
   });
   targetSel.addEventListener('change', () => { state.rfTarget = targetSel.value; });
+  drugBtns.forEach((b, i) => b.addEventListener('click', () => {
+    const id = DRUG_IDS[i], on = !state.drugs[id];
+    heart.setDrug(id, on);
+    state.drugs = { ...state.drugs, [id]: on };
+    state.coach = addNotes(state.coach, [noteForDrug(id, on, heart.param('sinusCl'))]);
+    renderDrugs();
+  }));
   manButtons.forEach((b, i) => b.addEventListener('click', () => startManeuver(['his-pvc', 'v-od', 'a-od'][i])));
   protoSel.addEventListener('change', () => { state.protocolKind = protoSel.value; state.protocolRows = []; state.protocolSummary = ''; renderProtocol(); });
   protoBtn.addEventListener('click', () => { if (state.protocol) { heart.stopPacing(); finishProtocol(); } else startProtocol(); });
@@ -420,8 +489,15 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     renderAblation();
   });
   canvas.addEventListener('click', (event) => {
-    if (!state.caliperOn || !drawn) return;
+    if (!drawn) return;
     const rect = canvas.getBoundingClientRect();
+    // A click on a channel name picks that channel for the gain keys.
+    if (event.clientX - rect.left < drawn.plotLeft) {
+      const picked = channelAtY(event.clientY - rect.top, drawn);
+      if (picked) { state.gainCh = picked; render(); }
+      return;
+    }
+    if (!state.caliperOn) return;
     const local = timeAtX(event.clientX - rect.left, drawn);
     if (local == null) return;
     const from = viewEnd() - spanMs();
@@ -429,6 +505,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     const radius = Math.max(CALIPER_SNAP_MS, (6 * (drawn.to - drawn.from)) / drawn.plotW);
     const t = snapTime({ events: heart.events(from + local - radius, from + local + radius) }, from + local, ch ? [ch] : LIVE_CHANNELS, radius);
     state.caliper = placeCaliper(state.caliper, t);
+    if (ch) state.caliperCh = ch;
     render();
   });
 
@@ -442,12 +519,24 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     if (rr != null && rr < INDUCED_RR_MS) { state.status = T().stoppedRhythm(Math.round(60000 / rr)); render(); }
   }
 
+  // The calipers in window time, with the time and amplitude reading drawn in the shaded box.
+  function caliperView(from) {
+    const { a, b } = state.caliper;
+    const view = { a: a == null ? null : a - from, b: b == null ? null : b - from };
+    if (a == null || b == null) return view;
+    const amp = caliperAmp();
+    const row = LIVE_CHANNELS.indexOf(state.caliperCh);
+    const mv = amp == null ? '' : amp >= SATURATION_MV ? ` · ≥ ${SATURATION_MV} mV` : ` · ${amp.toFixed(2)} mV`;
+    return { ...view, row: row >= 0 ? row : null, label: `${Math.abs(b - a)} ms${mv}` };
+  }
+
   function draw() {
     checkAfterStop();
     const span = spanMs(), end = viewEnd(), from = end - span;
     const raw = heart.events(from - 500, end + 80);   // earlier events: ladder lines entering from the left edge
-    const events = Object.fromEntries(Object.entries(raw).map(([ch, list]) => [ch, list.map((e) => ({ ...e, t: e.t - from }))]));
-    const local = state.caliperOn ? { a: state.caliper.a == null ? null : state.caliper.a - from, b: state.caliper.b == null ? null : state.caliper.b - from } : null;
+    const shifted = Object.fromEntries(Object.entries(raw).map(([ch, list]) => [ch, list.map((e) => ({ ...e, t: e.t - from }))]));
+    const events = withStimArtifacts(shifted, LIVE_CHANNELS);
+    const local = state.caliperOn ? caliperView(from) : null;
     // The ladder names the mechanism of a hidden case: it waits for the answer
     // (on the channels the activations are still joined, without the conduction lines).
     const locked = state.hidden && !state.answer;
@@ -457,7 +546,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
       links = shiftLinks(stripLinks(raw, ladder), -from);
       if (locked) links = { ...links, conduction: [] };
     }
-    drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, t0: from, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local, waves: state.waves, links, linkStyles: LADDER_STYLE }) || drawn;
+    drawn = drawEgm(canvas, { id: 'live', channels: LIVE_CHANNELS, windowMs: span, t0: from, events, calipers: [], markers: [] }, { lang: getLang(), channels: LIVE_CHANNELS, caliper: local, waves: state.waves, links, linkStyles: LADDER_STYLE, gains: state.gains, clip: true }) || drawn;
     const ladderOn = state.ladder && !locked;
     ladderCanvas.hidden = !ladderOn;
     // Built on the absolute event times (a His names its junctional A by absolute time).
@@ -525,6 +614,15 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     progSum.textContent = state.progSummary ? t.progSum(state.progSummary) : state.prog ? t.progRunning : '';
   }
 
+  function renderDrugs() {
+    const t = T();
+    drugTitle.textContent = t.drugTitle;
+    drugBtns.forEach((b, i) => { b.textContent = t.drugs[DRUG_IDS[i]]; b.setAttribute('aria-pressed', String(state.drugs[DRUG_IDS[i]])); });
+    coachList.replaceChildren(...state.coach.map((n) => { const li = el('li'); li.textContent = t.coach[n.key](n); return li; }));
+    coachList.hidden = !state.coach.length;
+    coachEmpty.textContent = state.coach.length ? '' : t.coachEmpty;
+  }
+
   function renderAblation() {
     const t = T();
     ablTitle.textContent = t.ablation;
@@ -545,6 +643,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     renderManeuver();
     renderProtocol();
     renderProgrammed();
+    renderDrugs();
     rateSel.replaceChildren(...RATES.map((v) => option(String(v), v === 0.25 ? '¼×' : v === 0.5 ? '½×' : `${v}×`)));
     rateSel.value = String(state.rate);
     rateSel.setAttribute('aria-label', t.rate);
@@ -558,6 +657,19 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     review.disabled = state.running;
     review.value = String(state.back);
     review.setAttribute('aria-label', t.review);
+    const pageText = { first: ['«', t.pageFirst], prev: ['‹', t.pagePrev], next: ['›', t.pageNext], last: ['»', t.pageLast] };
+    for (const b of pageBtns) { const [sym, name] = pageText[b.getAttribute('data-ep-live-page')]; b.textContent = sym; b.title = name; b.setAttribute('aria-label', name); }
+    pageBtns[2].disabled = pageBtns[3].disabled = state.running || state.back === 0;
+    pageAt.textContent = state.running ? '' : t.pageAt(state.back / 1000);
+    gainLabel.textContent = t.gain;
+    gainLabel.title = t.gainHint;
+    gainSel.replaceChildren(option('all', t.gainAll), ...LIVE_CHANNELS.map((ch) => option(ch, CHANNEL_LABEL[ch] || ch)));
+    gainSel.value = state.gainCh;
+    gainSel.setAttribute('aria-label', t.gain);
+    gainDown.textContent = '−'; gainDown.setAttribute('aria-label', t.gainDown);
+    gainUp.textContent = '+'; gainUp.setAttribute('aria-label', t.gainUp);
+    const shownGain = state.gainCh === 'all' ? (new Set(LIVE_CHANNELS.map(gainOf)).size === 1 ? gainOf(LIVE_CHANNELS[0]) : null) : gainOf(state.gainCh);
+    gainVal.textContent = shownGain == null ? '×…' : `×${shownGain}`;
     calBtn.textContent = t.calipers;
     calBtn.setAttribute('aria-pressed', String(state.caliperOn));
     wavesBtn.textContent = t.waves;
@@ -574,7 +686,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     for (const [span, key] of fieldLabels) span.textContent = t[key] || key;
     paceBtn.textContent = t.pace; burstBtn.textContent = t.burst; pausePaceBtn.textContent = t.pacePause; stopBtn.textContent = t.stop; shockBtn.textContent = t.shock;
     hint.textContent = t.hint;
-    info.textContent = state.caliperOn ? caliperText(state.caliper, lang) : !state.running ? t.frozen : state.status;
+    const amp = state.caliperOn ? caliperAmp() : null;
+    info.textContent = state.caliperOn ? `${t.caliperRead(state.caliper)}${amp == null ? '' : ` · ${t.amp(CHANNEL_LABEL[state.caliperCh] || state.caliperCh, amp)}`}` : !state.running ? t.frozen : state.status;
     canvas.setAttribute('aria-label', lang === 'en' ? 'Live electrogram monitor' : 'Canlı elektrogram monitörü');
     draw();
   }
@@ -612,8 +725,10 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     },
     maneuverText: () => state.maneuverText,
     protocol: () => ({ running: Boolean(state.protocol), rows: state.protocolRows.slice(), summary: state.protocolSummary }),
+    coach: () => ({ drugs: { ...state.drugs }, notes: state.coach.map((n) => ({ ...n })), sinusCl: heart.param('sinusCl') }),
     programmed: () => ({ running: Boolean(state.prog), rows: markJumps(state.progRows), summary: state.progSummary, continuous: state.cont ? { ...state.cont } : null }),
-    getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper } : null, waves: state.waves, ladder: state.ladder, links: state.links }),
+    getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper, ch: state.caliperCh, amp: caliperAmp() } : null, waves: state.waves, ladder: state.ladder, links: state.links,
+      back: state.back, gains: { ...state.gains }, gainCh: state.gainCh }),
     status: () => heart.status(),
     intervals: () => liveIntervals(heart.events(viewEnd() - 2500, viewEnd())),
     setCase

@@ -4,7 +4,11 @@
 // milliseconds so a click on a deflection lands on its center. Pure helpers; the panel owns
 // the state and the canvas (ep-egm.js draws the lines).
 
+import { egmSample } from './ep-egm.js';
+import { channelEvents, wavePeaks } from './ep-waveform.js';
+
 export const CALIPER_SNAP_MS = 8;
+export const SATURATION_MV = 5;   // a peak-to-peak reading this large is the amplifier at its rail (pacing artifact)
 
 /** Empty caliper. */
 export const noCaliper = () => ({ a: null, b: null });
@@ -43,4 +47,20 @@ export function caliperText(caliper, lang) {
   const rate = span > 0 ? Math.round(60000 / span) : null;
   const perMin = en ? 'bpm' : '/dk';
   return `${en ? 'Calipers' : 'Kaliper'}: ${span} ms${rate ? ` · ${rate} ${perMin}` : ''}${en ? ' (drag a line to adjust)' : ' (çizgiyi sürükleyerek ayarlayın)'}`;
+}
+
+/**
+ * Peak-to-peak amplitude (model mV) of one channel between two times, sampled every 0.5 ms
+ * and at each event's peaks; independent of the display gain. Null without a valid window.
+ */
+export function peakToPeak(recording, channelId, a, b) {
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  if (!recording || !Number.isFinite(lo) || !Number.isFinite(hi) || hi <= lo) return null;
+  const step = Math.max(0.5, (hi - lo) / 8000);
+  const times = [];
+  for (let t = lo; t <= hi; t += step) times.push(t);
+  for (const e of channelEvents(recording, channelId)) for (const t of wavePeaks(e)) if (t >= lo && t <= hi) times.push(t);
+  let min = Infinity, max = -Infinity;
+  for (const t of times) { const v = egmSample(recording, channelId, t); if (v < min) min = v; if (v > max) max = v; }
+  return Math.round((max - min) * 100) / 100;
 }

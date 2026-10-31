@@ -11,12 +11,14 @@
  * pathways they reach. Focal AT, CTI flutter, AF and scar VT start after
  * rapid capture (substrates.js triggers) and run until cardioversion (focal
  * AT is automatic and resumes after a shock) or an RF lesion removes their
- * substrate. Designed teaching timings (ms), not patient physiology.
+ * substrate. Isoproterenol and atropine (DRUGS) rescale the case's timings
+ * while given. Designed teaching timings (ms), not patient physiology.
  */
 import { ev, far, mono } from './ep-beats.js';
-import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS } from './ep-live-substrates.js';
+import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS } from './ep-live-substrates.js';
 
-export { LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS };
+export { LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS };
+const DRUG_FIELDS = [...new Set(Object.values(DRUGS).flatMap((d) => Object.keys(d)))];
 export const LIVE_CHANNELS = Object.freeze(['ecg-i', 'ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'rv']);
 // Pacing sites: the high right atrium, every coronary sinus bipole (proximal 9-10 to distal 1-2) and the RV apex.
 export const LIVE_SITES = Object.freeze(['hra', 'cs-prox', 'cs-78', 'cs-56', 'cs-34', 'cs-dist', 'rv']);
@@ -71,12 +73,24 @@ function prng(seed) {
 
 /**
  * One running heart for a case (its own mutable copy of the case parameters).
- * @returns {object} advanceTo, stimulate, stopPacing, cardiovert, rfStart, rfStop, events, trim, beats, status, lesions
+ * @returns {object} advanceTo, stimulate, stopPacing, cardiovert, rfStart, rfStop, setDrug, events, trim, beats, status, lesions
  */
 export function createLiveHeart(caseId = 'normal') {
   const id = LIVE_CASES[caseId] ? caseId : 'normal';
-  const p = JSON.parse(JSON.stringify(LIVE_CASES[id]));
+  const base = JSON.parse(JSON.stringify(LIVE_CASES[id]));
+  const p = JSON.parse(JSON.stringify(base));
   p.avBlock = false;
+  const drugs = Object.fromEntries(Object.keys(DRUGS).map((d) => [d, false]));
+  // Drug-sensitive values from the case's own, for the elements still present (an ablated one stays gone).
+  function applyDrugs() {
+    for (const path of DRUG_FIELDS) {
+      const [obj, key] = path.includes('.') ? path.split('.') : [null, path];
+      const target = obj ? p[obj] : p, from = obj ? base[obj] : base;
+      if (!target || from?.[key] == null) continue;
+      const factor = Object.keys(drugs).reduce((f, d) => f * (drugs[d] ? DRUGS[d][path] ?? 1 : 1), 1);
+      target[key] = Math.round(from[key] * factor);
+    }
+  }
   const rand = prng(id.length * 7919 + 17);
   const queue = [];
   const log = Object.fromEntries(LIVE_CHANNELS.map((ch) => [ch, []]));
@@ -365,6 +379,16 @@ export function createLiveHeart(caseId = 'normal') {
       return rf.token;
     },
     rfStop() { const done = rf; rf = null; return done; },
+    /** Give (on) or stop a drug of DRUGS; effective from the next activation. */
+    setDrug(name, on) {
+      if (!(name in drugs)) return false;
+      drugs[name] = Boolean(on);
+      applyDrugs();
+      return true;
+    },
+    drugs: () => ({ ...drugs }),
+    /** Current value of a drug-sensitive parameter ('sinusCl', 'fp.retroErp' ...), or null. */
+    param(path) { const [a, b] = path.split('.'); const v = b ? p[a]?.[b] : p[a]; return v ?? null; },
     rf: () => (rf ? { ...rf } : null),
     events(from, to) {
       return Object.fromEntries(Object.entries(log).map(([ch, list]) => [ch, list.filter((e) => e.t >= from && e.t <= to)]));

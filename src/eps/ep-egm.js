@@ -53,7 +53,6 @@ function rowLayout(channels, total) {
 }
 const FONT = '10px ui-monospace, monospace';
 
-
 // Deterministic baseline: sums of sines, seeded by channel index.
 function baseline(t, seed, rf) {
   let n = 0.012 * Math.sin(t * 0.169 + seed * 1.7)
@@ -136,8 +135,9 @@ function drawCalipers(ctx, recording, geo, rows) {
   }
 }
 
-// User calipers: full-height vertical lines; the interval sits between them at the top.
-function drawUserCaliper(ctx, geo, { a, b }, height) {
+// User calipers: full-height vertical lines; the interval sits between them at the top. With both
+// lines placed the measured time is shaded, and the measured channel's band within it a little more.
+function drawUserCaliper(ctx, geo, { a, b, label: text = null, row = null }, height) {
   const color = '#7fe3ff';
   const inside = (t) => t != null && t >= geo.from && t <= geo.to;
   for (const t of [a, b]) {
@@ -145,10 +145,14 @@ function drawUserCaliper(ctx, geo, { a, b }, height) {
   }
   if (a == null || b == null) return;
   const x0 = geo.x(Math.max(geo.from, Math.min(a, b))), x1 = geo.x(Math.min(geo.to, Math.max(a, b)));
+  ctx.fillStyle = 'rgba(127, 227, 255, 0.07)';
+  ctx.fillRect(x0, HEADER_H, x1 - x0, height - FOOTER_H - HEADER_H);
+  ctx.fillStyle = 'rgba(127, 227, 255, 0.12)';
+  if (row != null && geo.rowHeight(row) != null) ctx.fillRect(x0, geo.rowTop(row), x1 - x0, geo.rowHeight(row));
   const y = HEADER_H + 6;
   polyline(ctx, [[x0, y], [x1, y]], color, 1);
   ctx.font = '600 10px ui-monospace, monospace';
-  const label = `${Math.abs(b - a)} ms`;
+  const label = text || `${Math.abs(b - a)} ms`;
   const w = ctx.measureText(label)?.width || label.length * 6;
   tag(ctx, label, Math.max(LABEL_W, (x0 + x1 - w) / 2), y + 12, color);
 }
@@ -300,16 +304,17 @@ export function sampleTimes(recording, channelId, from, to, plotW) {
  * @param {HTMLCanvasElement} canvas
  * @param {object} recording from ep-cases.js (epRecording(id)) or ep-maneuver-sim.js
  * @param {{ lang?: string, cursor?: number|null, cursorMs?: number|null, title?: string,
- *   channels?: string[], zoom?: number, pan?: number, caliper?: { a: number|null, b: number|null }|null, waves?: boolean,
- *   links?: { groups, his, conduction }|null, linkStyles?: object }} [options]
+ *   channels?: string[], zoom?: number, pan?: number, caliper?: { a: number|null, b: number|null, label?: string, row?: number }|null, waves?: boolean,
+ *   links?: { groups, his, conduction }|null, linkStyles?: object, gains?: Record<string, number>|null, clip?: boolean }} [options]
  *   cursor: 0..1 fraction of the window; cursorMs: inspection time in ms;
  *   caliper: user caliper lines (ms) drawn across every channel; waves: wave names (A, H, V, P, QRS ...);
  *   channels: the rows to draw (default: the recording's list); zoom/pan: time window;
- *   links: the ladder on the channels (stripLinks), drawn in linkStyles (LADDER_STYLE)
+ *   links: the ladder on the channels (stripLinks), drawn in linkStyles (LADDER_STYLE);
+ *   gains: display gain per channel id (1 = default); clip: each trace held within its row, as an amplifier saturates
  * @returns {{ from: number, to: number, plotLeft: number, plotW: number, rowTop: number, rowH: number, tops: number[], heights: number[], rows: string[] }|undefined}
  *   the drawn time window and channel rows
  */
-export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null, waves = false, links = null, linkStyles = null } = {}) {
+export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorMs = null, title = '', channels: only = null, zoom = 1, pan = 0, caliper = null, waves = false, links = null, linkStyles = null, gains = null, clip = false } = {}) {
   const width = canvas?.clientWidth;
   const height = canvas?.clientHeight;
   if (!recording || !(width >= 2) || !(height >= 2)) return;
@@ -330,7 +335,7 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
     rowTop: (i) => tops[i] ?? tops.at(-1) + heights.at(-1),
     rowHeight: (i) => heights[i],
     mid: (i) => tops[i] + heights[i] / 2,
-    gain: (i) => heights[i] * (channels[i].surface ? SURFACE_GAIN : EGM_GAIN),
+    gain: (i) => heights[i] * (channels[i].surface ? SURFACE_GAIN : EGM_GAIN) * (gains?.[channels[i].id] ?? 1),
     x: (t) => LABEL_W + ((t - from) / (to - from)) * plotW
   };
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -342,10 +347,12 @@ export function drawEgm(canvas, recording, { lang = 'tr', cursor = null, cursorM
   ctx.lineJoin = 'round';
   channels.forEach((ch, i) => {
     const mid = geo.mid(i), gain = geo.gain(i);
+    const lo = tops[i] + 1, hi = tops[i] + heights[i] - 1;
     ctx.strokeStyle = COLORS[ch.id] || '#c9cdd6';
     ctx.beginPath();
     sampleTimes(recording, ch.id, from, to, plotW).forEach((t, s) => {
-      const y = mid - egmSample(recording, ch.id, t) * gain;
+      const raw = mid - egmSample(recording, ch.id, t) * gain;
+      const y = clip ? Math.min(hi, Math.max(lo, raw)) : raw;
       if (s === 0) ctx.moveTo(geo.x(t), y);
       else ctx.lineTo(geo.x(t), y);
     });

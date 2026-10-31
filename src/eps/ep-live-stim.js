@@ -77,12 +77,18 @@ export function driveStart(events, now, site, s1) {
   return Math.round(Math.max(now + 100, lastT == null ? now + 100 : lastT + s1));
 }
 
-/** Four or more ventricular beats after t, the last three cycles shorter than SUSTAINED_CL. */
+/**
+ * Four or more ventricular beats after t, the last three cycles shorter than SUSTAINED_CL,
+ * that are not a sinus tachycardia (every atrial beat sinus and every QRS conducted, as on isoproterenol).
+ */
 function sustainedAfter(events, t, end) {
-  const vs = of(events, 'rv', 'V').map((e) => e.t).filter((v) => v > t + 60 && v < end);
+  const inRun = (e) => e.t > t + 60 && e.t < end;
+  const vEvents = of(events, 'rv', 'V').filter(inRun), vs = vEvents.map((e) => e.t);
   if (vs.length < 4) return false;
   const cl = vs.slice(1).map((v, i) => v - vs[i]);
-  return cl.slice(-3).every((c) => c < SUSTAINED_CL);
+  if (!cl.slice(-3).every((c) => c < SUSTAINED_CL)) return false;
+  const sinusOnly = vEvents.every((e) => e.origin === 'his') && of(events, 'his-d', 'A').filter(inRun).every((e) => e.origin === 'sinus');
+  return !sinusOnly;
 }
 
 /** One drive's readout from the events recorded during it (absolute times). */

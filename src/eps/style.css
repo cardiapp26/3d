@@ -56,6 +56,9 @@ header.site-header[data-site-page=eps] .site-header-actions kbd { background: #1
 .ep-view input[type=range]:disabled { opacity: .35; }
 .ep-live-readout { margin: 0; font: 600 13px var(--mono); color: #c8d9f0; }
 .ep-live-info { margin: 0; font: 12px var(--mono); color: var(--muted); min-height: 1.3em; }
+.ep-live-tools { gap: 4px; color: var(--muted); }
+.ep-live-tools select { max-width: 10rem; }
+.ep-live-gain-val, .ep-live-page-at { font: 12px var(--mono); color: #c8d9f0; min-width: 3.4em; text-align: center; }
 
 /* Console sections */
 .ep-case { display: grid; gap: 3px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }

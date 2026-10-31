@@ -47,6 +47,11 @@ const fp = (over) => ({ ...BASE.fp, ...over });
 export const LIVE_CASES = Object.freeze({
   normal: { ...BASE },
   'avnrt-typical': { ...BASE, fp: fp({ erp: 380, retroErp: 250 }), sp: { ah: 260, dec: 90, tau: 50, erp: 250 } },
+  // Dual AV nodal physiology with a weak retrograde fast pathway: a jump without an echo at baseline,
+  // single echoes under isoproterenol, sustained AVNRT with isoproterenol and atropine together.
+  'avnrt-jump': { ...BASE, fp: fp({ erp: 380, retroErp: 700 }), sp: { ah: 260, dec: 90, tau: 50, erp: 250 } },
+  // The retrograde fast pathway recovers for one echo but not for the next: echo only, inducible on a drug.
+  'avnrt-echo': { ...BASE, fp: fp({ erp: 380, retroErp: 420 }), sp: { ah: 260, dec: 90, tau: 50, erp: 250 } },
   'avnrt-atypical': { ...BASE, fp: fp({ retroErp: 700 }), sp: { ah: 260, dec: 90, tau: 50, erp: 250, retro: 300, retroErp: 250 } },
   'ort-left': { ...BASE, fp: fp({ erp: 250, dec: 120, tau: 130 }), ap: { insertion: 'ap', origin: 'ap-left', ante: false, retro: 70, erp: 180, anteDelay: 25 } },
   pjrt: { ...BASE, fp: fp({ erp: 250, dec: 120, tau: 130, retroErp: 700 }), ap: { insertion: 'aps', origin: 'ap-ps', ante: false, retro: 190, retroDec: 60, retroTau: 90, erp: 200, anteDelay: 25 } },
@@ -54,8 +59,22 @@ export const LIVE_CASES = Object.freeze({
   'at-focal': { ...BASE, fp: fp({ retroErp: 220 }), at: { cl: 380, origin: 'la-focus', triggerCl: 330, triggerCount: 4 } },
   'flutter-cti': { ...BASE, flutter: { tcl: 240, triggerCl: 260, triggerCount: 6, ppiExtra: { hra: 20, 'cs-prox': 10, 'cs-dist': 120 } } },
   'vt-scar': { ...BASE, fp: fp({ retroErp: 1000 }), vt: { cl: 380, triggerCl: 300, ppiExtra: 80, atpCl: 320, atpCaptures: 6 } },
+  // No retrograde AV nodal conduction (VA block on ventricular pacing); isoproterenol brings it out at long cycles.
+  'va-block': { ...BASE, fp: fp({ retroErp: 700 }) },
   // Sinus node dysfunction: slower sinus rate and a long recovery after overdrive pacing.
   'sinus-node-disease': { ...BASE, sinusCl: 1000, snSuppression: 1600 }
+});
+
+/**
+ * Drugs of the live laboratory: factors on the case parameters (a value is the
+ * case's own times the factors of every drug given). Isoproterenol speeds the
+ * sinus node and shortens atrial, AV nodal (antegrade and retrograde), His,
+ * ventricular and accessory pathway refractoriness; atropine removes vagal tone:
+ * the sinus node and the AV node only. Designed teaching factors.
+ */
+export const DRUGS = Object.freeze({
+  iso: Object.freeze({ sinusCl: 0.7, aErp: 0.9, vErp: 0.9, hpsErp: 0.92, 'fp.ah': 0.75, 'fp.erp': 0.8, 'fp.retroErp': 0.65, 'sp.ah': 0.85, 'sp.erp': 0.8, 'sp.retroErp': 0.8, 'ap.erp': 0.85, 'at.cl': 0.85 }),
+  atropine: Object.freeze({ sinusCl: 0.75, 'fp.ah': 0.85, 'fp.erp': 0.85, 'fp.retroErp': 0.75, 'sp.erp': 0.9, 'sp.retroErp': 0.85 })
 });
 
 /** RF targets and the substrate element each one eliminates. */
