@@ -82,6 +82,35 @@ const APP=(process.env.APP_URL||'http://127.0.0.1:5173').replace(/\/$/,'');
   await page.locator('[data-site="rvApex"]').click();await page.waitForTimeout(200);
   assert.match(await page.locator('[data-pacing-readouts]').textContent(),/negatif/);
   for(const sel of ['[data-pacing-strip]','[data-pacing-beat]'])assert.ok(await painted(sel),sel);
+  // Ashman: classic long-short gives RBBB, a short preceding cycle narrows it, presets and AF mode work.
+  await page.locator('[data-chapter-tab="ashman"]').click();await page.locator('[data-ecg-chapter="ashman"]').waitFor();
+  await page.waitForFunction(()=>document.querySelector('[data-ash-pattern]'));
+  assert.equal(await page.locator('[data-ash-pattern]').getAttribute('data-ash-pattern'),'rbbb');
+  assert.match(await page.locator('[data-ash-explain]').textContent(),/Ashman/);
+  await setRange('[data-ash-cycle]',600);await page.waitForTimeout(250);
+  assert.equal(await page.locator('[data-ash-pattern]').getAttribute('data-ash-pattern'),'normal','short preceding cycle: narrow');
+  assert.ok(Number(await page.locator('[data-ash-coupling]').getAttribute('max'))<=590,'coupling stays shorter than the cycle');
+  await page.locator('[data-ash-preset="blocked"]').click();await page.waitForTimeout(250);
+  assert.equal(await page.locator('[data-ash-pattern]').getAttribute('data-ash-pattern'),'blocked-avn');
+  await page.locator('[data-ash-preset="lafb"]').click();await page.waitForTimeout(250);
+  assert.equal(await page.locator('[data-ash-pattern]').getAttribute('data-ash-pattern'),'rbbb-lafb');
+  assert.match(await page.locator('[data-ash-status]').textContent(),/refrakter/);
+  assert.equal(await page.locator('[data-ash-clues] .ecgc-crit-group').first().getAttribute('data-met'),'true');
+  for(const sel of ['[data-ash-strip]','[data-ash-bars]','[data-ash-map]'])assert.ok(await painted(sel),sel);
+  // The heart is the 3D atlas once it loads (the 2D section stands in until then).
+  await page.waitForFunction(()=>document.querySelector('[data-ash-heart]')?.dataset.loaded!=='false',null,{timeout:60000});
+  assert.equal(await page.locator('[data-ash-heart]').getAttribute('data-loaded'),'true','atlas heart loads');
+  const gl=await page.locator('[data-ash-heart] .ash-3d-gl canvas').evaluate(c=>({w:c.width,h:c.height}));
+  assert.ok(gl.w>100&&gl.h>100,'3D canvas sized');
+  const pins=await page.locator('[data-ash-heart] .ash-3d-pin:not([hidden])').allTextContents();
+  for(const name of ['AV nod','His','Sağ dal','Sol dal','LAF','LPF'])assert.ok(pins.includes(name),`pin ${name}`);
+  await page.locator('[data-ash-mode="af"]').click();await page.waitForTimeout(250);
+  assert.match(await page.locator('[data-ash-explain]').textContent(),/linking/);
+  const before=await page.locator('[data-ash-cells]').textContent();
+  await page.locator('[data-ash-reseed]').click();await page.waitForTimeout(250);
+  assert.notEqual(await page.locator('[data-ash-cells]').textContent(),before,'new AF strip');
+  for(const sel of ['[data-ash-strip]','[data-ash-tach]'])assert.ok(await painted(sel),sel);
+  await page.locator('[data-chapter-tab="pacing"]').click();await page.locator('[data-ecg-chapter="pacing"]').waitFor();
   // English, then a phone.
   await page.locator('[data-ecg-lang="en"]').click();
   await page.waitForFunction(()=>/Pacing: code/.test(document.querySelector('[data-ecg-chapter="pacing"]')?.textContent||''));
@@ -89,6 +118,6 @@ const APP=(process.env.APP_URL||'http://127.0.0.1:5173').replace(/\/$/,'');
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
   assert.equal(await page.locator('[data-ecg-chapter="pacing"]').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,'no horizontal overflow on a phone');
   assert.deepEqual(errors,[]);
-  console.log('PASS ecg chapters browser: Cell, Recording, QT, Atrial abnormality, Hypertrophy criteria, Pacing (NBG, faults, lead position), TR/EN, 390px; no page errors');
+  console.log('PASS ecg chapters browser: Cell, Recording, QT, Atrial abnormality, Hypertrophy criteria, Ashman (long-short, presets, AF), Pacing (NBG, faults, lead position), TR/EN, 390px; no page errors');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

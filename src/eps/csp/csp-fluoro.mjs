@@ -100,7 +100,7 @@ function backdrop(ctx, w, h, fx) {
 }
 const pulse = fx => 1 + (fx?.live ? .015 * Math.sin(fx.seconds * Math.PI * 2 * 1.4) : 0);
 
-function lead(ctx, points, tip, color = '#151817') {
+function lead(ctx, points, tip, color = '#0d1320') {
   ctx.strokeStyle = 'rgba(30, 33, 32, .55)'; ctx.lineWidth = 7; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(...points[0]); ctx.bezierCurveTo(...points[1], ...points[2], ...points[3]); ctx.stroke();   // sheath
   ctx.strokeStyle = color; ctx.lineWidth = 2.5;
@@ -111,9 +111,9 @@ function lead(ctx, points, tip, color = '#151817') {
 function spinMark(ctx, tip, phase) {
   if (phase == null) return;
   const a = phase * Math.PI * 2;
-  ctx.strokeStyle = 'rgba(21, 24, 23, .9)'; ctx.lineWidth = 1.6;
+  ctx.strokeStyle = 'rgba(13,19,32, .9)'; ctx.lineWidth = 1.6;
   ctx.beginPath(); ctx.ellipse(tip[0], tip[1], 7, 3, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.fillStyle = '#151817';
+  ctx.fillStyle = '#0d1320';
   ctx.beginPath(); ctx.arc(tip[0] + 7 * Math.cos(a), tip[1] + 3 * Math.sin(a), 2.2, 0, Math.PI * 2); ctx.fill();
 }
 

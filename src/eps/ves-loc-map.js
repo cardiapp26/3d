@@ -35,10 +35,10 @@ function defs(doc, uid) {
     for (const [offset, color, opacity = 1] of list) g.append(s(doc, 'stop', { offset, 'stop-color': color, 'stop-opacity': opacity }));
     d.append(g);
   };
-  stops(`${uid}-myo`, [['0%', '#4a5f52'], ['100%', '#2a3b32']]);
-  stops(`${uid}-cavity`, [['0%', '#10201a'], ['100%', '#0a1512']], true);
-  stops(`${uid}-rvot`, [['0%', '#3e5547'], ['55%', '#2f4238'], ['100%', '#1f2f27']]);
-  stops(`${uid}-root`, [['0%', '#2a3f36'], ['100%', '#14241d']], true);
+  stops(`${uid}-myo`, [['0%', '#444e65'], ['100%', '#1d2a48']]);
+  stops(`${uid}-cavity`, [['0%', '#0e1422'], ['100%', '#090d16']], true);
+  stops(`${uid}-rvot`, [['0%', '#2b3d68'], ['55%', '#212f50'], ['100%', '#172037']]);
+  stops(`${uid}-root`, [['0%', '#1e2c4b'], ['100%', '#101728']], true);
   stops(`${uid}-vessel`, [['0%', '#f0a7a0'], ['100%', '#c96f68']]);
   const f = s(doc, 'filter', { id: `${uid}-shadow`, x: '-50%', y: '-50%', width: '200%', height: '200%' });
   f.append(s(doc, 'feDropShadow', { dx: 0, dy: 1.5, stdDeviation: 2, 'flood-color': '#000', 'flood-opacity': .55 }));

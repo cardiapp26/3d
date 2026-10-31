@@ -23,6 +23,7 @@ import { createQtLab } from './ecg-qt-lab.js';
 import { createAtriaLab } from './ecg-atria-lab.js';
 import { createHypertrophyLab } from './ecg-hypertrophy-lab.js';
 import { createPacingLab } from './ecg-pacing-lab.js';
+import { createAshmanLab } from './ecg-ashman-lab.js';
 import './ecg-chapters.css';
 
 // Chapter labs with their own left-panel entry (also reachable as ?lesson=<id>).
@@ -37,6 +38,8 @@ const CHAPTER_LABS = Object.freeze([
     subtitle: { tr: 'P dalgası sağ ve sol atriyumun toplamıdır: sol büyümede uzun ve çentikli P ile derin V1 terminal kuvveti, sağ büyümede sivri ve yüksek P.', en: 'The P wave is the sum of the right and left atria: a long, notched P with a deep V1 terminal force when the left is large, a tall, peaked P when the right is.' } },
   { id: 'hypertrophy', create: createHypertrophyLab, title: { tr: 'Ventrikül Hipertrofisi', en: 'Ventricular Hypertrophy' },
     subtitle: { tr: 'LV ve RV duvar kalınlığı, cinsiyet ve strain; Sokolow-Lyon, Cornell, Peguero-Lo Presti ve RVH kriterleri canlı hesaplanır.', en: 'LV and RV wall thickness, sex and strain; Sokolow-Lyon, Cornell, Peguero-Lo Presti and RVH criteria computed live.' } },
+  { id: 'ashman', create: createAshmanLab, title: { tr: 'Ashman Fenomeni ve Aberasyon', en: 'Ashman Phenomenon and Aberrancy' },
+    subtitle: { tr: 'Uzun-kısa döngü: dalların refrakter periyodu önceki RR ile uzar. Erken atımı iletim sisteminde izle; AV nod koruması, RBBB/LBBB aberasyonu, bloke PAC ve AF’de linking.', en: 'Long-short cycles: bundle refractoriness lengthens with the preceding RR. Follow the early beat through the conduction system; AV node protection, RBBB/LBBB aberrancy, blocked PACs and linking in AF.' } },
   { id: 'pacing', create: createPacingLab, title: { tr: 'Pacing: Kod, Mod, Arıza', en: 'Pacing: Code, Modes, Malfunction' },
     subtitle: { tr: 'NBG kodu, AAI/VVI/DDD şeritleri ve cihaz işaretleri; yakalama kaybı, az ve fazla algılama; lead yerine göre paced QRS.', en: 'The NBG code, AAI/VVI/DDD strips with device markers; failure to capture, under- and oversensing; the paced QRS by lead position.' } }
 ]);

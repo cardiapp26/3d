@@ -13,13 +13,13 @@
 .ves-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 136px)); gap: 6px; }
 .ves-options button { display: flex; flex-direction: column; align-items: center; padding: 4px 6px; min-height: 44px; line-height: 1.3; font-size: 12px; }
 .ves-option-wave { width: 100%; max-width: 72px; height: 32px; }
-.ves button[aria-pressed=true] .ves-trace { stroke: #173e2a; }
+.ves button[aria-pressed=true] .ves-trace { stroke: #17273e; }
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 /* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
 .ves-map { width: var(--ves-atlas-w); margin-inline: auto; }
 .ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
-.ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
+.ves-ecg, .ves-monitor { background: #0b101b; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
 .ves-strip-window { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 8px; }
 .ves-strip-window:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -30,16 +30,16 @@
 .ves-site-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
 .ves-site-list button { padding: 8px; text-align: left; font-size: 12px; min-height: 44px; overflow-wrap: anywhere; }
 .ves button[data-candidate=true]:not([aria-pressed=true]) { border-color: #7fb2ff; }
-.ves-map-frame { fill: #0c1713; stroke: #2f4a3e; }
-.ves-map-myo { stroke: #8fb39d; stroke-width: 1.2; }
+.ves-map-frame { fill: #0a0f19; stroke: #233256; }
+.ves-map-myo { stroke: #8f9ab3; stroke-width: 1.2; }
 .ves-map-cavity { stroke: none; }
-.ves-map-ring { fill: none; stroke: #b9d6c4; stroke-width: 2.2; }
-.ves-map-leaflet { fill: none; stroke: #8fb39d; stroke-width: 1.2; stroke-linecap: round; opacity: .85; }
-.ves-map-rvot { stroke: #8fb39d; stroke-width: 1.4; }
-.ves-map-fiber { fill: none; stroke: #0a1512; stroke-width: 1; opacity: .45; }
-.ves-map-root { stroke: #c4dccb; stroke-width: 2; }
-.ves-map-cusp { fill: none; stroke: #9fc4ad; stroke-width: 1.4; }
-.ves-map-commissure { stroke: #9fc4ad; stroke-width: 1; opacity: .7; }
+.ves-map-ring { fill: none; stroke: #b9c2d6; stroke-width: 2.2; }
+.ves-map-leaflet { fill: none; stroke: #8f9ab3; stroke-width: 1.2; stroke-linecap: round; opacity: .85; }
+.ves-map-rvot { stroke: #8f9ab3; stroke-width: 1.4; }
+.ves-map-fiber { fill: none; stroke: #090d16; stroke-width: 1; opacity: .45; }
+.ves-map-root { stroke: #c4cbdc; stroke-width: 2; }
+.ves-map-cusp { fill: none; stroke: #9faac4; stroke-width: 1.4; }
+.ves-map-commissure { stroke: #9faac4; stroke-width: 1; opacity: .7; }
 .ves-map-fibrous { fill: #d9d2b8; opacity: .35; stroke: none; }
 .ves-map-trigone { fill: #e8e0c2; stroke: #fff6d8; stroke-width: 1; }
 .ves-map-ostium { fill: #ffd6d0; stroke: #c96f68; stroke-width: 1; }
@@ -50,98 +50,98 @@
 .ves-map-muscle { fill: none; stroke: #b08a78; stroke-width: 9; stroke-linecap: round; }
 .ves-map-papillary { fill: #a98272; stroke: #d5b2a0; stroke-width: 1.2; }
 .ves-map-chordae { fill: none; stroke: #e9d8cf; stroke-width: .9; opacity: .8; }
-.ves-map-endo { stroke: #a9c8b6; stroke-width: 1.4; }
-.ves-map-valve-leaflet { fill: none; stroke: #d7e8dd; stroke-width: 2.4; stroke-linecap: round; }
+.ves-map-endo { stroke: #a9b2c8; stroke-width: 1.4; }
+.ves-map-valve-leaflet { fill: none; stroke: #d7dce8; stroke-width: 2.4; stroke-linecap: round; }
 .ves-map-vertical { writing-mode: vertical-rl; }
-.ves-map-trabecula { fill: none; stroke: #4f6a5c; stroke-width: 2.5; stroke-linecap: round; }
-.ves-map-outflow { fill: #14241d; stroke: #b9d6c4; stroke-width: 2; }
+.ves-map-trabecula { fill: none; stroke: #4a556f; stroke-width: 2.5; stroke-linecap: round; }
+.ves-map-outflow { fill: #101728; stroke: #b9c2d6; stroke-width: 2; }
 .ves-map-purkinje { fill: none; stroke: #f2b66e; stroke-width: 2.2; stroke-dasharray: 4 3; stroke-linecap: round; }
 .ves-map-his { fill: #e9a0fa; stroke: #fff; stroke-width: 1; }
 .ves-map-his-line { fill: none; stroke: #e9a0fa; stroke-width: 1.5; }
 .ves-map-abl { fill: #d8b4fe; stroke: white; stroke-width: 1.5; }
 .ves-map-abl-shaft { stroke: #d8b4fe; stroke-width: 3; stroke-linecap: round; opacity: .8; }
-.ves-map-lead { stroke: #7f9a8c; stroke-width: .8; opacity: .8; }
-.ves-map-title { fill: #c9dacf; font: 600 12px system-ui, sans-serif; letter-spacing: .08em; text-anchor: middle; }
-.ves-map-axis { fill: #6f8a7c; font: 600 9px system-ui, sans-serif; letter-spacing: .1em; text-anchor: middle; }
-.ves-map-caption { fill: #b3c9bd; font: 10.5px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0c1713; stroke-width: 3px; stroke-linejoin: round; }
-.ves-map-tiny { fill: #9fb8ab; font: 8.5px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0c1713; stroke-width: 2.5px; stroke-linejoin: round; }
-.ves-map-label { fill: #e3ece6; font: 600 14px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0c1713; stroke-width: 3px; stroke-linejoin: round; }
+.ves-map-lead { stroke: #7683a3; stroke-width: .8; opacity: .8; }
+.ves-map-title { fill: #c9ceda; font: 600 12px system-ui, sans-serif; letter-spacing: .08em; text-anchor: middle; }
+.ves-map-axis { fill: #647395; font: 600 9px system-ui, sans-serif; letter-spacing: .1em; text-anchor: middle; }
+.ves-map-caption { fill: #b3bac9; font: 10.5px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0a0f19; stroke-width: 3px; stroke-linejoin: round; }
+.ves-map-tiny { fill: #9fa6b8; font: 8.5px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0a0f19; stroke-width: 2.5px; stroke-linejoin: round; }
+.ves-map-label { fill: #e3e6ec; font: 600 14px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #0a0f19; stroke-width: 3px; stroke-linejoin: round; }
 .ves-map[data-ves-atlas='3d'] image { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); }
 .ves-map-caption-3d { font-size: 20px; stroke-width: 5px; }
 .ves-map-title-3d { font-size: 22px; }
 .ves-map-ilt-muscle { fill: #b77a68; stroke: #f0c1ad; stroke-width: 1; opacity: .9; }
 .ves-map-ilt-fibrous { fill: #d9d2b8; stroke: #fff6d8; stroke-width: 1; opacity: .55; }
 .ves-map-vif { fill: none; stroke: #9fd0e6; stroke-width: 4; stroke-linecap: round; opacity: .75; }
-.ves-map-aortic-wall { fill: #233a31; stroke: none; }
+.ves-map-aortic-wall { fill: #1b2742; stroke: none; }
 .ves-map-sinus-muscle { fill: #b77a68; opacity: .55; }
-.ves-map-hinge { fill: none; stroke: #f2f6f3; stroke-width: 2.4; stroke-linejoin: round; }
-.ves-map-stj { stroke: #f2f6f3; stroke-width: 2; stroke-dasharray: 9 5; }
+.ves-map-hinge { fill: none; stroke: #f2f3f6; stroke-width: 2.4; stroke-linejoin: round; }
+.ves-map-stj { stroke: #f2f3f6; stroke-width: 2; stroke-dasharray: 9 5; }
 .ves-map-vaj { fill: none; stroke: #e4b3a2; stroke-width: 1.6; stroke-dasharray: 2 3; }
-.ves-map-basal-ring { stroke: #cfe3d6; stroke-width: 1.4; stroke-dasharray: 1 4; stroke-linecap: round; }
+.ves-map-basal-ring { stroke: #cfd5e3; stroke-width: 1.4; stroke-dasharray: 1 4; stroke-linecap: round; }
 .ves-map-membranous { fill: #e3dcc2; stroke: #fff6d8; stroke-width: 1; opacity: .75; }
 .ves-map-fibrous-band { fill: #d9d2b8; opacity: .3; }
-.ves-map-rvot-band { fill: #2f4238; stroke: #8fb39d; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.ves-map-rvot-band { fill: #212f50; stroke: #8f9ab3; stroke-width: 1.2; stroke-dasharray: 4 3; }
 .ves-map-pa { fill: #2a4159; stroke: #8fb6d8; stroke-width: 1.4; }
-.ves-map-rvot-grid { fill: none; stroke: #0c1713; stroke-width: 1; opacity: .55; }
-.ves-map-rvot-divider { fill: none; stroke: #e7efe9; stroke-width: 1.6; stroke-dasharray: 5 3; }
-.ves-map-lead-pos { fill: #1f5a40; stroke: #6fd3a5; stroke-width: 1; }
+.ves-map-rvot-grid { fill: none; stroke: #0a0f19; stroke-width: 1; opacity: .55; }
+.ves-map-rvot-divider { fill: none; stroke: #e7e9ef; stroke-width: 1.6; stroke-dasharray: 5 3; }
+.ves-map-lead-pos { fill: #1f385a; stroke: #6f99d3; stroke-width: 1; }
 .ves-map-lead-neg { fill: #5a2a2a; stroke: #e39b9b; stroke-width: 1; }
-.ves-map-lead-tag { fill: #f1f7f3; stroke: none; font-weight: 600; }
+.ves-map-lead-tag { fill: #f1f3f7; stroke: none; font-weight: 600; }
 .ves-v1-gradient { display: block; width: var(--ves-atlas-w); margin-inline: auto; height: auto; }
-.ves-v1-card { fill: #13221c; stroke: #2f4a3e; }
+.ves-v1-card { fill: #0f1626; stroke: #233256; }
 [data-active=true] .ves-v1-card { fill: #3a3416; stroke: #fcd34d; stroke-width: 2; }
 .ves-v1-trace { stroke-width: 2; }
 .ves-v1-label { font-size: 7.2px; }
 .ves-v1-link { cursor: pointer; }
 .ves-v1-link:focus { outline: none; }
 .ves-v1-link:focus-visible .ves-v1-card { stroke: #fff; stroke-width: 2; }
-.ves-v1-axis { fill: none; stroke: #6f8a7c; stroke-width: 1.2; }
-.ves-v1-electrode { fill: #f1f7f3; stroke: #0c1713; stroke-width: 2; }
-.ves-v1-electrode-label { fill: #0c1713; font: bold 8.5px system-ui, sans-serif; text-anchor: middle; }
+.ves-v1-axis { fill: none; stroke: #647395; stroke-width: 1.2; }
+.ves-v1-electrode { fill: #f1f3f7; stroke: #0a0f19; stroke-width: 2; }
+.ves-v1-electrode-label { fill: #0a0f19; font: bold 8.5px system-ui, sans-serif; text-anchor: middle; }
 .ves-v1-arrow { fill: none; stroke-width: 5.5; stroke-linecap: round; opacity: .7; }
 .ves-v1-tag { fill: #f6c3d3; }
 .ves-v1-head { stroke: none; }
 .ves-v1-toward { stroke: #f39ab6; } .ves-v1-head.ves-v1-toward { fill: #f39ab6; }
 .ves-v1-away { stroke: #7fc8f0; } .ves-v1-head.ves-v1-away { fill: #7fc8f0; }
 .ves-v1-star { fill: #f39ab6; stroke: #fff; stroke-width: 1; }
-.ves-v1-glyph-bg { fill: #0c1713; stroke: #2f4a3e; opacity: .92; }
+.ves-v1-glyph-bg { fill: #0a0f19; stroke: #233256; opacity: .92; }
 .ves-v1-glyph { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
 .ves-frontal { display: block; width: var(--ves-atlas-w); margin-inline: auto; height: auto; }
-.ves-frontal-triangle { fill: none; stroke: #8fb39d; stroke-width: 1.2; }
+.ves-frontal-triangle { fill: none; stroke: #8f9ab3; stroke-width: 1.2; }
 .ves-frontal-heart { fill: #4a3530; stroke: #c99a88; stroke-width: 1.2; opacity: .8; }
 .ves-frontal-rvot { fill: #5a4038; stroke: #c99a88; stroke-width: 1; }
-.ves-frontal-axis { stroke: #5d7a6c; stroke-width: .9; stroke-dasharray: 3 3; }
+.ves-frontal-axis { stroke: #566381; stroke-width: .9; stroke-dasharray: 3 3; }
 .ves-frontal-vector { stroke: #ff5a5a; stroke-width: 4; stroke-linecap: round; }
 .ves-frontal-head { fill: #ff5a5a; }
 .ves-frontal-star { fill: #ff5a5a; stroke: #ffe066; stroke-width: 1.2; }
 .ves-frontal-row { stroke-width: 1; }
-.ves-frontal-pos { fill: #173b2b; stroke: #3f9e70; } .ves-frontal-neg { fill: #3b1a1a; stroke: #b25c5c; } .ves-frontal-iso { fill: #2b2b1a; stroke: #9e9a52; }
+.ves-frontal-pos { fill: #17223b; stroke: #3f5b9e; } .ves-frontal-neg { fill: #3b1a1a; stroke: #b25c5c; } .ves-frontal-iso { fill: #2b2b1a; stroke: #9e9a52; }
 .ves-frontal-glyph { stroke-width: 1.8; }
-.ves-frontal-cross { stroke: #f1f7f3; stroke-width: 1; stroke-dasharray: 4 3; opacity: .55; }
-.ves-frontal-quadrant { fill: #d9e6dd; font-size: 8px; }
-.ves-frontal-dot { fill: #1f3329; stroke: #cfe3d6; stroke-width: 1; opacity: .85; }
-.ves-frontal-dot-label { fill: #eef5f0; font: bold 5.5px system-ui, sans-serif; text-anchor: middle; }
+.ves-frontal-cross { stroke: #f1f3f7; stroke-width: 1; stroke-dasharray: 4 3; opacity: .55; }
+.ves-frontal-quadrant { fill: #d9dde6; font-size: 8px; }
+.ves-frontal-dot { fill: #18223a; stroke: #cfd5e3; stroke-width: 1; opacity: .85; }
+.ves-frontal-dot-label { fill: #eef0f5; font: bold 5.5px system-ui, sans-serif; text-anchor: middle; }
 .ves-v1-transition { fill: #f3cf92; font-size: 7.2px; }
-.ves-frontal-lead-label { fill: #8fb39d; }
-.ves-frontal-sign { fill: #f1f7f3; font: bold 13px system-ui, sans-serif; text-anchor: middle; }
+.ves-frontal-lead-label { fill: #8f9ab3; }
+.ves-frontal-sign { fill: #f1f3f7; font: bold 13px system-ui, sans-serif; text-anchor: middle; }
 .ves-map-site { cursor: pointer; }
-.ves-map-site circle { fill: #1f3329; stroke: #cfe3d6; stroke-width: 1.8; }
+.ves-map-site circle { fill: #18223a; stroke: #cfd5e3; stroke-width: 1.8; }
 .ves-map-site .ves-map-halo { fill: transparent; stroke: none; }
-.ves-map-site text { fill: #eef5f0; font: bold 12px system-ui, sans-serif; text-anchor: middle; pointer-events: none; }
+.ves-map-site text { fill: #eef0f5; font: bold 12px system-ui, sans-serif; text-anchor: middle; pointer-events: none; }
 .ves-map-site[data-candidate=true] circle { stroke: #7fb2ff; stroke-width: 3; }
 .ves-map-site[data-candidate=true] .ves-map-halo { fill: #7fb2ff; opacity: .55; }
 .ves-map-site[aria-pressed=true] circle { fill: #fcd34d; stroke: #fff3c4; stroke-width: 2.5; }
 .ves-map-site[aria-pressed=true] .ves-map-halo { fill: #fcd34d; opacity: .6; }
-.ves-map-site[aria-pressed=true] text { fill: #1b241b; }
+.ves-map-site[aria-pressed=true] text { fill: #121a2d; }
 /* Mouse focus leaves no box around the marker; keyboard focus is shown on the circle below. */
 .ves-map-site:focus, .ves-map-site:focus-visible { outline: none; }
 .ves-map-site:focus-visible circle { stroke: white; stroke-width: 4; }
-.ves-trace { stroke: #173e2a; }
+.ves-trace { stroke: #17273e; }
 .ves-atlas { display: grid; gap: 10px; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .ves-map, .ves-ecg, .ves-monitor { display: block; width: 100%; min-width: 0; height: auto; }
 /* The atlas follows the column but never outgrows the reading area; it stays in view while the findings scroll. */
 .ves-localize-layout > .ves-atlas { position: sticky; top: 0; }
-.ves-ecg, .ves-monitor { background: #0e1815; border: 1px solid var(--line); border-radius: 8px; }
+.ves-ecg, .ves-monitor { background: #0b101b; border: 1px solid var(--line); border-radius: 8px; }
 .ves-ecg { background: #1a1416; }
 .ves-strip-window { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: 8px; }
 .ves-strip-window:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -152,52 +152,52 @@
 .ves-site-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
 .ves-site-list button { padding: 8px; text-align: left; font-size: 12px; min-height: 44px; overflow-wrap: anywhere; }
 .ves button[data-candidate=true]:not([aria-pressed=true]) { border-color: #7fb2ff; }
-.ves-map-frame { fill: #10211b; stroke: #375348; }
-.ves-map-chamber { fill: #283a30; stroke: #789d88; stroke-width: 3; }
-.ves-map-valve { fill: #172a24; stroke: #789d88; stroke-width: 3; }
-.ves-map-septum { fill: none; stroke: #a5b9ad; stroke-width: 10; opacity: .5; }
+.ves-map-frame { fill: #0e1423; stroke: #283962; }
+.ves-map-chamber { fill: #1c2946; stroke: #7381a2; stroke-width: 3; }
+.ves-map-valve { fill: #131b2e; stroke: #7381a2; stroke-width: 3; }
+.ves-map-septum { fill: none; stroke: #a5abb9; stroke-width: 10; opacity: .5; }
 .ves-map-muscle { fill: none; stroke: #ad9180; stroke-width: 11; stroke-linecap: round; }
 .ves-map-purkinje { fill: none; stroke: #efb57a; stroke-width: 3; stroke-dasharray: 5 3; }
 .ves-map-coronary { fill: none; stroke: #eaa09b; stroke-width: 4; }
 .ves-map-vein { fill: none; stroke: #7fb2ff; stroke-width: 5; opacity: .7; }
 .ves-map-his { fill: #e9a0fa; }
 .ves-map-abl { fill: #d8b4fe; stroke: white; stroke-width: 1.5; }
-.ves-map-caption { fill: #a4bcb0; font: 11px system-ui, sans-serif; text-anchor: middle; }
-.ves-map-label { fill: #c9dacf; font: 14px system-ui, sans-serif; text-anchor: middle; }
+.ves-map-caption { fill: #a4abbc; font: 11px system-ui, sans-serif; text-anchor: middle; }
+.ves-map-label { fill: #c9ceda; font: 14px system-ui, sans-serif; text-anchor: middle; }
 .ves-map[data-ves-atlas='3d'] image { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); }
 .ves-map-caption-3d { font-size: 20px; stroke-width: 5px; }
 .ves-map-title-3d { font-size: 22px; }
 .ves-map-site { cursor: pointer; }
-.ves-map-site circle { fill: #263b32; stroke: #96b4a3; stroke-width: 2; }
-.ves-map-site text { fill: #e3ece6; font: bold 12px system-ui, sans-serif; text-anchor: middle; pointer-events: none; }
+.ves-map-site circle { fill: #1c2845; stroke: #969fb4; stroke-width: 2; }
+.ves-map-site text { fill: #e3e6ec; font: bold 12px system-ui, sans-serif; text-anchor: middle; pointer-events: none; }
 .ves-map-site[data-candidate=true] circle { stroke: #7fb2ff; stroke-width: 4; }
 .ves-map-site[aria-pressed=true] circle { fill: #fcd34d; stroke: #fcd34d; stroke-width: 4; }
-.ves-map-site[aria-pressed=true] text { fill: #1b241b; }
+.ves-map-site[aria-pressed=true] text { fill: #121a2d; }
 /* Mouse focus leaves no box around the marker; keyboard focus is shown on the circle below. */
 .ves-map-site:focus, .ves-map-site:focus-visible { outline: none; }
 .ves-map-site:focus-visible circle { stroke: white; stroke-width: 5; }
-.ves-trace { fill: none; stroke: #96d8bd; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.ves-trace { fill: none; stroke: #96b2d8; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
 .ves-paper-bg { fill: #1a1416; }
 .ves-paper-fine { stroke: rgba(255, 128, 128, .13); stroke-width: .6; }
 .ves-paper-bold { stroke: rgba(255, 128, 128, .36); stroke-width: 1; }
-.ves-ecg-trace { stroke: #f1f7f3; stroke-width: 1.6; }
-.ves-calibration { fill: none; stroke: #f1f7f3; stroke-width: 1.4; }
-.ves-monitor-bg { fill: #0b1412; }
-.ves-grid-fine { stroke: #1b2a25; stroke-width: 1; }
-.ves-grid-row { stroke: #1f2f29; stroke-width: 1; stroke-dasharray: 2 4; }
+.ves-ecg-trace { stroke: #f1f3f7; stroke-width: 1.6; }
+.ves-calibration { fill: none; stroke: #f1f3f7; stroke-width: 1.4; }
+.ves-monitor-bg { fill: #090d16; }
+.ves-grid-fine { stroke: #141d31; stroke-width: 1; }
+.ves-grid-row { stroke: #172037; stroke-width: 1; stroke-dasharray: 2 4; }
 .ves-channel-trace { stroke-width: 1.6; }
 [data-ves-channel=II] .ves-channel-trace, [data-ves-channel=II] .ves-channel-swatch { stroke: #d9e36b; fill: #d9e36b; }
 [data-ves-channel=V1] .ves-channel-trace, [data-ves-channel=V1] .ves-channel-swatch { stroke: #e9eef0; fill: #e9eef0; }
 [data-ves-channel=his] .ves-channel-trace, [data-ves-channel=his] .ves-channel-swatch { stroke: #f6d35b; fill: #f6d35b; }
 [data-ves-channel=rvot] .ves-channel-trace, [data-ves-channel=rvot] .ves-channel-swatch { stroke: #6fd3e8; fill: #6fd3e8; }
-[data-ves-channel=lvot] .ves-channel-trace, [data-ves-channel=lvot] .ves-channel-swatch { stroke: #74c9a8; fill: #74c9a8; }
+[data-ves-channel=lvot] .ves-channel-trace, [data-ves-channel=lvot] .ves-channel-swatch { stroke: #748dc9; fill: #748dc9; }
 [data-ves-channel=cs] .ves-channel-trace, [data-ves-channel=cs] .ves-channel-swatch { stroke: #f0a35a; fill: #f0a35a; }
 [data-ves-channel=abl] .ves-channel-trace, [data-ves-channel=abl] .ves-channel-swatch { stroke: #e38bff; fill: #e38bff; }
 [data-ves-channel=uni] .ves-channel-trace, [data-ves-channel=uni] .ves-channel-swatch { stroke: #c4a6ff; fill: #c4a6ff; }
 .ves-channel-trace { fill: none !important; }
 .ves-local-trace { stroke: #d8b4fe; }
-.ves-grid { stroke: #294137; stroke-width: 1; }
-.ves-ecg-label { fill: #c8e0d3; font: 12px ui-monospace, monospace; }
+.ves-grid { stroke: #1f2c4b; stroke-width: 1; }
+.ves-ecg-label { fill: #c8cfe0; font: 12px ui-monospace, monospace; }
 .ves-wave-label { fill: #f3cf92; font: 11px ui-monospace, monospace; text-anchor: middle; }
 .ves-qrs-onset { stroke: #f3b364; stroke-width: 1.5; stroke-dasharray: 5 3; }
 .ves-caliper { stroke: #f3b364; fill: none; stroke-width: 2; }
@@ -207,14 +207,14 @@
 .ves-surface { border-top: 1px solid var(--line); padding-top: 16px; }
 .ves-surface > button { justify-self: start; padding: 10px 14px; min-height: 44px; }
 .ves-ratio { padding: 14px; border: 1px solid var(--line); border-radius: 8px; }
-.ves-formula { font: 13px var(--mono); color: #d4e9dd; margin: 0; overflow-wrap: anywhere; }
+.ves-formula { font: 13px var(--mono); color: #d4dae9; margin: 0; overflow-wrap: anywhere; }
 .ves-amplitudes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .ves-amplitudes .amap-field { text-transform: none; letter-spacing: normal; }
 .ves-amplitudes input { width: 100%; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
 .ves-scar { display: flex; gap: 8px; align-items: center; }
 .ves-record-layout { display: grid; grid-template-columns: minmax(320px, .85fr) minmax(0, 1.15fr); gap: 20px; align-items: start; }
 .ves-anatomy { display: grid; gap: 5px; margin: 0; }
-.ves-anatomy dt { color: #9bcab4; font-size: 12px; font-weight: 600; }
+.ves-anatomy dt { color: #9ba9ca; font-size: 12px; font-weight: 600; }
 .ves-anatomy dd { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
 .ves-sources { padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 .ves-sources summary { cursor: pointer; font-weight: 600; }
@@ -240,12 +240,12 @@
 .rvot-seg-root { fill: #1b2a33; stroke: #7fa6b8; stroke-width: 1.5; }
 .rvot-seg-sinus { fill: #24404d; stroke: #7fa6b8; }
 .rvot-seg { cursor: pointer; outline: none; }
-.rvot-seg-arc { fill: #2f5a4a; stroke: #0d1914; stroke-width: 2; transition: fill .15s; }
-.rvot-seg[data-level=low] .rvot-seg-arc { fill: #3a4d3f; stroke: #9ccdb6; stroke-dasharray: 5 4; }
-.rvot-seg[data-absent=true] .rvot-seg-arc { fill: #1b2420; stroke: #6f8579; stroke-dasharray: 3 3; }
-.rvot-seg:hover .rvot-seg-arc, .rvot-seg:focus-visible .rvot-seg-arc { fill: #3f7a63; }
+.rvot-seg-arc { fill: #283961; stroke: #0b101b; stroke-width: 2; transition: fill .15s; }
+.rvot-seg[data-level=low] .rvot-seg-arc { fill: #273860; stroke: #9cabcd; stroke-dasharray: 5 4; }
+.rvot-seg[data-absent=true] .rvot-seg-arc { fill: #121a2d; stroke: #627092; stroke-dasharray: 3 3; }
+.rvot-seg:hover .rvot-seg-arc, .rvot-seg:focus-visible .rvot-seg-arc { fill: #3f517a; }
 .rvot-seg[aria-pressed=true] .rvot-seg-arc { fill: #f2c46d; }
-.rvot-seg-label { fill: #eaf4ef; font: 700 12px system-ui, sans-serif; pointer-events: none; }
+.rvot-seg-label { fill: #eaedf4; font: 700 12px system-ui, sans-serif; pointer-events: none; }
 .rvot-seg[aria-pressed=true] .rvot-seg-label { fill: #23200f; }
 .rvot-seg-card { display: grid; gap: 8px; margin-top: 10px; padding: 12px; border: 1px solid rgba(242, 196, 109, .35); border-radius: 10px; background: rgba(242, 196, 109, .05); }
 .rvot-seg-card[hidden] { display: none; }

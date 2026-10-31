@@ -18,7 +18,7 @@ const GUIDE = {
   en: { play: '▶ Play LAT sequence', pause: 'Ⅱ Pause', full: 'Full map', time: 'LAT sequence', hint: '1 · Follow time from red to purple. 2 · Tap a point or select with arrow keys. 3 · Change reference and window to compare.', pick: 'Select a map point to inspect its timing.', outside: 'Unsampled point', missing: 'Outside window', point: 'Selected point', beat: 'Beat', note: 'Playback shows the assigned LAT order within the window; it does not validate true propagation.', anatomy: 'TV: tricuspid · MV: mitral · SVC/IVC: caval veins · PV: pulmonary vein · ○ reference · × wrong point' }
 };
 
-const BEAT_COLORS = { '-1': '#60a5fa', 0: '#e8f3ee', 1: '#fbbf24' };
+const BEAT_COLORS = { '-1': '#60a5fa', 0: '#e8ebf3', 1: '#fbbf24' };
 
 export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   const el = (tag, cls, attrs = {}) => {
@@ -194,7 +194,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#0e1815'; ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#0b101b'; ctx.fillRect(0, 0, width, height);
     const cs = Math.floor(Math.min(width / GRID.w, height / GRID.h));
     const ox = Math.floor((width - cs * GRID.w) / 2), oy = Math.floor((height - cs * GRID.h) / 2);
     geometry = { cs, ox, oy };
@@ -202,10 +202,10 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     const { at, result, reading } = c;
     for (let k = 0; k < at.time.length; k++) {
       const [x, y] = cellOf(k);
-      let fill = '#14201c';                                         // septum, holes
+      let fill = '#0f1625';                                         // septum, holes
       if (Number.isFinite(at.time[k]) && !at.blocked.has(k)) {
         const v = result?.lat.get(k);
-        fill = !result?.lat.has(k) ? '#25322d' : v == null ? '#4b5a54' : COLORS[colourIndex(v, reading.min, reading.max, state.scale)];
+        fill = !result?.lat.has(k) ? '#19243e' : v == null ? '#424c63' : COLORS[colourIndex(v, reading.min, reading.max, state.scale)];
       }
       if ((SCENARIOS[state.scenario].scar || []).some(([sx, sy]) => sx === x && sy === y)) fill = '#55534d';
       const lat = result?.lat.get(k);
@@ -228,7 +228,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     // Anatomy labels, the old CTI line.
     ctx.font = `600 ${Math.max(9, Math.floor(cs * 0.45))}px ui-monospace, monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#9fc7b6';
+    ctx.fillStyle = '#9fabc7';
     for (const h of HOLES) {
       const xs = h.cells.map(([x]) => x), ys = h.cells.map(([, y]) => y);
       ctx.fillText(h.label[L()], px((Math.min(...xs) + Math.max(...xs) + 1) / 2), py((Math.min(...ys) + Math.max(...ys) + 1) / 2));
@@ -277,7 +277,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#0e1815'; ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#0b101b'; ctx.fillRect(0, 0, width, height);
     const { at, win, referenceTime, result } = c;
     const cells = sampledCells(at, state.region).sort((a, b) => at.time[a] - at.time[b]);
     // On a narrow canvas the legend takes a second line.
@@ -309,7 +309,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     ctx.globalAlpha = 1;
     const t = T().timeline;
     ctx.font = '10px ui-monospace, monospace';
-    ctx.fillStyle = '#9fc7b6'; ctx.fillText(t.title, left, 12);
+    ctx.fillStyle = '#9fabc7'; ctx.fillText(t.title, left, 12);
     const legendItems = [[BEAT_COLORS[-1], t.prev], [BEAT_COLORS[0], t.cur], [BEAT_COLORS[1], t.next], ['#f87171', t.ref], ['#3fb58f', t.win]];
     if (narrow) {
       // Second line, left to right, smaller.

@@ -13,7 +13,7 @@ import { AFMAP_TEXT } from './afmap-text.js';
  * ablation outcome and the lesson.
  */
 
-const BG = '#0e1815', MUTED = '#9fc7b6', NO_DATA = '#2b3b35', LESION = '#7f1d1d';
+const BG = '#0b101b', MUTED = '#9fabc7', NO_DATA = '#1e2a48', LESION = '#7f1d1d';
 const PLAY_STEP = 2;   // frames per animation tick
 const START_FRAME = 600;   // mid recording, away from the edges of the Hilbert window
 
@@ -197,7 +197,7 @@ export function createAfMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     const peak = Math.max(0.02, ...Array.from(reference, (v) => -v), ...Array.from(egm, (v) => -v));
     const mid = top + (bottom - top) * 0.35, gain = ((bottom - top) * 0.55) / peak;
     const x = (ms) => x0 + (ms / (FRAMES * FRAME_MS)) * w;
-    ctx.strokeStyle = 'rgba(159, 199, 182, 0.18)'; ctx.beginPath(); ctx.moveTo(x0, mid); ctx.lineTo(x0 + w, mid); ctx.stroke();
+    ctx.strokeStyle = 'rgba(159,171,199, 0.18)'; ctx.beginPath(); ctx.moveTo(x0, mid); ctx.lineTo(x0 + w, mid); ctx.stroke();
     ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 1.2; ctx.beginPath();
     egm.forEach((v, f) => { const yy = mid - v * gain; if (f === 0) ctx.moveTo(x(f * FRAME_MS), yy); else ctx.lineTo(x(f * FRAME_MS), yy); });
     ctx.stroke();
@@ -209,7 +209,7 @@ export function createAfMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     for (let ms = 0; ms <= FRAMES * FRAME_MS; ms += 500) ctx.fillText(String(ms), x(ms) - 8, height - 4);
     // Spectrum (0-20 Hz) with the DF.
     const sx0 = width - specW - 6, sw = specW, sTop = top + 8, sBottom = bottom - 4;
-    ctx.strokeStyle = 'rgba(159, 199, 182, 0.3)'; ctx.strokeRect(sx0, sTop, sw, sBottom - sTop);
+    ctx.strokeStyle = 'rgba(159,171,199, 0.3)'; ctx.strokeRect(sx0, sTop, sw, sBottom - sTop);
     const pts = spectrum.spectrum.filter(([hz]) => hz <= 20);
     const pmax = Math.max(...pts.map(([, p]) => p)) || 1;
     ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 1.2; ctx.beginPath();
