@@ -98,3 +98,42 @@
 .ash-clues [data-met=true] { color: #6ee7b7; }
 [data-ash-pattern] strong { font-size: 13px; font-family: inherit; }
 @media (max-width: 860px) { .ash-strip { height: 210px; } .ash-3d { height: 300px; } }
+/* Cell chapter: conduction-system action potentials, membrane ions and the ECG (ecg-cell-cascade.js). */
+.ecgc-cascade { display: grid; gap: 12px; padding-bottom: 16px; margin-bottom: 4px; border-bottom: 1px solid rgba(56, 189, 248, .16); }
+.ecgc-cascade-lead { margin-top: 4px; font-size: 12px; }
+.ecgc-cascade-play { grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.ecgc-cascade-btn { min-height: 30px; padding: 4px 12px; border: 1px solid rgba(56, 189, 248, .45); border-radius: 8px; background: rgba(14, 165, 233, .14); color: #e0f2fe; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.ecgc-cascade-btn:hover { background: rgba(14, 165, 233, .26); }
+.ecgc-cascade-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr); gap: 10px; align-items: start; }
+@media (max-width: 1100px) { .ecgc-cascade-grid { grid-template-columns: minmax(0, 1fr); } .ecgc-cascade-side { max-width: 620px; } }
+.ecgc-cascade-chart { height: 440px; cursor: crosshair; touch-action: none; }
+.ecgc-cascade-side { display: grid; gap: 6px; min-width: 0; }
+.ecgc-cascade-state { margin: 0; font: 650 13px ui-monospace, monospace; color: #f1f5f9; }
+.ecgc-membrane { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid rgba(56, 189, 248, .14); background: #0b1220; }
+.ecgc-membrane .mb-out { fill: #0d1a2c; }
+.ecgc-membrane .mb-in { fill: #121a2b; }
+.ecgc-membrane .mb-side { fill: #94a3b8; font: 600 10px system-ui, sans-serif; }
+.ecgc-membrane .mb-head { fill: #475569; }
+.ecgc-membrane .mb-tail { fill: rgba(71, 85, 105, .35); }
+.ecgc-membrane .mb-protein { fill: #1e3a5f; stroke: #7dd3fc; stroke-width: 1; }
+.ecgc-membrane .mb-name { fill: #e2e8f0; font: 700 9px system-ui, sans-serif; paint-order: stroke; stroke: #0b1220; stroke-width: 3px; }
+.ecgc-membrane .mb-gene { fill: #94a3b8; font: 500 7.5px ui-monospace, monospace; paint-order: stroke; stroke: #0b1220; stroke-width: 3px; }
+.ecgc-membrane .mb-arrow { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: opacity .12s linear; }
+.ecgc-membrane .mb-ion { stroke: rgba(11, 18, 32, .8); stroke-width: 1; }
+.ecgc-membrane g { transition: opacity .12s linear; }
+.ecgc-ion-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: #cbd5e1; }
+.ecgc-ion-legend span::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; background: var(--ion); vertical-align: -1px; }
+.ecgc-cascade-active { display: flex; flex-wrap: wrap; gap: 4px; min-height: 26px; }
+.ecgc-ion-chip { padding: 3px 8px; border: 1px solid var(--ion); border-radius: 999px; background: rgba(2, 6, 23, .5); color: #e2e8f0; font-size: 11px; }
+.ecgc-cascade-phases { overflow-x: auto; }
+.ecgc-phase-table { width: 100%; border-collapse: collapse; font-size: 12px; color: #cbd5e1; }
+.ecgc-phase-table th { padding: 6px 8px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; border-bottom: 1px solid rgba(56, 189, 248, .2); }
+.ecgc-phase-table td { padding: 6px 8px; vertical-align: top; border-bottom: 1px solid rgba(148, 163, 184, .1); }
+.ecgc-phase-table td:first-child { white-space: nowrap; font-weight: 650; color: #e2e8f0; }
+.ecgc-phase-table tr[data-active] td { background: rgba(14, 165, 233, .14); color: #f1f5f9; }
+.ecgc-phase-table tr[data-active] td:first-child { box-shadow: inset 3px 0 0 #38bdf8; }
+@media (max-width: 860px) {
+  .ecgc-cascade-grid { grid-template-columns: minmax(0, 1fr); }
+  .ecgc-cascade-chart { height: 380px; }
+  .ecgc-phase-table td:last-child { min-width: 220px; }
+}
