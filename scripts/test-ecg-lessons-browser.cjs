@@ -26,7 +26,7 @@ const assert=require('node:assert/strict');
   }
   // Real model values, not only card selection.
   await page.locator('[data-topic="0"]').click();await choose(1);
-  assert.match(await page.locator('.ecg-lab-result').textContent(),/80 ms = 4.0/);
+  assert.match(await page.locator('.ecg-lab-result').textContent(),/PR: 160 ms = 4.0/);
   await page.locator('[data-topic="3"]').click();await choose(2);
   assert.equal(await page.locator('[data-lab-param="angle"]').inputValue(),'120');
   await page.locator('[data-ecg-lang="en"]').click();

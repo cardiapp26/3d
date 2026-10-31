@@ -7,15 +7,15 @@ const click = selector => [selector];
 const experiment = (title, hint, changes, target, icon) => ({ title, hint, changes, target, icon });
 const LESSONS = {
   ch11_basics: {
-    title: ['Bir atımı büyüt, ölç, karşılaştır', 'Zoom into a beat, measure, compare'],
+    title: ['Bir atımı büyüt, dalgaları ve aralıkları ölç', 'Magnify one beat, measure waves and intervals'],
     steps: [
-      experiment(['QRS’yi ölç', 'Measure QRS'], ['80 ms’lik QRS’nin kâğıtta kapladığı alanı incele.', 'Inspect the paper distance of an 80 ms QRS.'], [param('rate',75),click('[data-lab-control="speed-25"]'),click('[data-lab-control="gain-10"]'),click('[data-lab-control="interval-QRS"]')], '[data-ecg-lab="ch11_basics"]', 'wave'),
-      experiment(['Kâğıdı hızlandır', 'Speed up the paper'], ['50 mm/s seçildi. Aynı QRS artık iki kat kare kaplar; süre değişmez.', '50 mm/s selected. The same QRS spans twice as many boxes; duration stays fixed.'], [click('[data-lab-control="interval-QRS"]'),click('[data-lab-control="speed-50"]')], '[data-ecg-lab="ch11_basics"]', 'paper'),
-      experiment(['Voltajı büyüt', 'Increase the gain'], ['20 mm/mV seçildi. Dalga yüksekliği değişir, gerçek voltaj değişmez.', '20 mm/mV selected. Display height changes, actual voltage stays fixed.'], [click('[data-lab-control="gain-20"]')], '[data-ecg-lab="ch11_basics"]', 'wave')
+      experiment(['QRS’yi ölç', 'Measure QRS'], ['QRS seçildi: ventriküler depolarizasyon, 80 ms = 2 küçük kare.', 'QRS selected: ventricular depolarization, 80 ms = 2 small boxes.'], [param('rate',75),click('[data-lab-control="interval-QRS"]')], '[data-ecg-lab="ch11_basics"]', 'wave'),
+      experiment(['PR’yi ölç', 'Measure PR'], ['PR seçildi: P başlangıcından QRS başlangıcına; atriyum ve AV ileti süresi.', 'PR selected: from P onset to QRS onset; atrial and AV conduction time.'], [param('rate',75),click('[data-lab-control="interval-PR"]')], '[data-ecg-lab="ch11_basics"]', 'paper'),
+      experiment(['QT’yi ölç', 'Measure QT'], ['QT seçildi: QRS başlangıcından T sonuna; ventriküler depolarizasyon ve repolarizasyon.', 'QT selected: from QRS onset to T end; ventricular depolarization and repolarization.'], [param('rate',75),click('[data-lab-control="interval-QT"]')], '[data-ecg-lab="ch11_basics"]', 'wave')
     ],
-    question: ['Kâğıt hızı iki katına çıkınca gerçek QRS süresi?', 'When paper speed doubles, actual QRS duration?'],
-    answers: [['Değişmez', 'Stays the same'], ['İki katına çıkar', 'Doubles']],
-    why: ['Kâğıt hızı yatay ölçeği değiştirir. Süre aynı kalır; kare sayısı iki katına çıkar.', 'Paper speed changes the horizontal scale. Duration stays fixed; box count doubles.']
+    question: ['PR aralığı nereden nereye ölçülür?', 'Where is the PR interval measured?'],
+    answers: [['P başlangıcından QRS başlangıcına', 'P onset to QRS onset'], ['P sonundan QRS sonuna', 'P end to QRS end']],
+    why: ['PR aralığı P dalgasını ve PR segmentini içerir: atriyal depolarizasyon ve AV düğüm gecikmesi. PR segmenti yalnız P sonundan QRS başlangıcına kadardır.', 'The PR interval includes the P wave and the PR segment: atrial depolarization plus AV nodal delay. The PR segment alone runs from P end to QRS onset.']
   },
   ch11_leads: {
     title: ['Aynı vektöre üç farklı pencereden bak', 'View one vector through three windows'],

@@ -44,6 +44,18 @@ const CHAPTER_LABS = Object.freeze([
     subtitle: { tr: 'NBG kodu, AAI/VVI/DDD şeritleri ve cihaz işaretleri; yakalama kaybı, az ve fazla algılama; lead yerine göre paced QRS.', en: 'The NBG code, AAI/VVI/DDD strips with device markers; failure to capture, under- and oversensing; the paced QRS by lead position.' } }
 ]);
 
+// Left panel: main headings in teaching order, from the beat and the cell to the rhythm.
+// Every topic appears once; items are 'topic:<GUYTON id>', 'chapter:<lab id>', 'chan' or 'davinci'.
+const NAV_GROUPS = Object.freeze([
+  { title: { tr: 'Temeller', en: 'Foundations' }, items: ['topic:ch11_basics', 'chapter:cell'] },
+  { title: { tr: 'Kayıt ve derivasyonlar', en: 'Recording and leads' }, items: ['chapter:recording', 'topic:ch11_leads', 'davinci'] },
+  { title: { tr: 'Vektör ve aks', en: 'Vectors and axis' }, items: ['topic:ch12_vectors', 'topic:ch12_axis'] },
+  { title: { tr: 'Odacıklar ve repolarizasyon', en: 'Chambers and repolarization' }, items: ['chapter:atria', 'chapter:hypertrophy', 'chapter:qt', 'chan'] },
+  { title: { tr: 'İskemi ve enfarktüs', en: 'Ischemia and infarction' }, items: ['topic:ch12_injury'] },
+  { title: { tr: 'Ritim ve iletim', en: 'Rhythm and conduction' }, items: ['topic:ch13_arrhythmias', 'chapter:ashman', 'chapter:pacing'] }
+]);
+export const ECG_NAV_ORDER = Object.freeze(NAV_GROUPS.flatMap(g => g.items));
+
 export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   let activeTopicIdx = 0;
   let isDaVinci = new URLSearchParams(location.search).get('lesson') === 'davinci';
@@ -64,6 +76,39 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
   const labStates = {};
   const container = document.createElement('div');
   container.className = 'guyton-studio';
+
+  function activeKey() {
+    if (chapterId) return `chapter:${chapterId}`;
+    if (isChan) return 'chan';
+    if (isDaVinci) return 'davinci';
+    return `topic:${GUYTON_TOPICS[activeTopicIdx].id}`;
+  }
+
+  function openNav(key) {
+    const [kind, id] = key.split(':');
+    isDaVinci = kind === 'davinci';
+    isChan = kind === 'chan';
+    chapterId = kind === 'chapter' ? id : null;
+    if (kind === 'topic') activeTopicIdx = GUYTON_TOPICS.findIndex(t => t.id === id);
+    render();
+    container.querySelector(`[data-nav-key="${CSS.escape(key)}"]`)?.focus();
+  }
+
+  function navMarkup(lang, active) {
+    const isTr = lang === 'tr';
+    const item = key => {
+      const [kind, id] = key.split(':');
+      const on = key === active;
+      const topicIdx = kind === 'topic' ? GUYTON_TOPICS.findIndex(t => t.id === id) : -1;
+      const name = kind === 'topic' ? GUYTON_TOPICS[topicIdx].title[lang]
+        : kind === 'chapter' ? CHAPTER_LABS.find(c => c.id === id).title[lang]
+        : kind === 'chan' ? (isTr ? 'Kanalopatiler: genler ve sendromlar' : 'Channelopathies: genes and syndromes')
+        : (isTr ? '12 Derivasyon EKG Anatomisi' : '12-Lead ECG Anatomy');
+      const attr = kind === 'topic' ? `data-topic="${topicIdx}"` : kind === 'chapter' ? `data-chapter-tab="${id}"` : kind === 'chan' ? 'data-chan-tab="true"' : 'data-davinci-tab="true"';
+      return `<button type="button" role="tab" tabindex="${on ? 0 : -1}" aria-selected="${on}" class="guyton-tab-btn ${kind === 'davinci' ? 'davinci-tab-pill ' : ''}${on ? 'active' : ''}" data-nav-key="${key}" ${attr}><span class="guyton-tab-name">${name}</span></button>`;
+    };
+    return NAV_GROUPS.map(g => `<p class="guyton-tab-group" role="presentation">${g.title[lang]}</p>${g.items.map(item).join('')}`).join('');
+  }
 
   function render() {
     lab?.destroy();
@@ -105,22 +150,7 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       <nav class="guyton-chapters" aria-label="${isTr ? 'Bölümler' : 'Chapters'}">
         <p class="guyton-chapters-title">${isTr ? 'Bölümler' : 'Chapters'}</p>
         <div class="guyton-tabs" role="tablist" aria-orientation="vertical">
-          ${GUYTON_TOPICS.map((t, idx) => `
-            <button type="button" role="tab" tabindex="${idx === activeTopicIdx && onTopic ? 0 : -1}" aria-selected="${idx === activeTopicIdx && onTopic}" class="guyton-tab-btn ${idx === activeTopicIdx && onTopic ? 'active' : ''}" data-topic="${idx}">
-              <span class="guyton-tab-name">${t.title[lang]}</span>
-            </button>
-          `).join('')}
-          ${CHAPTER_LABS.map(c => `
-            <button type="button" role="tab" tabindex="${c.id === chapterId ? 0 : -1}" aria-selected="${c.id === chapterId}" class="guyton-tab-btn ${c.id === chapterId ? 'active' : ''}" data-chapter-tab="${c.id}">
-              <span class="guyton-tab-name">${c.title[lang]}</span>
-            </button>
-          `).join('')}
-          <button type="button" role="tab" tabindex="${isChan ? 0 : -1}" aria-selected="${isChan}" class="guyton-tab-btn ${isChan ? 'active' : ''}" data-chan-tab="true">
-            <span class="guyton-tab-name">${isTr ? 'Kanalopatiler · Faz 0–4' : 'Channelopathies · Phase 0–4'}</span>
-          </button>
-          <button type="button" role="tab" tabindex="${isDaVinci ? 0 : -1}" aria-selected="${isDaVinci}" class="guyton-tab-btn davinci-tab-pill ${isDaVinci ? 'active' : ''}" data-davinci-tab="true">
-            <span class="guyton-tab-name">${isTr ? '12 Derivasyon EKG Anatomisi' : '12-Lead ECG Anatomy'}</span>
-          </button>
+          ${navMarkup(lang, activeKey())}
         </div>
       </nav>
 
@@ -152,39 +182,18 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
       }
     }
 
-    // Bind topic tabs
-    container.querySelectorAll('[data-topic]').forEach(btn => {
+    // One list in teaching order: click opens a topic; arrows, Home and End move along the whole list.
+    const navButtons = [...container.querySelectorAll('[data-nav-key]')];
+    navButtons.forEach((btn, i) => {
+      btn.addEventListener('click', () => openNav(btn.dataset.navKey));
       btn.addEventListener('keydown', e => {
         // A vertical list on wide screens, a row on phones: both arrow pairs move.
         if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)) return;
         e.preventDefault();
-        isDaVinci = false; isChan = false; chapterId = null;
         const step = ['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : -1;
-        activeTopicIdx = e.key === 'Home' ? 0 : e.key === 'End' ? GUYTON_TOPICS.length - 1 : (activeTopicIdx + step + GUYTON_TOPICS.length) % GUYTON_TOPICS.length;
-        render(); container.querySelector(`[data-topic="${activeTopicIdx}"]`)?.focus();
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? navButtons.length - 1 : (i + step + navButtons.length) % navButtons.length;
+        openNav(navButtons[next].dataset.navKey);
       });
-      btn.addEventListener('click', () => {
-        isDaVinci = false; isChan = false; chapterId = null;
-        activeTopicIdx = Number(btn.dataset.topic);
-        render();
-        container.querySelector(`[data-topic="${activeTopicIdx}"]`)?.focus();
-      });
-    });
-
-    const davinciBtn = container.querySelector('[data-davinci-tab]');
-    if (davinciBtn) {
-      davinciBtn.addEventListener('click', () => {
-        isDaVinci = true; isChan = false; chapterId = null;
-        render();
-      });
-    }
-    container.querySelectorAll('[data-chapter-tab]').forEach(btn => btn.addEventListener('click', () => {
-      chapterId = btn.dataset.chapterTab; isDaVinci = false; isChan = false;
-      render(); container.querySelector(`[data-chapter-tab="${chapterId}"]`)?.focus();
-    }));
-    container.querySelector('[data-chan-tab]')?.addEventListener('click', () => {
-      isChan = true; isDaVinci = false; chapterId = null;
-      render();
     });
 
     const viewArea = container.querySelector('#guyton-view');
@@ -216,9 +225,12 @@ export function createGuytonEcgStudio({ mount, getLang = () => 'tr' }) {
 
     if (topic.id === 'ch11_basics') {
       mountNode.replaceChildren();
-      cameraLab = createLeadCameraLab({ mount: mountNode, getLang, state: labStates.leadCamera ||= {} });
     } else if (topic.id === 'ch11_leads') {
+      // Leads chapter: Einthoven and the hexaxial wheel, then the same heart seen by each lead camera.
       renderChapter11Leads(mountNode, isTr);
+      const cameraMount = document.createElement('div');
+      mountNode.append(cameraMount);
+      cameraLab = createLeadCameraLab({ mount: cameraMount, getLang, state: labStates.leadCamera ||= {} });
     } else if (topic.id === 'ch12_vectors') {
       // Continuous QRS genesis: activation map, vector loop and six leads (qrs-vector-lab.js).
       mountNode.replaceChildren();

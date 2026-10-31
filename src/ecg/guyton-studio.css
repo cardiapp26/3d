@@ -110,6 +110,18 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
   font-weight: 600;
 }
 
+/* Main headings of the chapter list; each topic sits under one of them. */
+.guyton-tab-group {
+  margin: 12px 0 2px;
+  padding-left: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+.guyton-tab-group:first-child { margin-top: 0; }
+
 .guyton-content-area {
   display: flex;
   flex-direction: column;
@@ -529,6 +541,8 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
   .guyton-tabs { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
   .guyton-tabs::-webkit-scrollbar { display: none; }
   .guyton-tabs .guyton-tab-btn { width: auto; flex: 0 0 auto; white-space: nowrap; }
+  .guyton-tab-group { flex: 0 0 auto; align-self: center; margin: 0 0 0 6px; white-space: nowrap; }
+  .guyton-tab-group:first-child { margin-left: 0; }
 }
 
 @media (max-width: 768px) {
