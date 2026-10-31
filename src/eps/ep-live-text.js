@@ -15,7 +15,21 @@ export const LIVE_TEXT = {
     run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper', waves: 'Dalga adları', ladder: 'Ladder diyagram', links: 'Kanalda ladder', linksTitle: 'Her aktivasyonun HRA, His, CS ve RV sinyallerini birleştirir; iletim çizgileri gizli olguda tanı verilince gösterilir.', ladderLocked: 'Gizli olguda tanı verilince gösterilir (mekanizmayı açık eder).', ladderLabel: 'Ladder diyagram: atriyum, AV düğüm ve ventrikül aktivasyonu ile iletim yolları',
     stim: 'Stimülatör', site: 'Uyarı yeri', s1: 'S1 (ms)', n: 'S1 sayısı', pace: 'Uyar (S1 + ekstra)', burst: 'Burst (yalnız S1)',
     pacePause: 'Uyar ve dondur', stop: 'Uyarıyı durdur', shock: 'Kardiyoversiyon',
-    sites: { hra: 'HRA', 'cs-prox': 'CS proksimal', 'cs-dist': 'CS distal', rv: 'RV apeks' },
+    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proksimal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', rv: 'RV apeks' },
+    step: 'Dekrement (ms)', limit: 'Alt sınır (ms)', rest: 'Dinlenme (s)', hr: 'Hız', perMin: 'dk',
+    progStart: 'Otomatik dekrement', progStop: 'Dekrementi durdur', contStart: 'Sürekli pacing', contStop: 'Sürekli pacingi durdur',
+    needExtra: 'Otomatik dekrement için S2 gerekir (S2 > 0).',
+    progRunning: 'Programlı uyarı sürüyor: her dizide son ekstrastimulus bir adım kısalır; yakalama kaybı, taşikardi ya da alt sınırda durur.',
+    contOn: (site, cl) => `Sürekli pacing: ${site}, ${cl} ms (${Math.round(60000 / cl)}/dk). S1 değişince bir sonraki uyarıdan geçerli; durdurana kadar sürer.`,
+    progRow: (r) => `${r.label} ${r.coupling}: ${!r.capture ? (r.sustained ? 'yakalama yok (taşikardi sürüyor)' : 'yakalama yok (refrakter)')
+      : r.ventricular ? (r.va == null ? 'VA blok' : `VA ${r.va}${r.jump ? ' (retrograd sıçrama)' : ''}`)
+        : r.ah == null ? 'AV nodal blok' : `A-H ${r.ah}${r.jump ? ' (sıçrama)' : ''}`}${r.echo ? ', echo' : ''}${r.sustained ? ', taşikardi başladı' : ''}`,
+    progSum: (x) => [
+      // A refractory period not reached is named only when the run went down to the lower limit.
+      x.erp != null || x.reason === 'limit' ? `${x.ventricular ? 'VERP' : 'AERP'} ${x.erp ?? 'ulaşılmadı'}` : '',
+      x.ventricular ? (x.vaBlock != null ? `VA blok ${x.vaBlock}` : '') : x.nodeErp != null || x.reason === 'limit' ? `AV nodal ERP ${x.nodeErp ?? 'ulaşılmadı'}` : '',
+      x.jump ? `sıçrama ${x.label} ${x.jump}` : '', x.echo ? `echo ${x.label} ${x.echo}` : '', x.induced ? `taşikardi ${x.label} ${x.induced}` : ''
+    ].filter(Boolean).join(' · ') + `. ${{ induced: 'Taşikardi başladığı için durdu.', erp: 'Refrakter periyoda ulaşıldı.', limit: 'Alt sınıra ulaşıldı.', stopped: 'Durduruldu.' }[x.reason] || ''}`,
     ablation: 'Ablasyon', target: 'Kateter ucu', rfOn: 'RF başlat', rfOff: 'RF durdur',
     rfRunning: (name) => `RF uygulanıyor: ${name}. Lezyon yaklaşık 4 s sürekli RF ile tamamlanır.`,
     targets: {
@@ -27,7 +41,7 @@ export const LIVE_TEXT = {
       cti: 'Lezyon: CTI bloğu oluştu.', focus: 'Lezyon: odak ablate edildi.', isthmus: 'Lezyon: VT istmusu ablate edildi.', none: 'Lezyon: bu bölgede hedef doku yok; etki olmadı.'
     },
     intervals: 'Son atım', none: 'yok', frozen: 'Donduruldu: geri sarmak için kaydırın; ölçüm için Kaliper.',
-    hint: 'Uyarı dizisi şimdiden 300 ms sonra başlar. Ekstrastimulus 0 ise kullanılmaz.',
+    hint: 'Uyarı dizisi şimdiden 300 ms sonra başlar. Ekstrastimulus 0 ise kullanılmaz. Otomatik dekrement son ekstrastimulusu her dizide kısaltır; dizi son spontan atıma senkron başlar.',
     rate: 'Oynatma hızı',
     maneuvers: 'Manevralar', hisPvc: 'His-refrakter PVC', vOverdrive: 'V overdrive (TCL − 30)', aOverdrive: 'Atriyal overdrive (TCL − 20)',
     needTachy: 'Önce bir taşikardi başlatın: TCL ölçülemedi.', maneuverRunning: 'Manevra uygulanıyor; sonuç birkaç atım sonra.',
@@ -71,7 +85,20 @@ export const LIVE_TEXT = {
     run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers', waves: 'Wave names', ladder: 'Ladder diagram', links: 'Ladder on channels', linksTitle: 'Joins the HRA, His, CS and RV signals of each activation; the conduction lines show once the hidden case is answered.', ladderLocked: 'Shown once the hidden case is answered (it names the mechanism).', ladderLabel: 'Ladder diagram: atrial, AV nodal and ventricular activation and the conduction routes',
     stim: 'Stimulator', site: 'Pacing site', s1: 'S1 (ms)', n: 'S1 count', pace: 'Pace (S1 + extras)', burst: 'Burst (S1 only)',
     pacePause: 'Pace and freeze', stop: 'Stop pacing', shock: 'Cardiovert',
-    sites: { hra: 'HRA', 'cs-prox': 'CS proximal', 'cs-dist': 'CS distal', rv: 'RV apex' },
+    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proximal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', rv: 'RV apex' },
+    step: 'Decrement (ms)', limit: 'Lower limit (ms)', rest: 'Rest (s)', hr: 'Rate', perMin: 'min',
+    progStart: 'Auto decrement', progStop: 'Stop decrement', contStart: 'Continuous pacing', contStop: 'Stop continuous pacing',
+    needExtra: 'Auto decrement needs an S2 (S2 > 0).',
+    progRunning: 'Programmed stimulation running: the last extrastimulus shortens one step per drive; it stops at loss of capture, a tachycardia or the lower limit.',
+    contOn: (site, cl) => `Continuous pacing: ${site}, ${cl} ms (${Math.round(60000 / cl)}/min). A new S1 applies from the next stimulus; it runs until stopped.`,
+    progRow: (r) => `${r.label} ${r.coupling}: ${!r.capture ? (r.sustained ? 'no capture (tachycardia running)' : 'no capture (refractory)')
+      : r.ventricular ? (r.va == null ? 'VA block' : `VA ${r.va}${r.jump ? ' (retrograde jump)' : ''}`)
+        : r.ah == null ? 'AV nodal block' : `A-H ${r.ah}${r.jump ? ' (jump)' : ''}`}${r.echo ? ', echo' : ''}${r.sustained ? ', tachycardia started' : ''}`,
+    progSum: (x) => [
+      x.erp != null || x.reason === 'limit' ? `${x.ventricular ? 'VERP' : 'AERP'} ${x.erp ?? 'not reached'}` : '',
+      x.ventricular ? (x.vaBlock != null ? `VA block ${x.vaBlock}` : '') : x.nodeErp != null || x.reason === 'limit' ? `AV nodal ERP ${x.nodeErp ?? 'not reached'}` : '',
+      x.jump ? `jump ${x.label} ${x.jump}` : '', x.echo ? `echo ${x.label} ${x.echo}` : '', x.induced ? `tachycardia ${x.label} ${x.induced}` : ''
+    ].filter(Boolean).join(' · ') + `. ${{ induced: 'Stopped: a tachycardia started.', erp: 'Refractory period reached.', limit: 'Lower limit reached.', stopped: 'Stopped.' }[x.reason] || ''}`,
     ablation: 'Ablation', target: 'Catheter tip', rfOn: 'Start RF', rfOff: 'Stop RF',
     rfRunning: (name) => `RF on: ${name}. A lesion needs about 4 s of continuous RF.`,
     targets: {
@@ -83,7 +110,7 @@ export const LIVE_TEXT = {
       cti: 'Lesion: CTI block.', focus: 'Lesion: focus ablated.', isthmus: 'Lesion: VT isthmus ablated.', none: 'Lesion: no target tissue here; no effect.'
     },
     intervals: 'Last beat', none: 'n/a', frozen: 'Frozen: scroll back with the slider; measure with Calipers.',
-    hint: 'A train starts 300 ms from now. An extrastimulus of 0 is off.',
+    hint: 'A train starts 300 ms from now. An extrastimulus of 0 is off. Auto decrement shortens the last extrastimulus each drive; each drive starts in step with the last spontaneous beat.',
     rate: 'Playback',
     maneuvers: 'Maneuvers', hisPvc: 'His-refractory PVC', vOverdrive: 'V overdrive (TCL − 30)', aOverdrive: 'Atrial overdrive (TCL − 20)',
     needTachy: 'Induce a tachycardia first: no TCL to measure.', maneuverRunning: 'Maneuver running; result after a few beats.',

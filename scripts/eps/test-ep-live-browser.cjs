@@ -213,6 +213,47 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.ok((await page.locator('[data-ep-live-protocol-rows] li').allTextContents()).some((t) => /^S1 350: 1:1, AH \d+, PR \d+ > PP$/.test(t)), 'row marks PR > PP');
     assert.ok(await page.locator('[data-ep-live-protocol-rows] li').count() >= 10, 'protocol rows listed');
 
+    // Programmed stimulation: auto decrement of S2 from a mid CS bipole finds the AV nodal and atrial ERPs.
+    await page.evaluate(() => window.epsLab.live.setCase('normal'));
+    assert.ok(await page.locator('[data-ep-live-stim=site] option[value=cs-56]').count(), 'every CS bipole is a pacing site');
+    await page.locator('[data-ep-live-stim=site]').selectOption('cs-56');
+    await page.locator('[data-ep-live-stim=s1]').fill('600');
+    await page.locator('[data-ep-live-stim=s2]').fill('320');
+    await page.locator('[data-ep-live-stim=s3]').fill('0');
+    await page.locator('[data-ep-live-stim=step]').fill('20');
+    await page.locator('[data-ep-live-action=prog]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(90000); });
+    const prog = await page.evaluate(() => window.epsLab.live.programmed());
+    assert.equal(prog.running, false, 'run ends at the refractory period');
+    assert.match(await page.locator('[data-ep-live-prog-summary]').textContent(), /AERP 2\d0 · AV nodal ERP 2\d0\. Refrakter periyoda ulaşıldı\./);
+    assert.match((await page.locator('[data-ep-live-prog-rows] li').allTextContents())[0], /^S2 320: A-H \d+$/);
+    // Typical AVNRT from the HRA: the jump, the echo and the induction stop the run.
+    await page.evaluate(() => window.epsLab.live.setCase('avnrt-typical'));
+    await page.locator('[data-ep-live-stim=site]').selectOption('hra');
+    await page.locator('[data-ep-live-stim=s2]').fill('400');
+    await page.locator('[data-ep-live-stim=step]').fill('10');
+    await page.locator('[data-ep-live-action=prog]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(40000); });
+    assert.match(await page.locator('[data-ep-live-prog-summary]').textContent(), /sıçrama S2 370 · echo S2 370 · taşikardi S2 370\. Taşikardi başladığı için durdu\./);
+    assert.match(await page.locator('[data-ep-live-intervals]').textContent(), /^Hız 1[5-9]\d\/dk/, 'live heart rate of the tachycardia');
+    // Continuous pacing: runs at S1 until stopped, a new S1 applies at once.
+    await page.evaluate(() => window.epsLab.live.setCase('normal'));
+    await page.locator('[data-ep-live-stim=s1]').fill('500');
+    await page.locator('[data-ep-live-action=continuous]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(6000); });
+    assert.equal((await page.evaluate(() => window.epsLab.live.intervals())).pp, 500);
+    await page.locator('[data-ep-live-stim=s1]').fill('400');
+    await page.locator('[data-ep-live-stim=s1]').dispatchEvent('change');
+    await page.evaluate(() => { window.epsLab.live.advance(3000); });
+    assert.equal((await page.evaluate(() => window.epsLab.live.intervals())).pp, 400, 'new S1 applied');
+    assert.match(await page.locator('[data-ep-live-intervals]').textContent(), /^Hız 150\/dk/);
+    await page.locator('[data-ep-live-action=continuous]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(4000); });
+    assert.equal((await page.evaluate(() => window.epsLab.live.intervals())).pp, 800, 'sinus after continuous pacing stops');
+
     // AF mapping: Space plays and pauses the activation / phase map (a focused button is not pressed); no playback on the DF map.
     await page.locator('[data-ep-section=afmap]').click();
     await page.waitForFunction(() => window.epsLab.panel.afmap.getState().active);
@@ -228,7 +269,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().playing), false, 'DF map: nothing to play');
 
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, Space play / pause on the AF map');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, auto-decrement S2 from a CS bipole (ERPs) and in AVNRT (jump, echo, induction), continuous pacing with live S1 change and heart rate, Space play / pause on the AF map');
   } finally {
     await browser.close();
   }

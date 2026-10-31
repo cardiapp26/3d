@@ -7,8 +7,9 @@
  * Thresholds are the classic teaching cut-offs, not a diagnostic algorithm.
  */
 
+import { SITE_CHANNEL as PACE_CHANNEL } from './ep-live-model.js';
+
 const RETRO = new Set(['avn-fast', 'avn-slow', 'ap-left', 'ap-ps']);
-const PACE_CHANNEL = { hra: 'hra', 'cs-prox': 'cs-910', 'cs-dist': 'cs-12', rv: 'rv' };
 export const PPI_CUTOFF = 115;     // PPI - TCL from the RV: > 115 AVNRT, otherwise AVRT
 export const CPPI_CUTOFF = 110;    // Gonzalez-Torrecilla 2006, PMID 16731468: <110 supports ORT
 export const SA_VA_CUTOFF = 85;    // SA - VA: > 85 AVNRT, otherwise AVRT

@@ -17,9 +17,29 @@ import { ev, far, mono } from './ep-beats.js';
 import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS } from './ep-live-substrates.js';
 
 export { LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS };
-export const LIVE_CHANNELS = Object.freeze(['ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'rv']);
-export const LIVE_SITES = Object.freeze(['hra', 'cs-prox', 'cs-dist', 'rv']);
+export const LIVE_CHANNELS = Object.freeze(['ecg-i', 'ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'rv']);
+// Pacing sites: the high right atrium, every coronary sinus bipole (proximal 9-10 to distal 1-2) and the RV apex.
+export const LIVE_SITES = Object.freeze(['hra', 'cs-prox', 'cs-78', 'cs-56', 'cs-34', 'cs-dist', 'rv']);
+export const SITE_CHANNEL = Object.freeze({ hra: 'hra', 'cs-prox': 'cs-910', 'cs-78': 'cs-78', 'cs-56': 'cs-56', 'cs-34': 'cs-34', 'cs-dist': 'cs-12', rv: 'rv' });
 const ATRIAL_CHANNELS = ['hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12'];
+const CS_PAIRS = ['cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12'];
+
+/**
+ * Activation sequence of an origin. A mid coronary sinus bipole (7-8, 5-6, 3-4)
+ * activates its neighbours 10 ms per bipole away, the other structures in
+ * between the proximal and the distal CS sequences.
+ */
+const MID_CS = Object.fromEntries(['cs-78', 'cs-56', 'cs-34'].map((site) => {
+  const k = CS_PAIRS.indexOf(site), w = k / (CS_PAIRS.length - 1);
+  const a = ORIGINS['cs-prox'], b = ORIGINS['cs-dist'];
+  const o = Object.fromEntries(CS_PAIRS.map((ch, i) => [ch, 2 + 10 * Math.abs(i - k)]));
+  for (const key of ['his-d', 'his-p', 'hra', 'avj', 'ap', 'aps', 'p']) o[key] = Math.round(a[key] + (b[key] - a[key]) * w);
+  o.pAmp = Math.round((a.pAmp + (b.pAmp - a.pAmp) * w) * 1000) / 1000;
+  return [site, Object.freeze({ ...o, w })];
+}));
+export const originOf = (origin) => ORIGINS[origin] || MID_CS[origin] || null;
+// Flutter return beyond the TCL at a mid CS bipole: between the proximal and distal values.
+const ppiExtraAt = (flutter, site) => flutter.ppiExtra[site] ?? Math.round(flutter.ppiExtra['cs-prox'] + (flutter.ppiExtra['cs-dist'] - flutter.ppiExtra['cs-prox']) * MID_CS[site].w);
 
 /** Stimulus train: S1 × n then the extrastimuli (each coupled to the previous stimulus; 0 or empty = off). */
 export function planTrain({ site, start, s1, n, extras = [] }) {
@@ -89,7 +109,7 @@ export function createLiveHeart(caseId = 'normal') {
     if (!LIVE_SITES.includes(origin)) pacedRun = 0;   // a non-paced activation ends the paced run
     last.atrium = t;
     lastAtrium = { t, origin };
-    const o = offsets || ORIGINS[origin];
+    const o = offsets || originOf(origin);
     const amp = origin === 'af' ? 0.3 : null;
     for (const ch of ATRIAL_CHANNELS) {
       if (o[ch] == null) continue;
@@ -162,9 +182,11 @@ export function createLiveHeart(caseId = 'normal') {
     } else if (spRetroReady(hr)) spRetro(hr);
   }
 
+  // Surface QRS per origin; lead I: positive for a narrow or RV apical (left bundle branch block like)
+  // QRS, negative for a left lateral pathway and the left ventricular (scar) VT exit.
   const QRS = {
-    his: { lag: 0, sigma: 8, v1: -0.5 }, rv: { lag: 20, sigma: 16, v1: -0.5 }, escape: { lag: 20, sigma: 18, v1: -0.5 },
-    ap: { lag: 30, sigma: 16, v1: 0.6 }, vt: { lag: 15, sigma: 18, v1: 0.8 }
+    his: { lag: 0, sigma: 8, v1: -0.5, i: 0.55 }, rv: { lag: 20, sigma: 16, v1: -0.5, i: 0.7 }, escape: { lag: 20, sigma: 18, v1: -0.5, i: 0.5 },
+    ap: { lag: 30, sigma: 16, v1: 0.6, i: -0.45 }, vt: { lag: 15, sigma: 18, v1: 0.8, i: -0.5 }
   };
   function ventricle(t, { origin, h = null, aJunction = null }, force = false) {
     if (!force && !ready('v', t, p.vErp)) return false;
@@ -172,6 +194,7 @@ export function createLiveHeart(caseId = 'normal') {
     const q = QRS[origin] || QRS.rv;
     if (origin === 'ap') record('ecg-ii', mono('delta', t, 0.3, 7));
     record('ecg-ii', ev('V', t + q.lag, origin === 'vt' ? -0.8 : 0.9, q.sigma));
+    record('ecg-i', ev('V', t + q.lag, q.i, q.sigma));
     record('ecg-v1', ev('V', t + q.lag, q.v1, q.sigma));
     record('rv', ev('V', origin === 'rv' ? t : t + (origin === 'vt' ? 40 : 5), 0.9, 5, { origin }));
     const nearHis = origin === 'his';
@@ -210,7 +233,7 @@ export function createLiveHeart(caseId = 'normal') {
       lastFlutterCapture = { t, site };
       // While the train goes on, the next stimulus captures before the wavefront returns.
       const next = queue.find((q) => q.kind === 'stim' && q.data.site !== 'rv');
-      if (!next || next.t >= t + p.flutter.tcl + p.flutter.ppiExtra[site]) scheduleFlutterReturn(lastFlutterCapture);
+      if (!next || next.t >= t + p.flutter.tcl + ppiExtraAt(p.flutter, site)) scheduleFlutterReturn(lastFlutterCapture);
     }
     if (kind === 'v' && active.vt) {
       unschedule('vt-fire');
@@ -242,13 +265,11 @@ export function createLiveHeart(caseId = 'normal') {
 
   // Return of the entrained flutter wavefront: TCL + distance to the circuit at the pacing site.
   function scheduleFlutterReturn({ t, site }) {
-    const ch = { hra: 'hra', 'cs-prox': 'cs-910', 'cs-dist': 'cs-12' }[site];
-    schedule(t + p.flutter.tcl + p.flutter.ppiExtra[site] - ORIGINS.flutter[ch], 'flutter-fire');
+    schedule(t + p.flutter.tcl + ppiExtraAt(p.flutter, site) - ORIGINS.flutter[SITE_CHANNEL[site]], 'flutter-fire');
   }
 
   function stim(t, site) {
-    const ch = site === 'cs-prox' ? 'cs-910' : site === 'cs-dist' ? 'cs-12' : site;
-    record(ch, ev('S', t, 0.5, 2));
+    record(SITE_CHANNEL[site], ev('S', t, 0.5, 2));
     if (site === 'rv') onStim('v', t, ventricle(t + 10, { origin: 'rv' }), site);
     else {
       const captured = activateAtrium(t + 2, site);
@@ -331,7 +352,7 @@ export function createLiveHeart(caseId = 'normal') {
       for (const k of Object.keys(last)) last[k] = t;
       active.flutter = active.af = active.vt = false;
       rf = null;
-      record('ecg-ii', ev('DC', t, 1.6, 3)); record('ecg-v1', ev('DC', t, -1.4, 3));
+      record('ecg-i', ev('DC', t, 1.2, 3)); record('ecg-ii', ev('DC', t, 1.6, 3)); record('ecg-v1', ev('DC', t, -1.4, 3));
       schedule(t + 900, 'sinus');
       if (active.at) schedule(t + p.at.cl + 300, 'at-fire');
     },

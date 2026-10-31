@@ -1,7 +1,9 @@
 /*
  * Live EP recording system: a continuously sweeping multichannel monitor
  * driven by the conduction model (ep-live-model.js), with a programmable
- * stimulator (site, S1 × N, S2-S4, burst, pace and pause), DC cardioversion,
+ * stimulator (any CS bipole, HRA or RV; S1 × N, S2-S4, burst, pace and pause,
+ * continuous pacing, decremental extrastimulus runs read drive by drive with
+ * ep-live-stim.js), a live heart rate, DC cardioversion,
  * freeze and review of the last 30 s, sweep speed, interval readout and
  * vertical calipers, RF ablation at a chosen catheter-tip target, and a
  * hidden-case diagnosis quiz with expert hints. The strip is drawn by
@@ -14,6 +16,7 @@ import {
   tclBefore, atrialCycle, hisPvcTime, analyzeHisPvc, overdriveStart, planOverdrive, atriumEntrained, analyzeOverdrive,
   interpretOverdrive, interpretSite, planProtocol, analyzeStep, summarizeProtocol, analyzeVaLinking
 } from './ep-live-maneuvers.js';
+import { planProgrammed, placeDrive, driveStart, analyzeDrive, driveEnds, markJumps, summarizeProgrammed, STIM_DEFAULTS } from './ep-live-stim.js';
 import { CALIPER_SNAP_MS, noCaliper, snapTime, placeCaliper, caliperText } from './ep-user-caliper.js';
 import { readFlag, writeFlag } from './view-prefs.js';
 import { buildLadder, drawLadder, LADDER_STYLE } from './ep-ladder.js';
@@ -25,6 +28,7 @@ const SPEEDS = [25, 50, 100];      // sweep, mm/s
 const RATES = [0.25, 0.5, 1, 2, 4]; // playback speed
 const REVIEW_MS = 30000;           // frozen history that can be scrolled back
 const KEEP_MS = 45000;             // event memory kept by the model
+const CONT_AHEAD_MS = 2000;        // continuous pacing: stimuli scheduled this far ahead
 // Animation frame helpers that also load outside a browser (unit tests).
 const nextFrame = (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : 0);
 const cancelFrame = (id) => { if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id); };
@@ -41,7 +45,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const caseText = (id) => LIVE_CASE_TEXT[id][L()];
   const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '', waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links'),
     hidden: false, quizOpen: false, answer: null, showHints: false, rfOn: false, rfTarget: 'slow-pathway', lesion: '',
-    maneuver: null, maneuverText: '', protocol: null, protocolKind: 'avbcl', protocolRows: [], protocolSummary: '' };
+    maneuver: null, maneuverText: '', protocol: null, protocolKind: 'avbcl', protocolRows: [], protocolSummary: '',
+    prog: null, progRows: [], progSummary: null, cont: null };
   let heart = createLiveHeart(state.caseId);
   let simNow = 0, lastWall = null, raf = 0, lastTrim = 0, drawn = null;
 
@@ -82,15 +87,22 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const field = (key, input) => { const l = el('label', 'ep-pace-field'); const s = el('span'); fieldLabels.push([s, key]); l.append(s, input); return l; };
   const num = (key, value, min, max) => el('input', '', { type: 'number', min: String(min), max: String(max), step: '10', value: String(value), 'data-ep-live-stim': key });
   const siteSel = el('select', '', { 'data-ep-live-stim': 'site' });
-  const inputs = { s1: num('s1', 600, 200, 1500), n: num('n', 8, 1, 20), s2: num('s2', 370, 0, 1000), s3: num('s3', 0, 0, 1000), s4: num('s4', 0, 0, 1000) };
-  inputs.n.step = '1';
+  const inputs = {
+    s1: num('s1', 600, 200, 1500), n: num('n', 8, 1, 20), s2: num('s2', 370, 0, 1000), s3: num('s3', 0, 0, 1000), s4: num('s4', 0, 0, 1000),
+    step: num('step', STIM_DEFAULTS.step, 1, 50), limit: num('limit', STIM_DEFAULTS.limit, 150, 600), rest: num('rest', STIM_DEFAULTS.rest, 1, 10)
+  };
+  inputs.n.step = '1'; inputs.step.step = '1'; inputs.rest.step = '0.5';
   const grid = el('div', 'ep-live-grid');
-  grid.append(field('site', siteSel), field('s1', inputs.s1), field('n', inputs.n), field('S2', inputs.s2), field('S3', inputs.s3), field('S4', inputs.s4));
+  grid.append(field('site', siteSel), field('s1', inputs.s1), field('n', inputs.n), field('S2', inputs.s2), field('S3', inputs.s3), field('S4', inputs.s4),
+    field('step', inputs.step), field('limit', inputs.limit), field('rest', inputs.rest));
   const actions = el('div', 'ep-pace-actions');
   const button = (key, cls) => { const b = el('button', cls, { type: 'button', 'data-ep-live-action': key }); actions.append(b); return b; };
-  const paceBtn = button('pace', 'ep-pace-deliver'), burstBtn = button('burst', 'ep-pace-retry'), pausePaceBtn = button('pace-pause', 'ep-pace-retry'), stopBtn = button('stop', 'ep-pace-retry'), shockBtn = button('shock', 'ep-pace-retry ep-live-shock');
+  const paceBtn = button('pace', 'ep-pace-deliver'), burstBtn = button('burst', 'ep-pace-retry'), pausePaceBtn = button('pace-pause', 'ep-pace-retry'),
+    progBtn = button('prog', 'ep-pace-retry'), contBtn = button('continuous', 'ep-pace-retry'), stopBtn = button('stop', 'ep-pace-retry'), shockBtn = button('shock', 'ep-pace-retry ep-live-shock');
   const hint = el('p', 'ep-pace-note');
-  stimBox.append(stimTitle, grid, actions, hint);
+  const progList = el('ol', 'ep-live-protocol-rows', { 'data-ep-live-prog-rows': '' });
+  const progSum = el('p', 'ep-pace-result', { 'aria-live': 'polite', 'data-ep-live-prog-summary': '' });
+  stimBox.append(stimTitle, grid, actions, hint, progList, progSum);
   // RF ablation console.
   const ablBox = el('section', 'ep-pace ep-live-ablation');
   const ablTitle = el('h4', 'ep-pace-title');
@@ -134,7 +146,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     state.caseId = LIVE_CASES[id] ? id : 'normal';
     heart = createLiveHeart(state.caseId);
     simNow = 0; lastTrim = 0; state.back = 0; state.caliper = noCaliper(); state.status = '';
-    Object.assign(state, { hidden, quizOpen: false, answer: null, showHints: false, rfOn: false, lesion: '', maneuver: null, maneuverText: '', protocol: null, protocolRows: [], protocolSummary: '' });
+    Object.assign(state, { hidden, quizOpen: false, answer: null, showHints: false, rfOn: false, lesion: '', maneuver: null, maneuverText: '', protocol: null, protocolRows: [], protocolSummary: '', prog: null, progRows: [], progSummary: null, cont: null });
     advance(2500);   // open on a few sinus beats
     if (!state.running) state.frozenAt = simNow;
     render();
@@ -148,6 +160,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     if (simNow - lastTrim > 5000) { heart.trim(simNow - KEEP_MS); lastTrim = simNow; }
     tickManeuver();
     tickProtocol();
+    tickProgrammed();
+    topUpContinuous();
     // A completed lesion ends the RF application and reports its effect.
     const rf = heart.rf();
     if (state.rfOn && rf && rf.effect !== undefined) {
@@ -257,6 +271,77 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     else { if (!step.continuous) heart.stimulate(pr.steps[pr.index].stims); renderProtocol(); }
   }
 
+  // ---- Programmed extrastimuli (decremental) and continuous pacing ----
+  const stimSettings = () => ({
+    site: siteSel.value, s1: inputs.s1.value, n: inputs.n.value, extras: ['s2', 's3', 's4'].map((k) => inputs[k].value),
+    step: inputs.step.value, limit: inputs.limit.value, rest: inputs.rest.value
+  });
+  function nextDrive() {
+    const pr = state.prog, plan = pr.plans[pr.index];
+    const d = placeDrive(plan, driveStart(heart.events(simNow - 3000, simNow), simNow, plan.site, plan.s1));
+    pr.drive = d;
+    heart.stimulate(d.stims);
+  }
+  function startProgrammed() {
+    const plans = planProgrammed(stimSettings());
+    if (!plans.length) { state.status = T().needExtra; render(); return; }
+    stopAllPacing();
+    if (!state.running) freeze(false);
+    state.prog = { plans, index: 0, drive: null };
+    state.progRows = []; state.progSummary = null;
+    nextDrive();
+    state.status = T().progRunning;
+    render();
+  }
+  function finishProgrammed(reason = null) {
+    if (!state.prog) return;
+    state.progSummary = summarizeProgrammed(state.progRows, { reason });
+    state.prog = null;
+    renderProgrammed();
+  }
+  function tickProgrammed() {
+    const pr = state.prog;
+    if (!pr || !pr.drive || simNow < pr.drive.end) return;
+    const row = analyzeDrive(heart.events(pr.drive.stims[0].t - 100, pr.drive.end), pr.drive);
+    state.progRows.push(row);
+    pr.index++;
+    if (driveEnds(row) || pr.index >= pr.plans.length) finishProgrammed();
+    else { nextDrive(); renderProgrammed(); }
+  }
+  function startContinuous() {
+    const cl = Math.max(200, Math.min(1500, Number(inputs.s1.value) || 600));
+    stopAllPacing();
+    if (!state.running) freeze(false);
+    state.cont = { site: siteSel.value, cl, next: simNow + 300 };
+    topUpContinuous();
+    state.status = T().contOn(T().sites[state.cont.site], cl);
+    render();
+  }
+  function topUpContinuous() {
+    const c = state.cont;
+    if (!c) return;
+    const list = [];
+    for (; c.next <= simNow + CONT_AHEAD_MS; c.next += c.cl) list.push({ t: c.next, site: c.site });
+    if (list.length) heart.stimulate(list);
+  }
+  // A new S1 during continuous pacing applies from the next stimulus.
+  function retuneContinuous() {
+    const c = state.cont, cl = Number(inputs.s1.value);
+    if (!c || !(cl >= 200 && cl <= 1500)) return;
+    heart.stopPacing(simNow);
+    const delivered = c.next - c.cl * Math.ceil((c.next - simNow) / c.cl);   // the last stimulus already given
+    c.cl = cl;
+    c.next = Math.max(delivered + cl, simNow + 1);
+    topUpContinuous();
+    state.status = T().contOn(T().sites[c.site], cl);
+    render();
+  }
+  function stopAllPacing() {
+    heart.stopPacing();
+    state.cont = null;
+    if (state.prog) finishProgrammed('stopped');
+  }
+
   function freeze(flag) {
     state.running = !flag;
     state.frozenAt = flag ? simNow : null;
@@ -272,6 +357,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     const extras = kind === 'burst' ? [] : ['s2', 's3', 's4'].map((k) => Number(inputs[k].value) || 0);
     const train = planTrain({ site: siteSel.value, start: simNow + 300, s1, n, extras });
     if (!train.length) return;
+    stopAllPacing();
     if (!state.running) freeze(false);
     heart.stimulate(train);
     const used = extras.filter((x) => x > 0);
@@ -284,8 +370,15 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   paceBtn.addEventListener('click', () => deliver('pace'));
   burstBtn.addEventListener('click', () => deliver('burst'));
   pausePaceBtn.addEventListener('click', () => deliver('pace-pause'));
-  stopBtn.addEventListener('click', () => { heart.stopPacing(); state.pauseAt = null; state.status = T().stopped; state.stopCheckAt = simNow + STOP_CHECK_MS; render(); });
-  shockBtn.addEventListener('click', () => { if (!state.running) freeze(false); heart.cardiovert(simNow + 50); state.stopCheckAt = null; state.status = T().shocked; render(); });
+  progBtn.addEventListener('click', () => {
+    if (!state.prog) { startProgrammed(); return; }
+    heart.stopPacing();
+    finishProgrammed('stopped');
+  });
+  contBtn.addEventListener('click', () => { if (state.cont) { stopAllPacing(); state.status = T().stopped; state.stopCheckAt = simNow + STOP_CHECK_MS; render(); } else startContinuous(); });
+  inputs.s1.addEventListener('change', retuneContinuous);
+  stopBtn.addEventListener('click', () => { stopAllPacing(); state.pauseAt = null; state.status = T().stopped; state.stopCheckAt = simNow + STOP_CHECK_MS; render(); });
+  shockBtn.addEventListener('click', () => { if (!state.running) freeze(false); state.cont = null; if (state.prog) finishProgrammed('stopped'); heart.cardiovert(simNow + 50); state.stopCheckAt = null; state.status = T().shocked; render(); });
   runBtn.addEventListener('click', () => freeze(state.running));
   speedSel.addEventListener('change', () => { state.speed = Number(speedSel.value) || 25; render(); });
   review.addEventListener('input', () => { state.back = Number(review.value); state.caliper = noCaliper(); draw(); });
@@ -371,7 +464,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     if (ladderOn && drawn) drawLadder(ladderCanvas, ladder, { ...drawn, from: drawn.from + from, to: drawn.to + from }, { lang: L() });
     const iv = liveIntervals(heart.events(end - 2500, end));
     const t = T(), f = (v) => (v == null ? t.none : `${v} ms`);
-    readout.textContent = `${t.intervals}: PP ${f(iv.pp)} · RR ${f(iv.rr)} · AH ${f(iv.ah)} · HV ${f(iv.hv)} · VA ${f(iv.va)}`;
+    const rr = iv.rr ?? iv.pp;
+    readout.textContent = `${t.hr} ${rr ? `${Math.round(60000 / rr)}/${t.perMin}` : t.none} · ${t.intervals}: PP ${f(iv.pp)} · RR ${f(iv.rr)} · AH ${f(iv.ah)} · HV ${f(iv.hv)} · VA ${f(iv.va)}`;
   }
 
   const option = (value, text) => { const o = doc.createElement('option'); o.value = value; o.textContent = text; return o; };
@@ -420,6 +514,17 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     protoSummary.textContent = state.protocolSummary;
   }
 
+  function renderProgrammed() {
+    const t = T();
+    progBtn.textContent = state.prog ? t.progStop : t.progStart;
+    progBtn.setAttribute('aria-pressed', String(Boolean(state.prog)));
+    contBtn.textContent = state.cont ? t.contStop : t.contStart;
+    contBtn.setAttribute('aria-pressed', String(Boolean(state.cont)));
+    progList.replaceChildren(...markJumps(state.progRows).map((r) => { const li = el('li'); li.textContent = t.progRow(r); return li; }));
+    progList.hidden = !state.progRows.length;
+    progSum.textContent = state.progSummary ? t.progSum(state.progSummary) : state.prog ? t.progRunning : '';
+  }
+
   function renderAblation() {
     const t = T();
     ablTitle.textContent = t.ablation;
@@ -439,6 +544,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     renderAblation();
     renderManeuver();
     renderProtocol();
+    renderProgrammed();
     rateSel.replaceChildren(...RATES.map((v) => option(String(v), v === 0.25 ? '¼×' : v === 0.5 ? '½×' : `${v}×`)));
     rateSel.value = String(state.rate);
     rateSel.setAttribute('aria-label', t.rate);
@@ -506,6 +612,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     },
     maneuverText: () => state.maneuverText,
     protocol: () => ({ running: Boolean(state.protocol), rows: state.protocolRows.slice(), summary: state.protocolSummary }),
+    programmed: () => ({ running: Boolean(state.prog), rows: markJumps(state.progRows), summary: state.progSummary, continuous: state.cont ? { ...state.cont } : null }),
     getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper } : null, waves: state.waves, ladder: state.ladder, links: state.links }),
     status: () => heart.status(),
     intervals: () => liveIntervals(heart.events(viewEnd() - 2500, viewEnd())),
