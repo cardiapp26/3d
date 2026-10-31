@@ -431,7 +431,6 @@ app.innerHTML = `
       <div id="echo-panel" class="echo-panel-mount" hidden></div>
       <div id="eps-handoff" class="eps-handoff" hidden></div>
         <div id="koch-sp" class="koch-sp-mount" hidden></div>
-      <div id="ts-guide" class="ts-guide-mount" hidden></div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div class="divider"></div>
       <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
@@ -439,6 +438,7 @@ app.innerHTML = `
       <p id="lesson-intro"></p>
       <div id="steps"></div>
       <div id="step-detail"></div>
+      <div id="ts-guide" class="ts-guide-mount" hidden></div>
       <div id="exam-panel" class="exam-panel-mount" hidden></div>
       <button class="primary" id="next-step">${getTranslation('nextLandmark')}</button>
       <label class="slider-label" for="progress" id="progress-label">${getTranslation('leadProgressLabel')} <span id="progress-value">100%</span></label>

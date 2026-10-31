@@ -132,3 +132,12 @@
   .tsg-clock-row{grid-template-columns:minmax(0,1fr)}
   .tsg-clock-fig{max-width:170px;margin:0 auto;width:100%}
 }
+/* Collapsible header: the guide sits under the lesson step and opens on demand. */
+.tsg{margin:14px 0}
+.tsg-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.tsg-toggle:focus-visible{outline:2px solid #2f8f83;outline-offset:3px;border-radius:6px}
+.tsg-toggle-text{display:grid;gap:2px;min-width:0}
+.tsg-toggle .tsg-kicker,.tsg-toggle .tsg-title{display:block}
+.tsg-toggle .tsg-title{font-weight:700}
+.tsg-toggle-icon{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid #cfd8cc;background:#fff;font-size:16px;font-weight:700;color:#1f5f57}
+.tsg.closed{gap:4px}
