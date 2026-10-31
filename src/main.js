@@ -19,6 +19,7 @@ import { createHemoMode } from './hemo-mode.js';
 import { createExamMode } from './exam-mode.js';
 import { createEchoMode } from './echo-mode.js';
 import { createKochSpPanel } from './koch-sp-panel.js';
+import { createTransseptalGuide } from './transseptal-guide.js';
 import {initUpdater, updateUpdaterLanguage} from './updater.js';
 import { CHAMBER_MODES, chamberMode, inChamberMode } from './chamber-modes.js';
 import { createRvotSectionPanel } from './rvot-section-panel.js';
@@ -430,6 +431,7 @@ app.innerHTML = `
       <div id="echo-panel" class="echo-panel-mount" hidden></div>
       <div id="eps-handoff" class="eps-handoff" hidden></div>
         <div id="koch-sp" class="koch-sp-mount" hidden></div>
+      <div id="ts-guide" class="ts-guide-mount" hidden></div>
       <div id="hemo-panel" class="hemo-panel-mount" hidden></div>
       <div class="divider"></div>
       <div class="eyebrow" data-i18n="guidedLearning">${getTranslation('guidedLearning')}</div>
@@ -749,6 +751,17 @@ const kochSp = heart ? createKochSpPanel({
     setFluoroscopyActive(fluoro);
   }
 }) : null;
+// Transseptal lesson: equipment, steps, confirmation, sites, safety and a knowledge check (transseptal-guide.js).
+const tsGuide = createTransseptalGuide({
+  mount: document.querySelector('#ts-guide'),
+  getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
+  onLessonStep: index => openLessonStep('transseptal', index),
+  onShowSite: key => {
+    heart?.setCatheterVisible('sites', true);
+    syncCatheterUI();
+    inspect(`ts-site-${key}`);
+  }
+});
 function syncEpsHandoff(lessonStep) {
   const clip = mode === 'ablation' ? lessonStep?.egm : null;
   epsHandoff.show(clip);
@@ -1238,6 +1251,7 @@ function setMode(newMode, updateUrl = true) {
   document.querySelectorAll('.chamber-tools').forEach(section => { section.hidden = section.dataset.chamberMode !== mode; });
   document.querySelector('#ep-tools').hidden = mode !== 'ablation';
   if (mode !== 'ablation') { epsHandoff.show(null); kochSp?.setActive(false); }
+  tsGuide.setActive(mode === 'transseptal');
   if (mode === 'ablation') syncEpTools();
   updateContextNote();
   panelShell?.refresh();
@@ -2152,6 +2166,7 @@ function updateLanguageUI() {
   examMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   epsHandoff.render();
   kochSp?.setLanguage();
+  tsGuide.setLanguage();
   echoMode?.setLanguage(getContentLanguage() === 'tr' ? 'tr' : 'en');
   updateCycleUI(heart?.getCycleState());
 }
