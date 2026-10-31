@@ -127,6 +127,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     const cal = await page.evaluate(() => window.epsLab.live.getState().caliper);
     assert.ok(cal.a != null && cal.b != null && cal.b > cal.a, `caliper placed ${JSON.stringify(cal)}`);
     assert.match(await page.locator('.ep-live-info').textContent(), /Kaliper: \d+ ms/);
+    assert.doesNotMatch(await page.locator('.ep-live-info').textContent(), /sürükle/, 'no drag hint on the live monitor');
 
     // Cardioversion: sinus rhythm returns.
     await page.locator('[data-ep-live-action=shock]').click();
@@ -213,6 +214,118 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.ok((await page.locator('[data-ep-live-protocol-rows] li').allTextContents()).some((t) => /^S1 350: 1:1, AH \d+, PR \d+ > PP$/.test(t)), 'row marks PR > PP');
     assert.ok(await page.locator('[data-ep-live-protocol-rows] li').count() >= 10, 'protocol rows listed');
 
+    // Programmed stimulation: auto decrement of S2 from a mid CS bipole finds the AV nodal and atrial ERPs.
+    await page.evaluate(() => window.epsLab.live.setCase('normal'));
+    assert.ok(await page.locator('[data-ep-live-stim=site] option[value=cs-56]').count(), 'every CS bipole is a pacing site');
+    await page.locator('[data-ep-live-stim=site]').selectOption('cs-56');
+    await page.locator('[data-ep-live-stim=s1]').fill('600');
+    await page.locator('[data-ep-live-stim=s2]').fill('320');
+    await page.locator('[data-ep-live-stim=s3]').fill('0');
+    await page.locator('[data-ep-live-stim=step]').fill('20');
+    await page.locator('[data-ep-live-action=prog]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(90000); });
+    const prog = await page.evaluate(() => window.epsLab.live.programmed());
+    assert.equal(prog.running, false, 'run ends at the refractory period');
+    assert.match(await page.locator('[data-ep-live-prog-summary]').textContent(), /AERP 2\d0 · AV nodal ERP 2\d0\. Refrakter periyoda ulaşıldı\./);
+    assert.match((await page.locator('[data-ep-live-prog-rows] li').allTextContents())[0], /^S2 320: A-H \d+$/);
+    // Typical AVNRT from the HRA: the jump, the echo and the induction stop the run.
+    await page.evaluate(() => window.epsLab.live.setCase('avnrt-typical'));
+    await page.locator('[data-ep-live-stim=site]').selectOption('hra');
+    await page.locator('[data-ep-live-stim=s2]').fill('400');
+    await page.locator('[data-ep-live-stim=step]').fill('10');
+    await page.locator('[data-ep-live-action=prog]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(40000); });
+    assert.match(await page.locator('[data-ep-live-prog-summary]').textContent(), /sıçrama S2 370 · echo S2 370 · taşikardi S2 370\. Taşikardi başladığı için durdu\./);
+    assert.match(await page.locator('[data-ep-live-intervals]').textContent(), /^Hız 1[5-9]\d\/dk/, 'live heart rate of the tachycardia');
+    // Continuous pacing: runs at S1 until stopped, a new S1 applies at once.
+    await page.evaluate(() => window.epsLab.live.setCase('normal'));
+    await page.locator('[data-ep-live-stim=s1]').fill('500');
+    await page.locator('[data-ep-live-action=continuous]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(6000); });
+    assert.equal((await page.evaluate(() => window.epsLab.live.intervals())).pp, 500);
+    await page.locator('[data-ep-live-stim=s1]').fill('400');
+    await page.locator('[data-ep-live-stim=s1]').dispatchEvent('change');
+    await page.evaluate(() => { window.epsLab.live.advance(3000); });
+    assert.equal((await page.evaluate(() => window.epsLab.live.intervals())).pp, 400, 'new S1 applied');
+    assert.match(await page.locator('[data-ep-live-intervals]').textContent(), /^Hız 150\/dk/);
+    await page.locator('[data-ep-live-action=continuous]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(4000); });
+    assert.equal((await page.evaluate(() => window.epsLab.live.intervals())).pp, 800, 'sinus after continuous pacing stops');
+
+    // Recorder: per-channel gain (chooser, a click on a channel name, all channels at once).
+    await page.locator('[data-ep-live-gain-ch]').selectOption('his-d');
+    await page.locator('[data-ep-live-gain=up]').click();
+    await page.locator('[data-ep-live-gain=up]').click();
+    assert.equal((await page.evaluate(() => window.epsLab.live.getState().gains))['his-d'], 2, 'His d gain raised twice');
+    assert.equal(await page.locator('[data-ep-live-gain-val]').textContent(), '×2');
+    const strip = await page.locator('.ep-live-canvas').boundingBox();
+    await page.mouse.click(strip.x + 12, strip.y + strip.height - 26);   // RV, the last row
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().gainCh), 'rv', 'channel name picks the gain channel');
+    await page.locator('[data-ep-live-gain-ch]').selectOption('all');
+    await page.locator('[data-ep-live-gain=down]').click();
+    const gains = await page.evaluate(() => window.epsLab.live.getState().gains);
+    assert.equal(gains['his-d'], 1.5); assert.equal(gains.rv, 0.75);
+    assert.equal(await page.locator('[data-ep-live-gain-val]').textContent(), '×…', 'mixed gains');
+    // Pacing artifact: the calipers across a paced HRA train read the saturated bipole; RV reads its own signal.
+    for (const [k, v] of [['site', 'hra'], ['s1', '600'], ['n', '3'], ['s2', '0']]) {
+      if (k === 'site') await page.locator('[data-ep-live-stim=site]').selectOption(v); else await page.locator(`[data-ep-live-stim=${k}]`).fill(v);
+    }
+    await page.locator('[data-ep-live-action=pace]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(3000); });
+    if (!(await page.evaluate(() => window.epsLab.live.getState().caliper))) await page.locator('[data-ep-live-caliper]').click();
+    const unit = (strip.height - 34) / (3 * 1.55 + 9);
+    const rowY = (i) => strip.y + 18 + 3 * 1.55 * unit + (i - 3 + 0.5) * unit;   // rows 3.. are the intracardiac channels
+    const across = async (y) => { await page.mouse.click(strip.x + 66, y); await page.mouse.click(strip.x + strip.width - 12, y); return page.evaluate(() => window.epsLab.live.getState().caliper); };
+    const hraCal = await across(rowY(3));
+    assert.equal(hraCal.ch, 'hra');
+    assert.ok(hraCal.amp >= 5, `paced bipole saturates: ${JSON.stringify(hraCal)}`);
+    assert.match(await page.locator('.ep-live-info').textContent(), /HRA tepe-tepe ≥ 5 mV \(satürasyon\)/);
+    const rvCal = await across(rowY(11));
+    assert.equal(rvCal.ch, 'rv');
+    assert.ok(rvCal.amp > 0.5 && rvCal.amp < 5, `RV amplitude ${rvCal.amp}`);
+    assert.match(await page.locator('.ep-live-info').textContent(), /RV tepe-tepe \d\.\d\d mV/);
+    // Review page by page.
+    assert.equal(await page.locator('[data-ep-live-page=next]').isDisabled(), true, 'already at the current page');
+    await page.locator('[data-ep-live-page=prev]').click();
+    const back1 = await page.evaluate(() => window.epsLab.live.getState().back);
+    assert.ok(back1 > 2000, `one page back: ${back1}`);
+    assert.match(await page.locator('[data-ep-live-page-at]').textContent(), /^\d+\.\d s geride$/);
+    await page.locator('[data-ep-live-page=first]').click();
+    assert.ok(await page.evaluate(() => window.epsLab.live.getState().back) >= back1, 'oldest page');
+    await page.locator('[data-ep-live-page=last]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.live.getState().back), 0);
+    assert.equal(await page.locator('[data-ep-live-page-at]').textContent(), 'şimdi');
+
+    // Drugs and coach: echo-only AVNRT is not inducible at baseline, isoproterenol (S1 below the sinus cycle) induces it.
+    for (const id of ['avnrt-jump', 'avnrt-echo', 'va-block']) assert.ok(await page.locator(`[data-ep-live-case] option[value=${id}]`).count(), `case ${id}`);
+    await page.evaluate(() => window.epsLab.live.setCase('avnrt-echo'));
+    assert.match(await page.locator('.ep-live-drugs .ep-pace-note').textContent(), /dekrement protokolü/);
+    for (const [k, v] of [['s1', '600'], ['n', '8'], ['s2', '400'], ['s3', '0'], ['step', '10']]) await page.locator(`[data-ep-live-stim=${k}]`).fill(v);
+    await page.locator('[data-ep-live-action=prog]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(180000); });
+    assert.match(await page.locator('[data-ep-live-prog-summary]').textContent(), /sıçrama S2 370 · echo S2 370\. Refrakter periyoda ulaşıldı\./);
+    assert.match(await page.locator('[data-ep-live-coach] li').first().textContent(), /echo var ama taşikardi sürmedi.*İzoproterenol ile/);
+    await page.locator('[data-ep-live-drug=iso]').click();
+    assert.equal(await page.locator('[data-ep-live-drug=iso]').getAttribute('aria-pressed'), 'true');
+    assert.match(await page.locator('[data-ep-live-coach] li').first().textContent(), /^İzoproterenol başladı, sinüs siklusu 560 ms/);
+    await page.evaluate(() => { window.epsLab.live.advance(4000); });
+    assert.equal((await page.evaluate(() => window.epsLab.live.intervals())).pp, 560, 'faster sinus on isoproterenol');
+    await page.locator('[data-ep-live-stim=s1]').fill('500');
+    await page.locator('[data-ep-live-action=prog]').click();
+    await page.locator('[data-ep-live-run]').click();
+    await page.evaluate(() => { window.epsLab.live.advance(90000); });
+    assert.match(await page.locator('[data-ep-live-prog-summary]').textContent(), /taşikardi S2 300\. Taşikardi başladığı için durdu\./);
+    assert.match(await page.locator('[data-ep-live-coach] li').first().textContent(), /^İlaç altında S2 300 ms ile taşikardi başladı/);
+    assert.equal(await page.locator('[data-ep-live-coach] li').count(), 3, 'run, drug and run notes');
+    await page.evaluate(() => window.epsLab.live.setCase('normal'));
+    assert.equal(await page.locator('[data-ep-live-drug=iso]').getAttribute('aria-pressed'), 'false', 'a new case starts without drugs');
+    assert.equal(await page.locator('[data-ep-live-coach] li').count(), 0);
+
     // AF mapping: Space plays and pauses the activation / phase map (a focused button is not pressed); no playback on the DF map.
     await page.locator('[data-ep-section=afmap]').click();
     await page.waitForFunction(() => window.epsLab.panel.afmap.getState().active);
@@ -228,7 +341,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().playing), false, 'DF map: nothing to play');
 
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, Space play / pause on the AF map');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, auto-decrement S2 from a CS bipole (ERPs) and in AVNRT (jump, echo, induction), continuous pacing with live S1 change and heart rate, per-channel gain, saturating pacing artifact and caliper amplitude, page-by-page review, drugs (isoproterenol) with the coach on an echo-only AVNRT, Space play / pause on the AF map');
   } finally {
     await browser.close();
   }

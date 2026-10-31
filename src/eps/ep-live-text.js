@@ -15,7 +15,42 @@ export const LIVE_TEXT = {
     run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper', waves: 'Dalga adları', ladder: 'Ladder diyagram', links: 'Kanalda ladder', linksTitle: 'Her aktivasyonun HRA, His, CS ve RV sinyallerini birleştirir; iletim çizgileri gizli olguda tanı verilince gösterilir.', ladderLocked: 'Gizli olguda tanı verilince gösterilir (mekanizmayı açık eder).', ladderLabel: 'Ladder diyagram: atriyum, AV düğüm ve ventrikül aktivasyonu ile iletim yolları',
     stim: 'Stimülatör', site: 'Uyarı yeri', s1: 'S1 (ms)', n: 'S1 sayısı', pace: 'Uyar (S1 + ekstra)', burst: 'Burst (yalnız S1)',
     pacePause: 'Uyar ve dondur', stop: 'Uyarıyı durdur', shock: 'Kardiyoversiyon',
-    sites: { hra: 'HRA', 'cs-prox': 'CS proksimal', 'cs-dist': 'CS distal', rv: 'RV apeks' },
+    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proksimal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', rv: 'RV apeks' },
+    step: 'Dekrement (ms)', limit: 'Alt sınır (ms)', rest: 'Dinlenme (s)', hr: 'Hız', perMin: 'dk',
+    drugTitle: 'İlaçlar ve eğitmen', drugs: { iso: 'İzoproterenol', atropine: 'Atropin' }, coachEmpty: 'Bir dekrement protokolü çalıştırın ya da ilaç verin; bulgu ve sonraki adım burada yazılır.',
+    caliperRead: (c) => (c.a == null ? 'Kaliper: ilk çizgi için şeride tıklayın.' : c.b == null ? 'Kaliper: ikinci çizgi için tıklayın.'
+      : `Kaliper: ${Math.abs(c.b - c.a)} ms${c.b !== c.a ? ` · ${Math.round(60000 / Math.abs(c.b - c.a))} /dk` : ''} (yeni ölçüm için tekrar tıklayın)`),
+    coach: {
+      syncS1: (n) => `İlk dizi yakalamadı: S1 ${n.s1} ms sinüs siklusuna (${n.sinusCl} ms) çok yakın. S1'i sinüs siklusunun en az 40 ms altına indirin.`,
+      induced: (n) => `${n.label} ${n.coupling} ms ile taşikardi başladı. VA aralığı ve CS dizilimine bakın; His-refrakter PVC ve V overdrive ile mekanizmayı ayırın.`,
+      inducedOnDrug: (n) => `İlaç altında ${n.label} ${n.coupling} ms ile taşikardi başladı: bazalde indüklenmeyen substrat ilaçla ortaya çıktı. Ablasyon sonrası da ilaç altında indüksiyon denenmeli.`,
+      echoOnly: (n) => `${n.label} ${n.coupling} ms'de echo var ama taşikardi sürmedi: retrograd hızlı yol ikinci dönüşte refrakter. ${n.drug ? `${{ iso: 'İzoproterenol', atropine: 'Atropin' }[n.drug]} ile dekrementi tekrarlayın (S1 sinüs siklusunun altında, ör. 500).` : 'İki ilaç da verildi: S3 ekleyin ya da S1 400 deneyin.'}`,
+      jumpOnly: (n) => `${n.label} ${n.coupling} ms'de AH sıçraması: ikili AV nodal fizyoloji. Echo yok: retrograd hızlı yol zayıf. ${n.drug ? `${{ iso: 'İzoproterenol', atropine: 'Atropin' }[n.drug]} ile tekrarlayın (S1 sinüs siklusunun altında).` : 'S3 ekleyin ya da S1 400 deneyin.'}`,
+      noDual: () => 'Sıçrama ve echo yok: bu protokolde ikili AV nodal fizyoloji görülmedi. Farklı S1 (ör. 400) ya da S3 deneyin; klinik şüphe sürüyorsa izoproterenol.',
+      noVa: (n) => `RV uyarıda retrograd A yok (VA blok): AVNRT ve ortodromik AVRT olasılığı azalır, dışlanmaz.${n.drug ? ` ${{ iso: 'İzoproterenol', atropine: 'Atropin' }[n.drug]} altında tekrar test edin (S1 sinüs siklusunun altında, ör. 500).` : ''}`,
+      vaNodal: (n) => `Retrograd A konsantrik ve His en erken: AV düğüm üzerinden.${n.vaBlock != null ? ` VA blok S2 ${n.vaBlock} ms.` : ''}`,
+      vaEccentric: () => 'Retrograd A eksantrik, CS distal en erken: sol lateral aksesuar yol lehine. His-refrakter PVC ile doğrulayın.',
+      vaSeptalAp: () => 'Retrograd A en erken CS ağzında: posteroseptal aksesuar yol ya da yavaş yol. His-refrakter PVC ile ayırın.',
+      drugOn: (n) => `${{ iso: 'İzoproterenol', atropine: 'Atropin' }[n.drug]} başladı, sinüs siklusu ${n.sinusCl} ms. ${n.drug === 'iso' ? 'Atriyum, AV düğüm (antegrad ve retrograd), His-Purkinje, ventrikül ve aksesuar yol refrakterliği kısaldı.' : 'Vagal tonus kalktı: sinüs düğümü ve AV düğüm iletimi kolaylaştı.'} Uyarıyı S1 sinüs siklusunun altında tekrarlayın.`,
+      drugOff: (n) => `${{ iso: 'İzoproterenol', atropine: 'Atropin' }[n.drug]} kesildi, sinüs siklusu ${n.sinusCl} ms.`
+    },
+    gain: 'Kazanç', gainAll: 'Tüm kanallar', gainDown: 'Kazancı azalt', gainUp: 'Kazancı artır', gainHint: 'Kanal adına tıklayınca kazanç o kanala geçer.',
+    pageFirst: 'En eski sayfa', pagePrev: 'Önceki sayfa', pageNext: 'Sonraki sayfa', pageLast: 'Şimdiki sayfa',
+    pageAt: (s) => (s ? `${s.toFixed(1)} s geride` : 'şimdi'),
+    amp: (ch, v) => (v >= 5 ? `${ch} tepe-tepe ≥ 5 mV (satürasyon)` : `${ch} tepe-tepe ${v.toFixed(2)} mV`),
+    progStart: 'Otomatik dekrement', progStop: 'Dekrementi durdur', contStart: 'Sürekli pacing', contStop: 'Sürekli pacingi durdur',
+    needExtra: 'Otomatik dekrement için S2 gerekir (S2 > 0).',
+    progRunning: 'Programlı uyarı sürüyor: her dizide son ekstrastimulus bir adım kısalır; yakalama kaybı, taşikardi ya da alt sınırda durur.',
+    contOn: (site, cl) => `Sürekli pacing: ${site}, ${cl} ms (${Math.round(60000 / cl)}/dk). S1 değişince bir sonraki uyarıdan geçerli; durdurana kadar sürer.`,
+    progRow: (r) => `${r.label} ${r.coupling}: ${!r.capture ? (r.sustained ? 'yakalama yok (taşikardi sürüyor)' : 'yakalama yok (refrakter)')
+      : r.ventricular ? (r.va == null ? 'VA blok' : `VA ${r.va}${r.jump ? ' (retrograd sıçrama)' : ''}`)
+        : r.ah == null ? 'AV nodal blok' : `A-H ${r.ah}${r.jump ? ' (sıçrama)' : ''}`}${r.echo ? ', echo' : ''}${r.sustained ? ', taşikardi başladı' : ''}`,
+    progSum: (x) => [
+      // A refractory period not reached is named only when the run went down to the lower limit.
+      x.erp != null || x.reason === 'limit' ? `${x.ventricular ? 'VERP' : 'AERP'} ${x.erp ?? 'ulaşılmadı'}` : '',
+      x.ventricular ? (x.vaBlock != null ? `VA blok ${x.vaBlock}` : '') : x.nodeErp != null || x.reason === 'limit' ? `AV nodal ERP ${x.nodeErp ?? 'ulaşılmadı'}` : '',
+      x.jump ? `sıçrama ${x.label} ${x.jump}` : '', x.echo ? `echo ${x.label} ${x.echo}` : '', x.induced ? `taşikardi ${x.label} ${x.induced}` : ''
+    ].filter(Boolean).join(' · ') + `. ${{ induced: 'Taşikardi başladığı için durdu.', erp: 'Refrakter periyoda ulaşıldı.', limit: 'Alt sınıra ulaşıldı.', stopped: 'Durduruldu.' }[x.reason] || ''}`,
     ablation: 'Ablasyon', target: 'Kateter ucu', rfOn: 'RF başlat', rfOff: 'RF durdur',
     rfRunning: (name) => `RF uygulanıyor: ${name}. Lezyon yaklaşık 4 s sürekli RF ile tamamlanır.`,
     targets: {
@@ -27,7 +62,7 @@ export const LIVE_TEXT = {
       cti: 'Lezyon: CTI bloğu oluştu.', focus: 'Lezyon: odak ablate edildi.', isthmus: 'Lezyon: VT istmusu ablate edildi.', none: 'Lezyon: bu bölgede hedef doku yok; etki olmadı.'
     },
     intervals: 'Son atım', none: 'yok', frozen: 'Donduruldu: geri sarmak için kaydırın; ölçüm için Kaliper.',
-    hint: 'Uyarı dizisi şimdiden 300 ms sonra başlar. Ekstrastimulus 0 ise kullanılmaz.',
+    hint: 'Uyarı dizisi şimdiden 300 ms sonra başlar. Ekstrastimulus 0 ise kullanılmaz. Otomatik dekrement son ekstrastimulusu her dizide kısaltır; dizi son spontan atıma senkron başlar.',
     rate: 'Oynatma hızı',
     maneuvers: 'Manevralar', hisPvc: 'His-refrakter PVC', vOverdrive: 'V overdrive (TCL − 30)', aOverdrive: 'Atriyal overdrive (TCL − 20)',
     needTachy: 'Önce bir taşikardi başlatın: TCL ölçülemedi.', maneuverRunning: 'Manevra uygulanıyor; sonuç birkaç atım sonra.',
@@ -71,7 +106,41 @@ export const LIVE_TEXT = {
     run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers', waves: 'Wave names', ladder: 'Ladder diagram', links: 'Ladder on channels', linksTitle: 'Joins the HRA, His, CS and RV signals of each activation; the conduction lines show once the hidden case is answered.', ladderLocked: 'Shown once the hidden case is answered (it names the mechanism).', ladderLabel: 'Ladder diagram: atrial, AV nodal and ventricular activation and the conduction routes',
     stim: 'Stimulator', site: 'Pacing site', s1: 'S1 (ms)', n: 'S1 count', pace: 'Pace (S1 + extras)', burst: 'Burst (S1 only)',
     pacePause: 'Pace and freeze', stop: 'Stop pacing', shock: 'Cardiovert',
-    sites: { hra: 'HRA', 'cs-prox': 'CS proximal', 'cs-dist': 'CS distal', rv: 'RV apex' },
+    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proximal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', rv: 'RV apex' },
+    step: 'Decrement (ms)', limit: 'Lower limit (ms)', rest: 'Rest (s)', hr: 'Rate', perMin: 'min',
+    drugTitle: 'Drugs and coach', drugs: { iso: 'Isoproterenol', atropine: 'Atropine' }, coachEmpty: 'Run a decremental protocol or give a drug; the finding and the next step appear here.',
+    caliperRead: (c) => (c.a == null ? 'Calipers: click the strip for the first line.' : c.b == null ? 'Calipers: click for the second line.'
+      : `Calipers: ${Math.abs(c.b - c.a)} ms${c.b !== c.a ? ` · ${Math.round(60000 / Math.abs(c.b - c.a))} bpm` : ''} (click again to measure anew)`),
+    coach: {
+      syncS1: (n) => `The first drive did not capture: S1 ${n.s1} ms is too close to the sinus cycle (${n.sinusCl} ms). Pace at least 40 ms below the sinus cycle.`,
+      induced: (n) => `${n.label} ${n.coupling} ms induced a tachycardia. Read the VA interval and the CS sequence; separate the mechanisms with a His-refractory PVC and V overdrive.`,
+      inducedOnDrug: (n) => `On the drug, ${n.label} ${n.coupling} ms induced a tachycardia: a substrate not inducible at baseline came out. After ablation, test inducibility on the drug too.`,
+      echoOnly: (n) => `An echo at ${n.label} ${n.coupling} ms but no sustained tachycardia: the retrograde fast pathway is refractory on the second turn. ${n.drug ? `Repeat the decrement on ${{ iso: 'isoproterenol', atropine: 'atropine' }[n.drug]} (S1 below the sinus cycle, e.g. 500).` : 'Both drugs given: add S3 or try S1 400.'}`,
+      jumpOnly: (n) => `AH jump at ${n.label} ${n.coupling} ms: dual AV nodal physiology. No echo: a weak retrograde fast pathway. ${n.drug ? `Repeat on ${{ iso: 'isoproterenol', atropine: 'atropine' }[n.drug]} (S1 below the sinus cycle).` : 'Add S3 or try S1 400.'}`,
+      noDual: () => 'No jump and no echo: this protocol shows no dual AV nodal physiology. Try another S1 (e.g. 400) or S3; if clinical suspicion remains, isoproterenol.',
+      noVa: (n) => `No retrograde A with RV pacing (VA block): AVNRT and orthodromic AVRT become less likely, not excluded.${n.drug ? ` Test again on ${{ iso: 'isoproterenol', atropine: 'atropine' }[n.drug]} (S1 below the sinus cycle, e.g. 500).` : ''}`,
+      vaNodal: (n) => `Concentric retrograde A with the His earliest: over the AV node.${n.vaBlock != null ? ` VA block at S2 ${n.vaBlock} ms.` : ''}`,
+      vaEccentric: () => 'Eccentric retrograde A, distal CS earliest: favours a left lateral accessory pathway. Confirm with a His-refractory PVC.',
+      vaSeptalAp: () => 'Earliest retrograde A at the CS ostium: a posteroseptal accessory pathway or the slow pathway. Separate them with a His-refractory PVC.',
+      drugOn: (n) => `${{ iso: 'Isoproterenol', atropine: 'Atropine' }[n.drug]} started, sinus cycle ${n.sinusCl} ms. ${n.drug === 'iso' ? 'Atrial, AV nodal (antegrade and retrograde), His-Purkinje, ventricular and accessory pathway refractoriness shortened.' : 'Vagal tone removed: easier sinus node and AV nodal conduction.'} Pace again with S1 below the sinus cycle.`,
+      drugOff: (n) => `${{ iso: 'Isoproterenol', atropine: 'Atropine' }[n.drug]} stopped, sinus cycle ${n.sinusCl} ms.`
+    },
+    gain: 'Gain', gainAll: 'All channels', gainDown: 'Lower gain', gainUp: 'Raise gain', gainHint: 'Click a channel name to adjust its gain.',
+    pageFirst: 'Oldest page', pagePrev: 'Previous page', pageNext: 'Next page', pageLast: 'Current page',
+    pageAt: (s) => (s ? `${s.toFixed(1)} s back` : 'now'),
+    amp: (ch, v) => (v >= 5 ? `${ch} peak-to-peak ≥ 5 mV (saturated)` : `${ch} peak-to-peak ${v.toFixed(2)} mV`),
+    progStart: 'Auto decrement', progStop: 'Stop decrement', contStart: 'Continuous pacing', contStop: 'Stop continuous pacing',
+    needExtra: 'Auto decrement needs an S2 (S2 > 0).',
+    progRunning: 'Programmed stimulation running: the last extrastimulus shortens one step per drive; it stops at loss of capture, a tachycardia or the lower limit.',
+    contOn: (site, cl) => `Continuous pacing: ${site}, ${cl} ms (${Math.round(60000 / cl)}/min). A new S1 applies from the next stimulus; it runs until stopped.`,
+    progRow: (r) => `${r.label} ${r.coupling}: ${!r.capture ? (r.sustained ? 'no capture (tachycardia running)' : 'no capture (refractory)')
+      : r.ventricular ? (r.va == null ? 'VA block' : `VA ${r.va}${r.jump ? ' (retrograde jump)' : ''}`)
+        : r.ah == null ? 'AV nodal block' : `A-H ${r.ah}${r.jump ? ' (jump)' : ''}`}${r.echo ? ', echo' : ''}${r.sustained ? ', tachycardia started' : ''}`,
+    progSum: (x) => [
+      x.erp != null || x.reason === 'limit' ? `${x.ventricular ? 'VERP' : 'AERP'} ${x.erp ?? 'not reached'}` : '',
+      x.ventricular ? (x.vaBlock != null ? `VA block ${x.vaBlock}` : '') : x.nodeErp != null || x.reason === 'limit' ? `AV nodal ERP ${x.nodeErp ?? 'not reached'}` : '',
+      x.jump ? `jump ${x.label} ${x.jump}` : '', x.echo ? `echo ${x.label} ${x.echo}` : '', x.induced ? `tachycardia ${x.label} ${x.induced}` : ''
+    ].filter(Boolean).join(' · ') + `. ${{ induced: 'Stopped: a tachycardia started.', erp: 'Refractory period reached.', limit: 'Lower limit reached.', stopped: 'Stopped.' }[x.reason] || ''}`,
     ablation: 'Ablation', target: 'Catheter tip', rfOn: 'Start RF', rfOff: 'Stop RF',
     rfRunning: (name) => `RF on: ${name}. A lesion needs about 4 s of continuous RF.`,
     targets: {
@@ -83,7 +152,7 @@ export const LIVE_TEXT = {
       cti: 'Lesion: CTI block.', focus: 'Lesion: focus ablated.', isthmus: 'Lesion: VT isthmus ablated.', none: 'Lesion: no target tissue here; no effect.'
     },
     intervals: 'Last beat', none: 'n/a', frozen: 'Frozen: scroll back with the slider; measure with Calipers.',
-    hint: 'A train starts 300 ms from now. An extrastimulus of 0 is off.',
+    hint: 'A train starts 300 ms from now. An extrastimulus of 0 is off. Auto decrement shortens the last extrastimulus each drive; each drive starts in step with the last spontaneous beat.',
     rate: 'Playback',
     maneuvers: 'Maneuvers', hisPvc: 'His-refractory PVC', vOverdrive: 'V overdrive (TCL − 30)', aOverdrive: 'Atrial overdrive (TCL − 20)',
     needTachy: 'Induce a tachycardia first: no TCL to measure.', maneuverRunning: 'Maneuver running; result after a few beats.',
@@ -133,6 +202,14 @@ export const LIVE_CASE_TEXT = {
     tr: { name: 'Tipik AVNRT (yavaş-hızlı)', hints: ['HRA S1 600 + S2, 10\'ar ms kısaltın: hızlı yol ERP\'sinde (S2 ~370 ms) AH en az 50 ms sıçrar.', 'İnkremental pacing protokolünde (560 ms\'den 10\'ar ms): ~370 ms\'de AH sıçrar, ~350 ms\'den itibaren PR > PP (uyarı yavaş yoldan iner).', 'Sıçramadan sonra tipik AVNRT: VA ≤ 70 ms (burada ~30); A ve V neredeyse eşzamanlı.', 'Retrograd aktivasyon konsantrik: His\'te A en erken, CS proksimalden distale.', 'Ablasyon: yavaş yol (CS ağzının önü); RF sırasında kavşak atımları beklenen bir işarettir.', 'Kompakt düğüm / His bölgesinde RF tam AV bloğa yol açar.', 'Manevralar: His-refrakter PVC etkisiz; V overdrive sonrası V-A-V, PPI−TCL > 115, SA−VA > 85 ms.'] },
     en: { name: 'Typical AVNRT (slow-fast)', hints: ['HRA S1 600 + S2, shorten by 10 ms: at the fast-pathway ERP (S2 ~370 ms) the AH jumps by at least 50 ms.', 'With the incremental pacing protocol (from 560 ms in 10 ms steps): the AH jumps at ~370 ms and from ~350 ms the PR exceeds the PP (conduction down the slow pathway).', 'After the jump, typical AVNRT: VA ≤ 70 ms (here ~30); A and V almost simultaneous.', 'Concentric retrograde activation: earliest A at the His, CS proximal to distal.', 'Ablation: slow pathway (anterior to the CS ostium); junctional beats during RF are an expected sign.', 'RF at the compact node / His causes complete AV block.', 'Maneuvers: His-refractory PVC has no effect; after V overdrive V-A-V, PPI−TCL > 115, SA−VA > 85 ms.'] }
   },
+  'avnrt-jump': {
+    tr: { name: 'İkili AV nodal fizyoloji (indüklenmeyen)', hints: ['HRA S1 600 + S2, 10\'ar ms kısaltın: ~370 ms\'de AH en az 50 ms sıçrar (ikili AV nodal fizyoloji).', 'Bazalde echo ve taşikardi yok: retrograd hızlı yol zayıf (uzun retrograd ERP).', 'İzoproterenol altında (S1 500) sıçramadan sonra echo atımları görülür; taşikardi için ikinci ilaç ve daha kısa S1 gerekir.', 'Yalnız sıçrama ablasyon endikasyonu değildir; belgelenmiş klinik taşikardi ile birlikte değerlendirilir.'] },
+    en: { name: 'Dual AV nodal physiology (non-inducible)', hints: ['HRA S1 600 + S2 shortened by 10 ms: at ~370 ms the AH jumps by at least 50 ms (dual AV nodal physiology).', 'No echo and no tachycardia at baseline: a weak retrograde fast pathway (long retrograde ERP).', 'On isoproterenol (S1 500) echo beats follow the jump; a tachycardia needs the second drug and a shorter S1.', 'A jump alone is no indication for ablation; weigh it with a documented clinical tachycardia.'] }
+  },
+  'avnrt-echo': {
+    tr: { name: 'AVNRT: yalnız echo (ilaçla indüklenen)', hints: ['Bazalde S2 ~370 ms\'de sıçrama ve tek echo atımı; taşikardi sürmez.', 'Echo, yavaş yoldan inip hızlı yoldan dönen tek döngüdür; ikinci dönüşte retrograd hızlı yol hâlâ refrakterdir.', 'İzoproterenol (S1 500) ya da atropin ile S2 dekrementi tipik AVNRT başlatır.', 'Ablasyon: yavaş yol (CS ağzı önü); sonrasında ilaç altında da indüklenmemeli.'] },
+    en: { name: 'AVNRT: echo only (inducible on a drug)', hints: ['At baseline a jump and a single echo beat at S2 ~370 ms; no sustained tachycardia.', 'An echo is one turn down the slow and up the fast pathway; on the second turn the retrograde fast pathway is still refractory.', 'On isoproterenol (S1 500) or atropine the S2 decrement induces typical AVNRT.', 'Ablation: slow pathway (anterior to the CS ostium); afterwards it should not be inducible on the drug either.'] }
+  },
   'avnrt-atypical': {
     tr: { name: 'Atipik AVNRT (hızlı-yavaş)', hints: ['RV pacing ile başlar: retrograd iletim yavaş yoldan, VA uzun (~270 ms).', 'Uzun RP taşikardi; en erken A CS ağzında ama dizilim konsantrik.', 'PJRT\'den ayırım: His-refrakter PVC atriyumu değiştirmez; V overdrive sonrası V-A-V, PPI−TCL > 115 ve SA−VA > 85 ms (VA pacing siklusundan uzun olsa da yalancı V-A-A-V\'ye dikkat).', 'Ablasyon hedefi tipik AVNRT\'deki gibi yavaş yol bölgesidir.'] },
     en: { name: 'Atypical AVNRT (fast-slow)', hints: ['Induced by RV pacing: retrograde conduction over the slow pathway, long VA (~270 ms).', 'Long RP tachycardia; earliest A at the CS ostium but the sequence is concentric.', 'Versus PJRT: a His-refractory PVC leaves the atrium unchanged; after V overdrive V-A-V, PPI−TCL > 115 and SA−VA > 85 ms (beware of a pseudo-V-A-A-V when the VA exceeds the pacing cycle).', 'The ablation target is the slow-pathway region, as in typical AVNRT.'] }
@@ -156,6 +233,10 @@ export const LIVE_CASE_TEXT = {
   'flutter-cti': {
     tr: { name: 'Tipik (CTI bağımlı) atriyal flutter', hints: ['Hızlı atriyal pacing (≤ 260 ms) tipik flutter başlatır: atriyal siklus 240 ms.', '2:1 AV iletim: ventrikül siklusu 480 ms; DII\'de negatif testere dişi F dalgaları.', 'Septum ve CS proksimalden distale önce, yüksek lateral RA siklusun ortasında (saat yönünün tersi).', 'CTI ablasyonu flutterı sonlandırır ve yeniden başlatılamaz kılar.', 'Atriyal overdrive (entrainment): CS proksimal ve lateral RA\'da PPI−TCL ≤ 30 ms (devre içi), CS distalde > 100 ms (devre dışı).'] },
     en: { name: 'Typical (CTI-dependent) atrial flutter', hints: ['Rapid atrial pacing (≤ 260 ms) induces typical flutter: atrial cycle 240 ms.', '2:1 AV conduction: ventricular cycle 480 ms; negative saw-tooth F waves in II.', 'Septum and CS proximal to distal first, the high lateral RA mid-cycle (counterclockwise).', 'CTI ablation ends the flutter and makes it non-inducible.', 'Atrial overdrive (entrainment): PPI−TCL ≤ 30 ms at the proximal CS and lateral RA (in the circuit), > 100 ms at the distal CS (outside).'] }
+  },
+  'va-block': {
+    tr: { name: 'Retrograd VA blok', hints: ['RV pacing ve RV ekstrastimulusta retrograd A yok: VA dissosiyasyon, sinüs P dalgaları kendi hızında sürer.', 'VA iletim yokluğu AVNRT ve ortodromik AVRT olasılığını azaltır, dışlamaz.', 'İzoproterenol altında RV S1 500 ile 1:1 konsantrik VA (~145 ms) ortaya çıkar; daha kısa S2\'de VA blok.', 'Atropin bu modelde retrograd iletimi açmaya yetmez.'] },
+    en: { name: 'Retrograde VA block', hints: ['No retrograde A with RV pacing or RV extrastimuli: VA dissociation, the sinus P waves go on at their own rate.', 'Absent VA conduction makes AVNRT and orthodromic AVRT less likely, not impossible.', 'On isoproterenol, RV S1 500 brings out 1:1 concentric VA (~145 ms); VA block at a shorter S2.', 'In this model atropine alone does not open retrograde conduction.'] }
   },
   'sinus-node-disease': {
     tr: { name: 'Sinüs düğümü disfonksiyonu', hints: ['Sinüs hızı yavaş (siklus 1000 ms); AV iletim normal.', 'SNRT protokolü: HRA 600 ms × 30 sonrası ilk sinüs atımı geç gelir.', 'Düzeltilmiş SNRT (SNRT − sinüs siklusu) > 550 ms anormaldir; burada belirgin uzun.', 'Hiçbir protokol taşikardi başlatmaz.'] },
