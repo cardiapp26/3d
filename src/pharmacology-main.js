@@ -12,6 +12,7 @@ import { createDiureticsPanel } from './diuretics-panel.js';
 import { createHeartFailurePharmacology } from './heart-failure-pharmacology.js';
 import { createLipidPathways } from './lipid-pathways.js';
 import { createLipidReference } from './lipid-reference-panel.js';
+import { createLipoproteinTraffic } from './lipoprotein-traffic.js';
 import { createAnginaPanel } from './angina-panel.js';
 import { createAntihypertensiveLab } from './antihypertensive-lab.js';
 import { createVasoactivePanel } from './vasoactive-panel.js';
@@ -33,6 +34,7 @@ const coagulation = createCoagulationPanel({ mount: document.querySelector('[dat
 const diuretics = createDiureticsPanel({ mount: document.querySelector('[data-pharma-diuretics]'), getLang: () => lang });
 const heartFailure = createHeartFailurePharmacology({ mount: document.querySelector('[data-pharma-hf]'), getLang: () => lang });
 const lipidPathways = createLipidPathways({ mount: document.querySelector('[data-pharma-lipids]'), getLang: () => lang });
+const lipoproteins = createLipoproteinTraffic({ mount: document.querySelector('[data-pharma-lipoproteins]'), getLang: () => lang });
 const lipidReference = createLipidReference({ mount: document.querySelector('[data-pharma-lipid-reference]'), getLang: () => lang });
 const angina = createAnginaPanel({ mount: document.querySelector('[data-pharma-angina]'), getLang: () => lang });
 const antihypertensive = createAntihypertensiveLab({ mount: document.querySelector('[data-pharma-antihypertensive]'), getLang: () => lang });
@@ -100,6 +102,7 @@ function selectTopic(index, updateUrl = true) {
   document.querySelector('[data-pharma-diuretics]').hidden = PHARMA_TOPICS[index].id !== 'diuretics';
   document.querySelector('[data-pharma-hf]').hidden = PHARMA_TOPICS[index].id !== 'heart-failure';
   document.querySelector('[data-pharma-lipids]').hidden = PHARMA_TOPICS[index].id !== 'lipids';
+  document.querySelector('[data-pharma-lipoproteins]').hidden = PHARMA_TOPICS[index].id !== 'lipids';
   document.querySelector('[data-pharma-lipid-reference]').hidden = PHARMA_TOPICS[index].id !== 'lipids';
   document.querySelector('[data-pharma-angina]').hidden = PHARMA_TOPICS[index].id !== 'antianginals';
   document.querySelector('[data-pharma-antihypertensive]').hidden = PHARMA_TOPICS[index].id !== 'antihypertensives';
@@ -131,6 +134,7 @@ document.querySelectorAll('[data-pharma-lang]').forEach(button => button.addEven
   diuretics.refresh();
   heartFailure.refresh();
   lipidPathways.refresh();
+  lipoproteins.refresh();
   lipidReference.refresh();
   angina.refresh();
   vasoactive.refresh();

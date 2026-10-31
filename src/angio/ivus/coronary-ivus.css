@@ -881,3 +881,94 @@
     font-size: 11px;
   }
 }
+
+/* IVUS basics workspace (ivus-basics.js): interactive frame, systems, grey scale, workflow. */
+.ivus-basics { display: grid; gap: 14px; min-width: 0; }
+.ivus-basics-head { display: grid; gap: 6px; padding: 14px 16px; border-radius: 12px; border: 1px solid #1e293b; background: #0b111b; }
+.ivus-basics-head p { margin: 0; color: #cbd5e1; font-size: 13px; line-height: 1.55; }
+.ivus-basics-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, 1fr); gap: 14px; align-items: start; }
+.ivus-basics-stage, .ivus-basics-side, .ivus-basics-block { display: grid; gap: 8px; padding: 14px; border-radius: 12px; border: 1px solid #1e293b; background: #0b111b; min-width: 0; }
+.ivus-basics h3 { margin: 0; font-size: 14px; color: #f1f5f9; }
+.ivus-basics-frame { width: 100%; max-width: 560px; aspect-ratio: 1; justify-self: center; border-radius: 50%; background: #000; cursor: crosshair; display: block; }
+.ivus-basics-aline { width: 100%; height: 130px; display: block; border-radius: 8px; border: 1px solid #1e293b; }
+.ivus-basics-hint { margin: 0; color: #94a3b8; font-size: 12px; }
+.ivus-basics-field { display: grid; gap: 4px; }
+.ivus-basics-field > span { font-size: 11px; color: #94a3b8; letter-spacing: .02em; }
+.ivus-basics-field select { min-height: 32px; padding: 4px 8px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font: inherit; font-size: 13px; }
+.ivus-basics-seg, .ivus-basics-steps { display: flex; flex-wrap: wrap; gap: 4px; }
+.ivus-basics-seg button, .ivus-basics-steps button, .ivus-basics-step-nav button { min-height: 30px; padding: 4px 10px; border-radius: 7px; border: 1px solid #334155; background: #111827; color: #cbd5e1; font: inherit; font-size: 12px; cursor: pointer; }
+.ivus-basics-seg button[aria-pressed=true], .ivus-basics-steps button[aria-pressed=true] { background: #0ea5e9; border-color: #38bdf8; color: #04131f; font-weight: 600; }
+.ivus-basics-steps button:disabled { opacity: .4; cursor: not-allowed; }
+.ivus-basics-step-nav { display: flex; gap: 4px; margin-top: 4px; }
+.ivus-basics-toggles { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: #cbd5e1; }
+.ivus-basics-toggles input { accent-color: #38bdf8; }
+.ivus-basics-step-text { margin: 0; padding: 8px 12px; border-left: 3px solid #22d3ee; border-radius: 0 6px 6px 0; background: rgba(34, 211, 238, .08); color: #e2e8f0; font-size: 13px; line-height: 1.5; }
+.ivus-basics-probe { display: grid; gap: 3px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(244, 114, 182, .4); background: rgba(2, 6, 23, .5); }
+.ivus-basics-probe span { font-size: 11px; color: #94a3b8; }
+.ivus-basics-probe strong { color: #f9a8d4; font-size: 14px; }
+.ivus-basics-probe em { font-style: normal; color: #fde68a; font-size: 12px; }
+.ivus-basics-probe p { margin: 0; color: #cbd5e1; font-size: 12px; line-height: 1.5; }
+.ivus-basics-measures { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+.ivus-basics-mtitle { grid-column: 1 / -1; font-size: 11px; color: #94a3b8; }
+.ivus-basics-measures div { display: grid; gap: 1px; padding: 6px 10px; border-radius: 8px; border: 1px solid #1e293b; background: rgba(2, 6, 23, .45); }
+.ivus-basics-measures div span { font-size: 10px; color: #94a3b8; }
+.ivus-basics-measures div strong { font: 600 14px ui-monospace, monospace; color: #f1f5f9; }
+.ivus-basics-catheters { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.ivus-basics-cath { margin: 0; display: grid; gap: 4px; padding: 8px; border-radius: 8px; border: 1px solid #1e293b; background: #070c14; }
+.ivus-basics-cath svg { width: 100%; height: auto; }
+.ivus-basics-cath figcaption { font-size: 12px; color: #cbd5e1; }
+.ivus-basics-cath .cat-body { fill: #1e293b; stroke: #475569; }
+.ivus-basics-cath .cat-tip { fill: #334155; stroke: #64748b; }
+.ivus-basics-cath .cat-xdcr { fill: #38bdf8; }
+.ivus-basics-cath .cat-shaft { stroke: #64748b; stroke-width: 2; stroke-dasharray: 4 3; fill: none; }
+.ivus-basics-cath .cat-wire { stroke: #fbbf24; stroke-width: 2; fill: none; }
+.ivus-basics-cath .cat-exit { fill: #fbbf24; }
+.ivus-basics-cath .cat-label { fill: #94a3b8; font: 600 10px system-ui, sans-serif; }
+.ivus-basics-table-wrap { overflow-x: auto; }
+.ivus-basics-table { width: 100%; border-collapse: collapse; font-size: 12px; color: #cbd5e1; }
+.ivus-basics-table th, .ivus-basics-table td { padding: 7px 9px; text-align: left; vertical-align: top; border-bottom: 1px solid #1e293b; }
+.ivus-basics-table tr:first-child th { font-size: 11px; color: #38bdf8; text-transform: uppercase; letter-spacing: .04em; }
+.ivus-basics-table th { color: #e2e8f0; white-space: nowrap; }
+.ivus-basics-lead { margin: 0; color: #cbd5e1; font-size: 13px; }
+.ivus-basics-echoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.ivus-basics-echoes article { display: grid; grid-template-columns: 34px 1fr; gap: 2px 10px; padding: 10px; border-radius: 8px; border: 1px solid #1e293b; background: rgba(2, 6, 23, .45); }
+.ivus-basics-echoes i { grid-row: span 2; width: 34px; height: 34px; border-radius: 6px; border: 1px solid #475569; }
+.ivus-basics-echoes strong { color: #f1f5f9; font-size: 13px; }
+.ivus-basics-echoes p { margin: 0; color: #cbd5e1; font-size: 12px; line-height: 1.45; }
+.ivus-basics-workflow { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: #cbd5e1; font-size: 13px; }
+.ivus-basics-workflow li { display: grid; gap: 2px; }
+.ivus-basics-workflow strong { color: #f1f5f9; }
+.ivus-basics-sources { display: grid; gap: 4px; font-size: 12px; color: #94a3b8; }
+.ivus-basics-sources ul { margin: 0; padding-left: 18px; }
+.ivus-basics-sources a { color: #7dd3fc; }
+@media (max-width: 900px) { .ivus-basics-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Image reading quiz (ivus-quiz.js). */
+.ivus-quiz-total { color: #fde68a; font-size: 13px; }
+.ivus-quiz-levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.ivus-quiz-card { display: grid; gap: 6px; align-content: start; padding: 14px; border-radius: 12px; border: 1px solid #1e293b; background: #0b111b; }
+.ivus-quiz-card h3 { margin: 0; font-size: 14px; color: #f1f5f9; }
+.ivus-quiz-card p { margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.45; }
+.ivus-quiz-num { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #0e7490; color: #ecfeff; font-weight: 700; font-size: 13px; }
+.ivus-quiz-progress { font: 600 12px ui-monospace, monospace; color: #fde68a; }
+.ivus-quiz button { min-height: 32px; padding: 5px 12px; border-radius: 8px; border: 1px solid #334155; background: #111827; color: #e2e8f0; font: inherit; font-size: 13px; cursor: pointer; }
+.ivus-quiz button:hover:not(:disabled) { border-color: #38bdf8; }
+.ivus-quiz-card button { justify-self: start; background: #0ea5e9; border-color: #38bdf8; color: #04131f; font-weight: 700; }
+.ivus-quiz-play { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(260px, 1fr); gap: 14px; align-items: start; }
+.ivus-quiz-meta { margin: 0; color: #94a3b8; font-size: 12px; }
+.ivus-quiz-options { display: grid; gap: 6px; }
+.ivus-quiz-options button { text-align: left; min-height: 40px; }
+.ivus-quiz-options button.is-right { background: rgba(34, 197, 94, .2); border-color: #22c55e; color: #dcfce7; }
+.ivus-quiz-options button.is-wrong { background: rgba(239, 68, 68, .2); border-color: #ef4444; color: #fee2e2; }
+.ivus-quiz-options button:disabled { cursor: default; }
+.ivus-quiz-feedback { display: grid; gap: 4px; padding: 10px 12px; border-radius: 8px; border-left: 3px solid #22c55e; background: rgba(34, 197, 94, .08); }
+.ivus-quiz-feedback.is-wrong { border-left-color: #ef4444; background: rgba(239, 68, 68, .08); }
+.ivus-quiz-feedback strong { color: #f1f5f9; font-size: 14px; }
+.ivus-quiz-feedback em { font-style: normal; color: #fde68a; font-size: 12px; }
+.ivus-quiz-feedback p { margin: 0; color: #cbd5e1; font-size: 13px; line-height: 1.5; }
+.ivus-quiz-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.ivus-quiz-back { justify-self: start; }
+.ivus-quiz-summary { display: grid; gap: 8px; justify-items: start; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; background: #0b111b; }
+.ivus-quiz-summary h3 { margin: 0; color: #f1f5f9; }
+.ivus-quiz-summary strong { font: 700 28px ui-monospace, monospace; color: #fde68a; }
+@media (max-width: 900px) { .ivus-quiz-play { grid-template-columns: minmax(0, 1fr); } }
