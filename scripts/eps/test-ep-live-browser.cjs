@@ -326,6 +326,55 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.locator('[data-ep-live-drug=iso]').getAttribute('aria-pressed'), 'false', 'a new case starts without drugs');
     assert.equal(await page.locator('[data-ep-live-coach] li').count(), 0);
 
+    // Ring (LAO): the flutter circuit beside lead II, in the console; locked on a hidden case.
+    const freezeLive = async (on) => { if ((await page.evaluate(() => window.epsLab.live.getState().running)) === on) await page.locator('[data-ep-live-run]').click(); };
+    await page.evaluate(() => window.epsLab.live.setCase('flutter-cti'));
+    assert.equal(await page.locator('[data-ep-live-circuit-view]').isVisible(), false, 'ring off by default');
+    await page.locator('[data-ep-live-circuit]').click();
+    assert.equal(await page.locator('[data-ep-live-circuit]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-ep-live-stim=site]').selectOption('hra');
+    await page.locator('[data-ep-live-stim=s1]').fill('250');
+    await page.locator('[data-ep-live-action=burst]').click();
+    await freezeLive(true);
+    await page.evaluate(() => { window.epsLab.live.advance(6000); });
+    const ring = await page.evaluate(() => window.epsLab.live.circuit());
+    assert.equal(ring.active, true, `flutter circuit drawn ${JSON.stringify(ring)}`);
+    assert.ok(['septum', 'roof', 'lateral', 'cti'].includes(ring.segment));
+    assert.equal(await page.locator('[data-ep-live-circuit-head]').count(), 1, 'wavefront head');
+    assert.match(await page.locator('[data-ep-live-circuit-front]').textContent(), /^Dalga cephesi: /);
+    assert.equal(await page.locator('.ep-circ-legend li').count(), 4, 'four limbs in the legend');
+    assert.ok(await page.locator('.ep-circ-trace .ep-circ-f').count() >= 4, 'lead II F wave split into limbs');
+    const ringBox = await page.locator('[data-ep-live-circuit-view]').boundingBox();
+    const deckBox = await page.locator('.ep-live-console').boundingBox();
+    assert.ok(ringBox.x >= deckBox.x - 1 && ringBox.x + ringBox.width <= deckBox.x + deckBox.width + 1, 'ring in the console');
+    assert.equal(await page.locator('[data-ep-live-circuit-replay]').isVisible(), true, 'replay offered on a frozen flutter strip');
+    await page.locator('[data-ep-live-circuit-replay]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.live.circuit().replaying), true, 'slow replay runs');
+    await page.locator('[data-ep-live-circuit-replay]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.live.circuit().replaying), false, 'replay stopped');
+    // Entrainment from the isthmus (ABL d): paced fronts on the ring, then the PPI with concealed fusion.
+    await page.locator('[data-ep-live-stim=site]').selectOption('cti');
+    await page.locator('[data-ep-live-maneuver=a-od]').click();
+    await freezeLive(true);
+    const paced = await page.evaluate(() => { const L = window.epsLab.live; for (let i = 0; i < 60; i++) { L.advance(50); const c = L.circuit(); if (c.spot === 'paced') return c; } return null; });
+    assert.ok(paced && paced.entrain.fronts.includes('ortho'), `paced fronts on the ring ${JSON.stringify(paced)}`);
+    assert.match(await page.locator('[data-ep-live-circuit-front]').textContent(), /^Entrainment, CTI \(ABL d\)/);
+    await page.evaluate(() => window.epsLab.live.advance(4000));
+    assert.match(await page.locator('[data-ep-live-circuit-entrain]').textContent(), /^CTI \(ABL d\): PPI 245 ms, PPI−TCL 5 ms → devre içi; gizli füzyon/);
+    assert.equal(await page.evaluate(() => window.epsLab.live.circuit().active), true, 'the circuit runs on after the train');
+    await page.locator('[data-app-lang-option=en]').click();
+    assert.equal(await page.locator('.ep-circ-title').textContent(), 'Right atrium, LAO: tricuspid annulus');
+    assert.match(await page.locator('[data-ep-live-circuit-front]').textContent(), /^Wavefront: /);
+    await page.locator('[data-app-lang-option=tr]').click();
+    await page.locator('[data-ep-live-surprise]').click();
+    assert.equal(await page.locator('[data-ep-live-circuit]').isDisabled(), true, 'ring locked on a hidden case');
+    assert.equal(await page.locator('[data-ep-live-circuit-view]').isVisible(), false);
+    await page.evaluate(() => { window.epsLab.live.setCase('normal'); window.epsLab.live.advance(1200); });
+    assert.equal(await page.locator('[data-ep-live-circuit-view]').isVisible(), true, 'shown again on a named case');
+    assert.match(await page.locator('[data-ep-live-circuit-front]').textContent(), /^Makro-reentri yok · son atriyal aktivasyon: sinüs düğümü/);
+    await page.locator('[data-ep-live-circuit]').click();
+    assert.equal(await page.locator('[data-ep-live-circuit-view]').isVisible(), false, 'ring off');
+
     // AF mapping: Space plays and pauses the activation / phase map (a focused button is not pressed); no playback on the DF map.
     await page.locator('[data-ep-section=afmap]').click();
     await page.waitForFunction(() => window.epsLab.panel.afmap.getState().active);
@@ -341,7 +390,7 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.panel.afmap.getState().playing), false, 'DF map: nothing to play');
 
     assert.deepEqual(errors, []);
-    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, auto-decrement S2 from a CS bipole (ERPs) and in AVNRT (jump, echo, induction), continuous pacing with live S1 change and heart rate, per-channel gain, saturating pacing artifact and caliper amplitude, page-by-page review, drugs (isoproterenol) with the coach on an echo-only AVNRT, Space play / pause on the AF map');
+    console.log('PASS ep-live-browser: full-screen workstation, Space freeze, wave names on/off (live, frozen, lessons, remembered), ladder on the channels, ladder diagram on/off, TR/EN switch, sweeping monitor, S2-induced AVNRT, freeze + review + calipers, cardioversion, hidden case quiz and hints, flutter + CTI RF, His-refractory PVC, V overdrive verdict, AVBCL protocol, incremental pacing with AH jump and PR > PP, auto-decrement S2 from a CS bipole (ERPs) and in AVNRT (jump, echo, induction), continuous pacing with live S1 change and heart rate, per-channel gain, saturating pacing artifact and caliper amplitude, page-by-page review, drugs (isoproterenol) with the coach on an echo-only AVNRT, Space play / pause on the AF map, LAO flutter ring (circuit with coloured lead II in the console, slow replay, CTI entrainment with concealed fusion, EN, locked on a hidden case, sinus origin)');
   } finally {
     await browser.close();
   }

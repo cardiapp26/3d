@@ -15,15 +15,16 @@
  * while given. Designed teaching timings (ms), not patient physiology.
  */
 import { ev, far, mono } from './ep-beats.js';
-import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS } from './ep-live-substrates.js';
+import { ORIGINS, LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS, CTI_ENTRAINED } from './ep-live-substrates.js';
 
 export { LIVE_CASES, ABLATION_TARGETS, RF_LESION_MS, DRUGS };
 const DRUG_FIELDS = [...new Set(Object.values(DRUGS).flatMap((d) => Object.keys(d)))];
-export const LIVE_CHANNELS = Object.freeze(['ecg-i', 'ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'rv']);
-// Pacing sites: the high right atrium, every coronary sinus bipole (proximal 9-10 to distal 1-2) and the RV apex.
-export const LIVE_SITES = Object.freeze(['hra', 'cs-prox', 'cs-78', 'cs-56', 'cs-34', 'cs-dist', 'rv']);
-export const SITE_CHANNEL = Object.freeze({ hra: 'hra', 'cs-prox': 'cs-910', 'cs-78': 'cs-78', 'cs-56': 'cs-56', 'cs-34': 'cs-34', 'cs-dist': 'cs-12', rv: 'rv' });
-const ATRIAL_CHANNELS = ['hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12'];
+export const LIVE_CHANNELS = Object.freeze(['ecg-i', 'ecg-ii', 'ecg-v1', 'hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'abl-d', 'rv']);
+// Pacing sites: the high right atrium, every coronary sinus bipole (proximal 9-10 to distal 1-2),
+// the ablation catheter at the cavotricuspid isthmus (recorded on ABL d) and the RV apex.
+export const LIVE_SITES = Object.freeze(['hra', 'cs-prox', 'cs-78', 'cs-56', 'cs-34', 'cs-dist', 'cti', 'rv']);
+export const SITE_CHANNEL = Object.freeze({ hra: 'hra', 'cs-prox': 'cs-910', 'cs-78': 'cs-78', 'cs-56': 'cs-56', 'cs-34': 'cs-34', 'cs-dist': 'cs-12', cti: 'abl-d', rv: 'rv' });
+const ATRIAL_CHANNELS = ['hra', 'his-p', 'his-d', 'cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12', 'abl-d'];
 const CS_PAIRS = ['cs-910', 'cs-78', 'cs-56', 'cs-34', 'cs-12'];
 
 /**
@@ -35,7 +36,7 @@ const MID_CS = Object.fromEntries(['cs-78', 'cs-56', 'cs-34'].map((site) => {
   const k = CS_PAIRS.indexOf(site), w = k / (CS_PAIRS.length - 1);
   const a = ORIGINS['cs-prox'], b = ORIGINS['cs-dist'];
   const o = Object.fromEntries(CS_PAIRS.map((ch, i) => [ch, 2 + 10 * Math.abs(i - k)]));
-  for (const key of ['his-d', 'his-p', 'hra', 'avj', 'ap', 'aps', 'p']) o[key] = Math.round(a[key] + (b[key] - a[key]) * w);
+  for (const key of ['his-d', 'his-p', 'hra', 'abl-d', 'avj', 'ap', 'aps', 'p']) o[key] = Math.round(a[key] + (b[key] - a[key]) * w);
   o.pAmp = Math.round((a.pAmp + (b.pAmp - a.pAmp) * w) * 1000) / 1000;
   return [site, Object.freeze({ ...o, w })];
 }));
@@ -129,7 +130,7 @@ export function createLiveHeart(caseId = 'normal') {
       if (o[ch] == null) continue;
       record(ch, ev('A', t + o[ch], amp ?? (ch === 'his-d' ? 0.35 : ch === 'his-p' ? 0.6 : 0.75), origin === 'af' ? 3 : 5, { origin }));
     }
-    if (origin === 'flutter') record('ecg-ii', mono('F', t + 60, -0.16, 45));
+    if (o.f != null) record('ecg-ii', mono('F', t + o.f, -0.16, 45));   // flutter F wave (also a concealed CTI capture)
     else if (origin === 'af') record('ecg-ii', mono('f', t + 20, (rand() - 0.5) * 0.08, 12));
     else if (o.p != null) record('ecg-ii', mono('P', t + o.p, o.pAmp, 10));
     // Another wavefront reaching the sinus node (or an automatic focus) resets it;
@@ -243,7 +244,7 @@ export function createLiveHeart(caseId = 'normal') {
     // Entrainment: a captured stimulus resets a running macroreentry; the return
     // cycle at the pacing site is the TCL plus the distance to the circuit.
     if (kind === 'a' && active.flutter) {
-      unschedule('flutter-fire');
+      unschedule('flutter-fire'); unschedule('flutter-rejoin');
       lastFlutterCapture = { t, site };
       // While the train goes on, the next stimulus captures before the wavefront returns.
       const next = queue.find((q) => q.kind === 'stim' && q.data.site !== 'rv');
@@ -278,18 +279,44 @@ export function createLiveHeart(caseId = 'normal') {
   }
 
   // Return of the entrained flutter wavefront: TCL + distance to the circuit at the pacing site.
+  // From the isthmus the last capture already ran this cycle round the circuit (concealed):
+  // only its return into the isthmus is left, then the circuit goes on.
   function scheduleFlutterReturn({ t, site }) {
-    schedule(t + p.flutter.tcl + ppiExtraAt(p.flutter, site) - ORIGINS.flutter[SITE_CHANNEL[site]], 'flutter-fire');
+    schedule(t + p.flutter.tcl + ppiExtraAt(p.flutter, site) - ORIGINS.flutter[SITE_CHANNEL[site]], site === 'cti' ? 'flutter-rejoin' : 'flutter-fire');
+  }
+  const flutterPending = () => queue.some((q) => q.kind === 'flutter-fire' || q.kind === 'flutter-rejoin');
+
+  /** Latest A on a channel at or before t. */
+  const lastLocalA = (ch, t) => {
+    const list = log[ch] || [];
+    for (let i = list.length - 1; i >= 0; i--) if (list[i].type === 'A' && list[i].t <= t) return list[i].t;
+    return -Infinity;
+  };
+  /**
+   * Atrial capture from a pacing site. During flutter the site is excitable once its own last
+   * activation has recovered (the excitable gap), whatever the rest of the circuit is doing; a
+   * capture then takes the parts of the atrium the circuit had not reached yet (their pending
+   * activations are dropped). From the isthmus the capture follows the circuit (concealed entrainment).
+   */
+  function paceAtrium(t, site) {
+    const at = t + 2;
+    const inCircuit = active.flutter && lastAtrium?.origin === 'flutter';
+    if (inCircuit && at - lastLocalA(SITE_CHANNEL[site], at) < p.aErp) return false;
+    if (inCircuit) {
+      for (const ch of ATRIAL_CHANNELS) log[ch] = log[ch].filter((e) => !(e.origin === 'flutter' && e.t > at));
+      log['ecg-ii'] = log['ecg-ii'].filter((e) => !(e.type === 'F' && e.t > at + 20));
+    }
+    return activateAtrium(at, site, { force: inCircuit, offsets: site === 'cti' && active.flutter ? CTI_ENTRAINED : null });
   }
 
   function stim(t, site) {
     record(SITE_CHANNEL[site], ev('S', t, 0.5, 2));
     if (site === 'rv') onStim('v', t, ventricle(t + 10, { origin: 'rv' }), site);
     else {
-      const captured = activateAtrium(t + 2, site);
+      const captured = paceAtrium(t, site);
       onStim('a', t, captured, site);
       // A stimulus that did not capture leaves the circuit to return from the last capture.
-      if (!captured && active.flutter && lastFlutterCapture && !queue.some((q) => q.kind === 'flutter-fire')) scheduleFlutterReturn(lastFlutterCapture);
+      if (!captured && active.flutter && lastFlutterCapture && !flutterPending()) scheduleFlutterReturn(lastFlutterCapture);
     }
   }
 
@@ -329,6 +356,11 @@ export function createLiveHeart(caseId = 'normal') {
     escape: (t, d) => { if (last.v === d.token) ventricle(t, { origin: 'escape' }); },
     'at-fire': (t) => { if (!active.at || !p.at) return; activateAtrium(t, p.at.origin); schedule(t + p.at.cl, 'at-fire'); },
     'flutter-fire': (t) => { if (!active.flutter || !p.flutter) return; activateAtrium(t, 'flutter', { force: true }); schedule(t + p.flutter.tcl, 'flutter-fire'); },
+    'flutter-rejoin': (t) => {
+      if (!active.flutter || !p.flutter) return;
+      record('abl-d', ev('A', t + ORIGINS.flutter['abl-d'], 0.75, 5, { origin: 'flutter' }));
+      schedule(t + p.flutter.tcl, 'flutter-fire');
+    },
     'af-fire': (t) => { if (!active.af || !p.af) return; activateAtrium(t, 'af', { force: true, offsets: afOffsets() }); schedule(t + p.af.min + rand() * (p.af.max - p.af.min), 'af-fire'); },
     // The circuit keeps its cycle; a beat finding the ventricle refractory (a capture beat) does not exit.
     'vt-fire': (t) => { if (!active.vt || !p.vt) return; ventricle(t, { origin: 'vt' }); schedule(t + p.vt.cl, 'vt-fire'); },
@@ -358,7 +390,7 @@ export function createLiveHeart(caseId = 'normal') {
     /** Cancel stimuli still to come (or only those after time `after`). */
     stopPacing(after = -Infinity) {
       for (let i = queue.length - 1; i >= 0; i--) if (queue[i].kind === 'stim' && queue[i].t > after) queue.splice(i, 1);
-      if (active.flutter && lastFlutterCapture && !queue.some((q) => q.kind === 'flutter-fire' || (q.kind === 'stim' && q.data.site !== 'rv'))) scheduleFlutterReturn(lastFlutterCapture);
+      if (active.flutter && lastFlutterCapture && !flutterPending() && !queue.some((q) => q.kind === 'stim' && q.data.site !== 'rv')) scheduleFlutterReturn(lastFlutterCapture);
     },
     /** DC shock: every tissue depolarized; reentry and triggered rhythms end, an automatic focus resumes. */
     cardiovert(t) {

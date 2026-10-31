@@ -60,6 +60,62 @@ header.site-header[data-site-page=eps] .site-header-actions kbd { background: #1
 .ep-live-tools select { max-width: 10rem; }
 .ep-live-gain-val, .ep-live-page-at { font: 12px var(--mono); color: #c8d9f0; min-width: 3.4em; text-align: center; }
 
+/* Flutter circuit, LAO view in the console (ep-flutter-view.js): limb colours shared by the ring, the wake, lead II and the legend */
+.ep-live-circuit { --seg-septum: #4fa8ff; --seg-roof: #b892ff; --seg-lateral: #ff6b81; --seg-cti: #ffc640;
+  flex: none; border: 1px solid var(--line); border-radius: 6px; background: #0b101b; padding: 6px 8px; container-type: inline-size; }
+.ep-live-circuit[hidden] { display: none; }
+.ep-circ-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ep-circ-title { margin: 0; font-size: 12px; font-weight: 600; color: #c8d9f0; }
+.ep-circ-replay { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 12px; }
+.ep-circ-replay[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ep-circ-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.ep-circ-map { display: block; width: 100%; max-height: 250px; }
+.ep-circ-side { min-width: 0; }
+.ep-circ-trace { display: block; width: 100%; height: auto; max-height: 130px; border-radius: 4px; background: #070b13; }
+@container (min-width: 560px) { .ep-circ-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: center; gap: 12px; } }
+.ep-circ-front { margin: 4px 0 2px; font: 600 12px var(--mono); color: #e3ecf8; min-height: 1.3em; }
+.ep-circ-note { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+.ep-circ-legend { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 11px; color: #c8d9f0; }
+.ep-circ-legend li { display: flex; align-items: center; gap: 5px; }
+.ep-circ-swatch { width: 14px; height: 4px; border-radius: 2px; flex: none; background: currentColor; }
+.ep-circ-legend .seg-septum .ep-circ-swatch { background: var(--seg-septum); }
+.ep-circ-legend .seg-roof .ep-circ-swatch { background: var(--seg-roof); }
+.ep-circ-legend .seg-lateral .ep-circ-swatch { background: var(--seg-lateral); }
+.ep-circ-legend .seg-cti .ep-circ-swatch { background: var(--seg-cti); }
+.ep-circ-map .seg-septum, .ep-circ-trace .seg-septum { stroke: var(--seg-septum); fill: var(--seg-septum); }
+.ep-circ-map .seg-roof, .ep-circ-trace .seg-roof { stroke: var(--seg-roof); fill: var(--seg-roof); }
+.ep-circ-map .seg-lateral, .ep-circ-trace .seg-lateral { stroke: var(--seg-lateral); fill: var(--seg-lateral); }
+.ep-circ-map .seg-cti, .ep-circ-trace .seg-cti { stroke: var(--seg-cti); fill: var(--seg-cti); }
+.ep-circ-corridor { fill: none; stroke: #16233a; }
+.ep-circ-limb { fill: none !important; stroke-width: 26; opacity: .14; }
+.ep-circ-ta { fill: #0f1828; stroke: #6f86a8; stroke-width: 1.5; }
+.ep-circ-vessel { fill: #0f1828; stroke: #5b6f8f; stroke-width: 1.2; }
+.ep-circ-barrier { fill: none; stroke: #8494ad; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 4; }
+.ep-circ-os { fill: #0b101b; stroke: #8494ad; stroke-width: 1.2; }
+.ep-circ-cath { fill: none; stroke: #9fb0c8; stroke-width: 2; stroke-linecap: round; }
+.ep-circ-tip { fill: #dfe7f3; stroke: #0b101b; stroke-width: 1; transition: fill .05s; }
+.ep-circ-tip.is-hit { fill: #fff36b; }
+.ep-circ-label { fill: #c8d9f0; font: 600 9px var(--mono); }
+.ep-circ-label-ta { fill: #6f86a8; font-size: 10px; }
+.ep-circ-side-label { fill: var(--muted); font: 9px var(--mono); }
+.ep-circ-arrow { fill: none; stroke: #6f86a8; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.ep-circ-wake { stroke-width: 9; stroke-linecap: round; fill: none !important; }
+.ep-circ-glow { opacity: .3; stroke: none !important; }
+.ep-circ-head { stroke: #fff !important; stroke-width: 1.5; }
+.ep-circ-pulse { fill: none; stroke: #fff36b; stroke-width: 2; }
+.ep-circ-base { stroke: #1d2a42; stroke-width: 1; }
+.ep-circ-full { fill: none; stroke: #4a5a74; stroke-width: 1; }
+.ep-circ-f { fill: none !important; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.ep-circ-pen { stroke: #fff !important; stroke-width: 1; }
+.ep-circ-map .ep-circ-anti { stroke: #e9eef7; fill: #e9eef7; }
+.ep-circ-wake.ep-circ-anti { stroke-dasharray: 3 3; stroke-width: 5; }
+.ep-circ-head.ep-circ-anti { stroke: #7f8da3 !important; }
+.ep-circ-head.ep-circ-paced { fill: #fff36b; stroke: #0b101b !important; }
+.ep-circ-collide { fill: none; stroke: #fff36b; stroke-width: 2.5; }
+.ep-circ-abl { stroke: #c9a46a; }
+.ep-circ-entrain { margin: 2px 0; font: 600 12px var(--mono); color: #fff3a8; }
+.ep-circ-entrain[hidden] { display: none; }
+
 /* Console sections */
 .ep-case { display: grid; gap: 3px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
 .ep-case select { text-transform: none; letter-spacing: 0; font-size: 13px; }
