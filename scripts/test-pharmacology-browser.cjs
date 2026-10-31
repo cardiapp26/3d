@@ -1,12 +1,14 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { startApp } = require('./lib/app-server.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const { resolve } = require('node:path');
-const APP = (process.env.APP_URL || 'http://127.0.0.1:5180').replace(/\/$/, '');
 
 (async () => {
-    const { PHARMA_QUESTIONS, PHARMA_TOPICS, PHARMA_INTERACTIONS } = await import(pathToFileURL(resolve('src/pharmacology-data.js')).href);
+  const app = await startApp();
+  const APP = app.url;
+  const { PHARMA_QUESTIONS, PHARMA_TOPICS, PHARMA_INTERACTIONS } = await import(pathToFileURL(resolve('src/pharmacology-data.js')).href);
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Istanbul' });
@@ -303,5 +305,8 @@ const APP = (process.env.APP_URL || 'http://127.0.0.1:5180').replace(/\/$/, '');
     assert.deepEqual(errors, [], 'no runtime errors');
     console.log('PASS pharmacology browser: standalone route, header links, mobile layout, target map, AP classes, PK slider, search, comparison, quiz, coagulation/PT/aPTT/drug overlays/feedback, diuretic nephron/classes/electrolytes/reset, sources and persistent TR/EN');
     console.log(`Screenshots: ${shots}`);
-  } finally { await browser.close(); }
+  } finally {
+    await browser.close();
+    await app.close();
+  }
 })().catch(error => { console.error(error); process.exitCode = 1; });

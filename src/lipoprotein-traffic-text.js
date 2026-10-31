@@ -7,7 +7,7 @@ const FIELD = {
 export const LPT_WORDS = {
   tr: {
     eyebrow: 'LİPOPROTEİN TRAFİĞİ',
-    title: 'Kamyon benzetmesinden bilime: kanda kim neyi taşır?',
+    title: 'Kanda kim neyi taşır?',
     intro: 'Sosyal medyada yaygın bir infografik lipitleri yoldaki kamyonlarla anlatıyor: LDL teslimat, HDL geri dönüşüm, ApoB plaka. Burada aynı yol, bilimsel ayrıntıyla canlandırıldı. Bir partikül seçin; profili ve müdahaleleri değiştirin; yoldaki ve arter duvarındaki apoB partiküllerini izleyin. Gönderideki iddialar en altta tek tek kontrol edildi.',
     svgTitle: 'Bağırsak ve karaciğerden çıkan lipoproteinler, plazmada dolaşım, kas ve yağ dokusunda LPL, arter intimasında apoB partikül tutulumu',
     labels: { intestine: 'Bağırsak', liver: 'Karaciğer', tissue: 'Kas / yağ', plasma: 'Plazma', intima: 'Arter intiması' },
@@ -25,7 +25,7 @@ export const LPT_WORDS = {
     stripTitle: 'Boyutlar gerçek oranda (1 piksel = 1 nm, tipik çap)',
     stripAria: 'Altı lipoprotein sınıfı gerçek göreli boyutlarında yan yana',
     stripNote: (name, [lo, hi], d) => `${name}: tipik ~${d} nm, aralık ${lo}–${hi} nm. Şilomikron 1200 nm’ye kadar büyüyebilir; burada tipik boyutunda çizildi. Yukarıdaki kesitler büyütülmüştür; sınıflar arasındaki oran bu şeritte görülür.`,
-    labTitle: 'Profil laboratuvarı: aynı LDL-C, farklı kamyon sayısı',
+    labTitle: 'Profil laboratuvarı: aynı LDL-C, farklı partikül sayısı',
     labIntro: 'Bir başlangıç profili seçin veya değerleri girin, sonra yaşam tarzı ve ilaç seçeneklerini işaretleyin. Etkiler kanıtın orta değerlerine yuvarlanmış öğretim büyüklükleridir ve çarpımsal birleşir. "Aterojenik dislipidemi" profilinde LDL-C referansla aynıdır ama apoB partikülü fazladır. Animasyon "Sonra" sütununu izler.',
     presets: 'Başlangıç profilleri',
     inputs: { ldl: 'LDL-C · mg/dL', tg: 'Trigliserid · mg/dL', hdl: 'HDL-C · mg/dL', lpa: 'Lp(a) · nmol/L' },
@@ -43,7 +43,7 @@ export const LPT_WORDS = {
       'ldl-severe': 'LDL-C ≥190 mg/dL: ailesel hiperkolesterolemi açısından değerlendirilir; yaşam tarzı tek başına yetmez.',
       'hdl-very-high': 'HDL-C ≥90 mg/dL: koruyucu varsayılmaz; çok yüksek değerlerde mortalite artabilir.',
       'hdl-low': 'HDL-C <40 mg/dL: risk işaretidir, tedavi hedefi değildir.',
-      'apob-discordant': 'ApoB, LDL-C’nin tek başına düşündürdüğünden yüksek: kamyon sayısı fazla (küçük yoğun LDL, remnant veya Lp(a)). Ölçülen apoB yararlıdır.'
+      'apob-discordant': 'ApoB, LDL-C’nin tek başına düşündürdüğünden yüksek: partikül sayısı fazla (küçük yoğun LDL, remnant veya Lp(a)). Ölçülen apoB yararlıdır.'
     },
     invalid: ({ field, min, max }) => `${FIELD.tr[field]} için ${min} ile ${max} arasında bir değer girin.`,
     claimsTitle: 'Gönderideki iddialar: ne doğru, ne eksik?',
@@ -55,7 +55,7 @@ export const LPT_WORDS = {
   },
   en: {
     eyebrow: 'LIPOPROTEIN TRAFFIC',
-    title: 'From the truck analogy to the science: who carries what in blood?',
+    title: 'Who carries what in blood?',
     intro: 'A popular infographic explains lipids as trucks on a road: LDL delivers, HDL recycles, ApoB is the licence plate. Here the same road is animated with the scientific detail. Pick a particle, change the profile and the levers, and watch apoB particles on the road and in the arterial wall. The post’s claims are checked one by one at the end.',
     svgTitle: 'Lipoproteins leaving the intestine and liver, circulating in plasma, LPL in muscle and adipose tissue, and apoB particle retention in the arterial intima',
     labels: { intestine: 'Intestine', liver: 'Liver', tissue: 'Muscle / fat', plasma: 'Plasma', intima: 'Arterial intima' },
@@ -73,7 +73,7 @@ export const LPT_WORDS = {
     stripTitle: 'Sizes in true proportion (1 pixel = 1 nm, typical diameter)',
     stripAria: 'The six lipoprotein classes side by side at their true relative size',
     stripNote: (name, [lo, hi], d) => `${name}: typical ~${d} nm, range ${lo}–${hi} nm. Chylomicrons can reach 1200 nm; drawn here at a typical size. The cross-sections above are enlarged; the proportion between classes is shown in this strip.`,
-    labTitle: 'Profile lab: same LDL-C, different truck count',
+    labTitle: 'Profile lab: same LDL-C, different particle count',
     labIntro: 'Pick a starting profile or enter values, then tick lifestyle and drug options. Effects are teaching magnitudes rounded to the middle of the evidence and combine multiplicatively. The "atherogenic dyslipidemia" profile has the same LDL-C as the reference but more apoB particles. The animation follows the "After" column.',
     presets: 'Starting profiles',
     inputs: { ldl: 'LDL-C · mg/dL', tg: 'Triglycerides · mg/dL', hdl: 'HDL-C · mg/dL', lpa: 'Lp(a) · nmol/L' },
@@ -91,7 +91,7 @@ export const LPT_WORDS = {
       'ldl-severe': 'LDL-C ≥190 mg/dL: assess for familial hypercholesterolemia; lifestyle alone is not enough.',
       'hdl-very-high': 'HDL-C ≥90 mg/dL: not assumed protective; mortality may rise at very high values.',
       'hdl-low': 'HDL-C <40 mg/dL: a risk marker, not a treatment target.',
-      'apob-discordant': 'ApoB is higher than LDL-C alone suggests: more trucks (small dense LDL, remnants or Lp(a)). Measured apoB helps.'
+      'apob-discordant': 'ApoB is higher than LDL-C alone suggests: more particles (small dense LDL, remnants or Lp(a)). Measured apoB helps.'
     },
     invalid: ({ field, min, max }) => `Enter a value between ${min} and ${max} for ${FIELD.en[field]}.`,
     claimsTitle: 'The post’s claims: what holds, what is missing?',

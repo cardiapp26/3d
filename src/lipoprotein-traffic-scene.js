@@ -15,13 +15,13 @@ const ROUTES = {
 };
 /** Kind -> [fill, radius]. Distinct hues across classes for instant visual discrimination. */
 const LOOK = {
-  chylomicron: ['#009fb7', 11.5], remnant: ['#0b7285', 7], vldl: ['#6741d9', 9.5], idl: ['#f08c00', 7.2], ldl: ['#d92b2b', 5.8],
-  lpa: ['#b5179e', 6.4], hdl: ['#0ca678', 4], hdlLoaded: ['#087f5b', 5]
+  chylomicron: ['#00a2c7', 11.5], remnant: ['#0b7285', 7.5], vldl: ['#6339d6', 9.5], idl: ['#e67700', 7.5], ldl: ['#d92626', 6],
+  lpa: ['#c2255c', 6.2], hdl: ['#0ca678', 4], hdlLoaded: ['#099268', 5]
 };
 const APOB_KINDS = new Set(['chylomicron', 'remnant', 'vldl', 'idl', 'ldl', 'lpa']);
 const SPEED = 78;
-const RETAIN_SECONDS = 18;
-const MAX_RETAINED = 90;
+const RETAIN_SECONDS = 14;
+const MAX_RETAINED = 40;
 
 export const TRAFFIC_SCENE = `<defs>
     <linearGradient id="lpt-intestine-grad" x1="0" y1="0" x2="1" y2="1">
@@ -169,6 +169,97 @@ export const TRAFFIC_SCENE = `<defs>
 
 const add = (parent, tag) => parent.appendChild(document.createElementNS(SVG_NS, tag));
 
+function applyLook(el, base, look) {
+  const kind = look === 'remnant' ? 'chylomicron' : look === 'hdlLoaded' ? 'hdl' : look;
+  el.dataset.kind = kind;
+  base.dataset.kind = kind;
+  const isApoB = APOB_KINDS.has(look);
+  el.classList.toggle('is-apob', isApoB);
+  base.classList.toggle('is-apob', isApoB);
+
+  while (el.childNodes.length > 1) el.removeChild(el.lastChild);
+
+  if (look === 'chylomicron') {
+    base.setAttribute('r', '11.5');
+    base.setAttribute('fill', '#00a2c7');
+    base.setAttribute('stroke', '#ffffff');
+    base.setAttribute('stroke-width', '1.8');
+    const c1 = add(el, 'circle');
+    c1.setAttribute('r', '6'); c1.setAttribute('fill', '#e0f7fa'); c1.setAttribute('opacity', '0.35');
+    const c2 = add(el, 'circle');
+    c2.setAttribute('cx', '-2.5'); c2.setAttribute('cy', '-2.5'); c2.setAttribute('r', '2'); c2.setAttribute('fill', '#ffffff'); c2.setAttribute('opacity', '0.85');
+  } else if (look === 'remnant') {
+    base.setAttribute('r', '7.5');
+    base.setAttribute('fill', '#0b7285');
+    base.setAttribute('stroke', '#ffffff');
+    base.setAttribute('stroke-width', '1.5');
+    const c = add(el, 'circle');
+    c.setAttribute('cx', '-1.5'); c.setAttribute('cy', '-1.5'); c.setAttribute('r', '1.6'); c.setAttribute('fill', '#ffffff'); c.setAttribute('opacity', '0.8');
+  } else if (look === 'vldl') {
+    base.setAttribute('r', '9.5');
+    base.setAttribute('fill', 'none');
+    base.setAttribute('stroke', 'none');
+    const rect = add(el, 'rect');
+    rect.setAttribute('x', '-7'); rect.setAttribute('y', '-7');
+    rect.setAttribute('width', '14'); rect.setAttribute('height', '14');
+    rect.setAttribute('rx', '2.5'); rect.setAttribute('transform', 'rotate(45)');
+    rect.setAttribute('fill', '#6339d6'); rect.setAttribute('stroke', '#ffffff'); rect.setAttribute('stroke-width', '1.8');
+    const inner = add(el, 'rect');
+    inner.setAttribute('x', '-2.8'); inner.setAttribute('y', '-2.8');
+    inner.setAttribute('width', '5.6'); inner.setAttribute('height', '5.6');
+    inner.setAttribute('rx', '1'); inner.setAttribute('transform', 'rotate(45)');
+    inner.setAttribute('fill', '#ffffff'); inner.setAttribute('opacity', '0.5');
+  } else if (look === 'idl') {
+    base.setAttribute('r', '7.5');
+    base.setAttribute('fill', 'none');
+    base.setAttribute('stroke', 'none');
+    const poly = add(el, 'polygon');
+    poly.setAttribute('points', '0,-7.2 6.2,-3.6 6.2,3.6 0,7.2 -6.2,3.6 -6.2,-3.6');
+    poly.setAttribute('fill', '#e67700'); poly.setAttribute('stroke', '#ffffff'); poly.setAttribute('stroke-width', '1.6');
+    const dot = add(el, 'circle');
+    dot.setAttribute('r', '2'); dot.setAttribute('fill', '#ffffff'); dot.setAttribute('opacity', '0.6');
+  } else if (look === 'ldl') {
+    base.setAttribute('r', '6');
+    base.setAttribute('fill', '#d92626');
+    base.setAttribute('stroke', '#ffffff');
+    base.setAttribute('stroke-width', '1.8');
+    const ring = add(el, 'circle');
+    ring.setAttribute('r', '3.2'); ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', '#ffffff'); ring.setAttribute('stroke-width', '1.2');
+    const center = add(el, 'circle');
+    center.setAttribute('r', '1.4'); center.setAttribute('fill', '#d92626');
+  } else if (look === 'lpa') {
+    base.setAttribute('r', '6.2');
+    base.setAttribute('fill', '#c2255c');
+    base.setAttribute('stroke', '#ffffff');
+    base.setAttribute('stroke-width', '1.8');
+    for (const [kx, ky] of [[6.2, -3.2], [7.2, 1.6], [4.5, 5.8]]) {
+      const k = add(el, 'circle');
+      k.setAttribute('cx', kx); k.setAttribute('cy', ky); k.setAttribute('r', '2.4');
+      k.setAttribute('fill', '#f06595'); k.setAttribute('stroke', '#ffffff'); k.setAttribute('stroke-width', '0.9');
+    }
+  } else if (look === 'hdl') {
+    base.setAttribute('r', '4');
+    base.setAttribute('fill', 'none');
+    base.setAttribute('stroke', 'none');
+    const ell = add(el, 'ellipse');
+    ell.setAttribute('rx', '6.5'); ell.setAttribute('ry', '3.8');
+    ell.setAttribute('fill', '#0ca678'); ell.setAttribute('stroke', '#ffffff'); ell.setAttribute('stroke-width', '1.4');
+    const shine = add(el, 'ellipse');
+    shine.setAttribute('rx', '3.2'); shine.setAttribute('ry', '1.6');
+    shine.setAttribute('fill', '#ffffff'); shine.setAttribute('opacity', '0.5');
+  } else if (look === 'hdlLoaded') {
+    base.setAttribute('r', '5');
+    base.setAttribute('fill', 'none');
+    base.setAttribute('stroke', 'none');
+    const ell = add(el, 'ellipse');
+    ell.setAttribute('rx', '8'); ell.setAttribute('ry', '4.6');
+    ell.setAttribute('fill', '#099268'); ell.setAttribute('stroke', '#ffffff'); ell.setAttribute('stroke-width', '1.5');
+    const shine = add(el, 'ellipse');
+    shine.setAttribute('rx', '4'); shine.setAttribute('ry', '2');
+    shine.setAttribute('fill', '#ffffff'); shine.setAttribute('opacity', '0.55');
+  }
+}
+
 /**
  * @param {SVGSVGElement} svg element that already holds TRAFFIC_SCENE
  * @param {{ reducedMotion?: boolean, onCount?: (counts: {road:number, wall:number}) => void }} options
@@ -180,6 +271,7 @@ export function createTrafficScene(svg, { reducedMotion = false, onCount = () =>
     const path = document.createElementNS(SVG_NS, 'path');
     path.setAttribute('d', d);
     path.setAttribute('class', 'lpt-route');
+    path.dataset.route = id;
     svg.insertBefore(path, retainedLayer);
     return [id, { path, length: path.getTotalLength() }];
   }));
@@ -191,9 +283,13 @@ export function createTrafficScene(svg, { reducedMotion = false, onCount = () =>
     let route = kind === 'ldl' || kind === 'lpa' ? 'ldlLiver' : kind;
     const wallChance = kind === 'ldl' ? rates.wallLdl : kind === 'lpa' ? rates.wallLpa : 0;
     if (Math.random() < wallChance) route = `wall${Math.floor(Math.random() * WALL_X.length)}`;
-    const el = add(layer, 'circle');
-    particles.push({ el, kind, route, s: 0, look: '' });
+    const el = add(layer, 'g');
+    el.setAttribute('class', 'lpt-p');
+    const base = add(el, 'circle');
+    base.setAttribute('class', 'lpt-p-base');
+    particles.push({ el, base, kind, route, s: 0, look: '' });
   }
+
   /** What a particle looks like at its fraction of the route (VLDL shrinks into IDL and LDL). */
   function lookOf(p, f) {
     if (p.kind === 'chylomicron') return f < 0.62 ? 'chylomicron' : 'remnant';
@@ -201,21 +297,48 @@ export function createTrafficScene(svg, { reducedMotion = false, onCount = () =>
     if (p.kind === 'hdl') return f < 0.42 ? 'hdl' : 'hdlLoaded';
     return p.kind;
   }
+
   function retain(p) {
     const end = routes[p.route].path.getPointAtLength(routes[p.route].length);
-    const el = add(retainedLayer, 'circle');
-    el.setAttribute('cx', (end.x + (Math.random() - 0.5) * 70).toFixed(1));
-    el.setAttribute('cy', (284 + Math.random() * 44).toFixed(1));
-    el.setAttribute('r', p.kind === 'lpa' ? 4.8 : 4.2);
-    el.setAttribute('fill', LOOK[p.kind][0]);
+    const el = add(retainedLayer, 'g');
+    const x = (end.x + (Math.random() - 0.5) * 70).toFixed(1);
+    const y = (284 + Math.random() * 44).toFixed(1);
+    el.setAttribute('transform', `translate(${x}, ${y})`);
+    el.setAttribute('class', 'lpt-retained-p');
     el.dataset.kind = p.kind;
+    const base = add(el, 'circle');
+    base.setAttribute('class', 'lpt-retained-base');
+    base.dataset.kind = p.kind;
+
+    if (p.kind === 'lpa') {
+      base.setAttribute('r', '5');
+      base.setAttribute('fill', '#c2255c');
+      base.setAttribute('stroke', '#ffffff');
+      base.setAttribute('stroke-width', '1.4');
+      for (const [kx, ky] of [[5, -2.6], [5.8, 1.3], [3.6, 4.6]]) {
+        const k = add(el, 'circle');
+        k.setAttribute('cx', kx); k.setAttribute('cy', ky); k.setAttribute('r', '2');
+        k.setAttribute('fill', '#f06595'); k.setAttribute('stroke', '#ffffff'); k.setAttribute('stroke-width', '0.8');
+      }
+    } else {
+      base.setAttribute('r', '4.6');
+      base.setAttribute('fill', '#d92626');
+      base.setAttribute('stroke', '#ffffff');
+      base.setAttribute('stroke-width', '1.4');
+      const ring = add(el, 'circle');
+      ring.setAttribute('r', '2.2'); ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', '#ffffff'); ring.setAttribute('stroke-width', '1');
+      const dot = add(el, 'circle');
+      dot.setAttribute('r', '1'); dot.setAttribute('fill', '#d92626');
+    }
     retained.push({ el, born: clock });
     while (retained.length > MAX_RETAINED) retained.shift().el.remove();
   }
+
   const emit = (key, rate, dt) => {
     debt[key] = (debt[key] || 0) + rate * dt;
     while (debt[key] >= 1) { debt[key] -= 1; spawn(key); }
   };
+
   function step(dt) {
     clock += dt;
     for (const kind of ['ldl', 'vldl', 'chylomicron', 'lpa', 'hdl']) emit(kind, rates[kind], dt);
@@ -227,38 +350,41 @@ export function createTrafficScene(svg, { reducedMotion = false, onCount = () =>
         p.el.remove(); particles.splice(i, 1); continue;
       }
       const point = route.path.getPointAtLength(p.s), look = lookOf(p, p.s / route.length);
-      p.el.setAttribute('cx', point.x.toFixed(1)); p.el.setAttribute('cy', point.y.toFixed(1));
+      p.el.setAttribute('transform', `translate(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`);
       if (look !== p.look) {
         p.look = look;
-        p.el.setAttribute('r', LOOK[look][1]); p.el.setAttribute('fill', LOOK[look][0]);
-        p.el.dataset.kind = look === 'remnant' ? 'chylomicron' : look === 'hdlLoaded' ? 'hdl' : look;
-        p.el.classList.toggle('is-apob', APOB_KINDS.has(look));
+        applyLook(p.el, p.base, look);
       }
     }
     while (retained.length && clock - retained[0].born > RETAIN_SECONDS) retained.shift().el.remove();
     report();
   }
+
   function report() {
     const counts = { road: particles.filter(p => APOB_KINDS.has(p.look)).length, wall: retained.length };
     const key = `${counts.road}:${counts.wall}`;
     if (key !== lastCount) { lastCount = key; onCount(counts); }
   }
+
   function warm() {
     particles.splice(0).forEach(p => p.el.remove());
     retained.splice(0).forEach(r => r.el.remove());
     debt = {}; clock = 0;
     for (let i = 0; i < 160; i += 1) step(0.1);
   }
+
   function setRates(next) {
     rates = { ...next };
     if (reducedMotion) warm();
   }
+
   function tick(now) {
     const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
     last = now;
     if (running && !reducedMotion) step(dt);
     requestAnimationFrame(tick);
   }
+
   new IntersectionObserver(entries => { running = entries[0].isIntersecting; }).observe(svg);
   requestAnimationFrame(tick);
   return { setRates, warm, counts: () => ({ road: particles.filter(p => APOB_KINDS.has(p.look)).length, wall: retained.length }) };

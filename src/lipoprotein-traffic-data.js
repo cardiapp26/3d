@@ -30,7 +30,7 @@ export const LIPOPROTEIN_SOURCES = [
 /** Lipoprotein classes. Sizes and densities are textbook ranges; `apoB` marks one apoB per particle. */
 export const LIPOPROTEINS = [
   {
-    id: 'chylomicron', apoB: 'B-48', inPost: false, color: '#009fb7',
+    id: 'chylomicron', apoB: 'B-48', inPost: false, color: '#00a2c7',
     name: t('Şilomikron', 'Chylomicron'),
     size: '75–1200 nm', density: '< 0,95 g/mL',
     cargo: t('Diyet trigliseridi (~%85–90)', 'Dietary triglyceride (~85–90%)'),
@@ -41,7 +41,7 @@ export const LIPOPROTEINS = [
     science: t('Tokluk lipidinin taşıyıcısıdır. ApoB-48 taşır; ApoB ölçümü bu partikülleri de sayar, ancak açlıkta sayıları azdır.', 'Carrier of postprandial fat. It carries apoB-48; an apoB assay counts these too, but they are few in the fasting state.')
   },
   {
-    id: 'vldl', apoB: 'B-100', inPost: true, color: '#6741d9',
+    id: 'vldl', apoB: 'B-100', inPost: true, color: '#6339d6',
     name: t('VLDL', 'VLDL'),
     size: '30–80 nm', density: '0,95–1,006 g/mL',
     cargo: t('Endojen trigliserid (~%50–60)', 'Endogenous triglyceride (~50–60%)'),
@@ -49,10 +49,10 @@ export const LIPOPROTEINS = [
     route: t('Karaciğer → kan → LPL ile TG boşalır (kas: yakıt, yağ dokusu: depo) → IDL → LDL', 'Liver → blood → LPL unloads TG (muscle: fuel, adipose: storage) → IDL → LDL'),
     atherogenic: t('Küçük VLDL ve kalıntıları (remnant kolesterol) aterojeniktir.', 'Small VLDL and its remnants (remnant cholesterol) are atherogenic.'),
     analogy: t('"Yağ kargo kamyonu": trigliserid kutularını karaciğerden depolara taşır.', '"Fat cargo truck": carries boxes of triglyceride from the liver to storage.'),
-    science: t('Benzetme yarım kalır: VLDL yükünü boşalttıkça küçülür, IDL ve sonra LDL olur. Yani LDL kamyonu çoğunlukla boşalmış VLDL kamyonudur.', 'The analogy stops half way: as VLDL unloads it shrinks into IDL and then LDL. The LDL truck is mostly an emptied VLDL truck.')
+    science: t('VLDL, kasta ve yağ dokusunda LPL ile trigliserid yükünü boşalttıkça küçülür, IDL ve ardından LDL’ye dönüşür. Dolaşımdaki LDL partiküllerinin büyük çoğunluğu bu delipidasyon zincirinden köken alır.', 'As VLDL unloads its triglyceride via LPL in muscle and adipose tissue, it progressively shrinks into IDL and then LDL. The majority of circulating LDL particles originate from this delipidation cascade.')
   },
   {
-    id: 'idl', apoB: 'B-100', inPost: false, color: '#f08c00',
+    id: 'idl', apoB: 'B-100', inPost: false, color: '#e67700',
     name: t('IDL (VLDL kalıntısı)', 'IDL (VLDL remnant)'),
     size: '25–35 nm', density: '1,006–1,019 g/mL',
     cargo: t('TG ve kolesterol esteri karışık', 'Mixed TG and cholesteryl ester'),
@@ -63,7 +63,7 @@ export const LIPOPROTEINS = [
     science: t('Remnant (kalıntı) kolesterol, LDL-C dışında kalan aterojenik kolesterolün önemli kısmıdır; non-HDL-C bunu da içerir.', 'Remnant cholesterol is a large part of the atherogenic cholesterol outside LDL-C; non-HDL-C includes it.')
   },
   {
-    id: 'ldl', apoB: 'B-100', inPost: true, color: '#d92b2b',
+    id: 'ldl', apoB: 'B-100', inPost: true, color: '#d92626',
     name: t('LDL', 'LDL'),
     size: '18–25 nm', density: '1,019–1,063 g/mL',
     cargo: t('Kolesterol esteri (ana yük)', 'Cholesteryl ester (main load)'),
@@ -71,10 +71,10 @@ export const LIPOPROTEINS = [
     route: t('Kanda dolaşır; büyük kısmı karaciğer LDL reseptörüyle temizlenir. Bir kısmı arter duvarına (intima) girer ve proteoglikanlara tutunur.', 'Circulates; most is cleared by hepatic LDL receptors. Some enters the arterial wall (intima) and is retained by proteoglycans.'),
     atherogenic: t('Nedensel: genetik, epidemiyolojik ve randomize kanıt (EAS 2017).', 'Causal: genetic, epidemiological and randomized evidence (EAS 2017).'),
     analogy: t('"Teslimat kamyonu": karaciğer deposundan hücrelere kolesterol tuğlası taşır.', '"Delivery truck": carries cholesterol bricks from the liver warehouse to cells.'),
-    science: t('Çoğu hücre kolesterolünü kendisi sentezler; LDL kamyonu çoğunlukla karaciğere geri döner. Zarar, kamyonun yol kenarına (intima) girip orada kalmasıdır: giren partikül sayısı ve kalış süresi belirleyicidir.', 'Most cells make their own cholesterol; the LDL truck mostly returns to the liver. Harm comes when trucks enter the roadside (intima) and stay: particle number and exposure time decide.')
+    science: t('Çoğu periferik hücre gereksindiği kolesterolü kendisi sentezler; dolaşımdaki LDL partiküllerinin çoğu karaciğer LDL reseptörleri tarafından temizlenir. Aterogenez, apoB taşıyan partiküllerin subendotelyal alana (intima) girip proteoglikanlara tutunmasıyla (retansiyon) başlar: giren partikül sayısı ve temas süresi temel belirleyicidir.', 'Most peripheral cells synthesize their own cholesterol; most circulating LDL particles are cleared by hepatic LDL receptors. Atherogenesis begins when apoB-containing particles penetrate into the subendothelial intima and are retained by proteoglycans: particle flux and exposure duration are the primary drivers.')
   },
   {
-    id: 'lpa', apoB: 'B-100', inPost: true, color: '#b5179e',
+    id: 'lpa', apoB: 'B-100', inPost: true, color: '#c2255c',
     name: t('Lp(a)', 'Lp(a)'),
     size: '~25–30 nm', density: '1,05–1,12 g/mL',
     cargo: t('LDL benzeri çekirdek + okside fosfolipitler', 'LDL-like core + oxidized phospholipids'),
@@ -82,7 +82,7 @@ export const LIPOPROTEINS = [
     route: t('Karaciğerde üretilir; düzeyi büyük ölçüde (>%90) LPA geniyle belirlenir. Temizlenme yolu tam bilinmez.', 'Made in the liver; level is largely (>90%) set by the LPA gene. Clearance route is not fully known.'),
     atherogenic: t('Evet; genetik analizde partikül başına LDL’den yaklaşık 6 kat aterojenik (Björnson 2024). Aort darlığı ile de ilişkili.', 'Yes; per particle about 6-fold more atherogenic than LDL in a genetic analysis (Björnson 2024). Also linked to aortic stenosis.'),
     analogy: t('"Yapışkan tekerlekli LDL kamyonu": plak ve pıhtı eğilimi.', '"LDL truck with sticky wheels": plaque and clot tendency.'),
-    science: t('Benzetme iyi: apo(a) plazminojene benzer (antifibrinolitik olası etki), okside fosfolipitler inflamasyonu artırır. Erişkinlikte bir kez ölçülmesi önerilir (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) yüksek kabul edilir.', 'A good analogy: apo(a) resembles plasminogen (possible antifibrinolytic effect) and oxidized phospholipids drive inflammation. Measure once in adulthood (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) is high.')
+    science: t('Apo(a) yapısı plazminojene benzer (olası antifibrinolitik/protrombotik etki) ve okside fosfolipitler taşır (lokal vasküler inflamasyon). Erişkinlikte en az bir kez ölçülmesi önerilir (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) yüksek kabul edilir.', 'Apo(a) is homologous to plasminogen (potential antifibrinolytic/prothrombotic effect) and carries oxidized phospholipids (local vascular inflammation). Measuring at least once in adulthood is recommended (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) is considered high.')
   },
   {
     id: 'hdl', apoB: null, inPost: true, color: '#0ca678',
@@ -93,7 +93,7 @@ export const LIPOPROTEINS = [
     route: t('Lipitten fakir apoA-I, ABCA1 ile hücreden kolesterol alır (efflux) → LCAT esterler → karaciğere SR-BI ile verir veya CETP ile apoB partiküllerine aktarır.', 'Lipid-poor apoA-I takes cholesterol from cells via ABCA1 (efflux) → LCAT esterifies → delivers to liver via SR-BI or transfers it to apoB particles via CETP.'),
     atherogenic: t('Hayır; ama HDL-C’yi artırmak olay azaltmadı.', 'No; but raising HDL-C did not reduce events.'),
     analogy: t('"Geri dönüşüm kamyonu": dokulardan ve arterlerden artık kolesterolü toplar.', '"Recycling truck": collects leftover cholesterol from tissues and arteries.'),
-    science: t('Ters kolesterol taşınımı gerçektir, ama HDL-C kamyondaki yükü ölçer, kamyonun ne kadar iş yaptığını değil. Mendel randomizasyonu HDL-C’nin nedensel olmadığını gösterdi; çok yüksek HDL-C ile mortalite artabilir.', 'Reverse cholesterol transport is real, but HDL-C measures the load on the truck, not how much work it does. Mendelian randomization showed HDL-C is not causal; very high HDL-C may go with higher mortality.')
+    science: t('Ters kolesterol taşınımı biyolojik olarak gerçektir, ancak statik HDL-C düzeyi partikülün fonksiyonel kapasitesini doğrudan yansıtmaz. Mendel randomizasyon çalışmaları ve ilaç çalışmaları (niasin, CETP inhibitörleri) HDL-C yükseltilmesinin doğrudan koruyucu olmadığını gösterdi; aşırı yüksek HDL-C düzeyleri paradoksal olarak artmış mortalite ile ilişkili olabilir.', 'Reverse cholesterol transport is biologically real, but static HDL-C levels measure cholesterol content rather than particle functional flux. Mendelian randomization and pharmacological trials (niacin, CETP inhibitors) demonstrated that raising HDL-C does not causally reduce events; very high HDL-C levels may paradoxically associate with higher mortality.')
   }
 ];
 

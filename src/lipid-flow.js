@@ -28,8 +28,8 @@ export const LIPID_EFFECTS = {
 };
 const RECEPTOR_X = [540, 556, 572, 588, 604, 620];
 const STYLE = {
-  diet: ['#15aabf', 5.8], chylo: ['#009fb7', 10.5], hmg: ['#e67700', 5.8], bile: ['#5c940d', 6.4], pcsk9: ['#ae3ec9', 6], fa: ['#fd7e14', 5],
-  vldl: ['#6741d9', 11], idl: ['#f08c00', 8.8], ldl: ['#d92b2b', 7.2],
+  diet: ['#15aabf', 5.8], chylo: ['#00a2c7', 10.5], hmg: ['#e67700', 5.8], bile: ['#5c940d', 6.4], pcsk9: ['#ae3ec9', 6], fa: ['#fd7e14', 5],
+  vldl: ['#6339d6', 11], idl: ['#e67700', 8.8], ldl: ['#d92626', 7.2],
 };
 
 export const LIPID_SCENE = `<defs>
@@ -137,11 +137,11 @@ export const LIPID_SCENE = `<defs>
   <text x="526" y="122" class="lipidlab-small lipidlab-pool-label" data-lipid-label="pool"/>
   <text x="212" y="226" class="lipidlab-small" data-lipid-label="chylomicron"/><text x="30" y="404" class="lipidlab-organ-title" data-lipid-label="feces"/>
   <g class="lipidlab-legend" transform="translate(18 432)">
-    <circle cx="8" cy="8" r="5.5" fill="#009fb7" stroke="#fff" stroke-width="1.2"/><text x="18" y="12" class="lipidlab-small">CM</text>
+    <circle cx="8" cy="8" r="5.5" fill="#00a2c7" stroke="#fff" stroke-width="1.2"/><text x="18" y="12" class="lipidlab-small">CM</text>
     <circle cx="54" cy="8" r="5.5" fill="#5c940d" stroke="#fff" stroke-width="1.2"/><text x="64" y="12" class="lipidlab-small">BA</text>
-    <circle cx="98" cy="8" r="6" fill="#6741d9" stroke="#fff" stroke-width="1.2"/><text x="108" y="12" class="lipidlab-small">VLDL</text>
-    <circle cx="154" cy="8" r="5.5" fill="#f08c00" stroke="#fff" stroke-width="1.2"/><text x="164" y="12" class="lipidlab-small">IDL</text>
-    <circle cx="198" cy="8" r="5.5" fill="#d92b2b" stroke="#fff" stroke-width="1.2"/><text x="208" y="12" class="lipidlab-small">LDL</text>
+    <circle cx="98" cy="8" r="6" fill="#6339d6" stroke="#fff" stroke-width="1.2"/><text x="108" y="12" class="lipidlab-small">VLDL</text>
+    <circle cx="154" cy="8" r="5.5" fill="#e67700" stroke="#fff" stroke-width="1.2"/><text x="164" y="12" class="lipidlab-small">IDL</text>
+    <circle cx="198" cy="8" r="5.5" fill="#d92626" stroke="#fff" stroke-width="1.2"/><text x="208" y="12" class="lipidlab-small">LDL</text>
     <circle cx="246" cy="8" r="5" fill="#ae3ec9" stroke="#fff" stroke-width="1.2"/><text x="256" y="12" class="lipidlab-small">PCSK9</text>
   </g>
   <g class="lipidlab-plugs"></g>`;

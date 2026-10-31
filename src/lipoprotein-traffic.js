@@ -25,7 +25,7 @@ export function createLipoproteinTraffic({ mount, getLang }) {
   root.innerHTML = `<p class="lpt-eyebrow"></p><h2></h2><p class="lpt-intro"></p>
     <div class="lpt-layout"><div class="lpt-map"><svg viewBox="0 0 760 360" role="img" data-lpt-svg><title></title>${TRAFFIC_SCENE}</svg>
       <div class="lpt-chips" role="group"></div><button type="button" class="lpt-apob" data-lpt-apob aria-pressed="false"></button><p class="lpt-count" aria-live="polite"></p></div>
-      <article class="lpt-card" aria-live="polite"><h3></h3><dl></dl><div class="lpt-analogy"><h4></h4><p></p></div><div class="lpt-science"><h4></h4><p></p></div></article></div>
+      <article class="lpt-card" aria-live="polite"><h3></h3><dl></dl><div class="lpt-science"><h4></h4><p></p></div></article></div>
     <section class="lpt-anatomy" data-lpt-anatomy><h3></h3><p class="lpt-anatomy-intro"></p>
       <div class="lpt-anatomy-grid"><div class="lpt-section"></div><div class="lpt-anatomy-side"><h4 data-lpt-head="comp"></h4><div class="lpt-bar"></div><ul class="lpt-comp"></ul><h4 data-lpt-head="apos"></h4><ul class="lpt-apos"></ul></div></div>
       <h4 data-lpt-head="strip"></h4><div class="lpt-strip"></div><p class="lpt-strip-note"></p></section>
@@ -120,7 +120,6 @@ export function createLipoproteinTraffic({ mount, getLang }) {
       const dt = document.createElement('dt'), dd = document.createElement('dd');
       dt.textContent = term; dd.textContent = value; return [dt, dd];
     }));
-    $('.lpt-analogy h4').textContent = w.analogy; $('.lpt-analogy p').textContent = t(item.analogy);
     $('.lpt-science h4').textContent = w.science; $('.lpt-science p').textContent = t(item.science);
     renderAnatomy(item);
   }
