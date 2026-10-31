@@ -1,5 +1,7 @@
 /**
- * Chapter lab "Cell": the ventricular action potential of one cell (ecg-cell-model.js). Choose the
+ * Chapter lab "Cell". First the conduction system (ecg-cell-cascade.js): SA node, atrium, AV node,
+ * Purkinje and ventricle on one time axis with lead II and the ions of each phase. Then the
+ * ventricular action potential of one cell (ecg-cell-model.js). Choose the
  * cell (endocardial, M, epicardial), the pacing cycle length and two drug-like scales; read the
  * resting and peak voltage, upstroke velocity, APD50/APD90 and the diastolic interval; see the
  * restitution curve and where the QRS, ST segment and T wave fall on the action potential.
@@ -7,6 +9,7 @@
 import { paceCell, restitution } from './ecg-cell-model.js';
 import { recordElectrodes, trueLeads, INTERVALS } from './ecg-recording-model.js';
 import { fitCanvas, chartFrame, polyline, el, segmented } from './ecg-paper.js';
+import { createCellCascade } from './ecg-cell-cascade.js';
 
 const TEXT = {
   tr: {
@@ -37,6 +40,10 @@ export function createCellLab({ mount, getLang = () => 'tr', state = {} }) {
   const s = Object.assign(state, { cell: state.cell || 'epi', cl: state.cl || 1000, fi: state.fi ?? 100, so: state.so ?? 100 });
   const t = () => TEXT[getLang() === 'en' ? 'en' : 'tr'];
   const root = el('section', 'guyton-card ecgc-lab', { 'data-ecg-chapter': 'cell' });
+  // The conduction-system section stays mounted; only the ventricular part below is rebuilt.
+  const cascade = createCellCascade({ getLang, state: s.cascade ||= {} });
+  const vent = el('div', 'ecgc-vent', { 'data-cell-ventricle': '' });
+  root.append(cascade.element, vent);
   let frame = null, beat = null, ref = null, curve = null, ecg = null;
 
   function compute() {
@@ -55,7 +62,7 @@ export function createCellLab({ mount, getLang = () => 'tr', state = {} }) {
 
   function build() {
     const T = t();
-    root.replaceChildren();
+    vent.replaceChildren();
     const head = el('div', 'ecgc-head'); const h = el('h3'); h.textContent = T.title; head.append(h);
     const controls = el('div', 'ecgc-controls');
     const cellField = el('div', 'ecgc-field'); const cellLabel = el('span', 'ecgc-label'); cellLabel.textContent = T.cell;
@@ -70,7 +77,7 @@ export function createCellLab({ mount, getLang = () => 'tr', state = {} }) {
     const cur = el('canvas', 'ecgc-canvas ecgc-short', { 'data-cell-currents': '', role: 'img', 'aria-label': T.currents });
     side.append(rest, cur); grid.append(ap, side);
     const note = el('p', 'ecgc-note'); note.textContent = T.note;
-    root.append(head, controls, readouts, explain, grid, note);
+    vent.append(head, controls, readouts, explain, grid, note);
     compute(); draw();
   }
 
@@ -146,5 +153,5 @@ export function createCellLab({ mount, getLang = () => 'tr', state = {} }) {
   globalThis.addEventListener?.('resize', onResize);
   mount.append(root);
   build();
-  return { element: root, render: build, getBeat: () => beat, getCurve: () => curve, destroy() { globalThis.removeEventListener?.('resize', onResize); if (frame != null) globalThis.cancelAnimationFrame?.(frame); root.remove(); } };
+  return { element: root, render: () => { cascade.render(); build(); }, getCascade: () => cascade.getState(), getBeat: () => beat, getCurve: () => curve, destroy() { cascade.destroy(); globalThis.removeEventListener?.('resize', onResize); if (frame != null) globalThis.cancelAnimationFrame?.(frame); root.remove(); } };
 }

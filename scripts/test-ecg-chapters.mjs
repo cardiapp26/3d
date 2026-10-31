@@ -7,6 +7,8 @@ import { recordElectrodes, trueLeads, recordLeads, addArtifacts, beatMeasures, b
 import { atrialLobes, pMeasures, atrialCriteria, ventricleLobes, qrsVoltages, qrsAxis, hypertrophyCriteria } from '../src/ecg/ecg-structure-model.js';
 import { simulatePacing, pacedMeasures, renderStrip, NBG } from '../src/ecg/ecg-pacing-model.js';
 import { CLINICAL_CONDITIONS, sampleConditionLeadMv } from '../src/ecg/clinical-ecg-simulator.js';
+import { cascadeTiming, cellAt, cellMeasures, currentsAt, ecgRegionAt, CASCADE_CELLS } from '../src/ecg/ecg-conduction-cells.js';
+import { PHASES } from '../src/ecg/ecg-cell-cascade-text.js';
 import { bundleRefractory, avNode, prematureBeat, conductRun, outcomeMap, afRun, renderBeats, qrsWidth, aberrancyClues } from '../src/ecg/ecg-ashman-model.js';
 
 let passed = 0;
@@ -190,5 +192,51 @@ test('Ashman: aberrant shapes: rsR\u2032 in V1 with wide S in I for RBBB, QS in 
   const map = outcomeMap({ cycles: [600, 1400, 200], couplings: [260, 700, 20] });
   const flat = map.rows.flatMap(r => r.cells);
   for (const p of ['normal', 'rbbb', 'blocked-avn']) assert.ok(flat.includes(p), `map has ${p}`);
+});
+
+test('conduction cells: the SA node sets the rate; sympathetic tone speeds it, vagal tone and ivabradine slow it', () => {
+  const base = cascadeTiming(), sym = cascadeTiming({ tone: 1 }), vag = cascadeTiming({ tone: -1 }), ivab = cascadeTiming({ ivabradine: true });
+  near(base.rate, 72, 2, 'baseline rate');
+  assert.ok(sym.rate > base.rate + 30 && vag.rate < base.rate - 25, `rates ${sym.rate} / ${vag.rate}`);
+  assert.ok(ivab.rate < base.rate - 5 && ivab.rate > base.rate - 20, `ivabradine ${ivab.rate}`);
+  assert.ok(vag.pr > base.pr && sym.pr < base.pr, 'vagal tone lengthens and sympathetic tone shortens the PR');
+  assert.ok(sym.qt < base.qt && vag.qt > base.qt, 'QT follows the rate');
+  assert.equal(base.mdp, -60); assert.ok(vag.mdp < base.mdp, 'vagal tone lowers the maximum diastolic potential');
+});
+
+test('conduction cells: activation order on the ECG: SA before the P, atrium in the P, AV in the PR, Purkinje before the QRS, ventricle in the QRS', () => {
+  const k = cascadeTiming(), e = k.ecg, o = k.onsets;
+  assert.ok(o.sa < e.p && o.atrial >= e.p && o.atrial < e.pEnd, 'SA then atrium');
+  assert.ok(o.av > o.atrial && o.av < e.q, 'AV node during the PR');
+  assert.ok(o.purkinje < e.q && o.ventricle > e.q && o.ventricle < e.j, 'Purkinje just before the QRS, ventricle inside it');
+  assert.equal(ecgRegionAt(e.q + 10, k), 'QRS'); assert.equal(ecgRegionAt(e.j + 20, k), 'ST'); assert.equal(ecgRegionAt(e.pEnd + 10, k), 'PR');
+  // The ventricle is on its plateau during the ST and back near rest after the T.
+  assert.equal(cellAt('ventricle', e.j + 40, k).phase, 2);
+  assert.equal(cellAt('ventricle', e.tEnd + 20, k).phase, 4);
+});
+
+test('conduction cells: resting and peak voltages, durations and the pacemaker phase 4', () => {
+  const k = cascadeTiming(), m = Object.fromEntries(CASCADE_CELLS.map(c => [c, cellMeasures(c, k)]));
+  assert.equal(m.sa.rest, -60); assert.equal(m.sa.threshold, -40);
+  assert.ok(m.purkinje.rest <= -85 && m.ventricle.rest <= -84 && m.atrial.rest <= -79, 'working cells and Purkinje rest near −80 to −90 mV');
+  assert.ok(m.purkinje.apd > m.ventricle.apd && m.ventricle.apd > m.atrial.apd, 'Purkinje longest, atrium shortest');
+  assert.ok(m.sa.upstroke > 20 && m.av.upstroke > 20 && m.ventricle.upstroke < 5, 'nodal upstrokes are slow (calcium), working-cell upstrokes fast (sodium)');
+  // SA phase 4 rises steadily from the MDP to threshold.
+  const start = k.onsets.sa + k.up + k.rep, mid = cellAt('sa', start + 200, k).mv, late = cellAt('sa', start + 500, k).mv;
+  assert.ok(mid > -60 && late > mid && late < -40, `SA diastolic depolarization ${mid} -> ${late}`);
+  assert.equal(cellAt('sa', start + 200, k).phase, 4);
+});
+
+test('conduction cells: the channels open in the right phase', () => {
+  const k = cascadeTiming(), top = (cell, ms) => currentsAt(cell, ms, k)[0].id;
+  assert.equal(top('sa', k.onsets.sa + k.up + k.rep + 30), 'If', 'early SA phase 4: If');
+  assert.equal(top('sa', k.onsets.sa + 10), 'ICaL', 'SA phase 0: L-type calcium');
+  assert.equal(top('ventricle', k.onsets.ventricle + 1), 'INa', 'ventricular phase 0: sodium');
+  assert.ok(['ICaL', 'IKr', 'IKs'].includes(top('ventricle', k.onsets.ventricle + 120)), 'ventricular plateau: calcium in against potassium out');
+  assert.equal(top('purkinje', k.onsets.purkinje + 1), 'INa');
+  const vagal = cascadeTiming({ tone: -1 }), ach = currentsAt('sa', 400, vagal).find(c => c.id === 'IKACh');
+  assert.ok(ach.level > .8, 'vagal tone opens IKACh');
+  assert.equal(currentsAt('sa', 400, k).find(c => c.id === 'IKACh').level, 0, 'no IKACh without vagal tone');
+  for (const lang of ['tr', 'en']) for (const cell of CASCADE_CELLS) assert.ok(PHASES[lang][cell].length >= 3, `${lang} ${cell} phase table`);
 });
 console.log(`${passed} ECG chapter tests passed`);
