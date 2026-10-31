@@ -1091,7 +1091,8 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     mitralFocus=name==='mitral'&&mode==='anatomy';
     kochFocus=KOCH_VIEWS[name]!==undefined&&mode==='ablation';
     applyState();
-    if(mitralFocus){
+    // The scallop focus is an anatomy-mode lesson; other modes (the angiography studio) only fly the camera there.
+    if(name==='mitral'){
       const f=meshMap.get('mitral-annulus')?.[0]?.userData.frame;
       if(!f)return;
       lookTarget.copy(f.center);

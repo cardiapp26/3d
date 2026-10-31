@@ -17,6 +17,7 @@ import {
 
 import { createAngioAtlas } from './angio-atlas.js';
 import { createAngioDevice } from './angio-device.js';
+import { createAngioViewBar, VIEWBAR_PROJECTIONS } from './angio-viewbar.js';
 
 /**
  * Parses URL hash parameters (#a=-35&b=-45&sys=left)
@@ -132,6 +133,28 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       ${['veins', 'valves', 'conduction', 'vertebrae', 'diaphragm'].map(key => `<label><input type="checkbox" data-atlas-layer="${key}"><span data-atlas-layer-label="${key}"></span></label>`).join('')}
     </div>
     <p data-atlas-note></p><p data-atlas-selection role="status"></p>`;
+  // Atlas-style camera bar across both views, mounted before the atlas so it is part of the persistent element.
+  const viewBar = createAngioViewBar({
+    getLang,
+    onView(id) {
+      if (VIEWBAR_PROJECTIONS[id]) { setAngles(...VIEWBAR_PROJECTIONS[id], true, true); return; }
+      if (id === 'mitral') {
+        const valves = atlasElement.querySelector('[data-atlas-layer=valves]');
+        if (!valves.checked) { valves.checked = true; atlas?.setLayer('valves', true); }
+      }
+      if (atlas?.setAnatomyView(id)) viewBar.setActive(id);
+    },
+    onReset: () => setAngles(0, 0, true, true),
+    onCarm() {
+      const box = container.querySelector('.angio-carm-box');
+      if (!box) return;
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      box.classList.remove('is-flash'); void box.offsetWidth; box.classList.add('is-flash');
+    },
+    onFluoro: on => atlasElement.querySelector('.angio-atlas-pair').classList.toggle('is-solo', !on),
+    onSegmentation: on => atlas?.setSegmentation(on)
+  });
+  atlasElement.querySelector('.angio-atlas-pair').before(viewBar.element);
   const deviceElement = document.createElement('div');
   deviceElement.className = 'angio-device-viewport';
   deviceElement.dataset.angioDevice = '';
@@ -209,7 +232,9 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     const names = isTr ? { veins: 'Venler', valves: 'Kapaklar', conduction: 'İleti sistemi', vertebrae: 'Vertebra', diaphragm: 'Diyafram' }
       : { veins: 'Veins', valves: 'Valves', conduction: 'Conduction', vertebrae: 'Spine', diaphragm: 'Diaphragm' };
     atlasElement.querySelectorAll('[data-atlas-layer-label]').forEach(label => { label.textContent = names[label.dataset.atlasLayerLabel]; });
+    viewBar.render();
     atlas?.setAngles(state.alpha, state.beta);
+    if (!atlas?.getAnatomyView()) viewBar.syncAngles(state.alpha, state.beta);
     atlas?.setSystem(state.system);
     atlas?.setPlaying(state.cinePlaying);
     device?.setAngles(state.alpha, state.beta);
@@ -227,12 +252,14 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     ) || null;
   }
 
-  function setAngles(alpha, beta, updateUrl = true) {
+  /** fit: reframe the anatomy view and replace any anatomy-only camera (posterior, root, mitral). */
+  function setAngles(alpha, beta, updateUrl = true, fit = false) {
     state.alpha = Math.max(-90, Math.min(90, alpha));
     state.beta = Math.max(-45, Math.min(45, beta));
     if (updateUrl) updateHashParams(state.alpha, state.beta, state.system);
     syncAngleControls();
-    atlas?.setAngles(state.alpha, state.beta);
+    atlas?.setAngles(state.alpha, state.beta, fit);
+    if (!atlas?.getAnatomyView()) viewBar.syncAngles(state.alpha, state.beta);
     device?.setAngles(state.alpha, state.beta);
     renderCanvases();
   }
@@ -862,13 +889,14 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
     render: renderFull,
     setAngles,
     setSystem,
-    getAtlasState: () => ({ ...atlas?.getState(), device: device?.getState() }),
+    getAtlasState: () => ({ ...atlas?.getState(), device: device?.getState(), viewBar: viewBar.getState() }),
     getSchematicRegions: () => clickRegions.map(({ id, points, midPoint }) => ({ id, points, midPoint })),
     destroy() {
       if (rafId) cancelAnimationFrame(rafId);
       if (state.contrastTimer) clearInterval(state.contrastTimer);
       atlas?.dispose();
       device?.dispose();
+      viewBar.dispose();
       container.remove();
     }
   };

@@ -81,6 +81,34 @@ const assert = require('node:assert/strict');
         tip = await page.evaluate(() => { const t = document.querySelector('[data-atlas-viewport=anatomy] .angio-atlas-tip'); return t && !t.hidden ? t.textContent : null; });
       }
     assert.ok(tip, 'hover shows a structure name');
+    // Atlas camera bar over the anatomy view: C-arm presets move both views, anatomy-only cameras do not.
+    assert.equal(await page.locator('[data-angio-viewbar] [data-viewbar-view]').count(), 7, 'seven camera presets');
+    await page.locator('[data-viewbar-view=spider]').click();
+    for (const view of [(await state()).anatomy, (await state()).fluoro]) assert.deepEqual([view.angio.laoRao, view.angio.craCau], [45, -35], 'Spider drives both views');
+    assert.equal(await page.locator('[data-viewbar-view=spider]').getAttribute('aria-pressed'), 'true');
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press('p');
+    assert.equal((await state()).anatomyView, 'posterior');
+    await page.waitForTimeout(500);
+    const fluoroAngles = (await state()).fluoro.angio;
+    assert.deepEqual([fluoroAngles.laoRao, fluoroAngles.craCau], [45, -35], 'posterior camera leaves the C-arm alone');
+    assert.ok(Math.abs((await state()).anatomy.angio.laoRao) > 120, 'anatomy view turns to the back');
+    await page.keyboard.press('a');
+    assert.equal((await state()).anatomyView, null);
+    for (const view of [(await state()).anatomy, (await state()).fluoro]) assert.deepEqual([view.angio.laoRao, view.angio.craCau], [0, 0], 'Anterior re-attaches the anatomy view');
+    await page.locator('[data-viewbar-view=mitral]').click();
+    assert.equal((await state()).anatomyView, 'mitral');
+    assert.equal((await state()).anatomy.valves, true, 'mitral view shows the valves');
+    await page.keyboard.press('0');
+    assert.equal((await state()).anatomyView, null, 'reset returns to the C-arm view');
+    await page.keyboard.press('x');
+    assert.equal(await page.locator('.angio-fluoro-console').isVisible(), false, 'X hides the fluoroscopy panel');
+    await page.keyboard.press('x');
+    assert.equal(await page.locator('.angio-fluoro-console').isVisible(), true);
+    await page.keyboard.press('g');
+    assert.equal((await state()).anatomy.segmentation, true, 'G turns on segmentation colours');
+    assert.equal((await state()).fluoro.segmentation, false);
+    await page.keyboard.press('g');
     for (const width of [390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `no overflow ${width}`);

@@ -837,3 +837,21 @@
 .angio-physiology-cta-link:hover {
   background: #0369a1;
 }
+
+/* Atlas camera bar above the anatomy and fluoroscopy views (angio-viewbar.js), styled like the fluoroscopy console bar. */
+.angio-viewbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; margin-bottom: 10px; padding: 7px 8px; background: #171d26; border: 1px solid #263241; border-radius: 10px; }
+.angio-viewbar-presets, .angio-viewbar-tools { display: flex; flex-wrap: wrap; gap: 4px; }
+.angio-viewbar button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border: 1px solid #3a4656; border-radius: 7px; background: #1d2530; color: #cbd5e1; font: 600 12px Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
+.angio-viewbar button:hover { background: #283240; color: #fff; }
+.angio-viewbar button.active, .angio-viewbar button[aria-pressed=true] { color: #7dd3fc; border-color: #38bdf8; background: #16283a; }
+.angio-viewbar kbd { padding: 0 4px; border: 1px solid #3a4656; border-radius: 4px; background: #11161d; color: #94a3b8; font: 600 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.angio-seg-icon { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: conic-gradient(#d32f2f 0 25%, #f29e0b 0 50%, #0072b2 0 75%, #56b4e9 0); }
+.angio-atlas-pair.is-solo { grid-template-columns: 1fr; }
+.angio-atlas-pair.is-solo .angio-fluoro-console { display: none; }
+.angio-carm-box.is-flash { animation: angio-carm-flash 1.2s ease-out; }
+@keyframes angio-carm-flash { 0%, 40% { box-shadow: 0 0 0 3px #38bdf8; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (max-width: 600px) {
+  .angio-viewbar kbd { display: none; }
+  .angio-viewbar button { padding: 5px 7px; font-size: 11.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .angio-carm-box.is-flash { animation: none; } }
