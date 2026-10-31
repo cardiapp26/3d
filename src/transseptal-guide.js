@@ -28,6 +28,14 @@ function button(cls, text, data = {}) {
   return b;
 }
 const unique = list => [...new Set(list)];
+// Open or closed state of the guide card: a per-viewer convenience, closed by default.
+const OPEN_KEY = 'cardia_ts_guide_open';
+function readOpen() {
+  try { return localStorage.getItem(OPEN_KEY) === '1'; } catch { return false; }
+}
+function saveOpen(open) {
+  try { localStorage.setItem(OPEN_KEY, open ? '1' : '0'); } catch { /* private storage */ }
+}
 
 /**
  * @param {{ mount: HTMLElement, getLang?: () => string, onLessonStep?: (index: number) => void, onShowSite?: (key: string) => void }} options
@@ -35,7 +43,7 @@ const unique = list => [...new Set(list)];
 export function createTransseptalGuide({ mount, getLang = () => 'tr', onLessonStep = () => {}, onShowSite = () => {} }) {
   if (!mount) throw new Error('Transseptal guide needs a mount element');
   const state = {
-    tab: 'equipment', part: 'needle', needlePos: 'gap', hour: 4.5,
+    open: readOpen(), tab: 'equipment', part: 'needle', needlePos: 'gap', hour: 4.5,
     step: 0, view: 'lao', pull: 0, signs: [], site: 'pvi', quiz: { index: 0, picks: [] }
   };
   let active = false;
@@ -301,7 +309,14 @@ export function createTransseptalGuide({ mount, getLang = () => 'tr', onLessonSt
     root.replaceChildren();
     root.lang = lang();
     const head = el('header', 'tsg-head');
-    head.append(el('p', 'tsg-kicker', W.kicker), el('h4', 'tsg-title', W.title), el('p', 'tsg-intro', W.intro));
+    const toggle = button('tsg-toggle', '', { tsgToggle: '1' });
+    toggle.setAttribute('aria-expanded', String(state.open));
+    const label = el('span', 'tsg-toggle-text');
+    label.append(el('span', 'tsg-kicker', W.kicker), el('span', 'tsg-title', W.title));
+    toggle.append(label, el('span', 'tsg-toggle-icon', state.open ? '\u2212' : '+'));
+    head.append(toggle, el('p', 'tsg-intro', W.intro));
+    root.classList.toggle('closed', !state.open);
+    if (!state.open) { root.append(head); if (focusKey) root.querySelector(focusKey)?.focus(); return; }
     const tabs = el('div', 'tsg-tabs');
     tabs.setAttribute('role', 'tablist');
     tabs.setAttribute('aria-label', W.tabs);
@@ -325,7 +340,7 @@ export function createTransseptalGuide({ mount, getLang = () => 'tr', onLessonSt
   }
 
   function focusSignature(node) {
-    for (const key of ['tsgTab', 'needlePos', 'tsgView', 'tsgSite', 'stepGo', 'stepMove', 'tsgSign', 'tsgPart', 'quizPick']) {
+    for (const key of ['tsgToggle', 'tsgTab', 'needlePos', 'tsgView', 'tsgSite', 'stepGo', 'stepMove', 'tsgSign', 'tsgPart', 'quizPick']) {
       if (node.dataset?.[key] != null) return `[data-${key.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}="${node.dataset[key]}"]`;
     }
     if (node.dataset?.tsgHour != null) return '[data-tsg-hour]';
@@ -359,7 +374,8 @@ export function createTransseptalGuide({ mount, getLang = () => 'tr', onLessonSt
   });
   function handleAction(target) {
     const d = target.dataset;
-    if (d.tsgTab) { state.tab = d.tsgTab; render(); }
+    if (d.tsgToggle) { state.open = !state.open; saveOpen(state.open); render(); }
+    else if (d.tsgTab) { state.tab = d.tsgTab; render(); }
     else if (d.tsgPart) { state.part = d.tsgPart; render(); }
     else if (d.needlePos) { state.needlePos = d.needlePos; render(); }
     else if (d.stepMove) setStep(state.step + Number(d.stepMove));
