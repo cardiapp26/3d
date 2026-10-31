@@ -15,7 +15,7 @@ export const LIVE_TEXT = {
     run: 'Dondur', resume: 'Devam', speed: 'Tarama', review: 'Geri sar', calipers: 'Kaliper', waves: 'Dalga adları', ladder: 'Ladder diyagram', links: 'Kanalda ladder', linksTitle: 'Her aktivasyonun HRA, His, CS ve RV sinyallerini birleştirir; iletim çizgileri gizli olguda tanı verilince gösterilir.', ladderLocked: 'Gizli olguda tanı verilince gösterilir (mekanizmayı açık eder).', ladderLabel: 'Ladder diyagram: atriyum, AV düğüm ve ventrikül aktivasyonu ile iletim yolları',
     stim: 'Stimülatör', site: 'Uyarı yeri', s1: 'S1 (ms)', n: 'S1 sayısı', pace: 'Uyar (S1 + ekstra)', burst: 'Burst (yalnız S1)',
     pacePause: 'Uyar ve dondur', stop: 'Uyarıyı durdur', shock: 'Kardiyoversiyon',
-    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proksimal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', rv: 'RV apeks' },
+    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proksimal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', cti: 'CTI (ABL d)', rv: 'RV apeks' },
     step: 'Dekrement (ms)', limit: 'Alt sınır (ms)', rest: 'Dinlenme (s)', hr: 'Hız', perMin: 'dk',
     drugTitle: 'İlaçlar ve eğitmen', drugs: { iso: 'İzoproterenol', atropine: 'Atropin' }, coachEmpty: 'Bir dekrement protokolü çalıştırın ya da ilaç verin; bulgu ve sonraki adım burada yazılır.',
     caliperRead: (c) => (c.a == null ? 'Kaliper: ilk çizgi için şeride tıklayın.' : c.b == null ? 'Kaliper: ikinci çizgi için tıklayın.'
@@ -98,7 +98,27 @@ export const LIVE_TEXT = {
     sumErp: (x) => `AERP ${x.aerp ?? '< 200'} ms · AV nodal ERP ${x.avnErp ?? 'ölçülmedi'} ms${x.jump ? ` · AH sıçraması S2 ${x.jump}` : ''}${x.echo ? ` · echo S2 ${x.echo}${x.echoSequence ? ` (${ECHO_SEQUENCE.tr[x.echoSequence]})` : ''}` : ''}${x.induced ? ` · taşikardi S2 ${x.induced} (protokol durdu)` : ''}`,
     sumSnrt: (x) => `SNRT ${x.snrt ?? 'yok'} ms · düzeltilmiş SNRT ${x.csnrt ?? 'yok'} ms: ${x.abnormal ? 'uzun (> 550 ms), sinüs düğümü disfonksiyonu ile uyumlu' : 'normal (≤ 550 ms)'}.`,
     protocolRunning: 'Protokol sürüyor; oynatma hızını artırabilirsiniz.',
-    delivered: (txt) => `Verildi: ${txt}`, shocked: 'Senkronize DC şok verildi.', stopped: 'Uyarı durduruldu.', stoppedRhythm: (bpm) => `Uyarı durdu ama ritim sürüyor (~${bpm}/dk): pacing ile başlayan taşikardi kendi kendine devam eder. Sonlandırmak için hızlı pacing (burst, ATP) ya da kardiyoversiyon uygulayın.`
+    delivered: (txt) => `Verildi: ${txt}`, shocked: 'Senkronize DC şok verildi.', stopped: 'Uyarı durduruldu.', stoppedRhythm: (bpm) => `Uyarı durdu ama ritim sürüyor (~${bpm}/dk): pacing ile başlayan taşikardi kendi kendine devam eder. Sonlandırmak için hızlı pacing (burst, ATP) ya da kardiyoversiyon uygulayın.`,
+    circuitBtn: 'Halka (LAO)', circuitHint: 'Sağ atriyumu LAO açısından, triküspit halkaya karşıdan gösterir: flutter devresi ve DII aynı renklerle.',
+    circuit: {
+      title: 'Sağ atriyum, LAO: triküspit halka',
+      note: 'Şematik LAO görünümü. Dalga cephesinin zamanı His ve HRA elektrogramlarından okunur; F dalgasının her parçası cephenin o an bulunduğu bölümün rengindedir. CS sol atriyumu kaydeder.',
+      aria: 'Sağ atriyumun LAO şeması: triküspit halka çevresinde dalga cephesi',
+      traceAria: 'DII derivasyonu: F dalgası, flutter devresinin bölümlerine göre renkli',
+      traceLabel: 'DII · F dalgası renkli',
+      segments: { septum: 'Septum: aşağıdan yukarı (CS ağzından His\'e)', roof: 'Üst ön duvar: SVC\'nin önünden geçiş', lateral: 'Lateral duvar: yukarıdan aşağı', cti: 'CTI: yavaş iletim (istmus)' },
+      front: (seg) => `Dalga cephesi: ${seg}`,
+      noReentry: (origin) => (origin ? `Makro-reentri yok · son atriyal aktivasyon: ${origin}` : 'Makro-reentri yok'),
+      origins: { circuit: 'flutter devresi', sinus: 'sinüs düğümü', hra: 'HRA pacing', cti: 'CTI pacing (ABL d)', cs: 'CS (pacing ya da sol atriyum)', septal: 'septum (retrograd)', left: 'sol atriyum', af: 'AF (düzensiz dalgacıklar)', other: 'başka bir odak' },
+      replay: 'Son 2 döngüyü yavaş oynat', replayStop: 'Durdur',
+      entraining: (site, pcl) => `Entrainment, ${site}${pcl ? `, PCL ${pcl} ms` : ''}: ortodromik cephe (renkli) devreyi sürer, antidromik cephe (beyaz) önündeki dalgayla çarpışır.`,
+      entrainResult: (x) => `${x.siteName}: PPI ${x.ppi} ms, PPI−TCL ${x.ppiTcl} ms → ${x.verdict === 'inCircuit' ? 'devre içi' : 'devre dışı'}${{
+        concealed: '; gizli füzyon: F dalgası ve iç aktivasyon sırası flutter ile aynı (korunan istmus).',
+        manifest: '; manifest füzyon: pacing sırasında yüzey dalgası değişir (antidromik cephe devreden taşar).',
+        none: '; dalga devreye CS ağzından girer ve aynı yoldan döner.'
+      }[x.fusion] ?? '.'}`,
+      labels: { ta: 'TA', svc: 'SVC', ivc: 'IVC', kt: 'KT', es: 'ÖS', cs: 'CS', his: 'His', hra: 'HRA', abl: 'ABL', septal: 'Septal', lateral: 'Lateral', lao: 'LAO' }
+    },
   },
   en: {
     caseLabel: 'Substrate', hidden: '? Hidden case', surprise: 'Hidden case', diagnose: 'Diagnose', hints: 'Hints',
@@ -106,7 +126,7 @@ export const LIVE_TEXT = {
     run: 'Freeze', resume: 'Run', speed: 'Sweep', review: 'Review', calipers: 'Calipers', waves: 'Wave names', ladder: 'Ladder diagram', links: 'Ladder on channels', linksTitle: 'Joins the HRA, His, CS and RV signals of each activation; the conduction lines show once the hidden case is answered.', ladderLocked: 'Shown once the hidden case is answered (it names the mechanism).', ladderLabel: 'Ladder diagram: atrial, AV nodal and ventricular activation and the conduction routes',
     stim: 'Stimulator', site: 'Pacing site', s1: 'S1 (ms)', n: 'S1 count', pace: 'Pace (S1 + extras)', burst: 'Burst (S1 only)',
     pacePause: 'Pace and freeze', stop: 'Stop pacing', shock: 'Cardiovert',
-    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proximal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', rv: 'RV apex' },
+    sites: { hra: 'HRA', 'cs-prox': 'CS 9-10 (proximal)', 'cs-78': 'CS 7-8', 'cs-56': 'CS 5-6', 'cs-34': 'CS 3-4', 'cs-dist': 'CS 1-2 (distal)', cti: 'CTI (ABL d)', rv: 'RV apex' },
     step: 'Decrement (ms)', limit: 'Lower limit (ms)', rest: 'Rest (s)', hr: 'Rate', perMin: 'min',
     drugTitle: 'Drugs and coach', drugs: { iso: 'Isoproterenol', atropine: 'Atropine' }, coachEmpty: 'Run a decremental protocol or give a drug; the finding and the next step appear here.',
     caliperRead: (c) => (c.a == null ? 'Calipers: click the strip for the first line.' : c.b == null ? 'Calipers: click for the second line.'
@@ -188,7 +208,27 @@ export const LIVE_TEXT = {
     sumErp: (x) => `AERP ${x.aerp ?? '< 200'} ms · AV nodal ERP ${x.avnErp ?? 'not reached'} ms${x.jump ? ` · AH jump at S2 ${x.jump}` : ''}${x.echo ? ` · echo at S2 ${x.echo}${x.echoSequence ? ` (${ECHO_SEQUENCE.en[x.echoSequence]})` : ''}` : ''}${x.induced ? ` · tachycardia at S2 ${x.induced} (protocol stopped)` : ''}`,
     sumSnrt: (x) => `SNRT ${x.snrt ?? 'n/a'} ms · corrected SNRT ${x.csnrt ?? 'n/a'} ms: ${x.abnormal ? 'prolonged (> 550 ms), consistent with sinus node dysfunction' : 'normal (≤ 550 ms)'}.`,
     protocolRunning: 'Protocol running; you can raise the playback speed.',
-    delivered: (txt) => `Delivered: ${txt}`, shocked: 'Synchronized DC shock delivered.', stopped: 'Pacing stopped.', stoppedRhythm: (bpm) => `Pacing stopped but the rhythm continues (~${bpm}/min): a tachycardia started by pacing runs on by itself. Terminate it with rapid pacing (burst, ATP) or cardioversion.`
+    delivered: (txt) => `Delivered: ${txt}`, shocked: 'Synchronized DC shock delivered.', stopped: 'Pacing stopped.', stoppedRhythm: (bpm) => `Pacing stopped but the rhythm continues (~${bpm}/min): a tachycardia started by pacing runs on by itself. Terminate it with rapid pacing (burst, ATP) or cardioversion.`,
+    circuitBtn: 'Ring (LAO)', circuitHint: 'Shows the right atrium in LAO, en face on the tricuspid annulus: the flutter circuit and lead II in the same colours.',
+    circuit: {
+      title: 'Right atrium, LAO: tricuspid annulus',
+      note: 'Schematic LAO view. The front is timed from the His and HRA electrograms; each part of the F wave takes the colour of the limb the front is in at that moment. The CS records the left atrium.',
+      aria: 'LAO diagram of the right atrium: the wavefront around the tricuspid annulus',
+      traceAria: 'Lead II: the F wave coloured by the limbs of the flutter circuit',
+      traceLabel: 'II · F wave coloured',
+      segments: { septum: 'Septum: caudocranial (CS ostium to His)', roof: 'Anterior roof: across in front of the SVC', lateral: 'Lateral wall: craniocaudal', cti: 'CTI: slow conduction (isthmus)' },
+      front: (seg) => `Wavefront: ${seg}`,
+      noReentry: (origin) => (origin ? `No macro-reentry · latest atrial activation: ${origin}` : 'No macro-reentry'),
+      origins: { circuit: 'the flutter circuit', sinus: 'sinus node', hra: 'HRA pacing', cti: 'CTI pacing (ABL d)', cs: 'CS (pacing or left atrium)', septal: 'septum (retrograde)', left: 'left atrium', af: 'AF (disorganized wavelets)', other: 'another focus' },
+      replay: 'Replay the last 2 cycles slowly', replayStop: 'Stop',
+      entraining: (site, pcl) => `Entrainment, ${site}${pcl ? `, PCL ${pcl} ms` : ''}: the orthodromic front (coloured) drives the circuit, the antidromic one (white) collides with the wave ahead of it.`,
+      entrainResult: (x) => `${x.siteName}: PPI ${x.ppi} ms, PPI−TCL ${x.ppiTcl} ms → ${x.verdict === 'inCircuit' ? 'in the circuit' : 'outside the circuit'}${{
+        concealed: '; concealed fusion: the F wave and the intracardiac sequence equal the flutter (protected isthmus).',
+        manifest: '; manifest fusion: the surface wave changes during pacing (the antidromic front leaves the circuit).',
+        none: '; the wave joins the circuit at the CS ostium and comes back the same way.'
+      }[x.fusion] ?? '.'}`,
+      labels: { ta: 'TA', svc: 'SVC', ivc: 'IVC', kt: 'CT', es: 'ER', cs: 'CS', his: 'His', hra: 'HRA', abl: 'ABL', septal: 'Septal', lateral: 'Lateral', lao: 'LAO' }
+    },
   }
 };
 
@@ -231,8 +271,8 @@ export const LIVE_CASE_TEXT = {
     en: { name: 'Focal atrial tachycardia (left atrium)', hints: ['After an HRA burst ≤ 330 ms the focus fires: AT cycle ~380 ms.', 'Eccentric atrial activation: distal CS early, HRA late (left atrial focus).', 'The AV node is not in the circuit: variable VA. V overdrive, stopped once the atrium is entrained, gives a V-A-A-V response.', 'An automatic focus is not ended by cardioversion and fires again after the shock; focus ablation is needed.'] }
   },
   'flutter-cti': {
-    tr: { name: 'Tipik (CTI bağımlı) atriyal flutter', hints: ['Hızlı atriyal pacing (≤ 260 ms) tipik flutter başlatır: atriyal siklus 240 ms.', '2:1 AV iletim: ventrikül siklusu 480 ms; DII\'de negatif testere dişi F dalgaları.', 'Septum ve CS proksimalden distale önce, yüksek lateral RA siklusun ortasında (saat yönünün tersi).', 'CTI ablasyonu flutterı sonlandırır ve yeniden başlatılamaz kılar.', 'Atriyal overdrive (entrainment): CS proksimal ve lateral RA\'da PPI−TCL ≤ 30 ms (devre içi), CS distalde > 100 ms (devre dışı).'] },
-    en: { name: 'Typical (CTI-dependent) atrial flutter', hints: ['Rapid atrial pacing (≤ 260 ms) induces typical flutter: atrial cycle 240 ms.', '2:1 AV conduction: ventricular cycle 480 ms; negative saw-tooth F waves in II.', 'Septum and CS proximal to distal first, the high lateral RA mid-cycle (counterclockwise).', 'CTI ablation ends the flutter and makes it non-inducible.', 'Atrial overdrive (entrainment): PPI−TCL ≤ 30 ms at the proximal CS and lateral RA (in the circuit), > 100 ms at the distal CS (outside).'] }
+    tr: { name: 'Tipik (CTI bağımlı) atriyal flutter', hints: ['Hızlı atriyal pacing (≤ 260 ms) tipik flutter başlatır: atriyal siklus 240 ms.', '2:1 AV iletim: ventrikül siklusu 480 ms; DII\'de negatif testere dişi F dalgaları.', 'Septum ve CS proksimalden distale önce, yüksek lateral RA His\'ten yaklaşık 75 ms sonra, en son yavaş CTI (saat yönünün tersi); Halka (LAO) görünümü devreyi DII ile birlikte gösterir.', 'CTI ablasyonu flutterı sonlandırır ve yeniden başlatılamaz kılar.', 'Atriyal overdrive (entrainment): CS proksimal ve lateral RA\'da PPI−TCL ≤ 30 ms (devre içi), CS distalde > 100 ms (devre dışı).'] },
+    en: { name: 'Typical (CTI-dependent) atrial flutter', hints: ['Rapid atrial pacing (≤ 260 ms) induces typical flutter: atrial cycle 240 ms.', '2:1 AV conduction: ventricular cycle 480 ms; negative saw-tooth F waves in II.', 'Septum and CS proximal to distal first, the high lateral RA about 75 ms after the His, the slow CTI last (counterclockwise); the Ring (LAO) view shows the circuit with lead II.', 'CTI ablation ends the flutter and makes it non-inducible.', 'Atrial overdrive (entrainment): PPI−TCL ≤ 30 ms at the proximal CS and lateral RA (in the circuit), > 100 ms at the distal CS (outside).'] }
   },
   'va-block': {
     tr: { name: 'Retrograd VA blok', hints: ['RV pacing ve RV ekstrastimulusta retrograd A yok: VA dissosiyasyon, sinüs P dalgaları kendi hızında sürer.', 'VA iletim yokluğu AVNRT ve ortodromik AVRT olasılığını azaltır, dışlamaz.', 'İzoproterenol altında RV S1 500 ile 1:1 konsantrik VA (~145 ms) ortaya çıkar; daha kısa S2\'de VA blok.', 'Atropin bu modelde retrograd iletimi açmaya yetmez.'] },

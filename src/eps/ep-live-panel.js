@@ -26,6 +26,7 @@ import { CALIPER_SNAP_MS, SATURATION_MV, noCaliper, snapTime, placeCaliper, peak
 import { readFlag, writeFlag } from './view-prefs.js';
 import { buildLadder, drawLadder, LADDER_STYLE } from './ep-ladder.js';
 import { stripLinks, shiftLinks } from './ep-strip-links.js';
+import { createFlutterView } from './ep-flutter-view.js';
 
 const PX_PER_MM = 3.78;            // CSS pixels per millimetre (96 dpi)
 const STOP_CHECK_MS = 3000, INDUCED_RR_MS = 520;   // a rate above about 115/min 3 s after pacing stopped
@@ -52,7 +53,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const L = () => (getLang() === 'en' ? 'en' : 'tr');
   const T = () => LIVE_TEXT[L()];
   const caseText = (id) => LIVE_CASE_TEXT[id][L()];
-  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '', waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links'),
+  const state = { caseId: 'avnrt-typical', active: false, running: true, speed: 25, rate: 1, back: 0, frozenAt: null, pauseAt: null, caliperOn: false, caliper: noCaliper(), status: '', waves: readFlag('waves'), ladder: readFlag('ladder'), links: readFlag('links'), circuit: false,
     hidden: false, quizOpen: false, answer: null, showHints: false, rfOn: false, rfTarget: 'slow-pathway', lesion: '',
     maneuver: null, maneuverText: '', protocol: null, protocolKind: 'avbcl', protocolRows: [], protocolSummary: '',
     prog: null, progRows: [], progSummary: null, cont: null, gains: {}, gainCh: 'all', caliperCh: null, drugs: noDrugs(), coach: [] };
@@ -84,9 +85,10 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const wavesBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-waves': '' });
   const ladderBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-ladder': '' });
   const linksBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-links': '' });
+  const circuitBtn = el('button', 'ep-size', { type: 'button', 'data-ep-live-circuit': '' });
   const pageBtns = ['first', 'prev', 'next', 'last'].map((dir) => el('button', '', { type: 'button', 'data-ep-live-page': dir }));
   const pageAt = el('span', 'ep-live-page-at', { 'data-ep-live-page-at': '' });
-  bar.append(runBtn, speedSel, rateSel, pageBtns[0], pageBtns[1], review, pageBtns[2], pageBtns[3], pageAt, calBtn, wavesBtn, ladderBtn, linksBtn);
+  bar.append(runBtn, speedSel, rateSel, pageBtns[0], pageBtns[1], review, pageBtns[2], pageBtns[3], pageAt, calBtn, wavesBtn, ladderBtn, linksBtn, circuitBtn);
   // Display gain of one channel (or all), as the amplitude keys of a recording system.
   const tools = el('div', 'ep-view ep-live-tools');
   const gainLabel = el('span');
@@ -158,9 +160,11 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   // Workstation layout: the monitor fills the screen; case, stimulator,
   // maneuvers, protocols and RF sit in the console beside it.
   const monitor = el('div', 'ep-live-monitor');
+  // LAO view of the right atrium: the flutter circuit with lead II in the same colours.
+  const circuitView = createFlutterView(doc, { text: () => ({ ...T().circuit, sites: T().sites }) });
   monitor.append(bar, tools, canvas, ladderCanvas, readout, info);
   const deck = el('aside', 'ep-live-console');
-  deck.append(caseRow, caseBar, quiz, hintsBox, stimBox, drugBox, manBox, protoBox, ablBox);
+  deck.append(caseRow, caseBar, circuitView.element, quiz, hintsBox, stimBox, drugBox, manBox, protoBox, ablBox);
   root.append(monitor, deck);
 
   const spanMs = () => {
@@ -448,6 +452,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   wavesBtn.addEventListener('click', () => { state.waves = !state.waves; writeFlag('waves', state.waves); render(); });
   ladderBtn.addEventListener('click', () => { state.ladder = !state.ladder; writeFlag('ladder', state.ladder); render(); });
   linksBtn.addEventListener('click', () => { state.links = !state.links; writeFlag('links', state.links); render(); });
+  circuitBtn.addEventListener('click', () => { state.circuit = !state.circuit; render(); });
   caseSelect.addEventListener('change', () => { if (LIVE_CASES[caseSelect.value]) setCase(caseSelect.value); });
   surpriseBtn.addEventListener('click', () => {
     const ids = Object.keys(LIVE_CASES).filter((id) => id !== state.caseId);
@@ -551,6 +556,9 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     ladderCanvas.hidden = !ladderOn;
     // Built on the absolute event times (a His names its junctional A by absolute time).
     if (ladderOn && drawn) drawLadder(ladderCanvas, ladder, { ...drawn, from: drawn.from + from, to: drawn.to + from }, { lang: L() });
+    // The circuit view names the mechanism too: hidden until a hidden case is answered.
+    circuitView.element.hidden = !state.circuit || locked;
+    if (!circuitView.element.hidden) circuitView.update({ events: heart.events(end - 10000, end + 1), t: end, running: state.running, tcl: heart.param('flutter.tcl'), ppiExtra: heart.param('flutter.ppiExtra') });
     const iv = liveIntervals(heart.events(end - 2500, end));
     const t = T(), f = (v) => (v == null ? t.none : `${v} ms`);
     const rr = iv.rr ?? iv.pp;
@@ -682,6 +690,11 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     linksBtn.textContent = t.links;
     linksBtn.title = t.linksTitle;
     linksBtn.setAttribute('aria-pressed', String(state.links));
+    circuitBtn.textContent = t.circuitBtn;
+    circuitBtn.disabled = state.hidden && !state.answer;
+    circuitBtn.title = circuitBtn.disabled ? t.ladderLocked : t.circuitHint;
+    circuitBtn.setAttribute('aria-pressed', String(state.circuit && !circuitBtn.disabled));
+    circuitView.render();
     stimTitle.textContent = t.stim;
     for (const [span, key] of fieldLabels) span.textContent = t[key] || key;
     paceBtn.textContent = t.pace; burstBtn.textContent = t.burst; pausePaceBtn.textContent = t.pacePause; stopBtn.textContent = t.stop; shockBtn.textContent = t.shock;
@@ -725,6 +738,8 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
     },
     maneuverText: () => state.maneuverText,
     protocol: () => ({ running: Boolean(state.protocol), rows: state.protocolRows.slice(), summary: state.protocolSummary }),
+    circuit: () => circuitView.state(),
+    replayCircuit: () => circuitView.replayNow(),
     coach: () => ({ drugs: { ...state.drugs }, notes: state.coach.map((n) => ({ ...n })), sinusCl: heart.param('sinusCl') }),
     programmed: () => ({ running: Boolean(state.prog), rows: markJumps(state.progRows), summary: state.progSummary, continuous: state.cont ? { ...state.cont } : null }),
     getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper, ch: state.caliperCh, amp: caliperAmp() } : null, waves: state.waves, ladder: state.ladder, links: state.links,
