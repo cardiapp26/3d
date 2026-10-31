@@ -2,7 +2,8 @@
 // where it holds and corrected where it does not. Three parts: an animated particle map with a
 // particle card, a profile lab (presets, inputs, lifestyle and drug levers → lab values and apoB
 // particles), and a claim-by-claim check of the post.
-import { LIPOPROTEINS, LIPID_PRESETS, LIPID_LEVERS, POST_CLAIMS, LIPOPROTEIN_SOURCES } from './lipoprotein-traffic-data.js';
+import { LIPOPROTEINS, LIPID_PRESETS, LIPID_LEVERS, POST_CLAIMS, LIPOPROTEIN_SOURCES, LIPID_COMPONENTS, APOLIPOPROTEINS, PARTICLE_ANATOMY } from './lipoprotein-traffic-data.js';
+import { particleSection, compositionBar, sizeStrip } from './lipoprotein-particle.js';
 import { lipidScenario, trafficRates } from './lipoprotein-traffic-model.js';
 import { TRAFFIC_SCENE, createTrafficScene } from './lipoprotein-traffic-scene.js';
 import { LPT_WORDS } from './lipoprotein-traffic-text.js';
@@ -25,6 +26,9 @@ export function createLipoproteinTraffic({ mount, getLang }) {
     <div class="lpt-layout"><div class="lpt-map"><svg viewBox="0 0 760 360" role="img" data-lpt-svg><title></title>${TRAFFIC_SCENE}</svg>
       <div class="lpt-chips" role="group"></div><button type="button" class="lpt-apob" data-lpt-apob aria-pressed="false"></button><p class="lpt-count" aria-live="polite"></p></div>
       <article class="lpt-card" aria-live="polite"><h3></h3><dl></dl><div class="lpt-analogy"><h4></h4><p></p></div><div class="lpt-science"><h4></h4><p></p></div></article></div>
+    <section class="lpt-anatomy" data-lpt-anatomy><h3></h3><p class="lpt-anatomy-intro"></p>
+      <div class="lpt-anatomy-grid"><div class="lpt-section"></div><div class="lpt-anatomy-side"><h4 data-lpt-head="comp"></h4><div class="lpt-bar"></div><ul class="lpt-comp"></ul><h4 data-lpt-head="apos"></h4><ul class="lpt-apos"></ul></div></div>
+      <h4 data-lpt-head="strip"></h4><div class="lpt-strip"></div><p class="lpt-strip-note"></p></section>
     <section class="lpt-lab"><h3></h3><p class="lpt-lab-intro"></p><div class="lpt-presets" role="group"></div><div class="lpt-inputs"></div>
       <div class="lpt-levers"><fieldset data-lever-group="lifestyle"><legend></legend></fieldset><fieldset data-lever-group="drug"><legend></legend></fieldset></div>
       <p class="lpt-error" role="alert" hidden></p>
@@ -118,6 +122,38 @@ export function createLipoproteinTraffic({ mount, getLang }) {
     }));
     $('.lpt-analogy h4').textContent = w.analogy; $('.lpt-analogy p').textContent = t(item.analogy);
     $('.lpt-science h4').textContent = w.science; $('.lpt-science p').textContent = t(item.science);
+    renderAnatomy(item);
+  }
+
+  /** Particle anatomy of the selected class: cross-section, composition, apolipoproteins, sizes to scale. */
+  function renderAnatomy(item) {
+    const w = W(), anatomy = PARTICLE_ANATOMY[item.id];
+    $('.lpt-anatomy h3').textContent = w.anatomyTitle(t(item.name));
+    $('.lpt-anatomy-intro').textContent = w.anatomyIntro;
+    $('.lpt-section').innerHTML = particleSection(item.id, { title: w.sectionTitle(t(item.name)) });
+    $('[data-lpt-head=comp]').textContent = w.compTitle;
+    $('.lpt-bar').innerHTML = compositionBar(item.id);
+    $('.lpt-comp').replaceChildren(...LIPID_COMPONENTS.map(part => {
+      const li = document.createElement('li');
+      li.style.setProperty('--lpt-dot', part.color);
+      li.dataset.lptComp = part.id;
+      const n = anatomy.composition[part.id];
+      li.textContent = `${t(part.name)}: ${lang() === 'en' ? `~${n}%` : `~%${n}`}`;
+      return li;
+    }));
+    $('[data-lpt-head=apos]').textContent = w.aposTitle;
+    $('.lpt-apos').replaceChildren(...anatomy.apos.map(([id, n]) => {
+      const apo = APOLIPOPROTEINS.find(value => value.id === id);
+      const li = document.createElement('li'), strong = document.createElement('strong');
+      li.style.setProperty('--lpt-dot', apo.color);
+      li.dataset.lptApo = id;
+      strong.textContent = `${apo.name} ${w.apoCount(id, n)}: `;
+      li.append(strong, t(apo.role));
+      return li;
+    }));
+    $('[data-lpt-head=strip]').textContent = w.stripTitle;
+    $('.lpt-strip').innerHTML = sizeStrip(item.id, { title: w.stripAria, name: entry => t(entry.name).split(' ')[0] });
+    $('.lpt-strip-note').textContent = w.stripNote(t(item.name), anatomy.range, anatomy.diameter);
   }
 
   function renderLab() {
