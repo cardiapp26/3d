@@ -30,7 +30,7 @@ export const LIPOPROTEIN_SOURCES = [
 /** Lipoprotein classes. Sizes and densities are textbook ranges; `apoB` marks one apoB per particle. */
 export const LIPOPROTEINS = [
   {
-    id: 'chylomicron', apoB: 'B-48', inPost: false, color: '#f0d68e',
+    id: 'chylomicron', apoB: 'B-48', inPost: false, color: '#f2b705',
     name: t('Şilomikron', 'Chylomicron'),
     size: '75–1200 nm', density: '< 0,95 g/mL',
     cargo: t('Diyet trigliseridi (~%85–90)', 'Dietary triglyceride (~85–90%)'),
@@ -41,7 +41,7 @@ export const LIPOPROTEINS = [
     science: t('Tokluk lipidinin taşıyıcısıdır. ApoB-48 taşır; ApoB ölçümü bu partikülleri de sayar, ancak açlıkta sayıları azdır.', 'Carrier of postprandial fat. It carries apoB-48; an apoB assay counts these too, but they are few in the fasting state.')
   },
   {
-    id: 'vldl', apoB: 'B-100', inPost: true, color: '#b8923c',
+    id: 'vldl', apoB: 'B-100', inPost: true, color: '#8e44d8',
     name: t('VLDL', 'VLDL'),
     size: '30–80 nm', density: '0,95–1,006 g/mL',
     cargo: t('Endojen trigliserid (~%50–60)', 'Endogenous triglyceride (~50–60%)'),
@@ -52,7 +52,7 @@ export const LIPOPROTEINS = [
     science: t('Benzetme yarım kalır: VLDL yükünü boşalttıkça küçülür, IDL ve sonra LDL olur. Yani LDL kamyonu çoğunlukla boşalmış VLDL kamyonudur.', 'The analogy stops half way: as VLDL unloads it shrinks into IDL and then LDL. The LDL truck is mostly an emptied VLDL truck.')
   },
   {
-    id: 'idl', apoB: 'B-100', inPost: false, color: '#d6a73e',
+    id: 'idl', apoB: 'B-100', inPost: false, color: '#c27be8',
     name: t('IDL (VLDL kalıntısı)', 'IDL (VLDL remnant)'),
     size: '25–35 nm', density: '1,006–1,019 g/mL',
     cargo: t('TG ve kolesterol esteri karışık', 'Mixed TG and cholesteryl ester'),
@@ -63,7 +63,7 @@ export const LIPOPROTEINS = [
     science: t('Remnant (kalıntı) kolesterol, LDL-C dışında kalan aterojenik kolesterolün önemli kısmıdır; non-HDL-C bunu da içerir.', 'Remnant cholesterol is a large part of the atherogenic cholesterol outside LDL-C; non-HDL-C includes it.')
   },
   {
-    id: 'ldl', apoB: 'B-100', inPost: true, color: '#e2741e',
+    id: 'ldl', apoB: 'B-100', inPost: true, color: '#ff6a00',
     name: t('LDL', 'LDL'),
     size: '18–25 nm', density: '1,019–1,063 g/mL',
     cargo: t('Kolesterol esteri (ana yük)', 'Cholesteryl ester (main load)'),
@@ -74,7 +74,7 @@ export const LIPOPROTEINS = [
     science: t('Çoğu hücre kolesterolünü kendisi sentezler; LDL kamyonu çoğunlukla karaciğere geri döner. Zarar, kamyonun yol kenarına (intima) girip orada kalmasıdır: giren partikül sayısı ve kalış süresi belirleyicidir.', 'Most cells make their own cholesterol; the LDL truck mostly returns to the liver. Harm comes when trucks enter the roadside (intima) and stay: particle number and exposure time decide.')
   },
   {
-    id: 'lpa', apoB: 'B-100', inPost: true, color: '#c2463c',
+    id: 'lpa', apoB: 'B-100', inPost: true, color: '#d7263d',
     name: t('Lp(a)', 'Lp(a)'),
     size: '~25–30 nm', density: '1,05–1,12 g/mL',
     cargo: t('LDL benzeri çekirdek + okside fosfolipitler', 'LDL-like core + oxidized phospholipids'),
@@ -85,7 +85,7 @@ export const LIPOPROTEINS = [
     science: t('Benzetme iyi: apo(a) plazminojene benzer (antifibrinolitik olası etki), okside fosfolipitler inflamasyonu artırır. Erişkinlikte bir kez ölçülmesi önerilir (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) yüksek kabul edilir.', 'A good analogy: apo(a) resembles plasminogen (possible antifibrinolytic effect) and oxidized phospholipids drive inflammation. Measure once in adulthood (EAS 2022); ≥125 nmol/L (~≥50 mg/dL) is high.')
   },
   {
-    id: 'hdl', apoB: null, inPost: true, color: '#3f9a63',
+    id: 'hdl', apoB: null, inPost: true, color: '#14a35a',
     name: t('HDL', 'HDL'),
     size: '5–12 nm', density: '1,063–1,21 g/mL',
     cargo: t('Protein (~%50), fosfolipit, kolesterol', 'Protein (~50%), phospholipid, cholesterol'),
@@ -96,6 +96,40 @@ export const LIPOPROTEINS = [
     science: t('Ters kolesterol taşınımı gerçektir, ama HDL-C kamyondaki yükü ölçer, kamyonun ne kadar iş yaptığını değil. Mendel randomizasyonu HDL-C’nin nedensel olmadığını gösterdi; çok yüksek HDL-C ile mortalite artabilir.', 'Reverse cholesterol transport is real, but HDL-C measures the load on the truck, not how much work it does. Mendelian randomization showed HDL-C is not causal; very high HDL-C may go with higher mortality.')
   }
 ];
+
+/** Components of a lipoprotein, with their colours in the particle drawings. */
+export const LIPID_COMPONENTS = [
+  { id: 'tg', color: '#f5c518', name: t('Trigliserid (çekirdek)', 'Triglyceride (core)') },
+  { id: 'ce', color: '#ff8a1c', name: t('Kolesterol esteri (çekirdek)', 'Cholesteryl ester (core)') },
+  { id: 'pl', color: '#5aa9e6', name: t('Fosfolipit (yüzey)', 'Phospholipid (surface)') },
+  { id: 'fc', color: '#6b3f1f', name: t('Serbest kolesterol (yüzey)', 'Free cholesterol (surface)') },
+  { id: 'protein', color: '#7c8db5', name: t('Protein (apolipoproteinler)', 'Protein (apolipoproteins)') }
+];
+
+/** Apolipoproteins drawn on the particles: colour and role. */
+export const APOLIPOPROTEINS = [
+  { id: 'apoB100', color: '#1f4fd1', name: 'apoB-100', role: t('Karaciğer kaynaklı yapısal protein; partikül başına bir tane, LDL reseptörünün ligandı. ApoB ölçümü bu partikülleri sayar.', 'Liver-made structural protein; one per particle, the ligand of the LDL receptor. An apoB assay counts these particles.') },
+  { id: 'apoB48', color: '#5f86f0', name: 'apoB-48', role: t('Bağırsak formu: aynı genin ilk %48’i (mRNA düzenlemesi). LDL reseptörüne bağlanmaz; partikül başına bir tane.', 'Intestinal form: the first 48% of the same gene (mRNA editing). Does not bind the LDL receptor; one per particle.') },
+  { id: 'apoA1', color: '#14a35a', name: 'apoA-I', role: t('HDL’nin ana proteini: ABCA1 ile hücreden kolesterol alır, LCAT’ı etkinleştirir. Partikülü kemer gibi sarar.', 'Main HDL protein: takes cholesterol from cells via ABCA1 and activates LCAT. Wraps the particle like a belt.') },
+  { id: 'apoA2', color: '#7cc89a', name: 'apoA-II', role: t('HDL’de ikinci protein; işlevi daha az belirgin.', 'Second HDL protein; its function is less clear.') },
+  { id: 'apoC', color: '#e69500', name: 'apoC-II / C-III', role: t('C-II LPL’yi etkinleştirir (TG boşalır); C-III LPL’yi ve kalıntı alımını yavaşlatır.', 'C-II activates LPL (TG is unloaded); C-III slows LPL and remnant uptake.') },
+  { id: 'apoE', color: '#d4479a', name: 'apoE', role: t('Kalıntıların karaciğere alınmasını sağlar (LDL reseptörü, LRP1). HDL’den kazanılır.', 'Lets remnants be taken up by the liver (LDL receptor, LRP1). Picked up from HDL.') },
+  { id: 'apoa', color: '#d7263d', name: 'apo(a)', role: t('Plazminojene benzeyen kringle zinciri; apoB-100’e tek disülfid bağıyla bağlıdır. Kringle sayısı (izoform) kişiye göre değişir.', 'A plasminogen-like chain of kringles, joined to apoB-100 by one disulfide bond. The number of kringles (isoform) varies between people.') }
+];
+
+/**
+ * Particle anatomy: a typical diameter (nm) for the drawings and its range, approximate weight %
+ * of the components (textbook ranges rounded; they vary with the source and the subclass), and the
+ * apolipoproteins with a teaching count per particle.
+ */
+export const PARTICLE_ANATOMY = {
+  chylomicron: { diameter: 200, range: [75, 1200], composition: { tg: 86, ce: 3, pl: 7, fc: 2, protein: 2 }, apos: [['apoB48', 1], ['apoC', 4], ['apoE', 2], ['apoA1', 2]] },
+  vldl: { diameter: 50, range: [30, 80], composition: { tg: 55, ce: 12, pl: 18, fc: 7, protein: 8 }, apos: [['apoB100', 1], ['apoC', 4], ['apoE', 2]] },
+  idl: { diameter: 30, range: [25, 35], composition: { tg: 30, ce: 30, pl: 20, fc: 8, protein: 12 }, apos: [['apoB100', 1], ['apoE', 2], ['apoC', 1]] },
+  ldl: { diameter: 22, range: [18, 25], composition: { tg: 6, ce: 42, pl: 22, fc: 8, protein: 22 }, apos: [['apoB100', 1]] },
+  lpa: { diameter: 27, range: [25, 30], composition: { tg: 4, ce: 36, pl: 20, fc: 9, protein: 31 }, apos: [['apoB100', 1], ['apoa', 1]] },
+  hdl: { diameter: 9, range: [5, 12], composition: { tg: 4, ce: 18, pl: 25, fc: 5, protein: 48 }, apos: [['apoA1', 3], ['apoA2', 1]] }
+};
 
 /** Starting profiles (mg/dL; Lp(a) nmol/L). Teaching archetypes, not patients. */
 export const LIPID_PRESETS = [

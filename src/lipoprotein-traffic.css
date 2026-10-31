@@ -14,11 +14,11 @@
 .lpt svg .lpt-small{font-size:12px;fill:#6b7d73}
 .lpt-tag rect{fill:#e8f4ea;stroke:#769c87;stroke-width:1.5}
 .lpt-tag text{font-size:11px !important;font-weight:700}
-.lpt-route{fill:none;stroke:#c9d8cf;stroke-width:1.2;stroke-dasharray:3 5}
+.lpt-route{fill:none;stroke:#b9cfc2;stroke-width:1.2;stroke-dasharray:3 5}
 .lpt-endothelium{stroke:#b5786d;stroke-width:2;stroke-dasharray:10 4}
-.lpt-particles circle{stroke:rgba(255,255,255,.75);stroke-width:1;transition:opacity .25s}
+.lpt-particles circle{stroke:rgba(255,255,255,.9);stroke-width:1.2;transition:opacity .25s}
 .lpt-retained circle{opacity:.85;stroke:#7b3a2c;stroke-width:.8}
-.lpt svg[data-focus] .lpt-particles circle{opacity:.28}
+.lpt svg[data-focus] .lpt-particles circle{opacity:.55}
 .lpt svg[data-focus=chylomicron] .lpt-particles [data-kind=chylomicron],
 .lpt svg[data-focus=vldl] .lpt-particles [data-kind=vldl],
 .lpt svg[data-focus=idl] .lpt-particles [data-kind=idl],
@@ -28,6 +28,8 @@
 .lpt svg.is-apob .lpt-particles circle.is-apob{opacity:1;stroke:#1f3f8f;stroke-width:2.2}
 .lpt svg.is-apob .lpt-particles [data-kind=hdl]{opacity:.12}
 .lpt-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
+.lpt-chips button{border-color:var(--lpt-dot);background:color-mix(in srgb,var(--lpt-dot) 14%,#fff)}
+.lpt-chips button[aria-pressed=true]{background:var(--lpt-dot);color:#fff;border-color:var(--lpt-dot);text-shadow:0 1px 1px rgba(0,0,0,.35)}
 .lpt-chips button::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:var(--lpt-dot)}
 .lpt-apob{border-color:#7f95c9 !important}
 .lpt-apob[aria-pressed=true]{background:#1f3f8f !important}
@@ -70,5 +72,22 @@
 .lpt-sources{font-size:12px;line-height:1.7;border-top:1px solid #cdded1;padding-top:14px}
 .lpt-sources summary{cursor:pointer;font-weight:700}
 .lpt a{color:#287264;overflow-wrap:anywhere}
+.lpt svg text.lpt-on-dark{fill:#fff;font-weight:700}
+.lpt-anatomy{margin-top:22px;padding-top:16px;border-top:1px solid #cdded1}
+.lpt-anatomy-intro,.lpt-strip-note{color:#61766b}
+.lpt-anatomy-grid{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:20px;align-items:start}
+.lpt-section svg{max-width:260px;margin:0 auto}
+.lpt .lpt-section .lpp-ss{font:700 10px system-ui;fill:#d7263d}
+.lpt-bar svg{width:100%;height:16px;border-radius:6px;overflow:hidden;display:block}
+.lpt-comp,.lpt-apos{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:3px}
+.lpt-comp{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.lpt-comp li,.lpt-apos li{position:relative;padding-left:18px}
+.lpt-comp li::before,.lpt-apos li::before{content:"";position:absolute;left:0;top:.45em;width:11px;height:11px;border-radius:3px;background:var(--lpt-dot)}
+.lpt-strip{overflow-x:auto}
+.lpt .lpt-strip svg{width:auto;max-width:100%;height:auto}
+.lpt .lpt-strip svg text{font:12px system-ui;fill:#354e44}
+.lpt .lpt-strip .is-on text{font-weight:700}
+.lpt .lpt-strip svg text.lpp-nm{fill:#61766b;font-size:11px}
 @media(max-width:950px){.lpt-layout{grid-template-columns:1fr}.lpt-levers{grid-template-columns:1fr}}
+@media(max-width:640px){.lpt-anatomy-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.lpt{padding:14px}.lpt h2{font-size:22px}.lpt-inputs{grid-template-columns:repeat(2,minmax(0,1fr))}}

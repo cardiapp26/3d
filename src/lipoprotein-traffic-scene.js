@@ -2,6 +2,8 @@
 // Particles follow fixed routes; spawn rates come from trafficRates() so the road fills or empties
 // with the lab profile. apoB particles that enter the intima stay there for a while (retention).
 // Qualitative teaching animation: no kinetics, sizes not to scale.
+import { LIPOPROTEINS } from './lipoprotein-traffic-data.js';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const WALL_X = [170, 330, 520];
 const ROUTES = {
@@ -11,27 +13,28 @@ const ROUTES = {
   hdl: 'M452 112C480 170 500 240 520 300C540 318 566 312 576 290C600 240 600 200 560 160C530 130 490 120 462 114',
   ...Object.fromEntries(WALL_X.map((x, i) => [`wall${i}`, `M24 246L${x} 246C${x + 20} 252 ${x + 24} 272 ${x + 18} 300`]))
 };
-/** Kind → [fill, radius]. */
+/** Kind → [fill, radius]; class colours from the data, the remnant and loaded HDL as lighter shades. */
+const tone = id => LIPOPROTEINS.find(item => item.id === id).color;
 const LOOK = {
-  chylomicron: ['#f0d68e', 11], remnant: ['#e7c36a', 6.5], vldl: ['#b8923c', 9], idl: ['#d6a73e', 7], ldl: ['#e2741e', 5.5],
-  lpa: ['#c2463c', 6], hdl: ['#3f9a63', 3.6], hdlLoaded: ['#7fbf4a', 4.4]
+  chylomicron: [tone('chylomicron'), 11], remnant: ['#e8a800', 6.5], vldl: [tone('vldl'), 9], idl: [tone('idl'), 7], ldl: [tone('ldl'), 5.5],
+  lpa: [tone('lpa'), 6], hdl: [tone('hdl'), 3.6], hdlLoaded: ['#6fd34a', 4.4]
 };
 const APOB_KINDS = new Set(['chylomicron', 'remnant', 'vldl', 'idl', 'ldl', 'lpa']);
 const SPEED = 78;
 const RETAIN_SECONDS = 18;
 const MAX_RETAINED = 90;
 
-export const TRAFFIC_SCENE = `<defs><pattern id="lpt-villi" width="14" height="20" patternUnits="userSpaceOnUse"><path d="M0 20V8Q7 -3 14 8V20" fill="#ecd3b3" stroke="#d8b892"/></pattern></defs>
-  <rect x="20" y="30" width="140" height="122" rx="30" fill="#f6ead9"/><rect x="112" y="40" width="40" height="104" fill="url(#lpt-villi)"/>
+export const TRAFFIC_SCENE = `<defs><pattern id="lpt-villi" width="14" height="20" patternUnits="userSpaceOnUse"><path d="M0 20V8Q7 -3 14 8V20" fill="#f0be82" stroke="#c98a45"/></pattern></defs>
+  <rect x="20" y="30" width="140" height="122" rx="30" fill="#f7d9b0" stroke="#d9a868" stroke-width="2"/><rect x="112" y="40" width="40" height="104" fill="url(#lpt-villi)"/>
   <text x="34" y="62" data-lpt-label="intestine"/>
-  <path d="M290 40Q390 0 500 34Q540 90 470 122Q380 136 300 112Q270 80 290 40Z" fill="#dcb2a9" stroke="#bb867b" stroke-width="2"/>
-  <text x="352" y="66" data-lpt-label="liver"/>
-  <rect x="600" y="30" width="140" height="122" rx="24" fill="#f1e2bd"/>
+  <path d="M290 40Q390 0 500 34Q540 90 470 122Q380 136 300 112Q270 80 290 40Z" fill="#c8665a" stroke="#93392f" stroke-width="2"/>
+  <text x="352" y="66" class="lpt-on-dark" data-lpt-label="liver"/>
+  <rect x="600" y="30" width="140" height="122" rx="24" fill="#f6d27a" stroke="#cf9f2e" stroke-width="2"/>
   <text x="614" y="62" data-lpt-label="tissue"/>
-  <rect x="10" y="182" width="740" height="76" rx="38" fill="#ecc8bf" stroke="#cf9d92" stroke-width="2"/>
+  <rect x="10" y="182" width="740" height="76" rx="38" fill="#f4b8ae" stroke="#c9584a" stroke-width="2.5"/>
   <text x="694" y="252" class="lpt-small" data-lpt-label="plasma"/>
   <path d="M10 264H750" class="lpt-endothelium"/>
-  <rect x="10" y="268" width="740" height="84" rx="10" fill="#f4e6dd"/>
+  <rect x="10" y="268" width="740" height="84" rx="10" fill="#f6d6c4" stroke="#e0a98d" stroke-width="1.5"/>
   <text x="22" y="344" class="lpt-small" data-lpt-label="intima"/>
   <g class="lpt-retained"></g><g class="lpt-particles"></g>
   <g class="lpt-tag"><rect x="370" y="108" width="52" height="20" rx="6"/><text x="378" y="122">LDL-R</text></g>
