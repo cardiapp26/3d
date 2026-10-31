@@ -12,7 +12,9 @@
 .da-evidence-left{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .da-fig-mini-card{position:relative;display:block;width:105px;height:95px;padding:0!important;border:1px solid #3d5e73!important;border-radius:8px!important;overflow:hidden;background:#09131a!important;cursor:pointer;transition:transform .18s ease,border-color .18s ease}
 .da-fig-mini-card:hover{transform:translateY(-2px);border-color:#6ed0c2!important;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.da-fig-mini-card{background:radial-gradient(circle at 50% 45%,#13283a,#08111a 75%)!important}
 .da-fig-mini-card img{width:100%;height:100%;object-fit:cover;display:block}
+.da-fig-mini-card img[hidden]{display:none}
 .da-fig-mini-badge{position:absolute;bottom:0;inset-inline:0;background:rgba(10,20,30,.88);font-size:9px;font-weight:700;color:#c9efff;text-align:center;padding:2px 4px}
 .da-evidence-body{display:flex;flex-direction:column;gap:8px;min-width:0}
 .da-evidence-links{display:flex;align-items:center;gap:12px;flex-wrap:wrap}

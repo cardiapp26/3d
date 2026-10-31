@@ -10,5 +10,6 @@ WPW_DUZELTME_VE_GELISTIRME_PLANI.md
 # Large source-paper supplements and generated previews (kept locally)
 research/ecg-anatomy/jaccas_105998_mmc1.3mf
 research/ecg-anatomy/mmc1.zip
-public/ecg-anatomy/figures/*.png
+# Bradfield et al. paper figures: local reference only, never shipped (the app redraws them from its model)
+research/ecg-anatomy/paper-figures/
 /*-preview.png
