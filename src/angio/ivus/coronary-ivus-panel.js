@@ -27,13 +27,24 @@ import {
 } from './coronary-ivus-render.js';
 
 import { modelStateDefaults, modelWorkspaceHtml, mountModelWorkspace } from './ivus-model-view.js';
+import { basicsWorkspaceHtml, mountBasicsWorkspace } from './ivus-basics.js';
+import { quizWorkspaceHtml, mountQuizWorkspace } from './ivus-quiz.js';
 
-// Interactive 3D vessel & stent model leads the page; the four classic workspaces follow.
+// IVUS basics come first (how to read a frame), then the interactive 3D vessel & stent model
+// (the default view) and the four classic workspaces.
+const BASICS_MODE = Object.freeze({
+  id: 'basics',
+  label: Object.freeze({ tr: 'IVUS Temelleri', en: 'IVUS Basics' })
+});
+const QUIZ_MODE = Object.freeze({
+  id: 'quiz',
+  label: Object.freeze({ tr: 'Görüntü Okuma Testi', en: 'Image Reading Quiz' })
+});
 const MODEL_MODE = Object.freeze({
   id: 'model',
   label: Object.freeze({ tr: '3B Damar & Stent Modeli', en: '3D Vessel & Stent Model' })
 });
-const ALL_MODES = Object.freeze([MODEL_MODE, ...WORKSPACE_MODES]);
+const ALL_MODES = Object.freeze([BASICS_MODE, QUIZ_MODE, MODEL_MODE, ...WORKSPACE_MODES]);
 
 const pick = (obj, lang) => (obj && typeof obj === 'object' ? (obj[lang === 'en' ? 'en' : 'tr'] ?? obj.tr ?? '') : String(obj ?? ''));
 
@@ -47,7 +58,7 @@ export function createCoronaryIvusPanel({ mount, getLang = () => 'tr' }) {
   }
 
   const state = {
-    workspaceMode: 'model',            // 'model' | 'console' | 'morphology' | 'artifacts' | 'calculator'
+    workspaceMode: 'model',            // 'basics' | 'quiz' | 'model' | 'console' | 'morphology' | 'artifacts' | 'calculator'
     caseId: 'lad-fibrocalcific',
     transducerMode: 'rotational-60',   // 'rotational-60' | 'rotational-40' | 'phased-20'
     posMm: 20,                         // 0 (distal) .. 40 (proximal)
@@ -91,6 +102,8 @@ export function createCoronaryIvusPanel({ mount, getLang = () => 'tr' }) {
   let pullbackTimer = null;
   let lastTs = 0;
   let modelWorkspace = null;
+  let basicsWorkspace = null;
+  let quizWorkspace = null;
 
   function applyCaseDefaults(caseObj) {
     if (pullbackTimer) {
@@ -729,7 +742,13 @@ export function createCoronaryIvusPanel({ mount, getLang = () => 'tr' }) {
     let bodyHtml = '';
     modelWorkspace?.dispose();
     modelWorkspace = null;
-    if (state.workspaceMode === 'model') bodyHtml = modelWorkspaceHtml(state, lang);
+    basicsWorkspace?.dispose();
+    basicsWorkspace = null;
+    quizWorkspace?.dispose();
+    quizWorkspace = null;
+    if (state.workspaceMode === 'basics') bodyHtml = basicsWorkspaceHtml(state, lang);
+    else if (state.workspaceMode === 'quiz') bodyHtml = quizWorkspaceHtml(state, lang);
+    else if (state.workspaceMode === 'model') bodyHtml = modelWorkspaceHtml(state, lang);
     else if (state.workspaceMode === 'console') bodyHtml = renderConsoleWorkspace(lang);
     else if (state.workspaceMode === 'morphology') bodyHtml = renderMorphologyWorkspace(lang);
     else if (state.workspaceMode === 'artifacts') bodyHtml = renderArtifactsWorkspace(lang);
@@ -762,6 +781,10 @@ export function createCoronaryIvusPanel({ mount, getLang = () => 'tr' }) {
     drawAllCanvases();
     if (state.workspaceMode === 'model') {
       modelWorkspace = mountModelWorkspace(root, state, { getLang, rerender: render });
+    } else if (state.workspaceMode === 'basics') {
+      basicsWorkspace = mountBasicsWorkspace(root, state, { getLang, rerender: render });
+    } else if (state.workspaceMode === 'quiz') {
+      quizWorkspace = mountQuizWorkspace(root, state, { getLang, rerender: render });
     }
   }
 
@@ -789,11 +812,15 @@ export function createCoronaryIvusPanel({ mount, getLang = () => 'tr' }) {
   return {
     render,
     getState: () => ({ ...state }),
+    getBasicsState: () => basicsWorkspace?.getState() ?? null,
+    getQuizState: () => quizWorkspace?.getState() ?? null,
     selectCase,
     destroy() {
       if (rafId) cancelAnimationFrame(rafId);
       if (pullbackTimer) clearInterval(pullbackTimer);
       modelWorkspace?.dispose();
+      basicsWorkspace?.dispose();
+      quizWorkspace?.dispose();
       root.remove();
     }
   };

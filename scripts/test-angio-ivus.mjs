@@ -19,6 +19,9 @@ import {
   sampleIvusSlice,
 } from '../src/angio/ivus/coronary-ivus-sim.js';
 import { NORMAL_SEGMENTS } from '../src/angio/ivus/ivus-anatomy.js';
+import { structureAt, frameMeasures, buildFrame, aLine, VESSEL_CENTRE, WIRE_POSITION, FRAME_PRESETS } from '../src/angio/ivus/ivus-basics-frame.js';
+import { QUIZ_LEVELS, QUIZ_TEXT, questionTarget, questionOptions } from '../src/angio/ivus/ivus-quiz-data.js';
+import { BASICS_TEXT, ECHO_CATEGORIES, READING_STEPS, SYSTEM_ROWS, WORKFLOW, STRUCTURES, STRUCTURE_NAMES, ECHO_LABEL } from '../src/angio/ivus/ivus-basics-data.js';
 import { renderIvusAngioCoRegSvg } from '../src/angio/ivus/coronary-ivus-render.js';
 import { SITE_BADGES, SITE_MODULES } from '../src/site-modules.js';
 
@@ -184,6 +187,65 @@ CALCULATOR_CARDS.forEach((card) => {
 const svgMarkup = renderIvusAngioCoRegSvg(classicLad, { posMm: 20, stentDeployed: true }, 'tr');
 assert.match(svgMarkup, /<svg[\s\S]*20\.0 mm[\s\S]*<\/svg>/);
 
+
+// 6b. IVUS basics frame: layers from inside out, echo against the adventitia, shadows along the beam
+{
+  const at = (rho, hour, opts) => { const a = (hour / 12) * Math.PI * 2; return structureAt(VESSEL_CENTRE.x + rho * Math.sin(a), VESSEL_CENTRE.y - rho * Math.cos(a), opts); };
+  assert.deepEqual([1.0, 1.85, 2.0, 2.4].map(r => at(r, 12, { preset: 'normal' }).id), ['lumen', 'intima', 'media', 'adventitia'], 'normal wall: lumen, intima, media, adventitia');
+  assert.equal(at(2.0, 12, { preset: 'normal' }).echo, 'hypoechoic', 'media is hypoechoic');
+  assert.equal(at(2.4, 12, { preset: 'normal' }).echo, 'reference', 'adventitia is the brightness reference');
+  const fib = at(1.4, 4, { preset: 'fibrous' });
+  assert.equal(fib.id, 'fibrous'); assert.equal(fib.echo, 'hyperechoic');
+  // Clock positions are read from the image centre (the catheter), as on the console.
+  const four = structureAt(1.7 * Math.sin(Math.PI * 2 / 3), -1.7 * Math.cos(Math.PI * 2 / 3), { preset: 'fibrous' });
+  assert.equal(four.id, 'fibrous'); assert.equal(Math.round(four.clock), 4, 'fibrous plaque seen at 4 o\u2019clock from the catheter');
+  assert.deepEqual([1.4, 1.6, 2.4].map(r => at(r, 10, { preset: 'calcium' }).id), ['calcium', 'calciumShadow', 'calciumShadow'], 'calcium casts a shadow behind it');
+  assert.equal(at(1.4, 10, { preset: 'calcium' }).echo, 'shadowed');
+  assert.ok(['lipid', 'fibrous'].includes(at(1.3, 1.5, { preset: 'mixed' }).id) && at(1.3, 1.5, { preset: 'mixed' }).within === 'mixed', 'mixed plaque');
+  assert.equal(structureAt(WIRE_POSITION.x, WIRE_POSITION.y, { system: 'rotational-40' }).id, 'wire', 'rotational: wire visible');
+  assert.equal(structureAt(WIRE_POSITION.x * 2, WIRE_POSITION.y * 2, { system: 'rotational-40' }).id, 'wireShadow', 'rotational: wire shadow');
+  assert.notEqual(structureAt(WIRE_POSITION.x, WIRE_POSITION.y, { system: 'phased-20' }).id, 'wire', 'phased array: no wire artifact');
+  assert.equal(structureAt(0, 0, { system: 'phased-20' }).id, 'catheter');
+  const normal = frameMeasures('normal'), fibrous = frameMeasures('fibrous');
+  assert.ok(normal.lumenArea > fibrous.lumenArea && fibrous.burden > normal.burden, 'plaque shrinks the lumen and raises the burden');
+  assert.ok(Math.abs(normal.eelDiameter - normal.midMediaDiameter) <= .25, 'EEL-to-EEL and mid-media diameters differ by a clinically negligible amount');
+  const frame = buildFrame(120, { preset: 'calcium', system: 'rotational-60' });
+  assert.equal(frame.data.length, 120 * 120 * 4); assert.ok(frame.lumen.length > 500, 'lumen pixels listed for blood speckle');
+  const beam = aLine(3, { preset: 'normal' });
+  assert.ok(beam.some(s => s.id === 'media') && beam.some(s => s.id === 'adventitia'), 'A-line crosses media and adventitia');
+  for (const id of Object.keys(STRUCTURE_NAMES)) { assertBilingual(STRUCTURE_NAMES[id], `structure ${id}`); assertBilingual(STRUCTURES[id], `structure text ${id}`); }
+  for (const id of ['anechoic', 'hypoechoic', 'hyperechoic', 'shadowed', 'mixed']) assert.ok(ECHO_CATEGORIES.some(c => c.id === id) && ECHO_LABEL[id], `echo category ${id}`);
+  assert.equal(READING_STEPS.length, 7); assert.equal(SYSTEM_ROWS.length, 7); assert.ok(WORKFLOW.length >= 4);
+  for (const key of Object.keys(BASICS_TEXT)) assertBilingual(BASICS_TEXT[key], `basics text ${key}`);
+  assert.deepEqual(Object.keys(FRAME_PRESETS), ['normal', 'fibrous', 'calcium', 'mixed', 'nodule', 'attenuated', 'thrombus', 'hematoma', 'dissection', 'stent', 'sidebranch', 'nurd']);
+}
+
+// 6c. Image reading quiz: every arrow lands on its answer, answers are named and explained
+{
+  assert.equal(QUIZ_LEVELS.length, 7, 'seven levels from the normal wall to stents');
+  let count = 0;
+  QUIZ_LEVELS.forEach((level, li) => {
+    assertBilingual(level.title, `quiz level ${level.id}`); assertBilingual(level.intro, `quiz intro ${level.id}`);
+    level.questions.forEach((question, qi) => {
+      count++;
+      const target = questionTarget(question);
+      assert.ok(target, `${level.id} ${question.answer}: arrow target found`);
+      assert.equal(structureAt(target.x, target.y, question).id, question.answer, `${level.id} ${question.answer}: arrow on the answer`);
+      const options = questionOptions(question, qi + li);
+      assert.equal(new Set(options).size, 3); assert.ok(options.includes(question.answer));
+      for (const id of options) { assertBilingual(STRUCTURE_NAMES[id], `quiz option ${id}`); assertBilingual(STRUCTURES[id], `quiz explanation ${id}`); }
+    });
+  });
+  assert.ok(count >= 24, 'at least 24 questions');
+  for (const key of Object.keys(QUIZ_TEXT)) assertBilingual(QUIZ_TEXT[key], `quiz text ${key}`);
+  // The new findings behave like their IVUS signs.
+  const v = (rho, hour, preset) => { const a = (hour / 12) * Math.PI * 2; return structureAt(VESSEL_CENTRE.x + rho * Math.sin(a), VESSEL_CENTRE.y - rho * Math.cos(a), { preset }).id; };
+  assert.equal(v(1.6, 10, 'nodule'), 'calciumShadow', 'a calcified nodule shadows what lies behind it');
+  assert.equal(v(1.2, 2.5, 'attenuated'), 'attenuated'); assert.equal(v(2.0, 2.5, 'attenuated'), 'attenuation', 'attenuation without a bright edge');
+  assert.deepEqual([1.0, 1.28, 1.5].map(r => v(r, 3, 'dissection')), ['trueLumen', 'flap', 'falseLumen'], 'flap between the true and the false lumen');
+  assert.equal(v(1.6, 2.0, 'stent'), 'lumen', 'blood behind a malapposed strut');
+}
+
 // 7. Site routing, page shell, CSS & em-dash checks
 const angioModule = SITE_MODULES.find((mod) => mod.id === 'angio');
 assert.ok(angioModule?.pages?.some((p) => p.id === 'angio-ivus' && p.path === './angio/ivus/'));
@@ -205,6 +267,11 @@ for (const file of [
   '../src/angio/ivus/ivus-anatomy.js',
   '../src/angio/ivus/coronary-ivus-render.js',
   '../src/angio/ivus/coronary-ivus-panel.js',
+  '../src/angio/ivus/ivus-basics.js',
+  '../src/angio/ivus/ivus-basics-data.js',
+  '../src/angio/ivus/ivus-basics-frame.js',
+  '../src/angio/ivus/ivus-quiz.js',
+  '../src/angio/ivus/ivus-quiz-data.js',
   '../src/angio/ivus/coronary-ivus.css',
   '../src/angio/ivus/main.js',
   '../angio/ivus/index.html',

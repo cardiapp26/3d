@@ -131,6 +131,52 @@ async function main() {
     const calcCards = await page.locator('[data-ivus-calc-card]').count();
     assert.equal(calcCards, 6, 'All 6 IVUS calculator cards (incl. normal MLA) must render');
 
+    // 6b. IVUS basics: interactive frame read from inside out, probe, systems, grey scale, workflow
+    await page.click('[data-ivus-mode="basics"]');
+    await page.waitForSelector('[data-ivus-basics]');
+    assert.equal(await page.locator('[data-basics-step]').count(), 7, 'seven reading steps from inside out');
+    const basicsBox = await page.locator('[data-basics-frame]').boundingBox();
+    assert.ok(basicsBox && basicsBox.width > 220, 'basics IVUS frame renders');
+    await page.selectOption('[data-basics-preset]', 'fibrous');
+    const probe = await page.evaluate(() => {
+      const c = document.querySelector('[data-basics-frame]'), r = c.getBoundingClientRect(), mm = r.width / 2 / 4.6;
+      const a = (4 / 12) * Math.PI * 2, x = 1.7 * Math.sin(a), y = -1.7 * Math.cos(a);   // 4 o'clock from the catheter
+      return { x: r.left + r.width / 2 + x * mm, y: r.top + r.height / 2 + y * mm };
+    });
+    await page.mouse.click(probe.x, probe.y);
+    assert.equal(await page.getAttribute('[data-basics-probe-id]', 'data-basics-probe-id'), 'fibrous', 'probe names the fibrous plaque');
+    assert.equal(await page.getAttribute('[data-basics-probe-echo]', 'data-basics-probe-echo'), 'hyperechoic');
+    assert.match(await page.locator('[data-basics-probe]').textContent(), /saat 4|4 o'clock/);
+    await page.click('[data-basics-step="6"]');
+    assert.match(await page.locator('[data-basics-step-text]').textContent(), /EEL/);
+    await page.click('[data-basics-system="phased-20"]');
+    assert.equal(await page.locator('[data-basics-step="1"]').isDisabled(), true, 'phased array: no wire step');
+    await page.check('[data-basics-sweep]');
+    assert.equal(await page.locator('[data-basics-catheter]').count(), 2, 'both catheter designs drawn');
+    assert.equal(await page.locator('[data-basics-echo]').count(), 5, 'five grey-scale categories');
+    await assertNoHorizontalOverflow(page, 390, 844);
+    await page.setViewportSize({ width: 1440, height: 920 });
+
+    // 6c. Image reading quiz: right answer, explanation, then the same frame in the Basics probe
+    await page.click('[data-ivus-mode="quiz"]');
+    await page.waitForSelector('[data-quiz-card]');
+    assert.equal(await page.locator('[data-quiz-card]').count(), 7, 'seven quiz levels');
+    await page.click('[data-quiz-level="0"]');
+    await page.waitForSelector('[data-quiz-frame]');
+    const answer = await page.evaluate(() => window.coronaryIvus.getQuizState().answer);
+    await page.click(`[data-quiz-option="${answer}"]`);
+    assert.match(await page.getAttribute('[data-quiz-feedback]', 'class'), /is-right/);
+    await page.click('[data-quiz-next]');
+    const wrong = await page.evaluate(() => { const a = window.coronaryIvus.getQuizState().answer; return [...document.querySelectorAll('[data-quiz-option]')].map(b => b.dataset.quizOption).find(id => id !== a); });
+    await page.click(`[data-quiz-option="${wrong}"]`);
+    assert.match(await page.getAttribute('[data-quiz-feedback]', 'class'), /is-wrong/);
+    const expected = await page.evaluate(() => window.coronaryIvus.getQuizState().answer);
+    await page.click('[data-quiz-inspect]');
+    await page.waitForSelector('[data-ivus-basics]');
+    assert.equal(await page.getAttribute('[data-basics-probe-id]', 'data-basics-probe-id'), expected, 'Basics opens the quiz frame with the probe on the answer');
+    await page.click('[data-ivus-mode="quiz"]');
+    assert.match(await page.locator('[data-quiz-total]').textContent(), /1 \/ \d+/, 'one right answer counted');
+
     // 7. Language toggle TR -> EN -> TR
     await page.click('[data-ivus-lang="en"]');
     await page.waitForTimeout(80);
