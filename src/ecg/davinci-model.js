@@ -46,3 +46,23 @@ export function wavePath({id,net=0,kind='qrs',width=1,q=false,invert=false}) {
  :[[6,46],[49,46],...(q?[[54,58]]:[]),[63,base-(.5+.5*net)*37],[77,base+(.5-.5*net)*37],[88,46],[154,46]];
  return points.map(([x,v],i)=>`${i?'L':'M'}${x} ${y(v)}`).join('');
 }
+// Lead signals the workbench draws for a topic and state (pure, so the figure cards can draw
+// the same strips for any panel without touching the live workbench).
+export function workbenchSignals(tab, st) {
+ if(tab==='atrial'){
+  const d=PV_SITES[st.pvSite]||PV_SITES.RSPV;return [{id:'II',net:d.ii,color:'#f4c66e'},{id:'V1',net:d.v1,color:'#fb7185'},{id:'aVL',net:d.avl,color:'#c4a3ff'}].map(x=>({...x,kind:'p',width:d.width}));
+ }
+ if(tab==='heights'||tab==='nomenclature'&&st.nomenclatureTopic==='papillary'){
+  const d=SITES[st.focusSite]||SITES.summit;return CHEST.map((l,i)=>({...l,net:d.chest[i],kind:'qrs',q:!!d.qChest&&i>=2}));
+ }
+ if(tab==='nomenclature'&&st.nomenclatureTopic==='bundles')return [{id:'V1',net:st.bundleSide==='left'?-.9:.85,color:'#fb7185',kind:st.bundleSide==='left'?'lbbb':'rbbb'}];
+ const kind=tab!=='cabrera'?'qrs':st.cabreraScenario==='sinus_p'?'p':st.cabreraScenario==='mi_contiguous'?'st':'qrs';
+ return limbValues(workbenchAxis(tab,st),st.cabreraMode).map(x=>({...x,kind,q:tab==='cabrera'&&st.cabreraScenario==='rvot_shift'&&x.net<0}));
+}
+// Frontal propagation axis (degrees) the atlas arrow shows for a topic and state.
+export function workbenchAxis(tab, st) {
+ if(tab==='atrial')return 90;
+ if(tab==='heights'||tab==='nomenclature'&&st.nomenclatureTopic==='papillary')return (SITES[st.focusSite]||SITES.summit).axis;
+ if(tab==='nomenclature')return st.nomenclatureTopic==='bundles'?(st.bundleSide==='left'?180:0):-60;
+ return st.cabreraScenario==='rvot_shift'?rvotAngle(st.rvotFocus):st.cabreraScenario==='sinus_p'?58:90;
+}

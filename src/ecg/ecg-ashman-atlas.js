@@ -6,6 +6,10 @@
  * bundles, stops at a refractory bundle and colours the ventricles from the Purkinje ends, or
  * late, across the septum, on the blocked side. Drag to rotate, double-click to reset.
  * Until the atlas loads, or without WebGL, the 2D section of ecg-ashman-heart.js stands in.
+ *
+ * With origin 'sa' the same scene shows a sinus beat: the atria activate from the SA node and
+ * drawState() takes a conduction snapshot directly (the ECG simulator's beat scrubber), including
+ * the recovery of the atria and the ventricles during repolarization.
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -94,12 +98,19 @@ function setProgress(t, p, color) {
 }
 
 /**
- * @param {{ getLang?: () => string }} [options]
- * @returns {{ element: HTMLElement, draw: (pac: object, t: number, text: object) => void, destroy: () => void }}
+ * Conduction snapshot: progress 0..1 (null = not reached) of atria, avn, his, rbb, lbb, laf, lpf,
+ * lv, rv; septal (0..1 arrow length), septalToRv, sa (SA node firing), purkinjeLit (false hides the
+ * Purkinje twigs once the ventricles are activated), blockedAt {avn, rbb, lbb,
+ * laf}, and recovery {atria, ventricles} 0..1 for repolarization.
+ * @param {{ getLang?: () => string, origin?: 'pac' | 'sa' }} [options]
+ * @returns {{ element: HTMLElement, draw: (pac: object, t: number, text: object) => void,
+ *   drawState: (c: object, options: { bundles?: object, text: object, clock?: string }) => void, destroy: () => void }}
  */
-export function createAshmanAtlas({ getLang = () => 'tr' } = {}) {
+export function createAshmanAtlas({ getLang = () => 'tr', origin = 'pac' } = {}) {
   const element = document.createElement('div');
-  element.className = 'ash-3d'; element.dataset.ashHeart = ''; element.dataset.loaded = 'false';
+  element.className = 'ash-3d'; element.dataset.loaded = 'false';
+  // The Ashman lab's heart and the simulator's sinus-beat heart are told apart by their marker.
+  element.dataset[origin === 'sa' ? 'activationHeart' : 'ashHeart'] = '';
   const flat = document.createElement('canvas'); flat.className = 'ecgc-canvas ash-3d-flat'; flat.setAttribute('role', 'img');
   const host = document.createElement('div'); host.className = 'ash-3d-gl'; host.hidden = true;
   const labels = document.createElement('div'); labels.className = 'ash-3d-labels'; labels.setAttribute('aria-hidden', 'true');
@@ -108,13 +119,20 @@ export function createAshmanAtlas({ getLang = () => 'tr' } = {}) {
   element.append(flat, host, labels, clock, hint);
   let last = null, loaded = false, destroyed = false, gl = null;
   const tr = (a, b) => (getLang() === 'en' ? b : a);
+  if (origin === 'sa') flat.hidden = true;
 
   function draw(pac, t, text) {
-    last = { pac, t, text };
+    last = () => draw(pac, t, text);
     const since = Math.round(t - pac.a);
     clock.textContent = `P′ ${since >= 0 ? '+' : '−'}${Math.abs(since)} ms`;
     if (!loaded) { drawConduction(flat, pac, t, text); return; }
-    gl.update(pac, t, text);
+    gl.update(conductionAt(pac, t), pac.bundles, text);
+  }
+  function drawState(c, { bundles = null, text, clock: clockText = '' }) {
+    last = () => drawState(c, { bundles, text, clock: clockText });
+    clock.textContent = clockText;
+    if (!loaded) { hint.textContent = tr('3B kalp yükleniyor…', 'Loading the 3D heart…'); return; }
+    gl.update(c, bundles, text);
   }
 
   try { gl = buildScene(); } catch { element.dataset.loaded = 'error'; }
@@ -138,11 +156,11 @@ export function createAshmanAtlas({ getLang = () => 'tr' } = {}) {
     new GLTFLoader().setDRACOLoader(decoder).loadAsync(ATLAS_URL).then(gltf => {
       decoder.dispose();
       if (destroyed) return;
-      addAtlas(gltf, world, state);
+      addAtlas(gltf, world, state, origin);
       addConduction(world, state);
       loaded = true; host.hidden = false; flat.hidden = true; element.dataset.loaded = 'true';
       resize(); reset();
-      if (last) draw(last.pac, last.t, last.text);
+      last?.();
     }).catch(() => { decoder.dispose(); if (!destroyed) element.dataset.loaded = 'error'; });
 
     function render() {
@@ -173,14 +191,15 @@ export function createAshmanAtlas({ getLang = () => 'tr' } = {}) {
       }
     }
 
-    function update(pac, t, text) {
-      const c = conductionAt(pac, t), b = pac.bundles;
+    function update(c, b, text) {
       paintChambers(state, c, b);
-      paintConduction(state, pac, c);
+      paintConduction(state, b, c);
+      state.marks.sa.material.color.setHex(c.sa ? 0xfde047 : 0x94a3b8);
+      state.marks.sa.scale.setScalar(c.sa ? 1.5 : 1);
       for (const node of pins.values()) node.hidden = true;
       pin('sa', text.sa, AC.sa, 'is-left'); pin('avn', text.avn, AC.avn, 'is-left'); pin('his', text.his, AC.his.at(-1), 'is-up');
       pin('rbb', text.rbb, AC.rbb.at(-1), 'is-left'); pin('lbb', text.lbb, AC.lbb.at(-1), 'is-right'); pin('laf', text.laf, AC.laf.at(-1), 'is-right'); pin('lpf', text.lpf, AC.lpf.at(-1), 'is-right');
-      pin('pac', 'P′', state.focus.toArray(), 'is-pac is-right');
+      if (origin === 'pac') pin('pac', 'P′', state.focus.toArray(), 'is-pac is-right');
       const blocked = Object.keys(c.blockedAt).filter(k => c.blockedAt[k] && BLOCK_AT[k] && !(k === 'rbb' && c.blockedAt.lbb));
       for (const key of blocked) pin(`block-${key}`, text.block, blockPoint(state, key).toArray(), { laf: 'is-block is-low', rbb: 'is-block is-west', avn: 'is-block is-west' }[key] || 'is-block');
       if (c.septal > .25) pin('septal', text.septal, septalTip(state).toArray(), 'is-septal');
@@ -195,12 +214,12 @@ export function createAshmanAtlas({ getLang = () => 'tr' } = {}) {
   }
 
   return {
-    element, draw,
+    element, draw, drawState,
     destroy() { destroyed = true; gl?.dispose(); element.remove(); }
   };
 }
 
-function addAtlas(gltf, world, state) {
+function addAtlas(gltf, world, state, origin = 'pac') {
   gltf.scene.updateMatrixWorld(true);
   const found = [];
   gltf.scene.traverse(obj => {
@@ -228,11 +247,12 @@ function addAtlas(gltf, world, state) {
     }
   }
   gltf.scene.traverse(o => { o.geometry?.dispose(); o.material?.dispose?.(); });
-  // The early beat starts on the lateral roof of the left atrium.
+  // The early beat starts on the lateral roof of the left atrium; a sinus beat at the SA node.
   const la = state.chambers.la.mesh.geometry.attributes.position, v = new THREE.Vector3(), focus = new THREE.Vector3();
   let best = -Infinity;
-  for (let i = 0; i < la.count; i++) { v.fromBufferAttribute(la, i); const s = v.x + .6 * v.y; if (s > best) { best = s; focus.copy(v); } }
-  state.focus = focus;
+  if (origin === 'sa') focus.copy(V(AC.sa));
+  else for (let i = 0; i < la.count; i++) { v.fromBufferAttribute(la, i); const s = v.x + .6 * v.y; if (s > best) { best = s; focus.copy(v); } }
+  state.focus = focus; state.origin = origin;
   for (const id of ['ra', 'la']) state.chambers[id].dist.pac = distances(state.chambers[id].mesh.geometry, [focus.toArray()]);
   for (const [id, side] of [['lv', 'lv'], ['rv', 'rv']]) {
     const ch = state.chambers[id];
@@ -255,7 +275,7 @@ function addConduction(world, state) {
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), blending: THREE.AdditiveBlending, depthTest: false, transparent: true }));
   glow.scale.setScalar(.26); glow.renderOrder = 9; world.add(glow); state.heads = [glow];
   const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(true), depthTest: false, transparent: true }));
-  star.position.copy(state.focus); star.scale.setScalar(.22); star.renderOrder = 9; world.add(star); state.marks.star = star;
+  star.position.copy(state.focus); star.scale.setScalar(.22); star.renderOrder = 9; star.visible = state.origin !== 'sa'; world.add(star); state.marks.star = star;
   for (const key of Object.keys(BLOCK_AT)) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(.075, .02, 10, 28), new THREE.MeshBasicMaterial({ color: 0xef4444, depthTest: false, toneMapped: false }));
     ring.renderOrder = 10; ring.visible = false; world.add(ring); state.blocks.push({ key, ring });
@@ -268,11 +288,13 @@ function addConduction(world, state) {
 function septalTip(state) { const a = state.septalArrow; return a.position.clone().add(new THREE.Vector3(0, 1, 0).applyQuaternion(a.quaternion).multiplyScalar(a.line.scale.y)); }
 function blockPoint(state, key) { const [path, f] = BLOCK_AT[key]; return state.tubes[path].curve.getPointAt(f); }
 
-function paint(ch, distKey, p, hot) {
+// `rec` (0..1) is repolarization: the last activated wall recovers first, back to resting muscle.
+function paint(ch, distKey, p, hot, rec = 0) {
   const { d, max } = ch.dist[distKey], col = ch.mesh.geometry.attributes.color, arr = col.array;
   const r = p == null ? -1 : p * max * 1.02, band = max * .07, front = p != null && p < 1;
+  const back = rec > 0 ? (1 - rec) * max * 1.04 : Infinity;
   for (let i = 0; i < d.length; i++) {
-    const x = d[i], a = r >= 0 && x <= r ? 1 : 0, f = front ? Math.max(0, 1 - Math.abs(x - r) / band) : 0, k = i * 4;
+    const x = d[i], a = r >= 0 && x <= r && x < back ? 1 : 0, f = front ? Math.max(0, 1 - Math.abs(x - r) / band) : 0, k = i * 4;
     for (let c = 0; c < 3; c++) { const base = MUSCLE[c] + (hot[c] - MUSCLE[c]) * a; arr[k + c] = base + (FRONT[c] - base) * f; }
     arr[k + 3] = .14 + .4 * a + .45 * f;
   }
@@ -280,18 +302,18 @@ function paint(ch, distKey, p, hot) {
 }
 
 function paintChambers(state, c, b) {
-  for (const id of ['ra', 'la']) paint(state.chambers[id], 'pac', c.atria, HOT.atria);
+  for (const id of ['ra', 'la']) paint(state.chambers[id], 'pac', c.atria, HOT.atria, c.recovery?.atria || 0);
   const late = side => b?.[side === 'lv' ? 'lbb' : 'rbb']?.state === 'block';
-  for (const id of ['lv', 'rv']) paint(state.chambers[id], late(id) ? 'late' : 'own', c[id], HOT.ventricles);
+  for (const id of ['lv', 'rv']) paint(state.chambers[id], late(id) ? 'late' : 'own', c[id], HOT.ventricles, c.recovery?.ventricles || 0);
 }
 
-function paintConduction(state, pac, c) {
-  const tone = k => (pac.bundles?.[k]?.state === 'slow' ? TINT.slow : TINT.fast);
+function paintConduction(state, bundles, c) {
+  const tone = k => (bundles?.[k]?.state === 'slow' ? TINT.slow : TINT.fast);
   setProgress(state.tubes.his, c.his, TINT.fast);
   for (const k of ['rbb', 'lbb', 'laf']) setProgress(state.tubes[k], c[k], tone(k));
   setProgress(state.tubes.lpf, c.lpf, TINT.fast);
   for (const t of state.tracts) setProgress(t, c.atria, 0xfbbf24);
-  for (const side of ['lv', 'rv']) for (const t of state.purkinje[side]) setProgress(t, c[side] == null ? null : Math.min(1, c[side] * 2.5), TINT.fast);
+  for (const side of ['lv', 'rv']) for (const t of state.purkinje[side]) setProgress(t, c[side] == null || c.purkinjeLit === false ? null : Math.min(1, c[side] * 2.5), TINT.fast);
   const avnActive = c.avn != null && c.avn < 1 && !c.blockedAt.avn;
   state.marks.avn.material.color.setHex(avnActive ? 0xfbbf24 : 0x94a3b8);
   state.marks.star.scale.setScalar(c.atria != null && c.atria < 1 ? .3 : .22);
@@ -309,7 +331,7 @@ function paintConduction(state, pac, c) {
   const arrow = state.septalArrow;
   arrow.visible = c.septal > 0;
   if (arrow.visible) {
-    const toRv = pac.bundles.rbb.state === 'block', from = V(toRv ? SOURCES.rvLate[0] : SOURCES.lvLate[0]), to = V(toRv ? SOURCES.lvLate[0] : SOURCES.rvLate[0]);
+    const toRv = c.septalToRv ?? bundles?.rbb?.state === 'block', from = V(toRv ? SOURCES.rvLate[0] : SOURCES.lvLate[0]), to = V(toRv ? SOURCES.lvLate[0] : SOURCES.rvLate[0]);
     arrow.position.copy(from); arrow.setDirection(to.clone().sub(from).normalize()); arrow.setLength(Math.max(.15, from.distanceTo(to) * c.septal), .12, .07);
   }
 }

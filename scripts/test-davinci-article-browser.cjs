@@ -27,14 +27,26 @@ const assert = require('node:assert/strict');
     // Panels, legend and lightbox.
     await page.locator('[data-davinci-section="cabrera"]').click();
     const fig1 = page.locator('#da-card-1');
+    // Each figure is drawn by the model: an atlas still and ECG strips, never the paper's image.
+    // Stills are made when a card nears the viewport.
+    await fig1.scrollIntoViewIfNeeded();
+    await page.locator('#da-card-1 .da-model-anat.is-ready img').waitFor({ timeout: 20000 });
+    assert.match(await page.locator('#da-card-1 .da-model-anat img').getAttribute('src'), /^data:image\//);
+    assert.equal(await page.locator('#da-card-1 .da-model-strip').count(), 6, 'Figure 1 draws six limb leads');
+    const stillA = await page.locator('#da-card-1 .da-model-anat img').getAttribute('src');
     await fig1.locator('[data-fig-panel="B"]').click();
     assert.match(await page.locator('#da-card-1 .da-source-panel').textContent(), /Nonkoroner aort sinüsü/);
+    await page.locator('#da-card-1 .da-model-anat.is-ready img').waitFor({ timeout: 20000 });
+    assert.notEqual(await page.locator('#da-card-1 .da-model-anat img').getAttribute('src'), stillA, 'panel B is its own model drawing');
+    assert.equal(await page.locator('img[src*="ecg-anatomy/figures"]').count(), 0, 'no paper image is used');
     await page.locator('.da-fig-mini-card').click();
     await page.locator('.da-lightbox').waitFor({ state: 'visible' });
     assert.match(await page.locator('.da-lightbox-bar h4').textContent(), /Şekil 2/);
     await page.keyboard.press('ArrowRight');
     assert.match(await page.locator('.da-lightbox-bar h4').textContent(), /Şekil 3/);
-    assert.match(await page.locator('.da-lightbox-cite').textContent(), /CC BY-NC-ND 4\.0/);
+    assert.match(await page.locator('.da-lightbox-cite').textContent(), /Cardia/, 'lightbox names the model as the image source');
+    await page.locator('.da-lightbox .da-model-anat.is-ready img').waitFor({ timeout: 20000 });
+    assert.ok(await page.locator('.da-lightbox .da-model-strip').count() >= 6, 'lightbox draws the model ECG strips');
     await page.keyboard.press('Escape');
     await page.locator('.da-lightbox').waitFor({ state: 'detached' });
 
@@ -42,10 +54,12 @@ const assert = require('node:assert/strict');
     await page.locator('[data-da-goto-article]').click();
     assert.equal(await page.locator('#da-card-2').evaluate(n => n.classList.contains('is-flash')), true);
     await page.locator('[data-cab-mode="standard"]').click();
+    await page.locator('#da-card-10 [data-fig-panel="B"]').click();
     await page.locator('#da-card-10 [data-fig-try="10"]').click();
-    assert.equal(await page.locator('[data-cab-mode="cabrera"]').getAttribute('aria-pressed'), 'true', 'Figure 10 target restores Cabrera order');
+    assert.equal(await page.locator('[data-cab-mode="cabrera"]').getAttribute('aria-pressed'), 'true', 'Figure 10B restores Cabrera order');
+    await page.locator('#da-card-11 [data-fig-panel="D"]').click();
     await page.locator('#da-card-11 [data-fig-try="11"]').click();
-    assert.equal(await page.locator('[data-scenario="mi_contiguous"]').getAttribute('aria-pressed'), 'true', 'Figure 11 target selects inferior ST');
+    assert.equal(await page.locator('[data-scenario="mi_contiguous"]').getAttribute('aria-pressed'), 'true', 'Figure 11D selects inferior ST');
 
     // In-topic clinical check: correct option is not always first; feedback and simulation.
     const check = page.locator('[data-challenge="rvot_vector"]');
@@ -69,7 +83,7 @@ const assert = require('node:assert/strict');
     await page.locator('#da-card-1').scrollIntoViewIfNeeded();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true, 'mobile has no horizontal overflow');
     assert.deepEqual(errors, []);
-    console.log('PASS Da Vinci figures in topics: per-topic figure placement, no article tab, panels, lightbox with keyboard and license, scroll to card, show-in-lab targets, in-topic clinical check, paper note, EN, mobile');
+    console.log('PASS Da Vinci figures in topics: per-topic figure placement, no article tab, panels, model-drawn figures and lightbox with keyboard, scroll to card, show-in-lab targets, in-topic clinical check, paper note, EN, mobile');
   } finally {
     await browser.close();
   }

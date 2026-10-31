@@ -1,6 +1,7 @@
 // Interactive Clinical ECG Simulator & Unlocked ECGLens Premium Suite
 // Combines ECGSweep live-tracing calibrated monitor + ECGLens 3D-Heart Conduction Scrubber,
 // 38-Condition & Pharmacology Library, and Premium Lead-Selection & Missed/Flagged Study Hub.
+import { sinusActivation } from './ecg-sinus-activation.js';
 
 export const CONDUCTION_STAGES = [
   { id: 'sa', startMs: 0, endMs: 35, color: '#fbbf24', wave: 'P Başlangıcı', tr: 'SA Düğümü', en: 'SA Node', vel: '0.05 m/s', descTr: 'Sağ atriyum üst-arka duvarında (SVC-RA bileşkesi) spontan faz-4 depolarizasyon ile uyarının doğuşu.', descEn: 'Spontaneous phase-4 pacemaker depolarization at the superior posterolateral RA (SVC-RA junction).' },
@@ -2465,6 +2466,43 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
     return CLINICAL_CONDITIONS.find(c => c.id === st.condId) || CLINICAL_CONDITIONS[0];
   }
 
+  // The beat's activation on the 3D atlas heart (ecg-ashman-atlas.js, sinus origin). three.js
+  // loads on first use; every render and every animation frame redraws it at st.conductionMs.
+  let activationAtlas = null, activationLoading = false, activationKey = '', destroyed = false;
+  function activationText(isTr, lbbb) {
+    return isTr
+      ? { sa: 'SA düğüm', avn: 'AV düğüm', his: 'His', rbb: 'Sağ dal', lbb: 'Sol dal', laf: 'LAF', lpf: 'LPF', block: 'blok', septal: lbbb ? 'septum sağdan sola' : 'septum soldan sağa', aria: '3B atlas kalbinde atımın aktivasyonu: SA düğümden atriyumlara, AV düğüm, His, dallar ve ventriküller; repolarizasyonda toparlanma.' }
+      : { sa: 'SA node', avn: 'AV node', his: 'His', rbb: 'Right bundle', lbb: 'Left bundle', laf: 'LAF', lpf: 'LPF', block: 'block', septal: lbbb ? 'septum right to left' : 'septum left to right', aria: 'Activation of the beat on the 3D atlas heart: SA node to atria, AV node, His, bundles and ventricles; recovery during repolarization.' };
+  }
+  function drawActivation(force = false) {
+    const mount = root.querySelector('#clin-heart-svg-mount[data-activation]');
+    if (!mount || destroyed) return;
+    if (!activationAtlas) {
+      if (activationLoading) return;
+      activationLoading = true;
+      import('./ecg-ashman-atlas.js').then(m => {
+        if (destroyed) return;
+        activationAtlas = m.createAshmanAtlas({ getLang, origin: 'sa' });
+        drawActivation(true);
+      }).catch(error => {
+        console.warn('Activation heart unavailable', error);
+        const node = root.querySelector('#clin-heart-svg-mount[data-activation]');
+        if (node) node.textContent = getLang() === 'tr' ? '3B aktivasyon görüntüsü açılamadı.' : '3D activation view unavailable.';
+      });
+      return;
+    }
+    if (activationAtlas.element.parentElement !== mount) { mount.replaceChildren(activationAtlas.element); force = true; }
+    const cond = getActiveCondition(), tl = conductionTimeline(cond), m = cond.morph || {}, isTr = getLang() === 'tr';
+    const key = `${st.conductionMs}|${cond.id}|${getLang()}`;
+    if (!force && key === activationKey) return;
+    activationKey = key;
+    // Ventricular fibrillation and torsades have no organized activation sequence to show.
+    const beat = tl.chaotic ? { atrial: 'none', dropped: true } : { atrial: tl.atrial, rbbb: Boolean(m.rbbb), lbbb: Boolean(m.lbbb) };
+    const { c, bundles } = sinusActivation(tl.chaotic ? 0 : st.conductionMs, beat);
+    const stage = getActiveStage(st.conductionMs);
+    activationAtlas.drawState(c, { bundles, text: activationText(isTr, Boolean(m.lbbb)), clock: `${isTr ? stage.tr : stage.en} · ${st.conductionMs} ms` });
+  }
+
   function getActiveSkillStatRhythm() {
     const id = st.skillstatSubMode === 'game' && st.skillstatGameActive ? st.skillstatTargetRhyId : st.skillstatRhyId;
     return SKILLSTAT_27_RHYTHMS.find(r => r.id === id) || SKILLSTAT_27_RHYTHMS[0];
@@ -2501,7 +2539,8 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
     } catch (_) {}
   }
 
-  function buildHeartCoronarySvg(cond, stage, isTr) {
+  /** Coronary territory map; `coronaryOnly` leaves out the conduction overlay and stage bar. */
+  function buildHeartCoronarySvg(cond, stage, isTr, coronaryOnly = false) {
     const culprit = st.blindMode ? 'None' : (cond.culprit || 'None');
     const ladActive = culprit.includes('LAD') || culprit.includes('LMCA');
     const lcxActive = culprit.includes('LCx') || culprit.includes('LMCA');
@@ -2647,6 +2686,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
           <circle cx="222" cy="96" r="2.8" fill="#fef08a"/>
         ` : ''}
 
+        ${coronaryOnly ? '' : `
         <!-- CARDIAC CONDUCTION SYSTEM OVERLAY (7 STAGES: SA -> Internodal/Bachmann -> AVN -> His -> RBBB/LAFB/LPFB -> Purkinje) -->
         <!-- Internodal Pathways & Bachmann's Bundle -->
         <path d="M 112 76 C 126 94, 140 108, 154 118 M 112 76 C 118 98, 134 114, 154 118 M 112 76 C 152 60, 196 62, 226 82"
@@ -2687,6 +2727,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
           ${isTr ? stage.tr : stage.en} (${stage.startMs}–${stage.endMs} ms · ${stage.wave})
         </text>
         <text x="342" y="24" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="end">${stage.vel}</text>
+        `}
       </svg>
     `;
   }
@@ -3187,6 +3228,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
       if (scrubInput) scrubInput.value = String(st.conductionMs);
       if (scrubLabel) scrubLabel.textContent = `${st.conductionMs} ms`;
       renderCanvasFrame();
+      drawActivation();
     }
     rafId = requestAnimationFrame(stepAnimation);
   }
@@ -4027,9 +4069,14 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
                   <section class="clin-chan-section" aria-labelledby="clin-chan-heading">
                     <h4 class="clin-chan-heading" id="clin-chan-heading">${isTr ? 'Kanalopatiler · Faz 0–4 aksiyon potansiyeli ve gen atlası' : 'Channelopathies · Phase 0–4 action potential and gene atlas'}</h4>
                   ` : ''}
-                  <div class="clin-heart-svg-wrap" id="clin-heart-svg-mount">
-                    ${showChanAp ? buildChannelopathyApSvg(st.chanNodeId, isTr) : buildHeartCoronarySvg(cond, activeStage, isTr)}
+                  <div class="clin-heart-svg-wrap${showChanAp ? '' : ' is-activation'}" id="clin-heart-svg-mount" ${showChanAp ? '' : 'data-activation'}>
+                    ${showChanAp ? buildChannelopathyApSvg(st.chanNodeId, isTr) : ''}
                   </div>
+                  ${!showChanAp && !st.blindMode && cond.culprit && cond.culprit !== 'None' ? `
+                  <details class="clin-coronary-map" open>
+                    <summary>${isTr ? 'Koroner arter haritası · suçlu damar' : 'Coronary artery map · culprit vessel'}</summary>
+                    ${buildHeartCoronarySvg(cond, { id: 'none' }, isTr, true)}
+                  </details>` : ''}
 
                   ${showChanAp ? `
                     <div class="clin-chan-node-pills" role="group" aria-label="${isTr ? 'Faz 0–4 İyon Kanalı Seçimi' : 'Select Phase 0–4 Ion Channel'}">
@@ -4202,6 +4249,7 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
 
     bindEvents(activeQuestion, filteredQuestions.length);
     renderCanvasFrame();
+    drawActivation(true);
   }
 
   function bindEvents(activeQuestion, filteredCount) {
@@ -4701,7 +4749,9 @@ export function createClinicalEcgSimulator({ mount, getLang = () => 'tr', initia
       render();
     },
     destroy() {
+      destroyed = true;
       if (rafId) cancelAnimationFrame(rafId);
+      activationAtlas?.destroy();
       root.remove();
     }
   };

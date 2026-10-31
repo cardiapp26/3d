@@ -1,5 +1,5 @@
 import { createDavinciAtlas } from './davinci-atlas.js';
-import { CABRERA, CHEST, SITES, PV_SITES, DAVINCI_DOI, limbValues, rvotAngle, wavePath } from './davinci-model.js';
+import { SITES, PV_SITES, DAVINCI_DOI, rvotAngle, wavePath, workbenchSignals } from './davinci-model.js';
 import './davinci-workbench.css';
 
 export function createDavinciWorkbench({getLang,state:st,figures=null}) {
@@ -11,19 +11,10 @@ export function createDavinciWorkbench({getLang,state:st,figures=null}) {
   if(lead&&signals().some(s=>s.id===lead)){st.selectedLead=lead;update();}
   if(site){if(tab==='atrial')st.pvSite=site;else st.focusSite=site;render(tab);}
  }});
+ figures?.attachAtlas(atlas);
  const label=id=>id==='-aVR'?'−aVR':id;
  const button=(attr,value,text,active)=>`<button type="button" ${attr}="${value}" aria-pressed="${active}">${text}</button>`;
- function signals(){
-  if(tab==='atrial'){
-   const d=PV_SITES[st.pvSite];return [{id:'II',net:d.ii,color:'#f4c66e'},{id:'V1',net:d.v1,color:'#fb7185'},{id:'aVL',net:d.avl,color:'#c4a3ff'}].map(x=>({...x,kind:'p',width:d.width}));
-  }
-  if(tab==='heights'||tab==='nomenclature'&&st.nomenclatureTopic==='papillary'){
-   const d=SITES[st.focusSite];return CHEST.map((l,i)=>({...l,net:d.chest[i],kind:'qrs',q:!!d.qChest&&i>=2}));
-  }
-  if(tab==='nomenclature'&&st.nomenclatureTopic==='bundles')return [{id:'V1',net:st.bundleSide==='left'?-.9:.85,color:'#fb7185',kind:st.bundleSide==='left'?'lbbb':'rbbb'}];
-  const angle=tab==='nomenclature'?-60:st.cabreraScenario==='rvot_shift'?rvotAngle(st.rvotFocus):st.cabreraScenario==='sinus_p'?58:90;
-  return limbValues(angle,st.cabreraMode).map(x=>({...x,kind:st.cabreraScenario==='sinus_p'&&tab==='cabrera'?'p':st.cabreraScenario==='mi_contiguous'&&tab==='cabrera'?'st':'qrs',q:tab==='cabrera'&&st.cabreraScenario==='rvot_shift'&&x.net<0}));
- }
+ const signals=()=>workbenchSignals(tab,st);
  function sourceInfo(){
   if(tab==='atrial')return {figure:9,title:st.pvSite,message:PV_SITES[st.pvSite].message[lang()],axis:90};
   if(tab==='heights'||tab==='nomenclature'&&st.nomenclatureTopic==='papillary'){
@@ -66,7 +57,8 @@ export function createDavinciWorkbench({getLang,state:st,figures=null}) {
   root.querySelector('.da-wave-note').textContent=(baseline?tr('Kesik gri: kaydedilen A · Renkli: güncel B. ','Dashed grey: saved A · Colour: current B. '):'')+tr('Nitel örüntü; genlik ve süre ölçekli değil.','Qualitative pattern; amplitude and duration are not calibrated.');
   root.querySelector('[data-da-clear]').hidden=!st.daBaseline;
   root.querySelector('[data-da-save]').textContent=baseline?tr('A’yı güncelle','Update A'):tr('A’yı kaydet · karşılaştır','Save A · compare');
-  root.querySelector('.da-evidence-main').innerHTML=`<div class="da-evidence-left"><span class="da-figure">${tr('ŞEKİL','FIGURE')} ${info.figure}</span><button type="button" class="da-fig-mini-card" data-da-open-fig="${info.figure}" aria-label="${tr('Şekil', 'Figure')} ${info.figure}"><img src="../ecg-anatomy/figures/fig${info.figure}.webp" alt="Figure ${info.figure}" loading="lazy"><span class="da-fig-mini-badge">${tr('Büyüt','Zoom')} · ${tr('Şekil','Fig.')} ${info.figure}</span></button></div><div class="da-evidence-body"><p>${info.message}</p><div class="da-evidence-links"><button type="button" class="da-link-btn" data-da-goto-article="${info.figure}">${tr('Şekli aşağıda incele ↓', 'Study the figure below ↓')}</button><a href="${DAVINCI_DOI}" target="_blank" rel="noopener noreferrer">${tr('Kaynak makale ↗','Source paper ↗')}</a></div></div>`;
+  root.querySelector('.da-evidence-main').innerHTML=`<div class="da-evidence-left"><span class="da-figure">${tr('ŞEKİL','FIGURE')} ${info.figure}</span><button type="button" class="da-fig-mini-card" data-da-open-fig="${info.figure}" aria-label="${tr('Şekil', 'Figure')} ${info.figure}">${figures?figures.miniFigure(info.figure):''}<span class="da-fig-mini-badge">${tr('Büyüt','Zoom')} · ${tr('Şekil','Fig.')} ${info.figure}</span></button></div><div class="da-evidence-body"><p>${info.message}</p><div class="da-evidence-links"><button type="button" class="da-link-btn" data-da-goto-article="${info.figure}">${tr('Şekli aşağıda incele ↓', 'Study the figure below ↓')}</button><a href="${DAVINCI_DOI}" target="_blank" rel="noopener noreferrer">${tr('Kaynak makale ↗','Source paper ↗')}</a></div></div>`;
+  figures?.hydrate(root.querySelector('.da-evidence-main'));
   root.querySelector('[data-da-open-fig]')?.addEventListener('click',e=>figures?.openLightbox(info.figure,e.currentTarget));
   root.querySelector('[data-da-goto-article]')?.addEventListener('click',()=>{const card=root.querySelector(`#da-card-${info.figure}`);if(!card){figures?.openLightbox(info.figure);return;}card.scrollIntoView({behavior:'smooth',block:'center'});card.classList.add('is-flash');setTimeout(()=>card.classList.remove('is-flash'),1600);card.querySelector('[data-fig-zoom]')?.focus({preventScroll:true});});
   atlas.update({...st,tab,angle:info.axis,visibleLeads:list.map(s=>s.id)});

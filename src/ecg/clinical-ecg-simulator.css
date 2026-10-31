@@ -424,6 +424,28 @@
   text-align: center;
 }
 
+/* Beat activation on the 3D atlas heart (ecg-ashman-atlas.js, sinus origin). */
+.clin-heart-svg-wrap.is-activation {
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  min-height: 380px;
+}
+.clin-heart-svg-wrap.is-activation .ash-3d { height: 380px; border-radius: 10px; }
+.clin-heart-svg-wrap.is-activation .ash-3d-time { color: #e2e8f0; font-weight: 700; }
+.clin-coronary-map {
+  margin-top: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.6);
+  padding: 6px 8px;
+}
+.clin-coronary-map summary { cursor: pointer; font-size: 12px; font-weight: 700; color: #cbd5e1; }
+.clin-coronary-map .clin-heart-svg { margin-top: 6px; }
+@media (max-width: 560px) {
+  .clin-heart-svg-wrap.is-activation, .clin-heart-svg-wrap.is-activation .ash-3d { min-height: 320px; height: 320px; }
+}
+
 .clin-heart-svg {
   width: 100%;
   max-height: 250px;

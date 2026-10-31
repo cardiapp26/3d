@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {CABRERA,CHEST,SITES,PV_SITES,limbValues,rvotAngle,wavePath} from '../src/ecg/davinci-model.js';
+import {CABRERA,CHEST,SITES,PV_SITES,limbValues,rvotAngle,wavePath,workbenchSignals,workbenchAxis} from '../src/ecg/davinci-model.js';
+import {FIGURE_PANEL_STATES,figurePanelState,figurePanelSignals,figurePanelTarget} from '../src/ecg/davinci-figure-states.js';
 import {JACC_PAPER_META,JACC_FIGURES,JACC_CLINICAL_CHALLENGES} from '../src/ecg/davinci-data.js';
 
 // Verify JACC Paper Metadata
@@ -24,8 +25,16 @@ for(let i=1; i<=12; i++){
   assert.ok(fig.caption.tr && fig.caption.en);
   assert.ok(Array.isArray(fig.panels) && fig.panels.length > 0);
   assert.ok(fig.workbench && fig.workbench.tab);
-  // Verify images exist in public/ecg-anatomy/figures
-  assert.ok(fs.existsSync(`public/ecg-anatomy/figures/fig${i}.webp`), `fig${i}.webp must exist`);
+  // Every panel is redrawn from the model: a state in the figure's topic whose selected lead is drawn.
+  for (const panel of fig.panels) {
+    const state = FIGURE_PANEL_STATES[i]?.[panel.id];
+    assert.ok(state, `Figure ${i} panel ${panel.id} has a model state`);
+    assert.ok(['cabrera', 'heights', 'nomenclature', 'atrial'].includes(state.tab));
+    assert.ok(['anterior', 'superior', 'left', 'posterior'].includes(state.cameraView), `Figure ${i} ${panel.id} camera`);
+    const signals = figurePanelSignals(state);
+    assert.ok(signals.length > 0 && signals.some(s => s.id === state.selectedLead), `Figure ${i} ${panel.id} selected lead is drawn`);
+    if (state.compare) assert.ok(signals.some(s => s.compare), `Figure ${i} ${panel.id} comparison strips`);
+  }
 }
 
 // Verify Clinical Challenges
@@ -59,6 +68,20 @@ const q=points(wavePath({net:-.7,q:true}));assert.ok(q.find(([x,y])=>x===61&&y>4
 const rbbb=points(wavePath({kind:'rbbb'})),lbbb=points(wavePath({kind:'lbbb'}));
 assert.ok(rbbb.find(([x,y])=>x===80&&y<46),'RBBB terminal positive force');
 assert.ok(lbbb.find(([x,y])=>x===94&&y>46),'LBBB terminal negative force');
+// The paper's images are not shipped; the figure cards draw the model instead.
+assert.equal(fs.existsSync('public/ecg-anatomy/figures'), false, 'paper figure images are not shipped');
+// Figure panels carry the paper's contrasts in the model.
+const fig2 = figurePanelSignals(figurePanelState(2, 'B-C'));
+assert.ok(fig2.find(s => s.id === 'III').net > fig2.find(s => s.id === 'III').compare.net, 'Figure 2B-C: R rises in III from posterolateral to medial');
+assert.deepEqual(workbenchSignals('cabrera', figurePanelState(10, 'A')).map(s => s.id), ['I', 'II', 'III', 'aVR', 'aVL', 'aVF'], 'Figure 10A classical order');
+assert.deepEqual(workbenchSignals('cabrera', figurePanelState(10, 'B')).map(s => s.id), ['aVL', 'I', '-aVR', 'II', 'aVF', 'III'], 'Figure 10B Cabrera order');
+assert.equal(workbenchAxis('cabrera', figurePanelState(11, 'C')), 58, 'Figure 11C sinus P axis');
+assert.ok(figurePanelSignals(figurePanelState(11, 'D')).every(s => s.kind === 'st'), 'Figure 11D ST strips');
+assert.ok(figurePanelSignals(figurePanelState(8, 'C')).filter(s => ['V3', 'V4', 'V5', 'V6'].includes(s.id)).every(s => s.q), 'Figure 8C inferomedial Q in V3-V6');
+assert.equal(figurePanelSignals(figurePanelState(9, 'A')).find(s => s.id === 'aVL').net < 0, true, 'Figure 9A LAA negative P in aVL');
+const target = figurePanelTarget(figurePanelState(9, 'B-C'));
+assert.equal(target.compare, undefined); assert.equal(target.daBaseline.tab, 'atrial'); assert.equal(target.pvSite, 'RIPV');
+assert.equal(figurePanelTarget(figurePanelState(1, 'A')).daBaseline, null);
 console.log('PASS Da Vinci source relations: Figure 2 trends; Figures 4–5 height and concordance; Figure 8 distinct papillary Q and terminal bundle forces; Figure 9 P relations; Figure 10 exact inversion');
 
 // Figures and challenges are placed inside workbench topics (no separate article tab).

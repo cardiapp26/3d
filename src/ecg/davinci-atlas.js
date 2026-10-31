@@ -17,7 +17,7 @@ export function createDavinciAtlas({getLang,onSelect}) {
  let renderer;
  try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch{
   status.textContent=tr('3D görünüm açılamadı. Yan taraftaki kaynak bağlantılı şemalar ve kontroller kullanılabilir.','3D view unavailable. Source-linked diagrams and controls remain available.');
-  return {element,update(){},view(){},destroy(){element.remove();}};
+  return {element,update(){},view(){},snapshot(){return null;},isReady:()=>false,destroy(){element.remove();}};
  }
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0x0a1520,0);
  renderer.localClippingEnabled=true;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;host.append(renderer.domElement);
@@ -125,7 +125,7 @@ export function createDavinciAtlas({getLang,onSelect}) {
   const centre=bounds.getCenter(new THREE.Vector3()),scale=3.3/Math.max(...bounds.getSize(new THREE.Vector3()).toArray());
   for(const {obj,part} of found){const geometry=obj.geometry.clone().applyMatrix4(obj.matrixWorld);geometry.translate(-centre.x,-centre.y,-centre.z);geometry.scale(scale,scale,scale);const mesh=new THREE.Mesh(geometry,material(part.color));mesh.userData=part;heart.add(mesh);meshes.push(mesh);if(!byId.has(part.id))byId.set(part.id,[]);byId.get(part.id).push(mesh);}
   addArchBranchesAndTrims();
-  disposeNode(gltf.scene);decoder.dispose();loaded=true;element.dataset.loaded='true';update(current);
+  disposeNode(gltf.scene);decoder.dispose();loaded=true;element.dataset.loaded='true';update(current);element.dispatchEvent(new CustomEvent('da-atlas-ready'));
  }).catch(error=>{if(destroyed)return;status.hidden=false;status.textContent=tr('Atlas yüklenemedi; şematik işaretler kalp anatomisi yerine geçmez.','Atlas failed to load; schematic markers do not replace cardiac anatomy.');element.dataset.loaded='error';console.error('Da Vinci atlas:',error);});
  // Same atlas frame as heart.js: schematic supra-aortic branches on the arch, PA branches trimmed to hilar length.
  function addArchBranchesAndTrims(){
@@ -137,6 +137,42 @@ export function createDavinciAtlas({getLang,onSelect}) {
   element.dataset.paTrims=[...new Set(meshes.filter(m=>m.material.clippingPlanes?.length).map(m=>m.userData.sourceName))].join(',');
  }
  function view(name){const positions={anterior:[0,.35,10.8],superior:[0,10.8,.01],left:[10,.8,0],posterior:[0,.35,-10.8]};camera.position.set(...positions[name]);camera.up.set(0,1,0);if(name==='superior')camera.up.set(0,0,-1);controls.target.set(0,0,0);controls.update();dirty=true;element.dataset.view=name;}
+ // Still image of a model state for the figure cards. Renders the state at a fixed size off the
+ // live view, paints the electrode and site labels onto a 2D canvas, then restores the live view.
+ function drawPins(ctx,width,height){
+  ctx.font='750 13px Inter, system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const p of pins){
+   let visible=p.marker.visible;for(let a=p.marker.parent;a;a=a.parent)visible&&=a.visible;
+   const point=p.marker.getWorldPosition(new THREE.Vector3()).project(camera);
+   if(!visible||point.z>1)continue;
+   const x=(point.x+1)*width/2,y=(-point.y+1)*height/2-16,text=p.node.textContent,color=p.node.style.getPropertyValue('--pin-color')||'#e2e8f0';
+   const w=ctx.measureText(text).width+12;
+   ctx.fillStyle='rgba(13,25,34,.88)';ctx.strokeStyle=color;ctx.globalAlpha=.9;ctx.beginPath();ctx.roundRect(x-w/2,y-10,w,20,4);ctx.fill();ctx.globalAlpha=.45;ctx.stroke();ctx.globalAlpha=1;
+   ctx.fillStyle=color;ctx.fillText(text,x,y+.5);
+  }
+ }
+ function snapshot({state,view:name='anterior',width=640,height=440}){
+  if(!loaded||destroyed)return null;
+  const saved={current,position:camera.position.clone(),up:camera.up.clone(),target:controls.target.clone(),view:element.dataset.view,ratio:renderer.getPixelRatio()};
+  let url=null;
+  try{
+   update(state);view(name);
+   renderer.setPixelRatio(1);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();
+   renderer.render(scene,camera);
+   const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+   const ctx=canvas.getContext('2d');
+   const glow=ctx.createRadialGradient(width/2,height*.45,20,width/2,height*.45,Math.max(width,height)*.7);
+   glow.addColorStop(0,'#13283a');glow.addColorStop(1,'#08111a');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
+   ctx.drawImage(renderer.domElement,0,0,width,height);drawPins(ctx,width,height);
+   url=canvas.toDataURL('image/webp',.86);
+  }finally{
+   current=saved.current;update({});
+   camera.position.copy(saved.position);camera.up.copy(saved.up);controls.target.copy(saved.target);controls.update();
+   if(saved.view)element.dataset.view=saved.view;
+   renderer.setPixelRatio(saved.ratio);resize();positionLabels();dirty=true;
+  }
+  return url;
+ }
  update(current);
- return {element,update,view,destroy(){destroyed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();disposeNode(scene);renderer.dispose();renderer.forceContextLoss();element.remove();}};
+ return {element,update,view,snapshot,isReady:()=>loaded&&!destroyed,destroy(){destroyed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();decoder.dispose();disposeNode(scene);renderer.dispose();renderer.forceContextLoss();element.remove();}};
 }

@@ -10,8 +10,8 @@ export const GUYTON_TOPICS = [
       en: 'The Normal Electrocardiogram & Wave Principles'
     },
     subtitle: {
-      tr: 'Monofazik aksiyon potansiyeli, depolarizasyon ve repolarizasyon dalgaları, kalibrasyon',
-      en: 'Monophasic action potential, depolarization & repolarization waves, calibration'
+      tr: 'P, QRS ve T dalgaları; PR, QRS, ST ve QT ölçümü; standart kalibrasyonda tek atımın okunması',
+      en: 'P, QRS and T waves; PR, QRS, ST and QT measurement; reading one beat at standard calibration'
     },
     sections: [
       {

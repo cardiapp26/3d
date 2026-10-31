@@ -1,6 +1,5 @@
 import { ecgSample, ecgTiming } from './guyton-render.js';
 import { CHEST_LEADS, projectLead, reentryMetrics, ringSnapshot, RHYTHM_EXAMPLES } from './ecg-lab-model.js';
-import { ventricularSample } from '../physiology-model.js';
 import { drawRhythmStrip } from './rhythm-strip.js';
 import './ecg-labs.css';
 const NS='http://www.w3.org/2000/svg';
@@ -26,14 +25,13 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
   if(point.x<40||point.x>560)return;
   const rrMs=ecgTiming({rate:state.rate}).rr*1000;
   if(point.y>=38&&point.y<=170)state.cursor=Math.round((point.x-40)/520*rrMs);
-  else if(point.y>=225&&point.y<=345)state.cursor=Math.round(((point.x-40)/(state.speed*4)*1000)%rrMs);
+  else if(point.y>=225&&point.y<=345)state.cursor=Math.round(((point.x-40)/100*1000)%rrMs);
   else return;
   state.cursor=Math.max(0,Math.min(Math.ceil(rrMs)-1,state.cursor));draw();
  });
  const names={ch11_basics:tr('Dalga ve ölçüm laboratuvarı','Wave and measurement lab'),ch11_leads:tr('Göğüs elektrotları ve R progresyonu','Chest electrodes and R progression'),ch12_vectors:tr('Aktivasyon haritası ve eşzamanlı QRS izleri','Activation map and synchronized QRS traces'),ch12_axis:tr('Aksı I–aVF–II ile test et','Test axis with I–aVF–II'),ch12_injury:tr('Bölgesel ST haritası ve referans çizgisi','Regional ST map and reference line'),ch13_arrhythmias:tr('Uyarılabilir boşluğu oluştur','Create an excitable gap')};h.textContent=names[topic];svg.setAttribute('aria-label',h.textContent);
  if(topic==='ch11_basics'){
   sliders.rate=slider('rate',tr('Kalp hızı (dk⁻¹)','Heart rate (min⁻¹)'),60,100);
-  for(const v of [25,50])button('speed',v,`${v} mm/s`);for(const v of [5,10,20])button('gain',v,`${v} mm/mV`);
   for(const v of ['P','PR','QRS','QT','T'])button('interval',v,v);sliders.cursor=slider('cursor',tr('Atım içi zaman (ms) · grafiğe tıkla veya kaydır','Time within beat (ms) · click the plot or slide'),0,799);
  }
  if(topic==='ch11_leads')for(const id of ['I','II','III','aVR','aVL','aVF',...CHEST_LEADS.map(l=>l.id)])button('lead',id,id);
@@ -55,19 +53,26 @@ export function createEcgLab({mount,topic,getLang,getExternal=()=>({}),state={}}
   if(topic==='ch11_basics')drawBasics();if(topic==='ch11_leads')drawLeads();if(topic==='ch12_injury')drawInjury();if(topic==='ch13_arrhythmias')drawRing();
  }
  function drawBasics(){
-  const timing=ecgTiming({rate:state.rate}),pxSec=state.speed*4,pxMv=state.gain*4,rrMs=timing.rr*1000;
+  // Standard recording (25 mm/s, 10 mm/mV); paper speed and gain are taught in the Recording chapter.
+  const speed=25,gain=10,timing=ecgTiming({rate:state.rate}),pxSec=speed*4,pxMv=gain*4,rrMs=timing.rr*1000;
   sliders.cursor.input.max=String(Math.ceil(rrMs)-1);state.cursor=Math.min(state.cursor,Math.ceil(rrMs)-1);sliders.cursor.input.value=state.cursor;sliders.cursor.out.textContent=state.cursor;
   grid(40,225,520,120);waveform(40,225,520,120,{rate:state.rate,pxSec,gain:pxMv},'#192d38');
-  text(40,212,`${state.speed} mm/s · ${state.gain} mm/mV`);text(40,24,tr('Ventrikül hücresi: mV','Ventricular cell: mV'));
-  line([[40,40],[40,165],[560,165]],'lab-axis');text(7,55,'+20');text(7,163,'−90');
-  line(Array.from({length:521},(_,i)=>{const ms=i/520*rrMs,ap=ventricularSample(ms-(timing.q*1000));return [40+i,165-(ap.voltage+90)/110*115];}));
+  text(40,212,`${speed} mm/s · ${gain} mm/mV`);text(40,24,tr('Tek atım, büyütülmüş: dalgalar ve segmentler','One beat, magnified: waves and segments'));
+  // Magnified beat: the same teaching ECG, one RR wide, with each wave and segment named.
+  const zx=ms=>40+ms/rrMs*520,zBase=128,zy=mv=>zBase-mv*62;
+  line([[40,zBase],[560,zBase]],'lab-axis');
+  for(const [a,b,name,above] of [[timing.p,timing.pEnd,'P',true],[timing.pEnd,timing.q,tr('PR seg.','PR seg.'),false],[timing.q,timing.j,'QRS',true],[timing.j,timing.tStart,'ST',false],[timing.tStart,timing.tEnd,'T',true],[timing.tEnd,timing.rr,'TP',false]])
+   text(zx((a+b)/2*1000),above?50:160,name,{'text-anchor':'middle',class:'lab-wave-name'});
+  line(Array.from({length:521},(_,i)=>{const ms=i/520*rrMs;return [40+i,zy(ecgSample(ms/1000,{rate:state.rate}))];}));
   for(const ms of [0,rrMs/4,rrMs/2,rrMs*3/4,rrMs])text(40+ms/rrMs*520,185,String(Math.round(ms)),{'text-anchor':'middle'});text(572,185,'ms');
-  const cursor=state.cursor;line([[40+cursor/rrMs*520,38],[40+cursor/rrMs*520,170]],'lab-cursor');
+  const cursor=state.cursor;line([[zx(cursor),38],[zx(cursor),170]],'lab-cursor');
   line([[40+cursor/1000*pxSec,225],[40+cursor/1000*pxSec,345]],'lab-cursor');
   const spans={P:[timing.p,timing.pEnd],PR:[timing.p,timing.q],QRS:[timing.q,timing.j],QT:[timing.q,timing.tEnd],T:[timing.tStart,timing.tEnd]},[a,b]=spans[state.interval];
+  svg.append(svgNode('rect',{x:zx(a*1000),y:38,width:(b-a)*520/timing.rr,height:132,class:'lab-band'}));
   svg.append(svgNode('rect',{x:40+a*pxSec,y:225,width:(b-a)*pxSec,height:120,class:'lab-band'}));line([[40+a*pxSec,365],[40+b*pxSec,365]],'lab-measure');text(40+(a+b)/2*pxSec,386,`${state.interval} ${Math.round((b-a)*1000)} ms`,{'text-anchor':'middle'});
-  result.textContent=`${state.interval}: ${Math.round((b-a)*1000)} ms = ${((b-a)*state.speed).toFixed(1)} ${tr('küçük kare','small boxes')} · RR ${(timing.rr*1000).toFixed(0)} ms · QTcF ${(timing.qt/Math.cbrt(timing.rr)*1000).toFixed(0)} ms`;
-  note.textContent=tr('Hız ve kazanç kare sayısını değiştirir; gerçek süre/voltajı değiştirmez. QTcF = QT/RR⅓; bu sabit QT örneği hız uyumunu modellemez. Tek hücre AP’si yüzey EKG değildir. P atriyumu, QRS ventriküler depolarizasyonu, T repolarizasyonu temsil eder; her derivasyonda pozitif olmak zorunda değildir.','Speed and gain change box counts, not actual time/voltage. QTcF = QT/RR⅓; this fixed-QT example does not model rate adaptation. Single-cell AP is not surface ECG. P represents atria, QRS ventricular depolarization, T repolarization; polarity depends on lead.');
+  const at=cursor/1000,where=at<timing.p?'TP':at<timing.pEnd?'P':at<timing.q?tr('PR segmenti','PR segment'):at<timing.j?'QRS':at<timing.tStart?'ST':at<timing.tEnd?'T':'TP';
+  result.textContent=`${state.interval}: ${Math.round((b-a)*1000)} ms = ${((b-a)*speed).toFixed(1)} ${tr('küçük kare','small boxes')} · ${tr('İmleç','Cursor')} ${cursor} ms: ${where} · RR ${(timing.rr*1000).toFixed(0)} ms · QTcF ${(timing.qt/Math.cbrt(timing.rr)*1000).toFixed(0)} ms`;
+  note.textContent=tr('Standart kayıt: 25 mm/s ve 10 mm/mV; bir küçük kare 40 ms ve 0,1 mV. Kâğıt hızı ve kazancın etkisi “Kayıt” bölümünde, hücre aksiyon potansiyeli “Hücre” bölümünde, QT düzeltmesi “QT” bölümünde işlenir. P atriyumu, QRS ventriküler depolarizasyonu, T repolarizasyonu temsil eder; her derivasyonda pozitif olmak zorunda değildir.','Standard recording: 25 mm/s and 10 mm/mV; one small box is 40 ms and 0.1 mV. Paper speed and gain are covered in “Recording”, the cell action potential in “Cell”, QT correction in “QT”. P represents atria, QRS ventricular depolarization, T repolarization; polarity depends on lead.');
  }
  function drawLeads(){
   torso();const chosen=CHEST_LEADS.find(l=>l.id===state.lead);
