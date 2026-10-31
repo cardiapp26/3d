@@ -13,10 +13,11 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.goto(`${APP}/#/mode/anatomy`);
+    // Transseptal lives on the EP anatomy page.
+    await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
+    await page.goto(`${APP}/eps/anatomy/#/mode/transseptal`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
-    await page.locator('[data-mode=transseptal]').dispatchEvent('click');
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => window.heart.getState().mode === 'transseptal');
     const toggle = page.locator('[data-ts-cath=sites]');
     assert.equal(await toggle.count(), 1, 'the Target sites switch exists');
     assert.equal(await toggle.evaluate((el) => el.checked), false, 'off by default');
