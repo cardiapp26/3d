@@ -25,6 +25,12 @@ const SHOTS = process.env.SHOT_DIR || null;
     await page.waitForFunction(() => window.heart.getState().mode === 'transseptal');
     const guide = page.locator('[data-ts-guide]');
     assert.equal(await guide.isVisible(), true, 'guide visible in the transseptal lesson');
+    // Under the lesson step, closed by default so the step text stays in view.
+    assert.equal(await page.evaluate(() => Boolean(document.querySelector('#step-detail').compareDocumentPosition(document.querySelector('[data-ts-guide]')) & Node.DOCUMENT_POSITION_FOLLOWING)), true, 'guide follows the step detail');
+    assert.equal(await page.locator('[data-tsg-toggle]').getAttribute('aria-expanded'), 'false');
+    assert.equal(await page.locator('.tsg-tab').count(), 0, 'closed guide shows only its header');
+    await page.locator('[data-tsg-toggle]').click();
+    assert.equal(await page.locator('[data-tsg-toggle]').getAttribute('aria-expanded'), 'true');
     assert.equal(await page.locator('.tsg-tab').count(), 8);
     assert.equal(await page.locator('.tsg-kicker').textContent(), 'TRANSSEPTAL REHBER');
     const tab = id => page.locator(`[data-tsg-tab="${id}"]`).click();
