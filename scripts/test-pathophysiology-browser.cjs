@@ -28,16 +28,24 @@ const { startApp } = require('./lib/app-server.cjs');
     const activeModule = await page.$eval('.site-module[aria-current="page"]', el => el.textContent.trim());
     assert.ok(activeModule.toLowerCase().includes('patofizyoloji') || activeModule.toLowerCase().includes('pathophysiology'), 'Active module should be Patofizyoloji');
 
-    // Verify 6 station buttons in sidebar
+    // Verify 13 station buttons in sidebar, grouped under 4 headings
     const stations = await page.$$eval('.pathophys-nav-item', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
-    assert.equal(stations.length, 6, `Should have 6 stations in nav, found: ${stations.length}`);
+    assert.equal(stations.length, 13, `Should have 13 stations in nav, found: ${stations.length}`);
+    assert.equal(await page.locator('.pathophys-nav-group').count(), 4, 'four station groups');
 
     // Station 1: PV loop
     assert.ok(await page.$('.pathophys-pv-svg'), 'PV loop SVG should render');
     const efReadout = await page.$eval('[data-pv-out="ef"]', el => el.textContent.trim());
     assert.ok(efReadout.includes('%'), `EF readout should be percentage, got: ${efReadout}`);
 
-    // Click Station 2: Starling & Laplace
+    // Station 2: preload / afterload explorer (moved here from the catheter panel)
+    await page.click('[data-station="loads"]');
+    await page.waitForSelector('.pathophys-loads-lab .hemo-loads');
+    assert.equal(Number(await page.getAttribute('[data-load-stress]', 'data-load-stress')), 15, 'baseline preload wall stress');
+    await page.click('[data-load-mode="afterload"]');
+    assert.equal(Number(await page.getAttribute('[data-load-stress]', 'data-load-stress')), 125, 'baseline afterload wall stress');
+
+    // Click Station 3: Starling & Laplace
     await page.click('[data-station="starling-laplace"]');
     await page.waitForTimeout(200);
     assert.ok(await page.$('.starling-svg'), 'Starling SVG should render');
@@ -47,6 +55,37 @@ const { startApp } = require('./lib/app-server.cjs');
     await page.click('[data-station="atherogenesis"]');
     await page.waitForTimeout(200);
     assert.ok(await page.$('.athero-stepper'), 'Atherogenesis stepper should render');
+    assert.ok(await page.$('.athero-cum-svg polyline'), 'Cumulative LDL curve should render');
+    await page.click('[data-mod-id="masld"]');
+    await page.click('[data-statin-age="35"]');
+    assert.equal(await page.locator('.athero-cum-svg polyline').count(), 2, 'treated and untreated LDL trajectories');
+    await page.screenshot({ path: '/Users/yh/.gemini/antigravity/brain/65400f76-60ad-41ef-8e98-3578bd82623f/athero_screenshot.png' });
+
+    // New source-based stations
+    const shots = '/Users/yh/.gemini/antigravity/brain/65400f76-60ad-41ef-8e98-3578bd82623f';
+    await page.click('[data-station="hypertension-vascular"]');
+    await page.waitForSelector('.htn-svg');
+    const bpBefore = await page.locator('.pathophys-htn-lab .readout-value').first().textContent();
+    await page.click('[data-htn-drug="baxdrostat"]');
+    assert.notEqual(await page.locator('.pathophys-htn-lab .readout-value').first().textContent(), bpBefore, 'drug lowers central BP');
+    await page.screenshot({ path: `${shots}/htn_screenshot.png` });
+
+    await page.click('[data-station="pah-rv"]');
+    await page.waitForSelector('.pah-svg');
+    await page.click('[data-pah-toggle="sota"]');
+    await page.screenshot({ path: `${shots}/pah_screenshot.png` });
+
+    await page.click('[data-station="myocardial-ckm"]');
+    await page.waitForSelector('.ckm-svg');
+    for (const m of ['ckm', 'lymphatic', 'takotsubo']) { await page.click(`[data-ckm-mode="${m}"]`); await page.waitForSelector('.ckm-svg'); }
+    await page.screenshot({ path: `${shots}/ckm_screenshot.png` });
+
+    await page.click('[data-station="achd-shunts"]');
+    await page.waitForSelector('.achd-svg');
+    await page.click('[data-achd-preset="eisen"]');
+    assert.match(await page.locator('.achd-svg').textContent(), /Eisenmenger/, 'Eisenmenger reversal shown');
+    await page.screenshot({ path: `${shots}/achd_screenshot.png` });
+    assert.equal(errors.length, 0, `Page errors after new stations: ${errors.join('; ')}`);
 
     // Click Station 4: Electrophysiology
     await page.click('[data-station="electrophys"]');

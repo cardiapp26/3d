@@ -1,13 +1,39 @@
 // Cardiovascular Pathophysiology Studio: stations, didactic models, and bilingual content.
-// Time-varying elastance, Frank-Starling tension, Laplace stress, atheroma biology,
-// cardiac arrhythmogenesis, and Forrester hemodynamic subsets.
+// Grounded in Nature Reviews Cardiology (2024-2026) and Physiological Reviews:
+// Suga-Sagawa elastance, Frank-Starling, Laplace wall stress, Boren (2025) apoB retention,
+// Ference & Braunwald (2024) cumulative LDL exposure, Averna (2026) MASLD-dyslipidemia,
+// Porsch (2024) & Gelfand (2025) immuno-atherogenesis, Rashedi (2026) antiphospholipid thrombosis,
+// Masenga (2025) salt sensitivity, Sayer (2025) & Min (2025) hypertension & pulse wave reflection,
+// Ghofrani (2025) PAH & BMPR2/Activin signaling, Omerovic (2026) Takotsubo syndrome,
+// Zelniker & Braunwald (2026) SGLT2i CKM protection, Brakenhielm (2026) cardiac lymphatics,
+// Park & Fishman (2026) & Lee (2026) conduction system & CSP, Cepas-Guillen (2025) ACHD shunts.
 
 const t = (tr, en) => ({ tr, en });
+
+export const PATHOPHYS_GROUPS = [
+  {
+    id: 'mechanics',
+    label: t('I. Ventrikül Mekaniği ve Döngü', 'I. Ventricular Mechanics & Cycle')
+  },
+  {
+    id: 'vascular',
+    label: t('II. Vasküler Biyoloji, Aterom ve Basınç', 'II. Vascular Biology, Atheroma & Pressure')
+  },
+  {
+    id: 'myocardial',
+    label: t('III. Miyokard, Metabolizma ve İleti', 'III. Myocardium, Metabolism & Conduction')
+  },
+  {
+    id: 'structural',
+    label: t('IV. Kapak, Doğuştan Şant ve Akut Şok', 'IV. Valvular, Congenital Shunts & Shock')
+  }
+];
 
 export const PATHOPHYS_STATIONS = [
   {
     id: 'pv-loop',
     num: '01',
+    group: 'mechanics',
     title: t('Basınç-Hacim (PV) Döngüsü ve Ventrikül Mekaniği', 'Pressure-Volume (PV) Loop and Ventricular Mechanics'),
     shortTitle: t('PV Döngüsü', 'PV Loop'),
     intro: t(
@@ -16,8 +42,20 @@ export const PATHOPHYS_STATIONS = [
     )
   },
   {
-    id: 'starling-laplace',
+    id: 'loads',
     num: '02',
+    group: 'mechanics',
+    title: t('Ön Yük ve Ard Yük', 'Preload and Afterload'),
+    shortTitle: t('Ön Yük / Ard Yük', 'Preload / Afterload'),
+    intro: t(
+      'Atan sol ventrikül kesiti ve kas şeridi benzetmesiyle ön yük ile ard yükü ayırın; basınç, boşluk yarıçapı ve duvar kalınlığının duvar stresine etkisini canlı izleyin.',
+      'Separate preload from afterload with a beating LV section and a muscle-strip analogy; watch how pressure, cavity radius and wall thickness change wall stress.'
+    )
+  },
+  {
+    id: 'starling-laplace',
+    num: '03',
+    group: 'mechanics',
     title: t('Frank-Starling Yasası ve Laplace Duvar Stresi', 'Frank-Starling Law and Laplace Wall Stress'),
     shortTitle: t('Starling ve Laplace', 'Starling & Laplace'),
     intro: t(
@@ -26,43 +64,113 @@ export const PATHOPHYS_STATIONS = [
     )
   },
   {
-    id: 'atherogenesis',
-    num: '03',
-    title: t('Aterogenez ve Plak Biyolojisi', 'Atherogenesis and Plaque Biology'),
-    shortTitle: t('Aterom ve Plak', 'Atheroma & Plaque'),
+    id: 'physiology',
+    num: '04',
+    group: 'mechanics',
+    title: t('Görsel Fizyoloji Rehberi', 'Visual Physiology Guide'),
+    shortTitle: t('Fizyoloji Rehberi', 'Physiology Guide'),
     intro: t(
-      'Endotelyal disfonksiyon ve apoB transsitozundan subendotelyal retansiyona, köpük hücresi birikiminden MMP kaynaklı fibröz kılıf incelmesi ve akut plak rüptürüne kadar 5 evreli aterom kaskadı.',
-      'The 5-stage atheroma cascade: endothelial dysfunction, apoB particle retention, foam cell formation, necrotic core expansion, and MMP-driven fibrous cap rupture.'
+      'Pompa eğrileri (sağ ve sol doluş, otonom tonus, arter basıncı), basınç-hacim döngüsünün evreleri ve işi, Wiggers olayları.',
+      'Pump curves (right and left filling, autonomic tone, arterial pressure), the phases and work of the pressure-volume loop, and Wiggers events.'
+    )
+  },
+  {
+    id: 'wiggers',
+    num: '05',
+    group: 'mechanics',
+    title: t('Canlı Wiggers Diyagramı', 'Live Wiggers Diagram'),
+    shortTitle: t('Canlı Wiggers', 'Live Wiggers'),
+    intro: t(
+      'Sol ve sağ kalp basınçları, LV hacmi ve EKG aynı döngü saatinde: oynatın, dondurun, kalp hızını değiştirin ya da döngüde gezinin.',
+      'Left and right heart pressures, LV volume and the ECG on one cardiac clock: play, freeze, change the heart rate or scrub through the cycle.'
+    )
+  },
+  {
+    id: 'atherogenesis',
+    num: '06',
+    group: 'vascular',
+    title: t('Aterogenez, Kümülatif LDL, MASLD ve İmmüno-Tromboz Kanvası', 'Atherogenesis, Cumulative LDL, MASLD and Immuno-Thrombosis Canvas'),
+    shortTitle: t('Aterom ve LDL Kanvası', 'Atheroma & LDL Canvas'),
+    intro: t(
+      'Borén (2025), Ference ve Braunwald (2024), Averna (2026), Porsch (2024) ve Rashedi (2026) ışığında: Karaciğer steatozundan (MASLD) ApoB retansiyonuna, kümülatif LDL maruziyet eğrisinden otoimmün/aPL aracılı plak yırtılmasına canlı çoklu-organ sahnesi.',
+      'Interactive multi-organ canvas integrating hepatic steatosis (MASLD) VLDL overproduction, subendothelial apoB retention, cumulative LDL-years plaque threshold, and autoimmune/antiphospholipid thrombosis.'
+    )
+  },
+  {
+    id: 'hypertension-vascular',
+    num: '07',
+    group: 'vascular',
+    title: t('Hipertansiyon, Tuz Duyarlılığı ve Arteryel Dalga Yansıması', 'Hypertension, Salt Sensitivity and Arterial Wave Reflection'),
+    shortTitle: t('Hipertansiyon ve PWV', 'Hypertension & PWV'),
+    intro: t(
+      'Masenga (2025), Sayer (2025) ve Min (2025) çerçevesi: Renal sodyum tutulumu (basınç natriürezi), endotelin/aldosteron ekseni, direnç arteriyolü yeniden yapılanması ve aortik nabız dalgası hızı (PWV) augmentasyon simülatörü.',
+      'Explore renal pressure-natriuresis shifting, neurohormonal/endothelin activation, resistance arteriole remodeling, aortic pulse wave velocity (PWV) reflection augmentation, and novel antihypertensive targets.'
+    )
+  },
+  {
+    id: 'pah-rv',
+    num: '08',
+    group: 'vascular',
+    title: t('Pulmoner Arteriyel Hipertansiyon (PAH) ve Sağ Kalp Eşleşmesi', 'Pulmonary Arterial Hypertension (PAH) and Right Ventricular Coupling'),
+    shortTitle: t('Pulmoner HT ve Sağ Kalp', 'PAH & Right Heart'),
+    intro: t(
+      'Ghofrani (2025) 4-yolak modeli: BMPR2/Activin-Inhibin dengesizliği (sotatercept hedefi), endotelin, NO-sGC-cGMP ve prostasiklin yolakları; pleksiform arteriyoler obliterasyon ve interventriküler septumun sola (D-şekilli LV) kayması.',
+      'Four-pathway pulmonary vascular remodeling (BMPR2/Activin signaling, Endothelin-1, NO-sGC-cGMP, Prostacyclin), plexiform arteriopathy, and biventricular D-shape interdependence.'
+    )
+  },
+  {
+    id: 'myocardial-ckm',
+    num: '09',
+    group: 'myocardial',
+    title: t('Takotsubo Sendromu, CKM (SGLT2i) ve Kardiyak Lenfatikler', 'Takotsubo Syndrome, CKM (SGLT2i) and Cardiac Lymphatics'),
+    shortTitle: t('Takotsubo, CKM ve Lenfatik', 'Takotsubo, CKM & Lymphatics'),
+    intro: t(
+      'Omerovic (2026) Takotsubo katekolamin fırtınası ve β2-AR Gs→Gi sinyal anahtarı; Zelniker ve Braunwald (2026) SGLT2i miyokardiyal NHE-1/keton kardiyoproteksiyonu; Brakenhielm (2026) kardiyak lenfatik ödem drenajı ve fibrozis çözünümü.',
+      'Interactive simulation of Takotsubo apical ballooning (beta-2 Gs-to-Gi switch), SGLT2i cardio-kidney-metabolic (CKM) energetics, and cardiac lymphatic VEGFC/VEGFR3 edema clearance.'
     )
   },
   {
     id: 'electrophys',
-    num: '04',
-    title: t('Kardiyak Aksiyon Potansiyeli ve Aritmojenezi', 'Cardiac Action Potential and Arrhythmogenesis'),
-    shortTitle: t('Aksiyon Potansiyeli', 'Action Potential'),
+    num: '10',
+    group: 'myocardial',
+    title: t('Aksiyon Potansiyeli, İleti Sistemi (CCS) ve Fizyolojik Pacing', 'Action Potential, Conduction System (CCS) and Physiological Pacing'),
+    shortTitle: t('İleti Sistemi ve Aritmi', 'Conduction & Arrhythmia'),
     intro: t(
-      'Ventrikül ve nodal aksiyon potansiyeli iyon akımları (INa, ICa,L, IK, If) ile erken ard-depolarizasyonlar (EAD), geç ard-depolarizasyonlar (DAD) ve tek yönlü bloklu reentry devreleri.',
-      'Ventricular and nodal action potential ion currents (INa, ICa,L, IK, If) alongside early afterdepolarizations (EAD), delayed afterdepolarizations (DAD), and reentry circuits.'
-    )
-  },
-  {
-    id: 'forrester',
-    num: '05',
-    title: t('Akut Kalp Yetersizliği ve Forrester Hemodinamiği', 'Acute Heart Failure and Forrester Hemodynamics'),
-    shortTitle: t('Forrester Matrisi', 'Forrester Matrix'),
-    intro: t(
-      'Kardiyak İndeks (Perfüzyon: Sıcak/Soğuk) ve Pulmoner Kapiller Uç Basıncı (Konjesyon: Kuru/Islak) 2×2 matrisi: Klinik fenotipler, hemodinamik hedefler ve acil tedavi yanıtları.',
-      'Cardiac Index (Perfusion: Warm/Cold) vs Pulmonary Capillary Wedge Pressure (Congestion: Dry/Wet) 2×2 matrix: Clinical subsets, targets and emergency interventions.'
+      'Park ve Fishman (2026) ile Lee (2026) ışığında: Ventrikül/nodal iyon akımları (EAD, DAD, reentry), nodal (Tbx3/Hcn4) vs hızlı ileti (Nkx2-5/Scn5a/Cx40) genetik mimarisi ve LBBB dissenkronisinin Sol Dal Alanı Uyarımı (LBBAP/CSP) ile restorasyonu.',
+      'Cellular action potentials (EAD, DAD, reentry), transcriptional architecture of the cardiac conduction system, and mechanical resynchronization via Conduction System Pacing (LBBAP/HBP).'
     )
   },
   {
     id: 'valvular',
-    num: '06',
+    num: '11',
+    group: 'structural',
     title: t('Kapak Hastalıkları ve Basınç Gradyanları', 'Valvular Disease and Pressure Gradients'),
     shortTitle: t('Kapak Gradyanları', 'Valvular Gradients'),
     intro: t(
       'Aort darlığı, aort yetersizliği, mitral darlığı ve mitral yetersizliğinde eşzamanlı sol ventrikül, sol atriyum ve aort basınç dalgaları, tepe/ortalama gradyanlar ve hacim aşırı yükü.',
       'Simultaneous LV, LA and aortic pressure waveforms in aortic stenosis, aortic regurgitation, mitral stenosis and mitral regurgitation with transvalvular gradients.'
+    )
+  },
+  {
+    id: 'achd-shunts',
+    num: '12',
+    group: 'structural',
+    title: t('Erişkin Doğuştan Kalp Hastalıkları (ACHD) ve Şant Dinamiği', 'Adult Congenital Heart Disease (ACHD) and Shunt Dynamics'),
+    shortTitle: t('Doğuştan Şantlar (ACHD)', 'Congenital Shunts (ACHD)'),
+    intro: t(
+      'Cepas-Guillén (2025) çerçevesi: ASD, VSD ve PDA kusurlarında Qp/Qs şant akışı, odacık hacim/basınç aşırı yükü, pulmoner vasküler hastalık gelişimiyle Eisenmenger sendromu (sağ-sol şant tersinmesi ve siyanoz) ve transkateter kapama kriterleri.',
+      'Interactive 4-chamber shunt simulator for ASD, VSD, and PDA: live Qp/Qs calculation, chamber overload, progression to Eisenmenger reversal with systemic cyanosis, and transcatheter closure eligibility.'
+    )
+  },
+  {
+    id: 'forrester',
+    num: '13',
+    group: 'structural',
+    title: t('Akut Kalp Yetersizliği ve Forrester Hemodinamiği', 'Acute Heart Failure and Forrester Hemodynamics'),
+    shortTitle: t('Forrester Matrisi', 'Forrester Matrix'),
+    intro: t(
+      'Kardiyak İndeks (Perfüzyon: Sıcak/Soğuk) ve Pulmoner Kapiller Uç Basıncı (Konjesyon: Kuru/Islak) 2×2 matrisi: Klinik fenotipler, hemodinamik hedefler ve acil tedavi yanıtları.',
+      'Cardiac Index (Perfusion: Warm/Cold) vs Pulmonary Capillary Wedge Pressure (Congestion: Dry/Wet) 2×2 matrix: Clinical subsets, targets and emergency interventions.'
     )
   }
 ];
@@ -161,71 +269,122 @@ export const ATHEROMA_STAGES = [
   {
     stage: 1,
     id: 'endothelial',
-    title: t('Evre 1: Endotelyal Disfonksiyon ve Transsitoz', 'Stage 1: Endothelial Dysfunction & Transcytosis'),
+    title: t('Evre 1: Endotelyal Disfonksiyon ve ApoB Transsitozu', 'Stage 1: Endothelial Dysfunction & ApoB Transcytosis'),
     desc: t(
-      'Bifürkasyon ve eğriliklerde bozulmuş laminar shear stress, endotel geçirgenliğini artırır. VCAM-1 ve ICAM-1 adezyon molekülleri eksprese edilir; apoB içeren lipoproteinler endoteli geçerek subendotelyal boşluğa girer.',
-      'Disturbed shear stress at arterial bifurcations enhances endothelial permeability. VCAM-1 and ICAM-1 are upregulated; circulating apoB lipoproteins cross into the subendothelial space.'
+      'Bifürkasyon ve eğriliklerde bozulmuş laminar shear stress, endotel geçirgenliğini artırır. SR-BI ve ALK1 aracılı transsitoz ile dolaşımdaki apoB-100 taşıyan partiküller (LDL, VLDL kalıntıları, Lp(a)) subendotelyal intimaya geçer (Borén et al., Nat Rev Cardiol 2025).',
+      'Disturbed shear stress at arterial bifurcations impairs endothelial NO and promotes SR-BI/ALK1-mediated transcytosis of circulating apoB-100 lipoproteins (LDL, remnants, Lp(a)) into the intima (Borén et al., Nat Rev Cardiol 2025).'
     ),
     features: [
-      t('ApoB partikül girişi (LDL, Lp(a), Remnant)', 'ApoB particle influx (LDL, Lp(a), remnants)'),
-      t('Endotelyal nitrik oksit (NO) sentezi azalması', 'Reduced endothelial nitric oxide (NO) bioavailability'),
-      t('Lökosit adezyon reseptör aktivasyonu', 'Leukocyte adhesion receptor activation')
+      t('ApoB partikül akısı (<70 nm çaplı LDL, remnant ve Lp(a) girişi)', 'ApoB particle influx (<70 nm LDL, remnants, and Lp(a) entry)'),
+      t('Endotelyal eNOS / nitrik oksit (NO) biyoyararlanım kaybı', 'Loss of endothelial eNOS / nitric oxide (NO) bioavailability'),
+      t('VCAM-1, ICAM-1 ve E-selektin adezyon ekspresyonu', 'VCAM-1, ICAM-1 and E-selectin leukocyte adhesion upregulation')
     ]
   },
   {
     stage: 2,
     id: 'retention',
-    title: t('Evre 2: Subendotelyal Retansiyon ve Oksidasyon', 'Stage 2: Subendothelial Retention & Oxidation'),
+    title: t('Evre 2: Subendotelyal Retansiyon ve Oksidatif Modifikasyon', 'Stage 2: Subendothelial Retention & Oxidative Modification'),
     desc: t(
-      'İntimaya giren apoB partikülleri, matriks proteoglikanlarının negatif yüklü yan zincirlerine bağlanarak hapsolur (retansiyon). Dolaşımdan yalıtılan lipidler reaktif oksijen türevleriyle (ROS) okside olarak oxLDL haline gelir.',
-      'Retained apoB particles bind to negatively charged glycosaminoglycan chains of extracellular proteoglycans. Entrapped lipids undergo oxidation by ROS into pro-inflammatory oxLDL.'
+      'İntimaya giren apoB partiküllerindeki pozitif yüklü lizin/arjinin rezidüleri, arter matriksindeki proteoglikanların (biglikan, versikan) negatif yüklü kondroitin sülfat yan zincirlerine elektrostatik olarak bağlanıp hapsolur. Küçük yoğun LDL (sdLDL) ve Lp(a) en yüksek retansiyon afinitesine sahiptir.',
+      'Positively charged apoB residues bind electrostatically to negatively charged glycosaminoglycan chains of intimal proteoglycans (biglycan, versican). Small dense LDL (sdLDL) and Lp(a) exhibit the strongest retention.'
     ),
     features: [
-      t('Proteoglikan retansiyonu ( Williams & Tabas hipotezi)', 'Proteoglycan binding (response-to-retention hypothesis)'),
-      t('Minimal okside ve tam okside LDL (oxLDL)', 'Minimally modified and fully oxidized LDL (oxLDL)'),
-      t('Monosit kemotaktik protein-1 (MCP-1) salınımı', 'Monocyte chemoattractant protein-1 (MCP-1) release')
+      t('Proteoglikan-ApoB elektrostatik tuzağı (Retansiyon hipotezi)', 'Proteoglycan-apoB electrostatic trapping (Response-to-retention)'),
+      t('ROS ve 12/15-lipooksijenaz ile oxLDL ve okside fosfolipid (OxPL) oluşumu', 'ROS and lipoxygenase-driven oxLDL and oxidized phospholipid (OxPL) generation'),
+      t('Endotelden MCP-1 (CCL2) kemokin salınımı', 'Endothelial MCP-1 (CCL2) chemokine gradient secretion')
     ]
   },
   {
     stage: 3,
     id: 'foamcell',
-    title: t('Evre 3: Makrofaj Göçü ve Köpük Hücresi (Fatty Streak)', 'Stage 3: Macrophage Recruitment & Foam Cells (Fatty Streak)'),
+    title: t('Evre 3: Makrofaj Göçü, Köpük Hücresi ve NLRP3 İnflamazomu', 'Stage 3: Macrophage Recruitment, Foam Cells & NLRP3 Inflammasome'),
     desc: t(
-      'MCP-1 gradyanını izleyen monositler intimaya girer ve makrofajlara farklılaşır. Çöpçü reseptörler (SR-A, CD36) negatif geri-bildirimsiz olarak oxLDL yutarak köpük hücrelerine (foam cells) dönüşür ve yağlı çizgilenme (fatty streak) oluşur.',
-      'Recruited monocytes differentiate into macrophages in the intima. Scavenger receptors (SR-A, CD36) ingest oxLDL without cholesterol-dependent downregulation, creating lipid-laden foam cells.'
+      'İntimaya geçen monositler makrofajlara dönüşür; CD36 ve SR-A çöpçü reseptörleri negatif geri-bildirim olmaksızın oxLDL yutarak köpük hücrelerini oluşturur. Hücre içi serbest kolesterol kristalleşmesi lizozomal hasar yaparak NLRP3 inflamazomunu ve IL-1β / IL-18 kaskadını ateşler.',
+      'Recruited monocytes differentiate into macrophages that engulf oxLDL via scavenger receptors (CD36, SR-A) without feedback inhibition. Intracellular cholesterol crystals trigger lysosomal damage and NLRP3 inflammasome IL-1β/IL-18 activation.'
     ),
     features: [
-      t('Doyumsuz oxLDL fagositozu', 'Unregulated oxLDL scavenger phagocytosis'),
-      t('Köpük hücresi kümeleri (Fatty streak)', 'Foam cell aggregates (Fatty streak formation)'),
-      t('Lokal sitokin üretimi (TNF-α, IL-1β, IL-6)', 'Local pro-inflammatory cytokine secretion')
+      t('CD36 / SR-A aracılı doyumsuz oxLDL fagositozu', 'Unregulated CD36 / SR-A scavenger receptor oxLDL uptake'),
+      t('Kolesterol kristalleri ve NLRP3 -> IL-1β / IL-6 / CRP aksı', 'Cholesterol crystals activating NLRP3 -> IL-1β / IL-6 / CRP axis'),
+      t('Otoimmün T-hücresi (Th1 / IFN-γ) çapraz aktivasyonu (Porsch 2024)', 'Adaptive Th1 / IFN-gamma pro-inflammatory amplification (Porsch 2024)')
     ]
   },
   {
     stage: 4,
     id: 'fibrous',
-    title: t('Evre 4: Fibröz Kılıf ve Nekrotik Çekirdek (Aterom)', 'Stage 4: Fibroatheroma & Necrotic Core'),
+    title: t('Evre 4: Fibroaterom, Nekrotik Çekirdek ve Kusurlu Efferositoz', 'Stage 4: Fibroatheroma, Necrotic Core & Defective Efferocytosis'),
     desc: t(
-      'Medyadaki vasküler düz kas hücreleri (VSMC) intimaya göç ederek kollajen matriks sentezler ve fibröz kılıfı (fibrous cap) kurar. Merkezdeki köpük hücrelerinin apoptozu ve kusurlu temizlenme (efferosite bozukluğu) serbest kolesterol zengini nekrotik çekirdeği doğurur.',
-      'Vascular smooth muscle cells (VSMCs) migrate into the intima to lay down a protective collagenous fibrous cap. Defective efferocytosis and foam cell necrosis generate the acellular lipid core.'
+      'Medyadan göç eden düz kas hücreleri (VSMC) koruyucu kollajenöz fibröz kılıfı örer. Ancak aşırı yüklenen köpük hücrelerinin sekonder nekrozu ve ölü hücrelerin temizlenememesi (kusurlu efferositoz) lipidden zengin, hücresiz ve yüksek trombojenik nekrotik çekirdeği büyütür.',
+      'Phenotype-switched VSMCs synthesize a protective collagenous fibrous cap, while macrophage apoptosis and defective efferocytosis expand the lipid-rich, tissue-factor-laden acellular necrotic core.'
     ),
     features: [
-      t('Kollajenöz koruyucu fibröz kılıf', 'Protective collagen fibrous cap formed by VSMCs'),
-      t('Apoptoz ve nekrotik kolesterol çekirdeği', 'Necrotic core with extracellular cholesterol crystals'),
-      t('Anjiyogenez (kırılgan vasa vasorum mikrodamarları)', 'Adventitial neovascularization with fragile intraplaque capillaries')
+      t('VSMC göçü ve Tip I/III kollajen fibröz kılıf sentezi', 'VSMC migration and Type I/III collagen fibrous cap synthesis'),
+      t('Kusurlu efferositoz (MerTK kaybı) ve büyüyen nekrotik çekirdek', 'Defective efferocytosis (MerTK cleavage) expanding the necrotic core'),
+      t('Mikrokalsifikasyonlar ve kırılgan vasa vasorum neovaskülarizasyonu', 'Spotty microcalcifications and leaky intraplaque vasa vasorum')
     ]
   },
   {
     stage: 5,
     id: 'rupture',
-    title: t('Evre 5: Fibröz Kılıf Yırtılması ve Akut Tromboz', 'Stage 5: Plaque Rupture & Acute Thrombosis'),
+    title: t('Evre 5: İnce Kılıflı Fibroaterom (TCFA) Rüptürü ve Tromboz', 'Stage 5: Thin-Cap Fibroatheroma (TCFA) Rupture & Thrombosis'),
     desc: t(
-      'İntraplak makrofajlardan salınan matriks metalloproteinazlar (MMP-1, MMP-8, MMP-13) fibröz kılıf kollajenini eritir. Kılıf kritik kalınlığın (<65 µm) altına indiğinde kan basıncı stresiyle yırtılır; nekrotik doku faktörü trombositlerle temas ederek akut lümen tıkayıcı trombüsü tetikler.',
-      'Activated macrophages secrete matrix metalloproteinases (MMPs) degrading interstitial collagen. Thin-cap fibroatheroma (<65 µm) ruptures under tensile stress, exposing tissue factor to trigger acute thrombosis.'
+      'Makrofajlardan salınan MMP-1/8/13 kollajenazları fibröz kılıfı eritir ve IFN-γ VSMC kollajen sentezini baskılar. Kılıf <65 µm (TCFA) altına indiğinde mekanik duvar stresiyle yırtılır; doku faktörü (TF) kanla temas ederek trombosit agregasyonu ve akut tıkayıcı fibrin trombüsünü başlatır.',
+      'Macrophage MMPs degrade cap collagen while IFN-gamma halts VSMC synthesis. Once cap thickness drops below 65 µm (TCFA), biomechanic shoulder stress causes rupture, exposing tissue factor to trigger occlusive arterial thrombosis.'
     ),
     features: [
-      t('İncelmiş kılıf (Thin-cap fibroatheroma <65 µm)', 'Thin-cap fibroatheroma (TCFA <65 µm)'),
-      t('Doku faktörü (TF) maruziyeti ve tromboz', 'Tissue factor exposure driving platelet activation and fibrin clot'),
-      t('Akut koroner sendrom (STEMI / NSTEMI)', 'Acute luminal occlusion causing myocardial infarction')
+      t('MMP-1/8/13 kollajenolizi ve kritik ince kılıf (<65 µm TCFA)', 'MMP-1/8/13 collagenolysis producing thin-cap fibroatheroma (<65 µm)'),
+      t('Doku faktörü (TF) + Antifosfolipid/β2GPI trombojenik amplifikasyonu (Rashedi 2026)', 'Tissue factor exposure + antiphospholipid/beta2-GPI thrombotic amplification (Rashedi 2026)'),
+      t('Akut lümen tıkanması ve Miyokard İnfarktüsü (STEMI / NSTEMI)', 'Acute luminal thrombosis causing Myocardial Infarction (ACS)')
     ]
+  }
+];
+
+export const ATHEROMA_MODIFIERS = [
+  {
+    id: 'physiological',
+    name: t('Standart / İzole Hiperkolesterolemi', 'Standard / Isolated Hypercholesterolaemia'),
+    source: 'Borén et al. 2025 · Ference et al. 2024',
+    apoBMult: 1.0,
+    inflamMult: 1.0,
+    thrombMult: 1.0,
+    summary: t(
+      'Plak gelişimi doğrudan plazma ApoB konsantrasyonu ve maruziyet süresiyle (kümülatif LDL-yıl) orantılıdır.',
+      'Plaque progression scales linearly with plasma apoB concentration and cumulative exposure duration (LDL-years).'
+    )
+  },
+  {
+    id: 'masld',
+    name: t('MASLD / Hepatik Steatoz + İnsülin Direnci', 'MASLD / Hepatic Steatosis + Insulin Resistance'),
+    source: 'Averna, Hussain & Norata (Nat Rev Cardiol 2026)',
+    apoBMult: 1.45,
+    inflamMult: 1.35,
+    thrombMult: 1.15,
+    summary: t(
+      'Karaciğer yağlanması (MASLD) de novo lipogenezi ve büyük VLDL1 sekresyonunu artırır; CETP aracılı değişimle proteoglikanlara çok sıkı bağlanan aterojenik küçük-yoğun LDL (sdLDL) ve trigliseridden zengin kalıntı (remnant) akısı patlar.',
+      'Hepatic steatosis (MASLD) drives VLDL1 overproduction and CETP-mediated remodeling into highly retentive small dense LDL (sdLDL) and cholesterol-enriched remnants.'
+    )
+  },
+  {
+    id: 'autoimmune',
+    name: t('Otoimmünite / Psoriazis / SLE İnflamasyonu', 'Autoimmune / Psoriasis / SLE Inflammation'),
+    source: 'Porsch & Binder (2024) · Gelfand et al. (2025)',
+    apoBMult: 1.1,
+    inflamMult: 2.1,
+    thrombMult: 1.4,
+    summary: t(
+      'Sistemik otoimmün hastalıklar (SLE, Romatoid Artrit) ve şiddetli psoriazis (kardiyodermatoloji aksı); IL-17, TNF, IFN-γ ve NETozis yoluyla endotel bariyerini bozar, efferositozu felç eder ve normal LDL düzeylerinde bile hızlanmış TCFA rüptürüne yol açar.',
+      'Systemic autoimmunity (SLE, RA) and psoriasis amplify IL-17/TNF/IFN-gamma signaling and neutrophil NETosis, accelerating fibrous cap thinning even at moderate LDL levels.'
+    )
+  },
+  {
+    id: 'aps',
+    name: t('Antifosfolipid Sendromu (aPL / Anti-β2GPI)', 'Antiphospholipid Syndrome (aPL / Anti-β2GPI)'),
+    source: 'Rashedi et al. (Nat Rev Cardiol 2026)',
+    apoBMult: 1.05,
+    inflamMult: 1.65,
+    thrombMult: 2.4,
+    summary: t(
+      'Anti-β2-glikoprotein I ve antikardiyolipin antikorları endotel yüzeyindeki TLR4/ApoER2 reseptörlerine bağlanarak eNOS’u susturur, kompleman (C5a) ve Doku Faktörü (TF) ekspresyonunu tetikler; oxLDL-β2GPI kompleksleri makrofaj köpükleşmesini ve akut arteriyel trombozu katlar.',
+      'Anti-beta2-GPI antibodies engage endothelial TLR4/ApoER2 to suppress eNOS, activate complement, upregulate Tissue Factor, and form immunogenic oxLDL-beta2GPI complexes.'
+    )
   }
 ];

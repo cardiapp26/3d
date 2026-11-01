@@ -12,21 +12,8 @@
   font-family: 'DM Sans', sans-serif;
 }
 .live-wiggers[hidden] { display: none; }
-/* This tab gives the native cutaway and its synchronized plot equal space. */
-html[data-live-wiggers] :is(#cycle-panel, #wiggers-strip, .view-controls, .myo-control, .viewer-top, .scene-labels, .hemo-crosslink, #step-detail, #steps, .lesson-heading) { display: none !important; }
-html[data-live-wiggers] #viewport { top: 0; bottom: 0; }
-html[data-live-wiggers] #lesson > :not(#hemo-panel) { display: none !important; }
-html[data-live-wiggers] :is(.workspace > aside, [data-drawer], .mobile-tab[data-sheet=layers], .mobile-tab[data-sheet=tools], .btn-view-reset) { display: none !important; }
-html[data-live-wiggers] .hemo-tabs { flex-wrap: wrap; }
-@media (min-width: 1101px) {
-  html[data-live-wiggers][data-app-mode=cath] .workspace { grid-template-columns: minmax(360px, 1fr) 8px minmax(460px, 1fr); }
-}
 @media (max-width: 640px) {
-  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn] { --echo-sheet-h: 54dvh; }
-  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn] .workspace > article { top: auto; bottom: var(--tabbar-h); height: 54dvh; border-radius: 14px 14px 0 0; }
-  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn] .workspace > main { margin-top: 0; height: calc(100% - 54dvh); }
-  html[data-live-wiggers][data-app-mode=cath] body[data-sheet=learn][data-sheet-size=full] .workspace > main { height: calc(100% - 54dvh); }
-  html[data-live-wiggers] .live-wiggers button, html[data-live-wiggers] .live-wiggers select { min-height: 44px; }
+  .live-wiggers button, .live-wiggers select { min-height: 44px; }
 }
 .live-wiggers .live-wiggers__title { margin: 0; font-size: 21px; line-height: 1.15; }
 .live-wiggers .live-wiggers__subtitle { margin: -5px 0 0; color: #61766b; font-size: 12px; }

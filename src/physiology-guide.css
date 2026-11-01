@@ -36,5 +36,4 @@
 .phys-sources summary{cursor:pointer;font-weight:600}
 .phys-sources a{display:block;color:#447663}
 .pharmaep>.phys-guide,.pharmaep>.phys-currents{margin:18px 0}
-.hemo-tabs{flex-wrap:wrap;width:auto}
 @media(max-width:600px){.phys-guide,.phys-currents{padding:10px}.phys-guide h3,.phys-currents h3{font-size:17px}.phys-guide button{font-size:11px}}

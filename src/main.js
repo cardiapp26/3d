@@ -50,7 +50,7 @@ const MODE_KEYS = 9;
 // Modes whose lesson steps appear as menu entries under the mode itself.
 // true lists every step; a function picks the steps to list (the hemodynamics
 // mode lists its right heart catheterisation and pressure-volume loop chapters).
-const MODE_SUBSTEPS = { ablation: true, cath: step => Boolean(step.menu || step.pvLoop), exam: step => Boolean(step.menuLabel) };
+const MODE_SUBSTEPS = { ablation: true, cath: step => Boolean(step.menu), exam: step => Boolean(step.menuLabel) };
 
 // Right-panel tabs and phone sheets; created once the panels exist.
 let panelShell = null;
@@ -778,7 +778,6 @@ const hemoMode = heart ? createHemoMode({
   mount: document.querySelector('#hemo-panel'),
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
   onFocus: station => inspect(`cath-${station === 'pcwp' ? 'wedge' : station}`, false, false),
-  onLiveViewChange: active => { if (active) setWiggersOpen(false); },
   onOpenJvp: scenario => openJvpCase(scenario)
 }) : null;
 const examMode = heart ? createExamMode({
@@ -2280,8 +2279,6 @@ window.addEventListener('keydown', e => {
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
 
   const key = e.key;
-  // The live cutaway owns pressure materials and its imaging plane.
-  if (document.documentElement.dataset.liveWiggers && (/^[aprlsmwcxgofn0]$/i.test(key) || key === 'ArrowRight')) return;
 
   if (key >= '1' && key <= '9') {
     const modeIndex = parseInt(key, 10) - 1;

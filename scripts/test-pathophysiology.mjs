@@ -7,7 +7,9 @@ import {
   PATHOPHYS_STATIONS,
   PV_SCENARIOS,
   FORRESTER_PROFILES,
-  ATHEROMA_STAGES
+  ATHEROMA_STAGES,
+  ATHEROMA_MODIFIERS,
+  PATHOPHYS_GROUPS
 } from '../src/pathophysiology/pathophysiology-data.js';
 
 import { createPVLoopLab } from '../src/pathophysiology/pv-loop-lab.js';
@@ -18,7 +20,10 @@ import { createForresterLab } from '../src/pathophysiology/forrester-lab.js';
 import { createValvularLab } from '../src/pathophysiology/valvular-lab.js';
 
 test('Pathophysiology: data structures and bilingual integrity', () => {
-  assert.equal(PATHOPHYS_STATIONS.length, 6, 'Should have exactly 6 didactic stations');
+  assert.equal(PATHOPHYS_STATIONS.length, 13, 'Should have exactly 13 didactic stations');
+  for (const st of PATHOPHYS_STATIONS) assert.ok(PATHOPHYS_GROUPS.some(g => g.id === st.group), `${st.id} belongs to a known group`);
+  assert.equal(ATHEROMA_MODIFIERS.length, 4, 'four systemic atheroma phenotypes');
+  for (const id of ['loads', 'physiology', 'wiggers', 'hypertension-vascular', 'pah-rv', 'myocardial-ckm', 'achd-shunts']) assert.ok(PATHOPHYS_STATIONS.some(s => s.id === id), `${id} station is present`);
 
   for (const station of PATHOPHYS_STATIONS) {
     assert.ok(station.id, 'Station must have an id');
@@ -69,6 +74,10 @@ test('Pathophysiology: zero em-dashes house rule across all files', () => {
     'src/pathophysiology/electrophys-lab.js',
     'src/pathophysiology/forrester-lab.js',
     'src/pathophysiology/valvular-lab.js',
+    'src/pathophysiology/hypertension-lab.js',
+    'src/pathophysiology/pah-rv-lab.js',
+    'src/pathophysiology/myocardial-ckm-lab.js',
+    'src/pathophysiology/achd-shunts-lab.js',
     'src/pathophysiology/pathophysiology.css',
     'src/pathophysiology/main.js',
     'pathophysiology/index.html'

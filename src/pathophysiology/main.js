@@ -1,14 +1,22 @@
 // Cardiovascular Pathophysiology Studio: coordinator & navigation
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
 import { mountSiteHeader } from '../site-header.js';
-import { PATHOPHYS_STATIONS } from './pathophysiology-data.js';
+import { PATHOPHYS_STATIONS, PATHOPHYS_GROUPS } from './pathophysiology-data.js';
 
 import { createPVLoopLab } from './pv-loop-lab.js';
+import { createScenarioPvLoop } from './scenario-pv-loop.js';
+import { createLoadsLab } from './loads-lab.js';
+import { createPhysiologyLab } from './physiology-lab.js';
+import { createWiggersLab } from './wiggers-lab.js';
 import { createStarlingLaplaceLab } from './starling-laplace-lab.js';
 import { createAtherogenesisLab } from './atherogenesis-lab.js';
 import { createElectrophysLab } from './electrophys-lab.js';
 import { createForresterLab } from './forrester-lab.js';
 import { createValvularLab } from './valvular-lab.js';
+import { createHypertensionLab } from './hypertension-lab.js';
+import { createPahRvLab } from './pah-rv-lab.js';
+import { createMyocardialCkmLab } from './myocardial-ckm-lab.js';
+import { createAchdShuntsLab } from './achd-shunts-lab.js';
 
 import './pathophysiology.css';
 
@@ -19,13 +27,31 @@ let currentStationId = getStationFromHash();
 let activeLabInstance = null;
 
 const LAB_FACTORIES = {
-  'pv-loop': createPVLoopLab,
+  'pv-loop': createPvStation,
+  'loads': createLoadsLab,
+  'physiology': createPhysiologyLab,
+  'wiggers': createWiggersLab,
   'starling-laplace': createStarlingLaplaceLab,
   'atherogenesis': createAtherogenesisLab,
   'electrophys': createElectrophysLab,
   'forrester': createForresterLab,
-  'valvular': createValvularLab
+  'valvular': createValvularLab,
+  'hypertension-vascular': createHypertensionLab,
+  'pah-rv': createPahRvLab,
+  'myocardial-ckm': createMyocardialCkmLab,
+  'achd-shunts': createAchdShuntsLab
 };
+
+/** P-V station: the interactive elastance lab, then the loop of the catheter scenarios. */
+function createPvStation(opts) {
+  const lab = createPVLoopLab(opts);
+  const scenarioLoop = createScenarioPvLoop({ lang: opts.lang });
+  opts.container.append(scenarioLoop.element);
+  return {
+    updateLanguage(next) { lab.updateLanguage?.(next); scenarioLoop.setLanguage(next); },
+    destroy() { lab.destroy?.(); scenarioLoop.destroy(); }
+  };
+}
 
 function getStationFromHash() {
   const hash = window.location.hash.replace(/^#\/?/, '').trim();
@@ -99,11 +125,13 @@ function renderNav() {
   const nav = document.querySelector('[data-pathophys-nav]');
   if (!nav) return;
 
-  nav.innerHTML = PATHOPHYS_STATIONS.map(st => `
+  nav.innerHTML = PATHOPHYS_GROUPS.map(group => `
+    <p class="pathophys-nav-group">${group.label[lang]}</p>
+    ${PATHOPHYS_STATIONS.filter(st => st.group === group.id).map(st => `
     <button type="button" class="pathophys-nav-item ${st.id === currentStationId ? 'active' : ''}" data-station="${st.id}">
       <span class="nav-item-num">${st.num}</span>
       <span class="nav-item-text">${st.shortTitle[lang]}</span>
-    </button>
+    </button>`).join('')}
   `).join('');
 
   nav.querySelectorAll('[data-station]').forEach(btn => {
@@ -123,6 +151,7 @@ function switchStation(stationId) {
   const content = document.querySelector('[data-pathophys-content]');
   if (!content) return;
 
+  activeLabInstance?.destroy?.();
   content.innerHTML = '';
   activeLabInstance = null;
 
