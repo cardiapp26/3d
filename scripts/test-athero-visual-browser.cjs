@@ -1,0 +1,43 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert = require('node:assert/strict');
+const { startApp } = require('./lib/app-server.cjs');
+(async () => {
+  const app = await startApp();
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto(`${app.url}/pathophysiology/?lang=tr#/atherogenesis`, { waitUntil: 'networkidle' });
+    assert.equal(await page.locator('.athero-thumbnail').count(), 5);
+    assert.equal(await page.locator('.stage-btn .visual-tools').count(), 0, 'decorative thumbnails have no nested controls');
+    assert.ok(await page.locator('[data-athero-prev]').isDisabled());
+    await page.locator('[data-athero-next]').click();
+    assert.match(await page.locator('[data-athero-story-status]').textContent(), /2 \/ 5/);
+    await page.locator('[data-stage-idx="3"]').click();
+    assert.match(await page.locator('[data-athero-title]').textContent(), /Evre 4/);
+    const liver = page.locator('[data-svg-hs="liver"]');
+    await liver.focus();
+    await page.keyboard.press('Enter');
+    assert.match(await page.locator('[data-athero-inspector]').textContent(), /Karaciğer/);
+    assert.equal(await liver.getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-athero-motion]').click();
+    assert.equal(await page.locator('[data-athero-motion]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-athero-next]').click();
+    assert.ok(await page.locator('[data-athero-next]').isDisabled());
+    assert.equal(await page.locator('[data-athero-slider="cap"]').inputValue(), '50');
+    await page.locator('[data-stage-idx="3"]').click();
+    await page.screenshot({ path: '/tmp/athero-desktop.png', fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: '/tmp/athero-mobile.png', fullPage: true });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no mobile page overflow');
+    await page.screenshot({ path: '/tmp/athero-mobile.png', fullPage: true });
+    await page.goto(`${app.url}/pathophysiology/?lang=en#/atherogenesis`, { waitUntil: 'networkidle' });
+    assert.match(await page.locator('[data-athero-i18n="storyTitle"]').textContent(), /Follow/);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.locator('[data-athero-motion]').click();
+    assert.equal(await page.locator('.athero-flow-particle').first().evaluate(el => getComputedStyle(el).animationName), 'none');
+    assert.deepEqual(errors, []);
+    console.log('PASS: five stages, navigation limits, keyboard inspection, animation, TR/EN, reduced motion, mobile overflow.');
+  } finally { await browser.close(); await app.close(); }
+})().catch(e => { console.error(e); process.exitCode = 1; });

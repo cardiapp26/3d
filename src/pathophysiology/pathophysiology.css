@@ -1252,3 +1252,38 @@ body.pathophys-app {
   padding: 3px 8px;
   border-radius: 4px;
 }
+
+/* Plaque evolution: visual chapter navigation and inspectable tissue. */
+.athero-story-head { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:22px; background:linear-gradient(120deg,#e4f3ee,#f8f5e9); border:1px solid #c4ded5; border-radius:16px; }
+.athero-eyebrow { color:#397766; font-size:10px; font-weight:800; letter-spacing:.16em; }
+.athero-story-head h3 { margin:7px 0; font-size:clamp(20px,2.5vw,30px); color:#205f50; }
+.athero-story-head p { max-width:650px; margin:0; line-height:1.6; font-size:12px; color:#526d65; }
+.athero-story-head button { flex-shrink:0; min-height:44px; }
+.pathophys-athero-lab .athero-stepper { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:16px; }
+.pathophys-athero-lab .stage-btn { min-width:0; padding:9px; border-radius:12px; background:#f8faf8; color:#47645c; border:1px solid #d3e1dc; }
+.pathophys-athero-lab .stage-btn.active { background:#e0f2eb; color:#185e4c; border:2px solid #287c65; padding:8px; box-shadow:0 4px 16px #23694e12; }
+.athero-thumbnail { width:100%; max-height:90px; }
+.pathophys-athero-lab .stage-btn-label { font-size:12px; }
+.athero-story-nav { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:12px 0; }
+.athero-story-nav p { margin:0; color:var(--accent); font-size:13px; font-weight:700; text-align:center; }
+.athero-story-nav button { min-height:44px; }
+.athero-story-nav button:disabled { opacity:.4; cursor:default; }
+.pathophys-athero-lab .athero-svg { background:#fffcf7; border:1px solid #e4e7dc; border-radius:14px; padding:8px; }
+.athero-clickable { transition:filter .2s; }
+.athero-clickable[aria-pressed="true"] { filter:drop-shadow(0 0 3px #0d9488); }
+.athero-clickable:focus-visible { outline:2px solid #087f69; outline-offset:3px; }
+.pathophys-athero-lab button:focus-visible { outline:3px solid #087f69; outline-offset:3px; }
+.athero-motion-on .athero-flow-particle { animation:athero-drift 2.8s ease-in-out infinite; animation-delay:var(--flow-delay); }
+@keyframes athero-drift { 0%,100% { transform:translateX(-7px); } 50% { transform:translateX(7px); } }
+@media (prefers-reduced-motion:reduce) { .athero-motion-on .athero-flow-particle { animation:none; } .athero-clickable { transition:none; } }
+@media (max-width:600px) {
+  .athero-story-head { padding:16px; flex-direction:column; align-items:flex-start; gap:12px; }
+  .pathophys-athero-lab .athero-stepper { gap:5px; }
+  .pathophys-athero-lab .stage-btn { padding:4px; }
+  .pathophys-athero-lab .stage-btn.active { padding:3px; }
+  .pathophys-athero-lab .stage-btn-label { font-size:10px; overflow-wrap:anywhere; }
+  .pathophys-athero-lab .stage-btn-num { font-size:10px; }
+}
+@media (max-width:600px) {
+  .pathophys-athero-lab .athero-cumulative-box .lab-card-header { flex-direction:column; align-items:stretch; gap:12px; }
+}

@@ -12,7 +12,8 @@ export function createAtherogenesisLab(opts = {}) {
 
   let currentStageIndex = 0;
   let currentModifierId = 'physiological';
-  let selectedHotspot = 'proteoglycan';
+  let selectedHotspot = 'endothelium';
+  let motionEnabled = false;
   let apoBFlux = 130;       // LDL-C / ApoB proxy (mg/dL)
   let inflammation = 2.0;   // hsCRP (mg/L)
   let capThickness = 85;    // µm
@@ -58,11 +59,21 @@ export function createAtherogenesisLab(opts = {}) {
   };
 
   root.innerHTML = `
+    <div class="athero-story-head">
+      <div><span class="athero-eyebrow" data-athero-i18n="storyEyebrow"></span>
+      <h3 data-athero-i18n="storyTitle"></h3><p data-athero-i18n="storyHint"></p></div>
+      <button type="button" class="preset-pill" data-athero-motion aria-pressed="false"></button>
+    </div>
     <div class="athero-stepper" role="group" aria-label="Stages"></div>
+    <div class="athero-story-nav">
+      <button type="button" class="preset-pill" data-athero-prev></button>
+      <p data-athero-story-status role="status"></p>
+      <button type="button" class="preset-pill" data-athero-next></button>
+    </div>
     <div class="preset-pill-group" style="margin-top:10px" data-athero-modifiers></div>
     <div class="pathophys-grid">
       <div class="pathophys-stage athero-stage">
-        <svg viewBox="0 0 640 360" class="pathophys-svg athero-svg" role="img" aria-label="Atherogenesis Multi-Organ Cross Section"></svg>
+        <svg viewBox="0 0 640 360" class="pathophys-svg athero-svg" role="group" aria-label="Atherogenesis Multi-Organ Cross Section"></svg>
         <div class="athero-hotspot-bar" data-athero-hotspots></div>
         <div class="clinical-desc-box" style="width:100%;margin-top:8px" data-athero-inspector></div>
         <div class="athero-cumulative-box" style="width:100%;margin-top:12px">
@@ -143,6 +154,37 @@ export function createAtherogenesisLab(opts = {}) {
     });
   });
 
+  const stageTargets = ['endothelium', 'proteoglycan', 'foamcell', 'cap', 'cap'];
+  function selectStage(index) {
+    currentStageIndex = Math.max(0, Math.min(ATHEROMA_STAGES.length - 1, index));
+    selectedHotspot = stageTargets[currentStageIndex];
+    if (currentStageIndex === 4 && capThickness > 60) {
+      capThickness = 50;
+      $('[data-athero-slider="cap"]').value = '50';
+    }
+    render();
+  }
+  $('[data-athero-prev]').addEventListener('click', () => selectStage(currentStageIndex - 1));
+  $('[data-athero-next]').addEventListener('click', () => selectStage(currentStageIndex + 1));
+  $('[data-athero-motion]').addEventListener('click', () => {
+    motionEnabled = !motionEnabled;
+    render();
+  });
+
+  // Original schematic thumbnails: same tissue layers, progressively different contents.
+  function stageThumbnail(index) {
+    return `<svg viewBox="0 0 160 76" aria-hidden="true" class="athero-thumbnail">
+      <rect x="2" y="2" width="156" height="72" rx="12" fill="#fff8ed"/>
+      <path d="M 3 12 Q 80 2 157 12 L 157 35 L 3 35 Z" fill="#fee2e2"/>
+      <path d="M 3 37 H 157" stroke="#e87979" stroke-width="4" stroke-dasharray="16 3"/>
+      <path d="M 3 67 H 157" stroke="#fda4af" stroke-width="10"/>
+      ${index < 2 ? [45, 80, 115].map((x, i) => `<circle cx="${x}" cy="${index ? 49 : 20 + i * 9}" r="5" fill="#eab308" stroke="#a16207"/>`).join('') : ''}
+      ${index === 2 ? [52, 80, 108].map(x => `<circle cx="${x}" cy="50" r="12" fill="#fef08a" stroke="#d97706"/><circle cx="${x - 3}" cy="47" r="3" fill="#d97706"/><circle cx="${x + 4}" cy="54" r="3" fill="#d97706"/>`).join('') : ''}
+      ${index >= 3 ? `<path d="M 30 61 Q 80 12 130 61 Z" fill="#eab308"/><path d="M 30 60 Q 80 10 130 60" fill="none" stroke="${index === 4 ? '#dc2626' : '#0d9488'}" stroke-width="${index === 4 ? 2 : 5}" ${index === 4 ? 'stroke-dasharray="8 5"' : ''}/>` : ''}
+      ${index === 4 ? '<ellipse cx="82" cy="27" rx="22" ry="12" fill="#b91c1c"/>' : ''}
+    </svg>`;
+  }
+
   function getActiveModifier() {
     return ATHEROMA_MODIFIERS.find(m => m.id === currentModifierId) || ATHEROMA_MODIFIERS[0];
   }
@@ -170,22 +212,35 @@ export function createAtherogenesisLab(opts = {}) {
     const en = getLang() === 'en';
     const mod = getActiveModifier();
 
+    const shortNames = en
+      ? ['Entry', 'Retention', 'Foam cells', 'Fibrous cap', 'Rupture']
+      : ['Geçiş', 'Tutulum', 'Köpük hücreleri', 'Fibröz kılıf', 'Rüptür'];
+    root.classList.toggle('athero-motion-on', motionEnabled);
+    $('[data-athero-motion]').textContent = motionEnabled
+      ? (en ? 'Ⅱ Pause flow' : 'Ⅱ Akışı duraklat')
+      : (en ? '▷ Animate flow' : '▷ Akışı canlandır');
+    $('[data-athero-motion]').setAttribute('aria-pressed', String(motionEnabled));
+    $('[data-athero-prev]').textContent = en ? '← Previous' : '← Önceki';
+    $('[data-athero-next]').textContent = en ? 'Next →' : 'Sonraki →';
+    $('[data-athero-prev]').disabled = currentStageIndex === 0;
+    $('[data-athero-next]').disabled = currentStageIndex === 4;
+    $('[data-athero-story-status]').textContent = `${currentStageIndex + 1} / 5 · ${shortNames[currentStageIndex]}`;
+    $('.athero-stepper').setAttribute('aria-label', en ? 'Plaque evolution stages' : 'Plak gelişim evreleri');
+    $('.athero-svg').setAttribute('aria-label', en ? 'Interactive artery wall schematic' : 'Etkileşimli damar duvarı şeması');
+
     // 1. Stepper
     const stepper = $('.athero-stepper');
     stepper.innerHTML = ATHEROMA_STAGES.map((st, idx) => `
-      <button type="button" class="stage-btn ${idx === currentStageIndex ? 'active' : ''}" data-stage-idx="${idx}">
+      <button type="button" class="stage-btn ${idx === currentStageIndex ? 'active' : ''}" data-stage-idx="${idx}" aria-pressed="${idx === currentStageIndex}">
+        ${stageThumbnail(idx)}
         <span class="stage-btn-num">${en ? 'Stage' : 'Evre'} ${st.stage}</span>
-        <span class="stage-btn-label">${t(st.title).split(':')[1]?.trim() || t(st.title)}</span>
+        <span class="stage-btn-label">${shortNames[idx]}</span>
       </button>
     `).join('');
     $$('[data-stage-idx]').forEach(btn => {
       btn.addEventListener('click', () => {
-        currentStageIndex = parseInt(btn.dataset.stageIdx, 10);
-        if (currentStageIndex === 4 && capThickness > 60) {
-          capThickness = 50;
-          $('[data-athero-slider="cap"]').value = '50';
-        }
-        render();
+        selectStage(parseInt(btn.dataset.stageIdx, 10));
+        $(`[data-stage-idx="${currentStageIndex}"]`).focus({ preventScroll: true });
       });
     });
 
@@ -270,6 +325,9 @@ export function createAtherogenesisLab(opts = {}) {
 
     // 6. Labels & Sliders
     const I18N = {
+      storyEyebrow: en ? 'INSIDE THE ARTERY WALL' : 'DAMAR DUVARININ İÇİNDE',
+      storyTitle: en ? 'Follow the life of a plaque' : 'Bir plağın gelişimini izle',
+      storyHint: en ? 'Select a stage, then explore the structures in the artery. Schematic stages, not a fixed timeline.' : 'Bir evre seç, ardından damar üzerindeki yapıları keşfet. Evreler şematiktir; sabit bir zaman çizelgesi değildir.',
       simTitle: en ? 'Plaque Microenvironment & Exposure Parameters' : 'Plak Mikroçevresi ve Maruziyet Parametreleri',
       lblApoB: en ? 'Plasma LDL-C / ApoB Load' : 'Plazma LDL-C / ApoB Yükü',
       lblAge: en ? 'Patient Age (Cumulative Exposure)' : 'Hasta Yaşı (Kümülatif Maruziyet)',
@@ -346,7 +404,7 @@ export function createAtherogenesisLab(opts = {}) {
       const fill = isLpa ? '#a855f7' : (isSdLdl ? '#ea580c' : '#eab308');
       const stroke = isLpa ? '#6b21a8' : '#92400e';
       lumenParticles.push(`
-        <g>
+        <g class="athero-flow-particle" style="--flow-delay: ${-i * 0.3}s">
           <circle cx="${px}" cy="${py}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
           ${isLpa ? `<path d="M ${px + r} ${py - 3} Q ${px + r + 5} ${py}, ${px + r} ${py + 3}" fill="none" stroke="#7e22ce" stroke-width="1.5"/>` : ''}
         </g>
@@ -522,7 +580,7 @@ export function createAtherogenesisLab(opts = {}) {
         ${proteoglycanWeb}
       </g>
 
-      <g class="athero-clickable" data-svg-hs="${stageIdx >= 3 ? 'cap' : 'foamcell'}" style="cursor:pointer">
+      <g class="athero-clickable" data-svg-hs="${stageTargets[stageIdx]}" style="cursor:pointer">
         ${intimaContent}
       </g>
 
@@ -547,9 +605,22 @@ export function createAtherogenesisLab(opts = {}) {
     `;
 
     svg.querySelectorAll('[data-svg-hs]').forEach(g => {
-      g.addEventListener('click', () => {
-        selectedHotspot = g.dataset.svgHs;
+      const id = g.dataset.svgHs;
+      g.setAttribute('role', 'button');
+      g.setAttribute('tabindex', '0');
+      g.setAttribute('aria-label', t(HOTSPOTS[id].title));
+      g.setAttribute('aria-pressed', String(selectedHotspot === id));
+      const activate = () => {
+        selectedHotspot = id;
         render();
+        svg.querySelector(`[data-svg-hs="${id}"]`)?.focus({ preventScroll: true });
+      };
+      g.addEventListener('click', activate);
+      g.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          activate();
+        }
       });
     });
   }

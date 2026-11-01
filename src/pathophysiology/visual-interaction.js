@@ -5,7 +5,7 @@ export function createVisualInteraction({ container, lang }) {
   const controls = new Map(), ac = new AbortController();
   const t = (tr, en) => language === 'en' ? en : tr;
   function enhance(svg) {
-    if (!svg.viewBox.baseVal.width || controls.has(svg)) return;
+    if (svg.matches('[aria-hidden="true"]') || !svg.viewBox.baseVal.width || controls.has(svg)) return;
     if (svg.matches('.laplace-svg')) svg.setAttribute('viewBox', '0 -60 480 380');
     const original = svg.getAttribute('viewBox').split(/\s+/).map(Number);
     let zoom = 1, offset = { x: 0, y: 0 }, drag = null;
