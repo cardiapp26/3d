@@ -1,3 +1,4 @@
+import { addHeartFailureMotion } from './hf-motion.js';
 // Forrester Matrix & Acute Heart Failure Lab: 2x2 hemodynamic classification
 import { FORRESTER_PROFILES } from './pathophysiology-data.js';
 
@@ -303,6 +304,7 @@ export function createForresterLab(opts = {}) {
       </div>
     `;
 
+    addHeartFailureMotion(container, lang, 'flow', currentCI);
     bindEvents();
   }
 

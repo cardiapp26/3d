@@ -1,3 +1,4 @@
+import { addHeartFailureMotion } from './hf-motion.js';
 // Pericardial Pathophysiology Lab: Cardiac Tamponade vs Constrictive Pericarditis
 // Classical compliance curves, ventricular interdependence, and hemodynamic waveforms
 
@@ -358,6 +359,7 @@ export function createPericardialLab(opts = {}) {
       </div>
     `;
 
+    addHeartFailureMotion(root, lang, 'pericardium');
     // Bind event handlers
     root.querySelectorAll('[data-disorder]').forEach(btn => {
       btn.addEventListener('click', () => {

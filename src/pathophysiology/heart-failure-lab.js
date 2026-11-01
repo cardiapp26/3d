@@ -1,3 +1,4 @@
+import { addHeartFailureMotion } from './hf-motion.js';
 // Heart Failure & Cardiomyopathy Pathophysiology Lab
 // Classical Frank-Starling, Laplace remodeling, and neurohormonal mechanisms
 
@@ -303,6 +304,7 @@ export function createHeartFailureLab(opts = {}) {
       </div>
     `;
 
+    addHeartFailureMotion(root, lang, 'heart', currentPhenotypeId === 'hfref' || currentPhenotypeId === 'dcm' ? .35 : 1);
     // Bind event handlers
     root.querySelectorAll('[data-phenotype]').forEach(btn => {
       btn.addEventListener('click', () => {

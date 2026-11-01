@@ -1,3 +1,4 @@
+import { addHeartFailureMotion } from './hf-motion.js';
 // Takotsubo syndrome, cardio-kidney-metabolic (SGLT2i) protection and cardiac lymphatics.
 // Sources: Omerovic & Redfors (Nat Rev Cardiol 2026), Zelniker & Braunwald (Nat Rev Cardiol 2026),
 // Brakenhielm (Nat Rev Cardiol 2026). Didactic, schematic values; not patient data.
@@ -171,6 +172,7 @@ export function createMyocardialCkmLab(opts = {}) {
           <div class="clinical-desc-box"><h4>${t(tx.title)}</h4><p>${t(tx.body)}</p></div>
         </div>
       </div>`;
+    addHeartFailureMotion(root, lang, 'myocardium');
     root.querySelectorAll('[data-ckm-mode]').forEach(b => b.addEventListener('click', () => { mode = b.dataset.ckmMode; render(); }));
     root.querySelector('[data-ckm-slider]').addEventListener('input', e => { level[mode] = Number(e.target.value); render(); });
   }
