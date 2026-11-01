@@ -1,0 +1,99 @@
+{
+  "recordedAt": "2026-11-01T08:04:53.441Z",
+  "scope": "Lipoprotein traffic teaching UI: shared speed/pause, qualitative particle remodelling guide and target functions",
+  "environment": {
+    "node": "v22.14.0",
+    "vite": "8.3.0",
+    "playwright": "1.62.1",
+    "platform": "darwin",
+    "release": "25.5.0",
+    "arch": "arm64"
+  },
+  "inputs": [
+    "Static bilingual teaching data; no patient data, no outcome analysis"
+  ],
+  "sources": [
+    {
+      "title": "Cohen DE & Fisher EA (2013), Lipoprotein Metabolism, Dyslipidemia and Nonalcoholic Fatty Liver Disease",
+      "doi": "10.1055/s-0033-1358519",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3988578/",
+      "evidence": "Publisher metadata and primary figure explanation checked through PMC; scite returned full-text excerpts and mentioning-classified citation snippets for LPL hydrolysis and selective SR-BI lipid uptake. No editorialNotices field returned; not an independent absence-of-notices certification."
+    },
+    {
+      "title": "Feingold KR, Introduction to Lipids and Lipoproteins, Endotext",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK305896/",
+      "evidence": "Search excerpts checked; direct page open encountered a browser verification challenge."
+    }
+  ],
+  "method": "SVG interpolation of qualitative radius and cargo symbols, with attached apoB or apoA-I surface marker. Stage changes use the same scaled clock as traffic. Manual seek pauses both. A dashed outline marks previous size; whole-particle uptake and selective lipid uptake use different animation rules.",
+  "decisions": [
+    "Existing SVG/JavaScript runtime retained; no dependencies added.",
+    "Default speed 0.5x; user choices 0.25x, 0.5x, 1x, 2x.",
+    "Reduced motion starts paused; explicit play opts in.",
+    "Journey stops at final stage rather than showing an unphysical reverse transformation.",
+    "LDLR, SR-BI, LRP1 classified as receptors; LPL, HL, LCAT as enzymes; ABCA1 as transporter."
+  ],
+  "verification": [
+    {
+      "command": "npm run check",
+      "exit": 0,
+      "result": "Configured syntax checks passed; no separate type-checker/linter configured."
+    },
+    {
+      "command": "npm test",
+      "exit": 0,
+      "result": "Full configured non-browser suite passed."
+    },
+    {
+      "command": "node scripts/test-pharmacology-browser.cjs",
+      "exit": 0,
+      "result": "Existing pharmacology browser regression passed."
+    },
+    {
+      "command": "npm run test:lipoprotein-browser",
+      "exit": 0,
+      "result": "PASS traffic speed ratio: 7.78; pause freezes traffic. PASS lipoprotein journey: stages, targets, language, keyboard, mobile and reduced motion. Also checked progressive shrinkage and decreasing TG cargo."
+    },
+    {
+      "command": "npm run build",
+      "exit": 1,
+      "result": "Failed to resolve ../src/pathophysiology/main.js from pathophysiology/index.html. Concurrent unrelated new module; files left unchanged by this task."
+    },
+    {
+      "command": "Vite build using current config with pharmacology entry only and output /tmp/cardia-lipoprotein-build",
+      "exit": 0,
+      "result": "built in 233ms. Same existing bundler settings; entry list limited for scoped verification because unrelated new entry was incomplete."
+    },
+    {
+      "command": "scripts/test-lipoprotein-journey-browser.cjs against Vite preview of /tmp/cardia-lipoprotein-build",
+      "exit": 0,
+      "result": "PASS traffic speed ratio: 7.83; pause freezes traffic. PASS lipoprotein journey: stages, targets, language, keyboard, mobile and reduced motion."
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0,
+      "result": "Passed."
+    }
+  ],
+  "review": "Separate reviewer reproduced language selection reset and reversed ABCA1 arrow. Both fixed; second review found no critical/high issues. Biological fact-check is not independent expert clinical review.",
+  "limitations": [
+    "Qualitative teaching symbols, not molecular dynamics, calibrated kinetics, measured particle cargo or a treatment predictor.",
+    "Traffic uses Math.random for placement/routing, so screenshots and measured displacement ratios vary slightly across runs. UI behavior, not exact particle coordinates, is reproducibility target.",
+    "Repository-wide browser gate not run; scoped and existing pharmacology browser regressions ran.",
+    "Full build blocked by concurrent unrelated work."
+  ],
+  "sha256": {
+    "src/lipoprotein-traffic.js": "8e36d142c8aca2d69d6abcc33506749a56dd332955f1f800395bfda6d11f985f",
+    "src/lipoprotein-traffic-scene.js": "4d4559ff6287af8450923531c5f18857cb6d810203c6d2041c9f1a455d6d8b43",
+    "src/lipoprotein-traffic-text.js": "68d148b642375821b027529b35154e2607d434734dfdb2c2cf83eda0a79c1d80",
+    "src/lipoprotein-traffic-data.js": "67d9c9caccb586243413e7d28cb70657f186906def5291851df92de59a9768d1",
+    "src/lipoprotein-traffic.css": "29d3fc3f4a3c19a7bdd6ef242d5f979a365d782431f83ddffc274434aae7a2c9",
+    "src/lipoprotein-journey.js": "2cacadcf25e47ef6050257c75a6aa473e57c37fdc8f6ea626dc3b2dd7dff3138",
+    "src/lipoprotein-journey-data.js": "4dc9f28e4f34e1a941f60e0994b37008601161fd3f1a8346c034a8fc82e749de",
+    "scripts/test-lipoprotein-journey-browser.cjs": "53f3965f8bdd82e6dbbfcdfd6317ee0240627bcfcf1f2cda5868053e7a0a9511"
+  },
+  "preview": {
+    "path": "/tmp/lipoprotein-journey-preview.png",
+    "sha256": "836170f1ba9129b18e32dad19e90ef8fd72ed9141f06169252506172590d44d0"
+  }
+}

@@ -11,6 +11,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: page('./index.html'),
+        pathophysiology: page('./pathophysiology/index.html'),
         eps: page('./eps/index.html'),
         pharmacology: page('./pharmacology/index.html'),
         ecg: page('./ecg/index.html'),

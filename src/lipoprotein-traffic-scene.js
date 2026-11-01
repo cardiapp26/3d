@@ -262,9 +262,9 @@ function applyLook(el, base, look) {
 
 /**
  * @param {SVGSVGElement} svg element that already holds TRAFFIC_SCENE
- * @param {{ reducedMotion?: boolean, onCount?: (counts: {road:number, wall:number}) => void }} options
+ * @param {{ reducedMotion?: boolean, onCount?: Function, onAdvance?: Function }} options
  */
-export function createTrafficScene(svg, { reducedMotion = false, onCount = () => {} } = {}) {
+export function createTrafficScene(svg, { reducedMotion = false, onCount = () => {}, onAdvance = () => {} } = {}) {
   const layer = svg.querySelector('.lpt-particles');
   const retainedLayer = svg.querySelector('.lpt-retained');
   const routes = Object.fromEntries(Object.entries(ROUTES).map(([id, d]) => {
@@ -277,6 +277,7 @@ export function createTrafficScene(svg, { reducedMotion = false, onCount = () =>
   }));
   let rates = { ldl: 0, vldl: 0, chylomicron: 0, lpa: 0, hdl: 0, wallLdl: 0, wallLpa: 0 };
   let debt = {}, last = 0, running = true, clock = 0, lastCount = '';
+  let speed = 0.5, paused = reducedMotion;
   const particles = [], retained = [];
 
   function spawn(kind) {
@@ -374,18 +375,36 @@ export function createTrafficScene(svg, { reducedMotion = false, onCount = () =>
   }
 
   function setRates(next) {
+    const changed = Object.keys(next).some(key => rates[key] !== next[key]);
     rates = { ...next };
-    if (reducedMotion) warm();
+    if (paused && changed) warm();
   }
 
   function tick(now) {
     const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
     last = now;
-    if (running && !reducedMotion) step(dt);
+    if (running && !paused) {
+      step(dt * speed);
+      onAdvance(dt * speed);
+    }
     requestAnimationFrame(tick);
   }
 
-  new IntersectionObserver(entries => { running = entries[0].isIntersecting; }).observe(svg);
+  const visible = new Set();
+  const observer = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) visible.add(entry.target); else visible.delete(entry.target);
+    }
+    running = visible.size > 0;
+  });
+  observer.observe(svg.closest('.lpt-map') || svg);
+  const guide = svg.closest('.lpt')?.querySelector('[data-lpt-journey]');
+  if (guide) observer.observe(guide);
   requestAnimationFrame(tick);
-  return { setRates, warm, counts: () => ({ road: particles.filter(p => APOB_KINDS.has(p.look)).length, wall: retained.length }) };
+  return {
+    setRates, warm,
+    setSpeed(value) { if ([0.25, 0.5, 1, 2].includes(value)) speed = value; },
+    setPaused(value) { paused = Boolean(value); },
+    counts: () => ({ road: particles.filter(p => APOB_KINDS.has(p.look)).length, wall: retained.length })
+  };
 }

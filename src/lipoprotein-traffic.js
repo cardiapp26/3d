@@ -7,6 +7,8 @@ import { particleSection, compositionBar, sizeStrip } from './lipoprotein-partic
 import { lipidScenario, trafficRates } from './lipoprotein-traffic-model.js';
 import { TRAFFIC_SCENE, createTrafficScene } from './lipoprotein-traffic-scene.js';
 import { LPT_WORDS } from './lipoprotein-traffic-text.js';
+import { createLipoproteinJourney } from './lipoprotein-journey.js';
+import { TRAFFIC_TARGETS } from './lipoprotein-journey-data.js';
 import './lipoprotein-traffic.css';
 
 const PROFILE_KEYS = ['ldl', 'tg', 'hdl', 'lpa'];
@@ -14,6 +16,8 @@ const sourceTitle = id => LIPOPROTEIN_SOURCES.find(item => item.id === id)?.titl
 
 export function createLipoproteinTraffic({ mount, getLang }) {
   let particle = 'ldl', presetId = 'reference', apobView = false;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let paused = reducedMotion, speed = 0.5;
   let profile = { ...LIPID_PRESETS[0].profile };
   const levers = new Set();
   const lang = () => (getLang() === 'en' ? 'en' : 'tr');
@@ -23,9 +27,11 @@ export function createLipoproteinTraffic({ mount, getLang }) {
   const root = document.createElement('section');
   root.className = 'lpt';
   root.innerHTML = `<p class="lpt-eyebrow"></p><h2></h2><p class="lpt-intro"></p>
+    <div class="lpt-exploration"><div class="lpt-playback"><button type="button" data-lpt-pause></button><span data-lpt-speed-label></span><div class="lpt-speeds" role="group"></div></div>
     <div class="lpt-layout"><div class="lpt-map"><svg viewBox="0 0 760 360" role="img" data-lpt-svg><title></title>${TRAFFIC_SCENE}</svg>
-      <div class="lpt-chips" role="group"></div><button type="button" class="lpt-apob" data-lpt-apob aria-pressed="false"></button><p class="lpt-count" aria-live="polite"></p></div>
+      <div class="lpt-map-targets"></div><div class="lpt-chips" role="group"></div><button type="button" class="lpt-apob" data-lpt-apob aria-pressed="false"></button><p class="lpt-count" aria-live="polite"></p></div>
       <article class="lpt-card" aria-live="polite"><h3></h3><dl></dl><div class="lpt-science"><h4></h4><p></p></div></article></div>
+    <div class="lpt-learning" data-lpt-journey></div></div>
     <section class="lpt-anatomy" data-lpt-anatomy><h3></h3><p class="lpt-anatomy-intro"></p>
       <div class="lpt-anatomy-grid"><div class="lpt-section"></div><div class="lpt-anatomy-side"><h4 data-lpt-head="comp"></h4><div class="lpt-bar"></div><ul class="lpt-comp"></ul><h4 data-lpt-head="apos"></h4><ul class="lpt-apos"></ul></div></div>
       <h4 data-lpt-head="strip"></h4><div class="lpt-strip"></div><p class="lpt-strip-note"></p></section>
@@ -40,17 +46,51 @@ export function createLipoproteinTraffic({ mount, getLang }) {
   const $ = selector => root.querySelector(selector);
 
   const svg = $('[data-lpt-svg]');
+  const journey = createLipoproteinJourney({ mount: $('[data-lpt-journey]'), getLang: lang,
+    onManual: () => { paused = true; scene.setPaused(true); renderPlayback(); }
+  });
   const scene = createTrafficScene(svg, {
-    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    reducedMotion,
+    onAdvance: dt => journey.advance(dt),
     onCount: counts => { $('.lpt-count').textContent = W().count(counts); }
   });
+  for (const item of TRAFFIC_TARGETS.filter(value => ['ldlr', 'srbi', 'lpl'].includes(value.id))) {
+    const tag = svg.querySelector(`.lpt-tag-${item.id}`);
+    // Keep the labelled SVG an image; expose interactive controls as native HTML buttons below it.
+    const button = document.createElement('button');
+    button.type = 'button'; button.dataset.lptMapTarget = item.id;
+    button.addEventListener('click', () => {
+      journey.selectTarget(item.id);
+      $('.lpt-target-card').scrollIntoView({ block: 'nearest' });
+    });
+    $('.lpt-map-targets').append(button);
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    tag.append(title);
+  }
+
+  const speedButtons = [0.25, 0.5, 1, 2].map(value => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.dataset.lptSpeed = value;
+    button.textContent = `${value}×`;
+    button.addEventListener('click', () => { speed = value; scene.setSpeed(value); renderPlayback(); });
+    $('.lpt-speeds').append(button);
+    return button;
+  });
+  function renderPlayback() {
+    $('[data-lpt-pause]').textContent = paused ? W().play : W().pause;
+    $('[data-lpt-pause]').setAttribute('aria-pressed', String(paused));
+    $('[data-lpt-speed-label]').textContent = W().speed;
+    $('.lpt-speeds').setAttribute('aria-label', W().speed);
+    for (const button of speedButtons) button.setAttribute('aria-pressed', String(Number(button.dataset.lptSpeed) === speed));
+  }
+  $('[data-lpt-pause]').addEventListener('click', () => { paused = !paused; scene.setPaused(paused); renderPlayback(); });
 
   const chips = new Map(LIPOPROTEINS.map(item => {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.lptParticle = item.id;
     button.style.setProperty('--lpt-dot', item.color);
-    button.addEventListener('click', () => { particle = item.id; renderParticle(); });
+    button.addEventListener('click', () => { particle = item.id; renderParticle(); journey.selectParticle(item.id); });
     $('.lpt-chips').append(button);
     return [item.id, button];
   }));
@@ -184,9 +224,16 @@ export function createLipoproteinTraffic({ mount, getLang }) {
 
   function renderStatic() {
     const w = W();
+    renderPlayback();
     $('.lpt-eyebrow').textContent = w.eyebrow; $('h2').textContent = w.title; $('.lpt-intro').textContent = w.intro;
     svg.querySelector('title').textContent = w.svgTitle;
     svg.querySelectorAll('[data-lpt-label]').forEach(node => { node.textContent = w.labels[node.dataset.lptLabel]; });
+    for (const button of root.querySelectorAll('[data-lpt-map-target]')) {
+      const item = TRAFFIC_TARGETS.find(value => value.id === button.dataset.lptMapTarget);
+      button.textContent = `${item.label} · ${t(item.kind)}`;
+      button.setAttribute('aria-label', `${item.label}: ${t(item.name)}. ${t(item.role)}`);
+      svg.querySelector(`.lpt-tag-${item.id} title`).textContent = `${t(item.name)}. ${t(item.role)}`;
+    }
     $('.lpt-chips').setAttribute('aria-label', w.chips);
     $('.lpt-lab h3').textContent = w.labTitle; $('.lpt-lab-intro').textContent = w.labIntro;
     $('.lpt-presets').setAttribute('aria-label', w.presets);
@@ -209,7 +256,7 @@ export function createLipoproteinTraffic({ mount, getLang }) {
     $('.lpt-count').textContent = w.count(scene.counts());
   }
 
-  function refresh() { renderStatic(); renderParticle(); renderLab(); }
+  function refresh() { renderStatic(); renderParticle(); renderLab(); journey.refresh(); }
   syncInputs();
   refresh();
   scene.warm();

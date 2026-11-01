@@ -4,6 +4,8 @@
 const t = (tr, en) => ({ tr, en });
 
 export const LIPOPROTEIN_SOURCES = [
+  { id: 'metabolism', title: 'Cohen DE & Fisher EA. Lipoprotein Metabolism, Dyslipidemia and Nonalcoholic Fatty Liver Disease. Semin Liver Dis. 2013;33:380–388. doi:10.1055/s-0033-1358519', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC3988578/' },
+  { id: 'endotext', title: 'Feingold KR. Introduction to Lipids and Lipoproteins. Endotext. NCBI Bookshelf NBK305896', url: 'https://www.ncbi.nlm.nih.gov/books/NBK305896/' },
   { id: 'post', title: 'mindmusclepro: "Lipids Explained" (X post, 2026), the analogy discussed here', url: 'https://x.com/mindmusclepro/status/2116432373869097353' },
   { id: 'ference', title: 'Ference BA et al. LDL causes ASCVD. EAS consensus. Eur Heart J 2017;38:2459', url: 'https://doi.org/10.1093/eurheartj/ehx144' },
   { id: 'boren', title: 'Borén J et al. LDL causes ASCVD: pathophysiological, genetic and therapeutic insights. EAS consensus. Eur Heart J 2020;41:2313', url: 'https://doi.org/10.1093/eurheartj/ehz962' },

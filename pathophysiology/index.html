@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="app-version" content="1.17.0" />
+    <meta name="app-build" content="v17" />
+    <meta name="theme-color" content="#16382f" />
+    <title>Cardia · Patofizyoloji</title>
+  </head>
+  <body class="pathophys-app" data-cardia-root="../">
+    <header class="site-header" data-site-page="pathophysiology">
+      <div class="site-header-actions">
+        <div class="pathophys-lang" role="group" aria-label="Language">
+          <button type="button" data-pathophys-lang="tr">TR</button>
+          <button type="button" data-pathophys-lang="en">EN</button>
+        </div>
+      </div>
+    </header>
+    <main class="pathophys-workspace">
+      <aside class="pathophys-sidebar">
+        <p class="pathophys-eyebrow" data-pathophys-eyebrow></p>
+        <h1 data-pathophys-title>Patofizyoloji</h1>
+        <p class="pathophys-subtitle" data-pathophys-subtitle></p>
+        <nav class="pathophys-nav" data-pathophys-nav aria-label="Stations"></nav>
+        <p class="pathophys-sidebar-note" data-pathophys-note></p>
+      </aside>
+      <div class="pathophys-main">
+        <section class="pathophys-header">
+          <p class="pathophys-station-number" data-pathophys-station-num></p>
+          <h2 data-pathophys-station-title></h2>
+          <p class="pathophys-station-intro" data-pathophys-station-intro></p>
+        </section>
+        <div class="pathophys-content" data-pathophys-content></div>
+      </div>
+    </main>
+    <footer class="pathophys-footer" data-pathophys-disclaimer></footer>
+    <script type="module" src="../src/pathophysiology/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,136 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { startApp } = require('./lib/app-server.cjs');
+const assert = require('node:assert/strict');
+
+(async () => {
+  const app = await startApp();
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  const errors = [];
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    page.on('pageerror', error => errors.push(error.message));
+    await page.clock.install();
+    await page.goto(`${app.url}/pharmacology/?lang=tr#/lipids`);
+    await page.waitForSelector('[data-lpt-speed="0.5"]');
+    await page.locator('[data-lpt-svg]').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('[data-lpt-speed="0.5"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('[data-lpt-pause]').getAttribute('aria-pressed'), 'false');
+    await page.locator('[data-lpt-pause]').click();
+    const frozen = await page.locator('.lpt-particles').innerHTML();
+    await page.clock.runFor(800);
+    assert.equal(await page.locator('.lpt-particles').innerHTML(), frozen, 'pause freezes traffic');
+
+    // Measure displacement of the same particle on a straight route, with a virtual frame clock.
+    await page.evaluate(() => {
+      window.lptTracked = [...document.querySelectorAll('.lpt-particles .lpt-p')].find(node => {
+        const m = node.transform.baseVal.getItem(0).matrix;
+        return m.e > 25 && m.e < 180 && m.f > 240 && m.f < 248;
+      });
+      if (!window.lptTracked) throw new Error('No straight-route particle available');
+    });
+    const pos = () => page.evaluate(() => window.lptTracked.transform.baseVal.getItem(0).matrix.e);
+    const distances = [];
+    for (const speed of ['0.25', '2']) {
+      await page.locator(`[data-lpt-speed="${speed}"]`).click();
+      assert.equal(await page.locator('[data-lpt-pause]').getAttribute('aria-pressed'), 'true', 'speed choice keeps pause');
+      await page.locator('[data-lpt-pause]').click();
+      const before = await pos();
+      await page.clock.runFor(300);
+      const after = await pos();
+      distances.push(after - before);
+      await page.locator('[data-lpt-pause]').click();
+    }
+    const ratio = distances[1] / distances[0];
+    assert.ok(ratio > 6 && ratio < 10, `2× / 0.25× displacement ratio ≈8, got ${ratio}`);
+    console.log(`PASS traffic speed ratio: ${ratio.toFixed(2)}; pause freezes traffic`);
+
+    await page.locator('[data-lpt-stage="1"]').click();
+    assert.equal(await page.locator('.lpt-journey').getAttribute('data-stage'), '1');
+    assert.equal(await page.locator('[data-lpt-pause]').getAttribute('aria-pressed'), 'true', 'manual step pauses shared clock');
+    assert.equal(await page.locator('.lpt-target-card').getAttribute('data-target'), 'lpl');
+    assert.match(await page.locator('.lpt-stage-copy p').textContent(), /yeni apoB eklenmez/);
+    await page.locator('[data-lpt-target="srbi"]').click();
+    await page.locator('[data-pharma-lang="en"]').click();
+    assert.equal(await page.locator('.lpt-target-card').getAttribute('data-target'), 'srbi', 'language keeps chosen target');
+    assert.equal(await page.locator('.lpt-journey').getAttribute('data-stage'), '1', 'language keeps stage');
+    assert.equal(await page.locator('[data-lpt-speed="2"]').getAttribute('aria-pressed'), 'true', 'language keeps speed');
+    assert.match(await page.locator('.lpt-target-card').textContent(), /Scavenger receptor class B type I/);
+    const guideFrozen = await page.locator('.lpt-morph').innerHTML();
+    await page.clock.runFor(1000);
+    assert.equal(await page.locator('.lpt-morph').innerHTML(), guideFrozen, 'pause freezes enlarged particle');
+
+    await page.locator('[data-lpt-next]').click();
+    assert.equal(await page.locator('.lpt-target-card').getAttribute('data-target'), 'hl');
+    await page.locator('[data-lpt-next]').click();
+    assert.match(await page.locator('.lpt-journey-transport').textContent(), /Whole particle/);
+    assert.equal(await page.locator('[data-lpt-next]').isDisabled(), true);
+    await page.locator('[data-lpt-pathway="chylomicron"]').click();
+    assert.equal(await page.locator('[data-lpt-stage]').count(), 3);
+    await page.locator('[data-lpt-stage="2"]').click();
+    assert.equal(await page.locator('.lpt-target-card').getAttribute('data-target'), 'lrp1');
+    assert.match(await page.locator('.lpt-journey-identity').textContent(), /do not become LDL/);
+    await page.locator('[data-lpt-particle="hdl"]').click();
+    assert.equal(await page.locator('.lpt-journey').getAttribute('data-pathway'), 'hdl', 'class selection follows matching pathway');
+    await page.locator('[data-lpt-stage="3"]').click();
+    assert.match(await page.locator('.lpt-journey-transport').textContent(), /Lipid only/);
+    assert.equal(await page.locator('.lpt-target-card').getAttribute('data-target'), 'srbi');
+    assert.equal(await page.locator('[data-journey-particle]').getAttribute('opacity'), '1', 'selective uptake preserves HDL scaffold');
+    await page.locator('[data-lpt-particle="lpa"]').click();
+    assert.ok(await page.locator('.lpt-journey-lpa').isVisible(), 'Lp(a) exception is explicit');
+
+    await page.locator('[data-lpt-pathway="vldl"]').click();
+    await page.locator('[data-lpt-pause]').click();
+    await page.clock.runFor(4300);
+    const radiusDuringLipolysis = Number(await page.locator('[data-journey-shell]').getAttribute('rx'));
+    const tgDuringLipolysis = await page.locator('[data-journey-lipids] circle').evaluateAll(nodes => nodes.slice(0, 22).reduce((sum, node) => sum + Number(node.getAttribute('opacity')), 0));
+    await page.clock.runFor(1000);
+    const radiusAfterLipolysis = Number(await page.locator('[data-journey-shell]').getAttribute('rx'));
+    const tgAfterLipolysis = await page.locator('[data-journey-lipids] circle').evaluateAll(nodes => nodes.slice(0, 22).reduce((sum, node) => sum + Number(node.getAttribute('opacity')), 0));
+    assert.ok(radiusDuringLipolysis > radiusAfterLipolysis && radiusAfterLipolysis >= 53, 'single particle shrinks progressively during VLDL lipolysis');
+    assert.ok(tgDuringLipolysis > tgAfterLipolysis, 'TG cargo decreases during the same transition');
+    await page.locator('[data-lpt-pause]').click();
+    await page.locator('[data-lpt-stage="0"]').click();
+    await page.locator('[data-lpt-timeline]').focus();
+    await page.locator('[data-lpt-timeline]').press('ArrowRight');
+    assert.equal(await page.locator('.lpt-journey').getAttribute('data-stage'), '1', 'keyboard timeline advances stage');
+    await page.locator('[data-lpt-timeline]').press('Home');
+    await page.locator('[data-lpt-pause]').click();
+    await page.clock.runFor(9000);
+    assert.ok(Number(await page.locator('.lpt-journey').getAttribute('data-stage')) >= 2, 'shared 2× clock advances explanation');
+    await page.locator('[data-lpt-pause]').click();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('[data-pharma-lang="tr"]').click();
+    await page.locator('[data-lpt-stage="1"]').click();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, 'mobile has no horizontal page overflow');
+    await page.locator('[data-lpt-map-target="ldlr"]').click();
+    assert.equal(await page.locator('.lpt-target-card').getAttribute('data-target'), 'ldlr');
+    await page.locator('.lpt-learning').screenshot({ path: '/tmp/lipoprotein-journey-mobile.png' });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.locator('.lpt-exploration').screenshot({ path: '/tmp/lipoprotein-journey-desktop.png' });
+    await page.locator('.lpt-learning').evaluate(node => node.scrollIntoView({ block: 'start' }));
+    const playbackBelowHeader = await page.locator('.lpt-playback').evaluate(node => node.getBoundingClientRect().top >= document.querySelector('.site-header').getBoundingClientRect().bottom);
+    assert.ok(playbackBelowHeader, 'sticky speed controls stay below site header');
+    await page.screenshot({ path: '/tmp/lipoprotein-journey-preview.png' });
+
+    const reduced = await browser.newPage({ reducedMotion: 'reduce' });
+    reduced.on('pageerror', error => errors.push(error.message));
+    await reduced.clock.install();
+    await reduced.goto(`${app.url}/pharmacology/?lang=tr#/lipids`);
+    await reduced.locator('[data-lpt-svg]').scrollIntoViewIfNeeded();
+    assert.equal(await reduced.locator('[data-lpt-pause]').getAttribute('aria-pressed'), 'true', 'reduced motion starts paused');
+    const reducedFrozen = await reduced.locator('.lpt-particles').innerHTML();
+    await reduced.clock.runFor(800);
+    assert.equal(await reduced.locator('.lpt-particles').innerHTML(), reducedFrozen);
+    await reduced.locator('[data-lpt-next]').click();
+    assert.equal(await reduced.locator('.lpt-journey').getAttribute('data-stage'), '1', 'manual step works with reduced motion');
+    await reduced.locator('[data-lpt-pause]').click();
+    const beforePlay = await reduced.locator('.lpt-particles').innerHTML();
+    await reduced.clock.runFor(400);
+    assert.notEqual(await reduced.locator('.lpt-particles').innerHTML(), beforePlay, 'explicit play enables motion');
+    assert.deepEqual(errors, [], 'no page errors');
+    console.log('PASS lipoprotein journey: stages, targets, language, keyboard, mobile and reduced motion');
+  } finally {
+    await browser.close(); await app.close();
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });
