@@ -238,4 +238,5 @@ Wasserthal J et al., Radiol Artif Intell 2023;5(5):e230024. `scripts/ct/prepare-
 crops the thorax and writes `public/ct-data/s0019/` (companded 8-bit HU, gzip). Run
 `npm run test:ct`; with Vite running, `APP_URL=http://localhost:5173 npm run test:ct-browser`.
 
-Pathophysiology stations now share an experiment workspace: predict an observable outcome, capture a baseline, change the existing model controls, compare numeric readouts and paired diagram snapshots, then save an explanation. Stations without scalar readouts use qualitative diagram comparisons; feedback is not a clinical competency score. Range controls retain native model events and add bounded number input plus incremental buttons. Experiment notes and completion markers stay in this browser's local storage; clearing site data removes them. Mobile station navigation uses a horizontal strip. The lipid metabolism lab is linked for related exploration. Verify with `npm run test:learning-studio-browser`.
+
+Pathophysiology diagrams offer zoom, pan and reset. Ringed handles on the PV and Starling plots change EDV directly; Laplace cavity and wall handles change radius and wall thickness. Handles support pointer, touch and arrow-key input and update the existing model controls. The experiment form and completion badges have been removed. Run `npm run test:visual-interaction-browser`.

@@ -22,19 +22,14 @@ import { createMyocardialCkmLab } from './myocardial-ckm-lab.js';
 import { createAchdShuntsLab } from './achd-shunts-lab.js';
 
 import './pathophysiology.css';
-import { createLearningStudio } from './learning-studio.js';
+import { createVisualInteraction } from './visual-interaction.js';
 
 const params = new URLSearchParams(window.location.search);
 let lang = ['tr', 'en'].includes(params.get('lang')) ? params.get('lang') : initialLanguage();
 
 let currentStationId = getStationFromHash();
 let activeLabInstance = null;
-let learningStudio = null;
-let experimentRecords = {};
-function markProgress(records = experimentRecords) {
-  experimentRecords = records;
-  document.querySelectorAll('[data-station]').forEach(button => { button.dataset.experimentComplete = String(Boolean(records[button.dataset.station]?.completed)); });
-}
+let visualInteraction = null;
 
 const LAB_FACTORIES = {
   'pv-loop': createPvStation,
@@ -147,7 +142,6 @@ function renderNav() {
     </button>`).join('')}
   `).join('');
 
-  markProgress();
   nav.querySelectorAll('[data-station]').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.dataset.station;
@@ -165,14 +159,14 @@ function switchStation(stationId) {
   const content = document.querySelector('[data-pathophys-content]');
   if (!content) return;
 
-  learningStudio?.destroy();
+  visualInteraction?.destroy();
   activeLabInstance?.destroy?.();
   content.innerHTML = '';
   activeLabInstance = null;
 
   const factory = LAB_FACTORIES[stationId] || LAB_FACTORIES['pv-loop'];
   activeLabInstance = factory({ container: content, lang });
-  learningStudio = createLearningStudio({ container: content, station: PATHOPHYS_STATIONS.find(s => s.id === stationId), lang, onProgress: markProgress });
+  visualInteraction = createVisualInteraction({ container: content, lang });
 
   updateStaticText();
   renderNav();
@@ -209,7 +203,7 @@ function initLanguage() {
           activeLabInstance.setLanguage(lang);
         }
       }
-      learningStudio?.updateLanguage(lang);
+      visualInteraction?.updateLanguage(lang);
     });
   });
 }
