@@ -28,9 +28,9 @@ const { startApp } = require('./lib/app-server.cjs');
     const activeModule = await page.$eval('.site-module[aria-current="page"]', el => el.textContent.trim());
     assert.ok(activeModule.toLowerCase().includes('patofizyoloji') || activeModule.toLowerCase().includes('pathophysiology'), 'Active module should be Patofizyoloji');
 
-    // Verify 13 station buttons in sidebar, grouped under 4 headings
+    // Verify 16 station buttons in sidebar, grouped under 4 headings
     const stations = await page.$$eval('.pathophys-nav-item', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
-    assert.equal(stations.length, 13, `Should have 13 stations in nav, found: ${stations.length}`);
+    assert.equal(stations.length, 16, `Should have 16 stations in nav, found: ${stations.length}`);
     assert.equal(await page.locator('.pathophys-nav-group').count(), 4, 'four station groups');
 
     // Station 1: PV loop
@@ -85,6 +85,26 @@ const { startApp } = require('./lib/app-server.cjs');
     await page.click('[data-achd-preset="eisen"]');
     assert.match(await page.locator('.achd-svg').textContent(), /Eisenmenger/, 'Eisenmenger reversal shown');
     await page.screenshot({ path: `${shots}/achd_screenshot.png` });
+
+    // Test Lilly Classic Stations
+    await page.click('[data-station="ischemic-cascade"]');
+    await page.waitForSelector('.mvo2-scale-svg');
+    assert.ok(await page.$('.cascade-stepper'), 'Ischemic cascade stepper should render');
+    await page.click('[data-workload="heavy"]');
+    await page.screenshot({ path: `${shots}/ischemia_screenshot.png` });
+
+    await page.click('[data-station="heart-failure"]');
+    await page.waitForSelector('.starling-curve-svg');
+    assert.ok(await page.$('.geom-svg'), 'Heart failure geometry should render');
+    await page.click('[data-phenotype="hcm"]');
+    await page.screenshot({ path: `${shots}/hf_screenshot.png` });
+
+    await page.click('[data-station="pericardial"]');
+    await page.waitForSelector('.pericardial-pv-svg');
+    assert.ok(await page.$('.septal-shift-svg'), 'Pericardial septal shift should render');
+    await page.click('[data-disorder="constriction"]');
+    await page.screenshot({ path: `${shots}/pericardial_screenshot.png` });
+
     assert.equal(errors.length, 0, `Page errors after new stations: ${errors.join('; ')}`);
 
     // Click Station 4: Electrophysiology

@@ -10,6 +10,9 @@ import { createPhysiologyLab } from './physiology-lab.js';
 import { createWiggersLab } from './wiggers-lab.js';
 import { createStarlingLaplaceLab } from './starling-laplace-lab.js';
 import { createAtherogenesisLab } from './atherogenesis-lab.js';
+import { createIschemicCascadeLab } from './ischemic-cascade-lab.js';
+import { createHeartFailureLab } from './heart-failure-lab.js';
+import { createPericardialLab } from './pericardial-lab.js';
 import { createElectrophysLab } from './electrophys-lab.js';
 import { createForresterLab } from './forrester-lab.js';
 import { createValvularLab } from './valvular-lab.js';
@@ -29,16 +32,19 @@ let activeLabInstance = null;
 const LAB_FACTORIES = {
   'pv-loop': createPvStation,
   'loads': createLoadsLab,
+  'starling-laplace': createStarlingLaplaceLab,
   'physiology': createPhysiologyLab,
   'wiggers': createWiggersLab,
-  'starling-laplace': createStarlingLaplaceLab,
   'atherogenesis': createAtherogenesisLab,
-  'electrophys': createElectrophysLab,
+  'ischemic-cascade': createIschemicCascadeLab,
+  'heart-failure': createHeartFailureLab,
+  'pericardial': createPericardialLab,
+  'myocardial-ckm': createMyocardialCkmLab,
   'forrester': createForresterLab,
   'valvular': createValvularLab,
+  'electrophys': createElectrophysLab,
   'hypertension-vascular': createHypertensionLab,
   'pah-rv': createPahRvLab,
-  'myocardial-ckm': createMyocardialCkmLab,
   'achd-shunts': createAchdShuntsLab
 };
 
@@ -185,8 +191,13 @@ function initLanguage() {
       updateStaticText();
       renderNav();
 
-      if (activeLabInstance && typeof activeLabInstance.updateLanguage === 'function') {
-        activeLabInstance.updateLanguage(lang);
+      if (activeLabInstance) {
+        if (typeof activeLabInstance.updateLanguage === 'function') {
+          activeLabInstance.updateLanguage(lang);
+        }
+        if (typeof activeLabInstance.setLanguage === 'function') {
+          activeLabInstance.setLanguage(lang);
+        }
       }
     });
   });

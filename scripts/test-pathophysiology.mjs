@@ -18,12 +18,17 @@ import { createAtherogenesisLab } from '../src/pathophysiology/atherogenesis-lab
 import { createElectrophysLab } from '../src/pathophysiology/electrophys-lab.js';
 import { createForresterLab } from '../src/pathophysiology/forrester-lab.js';
 import { createValvularLab } from '../src/pathophysiology/valvular-lab.js';
+import { createIschemicCascadeLab } from '../src/pathophysiology/ischemic-cascade-lab.js';
+import { createHeartFailureLab } from '../src/pathophysiology/heart-failure-lab.js';
+import { createPericardialLab } from '../src/pathophysiology/pericardial-lab.js';
 
 test('Pathophysiology: data structures and bilingual integrity', () => {
-  assert.equal(PATHOPHYS_STATIONS.length, 13, 'Should have exactly 13 didactic stations');
+  assert.equal(PATHOPHYS_STATIONS.length, 16, 'Should have exactly 16 didactic stations');
   for (const st of PATHOPHYS_STATIONS) assert.ok(PATHOPHYS_GROUPS.some(g => g.id === st.group), `${st.id} belongs to a known group`);
   assert.equal(ATHEROMA_MODIFIERS.length, 4, 'four systemic atheroma phenotypes');
-  for (const id of ['loads', 'physiology', 'wiggers', 'hypertension-vascular', 'pah-rv', 'myocardial-ckm', 'achd-shunts']) assert.ok(PATHOPHYS_STATIONS.some(s => s.id === id), `${id} station is present`);
+  for (const id of ['loads', 'physiology', 'wiggers', 'hypertension-vascular', 'pah-rv', 'myocardial-ckm', 'achd-shunts', 'ischemic-cascade', 'heart-failure', 'pericardial']) {
+    assert.ok(PATHOPHYS_STATIONS.some(s => s.id === id), `${id} station is present`);
+  }
 
   for (const station of PATHOPHYS_STATIONS) {
     assert.ok(station.id, 'Station must have an id');
@@ -63,6 +68,9 @@ test('Pathophysiology: lab factories are functions', () => {
   assert.equal(typeof createElectrophysLab, 'function');
   assert.equal(typeof createForresterLab, 'function');
   assert.equal(typeof createValvularLab, 'function');
+  assert.equal(typeof createIschemicCascadeLab, 'function');
+  assert.equal(typeof createHeartFailureLab, 'function');
+  assert.equal(typeof createPericardialLab, 'function');
 });
 
 test('Pathophysiology: zero em-dashes house rule across all files', () => {
@@ -71,6 +79,9 @@ test('Pathophysiology: zero em-dashes house rule across all files', () => {
     'src/pathophysiology/pv-loop-lab.js',
     'src/pathophysiology/starling-laplace-lab.js',
     'src/pathophysiology/atherogenesis-lab.js',
+    'src/pathophysiology/ischemic-cascade-lab.js',
+    'src/pathophysiology/heart-failure-lab.js',
+    'src/pathophysiology/pericardial-lab.js',
     'src/pathophysiology/electrophys-lab.js',
     'src/pathophysiology/forrester-lab.js',
     'src/pathophysiology/valvular-lab.js',
