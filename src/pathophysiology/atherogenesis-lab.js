@@ -13,7 +13,7 @@ export function createAtherogenesisLab(opts = {}) {
   let currentStageIndex = 0;
   let currentModifierId = 'physiological';
   let selectedHotspot = 'endothelium';
-  let motionEnabled = false;
+  let motionEnabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let apoBFlux = 130;       // LDL-C / ApoB proxy (mg/dL)
   let inflammation = 2.0;   // hsCRP (mg/L)
   let capThickness = 85;    // µm
@@ -216,6 +216,7 @@ export function createAtherogenesisLab(opts = {}) {
       ? ['Entry', 'Retention', 'Foam cells', 'Fibrous cap', 'Rupture']
       : ['Geçiş', 'Tutulum', 'Köpük hücreleri', 'Fibröz kılıf', 'Rüptür'];
     root.classList.toggle('athero-motion-on', motionEnabled);
+    root.dataset.atheroStage = String(currentStageIndex);
     $('[data-athero-motion]').textContent = motionEnabled
       ? (en ? 'Ⅱ Pause flow' : 'Ⅱ Akışı duraklat')
       : (en ? '▷ Animate flow' : '▷ Akışı canlandır');
@@ -404,7 +405,7 @@ export function createAtherogenesisLab(opts = {}) {
       const fill = isLpa ? '#a855f7' : (isSdLdl ? '#ea580c' : '#eab308');
       const stroke = isLpa ? '#6b21a8' : '#92400e';
       lumenParticles.push(`
-        <g class="athero-flow-particle" style="--flow-delay: ${-i * 0.3}s">
+        <g class="athero-flow-particle" style="--flow-delay: ${-i * 0.7}s; --particle-x: ${px}px">
           <circle cx="${px}" cy="${py}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
           ${isLpa ? `<path d="M ${px + r} ${py - 3} Q ${px + r + 5} ${py}, ${px + r} ${py + 3}" fill="none" stroke="#7e22ce" stroke-width="1.5"/>` : ''}
         </g>
@@ -478,13 +479,13 @@ export function createAtherogenesisLab(opts = {}) {
           <path d="M 235 94 L 250 132" stroke="#2563eb" stroke-width="2" stroke-dasharray="3 2"/>
           <!-- Foam cells with lipid droplets -->
           ${[260, 325, 390, 450].map((cx, i) => `
-            <g transform="translate(${cx}, ${165 + (i % 2) * 14})">
+            <g transform="translate(${cx}, ${165 + (i % 2) * 14})"><g class="athero-cell-pulse" style="--flow-delay:${-i * .6}s">
               <circle cx="0" cy="0" r="20" fill="#f59e0b" fill-opacity="0.28" stroke="#b45309" stroke-width="2"/>
               <circle cx="-6" cy="-5" r="4.5" fill="#eab308"/><circle cx="6" cy="-4" r="4" fill="#eab308"/>
               <circle cx="-4" cy="6" r="4" fill="#eab308"/><circle cx="6" cy="5" r="4.5" fill="#eab308"/>
               <!-- Cholesterol crystal needles -->
               <line x1="-8" y1="9" x2="9" y2="-8" stroke="#fef08a" stroke-width="2"/>
-            </g>
+            </g></g>
           `).join('')}
           <text x="355" y="218" text-anchor="middle" font-size="12" font-weight="800" fill="#7c2d12">
             ${en ? 'CD36/SR-A Foam Cells + Cholesterol Crystals → NLRP3 → IL-1β / IL-6' : 'CD36/SR-A Köpük Hücreleri + Kolesterol Kristalleri → NLRP3 → IL-1β / IL-6'}
@@ -520,7 +521,7 @@ export function createAtherogenesisLab(opts = {}) {
           <path d="M 165 222 Q 255 140, 325 135" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="5 3"/>
           <path d="M 370 135 Q 440 140, 525 222" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="5 3"/>
           <!-- Occlusive Platelet + Fibrin Thrombus in Lumen -->
-          <ellipse cx="348" cy="96" rx="58" ry="26" fill="#b91c1c" fill-opacity="0.9" stroke="#450a0a" stroke-width="2.5"/>
+          <ellipse class="athero-thrombus-pulse" cx="348" cy="96" rx="58" ry="26" fill="#b91c1c" fill-opacity="0.9" stroke="#450a0a" stroke-width="2.5"/>
           <g stroke="#fecaca" stroke-width="1.4">
             <line x1="305" y1="90" x2="390" y2="104"/><line x1="310" y1="106" x2="385" y2="86"/><line x1="330" y1="78" x2="365" y2="114"/>
           </g>
@@ -561,6 +562,14 @@ export function createAtherogenesisLab(opts = {}) {
       <!-- Circulating Lipoprotein Particles -->
       ${lumenParticles.join('')}
       ${immuneLumen}
+      <!-- Particle trajectories are schematic, not calibrated biological kinetics. -->
+      <g aria-hidden="true" class="athero-mechanism-particles">
+        ${Array.from({ length: stageIdx >= 3 ? 8 : 12 }, (_, i) => {
+          const x = 170 + (i % 6) * 62;
+          const endY = stageIdx === 0 ? 142 : stageIdx === 1 ? 156 : 177;
+          return `<circle r="${stageIdx === 4 ? 4 : 5}" fill="${stageIdx === 4 ? '#dc2626' : '#eab308'}" stroke="${stageIdx === 4 ? '#991b1b' : '#92400e'}" stroke-width="1.5" class="athero-transit" style="--travel-x:${x}px;--travel-y:${endY}px;--flow-delay:${-i * .65}s;--destination-x:${stageIdx === 4 ? 348 : x + 18}px;--destination-y:${stageIdx === 4 ? 96 : endY}px"/>`;
+        }).join('')}
+      </g>
 
       <!-- Endothelial Monolayer -->
       <g class="athero-clickable" data-svg-hs="endothelium" style="cursor:pointer">

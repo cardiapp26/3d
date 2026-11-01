@@ -1287,3 +1287,27 @@ body.pathophys-app {
 @media (max-width:600px) {
   .pathophys-athero-lab .athero-cumulative-box .lab-card-header { flex-direction:column; align-items:stretch; gap:12px; }
 }
+/* Continuous transport through the lumen and across the endothelial barrier. */
+.pathophys-athero-lab .athero-flow-particle { animation:athero-circulate 7s linear infinite; animation-delay:var(--flow-delay); animation-play-state:paused; }
+.athero-transit { animation:athero-retention 7s linear infinite; animation-delay:var(--flow-delay); animation-play-state:paused; opacity:0; }
+.athero-cell-pulse { animation:athero-engulf 3s ease-in-out infinite; animation-delay:var(--flow-delay); animation-play-state:paused; }
+.athero-thrombus-pulse { transform-box:fill-box; transform-origin:center; animation:athero-engulf 3s ease-in-out infinite; animation-play-state:paused; }
+.athero-motion-on .athero-flow-particle,
+.athero-motion-on .athero-transit,
+.athero-motion-on .athero-cell-pulse,
+.athero-motion-on .athero-thrombus-pulse { animation-play-state:running; }
+@keyframes athero-circulate { from { transform:translateX(calc(140px - var(--particle-x))); } to { transform:translateX(calc(610px - var(--particle-x))); } }
+@keyframes athero-retention {
+  0% { transform:translate(var(--travel-x),40px); opacity:0; }
+  12% { transform:translate(var(--travel-x),65px); opacity:1; }
+  45% { transform:translate(var(--travel-x),115px); opacity:1; }
+  78% { transform:translate(var(--destination-x),var(--destination-y)); opacity:1; }
+  100% { transform:translate(var(--destination-x),var(--destination-y)); opacity:0; }
+}
+@keyframes athero-engulf { 0%,100% { scale:1; } 50% { scale:1.1; } }
+@media (prefers-reduced-motion:reduce) {
+  .pathophys-athero-lab .athero-flow-particle,
+  .pathophys-athero-lab .athero-transit,
+  .pathophys-athero-lab .athero-cell-pulse,
+  .pathophys-athero-lab .athero-thrombus-pulse { animation:none; }
+}
