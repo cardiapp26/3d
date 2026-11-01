@@ -1,5 +1,5 @@
 // Ischemic Heart Disease & The Ischemic Cascade Lab
-// Grounded in Leonard S. Lilly's "Pathophysiology of Heart Disease" (Chapters 6 & 7)
+// Classical myocardial oxygen supply/demand mechanics and temporal cascade
 
 import { ISCHEMIA_CASCADE_STAGES, MVO2_DETERMINANTS } from './pathophysiology-data.js';
 
@@ -175,7 +175,7 @@ export function createIschemicCascadeLab(opts = {}) {
           <!-- PANEL 2: TEMPORAL ISCHEMIC CASCADE -->
           <div class="ischemic-card cascade-card">
             <div class="card-head">
-              <h3>${lang === 'en' ? '2. Temporal Ischemic Cascade (Lilly Ch 6)' : '2. Zamansal İskemik Kaskad (Lilly Bölüm 6)'}</h3>
+              <h3>${lang === 'en' ? '2. Temporal Ischemic Cascade' : '2. Zamansal İskemik Kaskad'}</h3>
               <span class="badge badge-accent">${lang === 'en' ? 'Chronological Flow' : 'Zaman Sıralı Akış'}</span>
             </div>
 
@@ -275,11 +275,11 @@ export function createIschemicCascadeLab(opts = {}) {
           </div>
         </div>
 
-        <!-- LILLY CLASSIC HIGHLIGHT & MECHANICAL COMPLICATIONS -->
-        <div class="lilly-callout-card">
+        <!-- CORE PATHOPHYSIOLOGY HIGHLIGHT & MECHANICAL COMPLICATIONS -->
+        <div class="patho-callout-card">
           <div class="callout-badge">
             <span class="icon">📖</span>
-            <strong>Leonard S. Lilly (Harvard / Brigham and Women's Hospital) ${lang === 'en' ? 'Classic Principles' : 'Klasik Patofizyoloji İlkeleri'}:</strong>
+            <strong>${lang === 'en' ? 'Core Pathophysiological Principles & Cellular Mechanisms:' : 'Temel Patofizyolojik İlkeler ve Hücresel Mekanizmalar:'}</strong>
           </div>
           <div class="callout-columns">
             <div class="callout-col">

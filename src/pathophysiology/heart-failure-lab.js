@@ -1,5 +1,5 @@
 // Heart Failure & Cardiomyopathy Pathophysiology Lab
-// Grounded in Leonard S. Lilly's "Pathophysiology of Heart Disease" (Chapters 9 & 10)
+// Classical Frank-Starling, Laplace remodeling, and neurohormonal mechanisms
 
 import { HF_PHENOTYPES } from './pathophysiology-data.js';
 
@@ -273,11 +273,11 @@ export function createHeartFailureLab(opts = {}) {
           </div>
         </div>
 
-        <!-- LILLY CLASSIC HIGHLIGHT: GALLOP MECHANISMS -->
-        <div class="lilly-callout-card">
+        <!-- GALLOP MECHANISMS HIGHLIGHT -->
+        <div class="patho-callout-card">
           <div class="callout-badge">
             <span class="icon">🩺</span>
-            <strong>${lang === 'en' ? "Lilly Chapters 2 & 9: Auscultation Mechanics of S3 vs S4 Gallops" : "Lilly Bölüm 2 ve 9: S3 ve S4 Galop Seslerinin Oskültasyon Mekanizmaları"}</strong>
+            <strong>${lang === 'en' ? 'Auscultation Mechanics of S3 vs S4 Gallops' : 'S3 ve S4 Galop Seslerinin Oskültasyon Mekanizmaları'}</strong>
           </div>
           <div class="callout-columns">
             <div class="callout-col">

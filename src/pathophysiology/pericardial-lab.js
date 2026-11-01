@@ -1,5 +1,5 @@
 // Pericardial Pathophysiology Lab: Cardiac Tamponade vs Constrictive Pericarditis
-// Grounded in Leonard S. Lilly's "Pathophysiology of Heart Disease" (Chapter 14)
+// Classical compliance curves, ventricular interdependence, and hemodynamic waveforms
 
 import { PERICARDIAL_DISORDERS } from './pathophysiology-data.js';
 
@@ -305,11 +305,11 @@ export function createPericardialLab(opts = {}) {
           </div>
         </div>
 
-        <!-- LILLY BED-SIDE COMPARISON TABLE -->
-        <div class="lilly-callout-card">
+        <!-- BEDSIDE COMPARISON TABLE -->
+        <div class="patho-callout-card">
           <div class="callout-badge">
             <span class="icon">⚖️</span>
-            <strong>${lang === 'en' ? 'Lilly Chapter 14 Bedside Differential: Tamponade vs Constriction' : 'Lilly Bölüm 14 Yatak Başı Ayırıcı Tanı Tablosu: Tamponad ve Konstriksiyon'}</strong>
+            <strong>${lang === 'en' ? 'Bedside Differential Diagnosis: Tamponade vs Constriction' : 'Yatak Başı Ayırıcı Tanı Tablosu: Tamponad ve Konstriksiyon'}</strong>
           </div>
           <div class="table-responsive">
             <table class="pathophys-compare-table">

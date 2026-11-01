@@ -959,11 +959,11 @@ body.pathophys-app {
 .athero-cum-svg { max-height: 220px; }
 
 /* ==========================================================================
-   LILLY CLASSIC PATHOPHYSIOLOGY STUDIOS: ISCHEMIA, HEART FAILURE & PERICARDIUM
+   CARDIOVASCULAR PATHOPHYSIOLOGY STUDIOS: ISCHEMIA, HEART FAILURE & PERICARDIUM
    ========================================================================== */
 
-/* Shared Lilly Callout Card */
-.lilly-callout-card {
+/* Shared Pathophysiology Callout Card */
+.patho-callout-card {
   margin-top: 24px;
   background: linear-gradient(135deg, rgba(240, 249, 255, 0.95), rgba(254, 243, 199, 0.45));
   border: 1px solid #bae6fd;

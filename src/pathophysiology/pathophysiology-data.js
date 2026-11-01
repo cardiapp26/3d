@@ -1,30 +1,29 @@
 // Cardiovascular Pathophysiology Studio: stations, didactic models, and bilingual content.
-// Structured upon Leonard S. Lilly's "Pathophysiology of Heart Disease" (7th Edition, Wolters Kluwer / Harvard Medical School)
-// with high-yield modern clinical insights from Nature Reviews Cardiology (2024-2026) and Physiological Reviews.
+// High-yield clinical pathophysiology and mechanics integrated with interactive simulations.
 
 const t = (tr, en) => ({ tr, en });
 
 export const PATHOPHYS_GROUPS = [
   {
     id: 'mechanics',
-    label: t('I. Ventrikül Mekaniği, Döngü ve Oskültasyon (Lilly Bölüm 1, 2)', 'I. Ventricular Mechanics, Cycle & Auscultation (Lilly Ch 1, 2)')
+    label: t('I. Ventrikül Mekaniği, Döngü ve Oskültasyon', 'I. Ventricular Mechanics, Cycle & Auscultation')
   },
   {
     id: 'coronary',
-    label: t('II. Koroner Dolaşım, Aterom ve İskemi (Lilly Bölüm 5, 6, 7)', 'II. Coronary Circulation, Atheroma & Ischemia (Lilly Ch 5, 6, 7)')
+    label: t('II. Koroner Dolaşım, Aterom ve İskemi', 'II. Coronary Circulation, Atheroma & Ischemia')
   },
   {
     id: 'myocardial-pericardial',
-    label: t('III. Kalp Yetersizliği, Miyokard ve Perikard (Lilly Bölüm 9, 10, 14)', 'III. Heart Failure, Myocardium & Pericardium (Lilly Ch 9, 10, 14)')
+    label: t('III. Kalp Yetersizliği, Miyokard ve Perikard', 'III. Heart Failure, Myocardium & Pericardium')
   },
   {
     id: 'valvular-arrhythmia-congenital',
-    label: t('IV. Kapak, Aritmi, Damar Basıncı ve Doğuştan Şantlar (Lilly Bölüm 8, 11, 13, 16)', 'IV. Valvular, Arrhythmia, Vascular & Congenital (Lilly Ch 8, 11, 13, 16)')
+    label: t('IV. Kapak, Aritmi, Damar Basıncı ve Doğuştan Şantlar', 'IV. Valvular, Arrhythmia, Vascular & Congenital')
   }
 ];
 
 export const PATHOPHYS_STATIONS = [
-  // GRUP I: VENTRİKÜL MEKANİĞİ VE DÖNGÜ (Lilly Ch 1, 2)
+  // GRUP I: VENTRİKÜL MEKANİĞİ VE DÖNGÜ
   {
     id: 'pv-loop',
     num: '01',
@@ -81,7 +80,7 @@ export const PATHOPHYS_STATIONS = [
     )
   },
 
-  // GRUP II: KORONER DOLAŞIM, ATEROM VE İSKEMİ (Lilly Ch 5, 6, 7)
+  // GRUP II: KORONER DOLAŞIM, ATEROM VE İSKEMİ
   {
     id: 'atherogenesis',
     num: '06',
@@ -89,8 +88,8 @@ export const PATHOPHYS_STATIONS = [
     title: t('Aterogenez Biyolojisi, Plak Evrimi ve Kümülatif Maruziyet', 'Atherogenesis Biology, Plaque Evolution & Cumulative Exposure'),
     shortTitle: t('Aterom ve Plak Evrimi', 'Atheroma & Plaque Evolution'),
     intro: t(
-      'Lilly Bölüm 5 temelinde: Normal endotelden subendotelyal ApoB tutulumuna, köpük hücrelerinden fibröz kılıf ve ince kılıflı plak (TCFA) rüptürüne çok aşamalı biyolojik tuval (Borén, Averna ve Ference katkılarıyla).',
-      'Based on Lilly Chapter 5: Multi-stage biological canvas spanning healthy intima, subendothelial apoB retention, foam cells, fibrous cap, and thin-cap fibroatheroma (TCFA) rupture.'
+      'Normal endotelden subendotelyal ApoB tutulumuna, köpük hücrelerinden fibröz kılıf ve ince kılıflı plak (TCFA) rüptürüne çok aşamalı biyolojik tuval (Borén, Averna ve Ference katkılarıyla).',
+      'Multi-stage biological canvas spanning healthy intima, subendothelial apoB retention, foam cells, fibrous cap, and thin-cap fibroatheroma (TCFA) rupture.'
     )
   },
   {
@@ -100,12 +99,12 @@ export const PATHOPHYS_STATIONS = [
     title: t('İskemik Kalp Hastalığı, MVO2 ve İskemik Kaskad', 'Ischemic Heart Disease, MVO2 and the Ischemic Cascade'),
     shortTitle: t('İskemik Kaskad & MVO2', 'Ischemic Cascade & MVO2'),
     intro: t(
-      'Lilly Bölüm 6 ve 7: Miyokard oksijen arz-talep terazisi (MVO2) ile zamansal iskemik kaskad simülatörü (perfüzyon uyuşmazlığı -> diyastolik gevşeme kusuru -> sistolik duvar kusuru -> EKG ST-T kaymaları -> angina pektoris).',
-      'Lilly Chapters 6 & 7: Myocardial oxygen supply-demand balance (MVO2) and the temporal ischemic cascade simulator (perfusion deficit -> diastolic relaxation failure -> systolic dyskinesia -> ECG ST-T shifts -> clinical angina).'
+      'Miyokard oksijen arz-talep terazisi (MVO2) ile zamansal iskemik kaskad simülatörü (perfüzyon uyuşmazlığı -> diyastolik gevşeme kusuru -> sistolik duvar kusuru -> EKG ST-T kaymaları -> angina pektoris).',
+      'Myocardial oxygen supply-demand balance (MVO2) and the temporal ischemic cascade simulator (perfusion deficit -> diastolic relaxation failure -> systolic dyskinesia -> ECG ST-T shifts -> clinical angina).'
     )
   },
 
-  // GRUP III: KALP YETERSİZLİĞİ, MİYOKARD VE PERİKARD (Lilly Ch 9, 10, 14)
+  // GRUP III: KALP YETERSİZLİĞİ, MİYOKARD VE PERİKARD
   {
     id: 'heart-failure',
     num: '08',
@@ -113,8 +112,8 @@ export const PATHOPHYS_STATIONS = [
     title: t('Kalp Yetersizliği: HFrEF vs HFpEF, Nörohormonlar ve Kardiyomiyopatiler', 'Heart Failure: HFrEF vs HFpEF, Neurohormones & Cardiomyopathies'),
     shortTitle: t('Kalp Yetersizliği & KMP', 'Heart Failure & CMP'),
     intro: t(
-      'Lilly Bölüm 9 ve 10: Sistolik (HFrEF) ve diyastolik (HFpEF) yetersizlik, Frank-Starling kompansasyon sınırı, SNS/RAAS kısır döngüsü ve kardiyomiyopati fenotipleri (DCM, HCM dinamik LVOT/SAM obstrüksiyonu, RCM karekök trasesi).',
-      'Lilly Chapters 9 & 10: Systolic (HFrEF) vs diastolic (HFpEF) failure, Frank-Starling compensation limits, SNS/RAAS vicious cycle, and cardiomyopathy phenotypes (DCM, HCM with dynamic LVOT/SAM, RCM square-root sign).'
+      'Sistolik (HFrEF) ve diyastolik (HFpEF) yetersizlik, Frank-Starling kompansasyon sınırı, SNS/RAAS kısır döngüsü ve kardiyomiyopati fenotipleri (DCM, HCM dinamik LVOT/SAM obstrüksiyonu, RCM karekök trasesi).',
+      'Systolic (HFrEF) vs diastolic (HFpEF) failure, Frank-Starling compensation limits, SNS/RAAS vicious cycle, and cardiomyopathy phenotypes (DCM, HCM with dynamic LVOT/SAM, RCM square-root sign).'
     )
   },
   {
@@ -124,8 +123,8 @@ export const PATHOPHYS_STATIONS = [
     title: t('Perikard Patofizyolojisi: Kardiyak Tamponad ve Konstriksiyon', 'Pericardial Pathophysiology: Cardiac Tamponade & Constriction'),
     shortTitle: t('Perikard: Tamponad & Konstriksiyon', 'Pericardium: Tamponade & Constriction'),
     intro: t(
-      'Lilly Bölüm 14: Perikardiyal kompliyans eğrisi, tamponadda biventriküler etkileşim ve Pulsus Paradoxus (>10 mmHg düşüş, silinmiş y-inişi); konstriktif perikarditte karekök (dip-and-plateau) basınç dalgası ve Kussmaul belirtisi.',
-      'Lilly Chapter 14: Pericardial compliance curve, ventricular interdependence in cardiac tamponade with Pulsus Paradoxus (>10 mmHg drop, blunted y-descent), and constrictive pericarditis square-root wave with Kussmaul’s sign.'
+      'Perikardiyal kompliyans eğrisi, tamponadda biventriküler etkileşim ve Pulsus Paradoxus (>10 mmHg düşüş, silinmiş y-inişi); konstriktif perikarditte karekök (dip-and-plateau) basınç dalgası ve Kussmaul belirtisi.',
+      'Pericardial compliance curve, ventricular interdependence in cardiac tamponade with Pulsus Paradoxus (>10 mmHg drop, blunted y-descent), and constrictive pericarditis square-root wave with Kussmaul’s sign.'
     )
   },
   {
@@ -146,12 +145,12 @@ export const PATHOPHYS_STATIONS = [
     title: t('Akut Kardiyojenik Şok ve Forrester Hemodinamiği', 'Acute Cardiogenic Shock and Forrester Hemodynamics'),
     shortTitle: t('Forrester Şok Matrisi', 'Forrester Shock Matrix'),
     intro: t(
-      'Lilly Bölüm 9 ve 17: Kardiyak İndeks (Perfüzyon: Sıcak/Soğuk) ve Pulmoner Kapiller Uç Basıncı (Konjesyon: Kuru/Islak) 2×2 matrisi: Klinik hemodinamik hedefler ve acil tedavi yanıtları.',
-      'Lilly Chapters 9 & 17: Cardiac Index (Perfusion: Warm/Cold) vs Pulmonary Capillary Wedge Pressure (Congestion: Dry/Wet) 2×2 matrix: Clinical subsets, targets and emergency interventions.'
+      'Kardiyak İndeks (Perfüzyon: Sıcak/Soğuk) ve Pulmoner Kapiller Uç Basıncı (Konjesyon: Kuru/Islak) 2×2 matrisi: Klinik hemodinamik hedefler ve acil tedavi yanıtları.',
+      'Cardiac Index (Perfusion: Warm/Cold) vs Pulmonary Capillary Wedge Pressure (Congestion: Dry/Wet) 2×2 matrix: Clinical subsets, targets and emergency interventions.'
     )
   },
 
-  // GRUP IV: KAPAK, ARİTMİ, DAMAR BASINCI VE DOĞUŞTAN ŞANTLAR (Lilly Ch 8, 11, 13, 16)
+  // GRUP IV: KAPAK, ARİTMİ, DAMAR BASINCI VE DOĞUŞTAN ŞANTLAR
   {
     id: 'valvular',
     num: '12',
@@ -159,8 +158,8 @@ export const PATHOPHYS_STATIONS = [
     title: t('Kapak Hastalıkları, Basınç Gradyanları ve Dinamik Oskültasyon', 'Valvular Disease, Pressure Gradients & Dynamic Auscultation'),
     shortTitle: t('Kapak Gradyanları & Oskültasyon', 'Valvular Gradients & Auscultation'),
     intro: t(
-      'Lilly Bölüm 2 ve 8: Aort darlığı, aort yetersizliği, mitral darlığı ve mitral yetersizliğinde eşzamanlı basınç dalgaları, Gorlin alanları, yatak başı oskültasyon sesleri ve dinamik manevralar (Valsalva, çömelme, el sıkma).',
-      'Lilly Chapters 2 & 8: Simultaneous LV, LA and aortic pressure waveforms in AS, AR, MS and MR with transvalvular gradients, bedside murmurs, and dynamic maneuvers (Valsalva, squatting, handgrip).'
+      'Aort darlığı, aort yetersizliği, mitral darlığı ve mitral yetersizliğinde eşzamanlı basınç dalgaları, Gorlin alanları, yatak başı oskültasyon sesleri ve dinamik manevralar (Valsalva, çömelme, el sıkma).',
+      'Simultaneous LV, LA and aortic pressure waveforms in AS, AR, MS and MR with transvalvular gradients, bedside murmurs, and dynamic maneuvers (Valsalva, squatting, handgrip).'
     )
   },
   {
@@ -170,8 +169,8 @@ export const PATHOPHYS_STATIONS = [
     title: t('Aritmi Mekanizmaları: Otomatisite, Tetiklenen Aktivite ve Reentri', 'Arrhythmia Mechanisms: Automaticity, Triggered Activity & Reentry'),
     shortTitle: t('Aritmi Mekanizmaları', 'Arrhythmia Mechanisms'),
     intro: t(
-      'Lilly Bölüm 11 ve 12: Ventriküler ve nodal aksiyon potansiyelleri, erken ve gecikmiş artı-depolarizasyonlar (EAD/DAD), tek yönlü blok ve reentri üçlüsü; modern fizyolojik Sol Dal Alanı Uyarımı (LBBAP/CSP).',
-      'Lilly Chapters 11 & 12: Ventricular vs nodal action potentials, early and delayed afterdepolarizations (EAD/DAD), unidirectional block and the reentry triad; modern Conduction System Pacing (LBBAP/CSP).'
+      'Ventriküler ve nodal aksiyon potansiyelleri, erken ve gecikmiş artı-depolarizasyonlar (EAD/DAD), tek yönlü blok ve reentri üçlüsü; modern fizyolojik Sol Dal Alanı Uyarımı (LBBAP/CSP).',
+      'Ventricular vs nodal action potentials, early and delayed afterdepolarizations (EAD/DAD), unidirectional block and the reentry triad; modern Conduction System Pacing (LBBAP/CSP).'
     )
   },
   {
@@ -181,8 +180,8 @@ export const PATHOPHYS_STATIONS = [
     title: t('Hipertansiyon Patofizyolojisi, Guyton Basınç-Natriürezi ve Arteriyel Sertlik', 'Hypertension Pathophysiology, Guyton Pressure-Natriuresis & Arterial Stiffness'),
     shortTitle: t('Hipertansiyon & PWV', 'Hypertension & PWV'),
     intro: t(
-      'Lilly Bölüm 13 ve 15: BP = CO x SVR hemodinamiği, Guyton renal basınç-natriürezi eğrisi, direnç arteriyolü yeniden yapılanması ve aortik nabız dalgası hızı (PWV) dalga yansıması augmentasyonu.',
-      'Lilly Chapters 13 & 15: BP = CO x SVR hemodynamics, Guyton renal pressure-natriuresis shifting, resistance arteriole remodeling, and aortic pulse wave velocity (PWV) reflection augmentation.'
+      'BP = CO x SVR hemodinamiği, Guyton renal basınç-natriürezi eğrisi, direnç arteriyolü yeniden yapılanması ve aortik nabız dalgası hızı (PWV) dalga yansıması augmentasyonu.',
+      'BP = CO x SVR hemodynamics, Guyton renal pressure-natriuresis shifting, resistance arteriole remodeling, and aortic pulse wave velocity (PWV) reflection augmentation.'
     )
   },
   {
@@ -203,8 +202,8 @@ export const PATHOPHYS_STATIONS = [
     title: t('Erişkin Doğuştan Kalp Hastalıkları (ACHD), Şant Dinamiği ve Eisenmenger', 'Adult Congenital Heart Disease (ACHD), Shunt Dynamics & Eisenmenger'),
     shortTitle: t('Doğuştan Şantlar (ACHD)', 'Congenital Shunts (ACHD)'),
     intro: t(
-      'Lilly Bölüm 16: ASD, VSD ve PDA kusurlarında sol-sağ şant hacmi, Qp/Qs oranı, odacık aşırı yükü, pulmoner vasküler direnç artışıyla Eisenmenger sendromu (sağ-sol ters şant, siyanoz) ve perkütan kapama kriterleri.',
-      'Lilly Chapter 16: Left-to-right shunt mechanics in ASD, VSD and PDA: Qp/Qs calculation, volume/pressure chamber overload, progression to Eisenmenger reversal with cyanosis, and transcatheter closure.'
+      'ASD, VSD ve PDA kusurlarında sol-sağ şant hacmi, Qp/Qs oranı, odacık aşırı yükü, pulmoner vasküler direnç artışıyla Eisenmenger sendromu (sağ-sol ters şant, siyanoz) ve perkütan kapama kriterleri.',
+      'Left-to-right shunt mechanics in ASD, VSD and PDA: Qp/Qs calculation, volume/pressure chamber overload, progression to Eisenmenger reversal with cyanosis, and transcatheter closure.'
     )
   }
 ];
@@ -376,7 +375,7 @@ export const ATHEROMA_MODIFIERS = [
   {
     id: 'physiological',
     name: t('Standart / İzole Hiperkolesterolemi', 'Standard / Isolated Hypercholesterolaemia'),
-    source: 'Borén et al. 2025 · Ference et al. 2024 · Lilly Ch 5',
+    source: 'Borén et al. 2025 · Ference et al. 2024',
     apoBMult: 1.0,
     inflamMult: 1.0,
     thrombMult: 1.0,
@@ -423,7 +422,7 @@ export const ATHEROMA_MODIFIERS = [
   }
 ];
 
-// LILLY CHAPTER 6 & 7: ISCHEMIC CASCADE & MVO2 DETERMINANTS
+// ISCHEMIC CASCADE & MVO2 DETERMINANTS
 export const ISCHEMIA_CASCADE_STAGES = [
   {
     stage: 1,
@@ -495,7 +494,7 @@ export const MVO2_DETERMINANTS = {
   ]
 };
 
-// LILLY CHAPTER 14: PERICARDIAL DISORDERS (TAMPONADE VS CONSTRICTION)
+// PERICARDIAL DISORDERS (TAMPONADE VS CONSTRICTION)
 export const PERICARDIAL_DISORDERS = [
   {
     id: 'normal',
@@ -535,7 +534,7 @@ export const PERICARDIAL_DISORDERS = [
   }
 ];
 
-// LILLY CHAPTER 9 & 10: HEART FAILURE & CARDIOMYOPATHY PHENOTYPES
+// HEART FAILURE & CARDIOMYOPATHY PHENOTYPES
 export const HF_PHENOTYPES = [
   {
     id: 'normal',
@@ -611,7 +610,7 @@ export const HF_PHENOTYPES = [
   }
 ];
 
-// LILLY CHAPTER 2 & 8: DYNAMIC AUSCULTATION MANEUVERS
+// DYNAMIC AUSCULTATION MANEUVERS
 export const VALVULAR_MANEUVERS = [
   {
     id: 'valsalva',

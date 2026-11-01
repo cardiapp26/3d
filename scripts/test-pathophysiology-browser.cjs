@@ -86,7 +86,7 @@ const { startApp } = require('./lib/app-server.cjs');
     assert.match(await page.locator('.achd-svg').textContent(), /Eisenmenger/, 'Eisenmenger reversal shown');
     await page.screenshot({ path: `${shots}/achd_screenshot.png` });
 
-    // Test Lilly Classic Stations
+    // Test Classic Pathophysiology Stations
     await page.click('[data-station="ischemic-cascade"]');
     await page.waitForSelector('.mvo2-scale-svg');
     assert.ok(await page.$('.cascade-stepper'), 'Ischemic cascade stepper should render');
