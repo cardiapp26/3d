@@ -1311,3 +1311,35 @@ body.pathophys-app {
   .pathophys-athero-lab .athero-cell-pulse,
   .pathophys-athero-lab .athero-thrombus-pulse { animation:none; }
 }
+
+/* Playback controls & live flow stage styling for Group IV stations */
+.pathophys-motion-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.motion-speed-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub, #475569);
+}
+.motion-speed-label select {
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #cbd5e1);
+  background: #ffffff;
+  color: var(--text-main, #0f172a);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.valvular-flow-svg {
+  width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+  border-radius: 10px;
+}

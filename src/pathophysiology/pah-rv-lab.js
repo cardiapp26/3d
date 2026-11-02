@@ -14,6 +14,21 @@ export function createPahRvLab(opts = {}) {
   let tripleTherapyOn = false;
   let sotaterceptOn = false;
 
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let paused = Boolean(reducedMotion);
+  let speed = 1;
+  let cyclePhase = 0; // 0..100 (% of cardiac cycle)
+  let rafId = null;
+  let lastTs = 0;
+
+  // Particles for arteriole lumen blood flow, molecular signaling ligands, and RV/LV chamber circulation
+  const particles = Array.from({ length: 24 }, (_, i) => ({
+    id: i,
+    zone: i < 8 ? 'lumen' : i < 14 ? 'ligand' : i < 19 ? 'rv' : 'lv',
+    progress: (i / 24) % 1,
+    angle: (i * 1.35) % (Math.PI * 2)
+  }));
+
   const STAGES = [
     {
       id: 'normal',
@@ -94,12 +109,11 @@ export function createPahRvLab(opts = {}) {
     if (sotaterceptOn) effPvr *= 0.65;
     effPvr = Math.max(1.3, effPvr);
 
-    // Assume PAWP ~ 10 mmHg and CO scales inversely with uncoupled PVR
-    const rvEa = effPvr * 0.22; // arterial elastance proxy
+    const rvEa = effPvr * 0.22;
     const coupling = rvContractility / Math.max(0.2, rvEa);
     const co = Math.max(2.1, Math.min(6.0, 5.4 * Math.min(1.1, Math.pow(coupling / 1.2, 0.45))));
     const mpap = Math.round(10 + effPvr * co);
-    const eccentricity = (1.0 + Math.max(0, (mpap - 20) * 0.022)).toFixed(2); // LV D-shape eccentricity index
+    const eccentricity = (1.0 + Math.max(0, (mpap - 20) * 0.022)).toFixed(2);
 
     return { effPvr, mpap, co, coupling, eccentricity };
   }
@@ -111,6 +125,21 @@ export function createPahRvLab(opts = {}) {
     const pw = PATHWAYS[selectedPathway] || PATHWAYS['bmpr2-activin'];
 
     root.innerHTML = `
+      <div class="preset-pill-group pathophys-motion-bar" style="margin-bottom:10px">
+        <span class="preset-label">${en ? 'Live Pulmonary & RV-LV Motion:' : 'Canlı Pulmoner ve RV-LV Hareketi:'}</span>
+        <button type="button" class="preset-pill ${!paused ? 'active' : ''}" data-motion-toggle aria-pressed="${!paused}">
+          ${paused ? (en ? '▷ Play' : '▷ Oynat') : (en ? 'Ⅱ Pause' : 'Ⅱ Duraklat')}
+        </button>
+        <label class="motion-speed-label">
+          ${en ? 'Speed' : 'Hız'}
+          <select data-motion-speed>
+            <option value="0.5" ${speed === 0.5 ? 'selected' : ''}>0.5×</option>
+            <option value="1" ${speed === 1 ? 'selected' : ''}>1×</option>
+            <option value="2" ${speed === 2 ? 'selected' : ''}>2×</option>
+          </select>
+        </label>
+      </div>
+
       <div class="preset-pill-group" style="margin-bottom:10px">
         <span class="preset-label">${en ? 'Disease Stage:' : 'Hastalık Evresi:'}</span>
         ${STAGES.map(s => `
@@ -188,6 +217,25 @@ export function createPahRvLab(opts = {}) {
       </div>
     `;
 
+    const toggleBtn = root.querySelector('[data-motion-toggle]');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        paused = !paused;
+        toggleBtn.setAttribute('aria-pressed', String(!paused));
+        toggleBtn.classList.toggle('active', !paused);
+        toggleBtn.textContent = paused
+          ? (getLang() === 'en' ? '▷ Play' : '▷ Oynat')
+          : (getLang() === 'en' ? 'Ⅱ Pause' : 'Ⅱ Duraklat');
+      });
+    }
+
+    const speedSel = root.querySelector('[data-motion-speed]');
+    if (speedSel) {
+      speedSel.addEventListener('change', (e) => {
+        speed = Number(e.target.value) || 1;
+      });
+    }
+
     root.querySelectorAll('[data-pah-stage]').forEach(btn => {
       btn.addEventListener('click', () => {
         const st = STAGES.find(item => item.id === btn.dataset.pahStage);
@@ -222,17 +270,15 @@ export function createPahRvLab(opts = {}) {
         render();
       });
     });
+
+    updateAnimationFrame(0);
   }
 
   function buildPahSvg(en, m) {
-    // Left half: Pulmonary Arteriole Cross-Section + 4 Signaling Pathways
-    // Right half: Biventricular Short-Axis Cross-Section showing RV expansion & Septal D-Flattening
-
     const lumenR = Math.max(12, Math.round(48 - m.effPvr * 3.1));
     const intimaR = Math.min(54, lumenR + Math.round(m.effPvr * 1.9));
     const mediaR = 64;
 
-    // Septal shift & RV expansion based on mPAP
     const rvExpand = Math.min(48, Math.max(0, (m.mpap - 18) * 0.95));
     const septumFlatX = 465 + Math.min(34, Math.max(0, (m.mpap - 20) * 0.65));
     const lvRx = Math.max(28, 52 - Math.round((m.mpap - 20) * 0.42));
@@ -246,18 +292,22 @@ export function createPahRvLab(opts = {}) {
 
       <!-- Arteriole Concentric Layers -->
       <g transform="translate(163, 122)">
-        <!-- Adventitia -->
         <circle cx="0" cy="0" r="72" fill="#e2e8f0" stroke="#64748b" stroke-width="1.5"/>
-        <!-- Hypertrophied Media (PASMC) -->
-        <circle cx="0" cy="0" r="${mediaR}" fill="#fca5a5" stroke="#dc2626" stroke-width="2"/>
-        <!-- Proliferative Neointima -->
-        <circle cx="0" cy="0" r="${intimaR}" fill="#fde047" fill-opacity="0.7" stroke="#ca8a04" stroke-width="2"/>
-        <!-- Residual Lumen -->
-        <circle cx="0" cy="0" r="${lumenR}" fill="#fee2e2" stroke="#991b1b" stroke-width="2"/>
+        <circle data-pah-media cx="0" cy="0" r="${mediaR}" fill="#fca5a5" stroke="#dc2626" stroke-width="2"/>
+        <circle data-pah-intima cx="0" cy="0" r="${intimaR}" fill="#fde047" fill-opacity="0.7" stroke="#ca8a04" stroke-width="2"/>
+        <circle data-pah-lumen cx="0" cy="0" r="${lumenR}" fill="#fee2e2" stroke="#991b1b" stroke-width="2"/>
         ${m.effPvr > 8.5 ? `
-          <!-- Plexiform multi-slit channels -->
           <circle cx="-6" cy="-5" r="5" fill="#ef4444"/><circle cx="7" cy="-4" r="4.5" fill="#ef4444"/><circle cx="1" cy="7" r="5" fill="#ef4444"/>
         ` : ''}
+
+        <!-- Flowing Lumen RBCs & Molecular Signaling Particles -->
+        <g data-pah-arteriole-particles>
+          ${particles.filter(p => p.zone === 'lumen' || p.zone === 'ligand').map(p => `
+            <circle class="pah-particle hf-live-particle" data-pah-p="${p.id}" cx="0" cy="0" r="${p.zone === 'lumen' ? 4.2 : 4.6}"
+              fill="${p.zone === 'lumen' ? '#dc2626' : (sotaterceptOn ? '#059669' : '#d97706')}" stroke="#ffffff" stroke-width="1.1"/>
+          `).join('')}
+        </g>
+
         <text x="0" y="4" text-anchor="middle" font-size="10" font-weight="800" fill="#7f1d1d">
           ${m.effPvr > 8.5 ? (en ? 'Plexiform' : 'Pleksiform') : `r=${lumenR}`}
         </text>
@@ -299,7 +349,7 @@ export function createPahRvLab(opts = {}) {
       </text>
 
       <!-- Dilated Right Ventricle (Left side of short-axis view) -->
-      <path d="M ${septumFlatX} 86 C ${380 - rvExpand * 0.5} 82, ${368 - rvExpand * 0.6} 234, ${septumFlatX} 230 Z"
+      <path data-pah-rv-path d="M ${septumFlatX} 86 C ${380 - rvExpand * 0.5} 82, ${368 - rvExpand * 0.6} 234, ${septumFlatX} 230 Z"
         fill="#38bdf8" fill-opacity="0.45" stroke="#0284c7" stroke-width="4"/>
       <text x="${412 - rvExpand * 0.2}" y="156" text-anchor="middle" font-size="13" font-weight="800" fill="#0369a1">RV</text>
       <text x="${412 - rvExpand * 0.2}" y="172" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0369a1">
@@ -307,15 +357,23 @@ export function createPahRvLab(opts = {}) {
       </text>
 
       <!-- Interventricular Septum (bowing into LV as RV pressure rises) -->
-      <path d="M ${septumFlatX} 86 Q ${septumFlatX + (m.mpap > 32 ? 22 : -14)} 158, ${septumFlatX} 230"
+      <path data-pah-septum d="M ${septumFlatX} 86 Q ${septumFlatX + (m.mpap > 32 ? 22 : -14)} 158, ${septumFlatX} 230"
         fill="none" stroke="#be123c" stroke-width="9" stroke-linecap="round"/>
 
       <!-- Left Ventricle (Compressed into D-shape when RV pressure is high) -->
-      <ellipse cx="525" cy="158" rx="${lvRx}" ry="66" fill="#f87171" fill-opacity="0.45" stroke="#b91c1c" stroke-width="10"/>
+      <ellipse data-pah-lv-ellipse cx="525" cy="158" rx="${lvRx}" ry="66" fill="#f87171" fill-opacity="0.45" stroke="#b91c1c" stroke-width="10"/>
       <text x="${525 + (52 - lvRx) * 0.3}" y="156" text-anchor="middle" font-size="13" font-weight="800" fill="#7f1d1d">LV</text>
       <text x="${525 + (52 - lvRx) * 0.3}" y="172" text-anchor="middle" font-size="9.5" font-weight="700" fill="#7f1d1d">
         EI=${m.eccentricity}
       </text>
+
+      <!-- Circulating RV and LV Cavity Blood Particles -->
+      <g data-pah-chamber-particles>
+        ${particles.filter(p => p.zone === 'rv' || p.zone === 'lv').map(p => `
+          <circle class="pah-particle hf-live-particle" data-pah-p="${p.id}" cx="${p.zone === 'rv' ? 415 : 525}" cy="158" r="4.8"
+            fill="${p.zone === 'rv' ? '#0284c7' : '#dc2626'}" stroke="#ffffff" stroke-width="1.2"/>
+        `).join('')}
+      </g>
 
       <!-- Septal shift arrows -->
       ${m.mpap > 30 ? `
@@ -348,14 +406,109 @@ export function createPahRvLab(opts = {}) {
     `;
   }
 
+  function updateAnimationFrame(dtSec) {
+    if (!root.isConnected) return;
+    const m = computeMetrics();
+    const baseLumenR = Math.max(12, Math.round(48 - m.effPvr * 3.1));
+    const rvExpand = Math.min(48, Math.max(0, (m.mpap - 18) * 0.95));
+    const baseSeptumX = 465 + Math.min(34, Math.max(0, (m.mpap - 20) * 0.65));
+    const baseLvRx = Math.max(28, 52 - Math.round((m.mpap - 20) * 0.42));
+
+    cyclePhase = (cyclePhase + dtSec * 40 * speed) % 100;
+    const beat = Math.sin((cyclePhase / 100) * Math.PI * 2);
+
+    // 1. Pulsate Pulmonary Arteriole Lumen
+    const lumenEl = root.querySelector('[data-pah-lumen]');
+    if (lumenEl) {
+      lumenEl.setAttribute('r', Math.max(8, baseLumenR + 1.8 * beat).toFixed(1));
+    }
+
+    // 2. Animate Beating RV, LV, and Septal D-Flattening
+    const septumBow = (m.mpap > 32 ? 22 : -14) + beat * (m.mpap > 32 ? 9 : 4);
+    const septumX = baseSeptumX + beat * 3;
+    const rvPath = root.querySelector('[data-pah-rv-path]');
+    const septumPath = root.querySelector('[data-pah-septum]');
+    const lvEllipse = root.querySelector('[data-pah-lv-ellipse]');
+
+    if (rvPath) {
+      const rvBeat = rvExpand + beat * 6;
+      rvPath.setAttribute('d', `M ${septumX.toFixed(1)} 86 C ${(380 - rvBeat * 0.5).toFixed(1)} 82, ${(368 - rvBeat * 0.6).toFixed(1)} 234, ${septumX.toFixed(1)} 230 Z`);
+    }
+    if (septumPath) {
+      septumPath.setAttribute('d', `M ${septumX.toFixed(1)} 86 Q ${(septumX + septumBow).toFixed(1)} 158, ${septumX.toFixed(1)} 230`);
+    }
+    if (lvEllipse) {
+      const lvRxNow = Math.max(22, baseLvRx - beat * 4.5);
+      const lvRyNow = 66 - beat * 4.5;
+      lvEllipse.setAttribute('rx', lvRxNow.toFixed(1));
+      lvEllipse.setAttribute('ry', lvRyNow.toFixed(1));
+    }
+
+    // 3. Move Particles in Arteriole Lumen, Signaling Ring, and RV/LV Chambers
+    const coSpeed = (m.co / 5.0) * speed;
+    particles.forEach(p => {
+      const node = root.querySelector(`[data-pah-p="${p.id}"]`);
+      if (!node) return;
+
+      if (p.zone === 'lumen') {
+        p.angle = (p.angle + dtSec * 2.1 * coSpeed) % (Math.PI * 2);
+        const r = Math.max(4, (baseLumenR - 5) * (0.35 + 0.55 * ((p.id % 3) / 2)));
+        node.setAttribute('cx', (Math.cos(p.angle) * r).toFixed(1));
+        node.setAttribute('cy', (Math.sin(p.angle) * r).toFixed(1));
+      } else if (p.zone === 'ligand') {
+        // Signaling ligands in media/intima ring
+        p.angle = (p.angle - dtSec * 1.3 * speed) % (Math.PI * 2);
+        const r = sotaterceptOn ? 67 : (baseLumenR + 10);
+        node.setAttribute('cx', (Math.cos(p.angle) * r).toFixed(1));
+        node.setAttribute('cy', (Math.sin(p.angle) * r).toFixed(1));
+      } else if (p.zone === 'rv') {
+        p.angle = (p.angle + dtSec * 1.8 * coSpeed) % (Math.PI * 2);
+        const rX = 22 + rvExpand * 0.25;
+        const rY = 44;
+        const cx = (412 - rvExpand * 0.18) + Math.cos(p.angle) * rX;
+        const cy = 158 + Math.sin(p.angle) * rY;
+        node.setAttribute('cx', cx.toFixed(1));
+        node.setAttribute('cy', cy.toFixed(1));
+      } else {
+        p.angle = (p.angle + dtSec * 2.2 * coSpeed) % (Math.PI * 2);
+        const rX = Math.max(12, baseLvRx - 12);
+        const rY = 42;
+        const cx = 528 + Math.cos(p.angle) * rX;
+        const cy = 158 + Math.sin(p.angle) * rY;
+        node.setAttribute('cx', cx.toFixed(1));
+        node.setAttribute('cy', cy.toFixed(1));
+      }
+    });
+  }
+
+  function startLoop() {
+    if (rafId) cancelAnimationFrame(rafId);
+    lastTs = performance.now();
+    const tick = (now) => {
+      const dt = Math.min(0.06, Math.max(0.001, (now - lastTs) / 1000));
+      lastTs = now;
+      if (!paused) {
+        updateAnimationFrame(dt);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+
   mount.append(root);
   render();
+  startLoop();
 
   return {
     render() { render(); },
     updateLanguage(newLang) {
       if (typeof newLang === 'string') opts.lang = newLang;
       render();
+    },
+    destroy() {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      root.remove();
     }
   };
 }

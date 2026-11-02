@@ -13,6 +13,21 @@ export function createHypertensionLab(opts = {}) {
   let arterialStiffness = 9.5;      // PWV m/s (5 to 16)
   let activeDrug = 'none';          // 'none' | 'zilebesiran' | 'baxdrostat' | 'aprocitentan'
 
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let paused = Boolean(reducedMotion);
+  let speed = 1;
+  let cyclePhase = 24; // 0..100 (% of cardiac cycle)
+  let rafId = null;
+  let lastTs = 0;
+
+  // Particles for renal Na+ traffic, arteriole flow/hormones, and aortic forward/reflected wave propagation
+  const particles = Array.from({ length: 24 }, (_, i) => ({
+    id: i,
+    zone: i < 6 ? 'renal' : i < 14 ? 'arteriole' : i < 19 ? 'fwdWave' : 'refWave',
+    progress: (i / 24) % 1,
+    lane: ((i * 31) % 100) / 100 - 0.5
+  }));
+
   const PHENOTYPES = [
     {
       id: 'normotensive',
@@ -101,7 +116,6 @@ export function createHypertensionLab(opts = {}) {
     const saltSlope = isSaltSens ? 3.2 : 0.7;
     const drug = NOVEL_DRUGS.find(d => d.id === activeDrug) || NOVEL_DRUGS[0];
 
-    // Forward wave pressure + Reflected wave augmentation from PWV
     const baseMap = 88 + saltExcess * saltSlope + (phenotype === 'resistant-raas' ? 14 : 0) + drug.dbpDelta;
     const augPressure = Math.round(Math.max(2, (arterialStiffness - 5.5) * 3.4));
     const centralSbp = Math.round(baseMap + 28 + augPressure + (drug.sbpDelta - drug.dbpDelta));
@@ -113,12 +127,38 @@ export function createHypertensionLab(opts = {}) {
     return { centralSbp, centralDbp, pulsePressure, augPressure, aix, wallLumenRatio, drug };
   }
 
+  function sampleWavesAt(iPct, hemo) {
+    const refPeakIdx = Math.max(22, Math.round(52 - (arterialStiffness - 5.5) * 2.6));
+    const fwd = iPct <= 42
+      ? hemo.centralDbp + (hemo.centralSbp - hemo.augPressure - hemo.centralDbp) * Math.sin((iPct / 42) * Math.PI)
+      : hemo.centralDbp + 12 * Math.exp(-(iPct - 42) / 28);
+    const dist = Math.abs(iPct - refPeakIdx);
+    const ref = dist < 26 ? hemo.augPressure * Math.cos((dist / 26) * (Math.PI / 2)) : 0;
+    const total = Math.max(hemo.centralDbp, fwd + ref);
+    return { fwd, refBase: hemo.centralDbp + ref, total, refPeakIdx };
+  }
+
   function render() {
     const en = getLang() === 'en';
     const hemo = computeHemodynamics();
     const activePheno = PHENOTYPES.find(p => p.id === phenotype) || PHENOTYPES[0];
 
     root.innerHTML = `
+      <div class="preset-pill-group pathophys-motion-bar" style="margin-bottom:10px">
+        <span class="preset-label">${en ? 'Live Vascular & Wave Traffic:' : 'Canlı Damar ve Dalga Trafiği:'}</span>
+        <button type="button" class="preset-pill ${!paused ? 'active' : ''}" data-motion-toggle aria-pressed="${!paused}">
+          ${paused ? (en ? '▷ Play' : '▷ Oynat') : (en ? 'Ⅱ Pause' : 'Ⅱ Duraklat')}
+        </button>
+        <label class="motion-speed-label">
+          ${en ? 'Speed' : 'Hız'}
+          <select data-motion-speed>
+            <option value="0.5" ${speed === 0.5 ? 'selected' : ''}>0.5×</option>
+            <option value="1" ${speed === 1 ? 'selected' : ''}>1×</option>
+            <option value="2" ${speed === 2 ? 'selected' : ''}>2×</option>
+          </select>
+        </label>
+      </div>
+
       <div class="preset-pill-group" style="margin-bottom:10px">
         <span class="preset-label">${en ? 'Clinical Phenotype:' : 'Klinik Fenotip:'}</span>
         ${PHENOTYPES.map(p => `
@@ -139,7 +179,7 @@ export function createHypertensionLab(opts = {}) {
 
       <div class="pathophys-grid">
         <div class="pathophys-stage">
-          <svg viewBox="0 0 640 390" class="pathophys-svg htn-svg" role="img" aria-label="Hypertension Multi-Organ and Pulse Wave Reflection Canvas">
+          <svg viewBox="0 0 640 420" class="pathophys-svg htn-svg" role="img" aria-label="Hypertension Multi-Organ and Pulse Wave Reflection Canvas">
             ${buildHtnSvg(en, hemo)}
           </svg>
         </div>
@@ -186,6 +226,25 @@ export function createHypertensionLab(opts = {}) {
       </div>
     `;
 
+    const toggleBtn = root.querySelector('[data-motion-toggle]');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        paused = !paused;
+        toggleBtn.setAttribute('aria-pressed', String(!paused));
+        toggleBtn.classList.toggle('active', !paused);
+        toggleBtn.textContent = paused
+          ? (getLang() === 'en' ? '▷ Play' : '▷ Oynat')
+          : (getLang() === 'en' ? 'Ⅱ Pause' : 'Ⅱ Duraklat');
+      });
+    }
+
+    const speedSel = root.querySelector('[data-motion-speed]');
+    if (speedSel) {
+      speedSel.addEventListener('change', (e) => {
+        speed = Number(e.target.value) || 1;
+      });
+    }
+
     root.querySelectorAll('[data-htn-pheno]').forEach(btn => {
       btn.addEventListener('click', () => {
         const p = PHENOTYPES.find(item => item.id === btn.dataset.htnPheno);
@@ -212,44 +271,33 @@ export function createHypertensionLab(opts = {}) {
         render();
       });
     });
+
+    updateAnimationFrame(0);
   }
 
   function buildHtnSvg(en, hemo) {
-    // Top row: 3 interconnected organ/vascular boxes:
-    // 1. Renal Guyton Pressure-Natriuresis Curve (left)
-    // 2. Resistance Arteriole Cross-Section + Neurohormonal (center-right)
-    // Bottom row: Central Aortic Waveform Decomposition (Forward + Reflected = Augmented Central BP)
-
     const isSaltSens = phenotype === 'salt-sensitive' || phenotype === 'resistant-raas';
     const lumenR = Math.max(15, 34 - Math.round((hemo.centralSbp - 115) * 0.22));
     const wallR = 46;
 
-    // Generate Aortic Pressure Waveforms (0..100% cardiac cycle)
     const fwdPts = [];
     const refPts = [];
     const sumPts = [];
     const waveX = i => 55 + (i / 100) * 545;
-    const waveY = p => 360 - ((p - 50) / 145) * 145;
-
-    // Reflection arrival time shifts earlier as PWV increases
-    const refPeakIdx = Math.max(22, Math.round(52 - (arterialStiffness - 5.5) * 2.6));
+    const waveY = p => 395 - ((p - 50) / 145) * 125;
 
     for (let i = 0; i <= 100; i++) {
-      const fwd = i <= 42
-        ? hemo.centralDbp + (hemo.centralSbp - hemo.augPressure - hemo.centralDbp) * Math.sin((i / 42) * Math.PI)
-        : hemo.centralDbp + 12 * Math.exp(-(i - 42) / 28);
-
-      const dist = Math.abs(i - refPeakIdx);
-      const ref = dist < 26 ? hemo.augPressure * Math.cos((dist / 26) * (Math.PI / 2)) : 0;
-      const total = Math.max(hemo.centralDbp, fwd + ref);
-
+      const { fwd, refBase, total } = sampleWavesAt(i, hemo);
       fwdPts.push(`${waveX(i).toFixed(1)},${waveY(fwd).toFixed(1)}`);
-      refPts.push(`${waveX(i).toFixed(1)},${waveY(hemo.centralDbp + ref).toFixed(1)}`);
+      refPts.push(`${waveX(i).toFixed(1)},${waveY(refBase).toFixed(1)}`);
       sumPts.push(`${waveX(i).toFixed(1)},${waveY(total).toFixed(1)}`);
     }
 
+    const opX = isSaltSens ? 155 + dietarySalt * 5.2 + (activeDrug !== 'none' ? -18 : 0) : 118;
+    const opY = 154 - dietarySalt * 5.2;
+
     return `
-      <!-- Top Left: Renal Pressure-Natriuresis Plot (Masenga 2025) -->
+      <!-- Top Left: Renal Pressure-Natriuresis Plot & Live Na+ Excretion Traffic (Masenga 2025) -->
       <rect x="14" y="12" width="305" height="175" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
       <text x="26" y="30" font-size="11.5" font-weight="800" fill="#0f172a">
         ${en ? '1. Renal Pressure-Natriuresis (Masenga 2025)' : '1. Böbrek Basınç-Natriürez Eğrisi (Masenga 2025)'}
@@ -271,8 +319,15 @@ export function createHypertensionLab(opts = {}) {
       <line x1="145" y1="154" x2="265" y2="54" stroke="#dc2626" stroke-width="2.5"/>
       <text x="242" y="50" text-anchor="middle" font-size="9" font-weight="700" fill="#dc2626">${en ? 'Salt-Sensitive (ENaC/IL-17)' : 'Tuz Duyarlı (ENaC/IL-17)'}</text>
 
+      <!-- Animated Na+ Excretion Particles along curve -->
+      <g data-htn-renal-particles>
+        ${particles.filter(p => p.zone === 'renal').map(p => `
+          <circle class="htn-particle hf-live-particle" data-htn-p="${p.id}" cx="${opX}" cy="${opY}" r="4.2" fill="#f59e0b" stroke="#ffffff" stroke-width="1.1"/>
+        `).join('')}
+      </g>
+
       <!-- Operating Point -->
-      <circle cx="${isSaltSens ? 155 + dietarySalt * 5.2 : 118}" cy="${154 - dietarySalt * 5.2}" r="6" fill="#2563eb" stroke="#fff" stroke-width="2"/>
+      <circle data-htn-op-point cx="${opX}" cy="${opY}" r="6.5" fill="#2563eb" stroke="#ffffff" stroke-width="2"/>
 
       <!-- Top Right: Resistance Arteriole Remodeling & Targets (Sayer 2025) -->
       <rect x="330" y="12" width="296" height="175" rx="10" fill="#fff7ed" stroke="#fed7aa"/>
@@ -280,9 +335,14 @@ export function createHypertensionLab(opts = {}) {
         ${en ? '2. Resistance Arteriole & Targets (Sayer 2025)' : '2. Direnç Arteriyolü ve Hedefler (Sayer 2025)'}
       </text>
 
-      <!-- Arteriole Cross Section -->
-      <circle cx="402" cy="105" r="${wallR}" fill="#ea580c" fill-opacity="0.32" stroke="#9a3412" stroke-width="2.5"/>
-      <circle cx="402" cy="105" r="${lumenR}" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+      <!-- Arteriole Cross Section (pulsating wall + flowing RBCs) -->
+      <circle data-htn-wall cx="402" cy="105" r="${wallR}" fill="#ea580c" fill-opacity="0.32" stroke="#9a3412" stroke-width="2.5"/>
+      <circle data-htn-lumen cx="402" cy="105" r="${lumenR}" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+      <g data-htn-arteriole-particles>
+        ${particles.filter(p => p.zone === 'arteriole').map(p => `
+          <circle class="htn-particle hf-live-particle" data-htn-p="${p.id}" cx="402" cy="105" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1"/>
+        `).join('')}
+      </g>
       <text x="402" y="109" text-anchor="middle" font-size="10" font-weight="800" fill="#991b1b">r=${lumenR}</text>
       <text x="402" y="168" text-anchor="middle" font-size="9.5" font-weight="700" fill="#7c2d12">
         ${en ? 'Poiseuille: R ∝ 1 / r⁴' : 'Poiseuille Yasası: Direnç ∝ 1 / r⁴'}
@@ -304,15 +364,26 @@ export function createHypertensionLab(opts = {}) {
       </g>
 
       <!-- Bottom Panel: Central Aortic Pulse Wave Reflection & Augmentation (Min 2025) -->
-      <rect x="14" y="198" width="612" height="182" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
-      <text x="26" y="216" font-size="11.5" font-weight="800" fill="#0f172a">
+      <rect x="14" y="196" width="612" height="214" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+      <text x="26" y="214" font-size="11.5" font-weight="800" fill="#0f172a">
         ${en
           ? `3. Central Aortic Pulse Waveform & Reflected Wave Augmentation (PWV = ${arterialStiffness.toFixed(1)} m/s, AP = +${hemo.augPressure} mmHg)`
           : `3. Santral Aortik Nabız Dalgası ve Yansıyan Dalga Augmentasyonu (PWV = ${arterialStiffness.toFixed(1)} m/s, AP = +${hemo.augPressure} mmHg)`}
       </text>
 
-      <line x1="55" y1="360" x2="600" y2="360" stroke="#64748b" stroke-width="1.5"/>
-      <line x1="55" y1="225" x2="55" y2="360" stroke="#64748b" stroke-width="1.5"/>
+      <!-- Live Aortic Conduit Wave Propagation Highway -->
+      <rect x="55" y="222" width="545" height="24" rx="12" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="66" y="238" font-size="9" font-weight="800" fill="#0369a1">${en ? 'Aortic Root' : 'Aort Kökü'}</text>
+      <text x="588" y="238" text-anchor="end" font-size="9" font-weight="800" fill="#b45309">${en ? 'Peripheral Reflection' : 'Periferik Yansıma'}</text>
+      <g data-htn-wave-particles>
+        ${particles.filter(p => p.zone === 'fwdWave' || p.zone === 'refWave').map(p => `
+          <circle class="htn-particle hf-live-particle" data-htn-p="${p.id}" cx="200" cy="234" r="5"
+            fill="${p.zone === 'fwdWave' ? '#0284c7' : '#f59e0b'}" stroke="#ffffff" stroke-width="1.2"/>
+        `).join('')}
+      </g>
+
+      <line x1="55" y1="395" x2="600" y2="395" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="55" y1="255" x2="55" y2="395" stroke="#64748b" stroke-width="1.5"/>
       ${[80, 120, 160].map(p => `
         <line x1="55" y1="${waveY(p)}" x2="600" y2="${waveY(p)}" stroke="#e2e8f0" stroke-dasharray="3 3"/>
         <text x="48" y="${waveY(p) + 3}" text-anchor="end" font-size="9.5" fill="#64748b">${p}</text>
@@ -325,8 +396,14 @@ export function createHypertensionLab(opts = {}) {
       <!-- Summed Central Aortic Pressure Wave -->
       <polyline points="${sumPts.join(' ')}" fill="none" stroke="#dc2626" stroke-width="3"/>
 
+      <!-- Live Sweeping Waveform Cursor & Tracers -->
+      <line data-htn-cursor x1="180" y1="255" x2="180" y2="395" stroke="#0f172a" stroke-width="1.6" stroke-dasharray="4 3"/>
+      <circle data-htn-dot="sum" cx="180" cy="300" r="5.5" fill="#dc2626" stroke="#ffffff" stroke-width="1.8"/>
+      <circle data-htn-dot="fwd" cx="180" cy="310" r="4.5" fill="#0284c7" stroke="#ffffff" stroke-width="1.5"/>
+      <circle data-htn-dot="ref" cx="180" cy="330" r="4.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5"/>
+
       <!-- Legend inside waveform panel -->
-      <g transform="translate(310, 232)" font-size="10" font-weight="700">
+      <g transform="translate(310, 256)" font-size="10" font-weight="700">
         <line x1="0" y1="6" x2="18" y2="6" stroke="#dc2626" stroke-width="3"/>
         <text x="24" y="10" fill="#0f172a">${en ? 'Central Aortic Pressure' : 'Santral Aort Basıncı'}</text>
         <line x1="150" y1="6" x2="168" y2="6" stroke="#0284c7" stroke-width="2" stroke-dasharray="4 2"/>
@@ -337,14 +414,121 @@ export function createHypertensionLab(opts = {}) {
     `;
   }
 
+  function updateAnimationFrame(dtSec) {
+    if (!root.isConnected) return;
+    const hemo = computeHemodynamics();
+    const isSaltSens = phenotype === 'salt-sensitive' || phenotype === 'resistant-raas';
+    const baseLumenR = Math.max(15, 34 - Math.round((hemo.centralSbp - 115) * 0.22));
+
+    cyclePhase = (cyclePhase + dtSec * 42 * speed) % 100;
+    const pulse = cyclePhase <= 42 ? Math.sin((cyclePhase / 42) * Math.PI) : 0;
+
+    // 1. Update Central Aortic Waveform Cursor & Dots
+    const waveX = i => 55 + (i / 100) * 545;
+    const waveY = p => 395 - ((p - 50) / 145) * 125;
+    const curX = waveX(cyclePhase).toFixed(1);
+    const { fwd, refBase, total } = sampleWavesAt(cyclePhase, hemo);
+
+    const cursorEl = root.querySelector('[data-htn-cursor]');
+    if (cursorEl) {
+      cursorEl.setAttribute('x1', curX);
+      cursorEl.setAttribute('x2', curX);
+    }
+    const dotSum = root.querySelector('[data-htn-dot="sum"]');
+    const dotFwd = root.querySelector('[data-htn-dot="fwd"]');
+    const dotRef = root.querySelector('[data-htn-dot="ref"]');
+    if (dotSum) { dotSum.setAttribute('cx', curX); dotSum.setAttribute('cy', waveY(total).toFixed(1)); }
+    if (dotFwd) { dotFwd.setAttribute('cx', curX); dotFwd.setAttribute('cy', waveY(fwd).toFixed(1)); }
+    if (dotRef) { dotRef.setAttribute('cx', curX); dotRef.setAttribute('cy', waveY(refBase).toFixed(1)); }
+
+    // 2. Pulsate Resistance Arteriole Wall & Lumen
+    const lumenEl = root.querySelector('[data-htn-lumen]');
+    const wallEl = root.querySelector('[data-htn-wall]');
+    if (lumenEl) lumenEl.setAttribute('r', (baseLumenR + 2.2 * pulse).toFixed(1));
+    if (wallEl) wallEl.setAttribute('r', (46 + 1.8 * pulse).toFixed(1));
+
+    // 3. Move Particles in all 3 physiological zones
+    const pwvFactor = arterialStiffness / 8.0; // faster wave travel when PWV is high
+    particles.forEach(p => {
+      const node = root.querySelector(`[data-htn-p="${p.id}"]`);
+      if (!node) return;
+
+      if (p.zone === 'renal') {
+        // Move Na+ particles up the active Pressure-Natriuresis curve
+        const naRate = (isSaltSens ? 0.35 : 0.65) * speed;
+        p.progress = (p.progress + dtSec * naRate) % 1;
+        const x1 = isSaltSens ? 145 : 110;
+        const y1 = 154;
+        const x2 = isSaltSens ? 265 : 128;
+        const y2 = isSaltSens ? 54 : 48;
+        const x = x1 + (x2 - x1) * p.progress;
+        const y = y1 + (y2 - y1) * p.progress;
+        node.setAttribute('cx', x.toFixed(1));
+        node.setAttribute('cy', y.toFixed(1));
+      } else if (p.zone === 'arteriole') {
+        // Orbit / stream RBCs inside the resistance arteriole lumen + messenger particles toward wall
+        const flowSpeed = (0.35 + (baseLumenR / 34) * 0.6) * speed;
+        p.progress = (p.progress + dtSec * flowSpeed) % 1;
+        if (p.id < 11) {
+          const angle = p.progress * Math.PI * 2 + p.id;
+          const r = (baseLumenR - 4) * (0.35 + 0.55 * ((p.id % 3) / 2));
+          node.setAttribute('cx', (402 + Math.cos(angle) * r).toFixed(1));
+          node.setAttribute('cy', (105 + Math.sin(angle) * r).toFixed(1));
+          node.setAttribute('fill', '#dc2626');
+        } else {
+          // Neurohormonal vasoconstrictor particles traveling from right badges (x=465) to arteriole wall (x=435)
+          const blocked = activeDrug !== 'none';
+          const x = blocked ? 462 - p.progress * 12 : 464 - p.progress * 26;
+          const rowY = p.id === 11 ? 64 : p.id === 12 ? 104 : 144;
+          node.setAttribute('cx', x.toFixed(1));
+          node.setAttribute('cy', rowY.toFixed(1));
+          node.setAttribute('fill', blocked ? '#16a34a' : '#ea580c');
+          node.setAttribute('opacity', blocked && p.progress > 0.5 ? '0.2' : '0.9');
+        }
+      } else if (p.zone === 'fwdWave') {
+        // Forward wave packets traveling Aortic Root (x=110) -> Periphery (x=540)
+        p.progress = (p.progress + dtSec * 0.45 * pwvFactor * speed) % 1;
+        const x = 115 + p.progress * 415;
+        node.setAttribute('cx', x.toFixed(1));
+        node.setAttribute('cy', '230');
+      } else {
+        // Reflected wave packets bouncing Periphery (x=530) -> Aortic Root (x=115)
+        p.progress = (p.progress + dtSec * 0.52 * pwvFactor * speed) % 1;
+        const x = 530 - p.progress * 415;
+        node.setAttribute('cx', x.toFixed(1));
+        node.setAttribute('cy', '238');
+      }
+    });
+  }
+
+  function startLoop() {
+    if (rafId) cancelAnimationFrame(rafId);
+    lastTs = performance.now();
+    const tick = (now) => {
+      const dt = Math.min(0.06, Math.max(0.001, (now - lastTs) / 1000));
+      lastTs = now;
+      if (!paused) {
+        updateAnimationFrame(dt);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+
   mount.append(root);
   render();
+  startLoop();
 
   return {
     render() { render(); },
     updateLanguage(newLang) {
       if (typeof newLang === 'string') opts.lang = newLang;
       render();
+    },
+    destroy() {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      root.remove();
     }
   };
 }
