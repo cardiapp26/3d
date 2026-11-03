@@ -1343,3 +1343,27 @@ body.pathophys-app {
   margin-bottom: 10px;
   border-radius: 10px;
 }
+
+/* Live Wiggers: 3D pressure cutaway beside the panel. */
+.pathophys-wiggers-lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 16px;
+  align-items: start;
+}
+.pathophys-wiggers-3d {
+  min-height: 420px;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 40%, #1e293b, #0b1120);
+  overflow: hidden;
+  position: sticky;
+  top: 12px;
+}
+.pathophys-wiggers-3d canvas { display: block; width: 100% !important; height: 100% !important; }
+.pathophys-wiggers-3d__error { color: #f87171; padding: 24px; }
+.pathophys-wiggers-panel { min-width: 0; }
+@media (max-width: 900px) {
+  .pathophys-wiggers-lab { grid-template-columns: 1fr; }
+  .pathophys-wiggers-3d { position: relative; top: auto; min-height: 300px; }
+}
