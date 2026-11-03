@@ -5,6 +5,7 @@ import { PATHOPHYS_STATIONS, PATHOPHYS_GROUPS } from './pathophysiology-data.js'
 
 import { createPVLoopLab } from './pv-loop-lab.js';
 import { createScenarioPvLoop } from './scenario-pv-loop.js';
+import { createPvLessonsLab } from './pv-lessons-lab.js';
 import { createLoadsLab } from './loads-lab.js';
 import { createPhysiologyLab } from './physiology-lab.js';
 import { createWiggersLab } from './wiggers-lab.js';
@@ -16,6 +17,8 @@ import { createPericardialLab } from './pericardial-lab.js';
 import { createElectrophysLab } from './electrophys-lab.js';
 import { createForresterLab } from './forrester-lab.js';
 import { createValvularLab } from './valvular-lab.js';
+import { createRegurgitationLab } from './regurgitation-lab.js';
+import { createAcuteValveHemoLab } from './acute-valve-hemo-lab.js';
 import { createHypertensionLab } from './hypertension-lab.js';
 import { createPahRvLab } from './pah-rv-lab.js';
 import { createMyocardialCkmLab } from './myocardial-ckm-lab.js';
@@ -45,21 +48,35 @@ const LAB_FACTORIES = {
   'pericardial': createPericardialLab,
   'myocardial-ckm': createMyocardialCkmLab,
   'forrester': createForresterLab,
-  'valvular': createValvularLab,
+  'valvular': createValvularStation,
   'electrophys': createElectrophysLab,
   'hypertension-vascular': createVascularStation,
   'pah-rv': createPahRvLab,
   'achd-shunts': createAchdShuntsLab
 };
 
-/** P-V station: the interactive elastance lab, then the loop of the catheter scenarios. */
+/** P-V station: the interactive elastance lab, the loop of the catheter scenarios, then the whiteboard lessons. */
 function createPvStation(opts) {
   const lab = createPVLoopLab(opts);
   const scenarioLoop = createScenarioPvLoop({ lang: opts.lang });
   opts.container.append(scenarioLoop.element);
+  const lessons = createPvLessonsLab({ container: opts.container, lang: opts.lang });
   return {
-    updateLanguage(next) { lab.updateLanguage?.(next); scenarioLoop.setLanguage(next); },
-    destroy() { lab.destroy?.(); scenarioLoop.destroy(); }
+    updateLanguage(next) { lab.updateLanguage?.(next); scenarioLoop.setLanguage(next); lessons.updateLanguage(next); },
+    destroy() { lab.destroy?.(); scenarioLoop.destroy(); lessons.destroy(); }
+  };
+}
+
+/** Valvular station: the lesion lab (own host, it re-renders its container), then acute vs chronic MR/AR and acute valvular emergency hemodynamics. */
+function createValvularStation(opts) {
+  const host = document.createElement('div');
+  opts.container.append(host);
+  const lab = createValvularLab({ ...opts, container: host });
+  const regurg = createRegurgitationLab({ container: opts.container, lang: opts.lang });
+  const acute = createAcuteValveHemoLab({ container: opts.container, lang: opts.lang });
+  return {
+    updateLanguage(next) { lab.updateLanguage?.(next); regurg.updateLanguage(next); acute.updateLanguage(next); },
+    destroy() { lab.destroy?.(); regurg.destroy(); acute.destroy(); }
   };
 }
 
