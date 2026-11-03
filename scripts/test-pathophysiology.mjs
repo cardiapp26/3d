@@ -183,3 +183,25 @@ test('Vessel wall: SVG frames are well formed and bilingual text is complete', (
   assert.equal(keys(VW_TEXT.tr), keys(VW_TEXT.en));
   for (const k of ['lapPresets', 'shPresets', 'zones', 'shZones', 'layers']) assert.equal(keys(VW_TEXT.tr[k]), keys(VW_TEXT.en[k]), k);
 });
+
+test('Regurgitation lab: acute vs chronic MR/AR hemodynamics and geometry', async () => {
+  const { regurgParams, pressuresAt, jetIntensity, earlyMitralClosure, heartGeometry, valveOpenness, cycleWindows } =
+    await import('../src/pathophysiology/regurgitation-lab.js');
+  const win = cycleWindows();
+  const sys = (win.ej0 + win.ej1) / 2, earlyDia = 0.05, endDia = win.ivc0 - 0.005;
+  const peak = (p, key) => Math.max(...Array.from({ length: 200 }, (_, i) => pressuresAt(p, i / 200)[key]));
+  const mrA = regurgParams('mr', 0), mrC = regurgParams('mr', 1), arA = regurgParams('ar', 0), arC = regurgParams('ar', 1);
+  assert.ok(peak(mrA, 'la') > 2 * peak(mrC, 'la'), 'acute MR: giant v wave versus a modest v in the compliant LA');
+  assert.ok(pressuresAt(mrA, endDia).lv > 20 && pressuresAt(mrC, endDia).lv < 16, 'LVEDP high acutely, near normal chronically');
+  assert.ok(jetIntensity(mrA, sys) > 0.5 && jetIntensity(mrA, earlyDia) === 0, 'MR jet is systolic only');
+  assert.ok(jetIntensity(arC, earlyDia) > 0.5 && jetIntensity(arC, sys) === 0, 'AR jet is diastolic only');
+  assert.ok(earlyMitralClosure(arA) < win.ivc0 - 0.1 && earlyMitralClosure(arC) === null, 'early MV closure only in acute AR');
+  const pp = p => peak(p, 'ao') - Math.min(...Array.from({ length: 200 }, (_, i) => pressuresAt(p, i / 200).ao));
+  assert.ok(pp(arC) > 90 && pp(arA) < 50, 'wide pulse pressure in chronic AR only');
+  assert.ok(heartGeometry(mrC, 0).a > heartGeometry(mrA, 0).a && heartGeometry(mrC, 0).la.rx > heartGeometry(mrA, 0).la.rx, 'chronic MR dilates LV and LA');
+  assert.equal(heartGeometry(arC, 0).la.rx, heartGeometry(arA, 0).la.rx, 'LA size unchanged in AR');
+  assert.ok(heartGeometry(mrA, 1).a < heartGeometry(mrA, 0).a, 'LV cavity shrinks in systole');
+  assert.ok(valveOpenness(0.2).mv > 0.9 && valveOpenness(0.2).av === 0 && valveOpenness(sys).av > 0.9 && valveOpenness(sys).mv === 0, 'MV open in filling, AV in ejection');
+  const mid = regurgParams('mr', 0.5);
+  assert.ok(mid.lvA > mrA.lvA && mid.lvA < mrC.lvA, 'chronicity interpolates geometry');
+});

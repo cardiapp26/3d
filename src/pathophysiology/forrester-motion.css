@@ -1,0 +1,107 @@
+/* Forrester station: animated patient point, treatments and live patient panel. */
+.forrester-lab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.forrester-point { pointer-events: none; }
+
+.forrester-tx-group { flex-wrap: wrap; }
+
+.forrester-tx-btn {
+  border-left: 4px solid var(--tx-color, #2563eb);
+}
+
+.forrester-tx-btn:hover,
+.forrester-tx-btn:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tx-color, #2563eb) 35%, transparent);
+}
+
+.forrester-tx-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-muted, #f1f5f9);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-main, #1e293b);
+}
+
+.forrester-tx-note.is-risky {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+}
+
+.forrester-live-card {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: var(--radius-lg, 14px);
+  padding: 14px;
+  box-shadow: var(--shadow-sm, none);
+}
+
+.forrester-live-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+}
+
+.forrester-live-caption {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-sub, #64748b);
+}
+
+.forrester-live-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text-main, #1e293b);
+}
+
+.forrester-lungs ellipse {
+  stroke: #be8a94;
+  stroke-width: 2;
+}
+
+.forrester-blines line {
+  stroke: #e2e8f0;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.forrester-heart path {
+  fill: #fecdd3;
+  stroke: #be123c;
+  stroke-width: 6;
+  stroke-linejoin: round;
+}
+
+.forrester-circuit {
+  fill: none;
+  stroke: #e5c7c7;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.forrester-vein-wall {
+  fill: #eef2ff;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+
+.forrester-ref-line {
+  stroke: #64748b;
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+[data-live-tissue] {
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forrester-tx-btn { transition: none; }
+}

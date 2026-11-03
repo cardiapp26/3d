@@ -13,6 +13,9 @@ export function createVisualInteraction({ container, lang }) {
     const hint = document.createElement('span');
     const buttons = ['minus', 'plus', 'reset'].map(key => { const button = document.createElement('button'); button.type = 'button'; button.dataset.visualAction = key; bar.append(button); return button; });
     bar.append(hint); svg.before(bar); svg.classList.add('visual-interactive');
+    // In a row flex box the bar would take the figure's width: give it a row of its own.
+    const parent = svg.parentElement, ps = parent && getComputedStyle(parent);
+    if (ps && ps.display.includes('flex') && !ps.flexDirection.startsWith('column')) parent.classList.add('visual-tools-host');
     function view() {
       const [x, y, w, h] = original;
       svg.style.touchAction = zoom > 1 || specs.length ? 'none' : 'pan-y';
@@ -82,7 +85,20 @@ export function createVisualInteraction({ container, lang }) {
     }
     controls.set(svg, { refresh, handles }); refresh();
   }
-  function scan() { container.querySelectorAll('svg').forEach(enhance); for (const [svg, control] of controls) { if (svg.isConnected) control.handles(); } }
-  const observer = new MutationObserver(scan); observer.observe(container, { childList: true, subtree: true }); scan();
-  return { updateLanguage(next) { language = next; controls.forEach(control => control.refresh()); }, destroy() { observer.disconnect(); ac.abort(); controls.forEach((_, svg) => svg.previousElementSibling?.classList.contains('visual-tools') && svg.previousElementSibling.remove()); } };
+  function scan() {
+    scheduled = null;
+    container.querySelectorAll('svg').forEach(enhance);
+    for (const [svg, control] of controls) { if (svg.isConnected) control.handles(); else controls.delete(svg); }
+  }
+  // Animated figures redraw every frame: rescan only when an SVG arrives or a figure with
+  // drag handles changes, at most once per frame.
+  let scheduled = null;
+  const hasSvg = node => node.nodeType === 1 && (node.tagName.toLowerCase() === 'svg' || Boolean(node.querySelector?.('svg')));
+  const handled = target => [...controls.keys()].some(svg => svg.querySelector('[data-visual-handle]') && svg.contains(target));
+  const observer = new MutationObserver(list => {
+    if (scheduled != null) return;
+    if (list.some(m => [...m.addedNodes].some(hasSvg) || handled(m.target))) scheduled = requestAnimationFrame(scan);
+  });
+  observer.observe(container, { childList: true, subtree: true }); scan();
+  return { updateLanguage(next) { language = next; controls.forEach(control => control.refresh()); }, destroy() { observer.disconnect(); if (scheduled != null) cancelAnimationFrame(scheduled); ac.abort(); controls.forEach((_, svg) => svg.previousElementSibling?.classList.contains('visual-tools') && svg.previousElementSibling.remove()); } };
 }
