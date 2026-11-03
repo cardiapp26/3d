@@ -1,6 +1,18 @@
 // Interactive PV Loop Lab: Time-varying elastance and ventricular-arterial coupling.
 import { PV_PRESETS, PV_V0, pvParams, pvModelLoop } from '../hemo-pv-model.js';
 import { PV_SCENARIOS } from './pathophysiology-data.js';
+import { createCycleClock, createMotionBar, cyclePhaseAt, loopPointAt, tweenValues, PHASE_TEXT } from './cycle-clock.js';
+
+// Plot frame shared by the static and live layers.
+const W = 540, H = 380, PAD = { l: 50, r: 20, t: 30, b: 40 }, X_MAX = 280, Y_MAX = 240;
+const toX = v => PAD.l + (v / X_MAX) * (W - PAD.l - PAD.r);
+const toY = p => H - PAD.b - (p / Y_MAX) * (H - PAD.t - PAD.b);
+const VALVE_EVENTS = [
+  { key: 'mvClose', at: p => p.phases.ivc[0], tr: 'MK kapanır', en: 'MV closes', dx: 8, dy: 16 },
+  { key: 'avOpen', at: p => p.phases.ejection[0], tr: 'AK açılır', en: 'AV opens', dx: 8, dy: -8 },
+  { key: 'avClose', at: p => p.phases.ivr[0], tr: 'AK kapanır', en: 'AV closes', dx: -8, dy: -10, anchor: 'end' },
+  { key: 'mvOpen', at: () => 0, tr: 'MK açılır', en: 'MV opens', dx: -8, dy: 16, anchor: 'end' }
+];
 
 export function createPvLoopLab(opts = {}) {
   const mount = opts.mount || opts.container;
@@ -11,12 +23,28 @@ export function createPvLoopLab(opts = {}) {
   let currentPreset = 'normal';
   let params = { ...PV_SCENARIOS[0].params };
   const HR = 75; // typical resting heart rate for cardiac output calculation
+  // Loop on screen: glides toward `params` when a slider or preset changes.
+  let shown = { ...params }, shownLoop = null, cancelTween = () => {};
+  const clock = createCycleClock({ bpm: HR, speed: 0.5 });
+  const motionBar = createMotionBar(clock, { getLang, label: { tr: 'Canlı döngü:', en: 'Live loop:' } });
 
   root.innerHTML = `
     <div class="pathophys-presets-bar" role="group" aria-label="Presets"></div>
     <div class="pathophys-grid">
       <div class="pathophys-stage">
-        <svg viewBox="0 0 540 380" class="pathophys-svg pathophys-pv-svg" role="img" aria-label="Pressure-Volume Loop"></svg>
+        <svg viewBox="0 0 540 380" class="pathophys-svg pathophys-pv-svg" role="img" aria-label="Pressure-Volume Loop">
+          <g data-pv-static></g>
+          <g data-pv-live>
+            <polyline data-pv-trace fill="none" stroke="#087f5b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+            <g data-pv-events></g>
+            <circle data-pv-dot r="8" fill="#0b7285" stroke="#fff" stroke-width="2.5"/>
+            <g data-pv-lv transform="translate(468 70)">
+              <ellipse data-pv-lv-cavity cx="0" cy="0" rx="22" ry="34" fill="#f8d7da" stroke="#8c2d38" stroke-width="5"/>
+              <text data-pv-lv-text y="58" text-anchor="middle" class="axis-num"></text>
+            </g>
+            <text data-pv-live-text x="${PAD.l + 10}" y="${PAD.t + 14}" class="pv-live-text"></text>
+          </g>
+        </svg>
         <div class="pathophys-legend">
           <span><i class="legend-color legend-pv"></i> <strong data-i18n-pv="loop"></strong></span>
           <span><i class="legend-color legend-espvr"></i> <strong data-i18n-pv="espvr"></strong></span>
@@ -80,6 +108,7 @@ export function createPvLoopLab(opts = {}) {
       </div>
     </div>
   `;
+  root.prepend(motionBar.element);
   mount.append(root);
 
   const $ = sel => root.querySelector(sel);
@@ -96,6 +125,7 @@ export function createPvLoopLab(opts = {}) {
       params = { ...scen.params };
       syncSliders();
       render();
+      glide();
     });
     presetsBar.append(btn);
   });
@@ -106,8 +136,15 @@ export function createPvLoopLab(opts = {}) {
       params[key] = Number(input.value);
       currentPreset = 'custom';
       render();
+      glide();
     });
   });
+
+  // Animate the drawn loop from what is on screen to the new parameters.
+  function glide() {
+    cancelTween();
+    cancelTween = tweenValues(shown, params, values => { shown = values; drawStatic(); clock.refresh(); });
+  }
 
   function syncSliders() {
     ['edv', 'ees', 'ea', 'stiffness'].forEach(key => {
@@ -180,24 +217,22 @@ export function createPvLoopLab(opts = {}) {
     $('[data-pv-scen-title]').textContent = typeof activeScen.name === 'object' ? t(activeScen.name) : activeScen.name;
     $('[data-pv-scen-desc]').textContent = typeof activeScen.desc === 'object' ? t(activeScen.desc) : activeScen.desc;
 
-    // Draw SVG
-    drawPvSvg(p, params);
+    drawStatic();
+    clock.refresh();
   }
 
-  function drawPvSvg(p, currentParams) {
-    const svg = $('.pathophys-pv-svg');
+  /** Grid, axes, ESPVR, EDPVR, Ea and the loop for the parameters on screen. */
+  function drawStatic() {
+    const currentParams = shown;
+    const p = pvModelLoop(pvParams(shown, currentPreset || 'normal'));
+    shownLoop = p;
+    const layer = $('[data-pv-static]');
 
     // Coordinate mapping
     // X: Volume 0 to 280 mL
     // Y: Pressure 0 to 240 mmHg
-    const xMin = 0, xMax = 280;
-    const yMin = 0, yMax = 240;
-    const padL = 50, padR = 20, padT = 30, padB = 40;
-    const w = 540, h = 380;
-    const plotW = w - padL - padR, plotH = h - padT - padB;
-
-    const toX = v => padL + ((v - xMin) / (xMax - xMin)) * plotW;
-    const toY = pr => h - padB - ((pr - yMin) / (yMax - yMin)) * plotH;
+    const yMax = Y_MAX;
+    const padL = PAD.l, padR = PAD.r, padT = PAD.t, padB = PAD.b, w = W, h = H;
 
     // SVG grid lines and axis labels
     const gridLines = [];
@@ -249,7 +284,7 @@ export function createPvLoopLab(opts = {}) {
     const esvPt = `<circle cx="${toX(p.esv)}" cy="${toY(p.esp)}" r="5.5" fill="#c92a2a" stroke="#fff" stroke-width="1.8"/>`;
     const edvPt = `<circle cx="${toX(p.edv)}" cy="${toY(p.edp)}" r="5.5" fill="#e67700" stroke="#fff" stroke-width="1.8"/>`;
 
-    svg.innerHTML = `
+    layer.innerHTML = `
       ${gridLines.join('')}
       ${axes}
       ${labels.join('')}
@@ -262,15 +297,50 @@ export function createPvLoopLab(opts = {}) {
     `;
   }
 
+  /** Live layer: moving point, traced segment, valve events and the beating LV glyph. */
+  function drawLive(state) {
+    const p = shownLoop;
+    if (!p) return;
+    const en = getLang() === 'en';
+    const u = state.phase, pt = loopPointAt(p.points, u), phase = cyclePhaseAt(u, p.phases);
+    const dot = $('[data-pv-dot]');
+    dot.setAttribute('cx', toX(pt.v).toFixed(1));
+    dot.setAttribute('cy', toY(pt.p).toFixed(1));
+    // Trace the current phase only, so each phase lights up in turn.
+    const start = { filling: 0, ivc: p.phases.ivc[0], ejection: p.phases.ejection[0], ivr: p.phases.ivr[0] }[phase];
+    const trace = p.points.filter(s => s.u >= start && s.u <= u).concat([{ ...pt }]);
+    $('[data-pv-trace]').setAttribute('points', trace.map(s => `${toX(s.v).toFixed(1)},${toY(s.p).toFixed(1)}`).join(' '));
+    $('[data-pv-events]').innerHTML = VALVE_EVENTS.map(ev => {
+      const at = ev.at(p), q = loopPointAt(p.points, at);
+      const near = Math.min(Math.abs(u - at), 1 - Math.abs(u - at)) < 0.04;
+      const x = toX(q.v), y = toY(q.p);
+      return `<g class="pv-event${near ? ' is-now' : ''}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${near ? 6 : 3.5}"/>
+        <text x="${(x + ev.dx).toFixed(1)}" y="${(y + ev.dy).toFixed(1)}" text-anchor="${ev.anchor || 'start'}">${en ? ev.en : ev.tr}</text></g>`;
+    }).join('');
+    // LV glyph: cavity width follows volume, colour follows pressure.
+    const k = Math.sqrt(pt.v / 140), heat = Math.min(1, pt.p / 160);
+    const cav = $('[data-pv-lv-cavity]');
+    cav.setAttribute('rx', (22 * k).toFixed(1));
+    cav.setAttribute('ry', (34 * Math.cbrt(pt.v / 140)).toFixed(1));
+    cav.setAttribute('fill', `rgb(${Math.round(248 - 40 * heat)},${Math.round(215 - 150 * heat)},${Math.round(218 - 150 * heat)})`);
+    $('[data-pv-lv-text]').textContent = `${Math.round(pt.v)} mL`;
+    $('[data-pv-live-text]').textContent = `${PHASE_TEXT[phase][en ? 'en' : 'tr']} · ${Math.round(pt.v)} mL · ${Math.round(pt.p)} mmHg`;
+    motionBar.render(state, phase);
+  }
+
   syncSliders();
   render();
+  const unsubscribe = clock.subscribe(drawLive);
 
   return {
     render() { render(); },
     updateLanguage(newLang) {
       if (typeof newLang === 'string') opts.lang = newLang;
+      motionBar.setLanguage();
       render();
-    }
+    },
+    getState: () => ({ phase: clock.getState().phase, playing: clock.getState().playing, preset: currentPreset }),
+    destroy() { cancelTween(); unsubscribe(); clock.destroy(); root.remove(); }
   };
 }
 

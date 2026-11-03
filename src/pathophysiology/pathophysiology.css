@@ -798,7 +798,7 @@ body.pathophys-app {
 .starling-readout-row,
 .laplace-readout-row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 10px;
 }
@@ -1366,4 +1366,36 @@ body.pathophys-app {
 @media (max-width: 900px) {
   .pathophys-wiggers-lab { grid-template-columns: 1fr; }
   .pathophys-wiggers-3d { position: relative; top: auto; min-height: 300px; }
+}
+
+/* Shared cycle clock bar (cycle-clock.js) */
+.pathophys-cycle-bar { margin-bottom: 10px; }
+.pathophys-cycle-scrub {
+  display: inline-flex; align-items: center; gap: 6px; flex: 1 1 160px;
+  font-size: 12px; font-weight: 700; color: var(--text-sub, #475569);
+}
+.pathophys-cycle-scrub input { flex: 1; min-width: 100px; }
+.pathophys-cycle-phase { font-size: 13px; color: #0b7285; min-width: 150px; }
+
+/* PV loop live layer */
+.pv-live-text { font-size: 12px; font-weight: 700; fill: #0b7285; }
+.pv-event circle { fill: #495057; transition: r .15s; }
+.pv-event text { font-size: 10.5px; font-weight: 700; fill: #495057; }
+.pv-event.is-now circle { fill: #f08c00; }
+.pv-event.is-now text { fill: #d9480f; }
+
+/* Starling sarcomere strip */
+.sarcomere-svg { width: 100%; height: auto; display: block; margin-top: 6px; }
+@media (max-width: 640px) {
+  .pathophys-cycle-phase { min-width: 0; flex-basis: 100%; }
+}
+
+.starling-readout-row .readout-value,
+.laplace-readout-row .readout-value { overflow-wrap: anywhere; }
+
+/* Starling/Laplace: heading above its intro, and one column on narrow screens. */
+.pathophys-starling-lab .card-head { flex-direction: column; align-items: flex-start; }
+.pathophys-starling-lab .card-head p { margin: 0; font-size: 13px; line-height: 1.5; }
+@media (max-width: 900px) {
+  .pathophys-sl-grid { grid-template-columns: minmax(0, 1fr); }
 }
