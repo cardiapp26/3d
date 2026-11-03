@@ -352,6 +352,21 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
     assert.equal(await page.evaluate(() => window.epsLab.live.circuit().replaying), true, 'slow replay runs');
     await page.locator('[data-ep-live-circuit-replay]').click();
     assert.equal(await page.evaluate(() => window.epsLab.live.circuit().replaying), false, 'replay stopped');
+    // Teaching animation: typical (counterclockwise) cycles, then reverse typical (clockwise), then back to the live ring.
+    await page.locator('[data-ep-live-circuit-demo]').click();
+    assert.equal(await page.locator('[data-ep-live-circuit-demo]').getAttribute('aria-pressed'), 'true');
+    await page.evaluate(() => window.epsLab.live.circuitDemo('seek', 300));
+    let demo = await page.evaluate(() => window.epsLab.live.circuit());
+    assert.equal(demo.demo.dir, 'ccw', `demo starts counterclockwise ${JSON.stringify(demo)}`);
+    assert.match(await page.locator('[data-ep-live-circuit-front]').textContent(), /^Saat yönünün tersine \(tipik\)/);
+    await page.evaluate(() => window.epsLab.live.circuitDemo('seek', 240 * 4 + 300));
+    demo = await page.evaluate(() => window.epsLab.live.circuit());
+    assert.equal(demo.demo.dir, 'cw', 'then clockwise');
+    assert.match(await page.locator('[data-ep-live-circuit-front]').textContent(), /^Saat yönünde \(ters tipik\): DII'de pozitif/);
+    await page.locator('[data-ep-live-circuit-demo]').click();
+    demo = await page.evaluate(() => window.epsLab.live.circuit());
+    assert.equal(demo.demo, null, 'demo stopped');
+    assert.equal(demo.origin, 'flutter', 'live ring back after the demo');
     // Entrainment from the isthmus (ABL d): paced fronts on the ring, then the PPI with concealed fusion.
     await page.locator('[data-ep-live-stim=site]').selectOption('cti');
     await page.locator('[data-ep-live-maneuver=a-od]').click();

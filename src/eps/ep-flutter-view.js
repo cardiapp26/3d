@@ -7,7 +7,7 @@
  * front was. Without a flutter cycle the latest atrial activation is shown at its origin.
  * Frozen strips can replay the last cycles slowly. Colours live in style.css.
  */
-import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, LESION_ANGLE, circuitClock, circuitAngle, lastActivation, leadIiTrace, entrainmentAt, blockCheck, pacedSpread } from './ep-flutter-circuit.js';
+import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, LESION_ANGLE, circuitClock, circuitAngle, lastActivation, leadIiTrace, entrainmentAt, blockCheck, pacedSpread, schematicFWave } from './ep-flutter-circuit.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAP = Object.freeze({ w: 300, h: 236, cx: 150, cy: 118, squash: 0.86, rTa: 44, rIn: 52, rMid: 67, rOut: 82 });
@@ -16,6 +16,8 @@ const WAKE = Object.freeze({ share: 0.55, pieces: 28 });     // wake: the part o
 const HIT_MS = 30;                                           // catheter tip lit this long after its A
 const PULSE_MS = 160;                                        // origin pulse of a non-flutter activation
 const REPLAY = Object.freeze({ cycles: 2, rate: 0.12 });     // frozen replay: cycles shown, playback speed
+// Teaching animation: counterclockwise cycles, then clockwise ones, slowed down; F wave in mV.
+const DEMO = Object.freeze({ tcl: 240, cycles: 4, rate: 0.22, fMv: 0.22, blendMs: 90 });
 const SPOTS = Object.freeze({ sinus: [330, 100], hra: [CIRCUIT_SITES.hra, MAP.rOut - 4], cs: [CIRCUIT_SITES.csOs, 94], cti: [CIRCUIT_SITES.cti, MAP.rMid], septal: [70, MAP.rIn + 6], left: [60, 128] });
 // CS pacing sites on the CS catheter (proximal 9-10 at the ostium); entrainment drawing sizes.
 const CS_SITE_INDEX = Object.freeze({ 'cs-prox': 0, 'cs-78': 1, 'cs-56': 2, 'cs-34': 3, 'cs-dist': 4 });
@@ -58,7 +60,8 @@ export function createFlutterView(doc, { text }) {
   const head = html('div', 'ep-circ-head');
   const title = html('h4', 'ep-circ-title');
   const replayBtn = html('button', 'ep-circ-replay', { type: 'button', 'data-ep-live-circuit-replay': '' });
-  head.append(title, replayBtn);
+  const demoBtn = html('button', 'ep-circ-replay ep-circ-demo', { type: 'button', 'data-ep-live-circuit-demo': '' });
+  head.append(title, demoBtn, replayBtn);
   const side = html('div', 'ep-circ-side');
   const front = html('p', 'ep-circ-front', { 'data-ep-live-circuit-front': '' });
   const entrainLine = html('p', 'ep-circ-entrain', { 'data-ep-live-circuit-entrain': '', 'aria-live': 'polite' });
@@ -78,9 +81,16 @@ export function createFlutterView(doc, { text }) {
     body.append(map, side);
     const labels = {};
     const label = (key, [x, y], cls = 'ep-circ-label', anchor = 'middle') => { labels[key] = svg('text', { x: x.toFixed(1), y: y.toFixed(1), class: cls, 'text-anchor': anchor }, map); };
+    // Opened right atrium: the cut wall around the chamber, the caval veins as tubes.
+    const tube = (deg, w) => { const [x0, y0] = at(deg, 96), [x1, y1] = at(deg, 132); svg('line', { x1: x0, y1: y0, x2: x1, y2: y1, class: 'ep-circ-tube', 'stroke-width': w }, map); };
+    tube(332, 26); tube(204, 28);
+    svg('ellipse', { cx: MAP.cx, cy: MAP.cy, rx: MAP.rOut + 13, ry: (MAP.rOut + 13) * MAP.squash, class: 'ep-circ-wall' }, map);
+    svg('ellipse', { cx: MAP.cx, cy: MAP.cy, rx: MAP.rOut + 4, ry: (MAP.rOut + 4) * MAP.squash, class: 'ep-circ-endo' }, map);
     svg('ellipse', { cx: MAP.cx, cy: MAP.cy, rx: MAP.rMid, ry: MAP.rMid * MAP.squash, class: 'ep-circ-corridor', 'stroke-width': MAP.rOut - MAP.rIn }, map);
     for (const s of CIRCUIT_SEGMENTS) svg('polyline', { points: fmt(arc(s.from, s.to, MAP.rMid)), class: `ep-circ-limb seg-${s.id}` }, map);
     svg('ellipse', { cx: MAP.cx, cy: MAP.cy, rx: MAP.rTa, ry: MAP.rTa * MAP.squash, class: 'ep-circ-ta' }, map);
+    // Tricuspid leaflets (septal, anterior, posterior) meeting in the middle.
+    for (const deg of [70, 320, 200]) { const [x, y] = at(deg, MAP.rTa - 2); svg('line', { x1: MAP.cx, y1: MAP.cy, x2: x, y2: y, class: 'ep-circ-leaflet' }, map); }
     label('ta', [MAP.cx, MAP.cy + 4], 'ep-circ-label ep-circ-label-ta');
     const vessel = (deg, r, rad, key) => { const [x, y] = at(deg, r); svg('circle', { cx: x, cy: y, r: rad, class: 'ep-circ-vessel' }, map); label(key, [x, y + 3.5]); };
     vessel(332, 104, 14, 'svc');
@@ -138,6 +148,7 @@ export function createFlutterView(doc, { text }) {
   let entrainNow = null;       // entrainment at the painted time (ep-flutter-circuit.js entrainmentAt)
   let blockNow = null;         // block check at the painted time
   let blockText = '';
+  let demo = null;             // teaching animation: { t (ms of circuit time), last, raf }
 
   /** A front's wake: where it was over the last `span` ms, fading backwards (dir -1: an antidromic front). */
   function drawWake(live, phase, tcl, span, cls, dir = 1, way = 'ccw') {
@@ -269,6 +280,7 @@ export function createFlutterView(doc, { text }) {
   }
 
   function paint() {
+    if (demo) return;          // the teaching animation owns the drawing while it runs
     if (!props || element.hidden) return;
     build();
     const t = replay ? replay.t : props.t;
@@ -293,6 +305,83 @@ export function createFlutterView(doc, { text }) {
     replayBtn.textContent = replay ? tx.replayStop : tx.replay;
     replayBtn.setAttribute('aria-pressed', String(Boolean(replay)));
   }
+
+  // ---- Teaching animation: typical (counterclockwise) then reverse typical (clockwise) ----
+  const demoDir = (t) => (Math.floor(t / (DEMO.tcl * DEMO.cycles)) % 2 ? 'cw' : 'ccw');
+  function demoSample(t) {
+    const dir = demoDir(t), tau = t % DEMO.tcl;
+    let f = schematicFWave(tau, DEMO.tcl, dir);
+    // Blend into the new direction's wave so lead II does not jump at the switch.
+    const since = t % (DEMO.tcl * DEMO.cycles);
+    if (t >= DEMO.tcl * DEMO.cycles && since < DEMO.blendMs) {
+      const k = since / DEMO.blendMs;
+      f = schematicFWave(tau, DEMO.tcl, dir === 'cw' ? 'ccw' : 'cw') * (1 - k) + f * k;
+    }
+    return { t, dir, f: DEMO.fMv * f, ...circuitAngle(tau, DEMO.tcl, dir) };
+  }
+  function paintDemo() {
+    build();
+    const { live, arrows, trace } = parts;
+    const now = demoSample(demo.t), tx = text();
+    live.replaceChildren();
+    arrows.ccw.style.display = now.dir === 'ccw' ? '' : 'none';
+    arrows.cw.style.display = now.dir === 'cw' ? '' : 'none';
+    // The wake stays within the current direction, so the switch starts a fresh front.
+    const since = demo.t % (DEMO.tcl * DEMO.cycles);
+    drawWake(live, demo.t % DEMO.tcl, DEMO.tcl, Math.min(DEMO.tcl * WAKE.share, since), (b) => `ep-circ-wake seg-${b.segment}`, 1, now.dir);
+    drawHead(live, now.angle, `seg-${now.segment}`, true);
+    trace.replaceChildren();
+    const span = DEMO.tcl * 2.5, n = 150;
+    const samples = Array.from({ length: n + 1 }, (_, i) => demoSample(Math.max(0, demo.t - span + (span * i) / n)));
+    const x = (i) => TRACE.pad + (i / n) * (TRACE.w - 2 * TRACE.pad);
+    const y = (v) => Math.min(TRACE.h - 2, Math.max(2, TRACE.mid - v * TRACE.mvPx));
+    svg('line', { x1: TRACE.pad, y1: TRACE.mid, x2: TRACE.w - TRACE.pad, y2: TRACE.mid, class: 'ep-circ-base' }, trace);
+    let run = [];
+    const flush = (seg) => { if (run.length > 1) svg('polyline', { points: fmt(run), class: `ep-circ-f seg-${seg}` }, trace); };
+    samples.forEach((sm, i) => {
+      const prev = samples[i - 1];
+      if (prev && prev.segment !== sm.segment) { run.push([x(i), y(sm.f)]); flush(prev.segment); run = []; }
+      run.push([x(i), y(sm.f)]);
+    });
+    flush(now.segment);
+    svg('circle', { cx: x(n), cy: y(now.f), r: 3.5, class: `ep-circ-pen seg-${now.segment}` }, trace);
+    svg('text', { x: TRACE.pad, y: 12, class: 'ep-circ-label', 'text-anchor': 'start' }, trace).textContent = tx.traceLabel;
+    const segs = now.dir === 'cw' ? tx.segmentsCw : tx.segments;
+    const line = tx.demoFront(now.dir, segs[now.segment]);
+    if (line !== frontText) { frontText = line; front.textContent = line; }
+    demo.dir = now.dir;
+    if (legendKey !== `${tx.title}|${now.dir === 'cw'}`) buildLegend();
+    entrainLine.hidden = true;
+    replayBtn.hidden = true;
+    shown = { active: true, segment: now.segment, angle: Math.round(now.angle), origin: 'demo', spot: 'circuit', dir: now.dir };
+  }
+  function stopDemo() {
+    if (!demo) return;
+    cancelFrame(demo.raf);
+    demo = null;
+    demoBtn.textContent = text().demo;
+    demoBtn.setAttribute('aria-pressed', 'false');
+    frontText = '';
+    if (parts) buildLegend();
+    paint();
+  }
+  function startDemo() {
+    stopReplay();
+    demo = { t: 0, last: null, raf: 0 };
+    demoBtn.textContent = text().demoStop;
+    demoBtn.setAttribute('aria-pressed', 'true');
+    const step = (wall) => {
+      if (!demo) return;
+      if (!element.isConnected || element.hidden) { stopDemo(); return; }
+      if (demo.last != null) demo.t += Math.min(100, wall - demo.last) * DEMO.rate;
+      demo.last = wall;
+      paintDemo();
+      demo.raf = nextFrame(step);
+    };
+    paintDemo();
+    demo.raf = nextFrame(step);
+  }
+  demoBtn.addEventListener('click', () => (demo ? stopDemo() : startDemo()));
 
   function stopReplay() {
     if (!replay) return;
@@ -320,7 +409,7 @@ export function createFlutterView(doc, { text }) {
   /** Legend of the limbs, worded for the circuit's direction. */
   let legendKey = '';
   function buildLegend() {
-    const tx = text(), cw = props?.dir === 'cw';
+    const tx = text(), cw = (demo?.dir ?? props?.dir) === 'cw';
     const segs = cw ? tx.segmentsCw : tx.segments;
     legendKey = `${tx.title}|${cw}`;
     legend.replaceChildren(...CIRCUIT_SEGMENTS.map((s) => {
@@ -344,6 +433,8 @@ export function createFlutterView(doc, { text }) {
 
   function render() {
     title.textContent = text().title;
+    demoBtn.textContent = demo ? text().demoStop : text().demo;
+    demoBtn.setAttribute('aria-pressed', String(Boolean(demo)));
     if (!parts) return;
     applyText();
     paint();
@@ -360,9 +451,11 @@ export function createFlutterView(doc, { text }) {
       paint();
     },
     /** Test hook: what is shown. */
-    state: () => ({ ...shown, replaying: Boolean(replay), visible: !element.hidden }),
+    state: () => ({ ...shown, replaying: Boolean(replay), demo: demo ? { t: demo.t, dir: demoDir(demo.t) } : null, visible: !element.hidden }),
+    /** Teaching animation: start, stop, or jump to a circuit time (test hook). */
+    demo(cmd, t) { if (cmd === 'start' && !demo) startDemo(); else if (cmd === 'stop') stopDemo(); else if (cmd === 'seek' && demo) { demo.t = t; paintDemo(); } },
     /** Replay at once to its end (test hook). */
     replayNow() { startReplay(); if (replay) { replay.t = replay.to; stopReplay(); paint(); } },
-    destroy: stopReplay
+    destroy() { stopReplay(); stopDemo(); }
   };
 }
