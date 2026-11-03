@@ -25,6 +25,15 @@ const f = (id, def) => Object.freeze({ id, sounds: [], expected: {}, ...def });
 // expected: '+' louder (or longer for MVP), '-' softer (or shorter), '0' unchanged;
 // an array lists acceptable textbook answers; missing = not a standard test.
 export const FINDINGS = Object.freeze({
+  normal: f('normal', {
+    label: { en: 'Normal heart sounds (reference)', tr: 'Normal kalp sesleri (referans)' },
+    kind: 'reference', side: 'left', area: 'pulmonic', radiation: { en: 'None', tr: 'Yayılmaz' },
+    shape: 'none', grade: 0, sensitivity: {},
+    teaching: {
+      en: 'S1 is mitral and tricuspid closure at the start of systole; S2 is aortic (A2) then pulmonic (P2) closure. A2 comes slightly before P2, and the split widens with inspiration as more blood returns to the right heart. No murmur, no S3 or S4 in an adult at rest.',
+      tr: 'S1 sistol başında mitral ve triküspit kapanmasıdır; S2 önce aort (A2), sonra pulmoner (P2) kapanmasıdır. A2, P2\'den biraz önce gelir; inspiryumda sağ kalbe dönen kan arttıkça ayrılma genişler. Erişkinde istirahatte üfürüm, S3 veya S4 yoktur.'
+    }
+  }),
   hocm: f('hocm', {
     label: { en: 'Hypertrophic obstructive cardiomyopathy (dynamic LVOT obstruction)', tr: 'Hipertrofik obstrüktif kardiyomiyopati (dinamik LVOT obstrüksiyonu)' },
     kind: 'systolic', side: 'left', area: 'erb', radiation: { en: 'Lower left sternal border and apex; little radiation to the carotids', tr: 'Sol alt sternal kenar ve apeks; karotislere az yayılır' },
@@ -114,12 +123,32 @@ export const FINDINGS = Object.freeze({
   mitral_stenosis: f('mitral_stenosis', {
     label: { en: 'Mitral stenosis', tr: 'Mitral darlığı' },
     kind: 'diastolic', side: 'left', area: 'mitral', radiation: { en: 'Localized to the apex', tr: 'Apekste lokalize' },
-    shape: 'rumble', grade: 2, pitch: 'low', sounds: ['loud_S1', 'opening_snap'],
+    shape: 'rumble', grade: 2, pitch: 'low', sounds: ['loud_S1', 'opening_snap', 'loud_P2'],
     sensitivity: { hr: 0.3, preload: 0.4, contractility: 0.5, proximity: 1.0 },
     expected: { left_lateral: '+', exercise: '+', amyl_nitrite: '+', valsalva_strain: '-', stand: '-', squat: '+', leg_raise: '+', inspiration: '0' },
     teaching: {
-      en: 'A low-pitched rumble after an opening snap, with presystolic accentuation in sinus rhythm. Heard with the bell at the apex in left lateral decubitus; brief exercise or amyl nitrite (more flow, faster rate) bring it out. A shorter A2-to-opening-snap interval means a higher LA pressure.',
-      tr: 'Açılma sesinden sonra başlayan düşük frekanslı rulman, sinüs ritminde presistolik belirginleşme ile. Apekste, sol lateral dekübitte çan ile duyulur; kısa egzersiz veya amil nitrit (daha çok akım, daha hızlı kalp) belirginleştirir. A2-açılma sesi aralığının kısalması daha yüksek LA basıncını gösterir.'
+      en: 'A low-pitched rumble after an opening snap, with presystolic accentuation in sinus rhythm. Heard with the bell at the apex in left lateral decubitus; brief exercise or amyl nitrite (more flow, faster rate) bring it out. A shorter A2-to-opening-snap interval means a higher LA pressure; a loud P2 signals pulmonary hypertension.',
+      tr: 'Açılma sesinden sonra başlayan düşük frekanslı rulman, sinüs ritminde presistolik belirginleşme ile. Apekste, sol lateral dekübitte çan ile duyulur; kısa egzersiz veya amil nitrit (daha çok akım, daha hızlı kalp) belirginleştirir. A2-açılma sesi aralığının kısalması daha yüksek LA basıncını gösterir; sert P2 pulmoner hipertansiyonu düşündürür.'
+    }
+  }),
+  acute_mitral_regurgitation: f('acute_mitral_regurgitation', {
+    label: { en: 'Acute severe mitral regurgitation (e.g. papillary muscle or chordal rupture)', tr: 'Akut ciddi mitral yetersizliği (ör. papiller kas veya korda rüptürü)' },
+    kind: 'systolic', side: 'left', area: 'mitral', radiation: { en: 'Variable and often limited; may be soft or absent despite severe regurgitation', tr: 'Değişken ve çoğu zaman sınırlı; ciddi yetersizliğe karşın hafif olabilir veya duyulmayabilir' },
+    shape: 'early-systolic', span: 0.25, grade: 2, pitch: 'medium', sounds: ['S3'],
+    sensitivity: { afterload: 0.9, preload: 0.3 },
+    teaching: {
+      en: 'The left atrium is small and non-compliant, so the regurgitant volume raises LA pressure steeply (giant v wave). The LV-LA systolic gradient collapses by mid-systole and the murmur is a soft, early decrescendo that stops well before A2. An S3 reflects the large early diastolic inflow. Pulmonary edema and hypotension with a quiet murmur are typical; do not let a soft murmur reassure you.',
+      tr: 'Sol atriyum küçük ve kompliyansı düşüktür; geri kaçan hacim LA basıncını hızla yükseltir (dev v dalgası). LV-LA sistolik gradyanı sistol ortasında kaybolur, bu yüzden üfürüm hafif, erken dekreşendodur ve A2\'den belirgin önce biter. S3, erken diyastoldeki büyük doluşu yansıtır. Sessiz bir üfürümle birlikte akciğer ödemi ve hipotansiyon tipiktir; hafif üfürüm yanıltmamalıdır.'
+    }
+  }),
+  acute_aortic_regurgitation: f('acute_aortic_regurgitation', {
+    label: { en: 'Acute severe aortic regurgitation (e.g. endocarditis, aortic dissection)', tr: 'Akut ciddi aort yetersizliği (ör. endokardit, aort diseksiyonu)' },
+    kind: 'diastolic', side: 'left', area: 'erb', radiation: { en: 'Left sternal border; often faint, peripheral signs of chronic AR are absent', tr: 'Sol sternal kenar; çoğu zaman hafif, kronik AY\'nin periferik bulguları yoktur' },
+    shape: 'short-early-diastolic', span: 0.18, grade: 2, pitch: 'medium', flowGrade: 1.5, sounds: ['soft_S1', 'soft_A2', 'loud_P2', 'S3'],
+    sensitivity: { afterload: 0.6, preload: 0.2 },
+    teaching: {
+      en: 'The normal-sized, non-compliant LV cannot accommodate the sudden regurgitant volume: LV diastolic pressure rises fast and equalizes with aortic pressure early in diastole, so the diastolic murmur is short, soft and lower pitched than in chronic AR. The high LV pressure closes the mitral valve before systole (premature mitral closure), making S1 soft or absent. Forward flow is small, so the systolic flow murmur is soft or absent. Raised LV filling pressure causes pulmonary hypertension, a loud P2 and an S3.',
+      tr: 'Normal boyutlu ve kompliyansı düşük LV ani geri kaçış hacmini karşılayamaz: LV diyastolik basıncı hızla yükselir ve diyastolün erken döneminde aort basıncıyla eşitlenir; bu yüzden diyastolik üfürüm kısa, hafif ve kronik AY\'ye göre daha düşük frekanslıdır. Yüksek LV basıncı mitral kapağı sistolden önce kapatır (erken mitral kapanma), S1 hafifler veya kaybolur. İleri akım azdır, sistolik akım üfürümü hafiftir veya yoktur. Yükselen LV dolum basıncı pulmoner hipertansiyona, sert P2\'ye ve S3\'e yol açar.'
     }
   }),
   tricuspid_regurgitation: f('tricuspid_regurgitation', {
@@ -167,6 +196,13 @@ export const FINDINGS = Object.freeze({
 
 export const FINDING_IDS = Object.freeze(Object.keys(FINDINGS));
 
+/** Levine grade (1..6) for a score; findings without a murmur stay at 0, duration findings keep their grade. */
+function gradeFor(finding, score) {
+  if (!finding.grade) return 0;
+  if (finding.metric === 'duration') return finding.grade;
+  return Math.max(1, Math.min(6, finding.grade + score * 2));
+}
+
 /** Linear response score of a finding to a physiologic state. */
 export function responseScore(findingId, physio) {
   const finding = FINDINGS[findingId];
@@ -184,9 +220,7 @@ export function respond(findingId, maneuverId, level = 1) {
   const score = responseScore(findingId, physio);
   const direction = score > RESPONSE_THRESHOLD ? '+' : score < -RESPONSE_THRESHOLD ? '-' : '0';
   // Levine grade moves about one step per 0.5 of score, within 1..6.
-  const grade = finding.metric === 'duration'
-    ? finding.grade
-    : Math.max(1, Math.min(6, Math.round((finding.grade + score * 2) * 2) / 2));
+  const grade = Math.round(gradeFor(finding, score) * 2) / 2;
   return {
     score,
     direction,
@@ -225,9 +259,9 @@ export function heartSoundEvents(findingId, physio, { rhythm = 'sinus' } = {}) {
   const sounds = new Set(finding?.sounds || []);
   const split = sounds.has('wide_split') ? 0.05 + 0.02 * Math.max(0, physio.rightReturn) : 0.012 + 0.03 * Math.max(0, physio.rightReturn);
   const events = [
-    { u: S.avClosed, amp: sounds.has('loud_S1') ? 1 : 0.8, label: 'S1', width: 0.012 },
+    { u: S.avClosed, amp: sounds.has('loud_S1') ? 1 : sounds.has('soft_S1') ? 0.22 : 0.8, label: 'S1', width: 0.012 },
     { u: S.ivrStart, amp: sounds.has('soft_A2') ? 0.35 : 0.75, label: 'A2', width: 0.01 },
-    { u: S.ivrStart + split, amp: 0.45, label: 'P2', width: 0.009 }
+    { u: S.ivrStart + split, amp: sounds.has('loud_P2') ? 0.85 : 0.45, label: 'P2', width: 0.009 }
   ];
   if (sounds.has('S3')) events.push({ u: 0.08, amp: 0.35 + 0.2 * Math.max(0, physio.proximity), label: 'S3', width: 0.012 });
   if (sounds.has('S4') && rhythm !== 'afib') events.push({ u: 0.41, amp: 0.35 + 0.2 * Math.max(0, physio.proximity), label: 'S4', width: 0.01 });
@@ -238,6 +272,29 @@ export function heartSoundEvents(findingId, physio, { rhythm = 'sinus' } = {}) {
 }
 
 const bell = (u, center, width) => Math.exp(-(((u - center) / width) ** 2));
+const EJECTION_START = S.ejectionStart + 0.01;
+const SYSTOLE_END = S.ivrStart - 0.005;
+
+/** Crescendo-decrescendo ejection shape (0..1) peaking at `peak`. */
+function ejectionShape(uu, peak) {
+  if (uu < EJECTION_START || uu > SYSTOLE_END) return 0;
+  const width = uu < peak ? peak - EJECTION_START : SYSTOLE_END - peak;
+  return (1 - Math.abs(uu - peak) / width) ** 1.3;
+}
+
+/** Linear decrescendo (0..1) starting at `start` and lasting `span` (phase units). */
+function decrescendo(uu, start, span) {
+  const t = uu >= start ? uu - start : uu + 1 - start;
+  return t <= span ? 1 - t / span : 0;
+}
+
+/** Early systolic decrescendo (acute MR): starts with S1, stops after `span`, a short attack. */
+function earlySystolicShape(uu, span) {
+  const start = S.avClosed + 0.004;
+  if (uu < start || uu > start + span) return 0;
+  const t = (uu - start) / span;
+  return Math.min(1, t / 0.04) * (1 - t) ** 1.2;
+}
 
 /**
  * Murmur envelope (0..1) at phase u for a finding in a physiologic state,
@@ -248,29 +305,31 @@ export function murmurEnvelope(findingId, u, physio, { rhythm = 'sinus' } = {}) 
   if (!finding) return 0;
   const uu = ((u % 1) + 1) % 1;
   const score = responseScore(findingId, physio);
-  const grade = finding.metric === 'duration' ? finding.grade : Math.max(1, Math.min(6, finding.grade + score * 2));
+  const grade = gradeFor(finding, score);
   const level = grade / 6;
-  const start = S.ejectionStart + 0.01;
-  const end = S.ivrStart - 0.005;
+  // A soft systolic flow murmur rides along (acute AR), scaled with the main murmur.
+  const flow = finding.flowGrade ? (finding.flowGrade / 6) * (grade / finding.grade) * ejectionShape(uu, 0.64) : 0;
+  return flow + mainEnvelope(finding, uu, physio, { score, level, rhythm });
+}
+
+function mainEnvelope(finding, uu, physio, { score, level, rhythm }) {
   switch (finding.shape) {
     case 'ejection': {
-      if (uu < start || uu > end) return 0;
       // Dynamic obstruction and severe stenosis peak later as they worsen.
-      const peak = Math.min(end - 0.04, finding.peak + (finding.lvot ? 0.03 * Math.max(0, score) : 0));
-      const width = uu < peak ? peak - start : end - peak;
-      return level * (1 - Math.abs(uu - peak) / width) ** 1.3;
+      const peak = Math.min(SYSTOLE_END - 0.04, finding.peak + (finding.lvot ? 0.03 * Math.max(0, score) : 0));
+      return level * ejectionShape(uu, peak);
     }
+    case 'early-systolic':
+      return level * earlySystolicShape(uu, finding.span);
     case 'holosystolic':
       return uu >= S.avClosed + 0.004 && uu <= S.ivrStart ? level * 0.9 : 0;
     case 'late-systolic': {
       const click = mvpClickPhase(physio);
       return uu >= click && uu <= S.ivrStart ? level * (0.6 + 0.4 * (uu - click) / (S.ivrStart - click)) : 0;
     }
-    case 'early-diastolic': {
-      const t = uu >= S.ivrStart ? uu - S.ivrStart : uu + 1 - S.ivrStart;
-      const span = 0.42;
-      return t <= span ? level * (1 - t / span) : 0;
-    }
+    case 'early-diastolic':
+    case 'short-early-diastolic':
+      return level * decrescendo(uu, S.ivrStart, finding.span || 0.42);
     case 'rumble': {
       if (uu < 0.035 || uu >= S.avClosed) return 0;
       const early = uu < 0.32 ? 1 - 0.6 * (uu - 0.035) / 0.285 : 0.4;

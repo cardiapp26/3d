@@ -77,4 +77,49 @@ const split = maneuver => {
 assert.ok(split('inspiration') > split('expiration'), 'physiologic S2 split widens on inspiration');
 assert.ok(!heartSoundEvents('hocm', restPhysio, { rhythm: 'afib' }).some(e => e.label === 'S4'), 'no S4 in AF');
 
+// Normal reference: no murmur, grade 0, A2 before P2
+assert.equal(FINDINGS.normal.kind, 'reference');
+assert.equal(respond('normal', 'handgrip').grade, 0, 'normal stays without a murmur');
+for (let u = 0; u < 1; u += 0.01) assert.equal(murmurEnvelope('normal', u, restPhysio), 0, `no murmur in normal (u=${u.toFixed(2)})`);
+const normalEvents = heartSoundEvents('normal', restPhysio);
+assert.deepEqual(normalEvents.map(e => e.label), ['S1', 'A2', 'P2'], 'normal: S1, A2, P2 only');
+assert.ok(normalEvents[1].u < normalEvents[2].u, 'A2 precedes P2');
+
+// Acute severe MR: early decrescendo that stops well before A2, with an S3
+const amr = u => murmurEnvelope('acute_mitral_regurgitation', u, restPhysio);
+assert.equal(FINDINGS.acute_mitral_regurgitation.kind, 'systolic');
+assert.ok(amr(S.avClosed + 0.03) > 0, 'acute MR starts at S1');
+assert.ok(amr(S.avClosed + 0.03) > amr(S.avClosed + 0.15), 'acute MR decrescendo');
+const amrEnd = S.avClosed + 0.004 + FINDINGS.acute_mitral_regurgitation.span;
+assert.ok(amrEnd < S.ivrStart - 0.1, 'acute MR ends well before A2');
+for (let u = amrEnd + 0.005; u < 1; u += 0.01) assert.equal(amr(u), 0, `acute MR silent after mid-systole (u=${u.toFixed(2)})`);
+assert.ok(amr(0.2) === 0, 'acute MR silent in diastole');
+assert.ok(heartSoundEvents('acute_mitral_regurgitation', restPhysio).some(e => e.label === 'S3'), 'acute MR has an S3');
+assert.ok(Math.max(...[0.5, 0.55, 0.6].map(amr)) < murmurEnvelope('mitral_regurgitation', 0.55, restPhysio), 'acute MR fainter than chronic');
+
+// Acute severe AR: short early diastolic decrescendo, soft systolic flow murmur, soft S1, loud P2, S3
+const aar = u => murmurEnvelope('acute_aortic_regurgitation', u, restPhysio);
+const ar = u => murmurEnvelope('aortic_regurgitation', u, restPhysio);
+assert.ok(aar(S.ivrStart + 0.01) > aar(S.ivrStart + 0.12), 'acute AR decrescendo');
+assert.equal(aar(0.15), 0, 'acute AR is over by mid-diastole');
+assert.ok(ar(0.15) > 0, 'chronic AR still audible there (longer murmur)');
+assert.ok(aar(0.64) > 0 && aar(0.64) < murmurEnvelope('aortic_stenosis', FINDINGS.aortic_stenosis.peak, restPhysio), 'soft systolic flow murmur in acute AR');
+assert.equal(aar(S.avClosed + 0.03), 0, 'flow murmur waits for ejection');
+const aarEvents = Object.fromEntries(heartSoundEvents('acute_aortic_regurgitation', restPhysio).map(e => [e.label, e]));
+const normalBy = Object.fromEntries(normalEvents.map(e => [e.label, e]));
+assert.ok(aarEvents.S1.amp < 0.4 * normalBy.S1.amp, 'acute AR: soft or absent S1 (premature mitral closure)');
+assert.ok(aarEvents.P2.amp > aarEvents.A2.amp && aarEvents.P2.amp > normalBy.P2.amp, 'acute AR: loud P2, soft A2');
+assert.ok(aarEvents.S3, 'acute AR has an S3');
+
+// Chronic MS: loud S1, loud P2, OS after A2; chronic AS: soft A2, late peak
+const ms = Object.fromEntries(heartSoundEvents('mitral_stenosis', restPhysio).map(e => [e.label, e]));
+assert.ok(ms.S1.amp > normalBy.S1.amp && ms.P2.amp > normalBy.P2.amp && ms.OS, 'MS: loud S1, loud P2, opening snap');
+const asA2 = heartSoundEvents('aortic_stenosis', restPhysio).find(e => e.label === 'A2');
+assert.ok(asA2.amp < normalBy.A2.amp, 'AS: soft A2');
+assert.ok(FINDINGS.aortic_stenosis.peak > (S.ejectionStart + S.ivrStart) / 2, 'AS peaks after mid-systole');
+for (const id of FINDING_IDS) for (const text of [FINDINGS[id].label, FINDINGS[id].teaching, FINDINGS[id].radiation]) {
+  for (const v of Object.values(text)) assert.ok(!v.includes('\u2014'), `${id}: no em dash`);
+  assert.ok(text.tr && text.en, `${id}: bilingual text`);
+}
+
 console.log(`PASS: physical examination model reproduces ${checked} textbook maneuver responses and LVOT provocation`);
