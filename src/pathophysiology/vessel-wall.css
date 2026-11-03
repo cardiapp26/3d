@@ -1,0 +1,64 @@
+/* Vessel wall mechanics lab (Laplace and Hagen-Poiseuille). */
+.vw-lab {
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid var(--border, #e2e8e5);
+  border-radius: var(--radius-lg, 14px);
+  background: linear-gradient(180deg, #fff8f6 0%, #ffffff 60%);
+  box-shadow: var(--shadow-sm, none);
+}
+.vw-head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-start; justify-content: space-between; }
+.vw-head > div:first-child { flex: 1 1 420px; min-width: 0; }
+.vw-head h3 { margin: 0 0 4px; font-size: 1.15rem; color: #6f1414; }
+.vw-head p { margin: 0; color: var(--text-muted, #4b635b); font-size: 0.9rem; line-height: 1.45; }
+.vw-motion { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.85rem; }
+.vw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.vw-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #f0d4cf;
+  border-radius: var(--radius-md, 10px);
+  background: #fff;
+}
+.vw-card h4 { margin: 0; font-size: 0.98rem; color: #3b1d1d; }
+.vw-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.vw-presets .preset-pill { font-size: 0.78rem; }
+.vw-svg { display: block; width: 100%; height: auto; max-height: 340px; background: #fffdfb; border-radius: 8px; }
+.vw-svg .vw-label { font: 600 11px/1 system-ui, sans-serif; }
+.vw-svg .vw-strong { font-weight: 800; font-size: 12px; }
+.vw-svg .vw-small { font-size: 9.5px; }
+.vw-svg .vw-sub { font-size: 8px; baseline-shift: sub; }
+.vw-slider { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; font-size: 0.82rem; }
+.vw-slider span { color: var(--text-main, #132a24); font-weight: 600; }
+.vw-slider input { grid-column: 1 / -1; width: 100%; accent-color: #b84a4a; }
+.vw-slider output { grid-row: 1; grid-column: 2; font-variant-numeric: tabular-nums; color: #6f1414; font-weight: 700; }
+.vw-bars { display: grid; gap: 4px; }
+.vw-bar { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 2px 8px; align-items: center; font-size: 0.78rem; }
+.vw-bar span { grid-column: 1 / -1; color: var(--text-muted, #4b635b); }
+.vw-bar b { display: block; height: 9px; min-width: 2px; border-radius: 5px; background: #f08a00; transition: width 0.2s; }
+.vw-bar[data-vw-bar="axial"] b { background: #f5b400; }
+.vw-bar[data-vw-bar="radial"] b { background: #c026d3; }
+.vw-bar em { font-style: normal; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.vw-meta { margin: 0; font-size: 0.8rem; color: #3b1d1d; font-variant-numeric: tabular-nums; line-height: 1.4; }
+.vw-note { margin: 0; font-size: 0.8rem; color: var(--text-sub, #69827a); line-height: 1.45; }
+.vw-zone { margin: 0; padding: 7px 9px; border-radius: 8px; font-size: 0.82rem; line-height: 1.4; background: #ecfdf3; color: #14532d; }
+.vw-zone[data-zone="dilated"], .vw-zone[data-zone="intermediate"] { background: #fff7e6; color: #7c4a03; }
+.vw-zone[data-zone="high-risk"], .vw-zone[data-zone="low"] { background: #ffedd5; color: #9a3412; }
+.vw-zone[data-zone="surgery"], .vw-zone[data-zone="high"] { background: #fee2e2; color: #991b1b; }
+.vw-cycle { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.vw-cycle li { padding: 3px 8px; border: 1px solid #f0d4cf; border-radius: 999px; font-size: 0.75rem; color: #6b3a3a; transition: background 0.2s, color 0.2s; }
+.vw-cycle li.is-on { background: #b84a4a; border-color: #b84a4a; color: #fff; }
+.vw-layers { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 0.76rem; color: #3b1d1d; }
+.vw-layers i { display: inline-block; width: 12px; height: 8px; margin-right: 4px; border-radius: 2px; vertical-align: middle; }
+@media (max-width: 520px) {
+  .vw-lab { padding: 10px; }
+  .vw-grid { grid-template-columns: minmax(0, 1fr); }
+}

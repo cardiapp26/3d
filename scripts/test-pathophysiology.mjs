@@ -21,6 +21,12 @@ import { createValvularLab } from '../src/pathophysiology/valvular-lab.js';
 import { createIschemicCascadeLab } from '../src/pathophysiology/ischemic-cascade-lab.js';
 import { createHeartFailureLab } from '../src/pathophysiology/heart-failure-lab.js';
 import { createPericardialLab } from '../src/pathophysiology/pericardial-lab.js';
+import {
+  laplaceStresses, dilatedAorta, aortaZone, wallShear, shearZone, poiseuilleVelocity,
+  pulsePressureAt, oscillatoryShearIndex, MMHG_TO_KPA
+} from '../src/pathophysiology/vessel-wall-model.js';
+import { laplaceSvg, aortaSvg, shearSvg, lumenHalf } from '../src/pathophysiology/vessel-wall-svg.js';
+import { VW_TEXT } from '../src/pathophysiology/vessel-wall-text.js';
 
 test('Pathophysiology: data structures and bilingual integrity', () => {
   assert.equal(PATHOPHYS_STATIONS.length, 16, 'Should have exactly 16 didactic stations');
@@ -89,6 +95,11 @@ test('Pathophysiology: zero em-dashes house rule across all files', () => {
     'src/pathophysiology/pah-rv-lab.js',
     'src/pathophysiology/myocardial-ckm-lab.js',
     'src/pathophysiology/achd-shunts-lab.js',
+    'src/pathophysiology/vessel-wall-model.js',
+    'src/pathophysiology/vessel-wall-svg.js',
+    'src/pathophysiology/vessel-wall-text.js',
+    'src/pathophysiology/vessel-wall-lab.js',
+    'src/pathophysiology/vessel-wall.css',
     'src/pathophysiology/pathophysiology.css',
     'src/pathophysiology/main.js',
     'pathophysiology/index.html'
@@ -108,4 +119,67 @@ test('Pathophysiology: index.html has valid metadata and version alignment', () 
   assert.match(html, /name="app-version"\s+content="1\.17\.0"/);
   assert.match(html, /name="app-build"\s+content="v17"/);
   assert.match(html, /data-cardia-root="\.\.\/"/);
+});
+
+test('Vessel wall: Laplace stresses of a thin-walled cylinder', () => {
+  const s = laplaceStresses({ pInt: 120, pExt: 0, r: 12.5, h: 2 });
+  assert.ok(Math.abs(s.hoop - (120 * 12.5 / 2) * MMHG_TO_KPA) < 1e-9, 'hoop = P r / h');
+  assert.ok(Math.abs(s.axial - s.hoop / 2) < 1e-9, 'axial is half the hoop stress');
+  assert.ok(Math.abs(s.radialInner + 120 * MMHG_TO_KPA) < 1e-9, 'radial stress at the intima equals -Pint');
+  assert.ok(s.hoop > Math.abs(s.radialInner) * 6, 'hoop dominates radial by about r/h');
+  const ext = laplaceStresses({ pInt: 120, pExt: 30, r: 12.5, h: 2 });
+  assert.equal(ext.transmural, 90);
+  assert.ok(ext.hoop < s.hoop, 'external pressure lowers transmural stress');
+  const thick = laplaceStresses({ pInt: 180, r: 13.5, h: 3 });
+  const thin = laplaceStresses({ pInt: 180, r: 13.5, h: 2 });
+  assert.ok(Math.abs(thin.hoop / thick.hoop - 1.5) < 1e-9, 'hypertrophy lowers stress in proportion to h');
+});
+
+test('Vessel wall: dilated aorta stress rises with the square of the diameter', () => {
+  const ref = dilatedAorta({ diameter: 32, pressure: 120 });
+  assert.ok(Math.abs(ref.ratio - 1) < 1e-9);
+  const big = dilatedAorta({ diameter: 64, pressure: 120 });
+  assert.ok(Math.abs(big.ratio - 4) < 1e-9, 'double diameter at constant wall mass = 4x stress');
+  assert.ok(big.wall < ref.wall, 'wall thins');
+  assert.deepEqual([38, 45, 52, 56].map(aortaZone), ['normal', 'dilated', 'high-risk', 'surgery']);
+});
+
+test('Vessel wall: Hagen-Poiseuille wall shear', () => {
+  const c = wallShear({ vMean: 0.2, diameter: 3.5, viscosity: 3.5 });
+  assert.ok(Math.abs(c.tau - 8 * 0.0035 * 0.2 / 0.0035) < 1e-9, 'tau = 8 mu V / D');
+  assert.ok(Math.abs(c.dyn - c.tau * 10) < 1e-9, '1 Pa = 10 dyn/cm2');
+  assert.equal(c.zone, 'protective');
+  assert.equal(wallShear({ vMean: 0.07, diameter: 6 }).zone, 'low');
+  assert.equal(wallShear({ vMean: 0.9, diameter: 1.4 }).zone, 'high');
+  assert.ok(wallShear({ vMean: 0.2, diameter: 3.5, viscosity: 6 }).tau > c.tau, 'viscosity raises shear');
+  assert.deepEqual([0.2, 1, 3, 9].map(shearZone), ['low', 'intermediate', 'protective', 'high']);
+  assert.equal(poiseuilleVelocity(0.2, 0), 0.4, 'centreline is twice the mean');
+  assert.equal(poiseuilleVelocity(0.2, 1), 0, 'no slip at the wall');
+  assert.ok(c.reynolds < 2000, 'coronary flow is laminar');
+});
+
+test('Vessel wall: pulse and oscillatory shear', () => {
+  for (let i = 0; i < 20; i++) {
+    const p = pulsePressureAt(i / 20, 120, 80);
+    assert.ok(p >= 80 - 1e-9 && p <= 120 + 1e-9, 'pressure stays between DBP and SBP');
+  }
+  assert.equal(oscillatoryShearIndex(false), 0, 'laminar flow never reverses');
+  const osi = oscillatoryShearIndex(true);
+  assert.ok(osi > 0.1 && osi < 0.5, `bifurcation OSI ${osi}`);
+});
+
+test('Vessel wall: SVG frames are well formed and bilingual text is complete', () => {
+  const t = VW_TEXT.tr;
+  const a = laplaceSvg({ pNow: 110, pExt: 20, r: 12.5, h: 2, hoop: 100, axial: 50, hoopNow: 90, pulse: 0.5 }, t);
+  assert.match(a, /data-vw-hoop/);
+  assert.match(a, /P<tspan class="vw-sub">ext/);
+  const b = aortaSvg({ diameter: 60, wall: 1.2, hoop: 300, hoopNow: 260, ratio: 3.5, pNow: 120, pulse: 0.2 }, t);
+  assert.match(b, /d 60 mm/);
+  const c = shearSvg({ diameter: 3.5, factor: -0.4, tauNow: -0.6, zone: 'low', particles: [{ x: 10, rho: 0.2 }] }, t);
+  assert.equal((c.match(/class="vw-rbc"/g) || []).length, 1);
+  assert.ok(!/NaN|undefined/.test(a + b + c), 'no NaN or undefined in markup');
+  assert.ok(lumenHalf(30) <= 76 && lumenHalf(1) >= 22);
+  const keys = o => Object.keys(o).sort().join();
+  assert.equal(keys(VW_TEXT.tr), keys(VW_TEXT.en));
+  for (const k of ['lapPresets', 'shPresets', 'zones', 'shZones', 'layers']) assert.equal(keys(VW_TEXT.tr[k]), keys(VW_TEXT.en[k]), k);
 });

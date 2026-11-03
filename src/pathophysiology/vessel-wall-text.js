@@ -1,0 +1,65 @@
+// TR/EN text for the vessel wall mechanics lab.
+export const VW_TEXT = {
+  tr: {
+    title: 'Damar Duvarı Gerilimleri: Laplace ve Hagen-Poiseuille',
+    intro: 'Arter duvarına üç yönde gerilim biner: basıncın açtığı çevresel (σc), boyuna (σL) ve radyal (σr) gerilim; akımın endotele uyguladığı kayma gerilimi (τw) ise ayrı bir sinyaldir. Kaydırıcıları oynatın, kalp atımıyla değişen değerleri izleyin.',
+    motion: 'Canlı mekanizma', play: '▷ Oynat', pause: 'Ⅱ Duraklat', speed: 'Hız', now: 'Anlık',
+    lapTitle: 'A · Laplace: silindirik arter segmenti',
+    lapPresets: { normal: 'Normal aort', htn: 'Hipertansiyon', hypertrophy: 'HT + medial hipertrofi', external: 'Dış basınç ↑' },
+    sbp: 'Sistolik basınç (Pint)', pext: 'Dış basınç (Pext)', radius: 'Lümen yarıçapı (r)', wall: 'Duvar kalınlığı (h)',
+    hoop: 'Çevresel σc = Pt·r / h', axial: 'Boyuna σL = Pt·r / 2h', radial: 'Radyal σr: −Pint (intima) → −Pext',
+    transmural: 'Transmural basınç Pt = Pint − Pext', rOverH: 'r/h', thinWall: 'ince duvar yaklaşımı geçerli', thickWall: 'kalın duvar: yaklaşık değer',
+    hNeeded: 'σc\'yi normale indiren duvar', lapNote: 'Çevresel gerilim boyunanın iki katı, radyal gerilimin ise yaklaşık r/h katıdır. Basınç artınca media hipertrofisi (h ↑) gerilimi normale çeker: arteriyel konsantrik yeniden yapılanmanın Laplace mantığı.',
+    aorTitle: 'B · Aort kökü: genişleme gerilimi büyütür',
+    diameter: 'Asendan aort çapı', grow: '▶ Kısır döngüyü oynat', stopGrow: 'Ⅱ Döngüyü durdur', reset: 'Sıfırla',
+    aorPressure: 'Basınç: A panelindeki sistolik değer', ratio: 'Normale göre σc', wallNow: 'Duvar',
+    zones: { normal: 'Normal (<40 mm)', dilated: 'Dilatasyon: düzenli görüntüleme', 'high-risk': '≥50 mm: risk faktörü varsa cerrahi düşün', surgery: '≥55 mm: cerrahi eşik (ESC 2024)' },
+    cycle: ['Çap ↑ (r ↑)', 'Duvar incelir (h ↓)', 'σc ↑ (≈ d²)', 'Elastin kırılması, MMP ↑', 'Daha fazla genişleme'],
+    aorNote: 'Duvar kütlesi sabitken çap büyüdükçe duvar incelir; σc çapın karesiyle artar. Bu yüzden büyük anevrizma daha hızlı büyür ve diseksiyon/rüptür riski çapla katlanır. Kan basıncı kontrolü Pint\'i düşürerek döngüyü yavaşlatır.',
+    lvot: 'LVOT', sinus: 'Valsalva sinüsü',
+    shTitle: 'C · Hagen-Poiseuille: duvar kayma gerilimi',
+    shPresets: { coronary: 'Koroner, laminer', bifurcation: 'Bifurkasyon dış duvarı', stenosis: 'Darlık boğazı', polycythemia: 'Polisitemi (μ ↑)' },
+    velocity: 'Ortalama hız (Vm)', diam: 'Damar çapı (D)', viscosity: 'Viskozite (μ)',
+    tau: 'τw = 8μ·Vm / D', reynolds: 'Reynolds', osi: 'Osilatuar kayma indeksi', turbulent: 'türbülan riski',
+    layers: { endothelium: 'Endotel', intima: 'İntima', media: 'Media', adventitia: 'Adventisya' },
+    shZones: {
+      low: 'Aterojenik: düşük/osilatuar kayma. KLF2 ve eNOS azalır, NF-κB ve VCAM-1 artar; endotel parke taşı biçimine döner, apoB partikülleri daha kolay girer.',
+      intermediate: 'Ara bölge: koruma kısmi.',
+      protective: 'Ateroprotektif laminer kayma: KLF2/KLF4 → eNOS, NO ↑; endotel akım yönünde uzanır.',
+      high: 'Çok yüksek kayma: darlık boğazı. vWF açılır, trombosit aktive olur; plak yüzeyinde erozyon ve yırtılma riski.'
+    },
+    shNote: 'Poiseuille parabolik profil varsayar (sabit, laminer akım, düz tüp). Aortta profil küttür; formül orada gerçek τw\'yi olduğundan düşük gösterir.',
+    zoneTitle: 'Endotel yanıtı'
+  },
+  en: {
+    title: 'Vessel Wall Stresses: Laplace and Hagen-Poiseuille',
+    intro: 'Three stresses load the arterial wall: circumferential (σc), longitudinal (σL) and radial (σr), all driven by pressure; the shear stress (τw) that flow exerts on the endothelium is a separate signal. Move the sliders and watch the values change with each beat.',
+    motion: 'Live mechanism', play: '▷ Play', pause: 'Ⅱ Pause', speed: 'Speed', now: 'Now',
+    lapTitle: 'A · Laplace: cylindrical arterial segment',
+    lapPresets: { normal: 'Normal aorta', htn: 'Hypertension', hypertrophy: 'HTN + medial hypertrophy', external: 'External pressure ↑' },
+    sbp: 'Systolic pressure (Pint)', pext: 'External pressure (Pext)', radius: 'Lumen radius (r)', wall: 'Wall thickness (h)',
+    hoop: 'Circumferential σc = Pt·r / h', axial: 'Longitudinal σL = Pt·r / 2h', radial: 'Radial σr: −Pint (intima) → −Pext',
+    transmural: 'Transmural pressure Pt = Pint − Pext', rOverH: 'r/h', thinWall: 'thin-wall approximation valid', thickWall: 'thick wall: approximate',
+    hNeeded: 'Wall that normalises σc', lapNote: 'Circumferential stress is twice the longitudinal and about r/h times the radial stress. When pressure rises, medial hypertrophy (h ↑) brings stress back to normal: the Laplace logic of concentric arterial remodelling.',
+    aorTitle: 'B · Aortic root: dilation amplifies stress',
+    diameter: 'Ascending aortic diameter', grow: '▶ Play the vicious cycle', stopGrow: 'Ⅱ Stop the cycle', reset: 'Reset',
+    aorPressure: 'Pressure: systolic value from panel A', ratio: 'σc versus normal', wallNow: 'Wall',
+    zones: { normal: 'Normal (<40 mm)', dilated: 'Dilated: regular imaging', 'high-risk': '≥50 mm: consider surgery with risk factors', surgery: '≥55 mm: surgical threshold (ESC 2024)' },
+    cycle: ['Diameter ↑ (r ↑)', 'Wall thins (h ↓)', 'σc ↑ (≈ d²)', 'Elastin breaks, MMP ↑', 'Further dilation'],
+    aorNote: 'With a constant wall mass the wall thins as the diameter grows, so σc rises with the square of the diameter. Large aneurysms therefore grow faster and the risk of dissection or rupture climbs steeply with size. Blood pressure control lowers Pint and slows the cycle.',
+    lvot: 'LVOT', sinus: 'Sinus of Valsalva',
+    shTitle: 'C · Hagen-Poiseuille: wall shear stress',
+    shPresets: { coronary: 'Coronary, laminar', bifurcation: 'Bifurcation outer wall', stenosis: 'Stenosis throat', polycythemia: 'Polycythaemia (μ ↑)' },
+    velocity: 'Mean velocity (Vm)', diam: 'Vessel diameter (D)', viscosity: 'Viscosity (μ)',
+    tau: 'τw = 8μ·Vm / D', reynolds: 'Reynolds', osi: 'Oscillatory shear index', turbulent: 'turbulence risk',
+    layers: { endothelium: 'Endothelium', intima: 'Intima', media: 'Media', adventitia: 'Adventitia' },
+    shZones: {
+      low: 'Atherogenic: low or oscillatory shear. KLF2 and eNOS fall, NF-κB and VCAM-1 rise; the endothelium turns cobblestone and apoB particles enter more easily.',
+      intermediate: 'Intermediate: partial protection.',
+      protective: 'Atheroprotective laminar shear: KLF2/KLF4 → eNOS, NO ↑; the endothelium aligns with flow.',
+      high: 'Very high shear: stenosis throat. vWF unfolds and platelets activate; erosion and rupture risk at the plaque surface.'
+    },
+    shNote: 'Poiseuille assumes a parabolic profile (steady laminar flow in a straight tube). The aortic profile is blunt, so the formula underestimates the true τw there.',
+    zoneTitle: 'Endothelial response'
+  }
+};
