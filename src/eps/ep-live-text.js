@@ -113,6 +113,8 @@ export const LIVE_TEXT = {
       noReentry: (origin) => (origin ? `Makro-reentri yok · son atriyal aktivasyon: ${origin}` : 'Makro-reentri yok'),
       origins: { circuit: 'flutter devresi', sinus: 'sinüs düğümü', hra: 'HRA pacing', cti: 'CTI pacing (ABL d)', cs: 'CS (pacing ya da sol atriyum)', septal: 'septum (retrograd)', left: 'sol atriyum', af: 'AF (düzensiz dalgacıklar)', other: 'başka bir odak' },
       replay: 'Son 2 döngüyü yavaş oynat', replayStop: 'Durdur',
+      demo: 'Tipik → ters tipik (şema)', demoStop: 'Şemayı durdur',
+      demoFront: (dir, seg) => `${dir === 'cw' ? 'Saat yönünde (ters tipik): DII\'de pozitif F dalgası' : 'Saat yönünün tersine (tipik): DII\'de negatif testere dişi'} · ${seg}`,
       entraining: (site, pcl) => `Entrainment, ${site}${pcl ? `, PCL ${pcl} ms` : ''}: ortodromik cephe (renkli) devreyi sürer, antidromik cephe (beyaz) önündeki dalgayla çarpışır.`,
       entrainResult: (x) => `${x.siteName}: PPI ${x.ppi} ms, PPI−TCL ${x.ppiTcl} ms → ${x.verdict === 'inCircuit' ? 'devre içi' : 'devre dışı'}${{
         concealed: '; gizli füzyon: F dalgası ve iç aktivasyon sırası flutter ile aynı (korunan istmus).',
@@ -225,6 +227,8 @@ export const LIVE_TEXT = {
       noReentry: (origin) => (origin ? `No macro-reentry · latest atrial activation: ${origin}` : 'No macro-reentry'),
       origins: { circuit: 'the flutter circuit', sinus: 'sinus node', hra: 'HRA pacing', cti: 'CTI pacing (ABL d)', cs: 'CS (pacing or left atrium)', septal: 'septum (retrograde)', left: 'left atrium', af: 'AF (disorganized wavelets)', other: 'another focus' },
       replay: 'Replay the last 2 cycles slowly', replayStop: 'Stop',
+      demo: 'Typical → reverse typical (schematic)', demoStop: 'Stop the schematic',
+      demoFront: (dir, seg) => `${dir === 'cw' ? 'Clockwise (reverse typical): positive F waves in II' : 'Counterclockwise (typical): negative sawtooth in II'} · ${seg}`,
       entraining: (site, pcl) => `Entrainment, ${site}${pcl ? `, PCL ${pcl} ms` : ''}: the orthodromic front (coloured) drives the circuit, the antidromic one (white) collides with the wave ahead of it.`,
       entrainResult: (x) => `${x.siteName}: PPI ${x.ppi} ms, PPI−TCL ${x.ppiTcl} ms → ${x.verdict === 'inCircuit' ? 'in the circuit' : 'outside the circuit'}${{
         concealed: '; concealed fusion: the F wave and the intracardiac sequence equal the flutter (protected isthmus).',
