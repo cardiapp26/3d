@@ -70,6 +70,25 @@ const { startApp } = require('./lib/app-server.cjs');
     assert.notEqual(await page.locator('.pathophys-htn-lab .readout-value').first().textContent(), bpBefore, 'drug lowers central BP');
     await page.screenshot({ path: `${shots}/htn_screenshot.png` });
 
+    // Vessel wall stresses (Laplace + Hagen-Poiseuille) under the vascular station
+    await page.waitForSelector('[data-vessel-wall-lab] [data-vw-hoop]');
+    const toggleVw = page.locator('[data-vw-toggle]');
+    if ((await toggleVw.getAttribute('aria-pressed')) !== 'true') await toggleVw.click();
+    await page.locator('[data-vw-card="shear"]').scrollIntoViewIfNeeded();
+    const rbcBefore = await page.locator('.vw-rbc').first().getAttribute('cx');
+    await page.waitForTimeout(400);
+    assert.notEqual(await page.locator('.vw-rbc').first().getAttribute('cx'), rbcBefore, 'red cells move with the flow');
+    assert.equal(await page.locator('[data-vw-shear-zone]').getAttribute('data-zone'), 'protective', 'coronary laminar shear is protective');
+    await page.click('[data-vw-preset="shear.bifurcation"]');
+    assert.equal(await page.locator('[data-vw-shear-zone]').getAttribute('data-zone'), 'low', 'bifurcation outer wall is atheroprone');
+    await page.click('[data-vw-preset="shear.stenosis"]');
+    assert.equal(await page.locator('[data-vw-shear-zone]').getAttribute('data-zone'), 'high', 'stenosis throat has very high shear');
+    const hoopBefore = await page.locator('[data-vw-bar="hoop"] em').textContent();
+    await page.click('[data-vw-preset="lap.htn"]');
+    assert.notEqual(await page.locator('[data-vw-bar="hoop"] em').textContent(), hoopBefore, 'hypertension raises hoop stress');
+    await page.locator('[data-vw-input="aorta.diameter"]').fill('56');
+    assert.equal(await page.locator('[data-vw-aorta-zone]').getAttribute('data-zone'), 'surgery', '56 mm crosses the surgical threshold');
+
     await page.click('[data-station="pah-rv"]');
     await page.waitForSelector('.pah-svg');
     await page.click('[data-pah-toggle="sota"]');

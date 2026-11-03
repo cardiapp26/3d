@@ -20,8 +20,10 @@ import { createHypertensionLab } from './hypertension-lab.js';
 import { createPahRvLab } from './pah-rv-lab.js';
 import { createMyocardialCkmLab } from './myocardial-ckm-lab.js';
 import { createAchdShuntsLab } from './achd-shunts-lab.js';
+import { createVesselWallLab } from './vessel-wall-lab.js';
 
 import './pathophysiology.css';
+import './vessel-wall.css';
 import { createVisualInteraction } from './visual-interaction.js';
 
 const params = new URLSearchParams(window.location.search);
@@ -45,7 +47,7 @@ const LAB_FACTORIES = {
   'forrester': createForresterLab,
   'valvular': createValvularLab,
   'electrophys': createElectrophysLab,
-  'hypertension-vascular': createHypertensionLab,
+  'hypertension-vascular': createVascularStation,
   'pah-rv': createPahRvLab,
   'achd-shunts': createAchdShuntsLab
 };
@@ -58,6 +60,16 @@ function createPvStation(opts) {
   return {
     updateLanguage(next) { lab.updateLanguage?.(next); scenarioLoop.setLanguage(next); },
     destroy() { lab.destroy?.(); scenarioLoop.destroy(); }
+  };
+}
+
+/** Vascular station: hypertension and wave reflection, then the vessel wall stress lab. */
+function createVascularStation(opts) {
+  const lab = createHypertensionLab(opts);
+  const wall = createVesselWallLab({ container: opts.container, lang: opts.lang });
+  return {
+    updateLanguage(next) { lab.updateLanguage?.(next); wall.setLanguage(next); },
+    destroy() { lab.destroy?.(); wall.destroy(); }
   };
 }
 
