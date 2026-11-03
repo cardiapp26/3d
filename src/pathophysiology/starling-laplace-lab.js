@@ -1,5 +1,31 @@
 // Frank-Starling Law and Laplace Wall Stress interactive simulator.
 import { wallStress } from '../hemo-loads-model.js';
+import { createCycleClock, createMotionBar, cycleShape, tweenValues } from './cycle-clock.js';
+
+const INOTROPY = Object.freeze({ enhanced: { max: 130, k: 0.016 }, normal: { max: 95, k: 0.014 }, depressed: { max: 55, k: 0.012 } });
+const strokeVolume = (edv, state) => Math.max(10, INOTROPY[state].max * (1 - Math.exp(-INOTROPY[state].k * Math.max(0, edv - 35))));
+/** End-diastolic sarcomere length (µm): 1.75 at small EDV to 2.3 at large EDV. */
+export const diastolicSarcomere = edv => 1.75 + 0.55 * Math.min(1, Math.max(0, (edv - 60) / 190));
+/** Sarcomere length during the beat: shortens with the ejected fraction. */
+export const sarcomereAt = (edv, sv, contraction) => {
+  const ld = diastolicSarcomere(edv);
+  return ld - (ld - 1.6) * Math.min(1, (sv / edv) / 0.7) * contraction;
+};
+/** Laplace geometry during the beat: wall area held constant, so the wall thickens as the cavity shrinks. */
+export function laplaceAt(lap, shape) {
+  const pressure = lap.p * (0.08 + 0.92 * shape.pressure);
+  const r = lap.r * (1 - 0.22 * shape.contraction);
+  const area = (lap.r + lap.h) ** 2 - lap.r ** 2;
+  const h = Math.sqrt(r * r + area) - r;
+  return { p: pressure, r, h, sigma: wallStress({ p: pressure, r, h }) };
+}
+// Stress colour: teal at rest, amber near 160, red from 280 mmHg.
+function stressColor(sigma) {
+  const stops = [[0, [47, 125, 98]], [160, [230, 119, 0]], [280, [217, 38, 38]]];
+  const x = Math.min(280, Math.max(0, sigma));
+  const i = x <= 160 ? 0 : 1, [a, ca] = stops[i], [b, cb] = stops[i + 1], f = (x - a) / (b - a);
+  return `rgb(${ca.map((c, j) => Math.round(c + (cb[j] - c) * f)).join(',')})`;
+}
 
 export function createStarlingLaplaceLab(opts = {}) {
   const mount = opts.mount || opts.container;
@@ -13,6 +39,11 @@ export function createStarlingLaplaceLab(opts = {}) {
   // Laplace parameters: P (mmHg), r (cm), h (cm)
   let laplace = { p: 120, r: 2.5, h: 1.0 };
   let currentLaplacePreset = 'normal';
+  // Values on screen glide toward the chosen ones.
+  let shownStarling = { edv, sv: strokeVolume(edv, inotropyState) }, shownLap = { ...laplace };
+  let cancelStarling = () => {}, cancelLap = () => {};
+  const clock = createCycleClock({ bpm: 75, speed: 0.5 });
+  const motionBar = createMotionBar(clock, { getLang, label: { tr: 'Canlı kalp atımı:', en: 'Live heartbeat:' } });
 
   root.innerHTML = `
     <div class="pathophys-sl-grid">
@@ -23,7 +54,11 @@ export function createStarlingLaplaceLab(opts = {}) {
           <p data-sl="starlingIntro"></p>
         </div>
         <div class="starling-visual">
-          <svg viewBox="0 0 480 260" class="pathophys-svg starling-svg" role="img" aria-label="Frank-Starling Curve"></svg>
+          <svg viewBox="0 0 480 260" class="pathophys-svg starling-svg" role="img" aria-label="Frank-Starling Curve">
+            <g data-starling-static></g>
+            <circle data-starling-pulse r="7" fill="none" stroke="#1f4fd1" stroke-width="2"/>
+          </svg>
+          <svg viewBox="0 0 480 110" class="pathophys-svg sarcomere-svg" role="img" aria-label="Sarcomere"></svg>
         </div>
         <div class="starling-controls">
           <div class="pathophys-segmented" role="group" aria-label="Inotropic State">
@@ -93,6 +128,7 @@ export function createStarlingLaplaceLab(opts = {}) {
       </section>
     </div>
   `;
+  root.prepend(motionBar.element);
   mount.append(root);
 
   const $ = sel => root.querySelector(sel);
@@ -103,6 +139,7 @@ export function createStarlingLaplaceLab(opts = {}) {
     btn.addEventListener('click', () => {
       inotropyState = btn.dataset.inotrop;
       render();
+      glideStarling();
     });
   });
 
@@ -111,6 +148,7 @@ export function createStarlingLaplaceLab(opts = {}) {
     edv = Number(e.target.value);
     $('[data-starling-edv-val]').textContent = `${edv} mL`;
     render();
+    glideStarling();
   });
 
   // Laplace Presets
@@ -126,6 +164,7 @@ export function createStarlingLaplaceLab(opts = {}) {
       laplace = { ...LAPLACE_PRESETS[currentLaplacePreset] };
       syncLaplaceSliders();
       render();
+      glideLaplace();
     });
   });
 
@@ -134,8 +173,20 @@ export function createStarlingLaplaceLab(opts = {}) {
       laplace[k] = Number(e.target.value);
       currentLaplacePreset = 'custom';
       render();
+      glideLaplace();
     });
   });
+
+  function glideStarling() {
+    cancelStarling();
+    cancelStarling = tweenValues(shownStarling, { edv, sv: strokeVolume(edv, inotropyState) }, v => {
+      shownStarling = v; drawStarlingSvg(v.edv, inotropyState, v.sv); clock.refresh();
+    });
+  }
+  function glideLaplace() {
+    cancelLap();
+    cancelLap = tweenValues(shownLap, laplace, v => { shownLap = v; clock.refresh(); });
+  }
 
   function syncLaplaceSliders() {
     ['p', 'r', 'h'].forEach(k => {
@@ -184,14 +235,13 @@ export function createStarlingLaplaceLab(opts = {}) {
 
     // Starling Calculation
     // SV curve function: f(edv) = A * (1 - exp(-k * (edv - 40)))
-    const inotropK = { enhanced: { max: 130, k: 0.016 }, normal: { max: 95, k: 0.014 }, depressed: { max: 55, k: 0.012 } }[inotropyState];
-    const currentSv = Math.max(10, inotropK.max * (1 - Math.exp(-inotropK.k * Math.max(0, edv - 35))));
+    const currentSv = strokeVolume(edv, inotropyState);
     const tensionRel = ((currentSv / 75) * 100).toFixed(0);
 
     $('[data-starling-sv]').textContent = `${currentSv.toFixed(0)} mL`;
     $('[data-starling-tension]').textContent = `${tensionRel}%`;
 
-    drawStarlingSvg(edv, inotropyState, currentSv);
+    drawStarlingSvg(shownStarling.edv, inotropyState, shownStarling.sv);
 
     // Laplace Calculation
     $$('[data-lap-preset]').forEach(btn => {
@@ -214,11 +264,11 @@ export function createStarlingLaplaceLab(opts = {}) {
     else if (laplace.h >= 1.4 && laplace.r >= 3.5) remodelText = en ? 'Mixed Remodeling' : 'Mikst Hipertrofi / Dilatasyon';
     $('[data-laplace-remodel-status]').textContent = remodelText;
 
-    drawLaplaceSvg(laplace, sigma);
+    clock.refresh();
   }
 
   function drawStarlingSvg(curEdv, inotrop, curSv) {
-    const svg = $('.starling-svg');
+    const svg = $('[data-starling-static]');
     const w = 480, h = 260;
     const padL = 48, padR = 20, padT = 25, padB = 35;
     const plotW = w - padL - padR, plotH = h - padT - padB;
@@ -276,6 +326,7 @@ export function createStarlingLaplaceLab(opts = {}) {
 
   function drawLaplaceSvg(lap, sigma) {
     const svg = $('.laplace-svg');
+    const en = getLang() === 'en';
     const cx = 240, cy = 130;
 
     // Radius scaling: 1 cm -> 26 pixels
@@ -284,9 +335,8 @@ export function createStarlingLaplaceLab(opts = {}) {
     const rOuter = (lap.r + lap.h) * scale;
 
     // Stress color scale: from calm teal (<=120) to amber (180) to bright crimson (>=280)
-    let muscleColor = '#2f7d62';
-    if (sigma > 160 && sigma <= 240) muscleColor = '#e67700';
-    else if (sigma > 240) muscleColor = '#d92626';
+    const muscleColor = stressColor(sigma);
+    const arrow = 0.35 + 0.45 * Math.min(1, lap.p / 220);
 
     svg.innerHTML = `
       <!-- Outer Myocardium ring -->
@@ -296,14 +346,15 @@ export function createStarlingLaplaceLab(opts = {}) {
       
       <!-- Arrows inside lumen representing cavity pressure P -->
       <g stroke="#c92a2a" stroke-width="1.8" opacity="0.75" marker-end="url(#laplace-arrow)">
-        <line x1="${cx}" y1="${cy}" x2="${(cx + rInner * 0.7).toFixed(1)}" y2="${cy}"/>
-        <line x1="${cx}" y1="${cy}" x2="${(cx - rInner * 0.7).toFixed(1)}" y2="${cy}"/>
-        <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy - rInner * 0.7).toFixed(1)}"/>
-        <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy + rInner * 0.7).toFixed(1)}"/>
+        <line x1="${cx}" y1="${cy}" x2="${(cx + rInner * arrow).toFixed(1)}" y2="${cy}"/>
+        <line x1="${cx}" y1="${cy}" x2="${(cx - rInner * arrow).toFixed(1)}" y2="${cy}"/>
+        <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy - rInner * arrow).toFixed(1)}"/>
+        <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy + rInner * arrow).toFixed(1)}"/>
       </g>
       
       <!-- Cavity Label -->
-      <text x="${cx}" y="${cy + 5}" text-anchor="middle" font-weight="700" font-size="13" fill="#691b17">P = ${lap.p}</text>
+      <text x="${cx}" y="${cy + 5}" text-anchor="middle" font-weight="700" font-size="13" fill="#691b17">P = ${Math.round(lap.p)}</text>
+      <text x="${cx}" y="248" text-anchor="middle" font-weight="700" font-size="12" fill="#1c3028">${en ? 'Instant' : 'Anlık'} σ = ${Math.round(sigma)} mmHg</text>
       
       <!-- Radius Dimension Dimension line -->
       <line x1="${cx}" y1="${cy}" x2="${(cx + rInner).toFixed(1)}" y2="${cy}" stroke="#1f4fd1" stroke-width="2"/>
@@ -315,14 +366,58 @@ export function createStarlingLaplaceLab(opts = {}) {
     `;
   }
 
+  /** Sarcomere: Z lines, thin (actin) and thick (myosin) filaments at length L µm. */
+  function drawSarcomere(L, ld) {
+    const en = getLang() === 'en';
+    const s = 120, cx = 240, cy = 52, half = (L * s) / 2, actin = 1.0 * s, myo = 0.8 * s;
+    const zl = cx - half, zr = cx + half;
+    const rows = [-18, -6, 6, 18];
+    const thin = rows.map(y => `<line x1="${zl}" y1="${cy + y}" x2="${zl + actin}" y2="${cy + y}"/><line x1="${zr}" y1="${cy + y}" x2="${zr - actin}" y2="${cy + y}"/>`).join('');
+    const thick = [-12, 0, 12].map(y => {
+      const heads = [];
+      for (let x = cx - myo + 8; x <= cx + myo - 8; x += 12) if (Math.abs(x - cx) > 10) heads.push(`<line x1="${x}" y1="${cy + y}" x2="${x + (x < cx ? -4 : 4)}" y2="${cy + y - 4}"/>`);
+      return `<line x1="${cx - myo}" y1="${cy + y}" x2="${cx + myo}" y2="${cy + y}" stroke-width="5"/>${heads.join('')}`;
+    }).join('');
+    const overlap = Math.max(0, Math.min(zl + actin, cx + myo) - Math.max(zl, cx - myo));
+    $('.sarcomere-svg').innerHTML = `
+      <rect x="${(cx - myo).toFixed(1)}" y="${cy - 26}" width="${(2 * myo).toFixed(1)}" height="52" fill="#fff3bf" opacity="0.7"/>
+      <g stroke="#1971c2" stroke-width="2">${thin}</g>
+      <g stroke="#c2255c" stroke-width="2">${thick}</g>
+      <g stroke="#343a40" stroke-width="3"><line x1="${zl}" y1="${cy - 28}" x2="${zl}" y2="${cy + 28}"/><line x1="${zr}" y1="${cy - 28}" x2="${zr}" y2="${cy + 28}"/></g>
+      <text x="12" y="20" class="axis-num">${en ? 'Sarcomere' : 'Sarkomer'}: ${L.toFixed(2)} µm</text>
+      <text x="12" y="98" class="axis-num">${en ? 'End-diastole' : 'Diyastol sonu'}: ${ld.toFixed(2)} µm · ${en ? 'overlap' : 'örtüşme'} ${(overlap / s).toFixed(2)} µm</text>
+      <text x="468" y="98" text-anchor="end" class="axis-num"><tspan fill="#1971c2">${en ? 'actin' : 'aktin'}</tspan> · <tspan fill="#c2255c">${en ? 'myosin' : 'miyozin'}</tspan></text>`;
+  }
+
+  function drawLive(state) {
+    const shape = cycleShape(state.phase);
+    const { edv: e, sv } = shownStarling;
+    drawSarcomere(sarcomereAt(e, sv, shape.contraction), diastolicSarcomere(e));
+    // Operating point pulses with each beat.
+    const pulse = $('[data-starling-pulse]'), dot = $('[data-starling-static] circle');
+    if (dot) {
+      pulse.setAttribute('cx', dot.getAttribute('cx'));
+      pulse.setAttribute('cy', dot.getAttribute('cy'));
+      pulse.setAttribute('r', (7 + 12 * shape.contraction).toFixed(1));
+      pulse.setAttribute('opacity', (1 - 0.8 * shape.contraction).toFixed(2));
+    }
+    const live = laplaceAt(shownLap, shape);
+    drawLaplaceSvg(live, live.sigma);
+    motionBar.render(state, shape.phase);
+  }
+
   syncLaplaceSliders();
   render();
+  const unsubscribe = clock.subscribe(drawLive);
 
   return {
     render() { render(); },
     updateLanguage(newLang) {
       if (typeof newLang === 'string') opts.lang = newLang;
+      motionBar.setLanguage();
       render();
-    }
+    },
+    getState: () => ({ phase: clock.getState().phase, playing: clock.getState().playing, laplace: laplaceAt(shownLap, cycleShape(clock.getState().phase)) }),
+    destroy() { cancelStarling(); cancelLap(); unsubscribe(); clock.destroy(); root.remove(); }
   };
 }
