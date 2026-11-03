@@ -1,0 +1,55 @@
+/* Acute valvular emergencies comparison (src/exam-acute-valves.js). Palette follows exam-panel.css. */
+.acute-valves{display:grid;gap:6px;min-width:0;margin-top:10px;padding-top:8px;border-top:1px solid #e3e8df;font-size:11px;color:#263e3b;container-type:inline-size}
+.acute-valves [hidden]{display:none}
+.acute-valves .acute-heading{margin:0}
+.acute-intro,.acute-note{margin:0;font-size:10.5px;line-height:1.4;color:#748276}
+.acute-list{list-style:none;margin:0;padding:0;display:grid;gap:6px;min-width:0}
+.acute-legend{margin:0;display:flex;flex-wrap:wrap;gap:3px 10px;font-size:10px;color:#748276}
+.acute-legend-item{display:inline-flex;align-items:center;gap:4px}
+.acute-swatch{display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid #cbd7c5}
+.acute-swatch.is-aortic{background:#c0392b;border-color:#c0392b}
+.acute-swatch.is-pulmonic{background:#2f62a8;border-color:#2f62a8}
+.acute-swatch.is-murmur{background:repeating-linear-gradient(45deg,#3f6e5f 0 1px,#fff 1px 3px)}
+.acute-swatch.is-systole{background:rgba(224,82,77,.12)}
+
+.acute-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:4px;min-width:0;border:1px solid #dce4d7;border-radius:6px;background:#fff;overflow:hidden}
+.acute-row.is-active{border-color:#244f43;box-shadow:inset 3px 0 0 #244f43}
+.acute-select{display:grid;gap:2px;min-width:0;margin:0;padding:5px 6px 4px;border:0;background:none;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.acute-select:hover{background:#f7f9f5}
+.acute-select:focus-visible,.acute-play:focus-visible{outline:2px solid #299f8a;outline-offset:-2px}
+.acute-head{display:flex;align-items:baseline;gap:6px;min-width:0}
+.acute-key{flex:0 0 auto;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#edf2e9;color:#31573f;font-size:9.5px}
+.acute-row.is-active .acute-key{background:#244f43;color:#fff}
+.acute-title{min-width:0;font-weight:600;color:#31573f;overflow-wrap:anywhere}
+.acute-play{flex:0 0 auto;width:34px;margin:0;border:0;border-left:1px solid #edf1eb;background:#f7f9f5;color:#244f43;font-size:12px;cursor:pointer}
+.acute-play:hover{background:#edf2e9}
+.acute-row.is-playing .acute-play{background:#244f43;color:#fff}
+
+.acute-svg{display:block;width:100%;height:auto;max-width:100%}
+.acute-systole{fill:rgba(224,82,77,.06)}
+.acute-baseline{stroke:#9fb19a;stroke-width:.8}
+.acute-hatch{stroke:#3f6e5f;stroke-width:1.1}
+.acute-murmur{stroke:#3f6e5f;stroke-width:.7}
+.acute-bar{stroke:#263e3b;stroke-width:2.6;stroke-linecap:round}
+.acute-bar.is-aortic{stroke:#c0392b}
+.acute-bar.is-pulmonic{stroke:#2f62a8}
+.acute-bar.is-soft{stroke-dasharray:2 1.6;stroke-width:2}
+.acute-label{font:9px "DM Sans",sans-serif;fill:#96a28e;transition:fill .12s linear}
+.acute-label.is-lit{fill:#263e3b;font-weight:700}
+.acute-label.is-aortic.is-lit{fill:#c0392b}
+.acute-label.is-pulmonic.is-lit{fill:#2f62a8}
+.acute-label.is-murmur.is-lit{fill:#244f43}
+.acute-bar.is-lit{stroke-width:3.4}
+.acute-cursor{stroke:#e0524d;stroke-width:1.2}
+.acute-valves.is-static .acute-cursor{display:none}
+
+@container (min-width:560px){
+  .acute-select{grid-template-columns:150px minmax(0,1fr);align-items:center;gap:8px}
+}
+@media (max-width:640px){
+  .acute-select{grid-template-columns:1fr}
+  .acute-play{width:40px}
+}
+@media (prefers-reduced-motion:reduce){
+  .acute-label{transition:none}
+}

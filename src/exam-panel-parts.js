@@ -11,7 +11,7 @@ import { FINDINGS, heartSoundEvents, matchesExpected, murmurEnvelope, respond } 
 
 export const TEXT = {
   tr: {
-    finding: 'Bulgu', systolic: 'Sistolik üfürümler', diastolic: 'Diyastolik üfürümler',
+    finding: 'Bulgu', reference: 'Referans', systolic: 'Sistolik üfürümler', diastolic: 'Diyastolik üfürümler', noMurmur: 'üfürüm yok',
     gradeTitle: 'Üfürüm şiddeti (Levine derecesi)', maneuvers: 'Manevralar',
     stages: { ramp: 'başlangıç', hold: 'sürdürme', recover: 'düzelme', done: 'tamamlandı', fixed: 'sürdürme (sabit)' },
     canvas: 'Şematik fonokardiyogram ve EKG', systole: 'sistol', diastole: 'diyastol', ecg: 'EKG',
@@ -30,9 +30,12 @@ export const TEXT = {
     bestHeard: 'En iyi duyulduğu odak', radiation: 'Yayılım', timing: 'Zamanlama ve şekil', pitch: 'Frekans',
     areas: 'Oskültasyon odakları', sound: 'Ses (şematik)',
     soundNote: 'Sentezlenmiş şematik ses; gerçek bir kayıt değildir.',
-    kinds: { systolic: 'sistolik', diastolic: 'diyastolik' },
+    kinds: { reference: 'referans', systolic: 'sistolik', diastolic: 'diyastolik' },
     shapes: {
+      none: 'Üfürüm yok; S1, fizyolojik ayrılan S2 (A2 sonra P2)',
       ejection: 'Sistolik ejeksiyon üfürümü, kreşendo-dekreşendo',
+      'early-systolic': 'Erken sistolik, dekreşendo; A2\'den belirgin önce biter',
+      'short-early-diastolic': 'Kısa erken diyastolik dekreşendo; hafif sistolik akım üfürümü',
       holosystolic: 'Holosistolik, düz (plato)',
       'late-systolic': 'Orta sistolik klik ve geç sistolik üfürüm',
       'early-diastolic': 'Erken diyastolik, dekreşendo',
@@ -45,7 +48,7 @@ export const TEXT = {
     }
   },
   en: {
-    finding: 'Finding', systolic: 'Systolic murmurs', diastolic: 'Diastolic murmurs',
+    finding: 'Finding', reference: 'Reference', systolic: 'Systolic murmurs', diastolic: 'Diastolic murmurs', noMurmur: 'no murmur',
     gradeTitle: 'Murmur intensity (Levine grade)', maneuvers: 'Maneuvers',
     stages: { ramp: 'onset', hold: 'hold', recover: 'recovery', done: 'done', fixed: 'hold (fixed)' },
     canvas: 'Schematic phonocardiogram and ECG', systole: 'systole', diastole: 'diastole', ecg: 'ECG',
@@ -64,9 +67,12 @@ export const TEXT = {
     bestHeard: 'Best heard at', radiation: 'Radiation', timing: 'Timing and shape', pitch: 'Pitch',
     areas: 'Auscultation areas', sound: 'Sound (schematic)',
     soundNote: 'Synthesized schematic sound, not a recording.',
-    kinds: { systolic: 'systolic', diastolic: 'diastolic' },
+    kinds: { reference: 'reference', systolic: 'systolic', diastolic: 'diastolic' },
     shapes: {
+      none: 'No murmur; S1 and a physiologically split S2 (A2 then P2)',
       ejection: 'Systolic ejection murmur, crescendo-decrescendo',
+      'early-systolic': 'Early systolic, decrescendo; ends well before A2',
+      'short-early-diastolic': 'Short early diastolic decrescendo; soft systolic flow murmur',
       holosystolic: 'Holosystolic, plateau',
       'late-systolic': 'Mid-systolic click and late systolic murmur',
       'early-diastolic': 'Early diastolic, decrescendo',
