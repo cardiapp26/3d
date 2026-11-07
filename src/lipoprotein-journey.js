@@ -1,4 +1,5 @@
 import { TRAFFIC_JOURNEYS, TRAFFIC_TARGETS, JOURNEY_WORDS } from './lipoprotein-journey-data.js';
+import { createMetabolismScene } from './lipoprotein-metabolism.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const STAGE_SECONDS = 8;
@@ -9,7 +10,7 @@ const lerp = (a, b, p) => a + (b - a) * p;
 
 /** A single enlarged particle, driven by the traffic scene's scaled, pausable clock. */
 export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }) {
-  let pathway = TRAFFIC_JOURNEYS[0], stage = 0, elapsed = 0, targetId = 'ldlr', selectedParticle = 'ldl';
+  let pathway = TRAFFIC_JOURNEYS[0], stage = 0, elapsed = 0, targetId = 'ldlr', selectedParticle = 'ldl', ezetimibe = false;
   const lang = () => getLang() === 'en' ? 'en' : 'tr';
   const t = value => typeof value === 'string' ? value : value[lang()];
   const w = () => JOURNEY_WORDS[lang()];
@@ -27,7 +28,11 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
       <path fill="none" stroke="#527763" stroke-width="2" data-journey-arrow/>
       <text x="180" y="226" text-anchor="middle" data-journey-identity></text>
       <text x="398" y="120" text-anchor="middle" data-journey-target></text>
-    </svg><div class="lpt-journey-legend"></div>
+    </svg><div class="lpt-journey-legend" data-journey-legend></div>
+    <svg class="lpt-metabolism" viewBox="0 0 420 224" role="img" hidden><title></title>
+      <g data-metabolism-art></g><g data-metabolism-paths></g>
+    </svg><div class="lpt-journey-legend" data-metabolism-legend hidden></div>
+    <label class="lpt-metabolism-toggle" hidden><input type="checkbox" data-metabolism-ezetimibe><span></span></label>
     <div class="lpt-journey-transport" aria-live="polite"></div>
     <div class="lpt-stage-copy" aria-live="polite"><h4></h4><p></p></div>
     <div class="lpt-journey-controls"><button type="button" data-lpt-prev></button><label><span data-lpt-timeline-label></span><input type="range" min="0" step="1" value="0" data-lpt-timeline></label><button type="button" data-lpt-next></button></div>
@@ -37,6 +42,13 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
   </section>`;
   const $ = selector => mount.querySelector(selector);
   const svg = $('.lpt-morph');
+  const metabolismSvg = $('.lpt-metabolism');
+  const metabolism = createMetabolismScene(metabolismSvg, $('[data-metabolism-legend]'));
+  const ezetimibeToggle = $('[data-metabolism-ezetimibe]');
+  ezetimibeToggle.addEventListener('change', () => {
+    ezetimibe = ezetimibeToggle.checked;
+    renderStage();
+  });
   const add = (parent, tag, attrs = {}) => {
     const node = document.createElementNS(NS, tag);
     for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
@@ -52,6 +64,7 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
     button.addEventListener('click', () => {
       onManual(); pathway = item; stage = 0; elapsed = 0; selectedParticle = item.id;
       buildStages(); refresh();
+      if (item.stages[0].target) selectTarget(item.stages[0].target);
     });
     $('.lpt-pathways').append(button); return button;
   });
@@ -92,7 +105,7 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
   function seek(index) {
     onManual();
     stage = Math.max(0, Math.min(pathway.stages.length - 1, index));
-    elapsed = MORPH_SECONDS;
+    elapsed = pathway.stages[stage].scene ? 0 : MORPH_SECONDS;
     renderStage({ followTarget: true });
   }
   $('[data-lpt-prev]').addEventListener('click', () => seek(stage - 1));
@@ -101,6 +114,13 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
 
   function renderStage({ followTarget = false } = {}) {
     const current = pathway.stages[stage];
+    const hasScene = Boolean(current.scene);
+    svg.toggleAttribute('hidden', hasScene);
+    $('[data-journey-legend]').hidden = hasScene;
+    metabolismSvg.toggleAttribute('hidden', !hasScene);
+    if (!hasScene) $('[data-metabolism-legend]').hidden = true;
+    ezetimibeToggle.closest('label').hidden = current.scene !== 'uptake';
+    ezetimibeToggle.nextElementSibling.textContent = lang() === 'tr' ? 'Ezetimib etkisini göster' : 'Show ezetimibe effect';
     $('.lpt-journey').dataset.pathway = pathway.id;
     $('.lpt-journey').dataset.stage = stage;
     for (const button of mount.querySelectorAll('[data-lpt-stage]')) {
@@ -117,6 +137,13 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
     $('[data-lpt-prev]').disabled = stage === 0;
     $('[data-lpt-next]').disabled = stage === pathway.stages.length - 1;
     $('.lpt-journey-transport').textContent = current.transfer ? w()[current.transfer] : t(current.label);
+    if (followTarget && current.target) selectTarget(current.target);
+    if (hasScene) {
+      metabolismSvg.querySelector('title').textContent = `${t(current.title)}. ${t(current.detail)}`;
+      metabolism.show(current.scene, lang(), ezetimibe);
+      draw();
+      return;
+    }
     svg.querySelector('title').textContent = `${t(current.title)}. ${t(current.detail)}`;
     $('[data-journey-identity]').textContent = pathway.apo;
     $('[data-journey-change]').textContent = stage > 0 && ['out', 'esterify', 'in'].includes(current.transfer)
@@ -128,13 +155,16 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
     $('[data-journey-arrow]').setAttribute('d', !cellTransfer ? '' : current.transfer === 'in'
       ? 'M337 120H270M280 111L269 120L280 129'
       : 'M270 120H337M327 111L338 120L327 129');
-    if (followTarget && current.target) selectTarget(current.target);
     draw();
   }
 
   function draw() {
     const current = pathway.stages[stage], prev = pathway.stages[Math.max(0, stage - 1)];
     const raw = Math.min(1, elapsed / MORPH_SECONDS), p = ease(raw);
+    if (current.scene) {
+      metabolism.draw(p);
+      return;
+    }
     const radius = lerp(prev.radius, current.radius, p);
     const uptake = current.transfer === 'whole' ? p : 0;
     const isDisk = pathway.id === 'hdl';
@@ -191,7 +221,7 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
     $('.lpt-pathways').setAttribute('aria-label', w().pathways);
     $('[data-lpt-prev]').textContent = w().previous; $('[data-lpt-next]').textContent = w().next;
     $('[data-lpt-timeline]').setAttribute('aria-label', w().progress);
-    $('.lpt-journey-legend').replaceChildren(...w().legend.map((text, i) => {
+    $('[data-journey-legend]').replaceChildren(...w().legend.map((text, i) => {
       const span = document.createElement('span'); span.textContent = text;
       span.style.setProperty('--lpt-dot', i === 3 && pathway.id === 'hdl' ? '#14a35a' : COLORS[i]); return span;
     }));
@@ -215,6 +245,9 @@ export function createLipoproteinJourney({ mount, getLang, onManual = () => {} }
       elapsed += dt;
       if (elapsed >= STAGE_SECONDS && stage < pathway.stages.length - 1) {
         stage += 1; elapsed -= STAGE_SECONDS; renderStage({ followTarget: true });
+      } else if (pathway.stages[stage].scene) {
+        if (elapsed >= STAGE_SECONDS) elapsed %= STAGE_SECONDS;
+        if (elapsed - dt < MORPH_SECONDS) draw();
       } else if (stage > 0 && elapsed - dt < MORPH_SECONDS) draw();
     }
   };
