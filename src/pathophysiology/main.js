@@ -103,23 +103,10 @@ function updateStaticText() {
   document.documentElement.lang = lang;
   const isTr = lang === 'tr';
 
-  // Eyebrow
-  const eyebrow = document.querySelector('[data-pathophys-eyebrow]');
-  if (eyebrow) {
-    eyebrow.textContent = isTr ? 'Kardiyovasküler Stüdyo' : 'Cardiovascular Studio';
-  }
-
-  // Sidebar title & subtitle
+  // The station list starts at once; the page title stays for screen readers only.
   const title = document.querySelector('[data-pathophys-title]');
   if (title) {
     title.textContent = isTr ? 'Patofizyoloji' : 'Pathophysiology';
-  }
-
-  const subtitle = document.querySelector('[data-pathophys-subtitle]');
-  if (subtitle) {
-    subtitle.textContent = isTr
-      ? 'Hücresel elektrofizyolojiden ventriküler mekaniğe, aterom biyolojisinden kapak ve hemodinamiğe etkileşimli modeller.'
-      : 'Interactive didactic models spanning cellular electrophysiology, ventricular mechanics, atheroma biology, and hemodynamics.';
   }
 
   const note = document.querySelector('[data-pathophys-note]');

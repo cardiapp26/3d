@@ -74,7 +74,8 @@ header.site-header .site-header-actions .quick-search input{min-height:32px;back
   background:var(--site-control);color:var(--site-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
 .module-nav-toggle:hover,.module-nav-toggle[aria-expanded=true]{background:var(--site-active);color:var(--site-on-active);border-color:var(--site-active)}
 .module-nav-icon{font-size:14px;line-height:1}
-.module-nav{--mn-bg:#fff;--mn-line:#dee4de;--mn-text:#21493f;--mn-muted:#81908b;--mn-hover:#e8efe9;--mn-active:#21493f;
+.module-nav,.module-nav-panel{--mn-bg:#fff;--mn-line:#dee4de;--mn-text:#21493f;--mn-muted:#81908b;--mn-hover:#e8efe9;--mn-active:#21493f}
+.module-nav{
   position:fixed;left:0;top:var(--module-nav-top,96px);z-index:120;font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
 .module-nav *{box-sizing:border-box}
 .module-nav-panel{display:flex;flex-direction:column;gap:2px;width:272px;max-height:calc(100vh - var(--module-nav-top,96px) - 12px);overflow-y:auto;
@@ -93,5 +94,13 @@ header.site-header .site-header-actions .quick-search input{min-height:32px;back
   .module-nav-toggle span:last-child{display:none}
   .module-nav-panel{width:min(86vw,300px)}
   .module-nav-link{padding:12px 10px}
+}
+/* Wide screens: the list lives in the left rail (side-rail.js), open; the header button is not needed. */
+@media(min-width:1100px){
+  body.has-side-rail .module-nav-toggle{display:none}
+  .side-rail .module-nav-panel{width:auto;max-height:none;overflow:visible;padding:0;background:none;border:0;border-radius:0;box-shadow:none}
+  .side-rail .module-nav-head{padding:6px 8px 4px;margin:0;border:0}
+  .side-rail .module-nav-close{display:none}
+  .side-rail .module-nav-link{padding:8px 10px;font-size:12.5px}
 }
 @media print{.module-nav,.module-nav-toggle{display:none}}

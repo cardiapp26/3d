@@ -1054,11 +1054,12 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
     const horizontal=(depth/2)/(t*Math.max(camera.aspect,.2));
     fitDistance=THREE.MathUtils.clamp((Math.max(vertical,horizontal)/.94+depth*.5)*.9,3,18);
   }
-  function setAngioProjection(laoRaoDeg,craCauDeg,smooth=true,keepDistance=true){
+  // distance (optional): use this camera distance instead of keeping or fitting one (paired views share it).
+  function setAngioProjection(laoRaoDeg,craCauDeg,smooth=true,keepDistance=true,distance=null){
     if(mitralFocus){mitralFocus=false;applyState();}
     const target=fitCenter.clone();
     const offset=camera.position.clone().sub(target);
-    const R=keepDistance?Math.max(2.5,Math.min(16.0,offset.length()||fitDistance)):fitDistance;
+    const R=Number.isFinite(distance)?THREE.MathUtils.clamp(distance,2.5,16.0):keepDistance?Math.max(2.5,Math.min(16.0,offset.length()||fitDistance)):fitDistance;
     const clampedLaoRao=THREE.MathUtils.clamp(Number(laoRaoDeg)||0,-180,180);
     const clampedCraCau=THREE.MathUtils.clamp(Number(craCauDeg)||0,-50,50);
     const theta=(clampedLaoRao*Math.PI)/180;

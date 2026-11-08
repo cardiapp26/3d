@@ -5,10 +5,14 @@
  * mode list moves back into the aside there, so every control exists once.
  * When a mode has tools, its group tab opens one left panel holding both: the
  * group's modes at the top and the mode's tools below (no separate Tools tab).
+ * Wide screens list the modes, always open, in the left rail (side-rail.js) and
+ * show the Tools tab; a page with module pages (angiography) lists those instead.
  */
+import { ensureSideRail, SIDE_RAIL_QUERY } from './side-rail.js';
+
 const WORDS = {
-  tr: { layers: 'Katmanlar', tools: 'Araçlar', close: 'Kapat', label: 'Modlar ve katmanlar' },
-  en: { layers: 'Layers', tools: 'Tools', close: 'Close', label: 'Modes and layers' },
+  tr: { layers: 'Katmanlar', tools: 'Araçlar', close: 'Kapat', label: 'Modlar ve katmanlar', rail: 'Modlar' },
+  en: { layers: 'Layers', tools: 'Tools', close: 'Close', label: 'Modes and layers', rail: 'Modes' },
 };
 const MOBILE_QUERY = '(max-width: 640px)';
 const TOOL_SECTIONS = ['.chamber-tools', '#defect-tools', '#ep-tools'];
@@ -24,6 +28,10 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
   if (!bar || !nav || !aside) return { refresh() {}, closeAll() {} };
   const words = () => WORDS[getLang() === 'en' ? 'en' : 'tr'];
   const mobile = window.matchMedia(MOBILE_QUERY);
+  const wide = window.matchMedia(SIDE_RAIL_QUERY);
+  const railLayout = () => wide.matches && !mobile.matches;
+  const pagesCover = () => document.body.dataset.modulePages === 'true';
+  const railLabel = { tr: WORDS.tr.rail, en: WORDS.en.rail };
   const groups = [...nav.querySelectorAll('.mode-group')];
   const drawerTabs = {
     layers: bar.querySelector('[data-drawer=layers]'),
@@ -45,11 +53,19 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
 
   // ---- Placement --------------------------------------------------------
   // Phones: the list lives in the Modes sheet, after its search field.
+  // Wide screens: the list sits open in the left rail (hidden when the module pages cover it).
   function place() {
+    nav.hidden = railLayout() && pagesCover();
+    const inRail = railLayout() && !pagesCover();
+    document.body.classList.toggle('modes-in-rail', inRail);
     if (mobile.matches) {
       closeAll();
       const search = aside.querySelector('#aside-search');
       if (nav.parentElement !== aside) aside.insertBefore(nav, search ? search.nextSibling : aside.firstChild);
+    } else if (inRail) {
+      setGroup(null);
+      const rail = ensureSideRail({ label: railLabel, getLang });
+      if (nav.parentElement !== rail.body) rail.body.append(nav);
     } else if (nav.parentElement !== bar) {
       bar.prepend(nav);
     }
@@ -164,6 +180,7 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
     back?.focus();
   });
   mobile.addEventListener('change', place);
+  wide.addEventListener('change', () => { place(); refresh(); });
 
   // ---- State ------------------------------------------------------------
   function refresh() {
@@ -179,8 +196,8 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
     renderSwitcher();
     for (const [id, tab] of Object.entries(drawerTabs)) {
       if (!tab) continue;
-      // Tools open from the mode group tab on tablets and desktops.
-      tab.hidden = !available[id] || (id === 'tools' && !mobile.matches);
+      // Tools open from the mode group tab on tablets; with the modes in the rail they get their own tab.
+      tab.hidden = !available[id] || (id === 'tools' && !mobile.matches && !railLayout());
       tab.querySelector('.drawer-tab-label').textContent = w[id];
       tab.title = w[id];
     }
@@ -191,6 +208,7 @@ export function createHeaderTabs({ getLang = () => 'tr' } = {}) {
     wasToolsOnly = toolsOnly;
     const current = groups.find(g => g.classList.contains('current'));
     aside.dataset.peekLabel = current?.querySelector('.mode-group-current')?.textContent || w.tools;
+    if (document.body.classList.contains('modes-in-rail')) ensureSideRail({ label: railLabel, getLang });
     drawerClose.textContent = `${w.close} ×`;
     drawerClose.setAttribute('aria-label', drawer ? `${w[drawer]}: ${w.close}` : w.close);
   }

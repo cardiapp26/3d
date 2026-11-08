@@ -30,6 +30,9 @@ const text = (selector, val) => {
 const workspace = document.querySelector('[data-angio-workspace]');
 let studio = null;
 
+// The header (with the module's left rail) first: the 3D atlas then sizes itself once, in its final box.
+mountSiteHeader(document.querySelector('.site-header'), lang);
+
 if (workspace) {
   studio = createAngioStudio({
     mount: workspace,

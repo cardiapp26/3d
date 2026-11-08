@@ -1,0 +1,41 @@
+/* Left rail (side-rail.js): wide screens only; narrow screens keep their drawers. */
+.side-rail { display: none; }
+
+@media (min-width: 1100px) {
+  body.has-side-rail { --side-rail-w: 224px; }
+  body.has-side-rail[data-side-rail-state=collapsed] { --side-rail-w: 44px; }
+
+  .side-rail {
+    position: fixed; left: 0; top: var(--side-rail-top, 96px); bottom: 0; z-index: 110;
+    display: flex; flex-direction: column; gap: 4px; width: var(--side-rail-w);
+    padding: 8px 8px 12px; overflow-y: auto; overscroll-behavior: contain;
+    background: #fbfcf9; border-right: 1px solid #dee4de;
+    font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; color: #21493f;
+    scrollbar-width: thin;
+  }
+  .side-rail * { box-sizing: border-box; }
+  .side-rail-toggle {
+    display: flex; align-items: center; gap: 8px; width: 100%; flex: none;
+    border: 0; border-radius: 7px; background: transparent; color: #81908b;
+    padding: 7px 8px; font: inherit; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    text-align: left; cursor: pointer;
+  }
+  .side-rail-toggle:hover { background: #e8efe9; color: #21493f; }
+  .side-rail-toggle:focus-visible { outline: 3px solid #299f8a; outline-offset: 1px; }
+  .side-rail-icon::before { content: '\00AB'; font-size: 15px; line-height: 1; }
+  .side-rail[data-collapsed=true] { padding: 8px 4px; }
+  .side-rail[data-collapsed=true] .side-rail-icon::before { content: '\2630'; }
+  .side-rail[data-collapsed=true] .side-rail-toggle { writing-mode: vertical-rl; padding: 10px 6px; justify-content: flex-start; }
+  .side-rail-body { display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+  .side-rail-body[hidden] { display: none; }
+
+  /* The page's content sits to the right of the rail; the header keeps the full width. */
+  body.has-side-rail > :is(main, footer, .site-disclaimer),
+  body.has-side-rail #app > :is(.header-tabs, .workspace, footer, .site-disclaimer) {
+    margin-left: var(--side-rail-w);
+    width: auto;
+    max-width: calc(100% - var(--side-rail-w));
+  }
+}
+
+@media print { .side-rail { display: none; } }
