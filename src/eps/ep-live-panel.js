@@ -666,7 +666,7 @@ export function createLivePanel(doc, { getLang = () => 'tr', onOpenEam3d } = {})
   function render() {
     const t = T(), lang = L();
     caseName.textContent = t.caseLabel;
-    open3dBtn.textContent = lang === 'en' ? '3D EAM (CardaxEP)' : '3B EAM (CardaxEP)';
+    open3dBtn.textContent = lang === 'en' ? '3D map' : '3B harita';
     caseSelect.replaceChildren(...(state.hidden ? [option('hidden', t.hidden)] : []), ...Object.keys(LIVE_CASES).map((id) => option(id, caseText(id).name)));
     caseSelect.value = state.hidden ? 'hidden' : state.caseId;
     renderQuiz();

@@ -1,5 +1,5 @@
 /*
- * CardaxEP-style four-chamber 3D electroanatomical mapping (EAM) and whole-heart
+ * Four-chamber 3D electroanatomical mapping (EAM) and whole-heart
  * simulation model (pure). Coordinates live in the normalized 3D atlas frame
  * (chamber bounds centred, longest side 3.3, matching conduction-atlas.js).
  *
@@ -149,7 +149,7 @@ export const EAM3D_CATHETERS = Object.freeze({
 
 const midpoint = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
 
-// 23 Live polygraph channels matching the CardaxEP recording screen.
+// 23 live polygraph channels of the recording screen.
 export const EAM3D_CHANNELS = Object.freeze([
   { id: 'II', label: 'II', color: '#f1f5f9', kind: 'surface', catheter: null, pos: [0, 0, 0] },
   { id: 'V1', label: 'V1', color: '#f1f5f9', kind: 'surface', catheter: null, pos: [0, 0, 0] },
@@ -645,7 +645,7 @@ export function runStimManeuver({ scenarioId, mode = 'burst', channelId = 'rv-d'
 }
 
 /**
- * Probabilistic Circuit Modeling ("Find the circuit" workflow from CardaxEP):
+ * Probabilistic Circuit Modeling ("Find the circuit" workflow):
  * Surveys potential reentrant circuits across `runs` (10, 100, or 1000) over the 3D substrate,
  * filters out circuits interrupted by `ablatedLines`, and ranks minimal-intervention lines.
  */

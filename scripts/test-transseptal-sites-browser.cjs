@@ -15,7 +15,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     page.on('pageerror', (e) => errors.push(e.message));
     // Transseptal lives on the EP anatomy page.
     await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
-    await page.goto(`${APP}/eps/anatomy/#/mode/transseptal`);
+    await page.goto(`${APP}/angio/3d/#/mode/transseptal`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.waitForFunction(() => window.heart.getState().mode === 'transseptal');
     const toggle = page.locator('[data-ts-cath=sites]');

@@ -323,7 +323,7 @@ export function createPaceMapPanel(doc, { getLang = () => 'tr', onOpenEam3d } = 
     modeSel.value = state.mode;
     modeField.hidden = !s.entrainment;
     for (const [btn, key] of [[fusionBtn, 'fusion'], [mapBtn, 'scoremap'], [truthBtn, 'truth']]) { btn.textContent = tt[key]; btn.setAttribute('aria-pressed', String(state[key])); }
-    open3dBtn.textContent = L() === 'en' ? 'Open 3D EAM (CardaxEP)' : '3B EAM (CardaxEP) Aç';
+    open3dBtn.textContent = L() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = st.lesson;
     truth.textContent = st.truth;
     truth.hidden = !state.truth;

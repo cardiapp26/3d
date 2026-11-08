@@ -43,7 +43,7 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('#myo-opacity').inputValue(), '100');
     assert.ok((await materials()).filter(m => m.layer === 'vessels').every(m => m.opacity === 1), 'reset restores full opacity');
     // Transseptal lives on the EP anatomy page.
-    await page.goto(`${url}/eps/anatomy/#/mode/transseptal`);
+    await page.goto(`${url}/angio/3d/#/mode/transseptal`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.waitForFunction(() => window.heart.getState().mode === 'transseptal');
     await page.evaluate(() => window.heart.setOpacity(1));

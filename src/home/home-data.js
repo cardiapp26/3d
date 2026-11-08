@@ -46,7 +46,7 @@ export const HOME_MODULES = Object.freeze([
   },
   {
     id: 'angio', domain: 'cath', path: './angio/', thumb: 'angio',
-    kicker: w('C-kol stüdyosu', 'C-arm studio'),
+    kicker: w('Koroner anjiyografi', 'Coronary angiography'),
     name: w('Koroner Anjiyografi', 'Coronary Angiography'),
     points: [w('LAO/RAO, kraniyal ve kaudal projeksiyonlar', 'LAO/RAO, cranial and caudal projections'), w('Kontrast enjeksiyonu ve skopi', 'Contrast injection and fluoroscopy')]
   },
@@ -114,7 +114,7 @@ export const HOME_MODULES = Object.freeze([
     id: 'ep-anatomy', domain: 'rhythm', path: './eps/anatomy/', thumb: 'ep-anatomy', badge: '3d',
     kicker: w('Girişimsel EP anatomisi', 'Interventional EP anatomy'),
     name: w('3B EP Anatomisi', '3D EP Anatomy'),
-    points: [w('Transseptal geçiş ve Koch üçgeni', 'Transseptal access and Koch triangle'), w('Kalp pili elektrotları, Bachmann', 'Pacemaker leads, Bachmann')]
+    points: [w('Koch üçgeni ve ablasyon anatomisi', 'Koch triangle and ablation anatomy'), w('Kalp pili elektrotları, Bachmann', 'Pacemaker leads, Bachmann')]
   },
   {
     id: 'pharmacology', domain: 'drugs', path: './pharmacology/', thumb: 'pharmacology',

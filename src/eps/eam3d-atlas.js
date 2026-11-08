@@ -1,6 +1,6 @@
 /*
  * Three.js 3D Electroanatomical Mapping (EAM) & Whole-Heart Simulation Viewport
- * for the CardaxEP workstation (eam3d-panel.js).
+ * for the 3D EAM workstation (eam3d-panel.js).
  *
  * Renders:
  * - Translucent four-chamber atlas heart (RA, LA, RV, LV) with vertex-colored
@@ -88,7 +88,7 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   renderer.toneMappingExposure = 1.12;
   host.append(renderer.domElement);
   renderer.domElement.setAttribute('role', 'img');
-  renderer.domElement.setAttribute('aria-label', 'CardaxEP 3D Heart Viewport');
+  renderer.domElement.setAttribute('aria-label', '3D electroanatomic map viewport');
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 50);
@@ -524,7 +524,7 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
           const hue = ((w.phase + Math.PI) / (2 * Math.PI)) * 0.82;
           tmpColor.setHSL(hue, 0.85, tissue === 'scar' ? 0.22 : 0.52);
         } else {
-          // 'live' mode: CardaxEP translucent amber myocardium with bright depolarization wave
+          // 'live' mode: translucent amber myocardium with bright depolarization wave
           if (tissue === 'scar') {
             tmpColor.copy(scarColor);
           } else if (tissue === 'channel') {

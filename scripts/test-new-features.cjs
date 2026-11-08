@@ -33,27 +33,24 @@ const fs = require('node:fs');
     assert.ok(Math.abs(draggedBox.y - initialBox.y) > 50, 'Panel moved vertically');
     await page.screenshot({ path: 'research/screenshots/carm-panel-dragged.png' });
 
-    // 3. Test Veins toggle button in carm panel
-    const veinsBtn = page.locator('#carm-veins-toggle');
+    // 3. Veins group checkbox in the Layers panel (the one veins control)
     const veinsCheckbox = page.locator('input[data-layer="veins"]');
     assert.ok(await veinsCheckbox.isChecked(), 'Veins checked initially');
 
     // Click to hide veins
-    await veinsBtn.click();
-    assert.ok(!await veinsCheckbox.isChecked(), 'Veins checkbox unchecked after carm button toggle');
+    await veinsCheckbox.click();
+    assert.ok(!await page.locator('input[data-layer="cs"]').isChecked(), 'vein sub-layers follow the group checkbox');
     await page.screenshot({ path: 'research/screenshots/veins-hidden.png' });
 
     // Click to show veins again
-    await veinsBtn.click();
-    assert.ok(await veinsCheckbox.isChecked(), 'Veins checkbox re-checked');
+    await veinsCheckbox.click();
+    assert.ok(await page.locator('input[data-layer="cs"]').isChecked(), 'vein sub-layers re-checked');
 
     // 4. Test Conduction system
-    const conductionBtn = page.locator('#carm-conduction-toggle');
     const conductionCheckbox = page.locator('input[data-layer="conduction"]');
     assert.ok(await conductionCheckbox.isChecked(), 'Conduction checked initially');
 
     // 5. Test Valves & Subvalvular structures toggle
-    const valvesBtn = page.locator('#carm-valves-toggle');
     const valvesCheckbox = page.locator('input[data-layer="valves"]');
     assert.ok(await valvesCheckbox.isChecked(), 'Valves checked initially');
 
@@ -65,14 +62,14 @@ const fs = require('node:fs');
     await page.screenshot({ path: 'research/screenshots/valves-visible-inside-chambers.png' });
 
     // Click to hide all valves & papillary muscles
-    await valvesBtn.click();
-    assert.ok(!await valvesCheckbox.isChecked(), 'Valves checkbox unchecked after toggle');
+    await valvesCheckbox.click();
+    assert.ok(!await page.locator('input[data-layer="mitral"]').isChecked(), 'valve sub-layers follow the group checkbox');
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'research/screenshots/valves-hidden-inside-chambers.png' });
 
     // Click to show valves again
-    await valvesBtn.click();
-    assert.ok(await valvesCheckbox.isChecked(), 'Valves checkbox re-checked');
+    await valvesCheckbox.click();
+    assert.ok(await page.locator('input[data-layer="mitral"]').isChecked(), 'valve sub-layers re-checked');
 
     // Test individual sublayer: uncheck papillary muscles
     const papillaryCheckbox = page.locator('input[data-layer="papillary"]');

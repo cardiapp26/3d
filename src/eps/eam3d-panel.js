@@ -1,4 +1,4 @@
-// CardaxEP-inspired 3D Electroanatomical Mapping (EAM) & Whole-Heart Simulation Workstation Panel
+// 3D Electroanatomical Mapping (EAM) & Whole-Heart Simulation Workstation Panel
 
 import {
   EAM3D_SCENARIOS,

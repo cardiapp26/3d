@@ -17,7 +17,7 @@ import {
 } from '../../src/eps/eam3d-model.js';
 import { EAM3D_TEXT } from '../../src/eps/eam3d-text.js';
 
-// 1. Scenarios, map modes, wall layers and catheters match CardaxEP specification
+// 1. Scenarios, map modes, wall layers and catheters match the workstation specification
 assert.equal(EAM3D_SCENARIOS.includes('avnrt'), true);
 assert.equal(EAM3D_SCENARIOS.includes('vt-ischemic'), true);
 assert.equal(EAM3D_SCENARIOS.includes('pvc-rvot'), true);
@@ -30,7 +30,7 @@ assert.equal(EAM3D_CHANNELS.length, 26, 'surface II/V1 + 10 DUO + 5 CS + 2 HRA +
 
 // 2. Scenario cycle length responds to tissue conduction velocity levers and ablation
 const avnrtBase = scenarioSpec('avnrt', DEFAULT_LEVERS);
-assert.equal(avnrtBase.tcl, 392, 'CardaxEP default AVNRT CL is 392 ms');
+assert.equal(avnrtBase.tcl, 392, 'default AVNRT CL is 392 ms');
 const avnrtSlow = scenarioSpec('avnrt', { ...DEFAULT_LEVERS, atrialCv: 0.45 });
 assert.ok(avnrtSlow.tcl > avnrtBase.tcl, 'slower atrial CV lengthens cycle length');
 const afterSlowPathwayAblation = scenarioSpec('avnrt', DEFAULT_LEVERS, new Set(['slow-pathway']));

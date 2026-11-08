@@ -3,8 +3,8 @@ const { startApp } = require('./lib/app-server.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-// The C-arm angle as the controls show it (LAO/RAO, then CRA/CAU).
-const angleText = async page => `${await page.locator('#angio-alpha-val').textContent()} · ${await page.locator('#angio-beta-val').textContent()}`;
+// The C-arm angle as the cine corner (the only angle readout) writes it: LAO/RAO, then CRA/CAU.
+const angleText = async page => page.locator('[data-cine-angle]').textContent();
 
 (async () => {
   const app = await startApp();
@@ -26,18 +26,18 @@ const angleText = async page => `${await page.locator('#angio-alpha-val').textCo
 
     // Verify initial hash parsing of a=-35, b=-45, sys=left
     const badgeText = await angleText(page);
-    assert.match(badgeText, /RAO 35°.*CAU 45°/);
+    assert.match(badgeText, /^RAO 35 CAU 45$/);
     assert.equal(await page.locator('[data-angio-sys="left"].active').isVisible(), true, 'Left coronary system active');
 
     // 2. Preset Selection Tests
     // Click "Spider" (LAO 45 / CAU 35)
     await page.locator('[data-angio-view="lao-caudal"]').click();
-    assert.match(await angleText(page), /LAO 45°.*CAU 35°/);
+    assert.match(await angleText(page), /^LAO 45 CAU 35$/);
     assert.ok(page.url().includes('a=45') && page.url().includes('b=-35'), 'URL hash updated to Spider angles');
 
     // Click "RAO Cranial" (RAO 30 / CRA 30)
     await page.locator('[data-angio-view="rao-cranial"]').click();
-    assert.match(await angleText(page), /RAO 30°.*CRA 30°/);
+    assert.match(await angleText(page), /^RAO 30 CRA 30$/);
     assert.ok(page.url().includes('a=-30') && page.url().includes('b=30'), 'URL hash updated to RAO Cranial angles');
 
     // 3. System Switching Tests
@@ -48,7 +48,7 @@ const angleText = async page => `${await page.locator('#angio-alpha-val').textCo
 
     // Click "LAO Cranial (RCA)" Crux view
     await page.locator('[data-angio-view="rca-lao-cranial"]').click();
-    assert.match(await angleText(page), /LAO 40°.*CRA 30°/);
+    assert.match(await angleText(page), /^LAO 40 CRA 30$/);
 
     // Switch to Bypass Grafts
     await page.locator('[data-angio-sys="lima"]').click();
@@ -65,9 +65,9 @@ const angleText = async page => `${await page.locator('#angio-alpha-val').textCo
     const nextBadge = await angleText(page);
     assert.notEqual(prevBadge, nextBadge, 'Cranial nudge shifted angle');
 
-    // Click AP Center reset button
-    await page.locator('#angio-btn-center').click();
-    assert.match(await angleText(page), /AP 0°.*0°/);
+    // AP 0° / 0° reset: Anterior in the camera bar (the pad no longer repeats it)
+    await page.locator('[data-viewbar-view="anterior"]').click();
+    assert.equal(await angleText(page), 'AP');
 
     // 5. Contrast Injection Puff Test
     await page.locator('[data-inject-contrast]').click();
@@ -79,7 +79,7 @@ const angleText = async page => `${await page.locator('#angio-alpha-val').textCo
 
     // Click recommended view jump button
     await page.locator('[data-jump-view]').click();
-    assert.match(await angleText(page), /LAO 45°.*CAU 35°/, 'Jumped to recommended Spider view');
+    assert.match(await angleText(page), /^LAO 45 CAU 35$/, 'Jumped to recommended Spider view');
 
     // 7. Screenshots
     const shots = '/private/tmp/cardia-angio';

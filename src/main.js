@@ -114,7 +114,8 @@ function layerGroup(id, color, children) {
     </div>`;
 }
 
-// Short dock labels on narrow screens so Ant, Post, RAO and LAO fit without scrolling.
+// Short dock labels on narrow screens so the views and tools fit without scrolling.
+// Oblique projections (RAO, LAO, Spider and the rest) live in the C-arm panel; R/L/S still reach them.
 const VIEW_SHORT = { anterior: 'Ant', posterior: 'Post' };
 const app = document.querySelector('#app');
 app.innerHTML = `
@@ -217,7 +218,7 @@ app.innerHTML = `
 
     <div class="view-controls" aria-label="Camera presets">
       <div class="view-presets">
-      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['rao','RAO','R'],['lao','LAO','L'],['spider','Spider','S'],['root','Root','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}" title="${id==='root'?'Root & Cusps':t} (${k})">${VIEW_SHORT[id]?`<span class="view-long">${t}</span><span class="view-short">${VIEW_SHORT[id]}</span>`:t} <kbd>${k}</kbd></button>`).join('')}
+      ${[['anterior','Anterior','A'],['posterior','Posterior','P'],['root','Root','O']].map(([id,t,k])=>`<button data-view="${id}" class="${id==='anterior'?'selected':''}" title="${id==='root'?'Root & Cusps':t} (${k})">${VIEW_SHORT[id]?`<span class="view-long">${t}</span><span class="view-short">${VIEW_SHORT[id]}</span>`:t} <kbd>${k}</kbd></button>`).join('')}
       <button data-view="mitral" title="Mitral scallops · A1–A3 / P1–P3">Mitral</button>
       </div>
       <div class="view-tools">
@@ -296,17 +297,6 @@ app.innerHTML = `
       </div>
 
       <div class="carm-content" id="carm-content">
-        <div class="carm-readout-strip">
-          <div class="readout-card">
-            <span class="readout-sub" data-i18n="obliqueLabel">${getTranslation('obliqueLabel')}</span>
-            <span class="readout-digit" id="readout-lao-rao">AP 0°</span>
-          </div>
-          <div class="readout-card">
-            <span class="readout-sub" data-i18n="angulationLabel">${getTranslation('angulationLabel')}</span>
-            <span class="readout-digit" id="readout-cra-cau">0°</span>
-          </div>
-        </div>
-
         <div class="carm-desc-box" id="carm-projection-desc">${getAngioDescription('anterior')}</div>
 
         <!-- 2D JOYSTICK TRACKPAD -->
@@ -330,7 +320,7 @@ app.innerHTML = `
             <button class="nudge-btn nudge-up" data-nudge="cra" title="Cranial +5°">▲ CRA</button>
             <div class="nudge-mid-row">
               <button class="nudge-btn" data-nudge="rao" title="RAO +5°">◀ RAO</button>
-              <button class="nudge-btn nudge-center" id="carm-center-btn" title="Sıfırla (AP 0° / 0°)">AP</button>
+              <span class="nudge-hub" aria-hidden="true"></span>
               <button class="nudge-btn" data-nudge="lao" title="LAO +5°">LAO ▶</button>
             </div>
             <button class="nudge-btn" data-nudge="cau" title="Caudal -5°">▼ CAU</button>
@@ -370,20 +360,6 @@ app.innerHTML = `
         </div>
 
         <div class="carm-footer">
-          <button id="fluoroscopy-toggle" class="fluoro-btn" aria-pressed="false">
-            <span class="fluoro-icon">☢</span> <span data-i18n="fluoroBtn">${getTranslation('fluoroBtn')}</span>
-          </button>
-          <div class="carm-quick-actions">
-            <button id="carm-veins-toggle" class="carm-sub-btn active" title="Venöz sistemi (SVC, IVC, PV, CS, GCV) gizle / göster">
-              <span class="carm-sub-icon">🩸</span> Venler
-            </button>
-            <button id="carm-conduction-toggle" class="carm-sub-btn active" title="Kalp ileti sistemini (SA, AV, His-Purkinje) gizle / göster">
-              <span class="carm-sub-icon">⚡</span> İleti
-            </button>
-            <button id="carm-valves-toggle" class="carm-sub-btn active" title="Kapak ve papiller yapıları gizle / göster">
-              <span class="carm-sub-icon">🤍</span> Kapaklar
-            </button>
-          </div>
           <div id="catheter-toggles" class="carm-catheter-container" hidden>
             <div class="carm-section-subtitle" data-i18n="tsCathHeading">${getTranslation('tsCathHeading')}</div>
             <div class="carm-catheter-grid">
@@ -1322,7 +1298,7 @@ function handleHashChange() {
     // A camera preset carried over from another page (the mitral view of the angiography page),
     // applied once the atlas loads: the ready handler re-inspects the selection first.
     const targetView = urlParams.get('view');
-    if (targetView && document.querySelector(`[data-view="${CSS.escape(targetView)}"]`)) heart?.ready.then(() => setCameraPreset(targetView)).catch(() => {});
+    if (targetView && document.querySelector(`[data-view="${CSS.escape(targetView)}"], [data-angio="${CSS.escape(targetView)}"]`)) heart?.ready.then(() => setCameraPreset(targetView)).catch(() => {});
     rememberRoute(window.location.hash);   // a deep link is a visit too (syncUrl is skipped here)
   } finally {
     isUpdatingRoute = false;
@@ -1408,9 +1384,8 @@ carmHeader?.addEventListener('click', e => {
   toggleCarmPanel();
 });
 
-// Quick toggles for Veins and Conduction System
+// Veins, conduction and valves follow their group checkbox in the Layers panel.
 let veinsVisible = true;
-const carmVeinsToggle = document.querySelector('#carm-veins-toggle');
 const veinsCheckbox = document.querySelector('input[data-layer="veins"]');
 
 function setVeinsState(visible) {
@@ -1420,42 +1395,26 @@ function setVeinsState(visible) {
   document.querySelectorAll('[data-layer="cs"], [data-layer="gcv"], [data-layer="mcv"], [data-layer="piv"], [data-layer="pv"], [data-layer="svc"], [data-layer="ivc"]').forEach(cb => {
     cb.checked = visible;
   });
-  if (carmVeinsToggle) {
-    carmVeinsToggle.classList.toggle('active', veinsVisible);
-    carmVeinsToggle.innerHTML = `<span class="carm-sub-icon">🩸</span> ${veinsVisible ? getTranslation('veinsBtn') : getTranslation('veinsHiddenBtn')}`;
-  }
 }
 
-carmVeinsToggle?.addEventListener('click', () => {
-  setVeinsState(!veinsVisible);
-});
 veinsCheckbox?.addEventListener('change', () => {
   setVeinsState(veinsCheckbox.checked);
 });
 
 let conductionVisible = true;
-const carmConductionToggle = document.querySelector('#carm-conduction-toggle');
 const conductionCheckbox = document.querySelector('input[data-layer="conduction"]');
 
 function setConductionState(visible) {
   conductionVisible = visible;
   heart?.setConductionVisible(conductionVisible);
   if (conductionCheckbox) conductionCheckbox.checked = conductionVisible;
-  if (carmConductionToggle) {
-    carmConductionToggle.classList.toggle('active', conductionVisible);
-    carmConductionToggle.innerHTML = `<span class="carm-sub-icon">⚡</span> ${conductionVisible ? getTranslation('conductionBtn') : getTranslation('conductionHiddenBtn')}`;
-  }
 }
 
-carmConductionToggle?.addEventListener('click', () => {
-  setConductionState(!conductionVisible);
-});
 conductionCheckbox?.addEventListener('change', () => {
   setConductionState(conductionCheckbox.checked);
 });
 
 let valvesVisible = true;
-const carmValvesToggle = document.querySelector('#carm-valves-toggle');
 const valvesCheckbox = document.querySelector('input[data-layer="valves"]');
 const valveSubBoxes = ['aortic-valve', 'mitral', 'mitral-posterior', 'mitral-anterior', 'tricuspid', 'tricuspid-septal', 'tricuspid-inferior', 'tricuspid-anterior', 'mitral-annulus', 'tricuspid-annulus', 'pulmonary-valve', 'papillary'].map(id => document.querySelector(`input[data-layer="${id}"]`)).filter(Boolean);
 
@@ -1467,10 +1426,6 @@ function setValvesState(visible) {
     valvesCheckbox.indeterminate = false;
   }
   valveSubBoxes.forEach(b => b.checked = valvesVisible);
-  if (carmValvesToggle) {
-    carmValvesToggle.classList.toggle('active', valvesVisible);
-    carmValvesToggle.innerHTML = `<span class="carm-sub-icon">🤍</span> ${valvesVisible ? getTranslation('valvesBtn') : getTranslation('valvesHiddenBtn')}`;
-  }
 }
 
 valvesCheckbox?.addEventListener('change', () => {
@@ -1486,16 +1441,8 @@ valveSubBoxes.forEach(b => {
       valvesCheckbox.checked = allChecked;
       valvesCheckbox.indeterminate = anyChecked && !allChecked;
       valvesVisible = anyChecked;
-      if (carmValvesToggle) {
-        carmValvesToggle.classList.toggle('active', valvesVisible);
-        carmValvesToggle.innerHTML = `<span class="carm-sub-icon">🤍</span> ${valvesVisible ? getTranslation('valvesBtn') : getTranslation('valvesHiddenBtn')}`;
-      }
     }
   });
-});
-
-carmValvesToggle?.addEventListener('click', () => {
-  setValvesState(!valvesVisible);
 });
 
 let isDraggingPuck = false;
@@ -1567,10 +1514,6 @@ document.querySelectorAll('[data-nudge]').forEach(btn => {
   });
 });
 
-document.querySelector('#carm-center-btn')?.addEventListener('click', () => {
-  heart?.setAngioProjection(0, 0, true);
-});
-
 document.querySelectorAll('[data-angio]').forEach(btn => {
   btn.addEventListener('click', () => {
     const angioKey = btn.dataset.angio;
@@ -1587,7 +1530,6 @@ document.querySelectorAll('[data-angio]').forEach(btn => {
 
 let fluoroActive = false;
 let segmentationActive = false;
-const fluoroBtn = document.querySelector('#fluoroscopy-toggle');
 const fluoroDockBtn = document.querySelector('#fluoro-toggle-dock');
 // Anatomy contours over the fluoroscopy image (fluoro-contours.js), on by default.
 const fluoroContoursBtn = document.querySelector('#fluoro-contours-toggle');
@@ -1601,10 +1543,6 @@ function setFluoroscopyActive(active) {
   fluoroActive = Boolean(active);
   if (fluoroActive && segmentationActive) setSegmentationActive(false);
   heart?.setFluoroscopy(fluoroActive);
-  if (fluoroBtn) {
-    fluoroBtn.setAttribute('aria-pressed', String(fluoroActive));
-    fluoroBtn.classList.toggle('active', fluoroActive);
-  }
   if (fluoroDockBtn) {
     fluoroDockBtn.setAttribute('aria-pressed', String(fluoroActive));
     fluoroDockBtn.classList.toggle('active', fluoroActive);
@@ -1618,7 +1556,6 @@ function toggleFluoroscopy() {
   setFluoroscopyActive(!fluoroActive);
 }
 
-fluoroBtn?.addEventListener('click', toggleFluoroscopy);
 fluoroDockBtn?.addEventListener('click', toggleFluoroscopy);
 
 // Segmentation-style label colours (segmentation-view.js). Fluoroscopy is a different
@@ -1636,10 +1573,6 @@ function updateJoystickFromCamera(angles) {
   const { laoRao, craCau, laoRaoStr, craCauStr, label } = angles;
   const badge = document.querySelector('#carm-angle-badge');
   if (badge) badge.textContent = label;
-  const laoRaoEl = document.querySelector('#readout-lao-rao');
-  if (laoRaoEl) laoRaoEl.textContent = laoRaoStr;
-  const craCauEl = document.querySelector('#readout-cra-cau');
-  if (craCauEl) craCauEl.textContent = craCauStr;
 
   setPuckFromAngles(laoRao, craCau);
 
@@ -2139,16 +2072,6 @@ function updateLanguageUI() {
     const lessonIntroEl = document.querySelector('#lesson-intro');
     if (lessonIntroEl) lessonIntroEl.textContent = lessons[mode].intro;
     showStep({ relabel: true });
-  }
-
-  if (carmVeinsToggle) {
-    carmVeinsToggle.innerHTML = `<span class="carm-sub-icon">🩸</span> ${veinsVisible ? getTranslation('veinsBtn') : getTranslation('veinsHiddenBtn')}`;
-  }
-  if (carmConductionToggle) {
-    carmConductionToggle.innerHTML = `<span class="carm-sub-icon">⚡</span> ${conductionVisible ? getTranslation('conductionBtn') : getTranslation('conductionHiddenBtn')}`;
-  }
-  if (carmValvesToggle) {
-    carmValvesToggle.innerHTML = `<span class="carm-sub-icon">🤍</span> ${valvesVisible ? getTranslation('valvesBtn') : getTranslation('valvesHiddenBtn')}`;
   }
 
   const progressLabelEl = document.querySelector('#progress-label');

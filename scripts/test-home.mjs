@@ -27,9 +27,9 @@ for (const m of HOME_MODULES) {
   assert.ok(fs.existsSync(new URL(`${page}index.html`, root)), `${m.id}: ${m.path} exists`);
   if (m.path.includes('#')) assert.match(m.path, /^\.\/#\/mode\/[a-z]+$/, `${m.id}: 3D route`);
 }
-// Every menu page of the site header has a card.
+// Every menu page of the site header has a card (a drawer entry with a mode is a 3D lesson on a listed page).
 for (const mod of SITE_MODULES) {
-  for (const page of mod.pages || [mod]) {
+  for (const page of (mod.pages || [mod]).filter((p) => !p.mode)) {
     assert.ok(HOME_MODULES.some((m) => m.id === page.id), `site page ${page.id} has a welcome card`);
   }
 }

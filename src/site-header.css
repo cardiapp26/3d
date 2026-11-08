@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 /* Shared Cardia header (site-header.js): the same two rows on every page.
-   Row 1: brand, page badge, sub-pages, the page's own controls.
+   Row 1: brand, page badge, the page's own controls.
    Row 2: the module menu, one line, scrolling sideways when narrow.
    --site-header-h is the full height; page layouts subtract it. */
 :root{--site-header-h:96px}
@@ -18,11 +18,6 @@
 .site-brand{display:flex;align-items:center;gap:7px;color:var(--site-text);text-decoration:none;font-size:20px;line-height:1;flex-shrink:0}
 .site-brand strong{font-size:17px;font-weight:800;letter-spacing:3px}
 .site-badge{font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--site-muted);white-space:nowrap;flex-shrink:0}
-.site-subpages{display:flex;gap:2px;padding:2px;border-radius:8px;background:#e7ece5;border:1px solid var(--site-line);min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}
-.site-subpages::-webkit-scrollbar{display:none}
-.site-subpage{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;color:var(--site-link);text-decoration:none;white-space:nowrap}
-.site-subpage:hover{background:var(--site-hover);color:var(--site-text)}
-.site-subpage[aria-current=page]{background:var(--site-control);color:var(--site-text);box-shadow:0 1px 2px rgba(33,73,63,.15)}
 .site-modules{grid-area:nav;display:flex;align-items:center;gap:4px;height:44px;min-width:0;margin:0 -24px;padding:0 20px;
   border-top:1px solid var(--site-line);overflow-x:auto;scrollbar-width:none}
 .site-modules::-webkit-scrollbar{display:none}
@@ -30,18 +25,7 @@
   font-size:13px;font-weight:600;color:var(--site-link);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
 .site-module:hover{background:var(--site-hover);color:var(--site-text)}
 .site-module[aria-current=page]{background:var(--site-active);color:var(--site-on-active)}
-.site-module-group{flex:0 0 auto;display:inline-flex;align-items:center}
-.site-module-group .site-module{border-top-right-radius:0;border-bottom-right-radius:0;padding-right:8px}
-.site-module-more{height:32px;width:24px;padding:0;border:0;border-radius:0 7px 7px 0;background:transparent;color:var(--site-link);font-size:11px;cursor:pointer}
-.site-module-more:hover,.site-module-more[aria-expanded=true]{background:var(--site-hover);color:var(--site-text)}
-.site-module-group:has(.site-module[aria-current=page]) .site-module-more{background:var(--site-active);color:var(--site-on-active);box-shadow:inset 1px 0 0 rgba(255,255,255,.25)}
-.site-module-menu{position:fixed;z-index:130;display:flex;flex-direction:column;min-width:230px;padding:6px;background:var(--site-control);border:1px solid var(--site-line);border-radius:9px;box-shadow:0 10px 28px rgba(24,59,48,.16)}
-.site-module-menu[hidden]{display:none}
-.site-module-menu a{display:block;padding:8px 10px;border-radius:6px;color:var(--site-text);text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}
-.site-module-menu a:hover,.site-module-menu a:focus-visible{background:var(--site-hover)}
-.site-module-menu a[aria-current=page]{background:#e7ece5}
-.site-module-menu .site-menu-lesson{padding-left:24px;font-weight:500;color:var(--site-link)}
-.site-module-more:focus-visible,.site-module-menu a:focus-visible,.site-module:focus-visible,.site-subpage:focus-visible,.site-brand:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
+.site-module:focus-visible,.site-brand:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
 
 /* The page's own controls (language, search, tools) take the header colours. */
 .site-header-actions{grid-area:actions;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;height:52px;font-size:12px;color:var(--site-muted)}
@@ -71,7 +55,6 @@ header.site-header .site-header-actions .quick-search input{min-height:32px;back
 @media(max-width:1100px){
   .site-header{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand actions" "nav nav";padding:0 14px;column-gap:10px}
   .site-badge{display:none}
-  .site-subpage{padding:5px 8px;font-size:11.5px}
   .site-modules{margin:0 -14px;padding:0 12px}
 }
 @media(max-width:640px){
@@ -79,14 +62,36 @@ header.site-header .site-header-actions .quick-search input{min-height:32px;back
   .site-brand-block{height:48px;gap:8px}
   .site-brand strong{font-size:15px;letter-spacing:1px}
   .site-badge{display:none}
-  .site-subpage{padding:6px 8px;font-size:11px}
   .site-modules{height:48px;margin:0 -10px;padding:0 8px}
   .site-module{height:44px;padding:0 11px;font-size:12px}
-  .site-module-more{height:44px;width:32px}
-  .site-module-menu a{padding:12px 10px}
   .site-header-actions{height:48px;gap:4px}
   header.site-header .site-header-actions button,header.site-header .site-header-actions a{min-height:44px;min-width:44px;padding:0 8px;justify-content:center}
 }
-@media(max-width:420px){
-  .site-subpages{display:none}
+
+/* Left drawer of a module with several pages (site-header.js): the button sits
+   before the brand; the panel opens from the left edge, under the header. */
+.module-nav-toggle{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border:1px solid var(--site-control-line);border-radius:7px;
+  background:var(--site-control);color:var(--site-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+.module-nav-toggle:hover,.module-nav-toggle[aria-expanded=true]{background:var(--site-active);color:var(--site-on-active);border-color:var(--site-active)}
+.module-nav-icon{font-size:14px;line-height:1}
+.module-nav{--mn-bg:#fff;--mn-line:#dee4de;--mn-text:#21493f;--mn-muted:#81908b;--mn-hover:#e8efe9;--mn-active:#21493f;
+  position:fixed;left:0;top:var(--module-nav-top,96px);z-index:120;font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+.module-nav *{box-sizing:border-box}
+.module-nav-panel{display:flex;flex-direction:column;gap:2px;width:272px;max-height:calc(100vh - var(--module-nav-top,96px) - 12px);overflow-y:auto;
+  padding:8px;background:var(--mn-bg);border:1px solid var(--mn-line);border-left:0;border-top:0;border-radius:0 0 12px 0;box-shadow:0 14px 34px rgba(24,59,48,.22)}
+.module-nav-panel[hidden]{display:none}
+.module-nav-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 4px 8px 10px;margin-bottom:2px;border-bottom:1px solid var(--mn-line);color:var(--mn-muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.module-nav-head strong{font-weight:700}
+.module-nav-close{width:30px;height:30px;border:0;border-radius:7px;background:transparent;color:var(--mn-muted);font-size:19px;line-height:1;cursor:pointer}
+.module-nav-close:hover{background:var(--mn-hover);color:var(--mn-text)}
+.module-nav-link{display:block;padding:9px 10px;border-radius:7px;color:var(--mn-text);text-decoration:none;font-size:13px;font-weight:600;line-height:1.3}
+.module-nav-link:hover{background:var(--mn-hover)}
+.module-nav-link[aria-current=page]{background:var(--mn-active);color:#fff}
+.module-nav-toggle:focus-visible,.module-nav-close:focus-visible,.module-nav-link:focus-visible{outline:3px solid #299f8a;outline-offset:2px}
+@media(max-width:640px){
+  .module-nav-toggle{height:44px;min-width:44px;padding:0 9px}
+  .module-nav-toggle span:last-child{display:none}
+  .module-nav-panel{width:min(86vw,300px)}
+  .module-nav-link{padding:12px 10px}
 }
+@media print{.module-nav,.module-nav-toggle{display:none}}

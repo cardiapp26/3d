@@ -21,7 +21,9 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.equal(await page.locator('#fluoro-contours-toggle').isVisible(), false);
 
     await page.locator('#fluoro-toggle-dock').click();
-    await page.locator('[data-view=rao]').first().click();
+    // Oblique projections are in the C-arm panel (the dock keeps Anterior, Posterior, Root, Mitral).
+    await page.locator('#carm-toggle-dock').click();
+    await page.locator('[data-angio=rao]').click();
     await page.waitForTimeout(1200);
     const rao = await state();
     assert.equal(rao.visible, true);
@@ -29,7 +31,7 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.deepEqual(ids, ['aorta', 'cs', 'la', 'lv', 'mitral-annulus', 'pa', 'ra', 'rv', 'svc', 'tricuspid-annulus'], 'all ten structures');
     assert.equal(await page.locator('#fluoro-contours-toggle').isVisible(), true);
     // In LAO the right-sided annulus (TA) is on the screen left of the mitral annulus (MA).
-    await page.locator('[data-view=lao]').first().click();
+    await page.locator('[data-angio=lao]').click();
     await page.waitForTimeout(1200);
     const lao = await state();
     const at = (s, id) => s.contours.find((c) => c.id === id).centroid;

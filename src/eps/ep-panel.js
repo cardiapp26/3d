@@ -22,6 +22,7 @@ import { stripLinks } from './ep-strip-links.js';
 import { createMappingPanel } from './amap-panel.js';
 import { AMAP_TEXT } from './amap-text.js';
 import { createPaceMapPanel } from './pmap-panel.js';
+import { createSectionNav } from './ep-section-nav.js';
 import { PMAP_TEXT } from './pmap-text.js';
 import { createSubstratePanel } from './smap-panel.js';
 import { SMAP_TEXT } from './smap-text.js';
@@ -249,7 +250,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   conductionTab.addEventListener('click', () => { showView('conduction'); notifySection(); });
   tabs.appendChild(conductionTab);
   const conductionPanel = createConductionPanel(doc, { getLang: () => lang });
-  // 3D Electroanatomical Mapping & Whole-Heart Simulation (CardaxEP-style workstation).
+  // 3D Electroanatomical Mapping & Whole-Heart Simulation workstation.
   const eam3dTab = el('button');
   eam3dTab.type = 'button';
   eam3dTab.setAttribute('role', 'tab');
@@ -281,6 +282,8 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   vesTab.setAttribute('data-ep-section', 'ves');
   vesTab.addEventListener('click', () => { showView('ves'); notifySection(); });
   tabs.appendChild(vesTab);
+  // The tabs, grouped in the collapsible left menu with the 3D EP anatomy lessons.
+  const sectionNav = createSectionNav(doc, tabs, { getLang: () => lang });
   const vesPanel = createVesLocPanel(doc, { getLang: () => lang, onPractice: () => { showView('ves-practice'); notifySection(); } });
   const livePanel = createLivePanel(doc, { getLang: () => lang, onOpenEam3d: openEam3d });
   const caseRow = el('label', 'ep-case');
@@ -467,7 +470,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   sideCol.append(practiceBar, taskPanel.element, originPanel.element, simPanel.element, pharmaPanel.element, pacingPanel.element, pviPanel.element, apPanel.element, atGuide.element, evidenceBtn, result, impulse.element, text, card, compareBox, schematic.element, zoneLine, mapBox, compare, endpoint, sources);
   const lessonBox = el('div', 'ep-lesson');
   lessonBox.append(stripCol, sideCol);
-  root.append(tabs, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, mapBasicsPanel.element, afMapPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element, recordingPanel.element, cspPanel.element, conductionPanel.element, eam3dPanel.element);
+  root.append(sectionNav.element, lessonBox, livePanel.element, mappingPanel.element, paceMapPanel.element, substratePanel.element, mapBasicsPanel.element, afMapPanel.element, basicsPanel.element, svtPanel.element, wpwPanel.element, vesPanel.element, recordingPanel.element, cspPanel.element, conductionPanel.element, eam3dPanel.element);
   mount.appendChild(root);
 
   let lastDrawn = null;
@@ -677,6 +680,7 @@ export function createEpPanel(mount, { getLang, onScenario, onSection, initial =
   function render() {
     const t = EP_TEXT[lang];
     const recording = current();
+    sectionNav.render();
     sectionButtons.forEach((button, i) => {
       button.textContent = t.sections[EP_SECTIONS[i]];
       button.setAttribute('aria-selected', String(!state.live && !state.mapping && !state.pacemap && !state.substrate && !state.mapbasics && !state.afmap && !state.basics && !state.recording && !state.csp && !state.conduction && !state.eam3d && !state.svt && !state.wpw && !state.ves && !state.practice && EP_SECTIONS[i] === state.section));
