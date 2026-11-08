@@ -99,9 +99,6 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
           <div class="angio-seg" role="group" data-console-group="native">
             <button type="button" data-angio-sys="left">LCA</button><button type="button" data-angio-sys="right">RCA</button><button type="button" data-angio-sys="both"></button>
           </div>
-          <div class="angio-seg" role="group" data-console-group="graft-switch">
-            <button type="button" data-graft-switch="off"></button><button type="button" data-graft-switch="on"></button>
-          </div>
           <div class="angio-seg" role="group" data-console-group="grafts">
             <button type="button" data-angio-sys="lima">LIMA</button><button type="button" data-angio-sys="svg-om">SVG–OM</button><button type="button" data-angio-sys="svg-pda">SVG–PDA</button>
           </div>
@@ -122,7 +119,6 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
           </div>
         </div>
         <div class="angio-rotation">
-          <div class="angio-rotation-readout"><strong data-console-alpha-val></strong><strong data-console-beta-val></strong></div>
           <input type="range" min="-90" max="90" step="1" data-console-alpha>
           <div class="angio-rotation-scale"><span>RAO 90</span><span>0</span><span>LAO 90</span></div>
         </div>
@@ -160,15 +156,8 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
   deviceElement.dataset.angioDevice = '';
   atlasElement.querySelector('[data-atlas-opacity]').addEventListener('input', e => atlas?.setOpacity(Number(e.target.value)));
   atlasElement.querySelectorAll('[data-atlas-layer]').forEach(input => input.addEventListener('change', () => atlas?.setLayer(input.dataset.atlasLayer, input.checked)));
-  // Fluoroscopy console: native system, graft on/off and choice, outlines, C-arm angles.
-  let lastNative = ['left', 'right', 'both'].includes(state.system) ? state.system : 'left';
-  let lastGraft = ['lima', 'svg-om', 'svg-pda'].includes(state.system) ? state.system : 'lima';
-  const isGraft = id => ['lima', 'svg-om', 'svg-pda'].includes(id);
+  // Fluoroscopy console: one system choice (a native system or one graft), outlines, veins only, C-arm angles.
   atlasElement.querySelectorAll('[data-console-bar] [data-angio-sys]').forEach(btn => btn.addEventListener('click', () => setSystem(btn.dataset.angioSys)));
-  atlasElement.querySelectorAll('[data-graft-switch]').forEach(btn => btn.addEventListener('click', () => {
-    const on = btn.dataset.graftSwitch === 'on';
-    if (on !== isGraft(state.system)) setSystem(on ? lastGraft : lastNative);
-  }));
   const contoursBtn = atlasElement.querySelector('[data-atlas-contours]');
   contoursBtn.addEventListener('click', () => {
     const on = contoursBtn.getAttribute('aria-pressed') !== 'true';
@@ -186,40 +175,39 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
   atlasElement.querySelector('[data-console-beta]').addEventListener('input', e => setAngles(state.alpha, Number(e.target.value)));
   const SYSTEM_CORNER = { left: 'LCA', right: 'RCA', both: 'LCA + RCA', lima: 'LIMA', 'svg-om': 'SVG–OM', 'svg-pda': 'SVG–PDA' };
 
-  function syncConsole() {
-    const isTr = getLang() === 'tr';
-    if (isGraft(state.system)) lastGraft = state.system; else lastNative = state.system;
-    const graftOn = isGraft(state.system);
-    atlasElement.querySelectorAll('[data-console-bar] [data-angio-sys]').forEach(btn => {
+  /** System buttons: one choice across the native and graft groups, named in full on hover. */
+  function syncSystemButtons(isTr) {
+    const bar = atlasElement.querySelector('[data-console-bar]');
+    bar.setAttribute('aria-label', isTr ? 'Floroskopi konsolu' : 'Fluoroscopy console');
+    bar.querySelector('[data-console-group="native"]').setAttribute('aria-label', isTr ? 'Doğal koroner sistem' : 'Native coronary system');
+    bar.querySelector('[data-console-group="grafts"]').setAttribute('aria-label', isTr ? 'Bypass grefti' : 'Bypass graft');
+    bar.querySelectorAll('[data-angio-sys]').forEach(btn => {
       const active = btn.dataset.angioSys === state.system;
+      const system = CORONARY_SYSTEMS.find(s => s.id === btn.dataset.angioSys);
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-pressed', String(active));
       btn.setAttribute('aria-selected', String(active));
+      if (system) btn.title = isTr ? system.nameTr : system.nameEn;
     });
-    atlasElement.querySelector('[data-angio-sys="both"]').textContent = isTr ? 'İkisi' : 'Both';
-    atlasElement.querySelectorAll('[data-graft-switch]').forEach(btn => {
-      const active = (btn.dataset.graftSwitch === 'on') === graftOn;
-      btn.textContent = btn.dataset.graftSwitch === 'on' ? (isTr ? 'Greft açık' : 'Grafts on') : (isTr ? 'Greft kapalı' : 'Grafts off');
-      btn.classList.toggle('active', active);
-      btn.setAttribute('aria-pressed', String(active));
-    });
-    atlasElement.querySelector('[data-console-group="grafts"]').classList.toggle('is-off', !graftOn);
-    atlasElement.querySelector('[data-console-group="native"]').classList.toggle('is-off', graftOn);
+    bar.querySelector('[data-angio-sys="both"]').textContent = isTr ? 'İkisi' : 'Both';
+  }
+
+  function syncConsole() {
+    const isTr = getLang() === 'tr';
+    syncSystemButtons(isTr);
     contoursBtn.textContent = isTr ? 'Konturlar' : 'Outlines';
     veinsOnlyBtn.textContent = isTr ? 'Yalnız venler' : 'Veins only';
     veinsOnlyBtn.title = isTr ? 'Koroner venler: arterler ve greftler gizlenir' : 'Coronary veins: arteries and grafts hidden';
     const a = Math.round(state.alpha), b = Math.round(state.beta);
     const rot = a === 0 ? 'AP 0°' : `${a > 0 ? 'LAO' : 'RAO'} ${Math.abs(a)}°`;
     const ang = b === 0 ? (isTr ? 'Düz 0°' : 'Straight 0°') : `${b > 0 ? 'CRA' : 'CAU'} ${Math.abs(b)}°`;
-    atlasElement.querySelector('[data-console-alpha-val]').textContent = rot;
-    atlasElement.querySelector('[data-console-beta-val]').textContent = ang;
     const alphaInput = atlasElement.querySelector('[data-console-alpha]');
     const betaInput = atlasElement.querySelector('[data-console-beta]');
     if (document.activeElement !== alphaInput) alphaInput.value = String(a);
     if (document.activeElement !== betaInput) betaInput.value = String(b);
     alphaInput.setAttribute('aria-label', isTr ? `Rotasyon (RAO / LAO): ${rot}` : `Rotation (RAO / LAO): ${rot}`);
     betaInput.setAttribute('aria-label', isTr ? `Angülasyon (CRA / CAU): ${ang}` : `Angulation (CRA / CAU): ${ang}`);
-    // Cine corners: projection as the lab monitor writes it, and the injected system.
+    // Cine corners, the angle readout: projection as the lab monitor writes it, and the injected system.
     atlasElement.querySelector('[data-cine-angle]').textContent = `${a === 0 ? 'AP' : `${a > 0 ? 'LAO' : 'RAO'} ${Math.abs(a)}`} ${b === 0 ? '' : `${b > 0 ? 'CRA' : 'CAU'} ${Math.abs(b)}`}`.trim();
     atlasElement.querySelector('[data-cine-system]').textContent = veinsOnlyBtn.getAttribute('aria-pressed') === 'true' ? (isTr ? 'VENLER' : 'VEINS') : SYSTEM_CORNER[state.system] || '';
   }
@@ -345,20 +333,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
 
   function syncAngleControls() {
     const isTr = getLang() === 'tr';
-    const laoRao = Math.abs(state.alpha) < 0.5 ? 'AP 0°' : `${state.alpha > 0 ? 'LAO' : 'RAO'} ${Math.abs(Math.round(state.alpha))}°`;
-    const craCau = Math.abs(state.beta) < 0.5 ? '0°' : `${state.beta > 0 ? 'CRA' : 'CAU'} ${Math.abs(Math.round(state.beta))}°`;
-
-    const alphaSlider = container.querySelector('#angio-alpha-slider');
-    if (alphaSlider) alphaSlider.value = String(Math.round(state.alpha));
-
-    const betaSlider = container.querySelector('#angio-beta-slider');
-    if (betaSlider) betaSlider.value = String(Math.round(state.beta));
-
-    const alphaVal = container.querySelector('#angio-alpha-val');
-    if (alphaVal) alphaVal.textContent = laoRao;
-
-    const betaVal = container.querySelector('#angio-beta-val');
-    if (betaVal) betaVal.textContent = craCau;
+    // The console sliders beside the fluoroscopy are the only angle sliders; the pad adds the joystick and 5° nudges.
     syncConsole();
 
     // Joystick puck position: Pad dimensions are 160x160 (-80 to +80)
@@ -555,7 +530,6 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
           <div class="angio-pad-box">
             <div class="angio-pad-header">
               <span class="angio-pad-title">🕹️ ${isTr ? 'C-Arm Açı Kumandası (LAO/RAO & CRA/CAU)' : 'C-Arm Angle Pad'}</span>
-              <button type="button" class="angio-reset-btn" id="angio-btn-center">AP 0° / 0°</button>
             </div>
 
             <div class="angio-pad-flex">
@@ -574,30 +548,12 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
                 </div>
               </div>
 
-              <!-- Sliders & Nudge Cluster -->
+              <!-- 4-way 5° nudge cluster (sliders sit beside the fluoroscopy; AP 0° / 0° is Anterior in the camera bar) -->
               <div class="angio-nudge-col">
-                <div class="angio-slider-item">
-                  <div class="angio-slider-label">
-                    <span>${isTr ? 'Rotasyon (RAO / LAO):' : 'Rotation (RAO / LAO):'}</span>
-                    <strong id="angio-alpha-val">0°</strong>
-                  </div>
-                  <input type="range" id="angio-alpha-slider" min="-90" max="90" value="${state.alpha}" />
-                </div>
-
-                <div class="angio-slider-item">
-                  <div class="angio-slider-label">
-                    <span>${isTr ? 'Angülasyon (CAU / CRA):' : 'Angulation (CAU / CRA):'}</span>
-                    <strong id="angio-beta-val">0°</strong>
-                  </div>
-                  <input type="range" id="angio-beta-slider" min="-45" max="45" value="${state.beta}" />
-                </div>
-
-                <!-- 4-Way Nudge Cluster -->
                 <div class="angio-nudge-cluster">
                   <button type="button" class="angio-nudge-btn nudge-up" data-nudge="cra" title="Cranial +5°">▲ CRA</button>
                   <div class="angio-nudge-mid">
                     <button type="button" class="angio-nudge-btn" data-nudge="rao" title="RAO +5°">◀ RAO</button>
-                    <button type="button" class="angio-nudge-btn" data-nudge="ap" title="Sıfırla">AP</button>
                     <button type="button" class="angio-nudge-btn" data-nudge="lao" title="LAO +5°">LAO ▶</button>
                   </div>
                   <button type="button" class="angio-nudge-btn nudge-down" data-nudge="cau" title="Caudal -5°">▼ CAU</button>
@@ -727,18 +683,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       }
     });
 
-    // Sliders
-    const aSlider = container.querySelector('#angio-alpha-slider');
-    aSlider?.addEventListener('input', e => {
-      setAngles(Number(e.target.value), state.beta);
-    });
-
-    const bSlider = container.querySelector('#angio-beta-slider');
-    bSlider?.addEventListener('input', e => {
-      setAngles(state.alpha, Number(e.target.value));
-    });
-
-    // Nudge cluster
+    // Nudge cluster (the angle sliders live on the fluoroscopy console and are bound once with the atlas)
     container.querySelectorAll('[data-nudge]').forEach(btn => {
       btn.addEventListener('click', () => {
         const act = btn.dataset.nudge;
@@ -746,12 +691,7 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
         else if (act === 'cau') setAngles(state.alpha, state.beta - 5);
         else if (act === 'lao') setAngles(state.alpha + 5, state.beta);
         else if (act === 'rao') setAngles(state.alpha - 5, state.beta);
-        else if (act === 'ap') setAngles(0, 0);
       });
-    });
-
-    container.querySelector('#angio-btn-center')?.addEventListener('click', () => {
-      setAngles(0, 0);
     });
 
     // Joystick 2D Trackpad dragging

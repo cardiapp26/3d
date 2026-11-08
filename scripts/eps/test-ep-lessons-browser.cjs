@@ -28,7 +28,8 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
       return { strip: r('.ep-strip'), side: r('.ep-side'), canvas: r('.egm-canvas'), scroll: document.documentElement.scrollHeight };
     });
     assert.ok(layout.side.left >= layout.strip.right, 'side column beside the strip');
-    assert.ok(layout.canvas.height >= 450 && layout.canvas.width >= 850, `strip fills the screen ${JSON.stringify(layout.canvas)}`);
+    // The section menu takes a left column (ep-section-nav.js), so the strip is narrower than the window.
+    assert.ok(layout.canvas.height >= 450 && layout.canvas.width >= 780, `strip fills the screen ${JSON.stringify(layout.canvas)}`);
     assert.ok(layout.scroll <= 900, 'no page scroll on desktop');
 
     // Neutral diagnosis: no zone until the evidence is open.

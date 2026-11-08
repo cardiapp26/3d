@@ -422,7 +422,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr', onOpenEam3d } = 
     widthOut.textContent = `${widthInput.value} %`;
     artifactBtn.textContent = t.artifact; artifactBtn.setAttribute('aria-pressed', String(state.artifact));
     truthBtn.textContent = t.truth; truthBtn.setAttribute('aria-pressed', String(state.truth));
-    open3dBtn.textContent = L() === 'en' ? 'Open 3D EAM (CardaxEP)' : '3B EAM (CardaxEP) Aç';
+    open3dBtn.textContent = L() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = t.scenarios[state.scenario].lesson;
     truth.textContent = t.scenarios[state.scenario].truth;
     truth.hidden = !state.truth;

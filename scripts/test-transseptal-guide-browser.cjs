@@ -20,7 +20,7 @@ const SHOTS = process.env.SHOT_DIR || null;
     page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
     page.on('response', r => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
     await page.addInitScript(() => { localStorage.setItem('cardia_lang', 'tr'); localStorage.setItem('cardia_lang_explicit', '1'); });
-    await page.goto(`${APP}/eps/anatomy/#/mode/transseptal`);
+    await page.goto(`${APP}/angio/3d/#/mode/transseptal`);
     await page.waitForSelector('#viewport[data-model-ready=true]');
     await page.waitForFunction(() => window.heart.getState().mode === 'transseptal');
     const guide = page.locator('[data-ts-guide]');

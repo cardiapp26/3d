@@ -1,4 +1,4 @@
-// 3D EAM & Whole-Heart Simulation (CardaxEP-style workstation) browser test:
+// 3D EAM & Whole-Heart Simulation workstation browser test:
 // Opens #/eam3d, loads the 3D four-chamber atlas (or 2D fallback), verifies scenario and map mode
 // switching, chamber/wall levers, C-arm views, 26-channel live polygraph painting, Space play/pause,
 // programmed stimulation (burst termination & S1-S2 induction), 3D RF ablation line application,
@@ -185,10 +185,10 @@ const painted = (page, sel) =>
     await page.evaluate(() => window.epsLab.setLang('en'));
     assert.equal(
       await page.locator('[data-ep-section="eam3d"]').textContent(),
-      '3D EAM · CardaxEP',
+      '3D electroanatomic map',
     );
     assert.ok(
-      (await ws.locator('.eam3d-deck-title').textContent()).includes('CardaxEP 3D Electroanatomical'),
+      (await ws.locator('.eam3d-deck-title').textContent()).includes('3D Electroanatomical Mapping'),
     );
 
     assert.deepEqual(errors, [], `desktop errors: ${errors.join(' | ')}`);

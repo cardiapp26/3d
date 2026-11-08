@@ -435,7 +435,7 @@ export function createSubstratePanel(doc, { getLang = () => 'tr', onOpenEam3d } 
     const named = Object.entries(s.sites).find(([, p]) => p[0] === state.site[0] && p[1] === state.site[1]);
     siteSel.value = named ? named[0] : '';
     for (const [btn, key] of [[tagsBtn, 'tags'], [truthBtn, 'truth']]) { btn.textContent = tt[key]; btn.setAttribute('aria-pressed', String(state[key])); }
-    open3dBtn.textContent = L() === 'en' ? 'Open 3D EAM (CardaxEP)' : '3B EAM (CardaxEP) Aç';
+    open3dBtn.textContent = L() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = st.lesson;
     truth.textContent = st.truth;
     truth.hidden = !state.truth;

@@ -58,8 +58,9 @@ const assert = require('node:assert/strict');
     await page.locator('[data-console-bar] [data-angio-sys="lima"]').click();
     await page.waitForFunction(() => window.angioStudio.getAtlasState().fluoro.graft === 'lima');
     assert.equal(await page.locator('[data-cine-system]').textContent(), 'LIMA');
-    assert.equal(await page.locator('[data-graft-switch="on"]').getAttribute('aria-pressed'), 'true');
-    await page.locator('[data-graft-switch="off"]').click();
+    assert.equal(await page.locator('[data-console-bar] [data-angio-sys="lima"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('[data-graft-switch]').count(), 0, 'one system choice: no separate grafts on/off switch');
+    await page.locator('[data-console-bar] [data-angio-sys="left"]').click();
     await page.waitForFunction(() => window.angioStudio.getAtlasState().fluoro.graft === null);
     await page.locator('[data-console-alpha]').fill('13');
     await page.locator('[data-console-beta]').fill('37');
@@ -81,11 +82,12 @@ const assert = require('node:assert/strict');
         tip = await page.evaluate(() => { const t = document.querySelector('[data-atlas-viewport=anatomy] .angio-atlas-tip'); return t && !t.hidden ? t.textContent : null; });
       }
     assert.ok(tip, 'hover shows a structure name');
-    // Atlas camera bar over the anatomy view: C-arm presets move both views, anatomy-only cameras do not.
-    assert.equal(await page.locator('[data-angio-viewbar] [data-viewbar-view]').count(), 7, 'seven camera presets');
-    await page.locator('[data-viewbar-view=spider]').click();
+    // Atlas camera bar over the anatomy view: Anterior and the anatomy-only cameras; C-arm standard views live once, in the gallery.
+    assert.deepEqual(await page.locator('[data-angio-viewbar] [data-viewbar-view]').evaluateAll(els => els.map(el => el.dataset.viewbarView)),
+      ['anterior', 'posterior', 'root', 'mitral'], 'camera bar does not repeat the gallery projections');
+    await page.locator('[data-angio-view=lao-caudal]').click();
     for (const view of [(await state()).anatomy, (await state()).fluoro]) assert.deepEqual([view.angio.laoRao, view.angio.craCau], [45, -35], 'Spider drives both views');
-    assert.equal(await page.locator('[data-viewbar-view=spider]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('[data-angio-view=lao-caudal]').getAttribute('aria-pressed'), 'true');
     await page.evaluate(() => document.activeElement?.blur());
     await page.keyboard.press('p');
     assert.equal((await state()).anatomyView, 'posterior');

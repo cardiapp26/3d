@@ -1,12 +1,12 @@
 /*
- * Bilingual (TR / EN) copy for the 3D EAM / CardaxEP whole-heart simulation
+ * Bilingual (TR / EN) copy for the 3D EAM whole-heart simulation
  * and probabilistic circuit-finding workstation (eam3d-panel.js, eam3d-atlas.js).
  */
 export const EAM3D_TEXT = Object.freeze({
   tr: {
-    tab: '3B EAM · CardaxEP',
+    tab: '3B elektroanatomik harita',
     eyebrow: 'DÖRT BOŞLUKLU 3B SİMÜLASYON VE ELEKTROANATOMİK HARİTALAMA',
-    title: 'CardaxEP 3B Elektroanatomik Haritalama ve Devre Bulucu',
+    title: '3B Elektroanatomik Haritalama ve Devre Bulucu',
     intro: 'Atriyumlar, ventriküller ve His-Purkinje ileti ağı tek bir 3B modelde: intrakardiyak kateterler (DUO, CS, HRA, His, RV, HD Grid), canlı elektrogramlar, programlı stimülasyon, 3B ablasyon ve olasılıksal devre modelleme.',
     rails: {
       case: 'Vaka',
@@ -19,7 +19,7 @@ export const EAM3D_TEXT = Object.freeze({
       frozen: 'DONDURULDU',
       pacing: 'PACING AKTİF',
       loading: '3B kalp atlası yükleniyor...',
-      ready: '3B EAM hazır',
+      ready: '3B harita hazır',
       failed: 'WebGL / 3B atlas yüklenemedi; 2B şematik görünüm aktif.'
     },
     topActions: {
@@ -174,9 +174,9 @@ export const EAM3D_TEXT = Object.freeze({
     }
   },
   en: {
-    tab: '3D EAM · CardaxEP',
+    tab: '3D electroanatomic map',
     eyebrow: 'FOUR-CHAMBER 3D SIMULATION & ELECTROANATOMICAL MAPPING',
-    title: 'CardaxEP 3D Electroanatomical Mapping & Circuit Finder',
+    title: '3D Electroanatomical Mapping & Circuit Finder',
     intro: 'Atria, ventricles, and the His-Purkinje conduction system in one 3D model: intracardiac catheters (DUO, CS, HRA, His, RV, HD Grid), live electrograms, programmed stimulation, 3D ablation, and probabilistic circuit modeling.',
     rails: {
       case: 'Case',
@@ -189,7 +189,7 @@ export const EAM3D_TEXT = Object.freeze({
       frozen: 'FROZEN',
       pacing: 'PACING',
       loading: 'Loading 3D heart atlas...',
-      ready: '3D EAM ready',
+      ready: '3D map ready',
       failed: 'WebGL / 3D atlas unavailable; schematic fallback active.'
     },
     topActions: {

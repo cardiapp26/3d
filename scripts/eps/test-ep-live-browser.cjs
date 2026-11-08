@@ -25,7 +25,8 @@ const APP = (process.env.EPS_URL || `${(process.env.APP_URL || 'http://localhost
       const r = (s) => document.querySelector(s).getBoundingClientRect();
       return { canvas: r('.ep-live-canvas'), deck: r('.ep-live-console'), scroll: document.documentElement.scrollHeight };
     });
-    assert.ok(layout.canvas.height >= 900 * 0.55 && layout.canvas.width >= 900, `monitor fills the screen ${JSON.stringify(layout.canvas)}`);
+    // The section menu takes a left column (ep-section-nav.js), so the monitor is narrower than the window.
+    assert.ok(layout.canvas.height >= 900 * 0.55 && layout.canvas.width >= 820, `monitor fills the screen ${JSON.stringify(layout.canvas)}`);
     assert.ok(layout.deck.left >= layout.canvas.right, 'console to the right of the monitor');
     assert.ok(layout.scroll <= 900, 'no page scroll on desktop');
 

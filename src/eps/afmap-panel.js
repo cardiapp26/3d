@@ -298,7 +298,7 @@ export function createAfMappingPanel(doc, { getLang = () => 'tr', onOpenEam3d } 
     truthBtn.textContent = tt.truth;
     truthBtn.setAttribute('aria-pressed', String(state.truth));
     truthBtn.hidden = state.map !== 'phase';
-    open3dBtn.textContent = getLang() === 'en' ? 'Open 3D EAM (CardaxEP)' : '3B EAM (CardaxEP) Aç';
+    open3dBtn.textContent = getLang() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = tt.scenarios[state.scenario].lesson;
     truth.textContent = tt.scenarios[state.scenario].truth;
     source.textContent = tt.source;

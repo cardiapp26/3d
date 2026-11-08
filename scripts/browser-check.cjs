@@ -338,15 +338,14 @@ const openDrawer = async (page, id) => {
     assert.equal(await page.locator('#carm-toggle-btn').textContent(), '−');
     assert.equal(await page.locator('#carm-toggle-dock').getAttribute('aria-expanded'), 'true');
 
-    // While panel is open, test C-Arm conduction quick-toggle button sync
-    await page.locator('#carm-conduction-toggle').click();
-    assert.ok(!await conductionBox.isChecked(), 'conduction checkbox unchecked via C-Arm toggle');
-    await page.locator('#carm-conduction-toggle').click();
-    assert.ok(await conductionBox.isChecked(), 'conduction checkbox re-checked via C-Arm toggle');
+    // One control per job: layers stay in the Layers panel, fluoroscopy and the oblique views
+    // have one button each (dock and C-arm presets), and the angle shows once (header badge).
+    assert.equal(await page.locator('#carm-panel .carm-sub-btn:not([data-cath]), #carm-panel #fluoroscopy-toggle, #carm-panel .readout-digit').count(), 0, 'C-Arm panel repeats no dock or layer control');
+    assert.equal(await page.locator('.view-presets [data-view="rao"], .view-presets [data-view="lao"], .view-presets [data-view="spider"]').count(), 0, 'oblique views live in the C-Arm presets only');
 
     // 7. Fluoroscopy exit restores coronary material roughness & metalness
-    await page.locator('#fluoroscopy-toggle').click();
-    assert.ok(await page.locator('#fluoroscopy-toggle').evaluate(el => el.classList.contains('active')));
+    await page.locator('#fluoro-toggle-dock').click();
+    assert.ok(await page.locator('#fluoro-toggle-dock').evaluate(el => el.classList.contains('active')));
     await page.waitForSelector('#viewport[data-camera-settled=true]');
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     assert.equal(await page.evaluate(() => window.heart.getState().fluoroscopy), true);
@@ -374,8 +373,8 @@ const openDrawer = async (page, id) => {
     assert.equal(projectionPixels.colored, 0, 'fluoroscopy uses neutral grayscale');
     assert.ok(projectionPixels.dark > 100, 'contrast vessels remain dark');
     assert.ok(projectionPixels.background > 100, 'detector background remains light');
-    await page.locator('#fluoroscopy-toggle').click();
-    assert.ok(!await page.locator('#fluoroscopy-toggle').evaluate(el => el.classList.contains('active')));
+    await page.locator('#fluoro-toggle-dock').click();
+    assert.ok(!await page.locator('#fluoro-toggle-dock').evaluate(el => el.classList.contains('active')));
     const coronaryMats = await page.evaluate(() => {
       const results = [];
       window.heart.scene.traverse(obj => {
@@ -401,7 +400,7 @@ const openDrawer = async (page, id) => {
       await page.locator('input[data-layer="conduction"]').uncheck();
       await page.locator('input[data-layer="veins"]').uncheck();
       await page.locator('#coronary-system').selectOption('left');
-      await page.locator('[data-view="spider"]').click();
+      await page.locator('[data-view="posterior"]').click();
     };
     const captureState = async () => page.evaluate(() => ({
       rvWall: document.querySelector('[data-wall="rv"]')?.value,

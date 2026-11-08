@@ -2,89 +2,110 @@ import { fromRoot } from './cardia-pages.js';
 import { SITE_MODULES, SITE_BADGES } from './site-modules.js';
 import './site-header.css';
 
-// The header every Cardia page shares: brand, the page badge, the module menu
-// (one order everywhere) and, for modules with more than one page, their
-// sub-pages. A page writes <header class="site-header" data-site-page="...">
-// with its own controls in .site-header-actions; mountSiteHeader adds the rest.
+// The header every Cardia page shares: brand, the page badge and the module
+// menu (one order everywhere). A module with several pages lists them in a
+// drawer that opens from the left (button before the brand; one place, no repeats).
+// A page writes <header class="site-header" data-site-page="..."> with its own
+// controls in .site-header-actions; mountSiteHeader adds the rest.
 
 const pick = (text, lang) => text[lang === 'en' ? 'en' : 'tr'];
-const moduleOfPage = page => SITE_MODULES.find(m => m.id === page || m.pages?.some(p => p.id === page)) || SITE_MODULES[0];
+const moduleOfPage = page => SITE_MODULES.find(m => m.id === page || m.aliases?.includes(page) || m.pages?.some(p => p.id === page)) || SITE_MODULES[0];
 const escapeAttr = value => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const NAV_TEXT = {
+  tr: { button: 'Sayfalar', pages: label => `${label} sayfaları`, open: label => `${label} sayfaları`, close: 'Menüyü kapat' },
+  en: { button: 'Pages', pages: label => `${label} pages`, open: label => `${label} pages`, close: 'Close the menu' }
+};
 
 function moduleLink(module, current, lang) {
-  const active = module.id === current.id;
   const attrs = [
     `id="${module.id}-link"`,
     'class="site-module"',
     `data-site-link="${module.id}"`,
     `href="${fromRoot(module.path)}"`,
     module.id === 'anatomy' ? 'data-simulator-link' : '',
-    active ? 'aria-current="page"' : '',
+    module.id === current.id ? 'aria-current="page"' : '',
     module.title ? `title="${escapeAttr(pick(module.title, lang))}"` : ''
   ].filter(Boolean).join(' ');
-  const link = `<a ${attrs}>${pick(module.label, lang)}</a>`;
-  if (!module.pages) return link;
-  const more = lang === 'en' ? `${pick(module.label, lang)} pages` : `${pick(module.label, lang)} sayfaları`;
-  return `<span class="site-module-group">${link}<button type="button" class="site-module-more" data-site-more="${module.id}" aria-haspopup="true" aria-expanded="false" aria-label="${escapeAttr(more)}" title="${escapeAttr(more)}">▾</button></span>`;
+  return `<a ${attrs}>${pick(module.label, lang)}</a>`;
 }
 
-/** Drop-down of a module with several pages: each page, and the lessons of a 3D page. */
-function moduleMenu(module, page, lang) {
-  const items = module.pages.flatMap(sub => [
-    `<a class="site-menu-page" href="${fromRoot(sub.path)}"${sub.id === page ? ' aria-current="page"' : ''}>${pick(sub.label, lang)}</a>`,
-    ...(sub.lessons || []).map(lesson => `<a class="site-menu-lesson" href="${fromRoot(sub.path)}#/mode/${lesson.mode}">${pick(lesson.label, lang)}</a>`)
-  ]);
-  return `<div class="site-module-menu" data-site-menu="${module.id}" data-site-part hidden>${items.join('')}</div>`;
+/** 3D lesson in the address (#/mode/<id>), or null. */
+const currentMode = () => (typeof location === 'undefined' ? null : (location.hash.match(/^#\/mode\/([\w-]+)/) || [])[1] || null);
+
+/** The drawer entry that matches this page (and, on a 3D page, its open lesson). */
+function activeEntry(module, page) {
+  const here = module.pages.filter(sub => (sub.page || sub.id) === page);
+  const mode = currentMode();
+  return here.find(sub => sub.mode && sub.mode === mode) || here.find(sub => !sub.mode) || null;
 }
 
-let menuEventsBound = false;
-function closeMenus(except) {
-  document.querySelectorAll('.site-module-menu').forEach(menu => {
-    if (menu === except) return;
-    menu.hidden = true;
-    document.querySelector(`[data-site-more="${menu.dataset.siteMenu}"]`)?.setAttribute('aria-expanded', 'false');
-  });
+/** Header button that opens the drawer (left of the brand). */
+function drawerToggleMarkup(module, lang) {
+  const t = NAV_TEXT[lang === 'en' ? 'en' : 'tr'];
+  const label = pick(module.label, lang);
+  return `<button type="button" class="module-nav-toggle" data-module-nav-toggle aria-expanded="false" aria-controls="module-nav-panel" title="${escapeAttr(t.open(label))}"><span class="module-nav-icon" aria-hidden="true">☰</span><span>${t.button}</span></button>`;
 }
-function bindMenus(header) {
-  header.querySelectorAll('[data-site-more]').forEach(button => {
-    button.addEventListener('click', () => {
-      const menu = header.querySelector(`[data-site-menu="${button.dataset.siteMore}"]`);
-      const open = menu.hidden;
-      closeMenus(menu);
-      menu.hidden = !open;
-      button.setAttribute('aria-expanded', String(open));
-      if (!open) return;
-      // The menu row scrolls sideways (it would clip a child menu): place the menu under its button.
-      const r = button.closest('.site-module-group').getBoundingClientRect();
-      menu.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8))}px`;
-      menu.style.top = `${r.bottom + 4}px`;
-      menu.querySelector('a')?.focus();
+
+const entryHref = sub => `${fromRoot(sub.path)}${sub.mode ? `#/mode/${sub.mode}` : ''}`;
+
+function drawerMarkup(module, page, lang) {
+  const t = NAV_TEXT[lang === 'en' ? 'en' : 'tr'];
+  const label = pick(module.label, lang);
+  const active = activeEntry(module, page);
+  const links = module.pages.map(sub => `<a class="site-subpage module-nav-link" data-site-subpage="${sub.id}" href="${entryHref(sub)}"${sub === active ? ' aria-current="page"' : ''}>${pick(sub.label, lang)}</a>`);
+  return `<div class="module-nav" data-module-nav="${module.id}" data-open="false">
+    <nav id="module-nav-panel" class="module-nav-panel" aria-label="${escapeAttr(t.pages(label))}" hidden>
+      <div class="module-nav-head"><strong>${label}</strong><button type="button" class="module-nav-close" data-module-nav-close aria-label="${escapeAttr(t.close)}" title="${escapeAttr(t.close)}">×</button></div>
+      ${links.join('')}
+    </nav>
+  </div>`;
+}
+
+let drawerEventsBound = false;
+function setDrawerOpen(open, focus = false) {
+  const drawer = document.querySelector('[data-module-nav]');
+  if (!drawer) return;
+  const panel = drawer.querySelector('.module-nav-panel');
+  const handle = document.querySelector('[data-module-nav-toggle]');
+  drawer.dataset.open = String(open);
+  panel.hidden = !open;
+  handle.setAttribute('aria-expanded', String(open));
+  if (open && focus) (panel.querySelector('[aria-current="page"]') || panel.querySelector('a'))?.focus();
+  if (!open && focus) handle.focus();
+}
+
+/** Keep the drawer just under the sticky header. */
+function placeDrawer(header) {
+  const drawer = document.querySelector('[data-module-nav]');
+  if (drawer) drawer.style.setProperty('--module-nav-top', `${Math.max(0, Math.round(header.getBoundingClientRect().bottom))}px`);
+}
+
+function bindDrawer(header, module, page) {
+  const drawer = document.querySelector('[data-module-nav]');
+  header.querySelector('[data-module-nav-toggle]').addEventListener('click', () => setDrawerOpen(drawer.dataset.open !== 'true', true));
+  drawer.querySelector('[data-module-nav-close]').addEventListener('click', () => setDrawerOpen(false, true));
+  placeDrawer(header);
+  if (drawerEventsBound) return;
+  drawerEventsBound = true;
+  document.addEventListener('click', e => { if (!e.target.closest('[data-module-nav], [data-module-nav-toggle]')) setDrawerOpen(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('[data-module-nav][data-open="true"]')) setDrawerOpen(false, true); });
+  window.addEventListener('resize', () => placeDrawer(header), { passive: true });
+  window.addEventListener('scroll', () => placeDrawer(header), { passive: true });
+  // A 3D page switches lessons in place: follow the lesson in the drawer.
+  window.addEventListener('hashchange', () => {
+    const current = document.querySelector('[data-module-nav]');
+    if (!current) return;
+    const active = activeEntry(module, page);
+    current.querySelectorAll('.module-nav-link').forEach(a => {
+      if (active && a.dataset.siteSubpage === active.id) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
     });
   });
-  // The menu row is rebuilt on every mount; its scroll would leave a menu floating.
-  header.querySelector('.site-modules')?.addEventListener('scroll', () => closeMenus(), { passive: true });
-  if (menuEventsBound) return;
-  menuEventsBound = true;
-  document.addEventListener('click', e => { if (!e.target.closest('.site-module-menu, [data-site-more]')) closeMenus(); });
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    const open = document.querySelector('.site-module-menu:not([hidden])');
-    if (!open) return;
-    closeMenus();
-    document.querySelector(`[data-site-more="${open.dataset.siteMenu}"]`)?.focus();
-  });
-  window.addEventListener('resize', () => closeMenus());
-}
-
-function subPageLinks(module, page, lang) {
-  if (!module.pages) return '';
-  const links = module.pages.map(sub => `<a class="site-subpage" data-site-subpage="${sub.id}" href="${fromRoot(sub.path)}"${sub.id === page ? ' aria-current="page"' : ''}>${pick(sub.label, lang)}</a>`);
-  return `<nav class="site-subpages" aria-label="${pick(module.label, lang)}">${links.join('')}</nav>`;
 }
 
 /**
- * Fill a page header: brand, badge, sub-pages and the module menu before the
- * page's own controls (.site-header-actions).
+ * Fill a page header: brand, badge and the module menu before the page's own
+ * controls (.site-header-actions); a module with pages gets its left drawer.
  * @param {HTMLElement|null} header <header class="site-header" data-site-page="...">
  * @param {'tr'|'en'} lang
  */
@@ -93,16 +114,19 @@ export function mountSiteHeader(header, lang) {
   const page = header.dataset.sitePage || 'anatomy';
   const module = moduleOfPage(page);
   header.querySelectorAll(':scope > [data-site-part]').forEach(node => node.remove());
+  document.querySelectorAll('[data-module-nav]').forEach(node => node.remove());
   const markup = `
     <div class="site-brand-block" data-site-part>
+      ${module.pages ? drawerToggleMarkup(module, lang) : ''}
       <a class="site-brand" href="${fromRoot('./')}">✳ <strong>CARDIA</strong></a>
       <span class="site-badge" data-site-badge>${pick(SITE_BADGES[page] || SITE_BADGES.anatomy, lang)}</span>
-      ${subPageLinks(module, page, lang)}
     </div>
-    <nav class="site-modules" aria-label="${lang === 'en' ? 'Modules' : 'Modüller'}" data-site-part>${SITE_MODULES.map(m => moduleLink(m, module, lang)).join('')}</nav>
-    ${SITE_MODULES.filter(m => m.pages).map(m => moduleMenu(m, page, lang)).join('')}`;
+    <nav class="site-modules" aria-label="${lang === 'en' ? 'Modules' : 'Modüller'}" data-site-part>${SITE_MODULES.map(m => moduleLink(m, module, lang)).join('')}</nav>`;
   header.insertAdjacentHTML('afterbegin', markup);
-  bindMenus(header);
+  if (module.pages) {
+    document.body.insertAdjacentHTML('beforeend', drawerMarkup(module, page, lang));
+    bindDrawer(header, module, page);
+  }
   // Narrow screens scroll the menu: keep this page's module in view.
   const nav = header.querySelector('.site-modules');
   const current = nav?.querySelector('[aria-current="page"]');
