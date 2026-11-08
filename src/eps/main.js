@@ -15,6 +15,7 @@ import './recording.css';
 import './csp/csp.css';
 import './conduction.css';
 import './eam3d.css';
+import './eam3d-rf.css';
 import { APP_TEXT, LANGS, resolveLang, viewFromHash, clipFromHash } from './app-text.js';
 import { createEpPanel, EP_VIEWS } from './ep-panel.js';
 import { initialLanguage, rememberLanguage } from '../entry-language.js';
@@ -95,7 +96,8 @@ function spaceTarget() {
   if (view === 'recording') return panel.recording.element.querySelector('[data-recording-play]');
   if (view === 'csp') return panel.csp.element.querySelector('[data-csp-play]');
   if (view === 'conduction') return panel.conduction.element.querySelector('[data-cond-play]');
-  if (view === 'eam3d') return panel.eam3d.element.querySelector('[data-eam3d-run]');
+  // 3D map: RF on the ablation card, otherwise the run / freeze button.
+  if (view === 'eam3d') return panel.eam3d.spaceTarget?.() || panel.eam3d.element.querySelector('[data-eam3d-run]');
   if (view === 'afmap') {
     const play = panel.afmap.element.querySelector('[data-afmap-play]');
     return play && !play.parentElement?.hidden ? play : null;

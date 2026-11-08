@@ -1,0 +1,248 @@
+/* RF ablation console and readout of the 3D map (eam3d-rf-console.js). */
+
+.eam3d-rf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eam3d-rf-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.eam3d-rf-field .eam3d-rf-label {
+  grid-column: 1 / -1;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.eam3d-rf-field select,
+.eam3d-rf-field .eam3d-rf-pills {
+  grid-column: 1 / -1;
+}
+
+.eam3d-rf-field input[type="range"] {
+  width: 100%;
+  accent-color: #38bdf8;
+}
+
+.eam3d-rf-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  min-width: 64px;
+  text-align: right;
+}
+
+.eam3d-rf-hazard {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: #fde68a;
+  background: rgba(120, 53, 15, 0.25);
+  border-left: 3px solid #f59e0b;
+  padding: 5px 7px;
+  border-radius: 4px;
+}
+
+.eam3d-rf-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.eam3d-rf-pill {
+  background: #131c31;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.eam3d-rf-pill.is-active {
+  background: #0369a1;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.eam3d-rf-pill:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eam3d-rf-auto {
+  font-size: 11px;
+}
+
+.eam3d-rf-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.eam3d-rf-go {
+  background: #7f1d1d;
+  border-color: #ef4444;
+  color: #fff1f2;
+  font-weight: 800;
+}
+
+.eam3d-rf-go.is-on {
+  background: #dc2626;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35);
+}
+
+.eam3d-rf-status p,
+.eam3d-rf-safety p {
+  margin: 2px 0 0;
+}
+
+.eam3d-rf-status.is-blocked {
+  border-left-color: #22c55e;
+}
+
+.eam3d-rf-subtitle {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.eam3d-rf-safety {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+
+.eam3d-rf-safety .is-bad,
+.eam3d-rf-hud .is-bad,
+.eam3d-rf-value.is-bad {
+  color: #fca5a5;
+}
+
+.eam3d-rf-safety .is-warn,
+.eam3d-rf-hud .is-warn,
+.eam3d-rf-value.is-warn {
+  color: #fcd34d;
+}
+
+.eam3d-rf-safety .is-good,
+.eam3d-rf-hud .is-good,
+.eam3d-rf-value.is-good {
+  color: #86efac;
+}
+
+.eam3d-rf-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 10.5px;
+  color: #cbd5e1;
+}
+
+.eam3d-rf-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.eam3d-rf-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.eam3d-rf-log {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  color: #cbd5e1;
+}
+
+.eam3d-rf-log th,
+.eam3d-rf-log td {
+  padding: 2px 4px;
+  text-align: right;
+  border-bottom: 1px solid #1e293b;
+}
+
+.eam3d-rf-log th {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.eam3d-rf-log tr.is-durable td:first-child { box-shadow: inset 3px 0 0 #ef4444; }
+.eam3d-rf-log tr.is-acute td:first-child { box-shadow: inset 3px 0 0 #f9a8d4; }
+.eam3d-rf-log tr.is-weak td:first-child { box-shadow: inset 3px 0 0 #94a3b8; }
+.eam3d-rf-log tr.is-pop td:first-child { box-shadow: inset 3px 0 0 #facc15; }
+
+.eam3d-rf-scope {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+/* Readout over the 3D view, top right under the status badge (the opacity bar covers the bottom). */
+.eam3d-rf-hud {
+  position: absolute;
+  right: 10px;
+  top: 46px;
+  z-index: 4;
+  min-width: 190px;
+  background: rgba(7, 11, 20, 0.88);
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #e2e8f0;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
+.eam3d-rf-hud[hidden],
+.eam3d-rf-hud-row[hidden] {
+  display: none;
+}
+
+.eam3d-rf-hud-contact {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.eam3d-rf-hud-rf.is-on {
+  color: #fca5a5;
+  font-weight: 800;
+}
+
+.eam3d-rf-hud-note {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #86efac;
+  max-width: 220px;
+}
+
+@media (max-width: 760px) {
+  .eam3d-rf-hud {
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: 56px;
+    min-width: 0;
+  }
+}

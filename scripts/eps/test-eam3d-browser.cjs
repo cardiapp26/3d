@@ -1,7 +1,8 @@
 // 3D EAM & Whole-Heart Simulation workstation browser test:
 // Opens #/eam3d, loads the 3D four-chamber atlas (or 2D fallback), verifies scenario and map mode
 // switching, chamber/wall levers, C-arm views, 26-channel live polygraph painting, Space play/pause,
-// programmed stimulation (burst termination & S1-S2 induction), 3D RF ablation line application,
+// programmed stimulation (burst termination & S1-S2 induction), point-by-point RF ablation (readout,
+// Space, gaps, oedema block and reconduction after the 20-minute wait),
 // "Find the Circuit" probabilistic circuit survey, 2D-to-3D bridge buttons, TR/EN localization,
 // and 390px mobile responsiveness with zero console/page errors.
 
@@ -139,15 +140,48 @@ const painted = (page, sel) =>
       'S1-S2 270 ms re-induces AVNRT',
     );
 
-    // 3D RF Ablation: Slow pathway ablation terminates AVNRT
-    await ws.locator('[data-eam3d-ablate-line="slow-pathway"]').click();
+    // 3D RF ablation console: the scenario picks its line; ideal lesions end AVNRT.
+    const rfState = () => page.evaluate(() => window.epsLab.panel.eam3d.getState().rf);
+    const applied = () => page.evaluate(() => window.epsLab.panel.eam3d.getState().appliedLesions);
+    await ws.locator('[data-eam3d-rail="ablate"]').click();
+    assert.equal(await ws.locator('[data-eam3d-rf-target]').inputValue(), 'slow-pathway', 'AVNRT targets the slow pathway');
+    assert.equal(await ws.locator('[data-eam3d-rf-hud]').isVisible(), true, 'RF readout over the 3D view');
+    await ws.locator('[data-eam3d-rf-demo]').click();
     const verdictTr = await ws.locator('[data-eam3d-ablation-verdict]').textContent();
-    assert.ok(verdictTr.includes('Sinüs'), `Slow pathway ablation terminates AVNRT: ${verdictTr}`);
+    assert.ok(verdictTr.includes('sinüs ritmi'), `ideal slow pathway lesions end AVNRT: ${verdictTr}`);
+    assert.deepEqual(await applied(), ['slow-pathway']);
     await ws.locator('[data-eam3d-clear-lesions]').click();
-    assert.equal(
-      await page.evaluate(() => window.epsLab.panel.eam3d.getState().appliedLesions.length),
-      0,
-    );
+    assert.equal((await applied()).length, 0);
+
+    // One real application: 50 W HPSD, 20 g on the CTI, started with Space, watched on the readout.
+    await ws.locator('[data-eam3d-rf-target]').selectOption('cti-line');
+    await ws.locator('[data-eam3d-rf-power="50"]').click();
+    await ws.locator('[data-eam3d-rf-force]').fill('20');
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('Space');
+    await page.waitForFunction(() => (window.epsLab.panel.eam3d.getState().rf.delivery?.t || 0) > 1);
+    assert.match(await ws.locator('[data-eam3d-rf-hud-rf]').textContent(), /RF ON 50 W/);
+    await page.waitForFunction(() => window.epsLab.panel.eam3d.getState().rf.lesions.length === 1, null, { timeout: 20000 });
+    const first = (await rfState()).lesions[0];
+    assert.equal(first.stopReason, 'target', `HPSD reaches the CTI target (${first.index})`);
+    assert.ok(first.index >= 450 && first.depthMm >= 4.5, `full-thickness CTI lesion: index ${first.index}, ${first.depthMm} mm`);
+    assert.equal((await rfState()).positionMm, Math.min(28, first.sMm + 5), 'catheter steps 5 mm along the line');
+    assert.match(await ws.locator('[data-eam3d-ablation-verdict]').textContent(), /Boşluk/);
+
+    // Shallow lesions on typical flutter: oedema blocks now, conduction returns after the wait.
+    await ws.locator('[data-eam3d-clear-lesions]').click();
+    await ws.locator('[data-eam3d-scenario]').selectOption('flutter-typical');
+    await page.evaluate(() => {
+      const rf = window.epsLab.panel.eam3d.rf;
+      for (const sMm of [2, 7, 12, 17, 22, 26]) rf.deliverNow({ lineId: 'cti-line', sMm, powerW: 30, forceG: 10, autoStop: false, maxSeconds: 20 });
+    });
+    assert.deepEqual(await applied(), ['cti-line'], 'shallow but contiguous lesions block acutely');
+    assert.ok((await ws.locator('[data-eam3d-ablation-verdict]').textContent()).includes('sinüs ritmi'), 'acute CTI block ends flutter');
+    await ws.locator('[data-eam3d-rf-wait]').click();
+    assert.deepEqual(await applied(), [], 'after 20 min the shallow line reconnects');
+    assert.match(await ws.locator('[data-eam3d-ablation-verdict]').textContent(), /ileti geri döndü/);
+    assert.equal(await page.evaluate(() => window.epsLab.panel.eam3d.getState().scenarioId), 'flutter-typical');
+    await ws.locator('[data-eam3d-clear-lesions]').click();
 
     // Probabilistic Circuit Survey ("Find the circuit")
     await ws.locator('[data-eam3d-import-map]').click();

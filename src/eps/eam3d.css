@@ -351,6 +351,25 @@
   height: 100%;
 }
 
+/* The atlas (eam3d-atlas.js) fills the host; without a size of its own the
+   canvas sets its own height and the resize observer grows it without end. */
+.eam3d-stage,
+.eam3d-webgl,
+.eam3d-badges {
+  position: absolute;
+  inset: 0;
+}
+
+.eam3d-badges {
+  pointer-events: none;
+}
+
+.eam3d-webgl canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .eam3d-fallback-canvas {
   position: absolute;
   inset: 0;
