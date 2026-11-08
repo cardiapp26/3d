@@ -16,6 +16,7 @@ import { createPVLoopLab } from '../src/pathophysiology/pv-loop-lab.js';
 import { createStarlingLaplaceLab } from '../src/pathophysiology/starling-laplace-lab.js';
 import { createAtherogenesisLab } from '../src/pathophysiology/atherogenesis-lab.js';
 import { createElectrophysLab } from '../src/pathophysiology/electrophys-lab.js';
+import { ventricularFrameAt, VENTRICULAR_PLAYBACK_MS } from '../src/pathophysiology/ventricular-ap-scene.js';
 import { createForresterLab } from '../src/pathophysiology/forrester-lab.js';
 import { createValvularLab } from '../src/pathophysiology/valvular-lab.js';
 import { createIschemicCascadeLab } from '../src/pathophysiology/ischemic-cascade-lab.js';
@@ -77,6 +78,25 @@ test('Pathophysiology: lab factories are functions', () => {
   assert.equal(typeof createIschemicCascadeLab, 'function');
   assert.equal(typeof createHeartFailureLab, 'function');
   assert.equal(typeof createPericardialLab, 'function');
+});
+
+test('Ventricular animation: short early phases stay visible without stretching the voltage axis', () => {
+  const phases = [
+    [0, 0, 4, []],
+    [1200, 60, 0, ['na']],
+    [2600, 65, 1, ['ito']],
+    [3650, 78, 2, ['ca', 'k']],
+    [5850, 190, 3, ['k']],
+    [7950, 315, 4, []],
+    [VENTRICULAR_PLAYBACK_MS, 500, 4, []]
+  ];
+  for (const [elapsed, time, phase, gates] of phases) {
+    const frame = ventricularFrameAt(elapsed);
+    assert.equal(frame.time, time);
+    assert.equal(frame.phase, phase);
+    assert.deepEqual(frame.gates ?? [], gates);
+  }
+  assert.equal(ventricularFrameAt(1900).time, 62.5);
 });
 
 test('Pathophysiology: zero em-dashes house rule across all files', () => {

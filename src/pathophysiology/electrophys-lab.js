@@ -1,4 +1,6 @@
 // Interactive Cardiac Action Potential, Ion Channel Traffic & Arrhythmogenesis Lab
+import { drawVentricularScene, ventricularFrameAt, VENTRICULAR_PLAYBACK_MS } from './ventricular-ap-scene.js';
+
 export function createElectrophysLab(opts = {}) {
   const mount = opts.mount || opts.container;
   const getLang = typeof opts.getLang === 'function' ? opts.getLang : () => opts.lang || 'tr';
@@ -11,6 +13,9 @@ export function createElectrophysLab(opts = {}) {
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   let paused = Boolean(reducedMotion);
   let speed = 1;
+  let ventricularElapsed = 0;
+  let updateVentricularScene = null;
+  let ventricularKeyframes;
   let animTimeMs = 120; // 0..500 ms across the AP timeline
   let rafId = null;
   let lastTs = 0;
@@ -49,7 +54,19 @@ export function createElectrophysLab(opts = {}) {
     </div>
     <div class="pathophys-grid">
       <div class="pathophys-stage ep-stage">
-        <svg viewBox="0 0 580 430" class="pathophys-svg ep-svg" role="img" aria-label="Action Potential Waveform and Ion Channel Traffic"></svg>
+        <div class="ep-svg-frame" data-ep-film>
+          <svg viewBox="0 0 580 553" class="pathophys-svg ep-svg" role="img"></svg>
+        </div>
+        <div class="ep-svg-frame" data-ep-legacy hidden>
+          <svg viewBox="0 0 580 430" class="pathophys-svg ep-svg" role="img"></svg>
+        </div>
+        <div class="ep-film-controls" data-ep-film-controls hidden>
+          <label class="ep-film-scrub">
+            <span data-ep-i18n="lblScrub"></span>
+            <input type="range" min="0" max="${VENTRICULAR_PLAYBACK_MS}" value="0" step="10" data-ep-scrub>
+          </label>
+          <a href="https://doi.org/10.1371/journal.pcbi.1002061" target="_blank" rel="noopener noreferrer" data-ep-i18n="source"></a>
+        </div>
         <div class="ep-legend">
           <span><i class="legend-color legend-ap"></i> <strong data-ep-i18n="legVm"></strong></span>
           <span><i class="legend-color legend-ina"></i> <strong>INa (Na⁺)</strong></span>
@@ -78,6 +95,7 @@ export function createElectrophysLab(opts = {}) {
 
   const $ = sel => root.querySelector(sel);
   const $$ = sel => root.querySelectorAll(sel);
+  const scrub = $('[data-ep-scrub]');
 
   function getApKeyframes(cell, trig) {
     if (cell === 'ventricular') {
@@ -200,6 +218,13 @@ export function createElectrophysLab(opts = {}) {
     speed = Number(e.target.value) || 1;
   });
 
+  scrub.addEventListener('input', () => {
+    ventricularElapsed = Number(scrub.value);
+    paused = true;
+    syncPlaybackUi();
+    updateAnimationFrame(0);
+  });
+
   function syncPlaybackUi() {
     const en = getLang() === 'en';
     const btn = $('[data-motion-toggle]');
@@ -228,7 +253,9 @@ export function createElectrophysLab(opts = {}) {
       trigReentry: en ? 'Reentry Circuit' : 'Reentry Döngüsü',
       legVm: en ? 'Membrane Potential (Vm)' : 'Membran Potansiyeli (Vm)',
       currTitle: en ? 'Active Ion Channels & Phase Dynamics' : 'Aktif İyon Kanalları ve Faz Dinamikleri',
-      lblSpeed: en ? 'Speed' : 'Hız'
+      lblSpeed: en ? 'Speed' : 'Hız',
+      lblScrub: en ? 'Explore the beat' : 'Atımı incele',
+      source: en ? 'Physiology source' : 'Fizyoloji kaynağı'
     };
     Object.entries(TEXT).forEach(([k, str]) => {
       const el = $(`[data-ep-i18n="${k}"]`);
@@ -295,8 +322,21 @@ export function createElectrophysLab(opts = {}) {
   }
 
   function drawEpSvg(cell, trig) {
-    const svg = $('.ep-svg');
     const en = getLang() === 'en';
+    const showVentricularScene = cell === 'ventricular' && trig === 'none';
+    $('[data-ep-film]').hidden = !showVentricularScene;
+    $('[data-ep-legacy]').hidden = showVentricularScene;
+    $('[data-ep-film-controls]').hidden = !showVentricularScene;
+    $('.ep-legend').hidden = showVentricularScene;
+    if (showVentricularScene) {
+      ventricularKeyframes = getApKeyframes(cell, trig);
+      updateVentricularScene = drawVentricularScene($('[data-ep-film] svg'), en ? 'en' : 'tr', ventricularKeyframes);
+      return;
+    }
+
+    updateVentricularScene = null;
+    const svg = $('[data-ep-legacy] svg');
+    svg.setAttribute('aria-label', en ? 'Action potential and ion channels' : 'Aksiyon potansiyeli ve iyon kanalları');
     const w = 580, h = 430;
 
     if (trig === 'reentry') {
@@ -502,6 +542,15 @@ export function createElectrophysLab(opts = {}) {
 
   function updateAnimationFrame(dtSec) {
     if (!root.isConnected) return;
+    if (updateVentricularScene) {
+      if (dtSec > 0) ventricularElapsed = (ventricularElapsed + dtSec * 1000 * speed) % VENTRICULAR_PLAYBACK_MS;
+      const frame = ventricularFrameAt(ventricularElapsed);
+      updateVentricularScene(frame, interpolateVm(frame.time, ventricularKeyframes));
+      scrub.value = ventricularElapsed;
+      scrub.setAttribute('aria-valuetext', `${frame.time.toFixed(1)} ms`);
+      return;
+    }
+
     const en = getLang() === 'en';
 
     // Advance timeline (500 ms AP sweep in ~ 3.2 seconds at 1x speed)
@@ -552,8 +601,9 @@ export function createElectrophysLab(opts = {}) {
     const curX = (padL + (animTimeMs / 500) * plotW).toFixed(1);
     const curY = (h - padB - ((vm - -100) / 140) * plotH).toFixed(1);
 
-    const cursorEl = root.querySelector('[data-ep-cursor]');
-    const tracerEl = root.querySelector('[data-ep-tracer]');
+    const legacy = $('[data-ep-legacy]');
+    const cursorEl = legacy.querySelector('[data-ep-cursor]');
+    const tracerEl = legacy.querySelector('[data-ep-tracer]');
     if (cursorEl) {
       cursorEl.setAttribute('x1', curX);
       cursorEl.setAttribute('x2', curX);
@@ -564,7 +614,7 @@ export function createElectrophysLab(opts = {}) {
     }
 
     const info = activePhaseInfo(animTimeMs, cellType, triggerMode, en);
-    const phaseLabel = root.querySelector('[data-ep-live-phase]');
+    const phaseLabel = legacy.querySelector('[data-ep-live-phase]');
     if (phaseLabel) {
       phaseLabel.textContent = `${info.phase} · Vm = ${Math.round(vm)} mV`;
     }

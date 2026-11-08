@@ -652,6 +652,47 @@ body.pathophys-app {
   min-width: 0;
 }
 
+.ep-svg-frame,
+.ep-stage .ep-svg {
+  width: 100%;
+}
+
+.ep-stage .ep-svg {
+  height: auto;
+}
+
+.ep-film-controls {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.ep-film-controls a {
+  color: var(--accent);
+}
+
+.ep-film-scrub {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.ep-film-scrub input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 1100px) {
+  .pathophys-ep-lab .pathophys-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .pathophys-presets-bar {
   display: flex;
   flex-wrap: wrap;
