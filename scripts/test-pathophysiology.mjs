@@ -16,7 +16,7 @@ import { createPVLoopLab } from '../src/pathophysiology/pv-loop-lab.js';
 import { createStarlingLaplaceLab } from '../src/pathophysiology/starling-laplace-lab.js';
 import { createAtherogenesisLab } from '../src/pathophysiology/atherogenesis-lab.js';
 import { createElectrophysLab } from '../src/pathophysiology/electrophys-lab.js';
-import { ventricularFrameAt, VENTRICULAR_PLAYBACK_MS } from '../src/pathophysiology/ventricular-ap-scene.js';
+import { cytosolicCalciumAt, ventricularFrameAt, VENTRICULAR_PLAYBACK_MS } from '../src/pathophysiology/ventricular-ap-scene.js';
 import { createForresterLab } from '../src/pathophysiology/forrester-lab.js';
 import { createValvularLab } from '../src/pathophysiology/valvular-lab.js';
 import { createIschemicCascadeLab } from '../src/pathophysiology/ischemic-cascade-lab.js';
@@ -97,6 +97,17 @@ test('Ventricular animation: short early phases stay visible without stretching 
     assert.deepEqual(frame.gates ?? [], gates);
   }
   assert.equal(ventricularFrameAt(1900).time, 62.5);
+});
+
+test('Ventricular animation: cytosolic Ca²⁺ rises after Ca²⁺ entry and outlasts repolarization', () => {
+  assert.deepEqual(cytosolicCalciumAt(65), { stage: 'basal', level: 0 });
+  assert.deepEqual(cytosolicCalciumAt(78), { stage: 'rising', level: 0 });
+  assert.ok(cytosolicCalciumAt(105).level > 0 && cytosolicCalciumAt(105).level < 1);
+  assert.deepEqual(cytosolicCalciumAt(130), { stage: 'falling', level: 1 });
+  const duringRepolarization = cytosolicCalciumAt(230).level;
+  const afterRepolarization = cytosolicCalciumAt(325).level;
+  assert.ok(duringRepolarization < 1 && duringRepolarization > afterRepolarization && afterRepolarization > 0);
+  assert.deepEqual(cytosolicCalciumAt(420), { stage: 'basal', level: 0 });
 });
 
 test('Pathophysiology: zero em-dashes house rule across all files', () => {
