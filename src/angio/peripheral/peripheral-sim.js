@@ -1,3 +1,5 @@
+import { curveSamples } from './peripheral-svg.js';
+
 // Peripheral Angiography & DSA C-Arm Projection Engine, Presets, Lesions & ABI/TBI Calculator
 // Simulates 3D peripheral vascular geometry, contralateral/ipsilateral obliques, bolus-chase DSA,
 // catheter engagement, focal stenosis / CTO collaterals, and real-time bifurcation overlap telemetry.
@@ -43,10 +45,10 @@ export const PERIPHERAL_3D_TREES = {
       caliberMm: 4.6,
       flowOrder: 0.25,
       points: [
-        [0.0, 0.65, 0.22], [-0.38, 0.35, 0.16], [-0.82, -0.05, 0.08], [-1.18, -0.38, 0.02]
+        [0.0, 0.65, 0.22], [-0.32, 0.31, 0.16], [-0.76, -0.12, 0.08], [-1.18, -0.38, 0.02]
       ],
       contraPoints: [
-        [0.0, 0.65, 0.22], [0.38, 0.35, 0.16], [0.82, -0.05, 0.08], [1.18, -0.38, 0.02]
+        [0.0, 0.65, 0.22], [0.46, 0.39, 0.16], [0.94, 0.05, 0.08], [1.18, -0.38, 0.02]
       ]
     },
     {
@@ -89,10 +91,10 @@ export const PERIPHERAL_3D_TREES = {
       flowOrder: 0.5,
       // Runs anterolaterally (+Z) toward inguinal ligament
       points: [
-        [-1.18, -0.38, 0.02], [-1.34, -0.88, 0.38], [-1.48, -1.45, 0.68], [-1.58, -2.05, 0.88]
+        [-1.18, -0.38, 0.02], [-1.46, -0.85, 0.38], [-1.57, -1.43, 0.68], [-1.58, -2.05, 0.88]
       ],
       contraPoints: [
-        [1.18, -0.38, 0.02], [1.34, -0.88, 0.38], [1.48, -1.45, 0.68], [1.58, -2.05, 0.88]
+        [1.18, -0.38, 0.02], [1.39, -0.88, 0.38], [1.44, -1.45, 0.68], [1.58, -2.05, 0.88]
       ]
     },
     {
@@ -1262,17 +1264,17 @@ function drawTreatmentOverlay(ctx, projPts, lesionArc, baseWidth, treatment, ima
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.lineWidth = width + 2;
       strokePath(ctx, pts);
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+      ctx.strokeStyle = 'rgba(65, 65, 65, 0.65)';
       ctx.lineWidth = width;
       strokePath(ctx, pts);
       if (b.waist) {
         const mid = polylineBetween(projPts, cum, lesionArc - 3, lesionArc + 3);
-        ctx.strokeStyle = 'rgba(6, 78, 59, 0.95)';
+        ctx.strokeStyle = 'rgba(35, 35, 35, 0.95)';
         ctx.lineWidth = Math.max(1.5, baseWidth * Math.max(0.2, b.lumenRatio) * 0.6);
         strokePath(ctx, mid);
       }
     } else {
-      ctx.strokeStyle = 'rgba(5, 150, 105, 0.95)';
+      ctx.strokeStyle = 'rgba(55, 55, 55, 0.95)';
       ctx.lineWidth = 2.6;
       strokePath(ctx, pts);
     }
@@ -1316,6 +1318,29 @@ function drawTreatmentOverlay(ctx, projPts, lesionArc, baseWidth, treatment, ima
     ctx.moveTo(end.x + 4, end.y - 4); ctx.lineTo(end.x - 4, end.y + 4);
     ctx.stroke();
   }
+  ctx.restore();
+}
+
+// A cortical shaft with expanded epiphyses and a low-density medullary canal.
+function drawLongBone(ctx, x, y, width, height) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.beginPath();
+  ctx.moveTo(-width * .6, 0);
+  ctx.bezierCurveTo(-width, height * .08, -width * .36, height * .15, -width * .34, height * .3);
+  ctx.bezierCurveTo(-width * .3, height * .6, -width * .32, height * .82, -width * .65, height * .93);
+  ctx.bezierCurveTo(-width, height * 1.04, width, height * 1.04, width * .65, height * .93);
+  ctx.bezierCurveTo(width * .32, height * .82, width * .3, height * .6, width * .34, height * .3);
+  ctx.bezierCurveTo(width * .36, height * .15, width, height * .08, width * .6, 0);
+  ctx.quadraticCurveTo(0, -height * .035, -width * .6, 0);
+  ctx.fill();
+  ctx.strokeStyle = ctx.fillStyle;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.globalAlpha = .22;
+  ctx.strokeStyle = '#f0f0ed';
+  ctx.lineWidth = width * .36;
+  ctx.beginPath(); ctx.moveTo(0, height * .18); ctx.lineTo(0, height * .84); ctx.stroke();
   ctx.restore();
 }
 
@@ -1381,17 +1406,17 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
   // 1. Background based on imagingMode (DSA vs Native Fluoroscopy vs Roadmap)
   const bgGrad = ctx.createRadialGradient(cx, cy, scale * 0.2, cx, cy, Math.max(W, H) * 0.65);
   if (imagingMode === 'dsa') {
-    bgGrad.addColorStop(0, '#eef2f6');
-    bgGrad.addColorStop(0.75, '#d8e0e8');
-    bgGrad.addColorStop(1, '#aeb9c6');
+    bgGrad.addColorStop(0, '#d9d9d7');
+    bgGrad.addColorStop(0.75, '#c9c9c7');
+    bgGrad.addColorStop(1, '#969694');
   } else if (imagingMode === 'roadmap') {
     bgGrad.addColorStop(0, '#1e293b');
     bgGrad.addColorStop(0.8, '#0f172a');
     bgGrad.addColorStop(1, '#020617');
   } else {
-    bgGrad.addColorStop(0, '#e2e8f0');
-    bgGrad.addColorStop(0.7, '#cbd5e1');
-    bgGrad.addColorStop(1, '#94a3b8');
+    bgGrad.addColorStop(0, '#d1d1ce');
+    bgGrad.addColorStop(0.7, '#bcbcb9');
+    bgGrad.addColorStop(1, '#858583');
   }
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
@@ -1403,7 +1428,7 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
 
   // 2. Bony & Anatomical Landmarks (Subtracted ghost in DSA, prominent in Native Fluoro)
   if (showBones) {
-    const boneAlpha = imagingMode === 'dsa' ? 0.06 : imagingMode === 'roadmap' ? 0.12 : 0.25;
+    const boneAlpha = imagingMode === 'dsa' ? 0.012 : imagingMode === 'roadmap' ? 0.12 : 0.25;
     ctx.save();
     const spineShift = (alpha / 90) * (W * 0.28);
     ctx.fillStyle = imagingMode === 'roadmap'
@@ -1435,18 +1460,19 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
       ctx.fill();
       ctx.strokeStyle = imagingMode === 'roadmap' ? 'rgba(56, 189, 248, 0.35)' : 'rgba(51, 65, 85, 0.35)';
       ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash([]);
       ctx.stroke();
       ctx.setLineDash([]);
     } else if (viewId === 'runoff') {
       // Distal femur, knee joint line, tibia and fibula shafts
       const kneeProj = projectPeripheralPoint([0.04, 0.35, -0.45], alpha, beta);
       const ky = originY + kneeProj.v * scale;
-      ctx.fillRect(cx - 26 - spineShift * 0.3, 18, 52, Math.max(20, ky - 24));
-      ctx.fillRect(cx - 22 - spineShift * 0.3, ky + 8, 34, H - ky - 60);
-      ctx.fillRect(cx - 48 - spineShift * 0.2, ky + 16, 14, H - ky - 68);
+      drawLongBone(ctx, cx - spineShift * 0.3, 18, 30, Math.max(20, ky - 30));
+      drawLongBone(ctx, cx - 5 - spineShift * 0.3, ky + 12, 23, H - ky - 60);
+      drawLongBone(ctx, cx - 41 - spineShift * 0.2, ky + 18, 9, H - ky - 68);
       ctx.strokeStyle = 'rgba(71, 85, 105, 0.35)';
       ctx.setLineDash([5, 5]);
+      ctx.globalAlpha = 0.15;
       ctx.beginPath();
       ctx.moveTo(40, ky);
       ctx.lineTo(W - 40, ky);
@@ -1454,9 +1480,9 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
       ctx.setLineDash([]);
     } else if (viewId === 'arm') {
       // 1st rib and humerus/radius/ulna shafts
-      ctx.fillRect(cx + 12 - spineShift * 0.2, H * 0.22, 22, H * 0.35);
-      ctx.fillRect(cx + 26 - spineShift * 0.2, H * 0.58, 14, H * 0.32);
-      ctx.fillRect(cx - 8 - spineShift * 0.2, H * 0.58, 14, H * 0.32);
+      drawLongBone(ctx, cx + 23 - spineShift * 0.2, H * 0.22, 18, H * 0.34);
+      drawLongBone(ctx, cx + 33 - spineShift * 0.2, H * 0.59, 11, H * 0.31);
+      drawLongBone(ctx, cx - 1 - spineShift * 0.2, H * 0.59, 9, H * 0.31);
     }
     ctx.restore();
   }
@@ -1470,8 +1496,8 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
     const ty = originY + tipProj.v * scale;
 
     ctx.save();
-    ctx.strokeStyle = imagingMode === 'roadmap' ? '#38bdf8' : '#1e293b';
-    ctx.lineWidth = 4.2;
+    ctx.strokeStyle = imagingMode === 'roadmap' ? '#dedede' : '#343434';
+    ctx.lineWidth = 1.8;
     ctx.lineCap = 'round';
     ctx.beginPath();
     if (viewId === 'aortoiliac' || viewId === 'visceral') {
@@ -1488,7 +1514,7 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
     // Radiopaque marker band at catheter tip
     ctx.fillStyle = imagingMode === 'roadmap' ? '#f8fafc' : '#020617';
     ctx.beginPath();
-    ctx.arc(tx, ty + (viewId === 'aortoiliac' || viewId === 'visceral' ? 12 : 0), 3.6, 0, Math.PI * 2);
+    ctx.arc(tx, ty + (viewId === 'aortoiliac' || viewId === 'visceral' ? 12 : 0), 1.7, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -1504,10 +1530,11 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
   });
 
   function drawPolylines(pts3D, branch, isContra = false) {
-    const projPts = pts3D.map(pt => {
+    const projected = pts3D.map(pt => {
       const pr = projectPeripheralPoint(pt, alpha, beta, beatPhase);
-      return { x: originX + pr.u * scale, y: originY + pr.v * scale, raw: pr };
+      return [originX + pr.u * scale, originY + pr.v * scale];
     });
+    const projPts = curveSamples(projected, false, 20).map(([x, y]) => ({ x, y }));
 
     const isSelected = selectedId === branch.id;
     const isHovered = hoveredId === branch.id;
@@ -1516,12 +1543,12 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
     // Bolus-chase local contrast factor based on branch flowOrder
     const order = branch.flowOrder ?? 0.3;
     const waveDelta = bolusWave - order * 0.55;
-    const localBolus = Math.max(0.12, Math.min(1.0, waveDelta * 2.4)) * contrastOpacity;
+    const localBolus = Math.max(0, Math.min(1.0, waveDelta * 2.4)) * contrastOpacity;
 
     const baseWidth = Math.max(1.8, (branch.caliberMm || 3.0) * 1.45);
     let strokeCol = imagingMode === 'roadmap'
       ? `rgba(241, 245, 249, ${Math.max(0.25, localBolus)})`
-      : `rgba(15, 23, 42, ${Math.max(0.16, localBolus)})`;
+      : `rgba(15, 23, 42, ${Math.max(0, localBolus)})`;
 
     if (showHeatmap && metric) {
       if (metric.rating === 'excellent') strokeCol = 'rgba(16, 185, 129, 0.92)';
@@ -1529,8 +1556,7 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
       else strokeCol = 'rgba(239, 68, 68, 0.92)';
     }
 
-    if (isSelected) strokeCol = '#0284c7';
-    else if (isHovered) strokeCol = '#0ea5e9';
+
 
     ctx.save();
     ctx.lineCap = 'round';
@@ -1552,81 +1578,67 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
       && activeLesion.vesselId === branch.id
       && (activeLesion.pct > 0 || activeLesion.treatment);
 
-    if (!hasLesion) {
+    // Nested silhouettes approximate the longer X-ray path through the lumen centre.
+    // Width follows the sampled centreline, including a smooth focal stenosis.
+    const frac = activeLesion?.posFraction ?? 0.5;
+    const totalSegs = projPts.length - 1;
+    const segIdx = Math.min(totalSegs - 1, Math.floor(frac * totalSegs));
+    const segT = frac * totalSegs - segIdx;
+    const pA = projPts[segIdx], pB = projPts[segIdx + 1];
+    const lx = pA.x + (pB.x - pA.x) * segT;
+    const ly = pA.y + (pB.y - pA.y) * segT;
+    const segLen = Math.hypot(pB.x - pA.x, pB.y - pA.y) || 1;
+    if (branch.dashed) {
       ctx.strokeStyle = strokeCol;
-      ctx.lineWidth = baseWidth;
-      ctx.beginPath();
-      ctx.moveTo(projPts[0].x, projPts[0].y);
-      for (let i = 1; i < projPts.length; i += 1) ctx.lineTo(projPts[i].x, projPts[i].y);
-      ctx.stroke();
-    } else {
-      const frac = activeLesion.posFraction || 0.5;
-      const totalSegs = projPts.length - 1;
-      const segIdx = Math.min(totalSegs - 1, Math.floor(frac * totalSegs));
-      const segT = (frac * totalSegs) - segIdx;
-
+      ctx.lineWidth = 1.2;
+      strokePath(ctx, projPts);
+    }
+    for (const [layer, opacity] of (branch.dashed ? [] : [[1.14, 0.12], [1, 0.34], [0.76, 0.38], [0.42, 0.26]])) {
+      ctx.globalAlpha = opacity;
       ctx.strokeStyle = strokeCol;
-      ctx.lineWidth = baseWidth;
-      ctx.beginPath();
-      ctx.moveTo(projPts[0].x, projPts[0].y);
-      for (let i = 1; i <= segIdx; i += 1) ctx.lineTo(projPts[i].x, projPts[i].y);
-
-      const pA = projPts[segIdx];
-      const pB = projPts[segIdx + 1];
-      const lx = pA.x + (pB.x - pA.x) * segT;
-      const ly = pA.y + (pB.y - pA.y) * segT;
-      const dx = pB.x - pA.x;
-      const dy = pB.y - pA.y;
-      const segLen = Math.hypot(dx, dy) || 1;
-      const ux = dx / segLen;
-      const uy = dy / segLen;
-
-      ctx.lineTo(lx - ux * 5, ly - uy * 5);
-      ctx.stroke();
-
-      if (activeLesion.isCto || activeLesion.pct >= 99) {
-        // CTO stump cap + radiolucent occlusion gap
-        ctx.strokeStyle = 'rgba(220, 38, 38, 0.55)';
-        ctx.lineWidth = 1.6;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(lx - ux * 5, ly - uy * 5);
-        ctx.lineTo(lx + ux * 10, ly + uy * 10);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      } else {
-        const stenW = Math.max(0.9, baseWidth * (1.0 - activeLesion.pct / 100));
-        // A treated lesion with little residual reads as vessel, not as a red stenosis.
-        ctx.strokeStyle = activeLesion.treatment && activeLesion.pct < 30 ? strokeCol : '#dc2626';
-        ctx.lineWidth = stenW;
-        ctx.beginPath();
-        ctx.moveTo(lx - ux * 5, ly - uy * 5);
-        ctx.lineTo(lx + ux * 5, ly + uy * 5);
-        ctx.stroke();
+      const runs = [[]];
+      for (let i = 0; i < projPts.length; i += 1) {
+        const t = i / totalSegs;
+        const point = projPts[i];
+        const before = projPts[Math.max(0, i - 1)], after = projPts[Math.min(totalSegs, i + 1)];
+        const length = Math.hypot(after.x - before.x, after.y - before.y) || 1;
+        const distance = Math.hypot(point.x - lx, point.y - ly);
+        if (hasLesion && (activeLesion.isCto || activeLesion.pct >= 99) && distance < 9) {
+          if (runs.at(-1).length) runs.push([]);
+          continue;
+        }
+        const narrowing = hasLesion ? activeLesion.pct / 100 * Math.exp(-0.5 * (distance / 7) ** 2) : 0;
+        const radius = Math.max(0.075, baseWidth * (1 - 0.22 * t) * (1 - narrowing) * layer / 2);
+        const nx = -(after.y - before.y) / length * radius;
+        const ny = (after.x - before.x) / length * radius;
+        runs.at(-1).push({ left: [point.x + nx, point.y + ny], right: [point.x - nx, point.y - ny] });
       }
-
-      // Distal reconstituted vessel
-      ctx.strokeStyle = strokeCol;
-      ctx.lineWidth = baseWidth * (activeLesion.isCto ? 0.78 : 0.9);
-      ctx.beginPath();
-      ctx.moveTo(lx + ux * (activeLesion.isCto ? 10 : 5), ly + uy * (activeLesion.isCto ? 10 : 5));
-      for (let i = segIdx + 1; i < projPts.length; i += 1) ctx.lineTo(projPts[i].x, projPts[i].y);
-      ctx.stroke();
-
+      ctx.fillStyle = strokeCol;
+      for (const run of runs) {
+        if (run.length < 2) continue;
+        ctx.beginPath();
+        ctx.moveTo(...run[0].left);
+        for (const edge of run.slice(1)) ctx.lineTo(...edge.left);
+        for (const edge of [...run].reverse()) ctx.lineTo(...edge.right);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    if (hasLesion) {
       // Draw collateral bridge if CTO has collateral definition
       if (activeLesion.collateral) {
         const cFrom = projectPeripheralPoint(activeLesion.collateral.from, alpha, beta, beatPhase);
         const cTo = projectPeripheralPoint(activeLesion.collateral.to, alpha, beta, beatPhase);
         const cVia = activeLesion.collateral.via.map(pt => projectPeripheralPoint(pt, alpha, beta, beatPhase));
-        ctx.strokeStyle = '#d97706';
-        ctx.lineWidth = 1.8;
-        ctx.setLineDash([4, 3]);
-        ctx.beginPath();
-        ctx.moveTo(originX + cFrom.u * scale, originY + cFrom.v * scale);
-        cVia.forEach(vp => ctx.lineTo(originX + vp.u * scale, originY + vp.v * scale));
-        ctx.lineTo(originX + cTo.u * scale, originY + cTo.v * scale);
-        ctx.stroke();
+        // Collaterals are small tortuous vessels: a smooth, thinner, fainter path, not a straight-edged bridge.
+        const route = [cFrom, ...cVia, cTo].map(p => [originX + p.u * scale, originY + p.v * scale]);
+        ctx.strokeStyle = strokeCol;
+        ctx.globalAlpha = 0.7;
+        ctx.lineWidth = 1.2;
         ctx.setLineDash([]);
+        strokePath(ctx, curveSamples(route, false, 16).map(([x, y]) => ({ x, y })));
+        ctx.globalAlpha = 1;
       }
 
       if (activeLesion.treatment) {
@@ -1636,21 +1648,23 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
         drawTreatmentOverlay(ctx, projPts, lesionArc, baseWidth, activeLesion.treatment, imagingMode);
       }
 
-      // Stenosis callout badge
-      ctx.fillStyle = activeLesion.treatment && activeLesion.pct < 30 ? '#059669' : '#dc2626';
-      ctx.beginPath();
-      ctx.arc(lx, ly, 4.5, 0, Math.PI * 2);
-      ctx.fill();
+      // Optional teaching annotation, separate from the grayscale lumen.
+      if (showLabels) {
+        ctx.fillStyle = activeLesion.treatment && activeLesion.pct < 30 ? '#059669' : '#dc2626';
+        ctx.beginPath();
+        ctx.arc(lx, ly, 4.5, 0, Math.PI * 2);
+        ctx.fill();
 
-      const badgeText = activeLesion.isCto ? 'CTO %100' : `-%${activeLesion.pct}`;
-      ctx.font = '700 10px ui-monospace, SFMono-Regular, monospace';
-      const tw = ctx.measureText(badgeText).width;
-      ctx.fillStyle = activeLesion.treatment && activeLesion.pct < 30 ? 'rgba(4, 120, 87, 0.92)' : 'rgba(185, 28, 28, 0.92)';
-      ctx.beginPath();
-      ctx.roundRect(lx + 7, ly - 10, tw + 8, 15, 4);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(badgeText, lx + 11, ly + 1);
+        const badgeText = activeLesion.isCto ? 'CTO %100' : `-%${activeLesion.pct}`;
+        ctx.font = '700 10px ui-monospace, SFMono-Regular, monospace';
+        const tw = ctx.measureText(badgeText).width;
+        ctx.fillStyle = activeLesion.treatment && activeLesion.pct < 30 ? 'rgba(4, 120, 87, 0.92)' : 'rgba(185, 28, 28, 0.92)';
+        ctx.beginPath();
+        ctx.roundRect(lx + 7, ly - 10, tw + 8, 15, 4);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(badgeText, lx + 11, ly + 1);
+      }
     }
 
     ctx.restore();
@@ -1713,6 +1727,25 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
     }
     ctx.restore();
   }
+
+  // Stable detector grain. Cache per canvas to keep cine drawing inexpensive.
+  if (!canvas._periGrain) {
+    const tile = document.createElement('canvas');
+    tile.width = tile.height = 128;
+    const tc = tile.getContext('2d');
+    const image = tc.createImageData(128, 128);
+    let seed = 1937;
+    for (let i = 0; i < image.data.length; i += 4) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      const value = seed >>> 24;
+      image.data[i] = image.data[i + 1] = image.data[i + 2] = value;
+      image.data[i + 3] = 10;
+    }
+    tc.putImageData(image, 0, 0);
+    canvas._periGrain = ctx.createPattern(tile, 'repeat');
+  }
+  ctx.fillStyle = canvas._periGrain;
+  ctx.fillRect(0, 0, W, H);
 
   // 6. Cath Lab Corner HUD Overlays
   const laoRaoStr = Math.abs(alpha) < 0.5 ? 'AP' : `${alpha > 0 ? 'LAO' : 'RAO'} ${Math.abs(Math.round(alpha))}°`;

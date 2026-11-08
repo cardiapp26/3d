@@ -154,7 +154,7 @@ export function createPeripheralPanel({ mount, getLang }) {
     alpha: 0,
     beta: 0,
     imagingMode: 'dsa',
-    showLabels: true,
+    showLabels: false,
     showBones: true,
     showCatheter: true,
     showHeatmap: false,
