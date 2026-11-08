@@ -1449,3 +1449,8 @@ body.pathophys-app {
 @media (max-width: 900px) {
   .pathophys-sl-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* P-V loop station (main.js createPvStation): one tab row drives exploration, scenarios and lessons. */
+.pv-station-tabs { flex-wrap: wrap; margin: 0 0 14px; }
+.pv-station-lessons .pvl-head,
+.pv-station-lessons .pvl-tabs { display: none; }
