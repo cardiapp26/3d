@@ -4,7 +4,6 @@ import { mountSiteHeader } from '../site-header.js';
 import { PATHOPHYS_STATIONS, PATHOPHYS_GROUPS } from './pathophysiology-data.js';
 
 import { createPVLoopLab } from './pv-loop-lab.js';
-import { createScenarioPvLoop } from './scenario-pv-loop.js';
 import { createPvLessonsLab } from './pv-lessons-lab.js';
 import { createLoadsLab } from './loads-lab.js';
 import { createPhysiologyLab } from './physiology-lab.js';
@@ -60,27 +59,24 @@ const LAB_FACTORIES = {
 /** P-V station: the interactive elastance lab, the loop of the catheter scenarios, then the whiteboard lessons. */
 const PV_TABS = [
   { id: 'explore', label: { tr: 'Serbest keşif', en: 'Free exploration' } },
-  { id: 'scenarios', label: { tr: 'Kateter senaryoları', en: 'Catheter scenarios' } },
   { id: 'anatomy', lesson: true, label: { tr: '1. Döngünün anatomisi', en: '1. Anatomy of the loop' } },
   { id: 'afterload', lesson: true, label: { tr: '2. Artmış ard yük', en: '2. Increased afterload' } },
   { id: 'lusitropy', lesson: true, label: { tr: '3. Azalmış lusitropi', en: '3. Decreased lusitropy' } }
 ];
 
 /**
- * P-V loop station: one card, one row of tabs. Free exploration (presets, sliders, readouts),
- * the catheter scenarios' loops and the three step-by-step lessons used to sit one under another.
+ * P-V loop station: one card, one row of tabs. Free exploration (presets, sliders, readouts and
+ * the catheter scenarios' loops as an overlay) and the three step-by-step lessons.
  */
 function createPvStation(opts) {
   let lang = opts.lang === 'en' ? 'en' : 'tr';
   const tabBar = document.createElement('div');
   tabBar.className = 'preset-pill-group pv-station-tabs';
   tabBar.setAttribute('role', 'tablist');
-  const hosts = { explore: document.createElement('div'), scenarios: document.createElement('div'), lessons: document.createElement('div') };
+  const hosts = { explore: document.createElement('div'), lessons: document.createElement('div') };
   hosts.lessons.className = 'pv-station-lessons';
-  opts.container.append(tabBar, hosts.explore, hosts.scenarios, hosts.lessons);
+  opts.container.append(tabBar, hosts.explore, hosts.lessons);
   const lab = createPVLoopLab({ ...opts, container: hosts.explore, mount: hosts.explore });
-  const scenarioLoop = createScenarioPvLoop({ lang });
-  hosts.scenarios.append(scenarioLoop.element);
   const lessons = createPvLessonsLab({ container: hosts.lessons, lang });
   const buttons = PV_TABS.map(tab => {
     const b = document.createElement('button');
@@ -97,7 +93,6 @@ function createPvStation(opts) {
     current = id;
     const tab = PV_TABS.find(t => t.id === id);
     hosts.explore.hidden = id !== 'explore';
-    hosts.scenarios.hidden = id !== 'scenarios';
     hosts.lessons.hidden = !tab.lesson;
     if (tab.lesson) hosts.lessons.querySelector(`.pvl-tab[data-lesson="${id}"]`)?.click();
     buttons.forEach(b => {
@@ -110,8 +105,8 @@ function createPvStation(opts) {
   label();
   show(current);
   return {
-    updateLanguage(next) { lang = next === 'en' ? 'en' : 'tr'; label(); lab.updateLanguage?.(next); scenarioLoop.setLanguage(next); lessons.updateLanguage(next); },
-    destroy() { lab.destroy?.(); scenarioLoop.destroy(); lessons.destroy(); }
+    updateLanguage(next) { lang = next === 'en' ? 'en' : 'tr'; label(); lab.updateLanguage?.(next); lessons.updateLanguage(next); },
+    destroy() { lab.destroy?.(); lessons.destroy(); }
   };
 }
 

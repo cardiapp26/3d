@@ -2,6 +2,11 @@
 import { PV_PRESETS, PV_V0, pvParams, pvModelLoop } from '../hemo-pv-model.js';
 import { PV_SCENARIOS } from './pathophysiology-data.js';
 import { createCycleClock, createMotionBar, cyclePhaseAt, loopPointAt, tweenValues, PHASE_TEXT } from './cycle-clock.js';
+import { createHemodynamics } from '../hemodynamics.js';
+import { samplePvLoop } from '../hemo-pv-loop.js';
+
+// Catheter scenarios that have a matching elastance preset: choosing one also sets the sliders.
+const CATH_PRESET = { normal: 'normal', aortic_stenosis_severe: 'as', aortic_regurgitation_severe: 'ar', mitral_regurgitation_severe: 'mr', acute_lv_failure: 'hfref' };
 
 // Plot frame shared by the static and live layers.
 const W = 540, H = 380, PAD = { l: 50, r: 20, t: 30, b: 40 }, X_MAX = 280, Y_MAX = 240;
@@ -30,6 +35,10 @@ export function createPvLoopLab(opts = {}) {
 
   root.innerHTML = `
     <div class="pathophys-presets-bar" role="group" aria-label="Presets"></div>
+    <div class="pathophys-cath-row">
+      <label><span data-i18n-pv="cathLabel"></span> <select data-pv-cath></select></label>
+      <p data-pv-cath-note></p>
+    </div>
     <div class="pathophys-grid">
       <div class="pathophys-stage">
         <svg viewBox="0 0 540 380" class="pathophys-svg pathophys-pv-svg" role="img" aria-label="Pressure-Volume Loop">
@@ -50,6 +59,7 @@ export function createPvLoopLab(opts = {}) {
           <span><i class="legend-color legend-espvr"></i> <strong data-i18n-pv="espvr"></strong></span>
           <span><i class="legend-color legend-edpvr"></i> <strong data-i18n-pv="edpvr"></strong></span>
           <span><i class="legend-color legend-ea"></i> <strong data-i18n-pv="ea"></strong></span>
+          <span data-pv-cath-legend hidden><i class="legend-color legend-cath"></i> <strong data-i18n-pv="cathLoop"></strong></span>
         </div>
       </div>
       <div class="pathophys-controls">
@@ -138,6 +148,18 @@ export function createPvLoopLab(opts = {}) {
     presetsBar.append(btn);
   });
 
+  // Catheter scenario: its loop (from the catheterization module's pressures) drawn dashed over this one.
+  const hemo = createHemodynamics('normal');
+  let cathId = '', cathLoop = null;
+  const cathSelect = $('[data-pv-cath]');
+  cathSelect.addEventListener('change', () => {
+    cathId = cathSelect.value;
+    cathLoop = cathId && hemo.setScenario(cathId) ? samplePvLoop(hemo, 160) : null;
+    const preset = CATH_PRESET[cathId] && PV_SCENARIOS.find(sc => sc.id === CATH_PRESET[cathId]);
+    if (preset) { currentPreset = preset.id; params = { ...preset.params }; syncSliders(); glide(); }
+    render();
+  });
+
   ['edv', 'ees', 'ea', 'stiffness'].forEach(key => {
     const input = $(`[data-pv-slider="${key}"]`);
     input.addEventListener('input', () => {
@@ -196,12 +218,26 @@ export function createPvLoopLab(opts = {}) {
       rVAc: en ? 'V-A Coupling (Ea/Ees)' : 'V-A Eşleşme (Ea/Ees)',
       rEsp: en ? 'Peak / End-systolic Pressure' : 'Tepe / Sistol Sonu Basınç',
       rVols: en ? 'End-diastolic / End-systolic Volume' : 'Diyastol Sonu / Sistol Sonu Hacim',
-      rEdp: en ? 'End-diastolic Pressure (EDP)' : 'Diyastol Sonu Basınç (EDP)'
+      rEdp: en ? 'End-diastolic Pressure (EDP)' : 'Diyastol Sonu Basınç (EDP)',
+      cathLabel: en ? 'Catheter scenario' : 'Kateter senaryosu',
+      cathLoop: en ? 'Catheter scenario loop' : 'Kateter senaryosu döngüsü'
     };
     $$('[data-i18n-pv]').forEach(node => {
       const k = node.dataset.i18nPv;
       if (I18N[k]) node.textContent = I18N[k];
     });
+    // Catheter scenario picker; labels follow the language.
+    const lang = en ? 'en' : 'tr';
+    cathSelect.replaceChildren(
+      Object.assign(document.createElement('option'), { value: '', textContent: en ? 'None' : 'Seçilmedi' }),
+      ...hemo.listScenarios().map(({ id, label: name }) => Object.assign(document.createElement('option'), { value: id, textContent: name[lang] || name.tr }))
+    );
+    cathSelect.value = cathId;
+    $('[data-pv-cath-note]').textContent = cathId
+      ? (en ? 'Dashed: this scenario\'s loop from the catheterization module pressures (forward volume in regurgitant lesions). Bring the solid loop toward it with the sliders.'
+        : 'Kesik çizgi: bu senaryonun kateterizasyon modülündeki basınçlardan çizilen döngüsü (yetersizliklerde ileri hacim). Kaydırıcılarla düz döngüyü ona yaklaştırın.')
+      : (en ? 'Overlay the loop of a catheterization scenario on this plot.' : 'Bir kateterizasyon senaryosunun döngüsünü bu grafiğin üstüne çizin.');
+    $('[data-pv-cath-legend]').hidden = !cathLoop;
 
     // Calculate loop model
     const fullParams = pvParams(params, currentPreset || 'normal');
@@ -234,6 +270,13 @@ export function createPvLoopLab(opts = {}) {
   }
 
   /** Grid, axes, ESPVR, EDPVR, Ea and the loop for the parameters on screen. */
+  /** Dashed loop of the chosen catheter scenario, clipped to the plot. */
+  function cathPath() {
+    if (!cathLoop) return '';
+    const pts = cathLoop.points.map(s => `${toX(Math.min(X_MAX, s.v)).toFixed(1)},${toY(Math.min(Y_MAX, s.p)).toFixed(1)}`).join(' ');
+    return `<polygon points="${pts}" fill="none" stroke="#7048e8" stroke-width="2.5" stroke-dasharray="7 5" stroke-linejoin="round" data-pv-cath-loop/>`;
+  }
+
   function drawStatic() {
     const currentParams = shown;
     const p = pvModelLoop(pvParams(shown, currentPreset || 'normal'));
@@ -306,6 +349,7 @@ export function createPvLoopLab(opts = {}) {
       ${pvLoopPath}
       ${esvPt}
       ${edvPt}
+      ${cathPath()}
     `;
   }
 
@@ -351,7 +395,7 @@ export function createPvLoopLab(opts = {}) {
       motionBar.setLanguage();
       render();
     },
-    getState: () => ({ phase: clock.getState().phase, playing: clock.getState().playing, preset: currentPreset }),
+    getState: () => ({ phase: clock.getState().phase, playing: clock.getState().playing, preset: currentPreset, cath: cathId || null }),
     destroy() { cancelTween(); unsubscribe(); clock.destroy(); root.remove(); }
   };
 }

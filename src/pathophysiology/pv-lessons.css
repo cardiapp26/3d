@@ -7,7 +7,7 @@
   --pvl-blue: #1c64c4;
   --pvl-orange: #d9480f;
   --pvl-soft: #6b7f77;
-  --pvl-hand: 'Patrick Hand', 'Comic Neue', 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'DM Sans', system-ui, sans-serif;
+  --pvl-hand: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   container-type: inline-size;
   margin-top: 20px;
   padding: 16px;
