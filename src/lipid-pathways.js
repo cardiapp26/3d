@@ -4,7 +4,7 @@ import { LIPID_SCENE, LIPID_SCENE_LABELS, createLipidFlow } from './lipid-flow.j
 const text = (tr, en) => ({ tr, en });
 export const LIPID_TARGETS = {
   statin: { site: 'synthesis', flow: text('HMG-CoA redüktaz ⊣ → hepatik kolesterol ↓ → LDL-R ↑ → LDL temizlenmesi ↑', 'HMG-CoA reductase ⊣ → hepatic cholesterol ↓ → LDL-R ↑ → LDL clearance ↑') },
-  ezetimibe: { site: 'absorption', flow: text('NPC1L1 ⊣ → bağırsaktan kolesterol emilimi ↓', 'NPC1L1 ⊣ → intestinal cholesterol absorption ↓') },
+  ezetimibe: { site: 'absorption', flow: text('NPC1L1 ⊣ → bağırsaktan kolesterol emilimi ↓; yağ asidi alımı doğrudan bloke olmaz.', 'NPC1L1 ⊣ → intestinal cholesterol absorption ↓; fatty acid uptake is not directly blocked.') },
   pcsk9: { site: 'receptor', flow: text('PCSK9 ⊣ → LDL-R yıkımı ↓ → reseptör geri dönüşümü ↑', 'PCSK9 ⊣ → LDL-R degradation ↓ → receptor recycling ↑') },
   bile: { site: 'bile', flow: text('Safra asidi bağlama → dışkıyla kayıp ↑ → hepatik kolesterol kullanımı ↑', 'Bile acid binding → fecal loss ↑ → hepatic cholesterol utilization ↑') },
   fibrate: { site: 'lpl', flow: text('PPAR-α aktivasyonu → LPL ilişkili TG temizlenmesi ↑', 'PPAR-α activation → LPL-associated triglyceride clearance ↑') },
@@ -48,7 +48,7 @@ export function createLipidPathways({ mount, getLang }) {
     root.querySelector('article h3').textContent = t(item.name); root.querySelector('.lipidlab-examples').textContent = t(item.examples); root.querySelector('.lipidlab-flow').textContent = t(target.flow);
     const fields = { use: text('Klinik bağlam', 'Clinical context'), risk: text('Güvenlik', 'Safety'), monitor: text('İzlem', 'Monitoring') };
     for (const key of Object.keys(fields)) { const div = root.querySelector(`[data-lipid-field=${key}]`); div.querySelector('h4').textContent = t(fields[key]); div.querySelector('p').textContent = t(item[key]); }
-    root.querySelector('.lipidlab-limit').textContent = t(text('Özgün, basitleştirilmiş öğretim şeması; oklar konsantrasyon veya kinetik simülasyonu değildir. Şilomikron/kalıntı ve HDL geri taşıma yolları tam çizilmemiştir. HDL artışı, TG veya LDL düşüşü her ajan için aynı olay azalması anlamına gelmez. Bu altı sınıf güncel ilaçların tamamı değildir; inklisiran ve bempedoik asit bu referans görselin kapsamı dışındadır.', 'Original simplified teaching diagram; arrows are not concentration or kinetic simulations. Chylomicron/remnant and HDL reverse transport pathways are not fully drawn. Raising HDL or lowering TG/LDL does not imply identical event reduction for every agent. These six classes are not exhaustive; inclisiran and bempedoic acid are outside this reference image scope.'));
+    root.querySelector('.lipidlab-limit').textContent = t(text('Bu öğretim şeması ilaç hedeflerini gösterir; oklar konsantrasyon veya kinetik simülasyonu değildir. Ayrıntılı emilim, kalıntı ve HDL yollarını Lipid yolculuğu bölümünde izle. HDL artışı, TG veya LDL düşüşü her ajan için aynı olay azalması anlamına gelmez. Bu altı sınıf güncel ilaçların tamamı değildir.', 'This teaching diagram shows drug targets; arrows are not concentration or kinetic simulations. See the lipid journey for detailed absorption, remnant and HDL pathways. Raising HDL or lowering TG/LDL does not imply identical event reduction for every agent. These six classes are not exhaustive.'));
     root.querySelector('summary').textContent = t(text('Kaynaklar ve görsel sınırları', 'Sources and visual limits'));
   }
   refresh(); return { refresh };

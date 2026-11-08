@@ -18,7 +18,7 @@
 .phys-arrow.is-active{stroke:#b15d46;stroke-width:4}
 .phys-membrane{fill:none;stroke:#cc9475;stroke-width:9}
 .phys-fibrous{fill:#e1b8ac;stroke:#c1806f;stroke-dasharray:5 3}
-.phys-ew{fill:#ecc29b;fill-opacity:.45;stroke:#c95a61;stroke-width:2}
+.phys-ew{fill:#ecc29b;fill-opacity:.16;stroke:#c95a61;stroke-width:2}
 .phys-pe{fill:#b7ca99;fill-opacity:.5;stroke:#829368;stroke-width:1}
 .phys-focus{fill:none;stroke:#e49930;stroke-width:6}
 .phys-lane{fill:none;stroke:#cad7c6}
@@ -35,5 +35,43 @@
 .phys-caveat,.phys-sources{font-size:10px;color:#7a8a72}
 .phys-sources summary{cursor:pointer;font-weight:600}
 .phys-sources a{display:block;color:#447663}
+/* Live layer on the shared cycle clock (physiology-guide-motion.js) */
+.phys-guide>.pathophys-cycle-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;padding:6px 0;border-bottom:1px solid #d5dfcf;min-width:0}
+.phys-guide>.pathophys-cycle-bar .preset-label{font-weight:700;color:#5d7262}
+.phys-guide>.pathophys-cycle-bar select{font:inherit;padding:4px 6px;border:1px solid #c3d0bd;border-radius:5px;background:#fff;color:#315d4d}
+.phys-guide>.pathophys-cycle-bar .pathophys-cycle-scrub{display:inline-flex;align-items:center;gap:6px;flex:1 1 160px;min-width:0}
+.phys-guide>.pathophys-cycle-bar .pathophys-cycle-scrub input{flex:1;min-width:80px;accent-color:#315d4d}
+.phys-guide>.pathophys-cycle-bar .pathophys-cycle-phase{min-width:0;color:#2f6f6a}
+.phys-box.is-live{fill:#f8e2b8;stroke:#d08a3a}
+.phys-box.is-active.is-live{fill:#f6c98a}
+.phys-arrow.is-live{stroke:#d07a4a}
+.phys-live-text{font-weight:700;fill:#2f5a4b;font-variant-numeric:tabular-nums}
+.phys-ap-band{fill:#e4b459;opacity:.07}
+.phys-ap-band.is-active{opacity:.26}
+.phys-ap-num{font-weight:700;fill:#8a6a2d}
+.phys-ap-ghost{fill:none;stroke:#c9d3c4;stroke-width:2;stroke-dasharray:3 3}
+.phys-ap-pen{fill:none;stroke:#b5473d;stroke-width:2.8;stroke-linejoin:round}
+.phys-pen-dot{fill:#b5473d;stroke:#fff;stroke-width:1.5}
+.phys-ion-membrane{fill:#e8c9a6;stroke:#cc9475}
+.phys-ion-channel{fill:#fafbf5;stroke:#a98b6f}
+.phys-ion-arrow{fill:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.phys-ion-name{font-weight:700}
+.phys-ca-token{fill:#3d78b0;stroke:#fff;stroke-width:1.2}
+.phys-myosin{fill:none;stroke:#8f5f74;stroke-width:4}
+.phys-actin{fill:none;stroke:#5d8b6c;stroke-width:2}
+.phys-z{fill:none;stroke:#3f4f44;stroke-width:3}
+.phys-purkinje{fill:none;stroke:#b8c6b5;stroke-width:2}
+.phys-purkinje.is-live{stroke:#d07a4a;stroke-width:3}
+.phys-atrial-wave{fill:#e8a35a;stroke:none}
+.phys-wavefront{fill:#d0572f;stroke:#fff;stroke-width:2}
+.phys-pen-bg{fill:#f2f6ee;stroke:#cad7c6}
+.phys-pen-trace{fill:none;stroke:#3f6b4a;stroke-width:2;stroke-linejoin:round}
+.phys-drop{fill:none;stroke:#c65d4e;stroke-width:1;stroke-dasharray:3 3;opacity:.7}
+.phys-chamber{fill:#e5a3a0;stroke:#b5473d;stroke-width:2}
+.phys-flow-lane{fill:none;stroke:#e6d7c8;stroke-width:10;stroke-linecap:round}
+.phys-flow-dot{fill:#c8403b}
+.phys-ew-live{fill:#e8a66a;fill-opacity:.55;stroke:none}
+.phys-live-dot{fill:#b5473d;stroke:#fff;stroke-width:2}
+.phys-trace-dot{stroke:#fff;stroke-width:1.5}
 .pharmaep>.phys-guide,.pharmaep>.phys-currents{margin:18px 0}
 @media(max-width:600px){.phys-guide,.phys-currents{padding:10px}.phys-guide h3,.phys-currents h3{font-size:17px}.phys-guide button{font-size:11px}}
