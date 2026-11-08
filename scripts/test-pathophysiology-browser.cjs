@@ -55,6 +55,13 @@ const { startApp } = require('./lib/app-server.cjs');
     await page.waitForTimeout(200);
     assert.ok(await page.$('.starling-svg'), 'Starling SVG should render');
     assert.ok(await page.$('.laplace-svg'), 'Laplace SVG should render');
+    await page.click('[data-lap-preset="radius"]');
+    assert.match(await page.locator('[data-laplace-comparison]').textContent(), /150 → 210 mmHg.*P, h sabit/);
+    await page.click('[data-lap-preset="thickness"]');
+    assert.match(await page.locator('[data-laplace-comparison]').textContent(), /150 → 100 mmHg.*P, r sabit/);
+    await page.click('[data-lap-preset="eccentric"]');
+    assert.equal(await page.locator('[data-laplace-slider="h"]').inputValue(), '0.75');
+    assert.equal(await page.locator('[data-laplace-val="h"]').textContent(), '0.75 cm');
 
     // Click Station 3: Atherogenesis
     await page.click('[data-station="atherogenesis"]');
@@ -69,6 +76,22 @@ const { startApp } = require('./lib/app-server.cjs');
     // New source-based stations
     const shots = '/Users/yh/.gemini/antigravity/brain/65400f76-60ad-41ef-8e98-3578bd82623f';
     await page.click('[data-station="hypertension-vascular"]');
+    const raas = page.locator('[data-salt-raas-lab]');
+    await raas.locator('[data-raas-step="2"]').click();
+    assert.match(await raas.locator('[data-raas-value="raas"]').textContent(), /düşük/);
+    await raas.locator('[data-raas-step="4"]').click();
+    assert.match(await raas.locator('[data-raas-value="output"]').textContent(), /yüksek/);
+    assert.match(await raas.locator('[data-raas-value="pressure"]').textContent(), /yaklaşır/);
+    await raas.locator('[data-raas-scenario="low"]').click();
+    await raas.locator('[data-raas-step="2"]').click();
+    assert.match(await raas.locator('[data-raas-value="raas"]').textContent(), /yüksek/);
+    await raas.locator('[data-raas-scrub]').press('End');
+    assert.equal(await raas.getAttribute('data-raas-stage'), '4');
+    assert.match(await raas.locator('[data-raas-value="output"]').textContent(), /düşük/);
+    await page.locator('[data-pathophys-lang="en"]').click();
+    assert.equal(await raas.getAttribute('data-raas-stage'), '4', 'language retains salt stage');
+    assert.match(await raas.locator('[data-raas-title]').textContent(), /lower intake/);
+    await page.locator('[data-pathophys-lang="tr"]').click();
     await page.waitForSelector('.htn-svg');
     const bpBefore = await page.locator('.pathophys-htn-lab .readout-value').first().textContent();
     await page.click('[data-htn-drug="baxdrostat"]');

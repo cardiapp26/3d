@@ -22,6 +22,7 @@ import { createValvularLab } from '../src/pathophysiology/valvular-lab.js';
 import { createIschemicCascadeLab } from '../src/pathophysiology/ischemic-cascade-lab.js';
 import { createHeartFailureLab } from '../src/pathophysiology/heart-failure-lab.js';
 import { createPericardialLab } from '../src/pathophysiology/pericardial-lab.js';
+import { saltRaasFrame } from '../src/pathophysiology/salt-raas-lab.js';
 import {
   laplaceStresses, dilatedAorta, aortaZone, wallShear, shearZone, poiseuilleVelocity,
   pulsePressureAt, oscillatoryShearIndex, MMHG_TO_KPA
@@ -68,6 +69,27 @@ test('Pathophysiology: data structures and bilingual integrity', () => {
     assert.ok(st.title.tr && st.title.en);
     assert.ok(st.desc.tr && st.desc.en);
     assert.ok(Array.isArray(st.features) && st.features.length >= 3);
+  }
+});
+
+test('Salt adaptation buffers pressure while renal sodium output matches the new intake', () => {
+  for (const [scenario, direction] of [['high', 1], ['low', -1]]) {
+    const start = saltRaasFrame(0, scenario);
+    assert.equal(start.pressure, 0);
+    assert.equal(start.raas, 0);
+    const early = saltRaasFrame(0.42, scenario);
+    assert.equal(Math.sign(early.pressure), direction);
+    assert.equal(Math.sign(early.volume), direction);
+    const compensation = saltRaasFrame(0.58, scenario);
+    assert.equal(Math.sign(compensation.raas), -direction);
+    assert.ok(Math.abs(early.output) < Math.abs(start.intake), 'output has not caught up');
+    assert.ok(Math.abs(compensation.output) > Math.abs(start.intake), 'transient correction reverses the balance');
+    assert.ok(Math.abs(saltRaasFrame(0.7, scenario).volume) < Math.abs(compensation.volume));
+    const end = saltRaasFrame(0.8, scenario);
+    assert.equal(end.output, end.intake);
+    assert.equal(saltRaasFrame(1, scenario).volume, end.volume, 'volume is stable once intake matches output');
+    assert.ok(Math.abs(end.pressure) < Math.abs(early.pressure));
+    assert.ok(Math.abs(end.volume) < Math.abs(early.volume));
   }
 });
 

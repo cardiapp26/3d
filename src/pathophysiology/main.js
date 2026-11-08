@@ -20,12 +20,14 @@ import { createValvularLab } from './valvular-lab.js';
 import { createRegurgitationLab } from './regurgitation-lab.js';
 import { createAcuteValveHemoLab } from './acute-valve-hemo-lab.js';
 import { createHypertensionLab } from './hypertension-lab.js';
+import { createSaltRaasLab } from './salt-raas-lab.js';
 import { createPahRvLab } from './pah-rv-lab.js';
 import { createMyocardialCkmLab } from './myocardial-ckm-lab.js';
 import { createAchdShuntsLab } from './achd-shunts-lab.js';
 import { createVesselWallLab } from './vessel-wall-lab.js';
 
 import './pathophysiology.css';
+import './salt-raas.css';
 import './vessel-wall.css';
 import { createVisualInteraction } from './visual-interaction.js';
 
@@ -80,13 +82,14 @@ function createValvularStation(opts) {
   };
 }
 
-/** Vascular station: hypertension and wave reflection, then the vessel wall stress lab. */
+/** Vascular station: salt adaptation, wave reflection and vessel wall stress. */
 function createVascularStation(opts) {
+  const raas = createSaltRaasLab(opts);
   const lab = createHypertensionLab(opts);
   const wall = createVesselWallLab({ container: opts.container, lang: opts.lang });
   return {
-    updateLanguage(next) { lab.updateLanguage?.(next); wall.setLanguage(next); },
-    destroy() { lab.destroy?.(); wall.destroy(); }
+    updateLanguage(next) { raas.updateLanguage(next); lab.updateLanguage?.(next); wall.setLanguage(next); },
+    destroy() { raas.destroy(); lab.destroy?.(); wall.destroy(); }
   };
 }
 
