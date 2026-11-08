@@ -1,0 +1,106 @@
+.raas-lab {
+  --raas-ink: #17352f;
+  --raas-muted: #42635c;
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+  margin-bottom: 16px;
+  background: #f8fbf7;
+  color: var(--raas-ink);
+}
+
+.raas-header h3 { margin: 3px 0 6px; font-size: clamp(1.12rem, 2.3vw, 1.55rem); }
+.raas-header p { margin: 0; color: var(--raas-muted); }
+.raas-header [data-raas-copy="kicker"] { font-size: .7rem; font-weight: 800; letter-spacing: .11em; }
+
+.raas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.raas-toolbar .preset-pill-group { margin: 0; }
+.raas-play { font-weight: 750; }
+
+.raas-svg { display: block; width: 100%; max-height: 360px; border-radius: 12px; }
+
+.raas-metrics, .raas-steps {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.raas-metrics > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #cfe1d9;
+  border-radius: 8px;
+  background: #edf5f0;
+}
+
+.raas-metrics span { color: var(--raas-muted); font-size: .75rem; }
+.raas-metrics strong { color: var(--raas-ink); font-size: .85rem; }
+
+.raas-scrub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.raas-scrub input { flex: 1; min-width: 0; accent-color: #176b59; }
+.raas-steps { list-style: none; margin: 0; padding: 0; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+.raas-steps button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid #d0dfd7;
+  border-radius: 8px;
+  background: #fff;
+  color: #2d4d43;
+  font: inherit;
+  font-size: .78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.raas-steps button span {
+  display: grid;
+  flex: 0 0 1.45rem;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #e8f1ec;
+  font-weight: 800;
+}
+
+.raas-steps button[aria-current="step"] { background: #e0f3ea; border-color: #558e78; color: #154639; }
+.raas-steps button[aria-current="step"] span { background: #176b59; color: #fff; }
+
+.raas-explainer {
+  padding: 11px 14px;
+  border-inline-start: 4px solid #4d907a;
+  background: #edf5f0;
+  border-radius: 7px;
+}
+
+.raas-explainer h4 { margin: 0 0 3px; }
+.raas-explainer p, .raas-note { margin: 0; font-size: .86rem; color: var(--raas-muted); }
+.raas-sources { font-size: .78rem; }
+.raas-sources a { display: inline-block; color: #245e4f; margin: 5px 12px 0 0; }
+
+@media (max-width: 700px) {
+  .raas-metrics, .raas-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .raas-scrub { display: grid; gap: 4px; }
+  .raas-scrub input { width: 100%; margin: 0; }
+}
