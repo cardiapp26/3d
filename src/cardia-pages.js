@@ -7,8 +7,8 @@ export const CARDIA_PAGES = Object.freeze({
   anatomy: { path: './', groups: [['modeGroupAnatomy', ['anatomy', 'atria', 'ra', 'rv', 'lv', 'defects']]] },
   exam: { path: './exam/', groups: [['modeGroupExam', ['exam']]] },
   hemo: { path: './hemo/', groups: [['modeGroupHemodynamics', ['cath']]] },
-  'ep-anatomy': { path: './eps/anatomy/', groups: [['modeGroupEp', ['transseptal', 'ablation', 'pacemaker', 'bachmann']]] },
-  'angio-3d': { path: './angio/3d/', groups: [['modeGroupIntervention', ['angiography']]] }
+  'ep-anatomy': { path: './eps/anatomy/', groups: [['modeGroupEp', ['ablation', 'pacemaker', 'bachmann']]] },
+  'angio-3d': { path: './angio/3d/', groups: [['modeGroupIntervention', ['angiography', 'transseptal']]] }
 });
 
 // Imaging modes left the 3D shell for the echo studio.

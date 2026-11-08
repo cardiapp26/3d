@@ -20,7 +20,7 @@ const GUIDE = {
 
 const BEAT_COLORS = { '-1': '#60a5fa', 0: '#e8ebf3', 1: '#fbbf24' };
 
-export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
+export function createMappingPanel(doc, { getLang = () => 'tr', onOpenEam3d } = {}) {
   const el = (tag, cls, attrs = {}) => {
     const n = doc.createElement(tag);
     if (cls) n.className = cls;
@@ -121,8 +121,13 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   manual.append(leftField, widthField);
   const toggle = (name) => { const b = el('button', 'amap-toggle', { type: 'button', [`data-amap-${name}`]: '' }); return b; };
   const artifactBtn = toggle('artifact'), truthBtn = toggle('truth');
+  const open3dBtn = el('button', 'amap-toggle eam3d-bridge-btn', { type: 'button', 'data-open-eam3d': 'mapping' });
+  open3dBtn.addEventListener('click', () => {
+    const sc = state.scenario === 'cti-flutter' ? 'flutter-typical' : 'atrial-scar-flutter';
+    if (typeof onOpenEam3d === 'function') onOpenEam3d({ scenario: sc, mapMode: 'lat', rail: 'map' });
+  });
   const toggles = el('div', 'amap-toggles');
-  toggles.append(artifactBtn, truthBtn);
+  toggles.append(artifactBtn, truthBtn, open3dBtn);
   const warn = el('p', 'amap-warn', { 'aria-live': 'polite', 'data-amap-warn': '' });
   const readout = el('dl', 'amap-readout', { 'data-amap-readout': '' });
   const verdict = el('p', 'amap-verdict', { 'data-amap-verdict': '' });
@@ -417,6 +422,7 @@ export function createMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     widthOut.textContent = `${widthInput.value} %`;
     artifactBtn.textContent = t.artifact; artifactBtn.setAttribute('aria-pressed', String(state.artifact));
     truthBtn.textContent = t.truth; truthBtn.setAttribute('aria-pressed', String(state.truth));
+    open3dBtn.textContent = L() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = t.scenarios[state.scenario].lesson;
     truth.textContent = t.scenarios[state.scenario].truth;
     truth.hidden = !state.truth;

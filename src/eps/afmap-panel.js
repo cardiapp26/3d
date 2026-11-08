@@ -21,7 +21,7 @@ const phaseColor = (p) => `hsl(${Math.round(((p + Math.PI) / (2 * Math.PI)) * 30
 const activationColor = (u) => { const v = Math.max(0, Math.min(1, u)); return `rgb(${Math.round(30 + 225 * v)}, ${Math.round(40 + 190 * v)}, ${Math.round(45 + 30 * v)})`; };
 const scaleColor = (f) => COLORS[Math.max(0, Math.min(COLORS.length - 1, Math.floor(f * COLORS.length)))];
 
-export function createAfMappingPanel(doc, { getLang = () => 'tr' } = {}) {
+export function createAfMappingPanel(doc, { getLang = () => 'tr', onOpenEam3d } = {}) {
   const el = (tag, cls, attrs = {}) => {
     const n = doc.createElement(tag);
     if (cls) n.className = cls;
@@ -50,8 +50,12 @@ export function createAfMappingPanel(doc, { getLang = () => 'tr' } = {}) {
   const select = (name) => el('select', '', { [`data-afmap-${name}`]: '' });
   const sel = { scenario: select('scenario'), map: select('map'), resolution: select('resolution'), ablation: select('ablation'), site: select('site') };
   const truthBtn = el('button', 'amap-toggle', { type: 'button', 'data-afmap-truth': '' });
+  const open3dBtn = el('button', 'amap-toggle eam3d-bridge-btn', { type: 'button', 'data-open-eam3d': 'afmap' });
+  open3dBtn.addEventListener('click', () => {
+    if (typeof onOpenEam3d === 'function') onOpenEam3d({ scenario: 'af', mapMode: 'phase', rail: 'map' });
+  });
   const toggles = el('div', 'amap-toggles');
-  toggles.append(truthBtn);
+  toggles.append(truthBtn, open3dBtn);
   const verdict = el('p', 'amap-verdict', { 'aria-live': 'polite', 'data-afmap-verdict': '' });
   const readout = el('dl', 'amap-readout', { 'data-afmap-readout': '' });
   const ablationNote = el('p', 'amap-note', { 'data-afmap-ablation-text': '' });
@@ -294,6 +298,7 @@ export function createAfMappingPanel(doc, { getLang = () => 'tr' } = {}) {
     truthBtn.textContent = tt.truth;
     truthBtn.setAttribute('aria-pressed', String(state.truth));
     truthBtn.hidden = state.map !== 'phase';
+    open3dBtn.textContent = getLang() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = tt.scenarios[state.scenario].lesson;
     truth.textContent = tt.scenarios[state.scenario].truth;
     source.textContent = tt.source;

@@ -28,12 +28,17 @@ const { startApp } = require('./lib/app-server.cjs');
     const activeModule = await page.$eval('.site-module[aria-current="page"]', el => el.textContent.trim());
     assert.ok(activeModule.toLowerCase().includes('patofizyoloji') || activeModule.toLowerCase().includes('pathophysiology'), 'Active module should be Patofizyoloji');
 
-    // Verify 16 station buttons in sidebar, grouped under 4 headings
+    // Verify all stations are numbered in sidebar order.
     const stations = await page.$$eval('.pathophys-nav-item', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     assert.equal(stations.length, 16, `Should have 16 stations in nav, found: ${stations.length}`);
-    assert.equal(await page.locator('.pathophys-nav-group').count(), 4, 'four station groups');
+    assert.equal(await page.locator('.pathophys-nav-group').count(), 5, 'five station groups');
+    assert.equal(await page.locator('[data-station]').first().getAttribute('data-station'), 'electrophys');
+    assert.deepEqual(await page.locator('.nav-item-num').allTextContents(), Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0')));
+    await page.waitForSelector('[data-ep-film] svg');
+    assert.equal(await page.locator('[data-pathophys-station-num]').textContent(), 'İSTASYON 01');
 
-    // Station 1: PV loop
+    // Open the PV loop.
+    await page.click('[data-station="pv-loop"]');
     assert.ok(await page.$('.pathophys-pv-svg'), 'PV loop SVG should render');
     const efReadout = await page.$eval('[data-pv-out="ef"]', el => el.textContent.trim());
     assert.ok(efReadout.includes('%'), `EF readout should be percentage, got: ${efReadout}`);
@@ -50,6 +55,13 @@ const { startApp } = require('./lib/app-server.cjs');
     await page.waitForTimeout(200);
     assert.ok(await page.$('.starling-svg'), 'Starling SVG should render');
     assert.ok(await page.$('.laplace-svg'), 'Laplace SVG should render');
+    await page.click('[data-lap-preset="radius"]');
+    assert.match(await page.locator('[data-laplace-comparison]').textContent(), /150 → 210 mmHg.*P, h sabit/);
+    await page.click('[data-lap-preset="thickness"]');
+    assert.match(await page.locator('[data-laplace-comparison]').textContent(), /150 → 100 mmHg.*P, r sabit/);
+    await page.click('[data-lap-preset="eccentric"]');
+    assert.equal(await page.locator('[data-laplace-slider="h"]').inputValue(), '0.75');
+    assert.equal(await page.locator('[data-laplace-val="h"]').textContent(), '0.75 cm');
 
     // Click Station 3: Atherogenesis
     await page.click('[data-station="atherogenesis"]');
@@ -64,6 +76,22 @@ const { startApp } = require('./lib/app-server.cjs');
     // New source-based stations
     const shots = '/Users/yh/.gemini/antigravity/brain/65400f76-60ad-41ef-8e98-3578bd82623f';
     await page.click('[data-station="hypertension-vascular"]');
+    const raas = page.locator('[data-salt-raas-lab]');
+    await raas.locator('[data-raas-step="2"]').click();
+    assert.match(await raas.locator('[data-raas-value="raas"]').textContent(), /düşük/);
+    await raas.locator('[data-raas-step="4"]').click();
+    assert.match(await raas.locator('[data-raas-value="output"]').textContent(), /yüksek/);
+    assert.match(await raas.locator('[data-raas-value="pressure"]').textContent(), /yaklaşır/);
+    await raas.locator('[data-raas-scenario="low"]').click();
+    await raas.locator('[data-raas-step="2"]').click();
+    assert.match(await raas.locator('[data-raas-value="raas"]').textContent(), /yüksek/);
+    await raas.locator('[data-raas-scrub]').press('End');
+    assert.equal(await raas.getAttribute('data-raas-stage'), '4');
+    assert.match(await raas.locator('[data-raas-value="output"]').textContent(), /düşük/);
+    await page.locator('[data-pathophys-lang="en"]').click();
+    assert.equal(await raas.getAttribute('data-raas-stage'), '4', 'language retains salt stage');
+    assert.match(await raas.locator('[data-raas-title]').textContent(), /lower intake/);
+    await page.locator('[data-pathophys-lang="tr"]').click();
     await page.waitForSelector('.htn-svg');
     const bpBefore = await page.locator('.pathophys-htn-lab .readout-value').first().textContent();
     await page.click('[data-htn-drug="baxdrostat"]');
@@ -157,7 +185,7 @@ const { startApp } = require('./lib/app-server.cjs');
     const trStationTitle = await page.$eval('[data-pathophys-station-title]', el => el.textContent.trim());
     assert.ok(trStationTitle.includes('Kapak') || trStationTitle.includes('Gradyan'), `TR title expected, got: ${trStationTitle}`);
 
-    // Switch back to Station 1 (PV loop) and take screenshot
+    // Switch back to the PV loop and take screenshot.
     await page.click('[data-station="pv-loop"]');
     await page.waitForTimeout(250);
     const screenshotPath = '/Users/yh/.gemini/antigravity/brain/65400f76-60ad-41ef-8e98-3578bd82623f/pathophysiology_screenshot.png';

@@ -4,6 +4,14 @@ import { createCycleClock, createMotionBar, cycleShape, tweenValues } from './cy
 
 const INOTROPY = Object.freeze({ enhanced: { max: 130, k: 0.016 }, normal: { max: 95, k: 0.014 }, depressed: { max: 55, k: 0.012 } });
 const strokeVolume = (edv, state) => Math.max(10, INOTROPY[state].max * (1 - Math.exp(-INOTROPY[state].k * Math.max(0, edv - 35))));
+const LAPLACE_REFERENCE = Object.freeze({ p: 120, r: 2.5, h: 1.0 });
+const LAPLACE_PRESETS = {
+  normal: LAPLACE_REFERENCE,
+  concentric: { p: 200, r: 2.3, h: 1.8 },
+  eccentric: { p: 125, r: 4.2, h: 0.75 },
+  radius: { ...LAPLACE_REFERENCE, r: 3.5 },
+  thickness: { ...LAPLACE_REFERENCE, h: 1.5 }
+};
 /** End-diastolic sarcomere length (µm): 1.75 at small EDV to 2.3 at large EDV. */
 export const diastolicSarcomere = edv => 1.75 + 0.55 * Math.min(1, Math.max(0, (edv - 60) / 190));
 /** Sarcomere length during the beat: shortens with the ejected fraction. */
@@ -37,7 +45,7 @@ export function createStarlingLaplaceLab(opts = {}) {
   let inotropyState = 'normal'; // 'normal', 'enhanced', 'depressed'
 
   // Laplace parameters: P (mmHg), r (cm), h (cm)
-  let laplace = { p: 120, r: 2.5, h: 1.0 };
+  let laplace = { ...LAPLACE_REFERENCE };
   let currentLaplacePreset = 'normal';
   // Values on screen glide toward the chosen ones.
   let shownStarling = { edv, sv: strokeVolume(edv, inotropyState) }, shownLap = { ...laplace };
@@ -111,7 +119,7 @@ export function createStarlingLaplaceLab(opts = {}) {
           </label>
           <label class="pathophys-slider-row">
             <span class="slider-label"><strong data-sl="lblH"></strong> <small>(cm)</small></span>
-            <input type="range" data-laplace-slider="h" min="0.6" max="2.2" step="0.1">
+            <input type="range" data-laplace-slider="h" min="0.6" max="2.2" step="0.05">
             <span class="slider-val" data-laplace-val="h"></span>
           </label>
           <div class="laplace-readout-row">
@@ -124,6 +132,19 @@ export function createStarlingLaplaceLab(opts = {}) {
               <strong class="readout-value" data-laplace-remodel-status>--</strong>
             </div>
           </div>
+        </div>
+        <div class="clinical-desc-box">
+          <h4 data-sl="laplaceCompareTitle"></h4>
+          <div class="laplace-presets-row">
+            <button type="button" class="laplace-preset-btn" data-lap-preset="radius" data-sl="presRadius"></button>
+            <button type="button" class="laplace-preset-btn" data-lap-preset="thickness" data-sl="presThickness"></button>
+          </div>
+          <p><output data-laplace-comparison></output></p>
+          <p data-sl="laplaceClinical"></p>
+          <p>
+            <a href="https://www.jci.org/articles/view/108079" target="_blank" rel="noopener noreferrer">Grossman et al. (1975)</a> ·
+            <a href="https://www.jci.org/articles/view/105734" target="_blank" rel="noopener noreferrer">Graham et al. (1968)</a>
+          </p>
         </div>
       </section>
     </div>
@@ -150,13 +171,6 @@ export function createStarlingLaplaceLab(opts = {}) {
     render();
     glideStarling();
   });
-
-  // Laplace Presets
-  const LAPLACE_PRESETS = {
-    normal: { p: 120, r: 2.5, h: 1.0 },
-    concentric: { p: 200, r: 2.3, h: 1.8 }, // Aortic stenosis / HTN
-    eccentric: { p: 125, r: 4.2, h: 0.75 }  // Dilated cardiomyopathy / severe MR
-  };
 
   $$('[data-lap-preset]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -211,11 +225,17 @@ export function createStarlingLaplaceLab(opts = {}) {
       lblTension: en ? 'Myocardial Tension' : 'Miyokard Gerimi',
       laplaceTitle: en ? 'Laplace Law & Myocardial Wall Stress' : 'Laplace Yasası ve Duvar Gerimi',
       laplaceIntro: en
-        ? 'Wall stress (σ = P·r / 2h): High pressure triggers concentric thickening (h↑), whereas volume overload thins the wall (r↑, h↓), multiplying stress.'
-        : 'Duvar gerimi (σ = P·r / 2h): Basınç yükü konsantrik kalınlaşmayı (h↑), hacim dilatasyonu ise duvar incelmesini (r↑, h↓) tetikler.',
+        ? 'The thin-walled sphere approximates wall stress as σ ≈ P·r / (2h). P is transmural pressure. The diagram follows the beat, and the readout uses the selected inputs.'
+        : 'İnce duvarlı küre yaklaşımında duvar stresi σ ≈ P·r / (2h). P, transmural basınç farkıdır. Çizim atım boyunca değişir, hesap ise seçilen girdileri kullanır.',
       presNorm: en ? 'Normal Baseline' : 'Normal Referans',
       presConc: en ? 'Concentric Hypertrophy (AS/HTN)' : 'Konsantrik Hipertrofi (AD/HT)',
       presEcc: en ? 'Eccentric Dilation (DCM)' : 'Eksantrik Dilatasyon (KMP)',
+      laplaceCompareTitle: en ? 'One variable at a time' : 'Tek değişkenli karşılaştırma',
+      presRadius: en ? 'Increase radius (r)' : 'Yarıçapı artır (r)',
+      presThickness: en ? 'Increase thickness (h)' : 'Kalınlığı artır (h)',
+      laplaceClinical: en
+        ? 'In heart failure, dilation raises wall stress if pressure and thickness stay the same. Higher stress can increase myocardial oxygen demand and contribute to remodeling. Heart rate and contractility also affect oxygen demand. At the same pressure and radius, concentric thickening reduces stress.'
+        : 'Kalp yetersizliğinde, basınç ve duvar kalınlığı sabitse dilatasyon duvar stresini artırır. Yüksek stres miyokardın oksijen talebini artırabilir ve yeniden şekillenmeye katkıda bulunabilir. Kalp hızı ve kontraktilite de oksijen talebini etkiler. Aynı basınç ve yarıçapta konsantrik kalınlaşma stresi azaltır.',
       lblP: en ? 'Systolic Pressure (P)' : 'Sistolik Basınç (P)',
       lblR: en ? 'Cavity Radius (r)' : 'Kavite Yarıçapı (r)',
       lblH: en ? 'Wall Thickness (h)' : 'Duvar Kalınlığı (h)',
@@ -245,16 +265,27 @@ export function createStarlingLaplaceLab(opts = {}) {
 
     // Laplace Calculation
     $$('[data-lap-preset]').forEach(btn => {
-      btn.setAttribute('aria-pressed', String(btn.dataset.lapPreset === currentLaplacePreset));
+      const selected = btn.dataset.lapPreset === currentLaplacePreset;
+      btn.setAttribute('aria-pressed', String(selected));
+      btn.classList.toggle('active', selected);
     });
 
     $('[data-laplace-val="p"]').textContent = `${laplace.p} mmHg`;
     $('[data-laplace-val="r"]').textContent = `${laplace.r.toFixed(1)} cm`;
-    $('[data-laplace-val="h"]').textContent = `${laplace.h.toFixed(1)} cm`;
+    $('[data-laplace-val="h"]').textContent = `${laplace.h.toFixed(2).replace(/0$/, '')} cm`;
 
-    // Wall stress: sigma = P * r / (2 * h) (relative units: mmHg * cm / cm = mmHg)
     const sigma = wallStress(laplace);
     $('[data-laplace-stress]').textContent = `${Math.round(sigma)} mmHg`;
+    const comparison = $('[data-laplace-comparison]');
+    if (currentLaplacePreset === 'radius' || currentLaplacePreset === 'thickness') {
+      const fixed = currentLaplacePreset === 'radius' ? 'P, h' : 'P, r';
+      const referenceStress = wallStress(LAPLACE_REFERENCE);
+      comparison.textContent = `${Math.round(referenceStress)} → ${Math.round(sigma)} mmHg · ${fixed} ${en ? 'fixed' : 'sabit'}`;
+    } else {
+      comparison.textContent = en
+        ? 'Both comparisons start from the normal baseline.'
+        : 'İki karşılaştırma da normal referans ayarlarından başlar.';
+    }
 
     // Remodeling classification
     const rH = laplace.r / laplace.h; // normal is ~2.5 - 3.0

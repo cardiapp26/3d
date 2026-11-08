@@ -1,7 +1,22 @@
 const text = (tr, en) => ({ tr, en });
 export const PHYSIOLOGY_TEXT = {
   title: text('Görsel fizyoloji rehberi', 'Visual physiology guide'),
-  topics: { calcium: text('Ca²⁺ → kasılma', 'Ca²⁺ → contraction'), conduction: text('AV iletim', 'AV conduction'), pump: text('Pompa eğrileri', 'Pump curves'), pv: text('P-V: fazlar ve iş', 'P-V: phases and work'), wiggers: text('Wiggers: olaylar', 'Wiggers: events') },
+  topics: { ionic: text('AP fazları ve iyonlar', 'AP phases and ions'), calcium: text('Ca²⁺ → kasılma', 'Ca²⁺ → contraction'), conduction: text('AV iletim', 'AV conduction'), pump: text('Pompa eğrileri', 'Pump curves'), pv: text('P-V: fazlar ve iş', 'P-V: phases and work'), wiggers: text('Wiggers: olaylar', 'Wiggers: events') },
+  ionic: [
+    text('Faz 0 · hızlı depolarizasyon (Na⁺ içe)', 'Phase 0 · rapid depolarization (Na⁺ in)'),
+    text('Faz 1 · erken repolarizasyon (Ito, K⁺ dışa)', 'Phase 1 · early repolarization (Ito, K⁺ out)'),
+    text('Faz 2 · plato (Ca²⁺ içe, K⁺ dışa)', 'Phase 2 · plateau (Ca²⁺ in, K⁺ out)'),
+    text('Faz 3 · repolarizasyon (IKr / IKs)', 'Phase 3 · repolarization (IKr / IKs)'),
+    text('Faz 4 · dinlenim potansiyeli (IK1)', 'Phase 4 · resting potential (IK1)')
+  ],
+  ionicNotes: [
+    text('Voltaja bağımlı Na⁺ kanalları birkaç milisaniyede açılır; içe Na⁺ akımı zarı yaklaşık −90 mV’dan +20 mV’a taşır. Kanallar hızla inaktive olur.', 'Voltage-gated Na⁺ channels open within a few milliseconds; inward Na⁺ current drives the membrane from about −90 mV to +20 mV. The channels inactivate quickly.'),
+    text('Na⁺ kanalları inaktive olurken geçici dışa K⁺ akımı (Ito) çentiği oluşturur. Çentik derinliği bölgeye göre değişir; epikardda daha belirgindir.', 'As Na⁺ channels inactivate, the transient outward K⁺ current (Ito) forms the notch. Notch depth varies by region and is more prominent in epicardium.'),
+    text('L tipi kanallardan içe Ca²⁺ akımı dışa K⁺ akımlarıyla dengelenir; potansiyel uzun süre 0 mV civarında kalır. Giren Ca²⁺ kasılmayı tetikler (Ca²⁺ → kasılma sekmesi).', 'Inward Ca²⁺ current through L-type channels is balanced by outward K⁺ currents, holding the potential near 0 mV. The entering Ca²⁺ triggers contraction (see the Ca²⁺ → contraction tab).'),
+    text('Ca²⁺ kanalları kapanır, gecikmiş doğrultucu K⁺ akımları (IKr, IKs) artar ve zar dinlenim potansiyeline döner. Bu faz EKG’de T dalgasına karşılık gelir.', 'Ca²⁺ channels close, delayed rectifier K⁺ currents (IKr, IKs) grow and the membrane returns to rest. This phase corresponds to the T wave on the ECG.'),
+    text('Ventrikül hücresi IK1 sayesinde yaklaşık −90 mV’da kararlı kalır; Na⁺/K⁺-ATPaz gradyanları sürdürür. Sonraki uyarı Purkinje ağından gelir.', 'The ventricular cell stays stable near −90 mV through IK1; Na⁺/K⁺-ATPase maintains the gradients. The next impulse arrives through the Purkinje network.')
+  ],
+  ionicExtra: text('Kalem, QRS başlangıcından itibaren 72/dk’lık bir atımı (~833 ms) çizer. Oklar göreli akım yönünü ve büyüklüğünü gösterir; kısa Na⁺ akımı görünür kalsın diye kısa süre tutulur. pA/pF ölçümü değildir.', 'The pen draws one beat at 72/min (~833 ms) from QRS onset. Arrows show relative current direction and size; the brief Na⁺ current is held briefly so it stays visible. Not pA/pF measurements.'),
   calcium: [
     text('1 · T-tübül: L tipi Ca²⁺ kanalı açılır', '1 · T-tubule: L-type Ca²⁺ channel opens'),
     text('2 · RyR2: Ca²⁺ ile tetiklenen Ca²⁺ salınımı', '2 · RyR2: calcium-induced calcium release'),

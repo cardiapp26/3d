@@ -1,0 +1,108 @@
+/* Heart failure station: live P-V loop, congestion figure and neurohormonal cycle. */
+.heart-failure-lab .hf-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.heart-failure-lab .hf-card { min-width: 0; }
+
+.hf-pv-svg,
+.hf-congestion-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+}
+
+.hf-live-readouts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.hf-ef-live {
+  display: inline-block;
+  transform-origin: left center;
+  color: #be123c;
+  font-variant-numeric: tabular-nums;
+}
+
+.hf-live-readouts strong { font-variant-numeric: tabular-nums; }
+
+.hf-live-note,
+.hf-therapy-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-sub);
+}
+
+.hf-congestion-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.hf-lung {
+  fill: #fde2e4;
+  stroke: #be8a94;
+  stroke-width: 2;
+}
+
+.hf-blines line {
+  stroke: #475569;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.hf-vein {
+  fill: #eef2ff;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+
+.hf-leg {
+  fill: #fde7d9;
+  stroke: #b08968;
+  stroke-width: 1.5;
+}
+
+.hf-geom-label {
+  paint-order: stroke;
+  stroke: var(--bg-subtle, #f8fafc);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.hf-tokens circle { pointer-events: none; }
+
+.hf-pillar-btn {
+  border: 1px solid #c4b5fd;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.hf-pillar-btn:hover,
+.hf-pillar-btn:focus-visible {
+  border-color: #7c3aed;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
+}
+
+.hf-pillar-btn.active {
+  background: #16a34a;
+  border-color: #15803d;
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hf-pillar-btn { transition: none; }
+  .hf-ef-live { transform: none !important; }
+}

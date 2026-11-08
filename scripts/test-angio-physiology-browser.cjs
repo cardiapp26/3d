@@ -33,7 +33,7 @@ async function main() {
     const pageErrors = [];
     page.on('pageerror', (err) => pageErrors.push(err.message));
 
-    // 1. Verify C-arm Studio CTA link to ./physiology/
+    // 1. Verify coronary angiography page CTA link to ./physiology/
     await page.goto(`${BASE_URL}/angio/`, { waitUntil: 'networkidle' });
     await page.waitForSelector('[data-angio-physiology-link]');
     const ctaHref = await page.getAttribute('[data-angio-physiology-link]', 'href');

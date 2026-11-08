@@ -6,6 +6,13 @@ const t = (tr, en) => ({ tr, en });
 export const LIPOPROTEIN_SOURCES = [
   { id: 'metabolism', title: 'Cohen DE & Fisher EA. Lipoprotein Metabolism, Dyslipidemia and Nonalcoholic Fatty Liver Disease. Semin Liver Dis. 2013;33:380–388. doi:10.1055/s-0033-1358519', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC3988578/' },
   { id: 'endotext', title: 'Feingold KR. Introduction to Lipids and Lipoproteins. Endotext. NCBI Bookshelf NBK305896', url: 'https://www.ncbi.nlm.nih.gov/books/NBK305896/' },
+  { id: 'alo', title: 'Dr. Alo: Lipid And Cholesterol Metabolism In Depth Review (teaching reference)', url: 'https://www.dralo.net/blog/lipid-metabolism' },
+  { id: 'micelles', title: 'Westergaard H & Dietschy JM. Bile acid micelles and intestinal lipid uptake. J Clin Invest. 1976;58:97–108', url: 'https://www.jci.org/articles/view/108465' },
+  { id: 'npc1l1', title: 'Altmann SW et al. Niemann-Pick C1 Like 1 protein is critical for intestinal cholesterol absorption. Science. 2004;303:1201–1204', url: 'https://pubmed.ncbi.nlm.nih.gov/14976318/' },
+  { id: 'ezetimibe-label', title: 'DailyMed: Zetia prescribing information, section 12.1', url: 'https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=cb18564f-663f-4da2-9dd9-700ea9bdd398' },
+  { id: 'abcg58', title: 'Yu L et al. Overexpression of ABCG5 and ABCG8 promotes biliary cholesterol secretion and reduces fractional absorption of dietary cholesterol. J Clin Invest. 2002;110:671–680', url: 'https://www.jci.org/articles/view/16001' },
+  { id: 'mtp', title: 'Xie Y et al. Compensatory increase in hepatic lipogenesis in mice with conditional intestine-specific Mttp deficiency. J Biol Chem. 2006;281:4075–4086', url: 'https://pubmed.ncbi.nlm.nih.gov/16354657/' },
+  { id: 'cetp', title: 'Tall A et al. Accelerated transfer of cholesteryl esters in dyslipidemic plasma. J Clin Invest. 1987;79:1217–1225', url: 'https://www.jci.org/articles/view/112940' },
   { id: 'post', title: 'mindmusclepro: "Lipids Explained" (X post, 2026), the analogy discussed here', url: 'https://x.com/mindmusclepro/status/2116432373869097353' },
   { id: 'ference', title: 'Ference BA et al. LDL causes ASCVD. EAS consensus. Eur Heart J 2017;38:2459', url: 'https://doi.org/10.1093/eurheartj/ehx144' },
   { id: 'boren', title: 'Borén J et al. LDL causes ASCVD: pathophysiological, genetic and therapeutic insights. EAS consensus. Eur Heart J 2020;41:2313', url: 'https://doi.org/10.1093/eurheartj/ehz962' },

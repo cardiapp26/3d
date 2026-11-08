@@ -19,7 +19,7 @@ const BANDS = [97, 94, 90, 85, 80, 70];
 const bandOf = (score) => { const i = BANDS.findIndex((b) => score >= b); return i < 0 ? 6 : i; };
 const GOOD = 97, CLOSE = 90, LONG_SQRS = 40;
 
-export function createPaceMapPanel(doc, { getLang = () => 'tr' } = {}) {
+export function createPaceMapPanel(doc, { getLang = () => 'tr', onOpenEam3d } = {}) {
   const el = (tag, cls, attrs = {}) => {
     const n = doc.createElement(tag);
     if (cls) n.className = cls;
@@ -45,8 +45,12 @@ export function createPaceMapPanel(doc, { getLang = () => 'tr' } = {}) {
   const templateField = field('template', templateSel), modeField = field('mode', modeSel);
   const toggle = (name) => el('button', 'amap-toggle', { type: 'button', [`data-pmap-${name}`]: '' });
   const fusionBtn = toggle('fusion'), mapBtn = toggle('scoremap'), truthBtn = toggle('truth');
+  const open3dBtn = el('button', 'amap-toggle eam3d-bridge-btn', { type: 'button', 'data-open-eam3d': 'pacemap' });
+  open3dBtn.addEventListener('click', () => {
+    if (typeof onOpenEam3d === 'function') onOpenEam3d({ scenario: 'pvc-rvot', mapMode: 'lat', rail: 'case' });
+  });
   const toggles = el('div', 'amap-toggles');
-  toggles.append(fusionBtn, mapBtn, truthBtn);
+  toggles.append(fusionBtn, mapBtn, truthBtn, open3dBtn);
   const verdict = el('p', 'amap-verdict', { 'aria-live': 'polite', 'data-pmap-verdict': '' });
   const warn = el('ul', 'pmap-warn', { 'data-pmap-warn': '' });
   const readout = el('dl', 'amap-readout', { 'data-pmap-readout': '' });
@@ -319,6 +323,7 @@ export function createPaceMapPanel(doc, { getLang = () => 'tr' } = {}) {
     modeSel.value = state.mode;
     modeField.hidden = !s.entrainment;
     for (const [btn, key] of [[fusionBtn, 'fusion'], [mapBtn, 'scoremap'], [truthBtn, 'truth']]) { btn.textContent = tt[key]; btn.setAttribute('aria-pressed', String(state[key])); }
+    open3dBtn.textContent = L() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = st.lesson;
     truth.textContent = st.truth;
     truth.hidden = !state.truth;

@@ -76,6 +76,8 @@ async function tapDetectorShowsCard(page) {
     assert.ok(sections >= 5, 'EPS sections rendered');
     assert.deepEqual(await cutControls(page), [], 'EPS initial section fits');
     for (let i = 0; i < sections; i++) {
+      // On a phone the section menu starts closed and closes after each choice (ep-section-nav.js).
+      if (await page.locator('.ep-sections').isHidden()) await page.locator('[data-ep-nav-toggle]').click();
       await page.locator('[data-ep-section]').nth(i).click({ force: true });
       await page.waitForTimeout(500);
       assert.deepEqual(await cutControls(page), [], `EPS section ${i} fits the phone width`);

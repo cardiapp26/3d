@@ -26,6 +26,11 @@
 .lpt-stages button[aria-current=step]{background:#e3eee9;color:#204b37;border-color:#315b48;box-shadow:inset 0 -3px #315b48}
 .lpt .lpt-morph{background:#fffdf6;border-color:#e4dcc5;border-bottom-left-radius:0;border-bottom-right-radius:0}
 .lpt .lpt-morph text{font-size:15px;font-weight:700}
+.lpt .lpt-metabolism{background:#fffdf6;border-color:#e4dcc5}
+.lpt .lpt-metabolism text{font-size:15px;font-weight:700}
+.lpt-metabolism-toggle{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;font-weight:600;background:#fffdf6}
+.lpt-metabolism-toggle input{accent-color:#315b48}
+.lpt .lpt-journey [hidden]{display:none}
 .lpt-journey-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:10px;padding:10px;border:1px solid #e4dcc5;border-top:0;background:#fffdf6}
 .lpt-journey-legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--lpt-dot);margin-right:5px}
 .lpt-journey-transport{padding:8px 12px;font-size:12px;font-weight:700;text-align:center;background:#edf0d9;border-radius:0 0 8px 8px;min-height:18px}

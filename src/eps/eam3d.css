@@ -1,0 +1,713 @@
+/* 3D Electroanatomical Mapping & Whole-Heart Simulation Workstation */
+
+.eam3d-workstation {
+  display: grid;
+  grid-template-columns: 332px minmax(0, 1fr) 360px;
+  grid-template-rows: minmax(520px, calc(100vh - 210px)) auto;
+  grid-template-areas:
+    "left center right"
+    "stim stim stim";
+  gap: 8px;
+  background: #060a12;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 8px;
+  color: #e2e8f0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.eam3d-left {
+  grid-area: left;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  background: #0b111e;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.eam3d-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 5px;
+  background: #070b14;
+  border-right: 1px solid #1e293b;
+}
+
+.eam3d-rail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 3px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.eam3d-rail-btn:hover {
+  background: #131c2e;
+  color: #f1f5f9;
+}
+
+.eam3d-rail-btn.is-active {
+  background: #172554;
+  border-color: #3b82f6;
+  color: #eff6ff;
+}
+
+.eam3d-rail-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.eam3d-deck {
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.eam3d-deck-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.eam3d-deck-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: 0.01em;
+}
+
+.eam3d-deck-sub {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.eam3d-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 7px;
+  padding: 8px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.eam3d-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.eam3d-card-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #cbd5e1;
+}
+
+.eam3d-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.eam3d-select,
+.eam3d-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #070b14;
+  border: 1px solid #334155;
+  border-radius: 5px;
+  padding: 5px 7px;
+  color: #f8fafc;
+  font-size: 11.5px;
+}
+
+.eam3d-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.eam3d-mode-btn,
+.eam3d-wall-btn,
+.eam3d-btn {
+  background: #131c31;
+  border: 1px solid #293548;
+  border-radius: 5px;
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 7px;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.eam3d-mode-btn:hover,
+.eam3d-wall-btn:hover,
+.eam3d-btn:hover {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+.eam3d-mode-btn.is-active,
+.eam3d-wall-btn.is-active,
+.eam3d-btn.is-active {
+  background: #1d4ed8;
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+.eam3d-btn--accent {
+  background: #0f766e;
+  border-color: #14b8a6;
+  color: #f0fdfa;
+}
+
+.eam3d-btn--accent:hover {
+  background: #115e59;
+}
+
+.eam3d-btn--danger {
+  background: #7f1d1d;
+  border-color: #ef4444;
+  color: #fef2f2;
+}
+
+.eam3d-wall-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.eam3d-wall-btn {
+  flex: 1 1 auto;
+  font-size: 10px;
+  padding: 4px 5px;
+  text-align: center;
+}
+
+.eam3d-check-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+}
+
+.eam3d-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.eam3d-check input {
+  margin: 0;
+  accent-color: #3b82f6;
+}
+
+.eam3d-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.eam3d-slider-head {
+  display: flex;
+  justify-content: space-between;
+  color: #cbd5e1;
+}
+
+.eam3d-slider-row input[type="range"] {
+  width: 100%;
+  accent-color: #38bdf8;
+}
+
+.eam3d-summary-box {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #cbd5e1;
+  background: #070b14;
+  border-left: 3px solid #38bdf8;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+/* Center 3D Viewport */
+.eam3d-center {
+  grid-area: center;
+  position: relative;
+  background: radial-gradient(circle at 50% 45%, #111c33 0%, #070b14 75%);
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 440px;
+}
+
+.eam3d-topbar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.eam3d-carm-group,
+.eam3d-top-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+  background: rgba(7, 11, 20, 0.82);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 6px;
+  padding: 4px 6px;
+  backdrop-filter: blur(6px);
+}
+
+.eam3d-carm-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-right: 3px;
+  text-transform: uppercase;
+}
+
+.eam3d-carm-btn {
+  background: #131c31;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 7px;
+  cursor: pointer;
+}
+
+.eam3d-carm-btn.is-active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.eam3d-status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  padding: 2px 6px;
+}
+
+.eam3d-viewport-stage {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+.eam3d-canvas-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The atlas (eam3d-atlas.js) fills the host; without a size of its own the
+   canvas sets its own height and the resize observer grows it without end. */
+.eam3d-stage,
+.eam3d-webgl,
+.eam3d-badges {
+  position: absolute;
+  inset: 0;
+}
+
+.eam3d-badges {
+  pointer-events: none;
+}
+
+.eam3d-webgl canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.eam3d-fallback-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+.eam3d-viewport-stage.is-fallback .eam3d-fallback-canvas {
+  display: block;
+}
+
+.eam3d-badge-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.eam3d-circuit-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 2px solid var(--badge-color, #38bdf8);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+}
+
+.eam3d-circuit-badge.is-selected {
+  background: var(--badge-color, #38bdf8);
+  color: #020617;
+  transform: translate(-50%, -50%) scale(1.18);
+}
+
+.eam3d-bottombar {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: rgba(7, 11, 20, 0.86);
+  border: 1px solid rgba(51, 65, 85, 0.85);
+  border-radius: 6px;
+  padding: 6px 9px;
+  backdrop-filter: blur(6px);
+}
+
+.eam3d-bottom-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.eam3d-inline-slider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: #cbd5e1;
+}
+
+.eam3d-inline-slider input[type="range"] {
+  width: 88px;
+  accent-color: #38bdf8;
+}
+
+.eam3d-scale-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.eam3d-scale-gradient {
+  width: 96px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ef4444 0%, #eab308 35%, #22c55e 68%, #3b82f6 85%, #a855f7 100%);
+}
+
+.eam3d-inspect-bar {
+  font-size: 11px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid rgba(51, 65, 85, 0.55);
+  padding-top: 4px;
+}
+
+/* Right Polygraph Column */
+.eam3d-right {
+  grid-area: right;
+  background: #050811;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.eam3d-poly-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 10px;
+  background: #0b111e;
+  border-bottom: 1px solid #1e293b;
+}
+
+.eam3d-poly-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.eam3d-poly-cl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #22c55e;
+  font-variant-numeric: tabular-nums;
+}
+
+.eam3d-sweep-group {
+  display: flex;
+  gap: 3px;
+}
+
+.eam3d-sweep-btn {
+  background: #131c31;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-size: 10px;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+
+.eam3d-sweep-btn.is-active {
+  background: #1d4ed8;
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+.eam3d-poly-canvas-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 420px;
+  width: 100%;
+}
+
+.eam3d-poly-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Bottom Stimulator Bar */
+.eam3d-stimbar {
+  grid-area: stim;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  background: #0b111e;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+.eam3d-stim-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.eam3d-stim-run {
+  background: #16a34a;
+  border: 1px solid #4ade80;
+  border-radius: 5px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 11px;
+  cursor: pointer;
+}
+
+.eam3d-stim-run.is-running {
+  background: #dc2626;
+  border-color: #f87171;
+}
+
+.eam3d-stim-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.eam3d-stim-field input,
+.eam3d-stim-field select {
+  background: #050811;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #f8fafc;
+  font-size: 11px;
+  padding: 3px 6px;
+}
+
+.eam3d-stim-field input[type="number"] {
+  width: 58px;
+}
+
+.eam3d-stim-verdict {
+  font-size: 11px;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+/* Ablation & Survey lists */
+.eam3d-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eam3d-list-item {
+  background: #070b14;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eam3d-list-item.is-selected,
+.eam3d-list-item.is-applied {
+  border-color: #38bdf8;
+  background: #0c192e;
+}
+
+.eam3d-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.eam3d-list-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.eam3d-list-meta {
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.eam3d-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #1e293b;
+  color: #38bdf8;
+}
+
+/* Bridge CTA button in 2D panels and EP live */
+.eam3d-bridge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+  border: 1px solid #38bdf8;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.eam3d-bridge-btn:hover {
+  filter: brightness(1.1);
+}
+
+@media (max-width: 1180px) {
+  .eam3d-workstation {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 440px 360px auto;
+    grid-template-areas:
+      "left"
+      "center"
+      "right"
+      "stim";
+  }
+}
+
+@media (max-width: 600px) {
+  .eam3d-workstation {
+    padding: 4px;
+    gap: 6px;
+    grid-template-rows: auto 360px 320px auto;
+  }
+
+  .eam3d-left {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .eam3d-inline-slider input[type="range"] {
+    width: 64px;
+  }
+}

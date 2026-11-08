@@ -5,7 +5,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const text = (tr, en) => ({ tr, en });
 
 const ROUTES = {
-  dietIn: 'M62 52C70 120 80 170 92 202L150 224C190 240 200 270 226 283L330 300C345 310 352 322 360 334',
+  sterolIn: 'M62 52C70 120 80 170 92 202L154 223',
+  chylo: 'M162 240C190 252 200 270 226 283L330 300C345 310 352 322 360 334',
   dietOut: 'M62 52C60 150 66 260 70 330L62 384',
   hmg: 'M330 60C360 70 380 90 420 104L520 108C540 108 556 110 586 112',
   vldlUp: 'M402 180L402 248C404 270 420 283 450 283L596 283C600 262 597 232 592 196',
@@ -16,7 +17,7 @@ const ROUTES = {
   fa: 'M486 330C492 360 500 384 506 410',
 };
 /** Baseline relative spawn rates (per second) and branch shares. */
-const BASE = { diet: 1.2, absorbed: 0.7, hmg: 1.5, vldl: 1.3, bile: 1, reabsorbed: 0.9, pcsk9: 0.5, fa: 0.6, receptors: 3, morph: [0.42, 0.58] };
+const BASE = { diet: 1.2, absorbed: 0.7, chylo: 0.8, hmg: 1.5, vldl: 1.3, bile: 1, reabsorbed: 0.9, pcsk9: 0.5, fa: 0.6, receptors: 3, morph: [0.42, 0.58] };
 /** Drug → overrides and the plugged site. Directions follow the mechanism, magnitudes are illustrative. */
 export const LIPID_EFFECTS = {
   statin: { hmg: 0.35, receptors: 6, plug: 'synthesis' },
@@ -28,7 +29,7 @@ export const LIPID_EFFECTS = {
 };
 const RECEPTOR_X = [540, 556, 572, 588, 604, 620];
 const STYLE = {
-  diet: ['#15aabf', 5.8], chylo: ['#00a2c7', 10.5], hmg: ['#e67700', 5.8], bile: ['#5c940d', 6.4], pcsk9: ['#ae3ec9', 6], fa: ['#fd7e14', 5],
+  diet: ['#795032', 5.8], chylo: ['#00a2c7', 10.5], hmg: ['#e67700', 5.8], bile: ['#5c940d', 6.4], pcsk9: ['#ae3ec9', 6], fa: ['#fd7e14', 5],
   vldl: ['#6339d6', 11], idl: ['#e67700', 8.8], ldl: ['#d92626', 7.2],
 };
 
@@ -129,6 +130,7 @@ export const LIPID_SCENE = `<defs>
   <text x="410" y="270" class="lipidlab-small lipidlab-cascade-tag">VLDL → IDL → LDL</text>
   <g class="lipidlab-receptors"></g><g class="lipidlab-particles"></g>
   <g data-lipid-site="absorption"><rect x="54" y="186" width="108" height="34"/><text x="72" y="209">NPC1L1</text></g>
+  <text x="39" y="105" class="lipidlab-small" data-lipid-label="dietSterol"/>
   <g data-lipid-site="bile"><rect x="186" y="110" width="118" height="34"/><text x="198" y="133" data-lipid-label="bile"/></g>
   <g data-lipid-site="synthesis"><rect x="402" y="88" width="114" height="34"/><text x="416" y="111">HMG-CoA</text></g>
   <g data-lipid-site="receptor"><rect x="530" y="200" width="104" height="30"/><text x="556" y="221">LDL-R</text></g>
@@ -164,12 +166,12 @@ export function createLipidFlow(svg, { reducedMotion = false } = {}) {
   const emit = (key, rate, dt, pick) => { debt[key] = (debt[key] || 0) + rate * dt; while (debt[key] >= 1) { debt[key] -= 1; pick(); } };
   function style(p, fraction) {
     let kind = p.kind;
-    if (kind === 'diet' && p.route === 'dietIn' && fraction > 0.45) kind = 'chylo';
     if (kind === 'vldl') kind = fraction < state.morph[0] ? 'vldl' : fraction < state.morph[1] ? 'idl' : 'ldl';
     return STYLE[kind];
   }
   function step(dt) {
-    emit('diet', state.diet, dt, () => spawn(Math.random() < state.absorbed ? 'dietIn' : 'dietOut', 'diet'));
+    emit('diet', state.diet, dt, () => spawn(Math.random() < state.absorbed ? 'sterolIn' : 'dietOut', 'diet'));
+    emit('chylo', state.chylo, dt, () => spawn('chylo', 'chylo'));
     emit('hmg', state.hmg, dt, () => spawn('hmg', 'hmg'));
     emit('vldl', state.vldl, dt, () => spawn(Math.random() < state.receptors / 7 ? 'vldlUp' : 'vldlStay', 'vldl'));
     emit('bile', state.bile, dt, () => spawn(Math.random() < state.reabsorbed ? 'bileBack' : 'bileOut', 'bile'));
@@ -217,4 +219,4 @@ export function createLipidFlow(svg, { reducedMotion = false } = {}) {
   return { setDrug };
 }
 
-export const LIPID_SCENE_LABELS = { lumen: text('lümen', 'lumen'), pool: text('kolesterol havuzu', 'cholesterol pool') };
+export const LIPID_SCENE_LABELS = { lumen: text('lümen', 'lumen'), pool: text('kolesterol havuzu', 'cholesterol pool'), dietSterol: text('Kolesterol', 'Cholesterol') };

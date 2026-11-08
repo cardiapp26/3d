@@ -1,44 +1,38 @@
-// Camera and display bar above the studio's anatomy and fluoroscopy views, matching the atlas toolbar
-// (src/main.js): view presets, C-arm, fluoroscopy and segmentation, with the same keys.
-// C-arm presets move both views and the gantry; posterior, aortic root and mitral are
-// anatomy-only cameras because the C-arm has no such projection.
+// Camera and display bar above the studio's anatomy and fluoroscopy views, keyed like the atlas toolbar
+// (src/main.js). Each action appears once on the page: the C-arm standard projections (Spider, RAO, LAO, ...)
+// live in the studio's standard-view gallery for the selected system, and the angle sliders on the
+// fluoroscopy console. This bar keeps Anterior (AP 0° / 0°, the C-arm reset), the anatomy-only cameras
+// (posterior, aortic root, mitral) that have no C-arm projection, the jump to the C-arm gantry, the
+// side-by-side layout (the fluoroscopy panel beside the anatomy) and segmentation.
 
-/** C-arm projections (alpha: + LAO / - RAO, beta: + CRA / - CAU). Spider follows the studio's LAO caudal preset. */
-export const VIEWBAR_PROJECTIONS = Object.freeze({
-  anterior: [0, 0],
-  rao: [-30, 0],
-  lao: [45, 0],
-  spider: [45, -35]
-});
+/** C-arm projections (alpha: + LAO / - RAO, beta: + CRA / - CAU). */
+export const VIEWBAR_PROJECTIONS = Object.freeze({ anterior: [0, 0] });
 
 const VIEWS = [
   { id: 'anterior', key: 'A', en: 'Anterior', tr: 'Anterior' },
   { id: 'posterior', key: 'P', en: 'Posterior', tr: 'Posterior' },
-  { id: 'rao', key: 'R', en: 'RAO', tr: 'RAO' },
-  { id: 'lao', key: 'L', en: 'LAO', tr: 'LAO' },
-  { id: 'spider', key: 'S', en: 'Spider', tr: 'Spider' },
   { id: 'root', key: 'O', en: 'Root', tr: 'Kök' },
   { id: 'mitral', key: null, en: 'Mitral', tr: 'Mitral' }
 ];
 
 const TITLES = {
   tr: {
-    anterior: 'Anterior (AP 0° / 0°)', posterior: 'Posterior: yalnız 3B anatomi, C-arm karşılığı yok', rao: 'RAO 30°', lao: 'LAO 45°',
-    spider: 'Spider (LAO 45° / CAU 35°): LMCA bifurkasyonu', root: 'Aort kökü ve koroner ostiumlar: yalnız 3B anatomi',
+    anterior: 'Anterior (AP 0° / 0°): C-arm ve 3B anatomi öne döner', posterior: 'Posterior: yalnız 3B anatomi, C-arm karşılığı yok',
+    root: 'Aort kökü ve koroner ostiumlar: yalnız 3B anatomi',
     mitral: 'Mitral anulus: yalnız 3B anatomi, kapaklar açılır', carm: 'C-arm gantry ve açı kumandasına git',
-    fluoro: 'Floroskopi panelini göster veya gizle', seg: 'Segmentasyon tarzı görünüm: her atlas yapısı tek etiket renginde (hasta görüntüsünden segmentasyon değildir)',
-    fluoroLabel: 'Floroskopi', segLabel: 'Segmentasyon', bar: '3B anatomi kamera ve görünüm araçları'
+    fluoro: 'Floroskopi paneli 3B anatominin yanında; kapatınca 3B anatomi tam genişlikte açılır', seg: 'Segmentasyon tarzı görünüm: her atlas yapısı tek etiket renginde (hasta görüntüsünden segmentasyon değildir)',
+    fluoroLabel: 'Yan yana', segLabel: 'Segmentasyon', bar: '3B anatomi kamera ve görünüm araçları'
   },
   en: {
-    anterior: 'Anterior (AP 0° / 0°)', posterior: 'Posterior: 3D anatomy only, no C-arm equivalent', rao: 'RAO 30°', lao: 'LAO 45°',
-    spider: 'Spider (LAO 45° / CAU 35°): LMCA bifurcation', root: 'Aortic root and coronary ostia: 3D anatomy only',
+    anterior: 'Anterior (AP 0° / 0°): C-arm and 3D anatomy face front', posterior: 'Posterior: 3D anatomy only, no C-arm equivalent',
+    root: 'Aortic root and coronary ostia: 3D anatomy only',
     mitral: 'Mitral annulus: 3D anatomy only, shows the valves', carm: 'Go to the C-arm gantry and angle controls',
-    fluoro: 'Show or hide the fluoroscopy panel', seg: 'Segmentation-style view: each atlas structure in one label colour (not a segmentation of patient imaging)',
-    fluoroLabel: 'Fluoroscopy', segLabel: 'Segmentation', bar: '3D anatomy camera and display tools'
+    fluoro: 'Fluoroscopy panel beside the 3D anatomy; turn off to give the 3D anatomy the full width', seg: 'Segmentation-style view: each atlas structure in one label colour (not a segmentation of patient imaging)',
+    fluoroLabel: 'Side by side', segLabel: 'Segmentation', bar: '3D anatomy camera and display tools'
   }
 };
 
-const SHORTCUTS = { a: 'anterior', p: 'posterior', r: 'rao', l: 'lao', s: 'spider', o: 'root' };
+const SHORTCUTS = { a: 'anterior', p: 'posterior', o: 'root' };
 const TYPING = new Set(['INPUT', 'SELECT', 'TEXTAREA']);
 
 /**
@@ -57,7 +51,7 @@ export function createAngioViewBar({ getLang, onView, onReset, onCarm, onFluoro,
     </div>
     <div class="angio-viewbar-tools">
       <button type="button" data-viewbar-carm><span aria-hidden="true">📐</span> C-Arm <kbd>C</kbd></button>
-      <button type="button" data-viewbar-fluoro aria-pressed="true"><span aria-hidden="true">☢</span> <span data-viewbar-label="fluoro"></span> <kbd>X</kbd></button>
+      <button type="button" data-viewbar-fluoro aria-pressed="true"><span aria-hidden="true">◧</span> <span data-viewbar-label="fluoro"></span> <kbd>X</kbd></button>
       <button type="button" data-viewbar-seg aria-pressed="false"><span class="angio-seg-icon" aria-hidden="true"></span><span data-viewbar-label="seg"></span> <kbd>G</kbd></button>
     </div>`;
   let fluoro = true, segmentation = false;

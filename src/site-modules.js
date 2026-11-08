@@ -3,7 +3,12 @@
 
 const word = (tr, en) => ({ tr, en });
 
-/** Module menu, in display order. A sub-page lists under its module (and in its ▾ menu, with its lessons). */
+/**
+ * Module menu, in display order. A module with `pages` lists them in its left
+ * drawer (site-header.js); a page entry with `mode` opens that 3D lesson on the
+ * page `page` hosts. `aliases` are pages that belong to a module without being
+ * listed (they light the module up in the menu).
+ */
 export const SITE_MODULES = Object.freeze([
   { id: 'anatomy', path: './#/mode/anatomy', label: word('3D Anatomi', '3D Anatomy') },
   { id: 'pathophysiology', path: './pathophysiology/', label: word('Patofizyoloji', 'Pathophysiology') },
@@ -15,8 +20,9 @@ export const SITE_MODULES = Object.freeze([
   {
     id: 'angio', path: './angio/', label: word('Anjiyografi', 'Angiography'),
     pages: [
-      { id: 'angio', path: './angio/', label: word('C-kol stüdyosu', 'C-arm studio') },
+      { id: 'angio', path: './angio/', label: word('Koroner anjiyografi', 'Coronary angiography') },
       { id: 'angio-3d', path: './angio/3d/', label: word('3D koroner anatomi', '3D coronary anatomy') },
+      { id: 'angio-transseptal', page: 'angio-3d', path: './angio/3d/', mode: 'transseptal', label: word('Transseptal geçiş ve septostomi', 'Transseptal access and septostomy') },
       { id: 'angio-physiology', path: './angio/physiology/', label: word('Koroner fizyoloji', 'Coronary physiology') },
       { id: 'angio-ivus', path: './angio/ivus/', label: word('Koroner IVUS', 'Coronary IVUS') },
       { id: 'angio-carotid', path: './angio/carotid/', label: word('Karotis', 'Carotid') },
@@ -26,20 +32,9 @@ export const SITE_MODULES = Object.freeze([
   { id: 'ecg', path: './ecg/', label: word('EKG', 'ECG') },
   {
     id: 'eps', path: './eps/', label: word('EPS', 'EPS'),
-    title: word('EPS laboratuvarı: canlı kayıt, vakalar, manevralar, ablasyon', 'EPS laboratory: live recording, cases, maneuvers, ablation'),
-    pages: [
-      { id: 'eps', path: './eps/', label: word('Laboratuvar', 'Laboratory') },
-      {
-        id: 'ep-anatomy', path: './eps/anatomy/', label: word('3D EP anatomisi', '3D EP anatomy'),
-        // The 3D lessons of the page, listed in the EPS menu (mode ids of cardia-pages.js).
-        lessons: [
-          { mode: 'transseptal', label: word('Transseptal & septostomi', 'Transseptal & septostomy') },
-          { mode: 'ablation', label: word('Elektrofizyolojik anatomi', 'Electrophysiological anatomy') },
-          { mode: 'pacemaker', label: word('Kalp pili elektrotları', 'Pacemaker leads') },
-          { mode: 'bachmann', label: word('Bachmann demeti & pacing', 'Bachmann bundle & pacing') }
-        ]
-      }
-    ]
+    title: word('EPS laboratuvarı: canlı kayıt, vakalar, haritalama, pacing ve 3D EP anatomisi', 'EPS laboratory: live recording, cases, mapping, pacing and 3D EP anatomy'),
+    // The 3D EP anatomy lessons open from the laboratory's section menu (src/eps/ep-section-nav.js).
+    aliases: ['ep-anatomy']
   },
   { id: 'pharmacology', path: './pharmacology/', label: word('Farmakoloji', 'Pharmacology') }
 ]);

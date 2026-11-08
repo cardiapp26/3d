@@ -1,0 +1,40 @@
+.lvf {
+  --lvf-ink: #16362e;
+  --lvf-muted: #4d675e;
+  --lvf-edge: #d8e2d5;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin-bottom: 20px;
+  padding: clamp(12px, 2.5vw, 24px);
+  border: 1px solid var(--lvf-edge);
+  border-radius: 17px;
+  background: #fcfbf6;
+  color: var(--lvf-ink);
+}
+.lvf h3, .lvf h4, .lvf p, .lvf dl, .lvf dd, .lvf figure { margin: 0; }
+.lvf-head { display: grid; gap: 5px; }
+.lvf-kicker { color: #456b5b; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.lvf-head h3 { font-size: clamp(19px, 3.2vw, 28px); line-height: 1.2; }
+.lvf-intro, .lvf-reading p, .lvf-echo dd, .lvf-scope { color: var(--lvf-muted); line-height: 1.5; }
+.lvf-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.lvf .preset-pill[aria-pressed="true"] { background: #204a40; border-color: #204a40; color: #fff; }
+.lvf-scenes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lvf-scenes figure { display: grid; gap: 8px; min-width: 0; }
+.lvf-scenes figcaption { font-size: 13px; font-weight: 750; }
+.lvf-scenes svg { display: block; width: 100%; height: auto; border-radius: 10px; }
+.lvf-reading { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lvf-reading p { min-height: 4.4em; font-size: 13px; }
+.lvf-reading strong { display: block; margin-bottom: 2px; color: var(--lvf-ink); }
+.lvf-metrics, .lvf-echo { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 8px; }
+.lvf-metrics > div, .lvf-echo > div { padding: 9px 10px; border: 1px solid var(--lvf-edge); border-radius: 9px; background: #fff; }
+.lvf-metrics dt { color: var(--lvf-muted); font-size: 11px; font-weight: 700; }
+.lvf-metrics dd { font: 700 17px / 1.6 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.lvf-echo dt { color: var(--lvf-ink); font-size: 13px; font-weight: 750; }
+.lvf-echo dd, .lvf-scope, .lvf details { font-size: 12px; }
+.lvf details a { display: inline-block; margin-right: 14px; color: #195646; }
+.lvf details summary { cursor: pointer; font-weight: 700; }
+@media (max-width: 700px) {
+  .lvf-scenes, .lvf-reading { grid-template-columns: minmax(0, 1fr); }
+  .lvf-reading p { min-height: 0; }
+}

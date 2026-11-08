@@ -1,0 +1,74 @@
+/* Acute vs chronic MR / AR lab (regurgitation-lab.js). */
+.rg-lab {
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid var(--border, #e2e8e5);
+  border-radius: var(--radius-lg, 14px);
+  background: linear-gradient(180deg, #f7f9fb 0%, #ffffff 60%);
+  box-shadow: var(--shadow-sm, none);
+  min-width: 0;
+}
+.rg-head h3 { margin: 0 0 4px; font-size: 1.15rem; color: #6f1414; }
+.rg-head p { margin: 0 0 10px; color: var(--text-muted, #4b635b); font-size: 0.9rem; line-height: 1.45; }
+.rg-controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 12px; }
+.rg-views { flex: 1 1 420px; min-width: 0; padding-bottom: 0; border-bottom: 0; }
+.rg-remodel { background: #fff1f0; border-color: #f0c3bf; color: #8c1d24; }
+.rg-remodel:hover { background: #ffe3e0; color: #6f1414; }
+
+.rg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.rg-grid[data-count="1"] { grid-template-columns: minmax(0, 1fr); max-width: 760px; margin: 0 auto; }
+.rg-panel {
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  padding: 12px; border: 1px solid var(--border, #e2e8e5); border-radius: var(--radius-md, 10px); background: #fff;
+}
+.rg-panel[data-lesion="mr"] { border-top: 3px solid #1971c2; }
+.rg-panel[data-lesion="ar"] { border-top: 3px solid #e67700; }
+.rg-panel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.rg-panel-head h4 { margin: 0; font-size: 1rem; color: #3b1d1d; }
+.rg-cause { font-size: 0.78rem; color: var(--text-sub, #69827a); }
+
+.rg-heart { display: block; width: 100%; height: auto; background: #fbfcfd; border-radius: 8px; }
+.rg-myo { fill: #c8323c; }
+.rg-cavity { fill: #d5d9de; }
+.rg-la-wall { fill: #d4545c; stroke: #8c1d24; stroke-width: 1; }
+.rg-ao-wall { fill: none; stroke: #d27b7b; stroke-linecap: butt; }
+.rg-ao-lumen { fill: none; stroke: #d5d9de; stroke-linecap: butt; }
+.rg-pm { stroke: #8c1d24; stroke-width: 1; }
+.rg-chordae line { stroke: #ffffff; stroke-width: 1; opacity: 0.95; }
+.rg-chordae .rg-chord-broken { stroke-dasharray: 2 2; }
+.rg-leaflet, .rg-cusp { stroke: #4a3426; stroke-width: 3.2; stroke-linecap: round; }
+.rg-cusp { stroke-width: 2.6; }
+.rg-chamber { font: 800 13px/1 system-ui, sans-serif; fill: #1f2933; paint-order: stroke; stroke: rgba(255, 255, 255, 0.7); stroke-width: 3px; }
+.rg-jet-label { font: 600 8.5px/1 system-ui, sans-serif; fill: #3f5f86; }
+[data-rg="particles"] circle { fill: #ffffff; }
+
+.rg-badges { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.rg-badges li {
+  display: inline-flex; gap: 5px; align-items: baseline; padding: 3px 8px;
+  border-radius: 999px; font-size: 0.76rem; border: 1px solid #d3e5dc; background: #ecfdf3; color: #14532d;
+}
+.rg-badges li b { font-variant-numeric: tabular-nums; }
+.rg-badges li[data-level="mild"] { background: #fff7e6; border-color: #f5d9a8; color: #7c4a03; }
+.rg-badges li[data-level="up"] { background: #ffedd5; border-color: #f7c08a; color: #9a3412; }
+.rg-badges li[data-level="upup"] { background: #fee2e2; border-color: #f3a5a5; color: #991b1b; }
+
+.rg-trace { display: block; width: 100%; height: auto; background: #fbfcfd; border-radius: 6px; }
+.rg-trace-grid line { stroke: #e2e8e5; stroke-width: 0.6; }
+.rg-trace-grid text { font: 600 7px/1 system-ui, sans-serif; fill: #69827a; text-anchor: end; }
+.rg-trace-grid text:last-child { text-anchor: start; }
+.rg-curve { fill: none; stroke-width: 1.6; stroke-linejoin: round; }
+.rg-curve-la { stroke-dasharray: 0; }
+.rg-panel[data-lesion="ar"] .rg-curve-la { stroke-dasharray: 3 2; stroke-width: 1.2; }
+.rg-pen { stroke: #0b7285; stroke-width: 1; opacity: 0.7; }
+.rg-marker circle { fill: #ffffff; stroke: #1f2933; stroke-width: 1.2; }
+.rg-marker text { font: 700 8px/1 system-ui, sans-serif; fill: #1f2933; }
+.rg-trace-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 0.76rem; color: var(--text-muted, #4b635b); }
+.rg-trace-legend i { display: inline-block; width: 12px; height: 3px; margin-right: 4px; border-radius: 2px; vertical-align: middle; }
+.rg-trace-legend strong { margin-left: auto; font-variant-numeric: tabular-nums; color: #0b7285; font-size: 0.78rem; }
+.rg-take { margin: 0; font-size: 0.8rem; line-height: 1.45; color: #3b1d1d; }
+
+@media (max-width: 640px) {
+  .rg-lab { padding: 12px; }
+  .rg-grid { grid-template-columns: minmax(0, 1fr); }
+  .rg-trace-legend strong { margin-left: 0; flex-basis: 100%; }
+}

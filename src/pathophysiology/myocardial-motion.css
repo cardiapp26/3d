@@ -1,0 +1,9 @@
+/* Myocardial / CKM station: live layers driven by the shared cardiac cycle clock. */
+.pathophys-ckm-lab .pathophys-cycle-bar { margin-bottom: 10px; }
+.pathophys-ckm-lab .ckm-live-svg { display: block; width: 100%; height: auto; }
+.pathophys-ckm-lab .ckm-live-svg [data-epi],
+.pathophys-ckm-lab .ckm-live-svg [data-glu],
+.pathophys-ckm-lab .ckm-live-svg [data-lym],
+.pathophys-ckm-lab .ckm-live-svg [data-ket] { pointer-events: none; }
+.pathophys-ckm-lab .ckm-jet { filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.55)); }
+.pathophys-ckm-lab .ckm-metric-num { font-size: 15px; font-variant-numeric: tabular-nums; }

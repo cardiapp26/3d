@@ -33,11 +33,17 @@ const columns = lessonBox.children;
 assert.deepEqual(columns.map((c) => c.className), ['ep-strip', 'ep-side'], 'strip column beside the side column');
 const viewBarOf = () => columns[0].children.find((c) => hasClass(c, 'ep-view'));
 const byClass = (name) => [...panel.element.children, ...columns.flatMap((c) => c.children)].find((c) => hasClass(c, name));
-const tabs = byClass('ep-sections');
+// Section tabs sit in the grouped left menu (ep-section-nav.js): .ep-nav > .ep-sections > groups > buttons.
+const tabButtonsOf = (root) => root.children.find((c) => hasClass(c, 'ep-nav')).children.find((c) => hasClass(c, 'ep-sections')).children.flatMap((g) => g.children.filter((c) => c.tagName === 'button'));
+const tabGroups = panel.element.children.find((c) => hasClass(c, 'ep-nav')).children.find((c) => hasClass(c, 'ep-sections')).children;
+const tabs = { children: tabButtonsOf(panel.element) };
+const tabOf = (list, id) => list.children.find((b) => b.attributes['data-ep-section'] === id);
 const row = byClass('egm-scenarios');
 const text = byClass('egm-text');
 const title = byClass('egm-title');
-assert.equal(tabs.children.length, 16, 'three lesson sections, live recording, mapping, pace map, substrate, mapping basics, AF mapping, EGM basics, SVT, WPW, VES localization, EGM recording, CSP / LBBAP and conduction system tabs');
+assert.equal(tabs.children.length, 17, 'three lesson sections, live recording, mapping, pace map, substrate, mapping basics, AF mapping, EGM basics, SVT, WPW, VES localization, EGM recording, CSP / LBBAP, conduction system and 3D map tabs');
+assert.deepEqual(tabGroups.map((g) => g.attributes['data-ep-group']), ['cases', 'recording', 'mapping', 'localization', 'pacing', 'anatomy'], 'six section groups');
+assert.deepEqual(tabGroups.flatMap((g) => g.children.filter((c) => c.tagName === 'a').map((a) => a.attributes.href)), ['./anatomy/#/mode/pacemaker', './anatomy/#/mode/bachmann', './anatomy/#/mode/ablation'], '3D EP anatomy lessons in the pacing and anatomy groups');
 
 // Lesson entry: the legacy scenario ids open the treatment clips.
 panel.openLesson('sinus');
@@ -76,7 +82,7 @@ assert.ok(byClass('ep-measures').textContent.includes('TCL 360 ms'), 'measuremen
 
 // Language switch and unknown ids.
 panel.setLanguage('en');
-assert.equal(tabs.children[3].textContent, 'Live recording');
+assert.equal(tabOf(tabs, 'live').textContent, 'Live recording');
 assert.ok(byClass('ep-result').textContent.includes('no capture'));
 panel.setScenario('bogus');
 assert.equal(panel.getScenario(), 'avnrt-typ-vop-noncapture', 'unknown scenario ignored');
@@ -134,14 +140,19 @@ const panel2 = createEpPanel(mount2, { getLang: () => 'tr', initial: 'live', onS
 assert.equal(panel2.getActiveView(), 'live', 'initial live view');
 const lesson2 = panel2.element.children.find((c) => hasClass(c, 'ep-lesson'));
 assert.equal(lesson2.hidden, true, 'lesson hidden in live view');
-const tabs2 = panel2.element.children.find((c) => hasClass(c, 'ep-sections'));
+const tabs2 = { children: tabButtonsOf(panel2.element) };
 tabs2.children[0].listeners.click();
 assert.equal(panel2.getActiveView(), 'diagnosis');
 assert.equal(lesson2.hidden, false);
-tabs2.children[3].listeners.click();
+tabOf(tabs2, 'live').listeners.click();
 assert.deepEqual(seen, ['diagnosis', 'live']);
 panel2.showView('treatment');
 assert.equal(panel2.getActiveView(), 'treatment');
+panel2.openEam3d({ scenario: 'vt-ischemic', mapMode: 'voltage', rail: 'survey' });
+assert.equal(panel2.getActiveView(), 'eam3d');
+assert.equal(panel2.eam3d.getState().scenarioId, 'vt-ischemic');
+assert.equal(panel2.eam3d.getState().mapMode, 'voltage');
+panel2.showView('treatment');
 panel2.showView('bogus');
 assert.equal(panel2.getActiveView(), 'treatment', 'unknown view ignored');
 panel2.live.setActive(false);

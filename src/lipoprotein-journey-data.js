@@ -1,6 +1,8 @@
 // Qualitative teaching stages, not molecular dynamics or measured kinetics.
 // Mechanisms: Cohen & Fisher (2013), doi:10.1055/s-0033-1358519, Fig. 1;
 // Feingold, Introduction to Lipids and Lipoproteins, Endotext, NBK305896.
+import { METABOLISM_JOURNEYS, METABOLISM_TARGETS } from './lipoprotein-metabolism.js';
+
 const t = (tr, en) => ({ tr, en });
 
 export const TRAFFIC_TARGETS = [
@@ -31,7 +33,8 @@ export const TRAFFIC_TARGETS = [
   { id: 'lcat', label: 'LCAT', kind: t('Enzim', 'Enzyme'),
     name: t('Lesitin-kolesterol açiltransferaz', 'Lecithin-cholesterol acyltransferase'),
     site: t('Plazma, HDL yüzeyi', 'Plasma, HDL surface'),
-    role: t('ApoA-I ile etkinleşir. Serbest kolesterolü kolesterol esterine çevirir; esterler HDL çekirdeğine geçer ve partikül olgunlaşır.', 'Activated by apoA-I. Converts free cholesterol to cholesteryl esters, which enter the HDL core as the particle matures.') }
+    role: t('ApoA-I ile etkinleşir. Serbest kolesterolü kolesterol esterine çevirir; esterler HDL çekirdeğine geçer ve partikül olgunlaşır.', 'Activated by apoA-I. Converts free cholesterol to cholesteryl esters, which enter the HDL core as the particle matures.') },
+  ...METABOLISM_TARGETS
 ];
 
 // radius / tg / ce are illustrative drawing units, never nm, concentrations or molecule counts.
@@ -69,7 +72,7 @@ export const TRAFFIC_JOURNEYS = [
     ] },
   { id: 'hdl', particles: ['hdl'],
     name: t('HDL: kolesterolü geri taşı', 'HDL: return cholesterol'), apo: 'apoA-I',
-    identity: t('HDL ayrı bir yoldur; LDL’den oluşmaz. Burada doğrudan SR-BI yolu gösterilir; CETP ile dolaylı aktarım da mümkündür.', 'HDL has a separate pathway; it does not form from LDL. This view shows direct SR-BI delivery; indirect transfer via CETP also occurs.'),
+    identity: t('HDL, LDL’den oluşmaz. Burada doğrudan SR-BI yolu gösterilir. Karşılaştırmak için HDL: CETP ile dolaylı yol seçeneğini aç.', 'HDL does not form from LDL. This view shows the direct SR-BI route. Select HDL: indirect route via CETP to compare.'),
     stages: [
       { label: t('Lipitten fakir apoA-I', 'Lipid-poor apoA-I'), radius: 22, tg: 0, ce: 0, target: null, transfer: null,
         title: t('1. ApoA-I başlangıç taşıyıcısıdır', '1. ApoA-I is the starting carrier'),
@@ -83,18 +86,19 @@ export const TRAFFIC_JOURNEYS = [
       { label: t('Seçici lipid aktarımı', 'Selective lipid transfer'), radius: 35, tg: 0, ce: 1, target: 'srbi', transfer: 'selective',
         title: t('4. SR-BI, lipid yükünü karaciğere aktarır', '4. SR-BI transfers lipid cargo to the liver'),
         detail: t('Turuncu kolesterol esterleri karaciğere geçer. HDL’nin protein iskeleti dolaşımda kalabilir; bütün partikülün yutulması gerekmez.', 'Orange cholesteryl esters enter the liver. The HDL protein scaffold can remain in circulation; whole-particle uptake is not required.') }
-    ] }
+    ] },
+  ...METABOLISM_JOURNEYS
 ];
 
 export const JOURNEY_WORDS = {
-  tr: { title: 'Dönüşümü yakından izle', intro: 'Bir partikülü takip et: yük değişir, taşıyıcının kimliği izlenebilir. Aşamaya tıkla veya zaman çubuğunu sürükle.',
+  tr: { title: 'Lipid yolculuğunu yakından izle', intro: 'Emilim, partikül dönüşümü veya kolesterolün geri taşınması için bir yol seç. Aşamaya tıkla, zaman çubuğunu sürükle veya animasyonu oynat.',
     previous: '← Önceki', next: 'Sonraki →', progress: 'Dönüşüm aşaması', pathways: 'Dönüşüm yolları',
     legend: ['TG', 'Kolesterol esteri', 'Serbest kolesterol', 'Yüzey proteini'],
     out: 'Yağ asitleri → doku', in: 'Hücre → kolesterol', esterify: 'Serbest kolesterol → ester', whole: 'Bütün partikül → karaciğer', selective: 'Yalnız lipid → karaciğer',
     note: 'Büyütülmüş öğretim şeması. Noktalar molekül sayısı, hareket süresi biyolojik süre değildir. Boyut ve yük değişimi nitelikseldir.',
     targets: 'Reseptörler, enzimler ve taşıyıcılar', targetHint: 'Adına tıkla: bulunduğu yer ve yaptığı iş burada görünür.', location: 'Yer', role: 'Görev',
     lpa: 'Lp(a), LDL benzeri bir partiküle bağlı apo(a) taşır; temizlenme yolu tam açıklanmamıştır. Aşağıdaki zincir VLDL / IDL / LDL içindir, Lp(a) temizlenmesini göstermez.' },
-  en: { title: 'Watch the transformation up close', intro: 'Follow one particle: cargo changes while carrier identity stays traceable. Pick a stage or drag the timeline.',
+  en: { title: 'Follow the lipid journey up close', intro: 'Choose absorption, particle remodeling, or cholesterol return. Pick a stage, drag the timeline, or play the animation.',
     previous: '← Previous', next: 'Next →', progress: 'Transformation stage', pathways: 'Transformation pathways',
     legend: ['TG', 'Cholesteryl ester', 'Free cholesterol', 'Surface protein'],
     out: 'Fatty acids → tissue', in: 'Cell → cholesterol', esterify: 'Free cholesterol → ester', whole: 'Whole particle → liver', selective: 'Lipid only → liver',

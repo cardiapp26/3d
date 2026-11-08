@@ -1,0 +1,16 @@
+/* Atheroma station motion: the cardiac clock now drives lumen flow (inline
+   translate), so the CSS keyframe on flow particles only adds a gentle tumble.
+   Reduced motion keeps the existing `animation:none` rule in pathophysiology.css. */
+.athero-head-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.athero-head-actions button { flex-shrink:0; min-height:44px; }
+.pathophys-athero-lab .pathophys-cycle-bar { margin-bottom:12px; }
+.pathophys-athero-lab [data-athero-story].active { background:#0f766e; color:#fff; border-color:#0f766e; }
+.pathophys-athero-lab .athero-flow-particle { transform-box:fill-box; transform-origin:center; }
+@media (prefers-reduced-motion:no-preference) {
+  .pathophys-athero-lab.athero-clocked .athero-flow-particle { animation-name:athero-tumble; animation-duration:1.8s; animation-timing-function:ease-in-out; }
+}
+@keyframes athero-tumble { 0%,100% { scale:1; } 50% { scale:1.12; } }
+@media (max-width:600px) {
+  .athero-head-actions { width:100%; }
+  .athero-head-actions button { flex:1 1 140px; }
+}

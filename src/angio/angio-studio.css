@@ -350,17 +350,6 @@
   color: #f1f5f9;
 }
 
-.angio-reset-btn {
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(30, 41, 59, 0.8);
-  color: #e2e8f0;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 .angio-pad-flex {
   display: grid;
   grid-template-columns: 160px minmax(0, 1fr);
@@ -461,36 +450,12 @@
 .joy-left { left: -14px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
 .joy-right { right: -14px; top: 50%; transform: translateY(-50%) rotate(90deg); color: #38bdf8; }
 
-/* SLIDERS & NUDGE CLUSTER */
+/* 5° NUDGE CLUSTER (the angle sliders sit on the fluoroscopy console) */
 .angio-nudge-col {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-}
-
-.angio-slider-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.angio-slider-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #cbd5e1;
-}
-
-.angio-slider-label strong {
-  color: #38bdf8;
-  font-family: monospace;
-}
-
-.angio-slider-item input[type=range] {
-  width: 100%;
-  accent-color: #38bdf8;
-  cursor: pointer;
 }
 
 .angio-nudge-cluster {
@@ -745,7 +710,7 @@
 }
 
 /* Fluoroscopy console: the cath-lab controls sit on the image (angio-studio.js).
-   Toolbar above, CRA / CAU rail beside, RAO / LAO bar and readout below. */
+   Toolbar above, CRA / CAU rail beside, RAO / LAO bar below; the cine corner is the angle readout. */
 .angio-atlas-pair .angio-fluoro-console { background: #11161d; display: flex; flex-direction: column; }
 .angio-console-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; padding: 8px 10px; background: #171d26; border-bottom: 1px solid #263241; }
 .angio-seg { display: inline-flex; border: 1px solid #3a4656; border-radius: 7px; overflow: hidden; }
@@ -753,7 +718,6 @@
 .angio-seg button + button { border-left: 1px solid #3a4656; }
 .angio-seg button:hover, .angio-console-toggle:hover { background: #283240; color: #fff; }
 .angio-seg button.active { background: #2b3442; color: #f6b13b; box-shadow: inset 0 0 0 1px #f6b13b; }
-.angio-seg.is-off button:not(.active) { opacity: 0.55; }
 .angio-console-toggle { border: 1px solid #3a4656; border-radius: 7px; }
 .angio-console-toggle[aria-pressed=true] { color: #f6b13b; border-color: #f6b13b; }
 .angio-seg button:focus-visible, .angio-console-toggle:focus-visible, .angio-fluoro-console input:focus-visible { outline: 2px solid #f6b13b; outline-offset: 2px; }
@@ -776,13 +740,11 @@
 .angio-angulation { display: grid; grid-template-rows: auto 1fr auto; justify-items: center; gap: 6px; padding: 4px 0; font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: #94a3b8; }
 .angio-angulation input { writing-mode: vertical-lr; direction: rtl; width: 30px; height: 100%; min-height: 240px; accent-color: #f6b13b; cursor: ns-resize; }
 .angio-rotation { display: grid; gap: 4px; padding: 10px 14px 12px; }
-.angio-rotation-readout { display: flex; justify-content: space-between; font: 700 22px/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #e8edf3; }
 .angio-rotation input { width: 100%; accent-color: #f6b13b; cursor: ew-resize; }
 .angio-rotation-scale { display: flex; justify-content: space-between; font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: #94a3b8; }
 @media (max-width: 640px) {
   .angio-console-stage { grid-template-columns: minmax(0, 1fr) 40px; }
   .angio-angulation input { min-height: 180px; }
-  .angio-rotation-readout { font-size: 18px; }
   .angio-cine-corner { font-size: 13px; }
 }
 /* Hover name over the 3D anatomy and the fluoroscopy. */

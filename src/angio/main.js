@@ -13,11 +13,11 @@ let notes = null;
 
 const TEXTS = {
   tr: {
-    title: 'Cardia · Koroner Anjiyografi & C-Arm Stüdyosu',
+    title: 'Cardia · Koroner Anjiyografi',
     disclaimer: 'Cardia’nın mevcut 3B kalp atlası ve floroskopi görünümü kullanılır. Floroskopi, atlas yüzeylerinin geometrik projeksiyonudur; hasta röntgeni değildir. C-arm cihazı ve koroner lezyon alıştırması şematiktir. Eğitim ve simülasyon amaçlıdır.'
   },
   en: {
-    title: 'Cardia · Coronary Angiography & C-Arm Studio',
+    title: 'Cardia · Coronary Angiography',
     disclaimer: 'Uses the existing Cardia 3D heart atlas and fluoroscopy view. Fluoroscopy is a geometric projection of atlas surfaces, not a patient radiograph. The C-arm device and coronary lesion exercise are schematic. For education and simulation.'
   }
 };

@@ -30,7 +30,7 @@ function scaleColor(v, lo, hi) {
   return COLORS[Math.min(COLORS.length - 2, 1 + Math.floor(f * (COLORS.length - 2)))];
 }
 
-export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
+export function createSubstratePanel(doc, { getLang = () => 'tr', onOpenEam3d } = {}) {
   const el = (tag, cls, attrs = {}) => {
     const n = doc.createElement(tag);
     if (cls) n.className = cls;
@@ -56,8 +56,12 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
   const scarField = field('scarCut', scarSel), normalField = field('normalCut', normalSel), strategyField = field('strategy', strategySel);
   const toggle = (name) => el('button', 'amap-toggle', { type: 'button', [`data-smap-${name}`]: '' });
   const tagsBtn = toggle('tags'), truthBtn = toggle('truth');
+  const open3dBtn = el('button', 'amap-toggle eam3d-bridge-btn', { type: 'button', 'data-open-eam3d': 'substrate' });
+  open3dBtn.addEventListener('click', () => {
+    if (typeof onOpenEam3d === 'function') onOpenEam3d({ scenario: 'vt-ischemic', mapMode: 'voltage', rail: 'survey', surveyPreset: 'vt-scar' });
+  });
   const toggles = el('div', 'amap-toggles');
-  toggles.append(tagsBtn, truthBtn);
+  toggles.append(tagsBtn, truthBtn, open3dBtn);
   const verdict = el('p', 'amap-verdict', { 'aria-live': 'polite', 'data-smap-verdict': '' });
   const readout = el('dl', 'amap-readout', { 'data-smap-readout': '' });
   const strategyNote = el('p', 'amap-note', { 'data-smap-strategy-text': '' });
@@ -431,6 +435,7 @@ export function createSubstratePanel(doc, { getLang = () => 'tr' } = {}) {
     const named = Object.entries(s.sites).find(([, p]) => p[0] === state.site[0] && p[1] === state.site[1]);
     siteSel.value = named ? named[0] : '';
     for (const [btn, key] of [[tagsBtn, 'tags'], [truthBtn, 'truth']]) { btn.textContent = tt[key]; btn.setAttribute('aria-pressed', String(state[key])); }
+    open3dBtn.textContent = L() === 'en' ? 'Open in 3D map' : '3B haritada aç';
     lesson.textContent = st.lesson;
     truth.textContent = st.truth;
     truth.hidden = !state.truth;
