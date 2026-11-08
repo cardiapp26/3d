@@ -43,7 +43,7 @@ const noDrugs = () => Object.fromEntries(DRUG_IDS.map((d) => [d, false]));
 const nextFrame = (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : 0);
 const cancelFrame = (id) => { if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id); };
 
-export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
+export function createLivePanel(doc, { getLang = () => 'tr', onOpenEam3d } = {}) {
   const el = (tag, cls, attrs = {}) => {
     const n = doc.createElement(tag);
     if (cls) n.className = cls;
@@ -68,7 +68,21 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   const surpriseBtn = el('button', 'ep-pace-retry', { type: 'button', 'data-ep-live-surprise': '' });
   const diagnoseBtn = el('button', 'ep-pace-retry', { type: 'button', 'data-ep-live-diagnose': '' });
   const hintsBtn = el('button', 'ep-pace-retry', { type: 'button', 'data-ep-live-hints': '' });
-  caseBar.append(surpriseBtn, diagnoseBtn, hintsBtn);
+  const open3dBtn = el('button', 'ep-pace-retry eam3d-bridge-btn', { type: 'button', 'data-open-eam3d': 'live' });
+  open3dBtn.addEventListener('click', () => {
+    const mapCase = {
+      'avnrt-typical': 'avnrt',
+      'avnrt-atypical': 'avnrt',
+      'ort-ll': 'avrt-left',
+      'pjrt': 'avrt-left',
+      'wpw': 'avrt-left',
+      'focal-at': 'atrial-scar-flutter',
+      'flutter-cti': 'flutter-typical',
+      'scar-vt': 'vt-ischemic'
+    }[state.caseId] || 'avnrt';
+    if (typeof onOpenEam3d === 'function') onOpenEam3d({ scenario: mapCase, mapMode: 'live', rail: 'case' });
+  });
+  caseBar.append(surpriseBtn, diagnoseBtn, hintsBtn, open3dBtn);
   const quiz = el('section', 'ep-pace ep-live-quiz', { 'data-ep-live-quiz': '' });
   const quizQ = el('p', 'ep-pace-title');
   const quizChoices = el('div', 'ep-pace-answers', { role: 'group' });
@@ -652,6 +666,7 @@ export function createLivePanel(doc, { getLang = () => 'tr' } = {}) {
   function render() {
     const t = T(), lang = L();
     caseName.textContent = t.caseLabel;
+    open3dBtn.textContent = lang === 'en' ? '3D EAM (CardaxEP)' : '3B EAM (CardaxEP)';
     caseSelect.replaceChildren(...(state.hidden ? [option('hidden', t.hidden)] : []), ...Object.keys(LIVE_CASES).map((id) => option(id, caseText(id).name)));
     caseSelect.value = state.hidden ? 'hidden' : state.caseId;
     renderQuiz();

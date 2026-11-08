@@ -37,7 +37,7 @@ const tabs = byClass('ep-sections');
 const row = byClass('egm-scenarios');
 const text = byClass('egm-text');
 const title = byClass('egm-title');
-assert.equal(tabs.children.length, 16, 'three lesson sections, live recording, mapping, pace map, substrate, mapping basics, AF mapping, EGM basics, SVT, WPW, VES localization, EGM recording, CSP / LBBAP and conduction system tabs');
+assert.equal(tabs.children.length, 17, 'three lesson sections, live recording, mapping, pace map, substrate, mapping basics, AF mapping, EGM basics, SVT, WPW, VES localization, EGM recording, CSP / LBBAP, conduction system and 3D EAM tabs');
 
 // Lesson entry: the legacy scenario ids open the treatment clips.
 panel.openLesson('sinus');
@@ -142,6 +142,11 @@ tabs2.children[3].listeners.click();
 assert.deepEqual(seen, ['diagnosis', 'live']);
 panel2.showView('treatment');
 assert.equal(panel2.getActiveView(), 'treatment');
+panel2.openEam3d({ scenario: 'vt-ischemic', mapMode: 'voltage', rail: 'survey' });
+assert.equal(panel2.getActiveView(), 'eam3d');
+assert.equal(panel2.eam3d.getState().scenarioId, 'vt-ischemic');
+assert.equal(panel2.eam3d.getState().mapMode, 'voltage');
+panel2.showView('treatment');
 panel2.showView('bogus');
 assert.equal(panel2.getActiveView(), 'treatment', 'unknown view ignored');
 panel2.live.setActive(false);
