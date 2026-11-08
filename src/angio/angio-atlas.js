@@ -82,9 +82,12 @@ export function createAngioAtlas({ mount, getLang, onAngles }) {
     const refit = !keepAnatomy && release();
     syncing = true;
     try {
+      // Both views show one projection at one magnification: a fitted fluoroscopy view takes the anatomy
+      // view's distance, since the two canvases can differ in width (the fluoro angle slider takes room).
       hearts.forEach((h, i) => {
         if (i === activeSource || (i === 0 && keepAnatomy)) return;
-        h.setAngioProjection(a, b, false, !(fit || (i === 0 && refit)));
+        const fitting = fit || (i === 0 && refit);
+        h.setAngioProjection(a, b, false, !fitting, i === 1 && fit ? hearts[0].getState().angio.distance : null);
       });
     }
     finally { syncing = false; }

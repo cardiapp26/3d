@@ -11,9 +11,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/yh/.cache/
 const assert = require('node:assert/strict');
 // Layers and tools open as a drawer from the header tabs (tablet and desktop).
 // Tools open from the current mode group tab (merged mode + tools panel); layers keep their own tab.
+// Wide screens list the modes in the left rail and give tools their own tab.
 const openDrawer = async (page, id) => {
   if (await page.evaluate(() => document.body.dataset.openDrawer || null) === id && !(await page.evaluate(() => document.body.dataset.drawerPeek))) return;
-  if (id === 'tools') { await page.locator('.mode-group.current .mode-group-tab').click(); return; }
+  if (id === 'tools' && !(await page.locator('[data-drawer=tools]').isVisible())) { await page.locator('.mode-group.current .mode-group-tab').click(); return; }
   const tab = page.locator(`[data-drawer=${id}]`);
   if (await tab.getAttribute('aria-expanded') !== 'true') await tab.click();
 };

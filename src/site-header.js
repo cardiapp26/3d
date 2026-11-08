@@ -1,10 +1,12 @@
 import { fromRoot } from './cardia-pages.js';
 import { SITE_MODULES, SITE_BADGES } from './site-modules.js';
+import { ensureSideRail, sideRailWide, SIDE_RAIL_QUERY } from './side-rail.js';
 import './site-header.css';
 
 // The header every Cardia page shares: brand, the page badge and the module
-// menu (one order everywhere). A module with several pages lists them in a
-// drawer that opens from the left (button before the brand; one place, no repeats).
+// menu (one order everywhere). A module with several pages lists them in the
+// left rail on wide screens (side-rail.js) and in a drawer opened from the
+// header button on narrow ones: the same list, moved between the two.
 // A page writes <header class="site-header" data-site-page="..."> with its own
 // controls in .site-header-actions; mountSiteHeader adds the rest.
 
@@ -62,10 +64,13 @@ function drawerMarkup(module, page, lang) {
 }
 
 let drawerEventsBound = false;
+const panelEl = () => document.querySelector('#module-nav-panel');
+const inRail = panel => panel?.dataset.inRail === 'true';
+
 function setDrawerOpen(open, focus = false) {
   const drawer = document.querySelector('[data-module-nav]');
-  if (!drawer) return;
-  const panel = drawer.querySelector('.module-nav-panel');
+  const panel = panelEl();
+  if (!drawer || !panel || inRail(panel)) return;
   const handle = document.querySelector('[data-module-nav-toggle]');
   drawer.dataset.open = String(open);
   panel.hidden = !open;
@@ -80,23 +85,42 @@ function placeDrawer(header) {
   if (drawer) drawer.style.setProperty('--module-nav-top', `${Math.max(0, Math.round(header.getBoundingClientRect().bottom))}px`);
 }
 
+/** Wide screens: the page list sits in the left rail, always open. Narrow screens: in the drawer, closed. */
+function placePanel() {
+  const drawer = document.querySelector('[data-module-nav]');
+  const panel = panelEl();
+  if (!drawer || !panel) return;
+  const wide = sideRailWide();
+  const rail = document.querySelector('.side-rail .side-rail-body');
+  if (wide && rail) {
+    drawer.dataset.open = 'false';
+    rail.append(panel);
+    panel.dataset.inRail = 'true';
+    panel.hidden = false;
+  } else {
+    drawer.append(panel);
+    panel.dataset.inRail = 'false';
+    panel.hidden = drawer.dataset.open !== 'true';
+  }
+}
+
 function bindDrawer(header, module, page) {
   const drawer = document.querySelector('[data-module-nav]');
   header.querySelector('[data-module-nav-toggle]').addEventListener('click', () => setDrawerOpen(drawer.dataset.open !== 'true', true));
   drawer.querySelector('[data-module-nav-close]').addEventListener('click', () => setDrawerOpen(false, true));
   placeDrawer(header);
+  placePanel();
   if (drawerEventsBound) return;
   drawerEventsBound = true;
+  if (typeof matchMedia === 'function') matchMedia(SIDE_RAIL_QUERY).addEventListener('change', placePanel);
   document.addEventListener('click', e => { if (!e.target.closest('[data-module-nav], [data-module-nav-toggle]')) setDrawerOpen(false); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('[data-module-nav][data-open="true"]')) setDrawerOpen(false, true); });
   window.addEventListener('resize', () => placeDrawer(header), { passive: true });
   window.addEventListener('scroll', () => placeDrawer(header), { passive: true });
   // A 3D page switches lessons in place: follow the lesson in the drawer.
   window.addEventListener('hashchange', () => {
-    const current = document.querySelector('[data-module-nav]');
-    if (!current) return;
     const active = activeEntry(module, page);
-    current.querySelectorAll('.module-nav-link').forEach(a => {
+    document.querySelectorAll('.module-nav-link').forEach(a => {
       if (active && a.dataset.siteSubpage === active.id) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     });
@@ -114,7 +138,7 @@ export function mountSiteHeader(header, lang) {
   const page = header.dataset.sitePage || 'anatomy';
   const module = moduleOfPage(page);
   header.querySelectorAll(':scope > [data-site-part]').forEach(node => node.remove());
-  document.querySelectorAll('[data-module-nav]').forEach(node => node.remove());
+  document.querySelectorAll('[data-module-nav], #module-nav-panel').forEach(node => node.remove());
   const markup = `
     <div class="site-brand-block" data-site-part>
       ${module.pages ? drawerToggleMarkup(module, lang) : ''}
@@ -124,6 +148,9 @@ export function mountSiteHeader(header, lang) {
     <nav class="site-modules" aria-label="${lang === 'en' ? 'Modules' : 'Modüller'}" data-site-part>${SITE_MODULES.map(m => moduleLink(m, module, lang)).join('')}</nav>`;
   header.insertAdjacentHTML('afterbegin', markup);
   if (module.pages) {
+    // 3D pages read this to leave their own lesson list out of the rail (the pages cover it).
+    document.body.dataset.modulePages = 'true';
+    ensureSideRail({ label: { tr: NAV_TEXT.tr.button, en: NAV_TEXT.en.button }, getLang: () => lang });
     document.body.insertAdjacentHTML('beforeend', drawerMarkup(module, page, lang));
     bindDrawer(header, module, page);
   }
