@@ -298,17 +298,20 @@ function drawAfterload(base, cur) {
     + svArrow(base, 'SV', 'pvl-sv-ghost') + svArrow(cur, 'SV′', '')
     + text(toX(PV_V0 + 22) + 8, toY(cur.espvr(PV_V0 + 22)) + 4, 'ESPVR', 'pvl-curve-label pvl-red')
     + text(toX(cur.edv) + 4, toY(14), 'Ea′', 'pvl-curve-label pvl-blue')
-    + volumeTicks([{ v: base.esv, p: base.esp, label: 'ESV', cls: 'pvl-soft' }, { v: cur.esv, p: cur.esp, label: 'ESV′' }, { v: cur.edv, label: 'EDV' }])
-    + pressureTicks([{ p: lb.sbp, v: base.edv - base.sv / 2, label: 'SBP', cls: 'pvl-soft' }, { p: lc.sbp, v: cur.edv - cur.sv / 2, label: 'SBP′' }, { p: lc.dbp, v: cur.edv, label: 'DBP′' }]);
+    + volumeTicks([{ v: base.esv, p: base.esp, label: 'ESV', cls: 'pvl-soft' }, ...apart(cur.esv, base.esv, 3, { v: cur.esv, p: cur.esp, label: 'ESV′' }), { v: cur.edv, label: 'EDV' }])
+    + pressureTicks([{ p: lb.sbp, v: base.edv - base.sv / 2, label: 'SBP', cls: 'pvl-soft' }, ...apart(lc.sbp, lb.sbp, 6, { p: lc.sbp, v: cur.edv - cur.sv / 2, label: 'SBP′' }), { p: lc.dbp, v: cur.edv, label: 'DBP′' }]);
 }
+
+/** A primed tick only once its value has moved away from the baseline one (no stacked twin labels). */
+const apart = (value, baseline, gap, tick) => (Math.abs(value - baseline) >= gap ? [tick] : []);
 
 function drawLusitropy(base, cur) {
   return espvrLine(cur, 'pvl-espvr pvl-faint') + edpvrCurve(base, 'pvl-edpvr') + edpvrCurve(cur, 'pvl-edpvr pvl-edpvr-new')
     + loopPath(base, 'pvl-loop pvl-ghost') + loopPath(cur, 'pvl-loop')
     + text(toX(X_MAX - 30), toY(base.edpvr(X_MAX - 30)) + 14, 'EDPVR', 'pvl-curve-label pvl-orange', 'end')
-    + text(toX(cur.edv + 8), toY(Math.min(Y_MAX - 40, cur.edpvr(cur.edv + 22))), 'EDPVR′', 'pvl-curve-label pvl-red')
+    + (Math.abs(cur.edpvr(X_MAX - 30) - base.edpvr(X_MAX - 30)) > 12 ? text(toX(cur.edv + 8), toY(Math.min(Y_MAX - 40, cur.edpvr(cur.edv + 22))) - 6, 'EDPVR′', 'pvl-curve-label pvl-red') : '')
     + volumeTicks([{ v: cur.esv, p: cur.esp, label: 'ESV' }, { v: cur.edv, p: cur.edp, label: 'EDV' }])
-    + pressureTicks([{ p: cur.esp, v: cur.esv, label: 'ESP' }, { p: base.edp, v: base.edv, label: 'EDP', cls: 'pvl-soft' }, { p: cur.edp, v: cur.edv, label: 'EDP′' }]);
+    + pressureTicks([{ p: cur.esp, v: cur.esv, label: 'ESP' }, { p: base.edp, v: base.edv, label: 'EDP', cls: 'pvl-soft' }, ...apart(cur.edp, base.edp, 3, { p: cur.edp, v: cur.edv, label: 'EDP′' })]);
 }
 
 // Frank-Starling inset (EDP on x, SV on y).

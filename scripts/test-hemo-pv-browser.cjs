@@ -25,19 +25,21 @@ const APP = (process.env.APP_URL || 'http://localhost:5173/').replace(/\/$/, '')
     assert.equal(await page.locator('.hemo-metrics').isVisible(), true, 'scenario measurements stay');
 
     await page.goto(`${APP}/pathophysiology/index.html?lang=tr#pv-loop`);
-    await page.waitForSelector('.pathophys-scenario-pv canvas');
-    const shot = () => page.evaluate(() => document.querySelector('.pathophys-scenario-pv canvas').toDataURL());
+    // Catheter scenarios: picked in the exploration, their loop drawn dashed over the elastance loop.
+    await page.waitForSelector('[data-pv-cath]');
+    assert.ok((await page.locator('[data-pv-cath] option').count()) > 5, 'scenario menu filled');
+    assert.equal(await page.locator('[data-pv-cath-loop]').count(), 0, 'no overlay before a choice');
+    await page.locator('[data-pv-cath]').selectOption('mitral_stenosis_severe');
     await page.waitForTimeout(200);
-    assert.ok((await page.locator('[data-scenario-pv] option').count()) > 5, 'scenario menu filled');
-    await page.locator('[data-scenario-pv]').selectOption('aortic_stenosis_severe');
+    const ms = await page.locator('[data-pv-cath-loop]').getAttribute('points');
+    assert.ok(ms && ms.split(' ').length > 50, 'scenario loop drawn');
+    await page.locator('[data-pv-cath]').selectOption('aortic_stenosis_severe');
     await page.waitForTimeout(200);
-    const as = await shot();
-    await page.locator('[data-scenario-pv]').selectOption('normal');
-    await page.waitForTimeout(200);
-    assert.notEqual(await shot(), as, 'scenario change redraws the loop');
+    assert.notEqual(await page.locator('[data-pv-cath-loop]').getAttribute('points'), ms, 'scenario change redraws the loop');
+    assert.equal(await page.locator('[data-pv-preset=as]').evaluate(b => b.classList.contains('active') || b.getAttribute('aria-pressed') === 'true'), true, 'matching preset follows the scenario');
     await page.locator('[data-pathophys-lang=en]').click();
-    assert.match(await page.locator('.pathophys-scenario-pv h3').textContent(), /catheter scenarios/);
-    assert.equal(await page.locator('[data-scenario-pv]').inputValue(), 'normal', 'language keeps the scenario');
+    assert.match(await page.locator('.pathophys-cath-row label').textContent(), /Catheter scenario/);
+    assert.equal(await page.locator('[data-pv-cath]').inputValue(), 'aortic_stenosis_severe', 'language keeps the scenario');
     assert.equal(errors.length, 0, 'no page errors: ' + errors.join('; '));
     console.log('PASS: catheter panel shows pressure tracings only; scenario P-V loop lives in Pathophysiology');
   } finally {
