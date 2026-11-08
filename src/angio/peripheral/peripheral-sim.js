@@ -1176,6 +1176,149 @@ export function computeAbiTbi({ ankle = 124, brachial = 120, toe = 90 } = {}) {
 /**
  * Renders the live Peripheral Fluoroscopy / DSA / Roadmap Canvas
  */
+const DEVICE_PX_PER_MM = 1.1;
+
+/** Points of a projected polyline between two arc lengths (px). */
+function polylineBetween(pts, cum, from, to) {
+  const total = cum[cum.length - 1];
+  const a = Math.max(0, Math.min(total, from));
+  const b = Math.max(0, Math.min(total, to));
+  const at = (d) => {
+    let i = 1;
+    while (i < pts.length - 1 && cum[i] < d) i += 1;
+    const seg = cum[i] - cum[i - 1] || 1;
+    const f = (d - cum[i - 1]) / seg;
+    return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f };
+  };
+  const out = [at(a)];
+  for (let i = 1; i < pts.length - 1; i += 1) if (cum[i] > a && cum[i] < b) out.push(pts[i]);
+  out.push(at(b));
+  return out;
+}
+
+function strokePath(ctx, pts) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+}
+
+/**
+ * Devices and results of the endovascular procedure (peripheral-intervention.js
+ * procedureOverlay) drawn on the lesion's vessel: wire, balloon, stent,
+ * dissection flap, contrast extravasation and a distal embolic cut-off.
+ */
+function drawTreatmentOverlay(ctx, projPts, lesionArc, baseWidth, treatment, imagingMode) {
+  const cum = [0];
+  for (let i = 1; i < projPts.length; i += 1) cum.push(cum[i - 1] + Math.hypot(projPts[i].x - projPts[i - 1].x, projPts[i].y - projPts[i - 1].y));
+  const total = cum[cum.length - 1];
+  const span = (offsetMm, lengthMm) => {
+    const c = lesionArc + offsetMm * DEVICE_PX_PER_MM;
+    const half = Math.max(6, (lengthMm * DEVICE_PX_PER_MM) / 2);
+    return polylineBetween(projPts, cum, c - half, c + half);
+  };
+  const light = imagingMode === 'roadmap';
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.setLineDash([]);
+  if (treatment.stent) {
+    const pts = span(treatment.stent.offsetMm, treatment.stent.lengthMm);
+    const half = baseWidth / 2 + 1.5;
+    if (treatment.stent.type === 'covered') {
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
+      ctx.lineWidth = baseWidth + 3;
+      strokePath(ctx, pts);
+    }
+    // Struts: a zigzag between the two stent edges.
+    const scum = [0];
+    for (let i = 1; i < pts.length; i += 1) scum.push(scum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+    const zig = [];
+    for (let d = 0, k = 0; d <= scum[scum.length - 1]; d += 3, k += 1) {
+      const [a, b] = polylineBetween(pts, scum, d, d + 0.5);
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const side = k % 2 ? half : -half;
+      zig.push({ x: a.x - ((b.y - a.y) / len) * side, y: a.y + ((b.x - a.x) / len) * side });
+    }
+    ctx.strokeStyle = 'rgba(71, 85, 105, 0.95)';
+    ctx.lineWidth = 1.1;
+    if (zig.length > 1) strokePath(ctx, zig);
+  }
+  if (treatment.wire) {
+    // Dark edge with a light core: visible over the dark contrast column and the light background.
+    const wirePts = polylineBetween(projPts, cum, 0, total);
+    ctx.strokeStyle = 'rgba(2, 6, 23, 0.9)';
+    ctx.lineWidth = 2.6;
+    strokePath(ctx, wirePts);
+    ctx.strokeStyle = 'rgba(226, 232, 240, 0.95)';
+    ctx.lineWidth = 1;
+    strokePath(ctx, wirePts);
+  }
+  if (treatment.balloon) {
+    const b = treatment.balloon;
+    const pts = span(b.offsetMm, b.lengthMm);
+    if (b.inflated) {
+      const width = Math.max(3, baseWidth * Math.max(0.35, b.lumenRatio));
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = width + 2;
+      strokePath(ctx, pts);
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+      ctx.lineWidth = width;
+      strokePath(ctx, pts);
+      if (b.waist) {
+        const mid = polylineBetween(projPts, cum, lesionArc - 3, lesionArc + 3);
+        ctx.strokeStyle = 'rgba(6, 78, 59, 0.95)';
+        ctx.lineWidth = Math.max(1.5, baseWidth * Math.max(0.2, b.lumenRatio) * 0.6);
+        strokePath(ctx, mid);
+      }
+    } else {
+      ctx.strokeStyle = 'rgba(5, 150, 105, 0.95)';
+      ctx.lineWidth = 2.6;
+      strokePath(ctx, pts);
+    }
+    ctx.fillStyle = light ? '#f8fafc' : '#020617';
+    for (const end of [pts[0], pts[pts.length - 1]]) {
+      ctx.beginPath();
+      ctx.arc(end.x, end.y, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  const at = polylineBetween(projPts, cum, lesionArc, lesionArc + 1)[0];
+  if (treatment.dissection === 'major' || treatment.dissection === 'flow-limiting') {
+    ctx.strokeStyle = 'rgba(220, 38, 38, 0.85)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 2]);
+    const flap = polylineBetween(projPts, cum, lesionArc - 10, lesionArc + (treatment.dissection === 'flow-limiting' ? 22 : 12));
+    ctx.beginPath();
+    flap.forEach((pt, i) => {
+      const off = (i % 2 ? 1 : -1) * (baseWidth / 2 + 1.5);
+      if (i === 0) ctx.moveTo(pt.x + off, pt.y);
+      else ctx.lineTo(pt.x + off, pt.y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  if (treatment.perforation) {
+    const g = ctx.createRadialGradient(at.x + 8, at.y, 1, at.x + 8, at.y, 16);
+    g.addColorStop(0, light ? 'rgba(248, 250, 252, 0.7)' : 'rgba(15, 23, 42, 0.65)');
+    g.addColorStop(1, 'rgba(15, 23, 42, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(at.x + 8, at.y, 16, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (treatment.embolization) {
+    const end = polylineBetween(projPts, cum, total * 0.92, total)[0];
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(end.x - 4, end.y - 4); ctx.lineTo(end.x + 4, end.y + 4);
+    ctx.moveTo(end.x + 4, end.y - 4); ctx.lineTo(end.x - 4, end.y + 4);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 export function renderPeripheralFluoroscopyCanvas(canvas, state) {
   if (!canvas) return [];
   const ctx = canvas.getContext('2d');
@@ -1407,7 +1550,7 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
     const hasLesion = !isContra
       && activeLesion
       && activeLesion.vesselId === branch.id
-      && activeLesion.pct > 0;
+      && (activeLesion.pct > 0 || activeLesion.treatment);
 
     if (!hasLesion) {
       ctx.strokeStyle = strokeCol;
@@ -1453,7 +1596,8 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
         ctx.setLineDash([]);
       } else {
         const stenW = Math.max(0.9, baseWidth * (1.0 - activeLesion.pct / 100));
-        ctx.strokeStyle = '#dc2626';
+        // A treated lesion with little residual reads as vessel, not as a red stenosis.
+        ctx.strokeStyle = activeLesion.treatment && activeLesion.pct < 30 ? strokeCol : '#dc2626';
         ctx.lineWidth = stenW;
         ctx.beginPath();
         ctx.moveTo(lx - ux * 5, ly - uy * 5);
@@ -1485,8 +1629,15 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
         ctx.setLineDash([]);
       }
 
+      if (activeLesion.treatment) {
+        let lesionArc = 0;
+        for (let i = 1; i <= segIdx; i += 1) lesionArc += Math.hypot(projPts[i].x - projPts[i - 1].x, projPts[i].y - projPts[i - 1].y);
+        lesionArc += segLen * segT;
+        drawTreatmentOverlay(ctx, projPts, lesionArc, baseWidth, activeLesion.treatment, imagingMode);
+      }
+
       // Stenosis callout badge
-      ctx.fillStyle = '#dc2626';
+      ctx.fillStyle = activeLesion.treatment && activeLesion.pct < 30 ? '#059669' : '#dc2626';
       ctx.beginPath();
       ctx.arc(lx, ly, 4.5, 0, Math.PI * 2);
       ctx.fill();
@@ -1494,7 +1645,7 @@ export function renderPeripheralFluoroscopyCanvas(canvas, state) {
       const badgeText = activeLesion.isCto ? 'CTO %100' : `-%${activeLesion.pct}`;
       ctx.font = '700 10px ui-monospace, SFMono-Regular, monospace';
       const tw = ctx.measureText(badgeText).width;
-      ctx.fillStyle = 'rgba(185, 28, 28, 0.92)';
+      ctx.fillStyle = activeLesion.treatment && activeLesion.pct < 30 ? 'rgba(4, 120, 87, 0.92)' : 'rgba(185, 28, 28, 0.92)';
       ctx.beginPath();
       ctx.roundRect(lx + 7, ly - 10, tw + 8, 15, 4);
       ctx.fill();

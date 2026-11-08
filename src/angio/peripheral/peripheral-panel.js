@@ -13,6 +13,7 @@ import {
   renderPeripheralFluoroscopyCanvas
 } from './peripheral-sim.js';
 import { createAngioDevice } from '../angio-device.js';
+import { createInterventionPanel } from './peripheral-intervention-panel.js';
 
 const esc = value => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -201,11 +202,16 @@ export function createPeripheralPanel({ mount, getLang }) {
   let animFrameId = null;
   let lastFrameTime = performance.now();
   let isDraggingJoy = false;
+  let intervention = null;
 
+  const pickedLesionObj = () => PERIPHERAL_LESIONS.find(l => l.id === state.lesionId) || PERIPHERAL_LESIONS[0];
+
+  /** The lesion on screen: the picked one in its own view, as the procedure has left it (devices included). */
   function activeLesionObj() {
-    const found = PERIPHERAL_LESIONS.find(l => l.id === state.lesionId) || PERIPHERAL_LESIONS[0];
-    if (found.id === 'none' || found.view === state.viewId) return found;
-    return PERIPHERAL_LESIONS[0];
+    const found = pickedLesionObj();
+    if (found.id !== 'none' && found.view !== state.viewId) return PERIPHERAL_LESIONS[0];
+    const overlay = found.id === 'none' ? null : intervention?.overlay();
+    return overlay ? { ...found, pct: overlay.pct, isCto: overlay.isCto, treatment: overlay } : found;
   }
 
   function selectedItem() {
@@ -405,6 +411,21 @@ export function createPeripheralPanel({ mount, getLang }) {
         device = null;
       }
     }
+
+    // Endovascular procedure on the picked lesion, right under the lesion picker.
+    intervention = createInterventionPanel({
+      getLang,
+      onChange: () => {
+        // The chosen severity is the lesion's baseline: keep the lesion card badge in step.
+        const pct = intervention.baselinePct();
+        const badge = mount.querySelector('.peri-lesion-pct');
+        if (badge && pct != null) badge.textContent = pct >= 100 ? 'CTO %100' : `-%${pct}`;
+        drawFluoro();
+      },
+      onInject: () => triggerContrastBolus()
+    });
+    mount.querySelector('.peri-lesion-box')?.after(intervention.element);
+    intervention.setLesion(pickedLesionObj());
 
     bindCanvasAndJoystickEvents();
     skeletonReady = true;
@@ -675,7 +696,8 @@ export function createPeripheralPanel({ mount, getLang }) {
     } else {
       lesionCard.hidden = false;
       const optStr = formatAngleReadout(pickedLesion.recAlpha, pickedLesion.recBeta);
-      const badge = pickedLesion.isCto ? 'CTO %100' : `-%${pickedLesion.pct}`;
+      const shownPct = intervention?.baselinePct() ?? pickedLesion.pct;
+      const badge = shownPct >= 100 ? 'CTO %100' : `-%${shownPct}`;
       lesionCard.innerHTML = `<div class="peri-lesion-head">
           <strong>${esc(loc(pickedLesion.name, lang))}</strong>
           <span class="peri-lesion-pct">${esc(badge)}</span>
@@ -724,6 +746,7 @@ export function createPeripheralPanel({ mount, getLang }) {
     mount.querySelector('[data-peri-refs-note]').textContent = ui.refsNote;
     mount.querySelector('[data-peri-refs-list]').innerHTML = REFERENCES.map(line => `<li>${esc(line)}</li>`).join('');
 
+    intervention?.render();
     updateAnglesUI();
   }
 
@@ -988,6 +1011,7 @@ export function createPeripheralPanel({ mount, getLang }) {
     if (t.matches?.('[data-peri-lesion-select]')) {
       state.lesionId = t.value;
       const picked = PERIPHERAL_LESIONS.find(l => l.id === state.lesionId);
+      intervention?.setLesion(picked);
       if (picked && picked.id !== 'none') {
         if (picked.view !== 'all' && picked.view !== state.viewId) {
           state.viewId = picked.view;
