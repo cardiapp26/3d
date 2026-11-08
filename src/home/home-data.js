@@ -27,7 +27,7 @@ export const HOME_MODULES = Object.freeze([
     points: [w('Odacıklar, kapaklar, koroner ağaç', 'Chambers, valves, coronary tree'), w('Kalp atımı, akım ve Wiggers', 'Heartbeat, flow and Wiggers'), w('Septal defektler ve kesitler', 'Septal defects and sections')]
   },
   {
-    id: 'pathophysiology', domain: 'anatomy', path: './pathophysiology/', thumb: 'pathophysiology', badge: 'new',
+    id: 'pathophysiology', domain: 'anatomy', path: './pathophysiology/', thumb: 'pathophysiology-cover', badge: 'new',
     kicker: w('Etkileşimli fizyopatoloji', 'Interactive pathophysiology'),
     name: w('Patofizyoloji', 'Pathophysiology'),
     points: [w('Basınç-hacim (PV) döngüsü ve Frank-Starling', 'Pressure-volume (PV) loops and Frank-Starling'), w('Aterogenez, plak biyolojisi ve Laplace gerimi', 'Atherogenesis, plaque biology and Laplace stress'), w('Forrester hemodinamisi ve aritmik iyon akımları', 'Forrester hemodynamics and arrhythmogenic ion currents')]
