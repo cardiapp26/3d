@@ -5,28 +5,40 @@ const t = (tr, en) => ({ tr, en });
 
 export const PATHOPHYS_GROUPS = [
   {
+    id: 'electrophysiology',
+    label: t('I. Kardiyak Elektrofizyoloji', 'I. Cardiac Electrophysiology')
+  },
+  {
     id: 'mechanics',
-    label: t('I. Ventrikül Mekaniği, Döngü ve Oskültasyon', 'I. Ventricular Mechanics, Cycle & Auscultation')
+    label: t('II. Ventrikül Mekaniği, Döngü ve Oskültasyon', 'II. Ventricular Mechanics, Cycle & Auscultation')
   },
   {
     id: 'coronary',
-    label: t('II. Koroner Dolaşım, Aterom ve İskemi', 'II. Coronary Circulation, Atheroma & Ischemia')
+    label: t('III. Koroner Dolaşım, Aterom ve İskemi', 'III. Coronary Circulation, Atheroma & Ischemia')
   },
   {
     id: 'myocardial-pericardial',
-    label: t('III. Kalp Yetersizliği, Miyokard ve Perikard', 'III. Heart Failure, Myocardium & Pericardium')
+    label: t('IV. Kalp Yetersizliği, Miyokard ve Perikard', 'IV. Heart Failure, Myocardium & Pericardium')
   },
   {
-    id: 'valvular-arrhythmia-congenital',
-    label: t('IV. Kapak, Aritmi, Damar Basıncı ve Doğuştan Şantlar', 'IV. Valvular, Arrhythmia, Vascular & Congenital')
+    id: 'valvular-vascular-congenital',
+    label: t('V. Kapak, Damar Basıncı ve Doğuştan Şantlar', 'V. Valvular, Vascular & Congenital')
   }
 ];
 
 export const PATHOPHYS_STATIONS = [
-  // GRUP I: VENTRİKÜL MEKANİĞİ VE DÖNGÜ
+  {
+    id: 'electrophys',
+    group: 'electrophysiology',
+    title: t('Aritmi Mekanizmaları: Otomatisite, Tetiklenen Aktivite ve Reentri', 'Arrhythmia Mechanisms: Automaticity, Triggered Activity & Reentry'),
+    shortTitle: t('Aritmi Mekanizmaları', 'Arrhythmia Mechanisms'),
+    intro: t(
+      'Ventriküler ve nodal aksiyon potansiyelleri, erken ve gecikmiş artı-depolarizasyonlar (EAD/DAD), tek yönlü blok ve reentri üçlüsü; modern fizyolojik Sol Dal Alanı Uyarımı (LBBAP/CSP).',
+      'Ventricular vs nodal action potentials, early and delayed afterdepolarizations (EAD/DAD), unidirectional block and the reentry triad; modern Conduction System Pacing (LBBAP/CSP).'
+    )
+  },
   {
     id: 'pv-loop',
-    num: '01',
     group: 'mechanics',
     title: t('Basınç-Hacim (PV) Döngüsü ve Ventrikül Mekaniği', 'Pressure-Volume (PV) Loop and Ventricular Mechanics'),
     shortTitle: t('PV Döngüsü', 'PV Loop'),
@@ -37,7 +49,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'loads',
-    num: '02',
     group: 'mechanics',
     title: t('Ön Yük ve Ard Yük', 'Preload and Afterload'),
     shortTitle: t('Ön Yük / Ard Yük', 'Preload / Afterload'),
@@ -48,7 +59,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'starling-laplace',
-    num: '03',
     group: 'mechanics',
     title: t('Frank-Starling Yasası ve Laplace Duvar Stresi', 'Frank-Starling Law and Laplace Wall Stress'),
     shortTitle: t('Starling ve Laplace', 'Starling & Laplace'),
@@ -59,7 +69,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'physiology',
-    num: '04',
     group: 'mechanics',
     title: t('Görsel Fizyoloji Rehberi ve Pompa Eğrileri', 'Visual Physiology Guide & Pump Curves'),
     shortTitle: t('Fizyoloji Rehberi', 'Physiology Guide'),
@@ -70,7 +79,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'wiggers',
-    num: '05',
     group: 'mechanics',
     title: t('Canlı Wiggers Diyagramı ve Kalp Sesleri', 'Live Wiggers Diagram and Heart Sounds'),
     shortTitle: t('Canlı Wiggers', 'Live Wiggers'),
@@ -80,10 +88,8 @@ export const PATHOPHYS_STATIONS = [
     )
   },
 
-  // GRUP II: KORONER DOLAŞIM, ATEROM VE İSKEMİ
   {
     id: 'atherogenesis',
-    num: '06',
     group: 'coronary',
     title: t('Aterogenez Biyolojisi, Plak Evrimi ve Kümülatif Maruziyet', 'Atherogenesis Biology, Plaque Evolution & Cumulative Exposure'),
     shortTitle: t('Aterom ve Plak Evrimi', 'Atheroma & Plaque Evolution'),
@@ -94,7 +100,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'ischemic-cascade',
-    num: '07',
     group: 'coronary',
     title: t('İskemik Kalp Hastalığı, MVO2 ve İskemik Kaskad', 'Ischemic Heart Disease, MVO2 and the Ischemic Cascade'),
     shortTitle: t('İskemik Kaskad & MVO2', 'Ischemic Cascade & MVO2'),
@@ -104,10 +109,8 @@ export const PATHOPHYS_STATIONS = [
     )
   },
 
-  // GRUP III: KALP YETERSİZLİĞİ, MİYOKARD VE PERİKARD
   {
     id: 'heart-failure',
-    num: '08',
     group: 'myocardial-pericardial',
     title: t('Kalp Yetersizliği: HFrEF vs HFpEF, Nörohormonlar ve Kardiyomiyopatiler', 'Heart Failure: HFrEF vs HFpEF, Neurohormones & Cardiomyopathies'),
     shortTitle: t('Kalp Yetersizliği & KMP', 'Heart Failure & CMP'),
@@ -118,7 +121,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'pericardial',
-    num: '09',
     group: 'myocardial-pericardial',
     title: t('Perikard Patofizyolojisi: Kardiyak Tamponad ve Konstriksiyon', 'Pericardial Pathophysiology: Cardiac Tamponade & Constriction'),
     shortTitle: t('Perikard: Tamponad & Konstriksiyon', 'Pericardium: Tamponade & Constriction'),
@@ -129,7 +131,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'myocardial-ckm',
-    num: '10',
     group: 'myocardial-pericardial',
     title: t('Özelleşmiş Miyokard Stresi: Takotsubo, CKM Enerjetikleri ve Lenfatikler', 'Specialized Myocardial Stress: Takotsubo, CKM Energetics & Lymphatics'),
     shortTitle: t('Takotsubo & CKM', 'Takotsubo & CKM'),
@@ -140,7 +141,6 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'forrester',
-    num: '11',
     group: 'myocardial-pericardial',
     title: t('Akut Kardiyojenik Şok ve Forrester Hemodinamiği', 'Acute Cardiogenic Shock and Forrester Hemodynamics'),
     shortTitle: t('Forrester Şok Matrisi', 'Forrester Shock Matrix'),
@@ -150,11 +150,9 @@ export const PATHOPHYS_STATIONS = [
     )
   },
 
-  // GRUP IV: KAPAK, ARİTMİ, DAMAR BASINCI VE DOĞUŞTAN ŞANTLAR
   {
     id: 'valvular',
-    num: '12',
-    group: 'valvular-arrhythmia-congenital',
+    group: 'valvular-vascular-congenital',
     title: t('Kapak Hastalıkları, Basınç Gradyanları ve Dinamik Oskültasyon', 'Valvular Disease, Pressure Gradients & Dynamic Auscultation'),
     shortTitle: t('Kapak Gradyanları & Oskültasyon', 'Valvular Gradients & Auscultation'),
     intro: t(
@@ -163,20 +161,8 @@ export const PATHOPHYS_STATIONS = [
     )
   },
   {
-    id: 'electrophys',
-    num: '13',
-    group: 'valvular-arrhythmia-congenital',
-    title: t('Aritmi Mekanizmaları: Otomatisite, Tetiklenen Aktivite ve Reentri', 'Arrhythmia Mechanisms: Automaticity, Triggered Activity & Reentry'),
-    shortTitle: t('Aritmi Mekanizmaları', 'Arrhythmia Mechanisms'),
-    intro: t(
-      'Ventriküler ve nodal aksiyon potansiyelleri, erken ve gecikmiş artı-depolarizasyonlar (EAD/DAD), tek yönlü blok ve reentri üçlüsü; modern fizyolojik Sol Dal Alanı Uyarımı (LBBAP/CSP).',
-      'Ventricular vs nodal action potentials, early and delayed afterdepolarizations (EAD/DAD), unidirectional block and the reentry triad; modern Conduction System Pacing (LBBAP/CSP).'
-    )
-  },
-  {
     id: 'hypertension-vascular',
-    num: '14',
-    group: 'valvular-arrhythmia-congenital',
+    group: 'valvular-vascular-congenital',
     title: t('Hipertansiyon Patofizyolojisi, Guyton Basınç-Natriürezi ve Arteriyel Sertlik', 'Hypertension Pathophysiology, Guyton Pressure-Natriuresis & Arterial Stiffness'),
     shortTitle: t('Hipertansiyon & PWV', 'Hypertension & PWV'),
     intro: t(
@@ -186,8 +172,7 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'pah-rv',
-    num: '15',
-    group: 'valvular-arrhythmia-congenital',
+    group: 'valvular-vascular-congenital',
     title: t('Pulmoner Arteriyel Hipertansiyon (PAH) ve Sağ Kalp Eşleşmesi', 'Pulmonary Arterial Hypertension (PAH) and Right Ventricular Coupling'),
     shortTitle: t('Pulmoner HT & Sağ Kalp', 'PAH & Right Heart'),
     intro: t(
@@ -197,8 +182,7 @@ export const PATHOPHYS_STATIONS = [
   },
   {
     id: 'achd-shunts',
-    num: '16',
-    group: 'valvular-arrhythmia-congenital',
+    group: 'valvular-vascular-congenital',
     title: t('Erişkin Doğuştan Kalp Hastalıkları (ACHD), Şant Dinamiği ve Eisenmenger', 'Adult Congenital Heart Disease (ACHD), Shunt Dynamics & Eisenmenger'),
     shortTitle: t('Doğuştan Şantlar (ACHD)', 'Congenital Shunts (ACHD)'),
     intro: t(
@@ -206,7 +190,7 @@ export const PATHOPHYS_STATIONS = [
       'Left-to-right shunt mechanics in ASD, VSD and PDA: Qp/Qs calculation, volume/pressure chamber overload, progression to Eisenmenger reversal with cyanosis, and transcatheter closure.'
     )
   }
-];
+].map((station, index) => ({ ...station, num: String(index + 1).padStart(2, '0') }));
 
 export const PV_SCENARIOS = [
   {

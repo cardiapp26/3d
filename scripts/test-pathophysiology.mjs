@@ -31,6 +31,9 @@ import { VW_TEXT } from '../src/pathophysiology/vessel-wall-text.js';
 
 test('Pathophysiology: data structures and bilingual integrity', () => {
   assert.equal(PATHOPHYS_STATIONS.length, 16, 'Should have exactly 16 didactic stations');
+  const menuOrder = PATHOPHYS_GROUPS.flatMap(group => PATHOPHYS_STATIONS.filter(st => st.group === group.id));
+  assert.equal(menuOrder[0].id, 'electrophys', 'Electrophysiology opens first');
+  assert.deepEqual(menuOrder.map(st => st.num), Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0')));
   for (const st of PATHOPHYS_STATIONS) assert.ok(PATHOPHYS_GROUPS.some(g => g.id === st.group), `${st.id} belongs to a known group`);
   assert.equal(ATHEROMA_MODIFIERS.length, 4, 'four systemic atheroma phenotypes');
   for (const id of ['loads', 'physiology', 'wiggers', 'hypertension-vascular', 'pah-rv', 'myocardial-ckm', 'achd-shunts', 'ischemic-cascade', 'heart-failure', 'pericardial']) {
