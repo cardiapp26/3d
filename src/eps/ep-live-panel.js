@@ -763,6 +763,7 @@ export function createLivePanel(doc, { getLang = () => 'tr', onOpenEam3d } = {})
     protocol: () => ({ running: Boolean(state.protocol), rows: state.protocolRows.slice(), summary: state.protocolSummary }),
     circuit: () => circuitView.state(),
     replayCircuit: () => circuitView.replayNow(),
+    circuitDemo: (cmd, t) => circuitView.demo(cmd, t),
     coach: () => ({ drugs: { ...state.drugs }, notes: state.coach.map((n) => ({ ...n })), sinusCl: heart.param('sinusCl') }),
     programmed: () => ({ running: Boolean(state.prog), rows: markJumps(state.progRows), summary: state.progSummary, continuous: state.cont ? { ...state.cont } : null }),
     getState: () => ({ caseId: state.caseId, hidden: state.hidden, answer: state.answer, running: state.running, speed: state.speed, now: simNow, rfOn: state.rfOn, caliper: state.caliperOn ? { ...state.caliper, ch: state.caliperCh, amp: caliperAmp() } : null, waves: state.waves, ladder: state.ladder, links: state.links,

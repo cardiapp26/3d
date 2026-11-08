@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { createLiveHeart, planTrain, LIVE_SITES, SITE_CHANNEL, LIVE_CHANNELS } from '../../src/eps/ep-live-model.js';
 import { planOverdrive, overdriveStart, analyzeOverdrive, interpretSite } from '../../src/eps/ep-live-maneuvers.js';
 import { ORIGINS } from '../../src/eps/ep-live-substrates.js';
-import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, circuitAngle, segmentSpeeds, circuitAt, circuitClock, flutterAnchors, lastActivation, originSpot, leadIiTrace, normAngle, entrainmentAt, blockCheck, pacedSpread, LESION_ANGLE } from '../../src/eps/ep-flutter-circuit.js';
+import { CIRCUIT_SEGMENTS, CIRCUIT_SITES, circuitAngle, segmentSpeeds, circuitAt, circuitClock, flutterAnchors, lastActivation, originSpot, leadIiTrace, normAngle, entrainmentAt, blockCheck, pacedSpread, LESION_ANGLE, schematicFWave } from '../../src/eps/ep-flutter-circuit.js';
 import { LIVE_TEXT } from '../../src/eps/ep-live-text.js';
 
 // ---- Geometry and time course of one cycle ----
@@ -249,8 +249,22 @@ for (const lang of ['tr', 'en']) {
   assert.match(c.blockCheck({ siteName: 'X', site: 'cs-prox', interval: 127, hraFirst: true, block: true }), /127 ms/);
   assert.equal(typeof c.labels.lesion, 'string');
 }
+// Schematic F wave of the teaching animation: typical is a negative sawtooth (deep, sharp upstroke,
+// slow descent), reverse typical is broadly positive; continuous over the cycle.
+{
+  const tcl = 240, ccw = [], cw = [];
+  for (let t = 0; t < tcl; t += 2) { ccw.push(schematicFWave(t, tcl, 'ccw')); cw.push(schematicFWave(t, tcl, 'cw')); }
+  const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+  assert.ok(mean(ccw) < -0.2, `typical F wave mostly negative (${mean(ccw).toFixed(2)})`);
+  assert.ok(mean(cw) > 0.15, `reverse typical F wave mostly positive (${mean(cw).toFixed(2)})`);
+  assert.ok(Math.min(...ccw) <= -0.99 && Math.max(...ccw) >= 0.34, 'typical: nadir -1, peak 0.35');
+  const rise = ccw.findIndex((v, i) => i && v - ccw[i - 1] > 0.02), steps = ccw.slice(1).map((v, i) => v - ccw[i]);
+  assert.ok(rise > 0 && Math.max(...steps) > -Math.min(...steps), 'typical: the upstroke is steeper than the descent');
+  assert.ok(Math.abs(schematicFWave(0, tcl) - schematicFWave(tcl - 0.01, tcl)) < 0.01, 'continuous over the cycle');
+}
+
 for (const f of ['ep-flutter-circuit.js', 'ep-flutter-view.js', 'ep-live-text.js', 'ep-live-substrates.js']) {
   assert.ok(!readFileSync(new URL(`../../src/eps/${f}`, import.meta.url), 'utf8').includes(String.fromCharCode(0x2014)), `no em dash in ${f}`);
 }
 
-console.log('PASS ep-flutter-circuit: counterclockwise LAO ring timed from the His A (His and HRA catheters in step), slowest isthmus, lead II limbs (septum and roof descending, nadir at the free wall, lateral positive, isthmus plateau), sinus and paced origins, entrainment from HRA, CS proximal, CTI (concealed fusion, no double activation), mid and distal CS (outside, via the CS ostium) with ring PPI equal to the maneuver and a seamless return, CTI ablation stops the drawn circuit; clockwise flutter (positive F, mirrored ring, entrainment by site); isthmus line and bidirectional block check (long way round from the CS ostium and from the lateral isthmus)');
+console.log('PASS ep-flutter-circuit: counterclockwise LAO ring timed from the His A (His and HRA catheters in step), slowest isthmus, lead II limbs (septum and roof descending, nadir at the free wall, lateral positive, isthmus plateau), sinus and paced origins, entrainment from HRA, CS proximal, CTI (concealed fusion, no double activation), mid and distal CS (outside, via the CS ostium) with ring PPI equal to the maneuver and a seamless return, CTI ablation stops the drawn circuit; clockwise flutter (positive F, mirrored ring, entrainment by site); isthmus line and bidirectional block check (long way round from the CS ostium and from the lateral isthmus); schematic F wave of the teaching animation (negative sawtooth, positive reverse typical)');

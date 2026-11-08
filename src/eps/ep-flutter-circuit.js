@@ -68,6 +68,23 @@ function ccwAngle(tau, tcl) {
   return { angle: normAngle(k.a0 + ((k.a1 - k.a0) * (ph - k.t0)) / (k.t1 - k.t0)), segment: k.id };
 }
 
+// Schematic lead II F wave of the teaching animation (mV-free, -1..1), at each limb boundary in
+// time order from the His: the descending limb with the septum, the nadir as the lateral wall
+// starts, the positive part with the lateral wall and the plateau with the isthmus.
+const F_KNOTS = Object.freeze({ roof: [-0.85, -1], lateral: [-1, 0.35], cti: [0.35, 0.1], septum: [0.1, -0.85] });
+/**
+ * Schematic lead II F wave tau ms after the His A: counterclockwise gives the negative sawtooth of
+ * typical flutter; clockwise runs the circuit backwards and gives broad positive F waves.
+ */
+export function schematicFWave(tau, tcl = DEFAULT_TCL, dir = 'ccw') {
+  if (dir === 'cw') return -0.8 * schematicFWave(-tau, tcl, 'ccw');
+  const ph = ((tau % tcl) + tcl) % tcl;
+  const k = knots(tcl).find((x) => ph < x.t1) || knots(tcl).at(-1);
+  const [v0, v1] = F_KNOTS[k.id];
+  const f = (ph - k.t0) / (k.t1 - k.t0);
+  return v0 + (v1 - v0) * (1 - Math.cos(Math.PI * f)) / 2;
+}
+
 /** Angular speed of each limb (degrees per ms) at a cycle length. */
 export function segmentSpeeds(tcl = DEFAULT_TCL) {
   return Object.fromEntries(knots(tcl).map((k) => [k.id, (k.a0 - k.a1) / (k.t1 - k.t0)]));
