@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(`${app.url}/pathophysiology/?lang=tr#pv-loop`);await page.waitForSelector('[data-visual-handle]');
  assert.equal(await page.locator('.learning-studio').count(),0,'unwanted experiment panel removed');
- async function drag(selector,dx){const b=await page.locator(selector).boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2+dx,b.y+b.height/2,{steps:8});await page.mouse.up();}
+ async function drag(selector,dx){const handle=page.locator(selector).first();await handle.waitFor({state:'visible'});const b=await handle.boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2+dx,b.y+b.height/2,{steps:8});await page.mouse.up();}
  const value=()=>page.locator('[data-pv-slider=edv]').inputValue();let before=Number(await value());
  await page.locator('.pathophys-pv-svg').scrollIntoViewIfNeeded();
  await drag('.pathophys-pv-svg [data-visual-handle]',45);assert.ok(Number(await value())>before,'drag changes actual EDV');

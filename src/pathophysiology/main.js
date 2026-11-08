@@ -58,13 +58,59 @@ const LAB_FACTORIES = {
 };
 
 /** P-V station: the interactive elastance lab, the loop of the catheter scenarios, then the whiteboard lessons. */
+const PV_TABS = [
+  { id: 'explore', label: { tr: 'Serbest keşif', en: 'Free exploration' } },
+  { id: 'scenarios', label: { tr: 'Kateter senaryoları', en: 'Catheter scenarios' } },
+  { id: 'anatomy', lesson: true, label: { tr: '1. Döngünün anatomisi', en: '1. Anatomy of the loop' } },
+  { id: 'afterload', lesson: true, label: { tr: '2. Artmış ard yük', en: '2. Increased afterload' } },
+  { id: 'lusitropy', lesson: true, label: { tr: '3. Azalmış lusitropi', en: '3. Decreased lusitropy' } }
+];
+
+/**
+ * P-V loop station: one card, one row of tabs. Free exploration (presets, sliders, readouts),
+ * the catheter scenarios' loops and the three step-by-step lessons used to sit one under another.
+ */
 function createPvStation(opts) {
-  const lab = createPVLoopLab(opts);
-  const scenarioLoop = createScenarioPvLoop({ lang: opts.lang });
-  opts.container.append(scenarioLoop.element);
-  const lessons = createPvLessonsLab({ container: opts.container, lang: opts.lang });
+  let lang = opts.lang === 'en' ? 'en' : 'tr';
+  const tabBar = document.createElement('div');
+  tabBar.className = 'preset-pill-group pv-station-tabs';
+  tabBar.setAttribute('role', 'tablist');
+  const hosts = { explore: document.createElement('div'), scenarios: document.createElement('div'), lessons: document.createElement('div') };
+  hosts.lessons.className = 'pv-station-lessons';
+  opts.container.append(tabBar, hosts.explore, hosts.scenarios, hosts.lessons);
+  const lab = createPVLoopLab({ ...opts, container: hosts.explore, mount: hosts.explore });
+  const scenarioLoop = createScenarioPvLoop({ lang });
+  hosts.scenarios.append(scenarioLoop.element);
+  const lessons = createPvLessonsLab({ container: hosts.lessons, lang });
+  const buttons = PV_TABS.map(tab => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'preset-pill';
+    b.setAttribute('role', 'tab');
+    b.dataset.pvTab = tab.id;
+    b.addEventListener('click', () => show(tab.id));
+    return b;
+  });
+  tabBar.append(...buttons);
+  let current = 'explore';
+  function show(id) {
+    current = id;
+    const tab = PV_TABS.find(t => t.id === id);
+    hosts.explore.hidden = id !== 'explore';
+    hosts.scenarios.hidden = id !== 'scenarios';
+    hosts.lessons.hidden = !tab.lesson;
+    if (tab.lesson) hosts.lessons.querySelector(`.pvl-tab[data-lesson="${id}"]`)?.click();
+    buttons.forEach(b => {
+      const on = b.dataset.pvTab === id;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', String(on));
+    });
+  }
+  function label() { buttons.forEach((b, i) => { b.textContent = PV_TABS[i].label[lang]; }); }
+  label();
+  show(current);
   return {
-    updateLanguage(next) { lab.updateLanguage?.(next); scenarioLoop.setLanguage(next); lessons.updateLanguage(next); },
+    updateLanguage(next) { lang = next === 'en' ? 'en' : 'tr'; label(); lab.updateLanguage?.(next); scenarioLoop.setLanguage(next); lessons.updateLanguage(next); },
     destroy() { lab.destroy?.(); scenarioLoop.destroy(); lessons.destroy(); }
   };
 }

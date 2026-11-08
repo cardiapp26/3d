@@ -967,7 +967,18 @@ function stepListMarkup(steps, current) {
   }).join('');
 }
 
+/** Mark the menu chapter that holds the open lesson step (the last chapter entry at or before it). */
+function markCurrentSubstep() {
+  const entries = [...document.querySelectorAll(`.mode-substep[data-mode="${mode}"]`)];
+  const current = entries.filter(b => Number(b.dataset.modeStep) <= step).pop();
+  for (const b of document.querySelectorAll('.mode-substep')) {
+    if (b === current) b.setAttribute('aria-current', 'step');
+    else b.removeAttribute('aria-current');
+  }
+}
+
 function showStep({ relabel = false, keepExamPanel = false } = {}) {
+  markCurrentSubstep();
   const isPacemaker = mode === 'pacemaker';
   const isBachmann = mode === 'bachmann';
   const isTransseptal = mode === 'transseptal';

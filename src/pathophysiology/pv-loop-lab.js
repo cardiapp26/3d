@@ -100,6 +100,14 @@ export function createPvLoopLab(opts = {}) {
             <span class="readout-title" data-i18n-pv="rEsp">Peak / ESP</span>
             <strong class="readout-value" data-pv-out="esp">--</strong>
           </div>
+          <div class="readout-card">
+            <span class="readout-title" data-i18n-pv="rVols">EDV / ESV</span>
+            <strong class="readout-value" data-pv-out="vols">--</strong>
+          </div>
+          <div class="readout-card">
+            <span class="readout-title" data-i18n-pv="rEdp">EDP</span>
+            <strong class="readout-value" data-pv-out="edp">--</strong>
+          </div>
         </div>
         <div class="pathophys-scenario-card">
           <h4 data-pv-scen-title></h4>
@@ -186,7 +194,9 @@ export function createPvLoopLab(opts = {}) {
       rCo: en ? 'Cardiac Output' : 'Kardiyak Debi',
       rSw: en ? 'Stroke Work' : 'Vuru İşi',
       rVAc: en ? 'V-A Coupling (Ea/Ees)' : 'V-A Eşleşme (Ea/Ees)',
-      rEsp: en ? 'Peak Pressure' : 'Tepe Basıncı'
+      rEsp: en ? 'Peak / End-systolic Pressure' : 'Tepe / Sistol Sonu Basınç',
+      rVols: en ? 'End-diastolic / End-systolic Volume' : 'Diyastol Sonu / Sistol Sonu Hacim',
+      rEdp: en ? 'End-diastolic Pressure (EDP)' : 'Diyastol Sonu Basınç (EDP)'
     };
     $$('[data-i18n-pv]').forEach(node => {
       const k = node.dataset.i18nPv;
@@ -208,6 +218,8 @@ export function createPvLoopLab(opts = {}) {
     $('[data-pv-out="sw"]').textContent = `${swJ} J`;
     $('[data-pv-out="vac"]').textContent = vaRatio;
     $('[data-pv-out="esp"]').textContent = `${Math.round(p.peak || p.esp)} / ${Math.round(p.esp)} mmHg`;
+    $('[data-pv-out="vols"]').textContent = `${Math.round(p.edv)} / ${Math.round(p.esv)} mL`;
+    $('[data-pv-out="edp"]').textContent = `${Math.round(p.edp)} mmHg`;
 
     // Active scenario info
     const activeScen = PV_SCENARIOS.find(s => s.id === currentPreset) || {
