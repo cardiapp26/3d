@@ -18,7 +18,7 @@ export { sampleExamStrip, responseTable } from './exam-panel-parts.js';
 
 const DEFAULT_FINDING = 'hocm';
 const DEFAULT_MANEUVER = 'rest';
-const KINDS = ['systolic', 'diastolic'];
+const KINDS = ['reference', 'systolic', 'diastolic'];
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const pct = v => `${((100 * Math.max(0, Math.min(GAUGE_MAX, v))) / GAUGE_MAX).toFixed(2)}%`;
 
@@ -213,7 +213,7 @@ export function createExamPanel(root, options = {}) {
     const area = AUSCULTATION_AREAS[f.area];
     const rows = [[T.bestHeard, area ? labelOf(area.label, lang) : f.area], [T.radiation, labelOf(f.radiation, lang)],
       [T.timing, words.timing], [T.pitch, words.pitch]];
-    refs.card.replaceChildren(...rows.map(([k, v]) => {
+    refs.card.replaceChildren(...rows.filter(([, v]) => v).map(([k, v]) => {
       const row = el('div', 'exam-card-row');
       row.append(el('span', 'exam-card-label', k), el('span', 'exam-card-value', v));
       return row;
@@ -269,7 +269,7 @@ export function createExamPanel(root, options = {}) {
     const T = TEXT[lang];
     const f = finding();
     const r = respond(state.findingId, state.maneuverId, level);
-    refs.grade.textContent = `${fmtNum(r.grade, lang)}/6`;
+    refs.grade.textContent = f.grade ? `${fmtNum(r.grade, lang)}/6` : T.noMurmur;
     refs.badge.title = T.gradeTitle;
     const lv = refs.lvot;
     lv.box.hidden = !f.lvot;

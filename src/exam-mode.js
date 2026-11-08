@@ -1,3 +1,4 @@
+import { createAcuteValves } from './exam-acute-valves.js';
 import { createExamPanel } from './exam-panel.js';
 import { createJvpPanel } from './jvp-panel.js';
 import { JVP_TEXT } from './jvp-content.js';
@@ -14,7 +15,7 @@ import { JVP_TEXT } from './jvp-content.js';
  *   onOpenCath: the JVP scenario's catheterization case is requested.
  */
 export function createExamMode({ heart, mount, getLang, onArea, onView, onOpenCath }) {
-  let panel = null, jvp = null, tabs = null;
+  let panel = null, jvp = null, tabs = null, acute = null;
   let active = false, view = 'auscultation';
   const sections = {};
 
@@ -31,11 +32,11 @@ export function createExamMode({ heart, mount, getLang, onArea, onView, onOpenCa
       tab.addEventListener('click', () => { showView(id); onView?.(id); });
       tabs.append(tab);
     }
-    for (const id of ['auscultation', 'jvp']) {
+    for (const id of ['auscultation', 'acute', 'jvp']) {
       sections[id] = document.createElement('div');
       sections[id].className = `exam-view exam-view-${id}`;
     }
-    mount.append(tabs, sections.auscultation, sections.jvp);
+    mount.append(tabs, sections.auscultation, sections.acute, sections.jvp);
     panel = createExamPanel(sections.auscultation, {
       lang: getLang(),
       getCycleState: () => heart.getCycleState(),
@@ -44,6 +45,19 @@ export function createExamMode({ heart, mount, getLang, onArea, onView, onOpenCa
         onArea?.(areaId);
       }
     });
+    // The acute valvular emergencies comparison sits under the auscultation tab; a row opens its finding.
+    acute = createAcuteValves(sections.acute, {
+      lang: getLang(),
+      getCycleState: () => heart.getCycleState(),
+      onSelect(findingId) {
+        if (!panel.setFinding(findingId)) return;
+        heart.highlightAuscultation(panel.getArea());
+        onArea?.(panel.getArea());
+      },
+      onPlay: () => panel.setAudioEnabled(false)
+    });
+    // One sound at a time: turning on the panel's sound stops a playing row.
+    panel.element.addEventListener('change', event => { if (event.target.closest('.exam-audio')?.querySelector('input')?.checked) acute.stopAudio(); });
     jvp = createJvpPanel(sections.jvp, {
       getLang,
       getCycleState: () => heart.getCycleState(),
@@ -67,6 +81,8 @@ export function createExamMode({ heart, mount, getLang, onArea, onView, onOpenCa
     }
     sections.auscultation.hidden = id === 'jvp';
     sections.jvp.hidden = id !== 'jvp';
+    sections.acute.hidden = id !== 'auscultation';
+    if (id !== 'auscultation') acute?.stopAudio();
     if (id !== 'jvp') panel?.setSection(id);
     if (id === 'jvp') { panel?.setAudioEnabled?.(false); heart.highlightAuscultation(null); jvp.draw(heart.getCycleState()); }
     else jvp?.pause();
@@ -82,6 +98,7 @@ export function createExamMode({ heart, mount, getLang, onArea, onView, onOpenCa
       active = false;
       mount.hidden = true;
       panel?.setAudioEnabled?.(false);
+      acute?.stopAudio();
       jvp?.reset();
       heart.highlightAuscultation(null);
     },
@@ -114,15 +131,19 @@ export function createExamMode({ heart, mount, getLang, onArea, onView, onOpenCa
     },
     tick(state) {
       if (!active || !panel) return;
-      if (view === 'jvp') jvp.draw(state); else panel.draw(state);
+      if (view === 'jvp') { jvp.draw(state); return; }
+      panel.draw(state);
+      if (view === 'auscultation') { acute.setActive(panel.getFinding()); acute.draw(state); }
     },
     setLanguage(lang) {
       panel?.setLanguage(lang);
+      acute?.setLanguage(lang);
       jvp?.setLanguage(lang);
       showView(view);
     },
     getView: () => view,
     getJvp: () => jvp,
+    getAcute: () => acute,
     isActive: () => active
   };
 }
