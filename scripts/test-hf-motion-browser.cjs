@@ -10,7 +10,9 @@ const STATIONS=['heart-failure','pericardial','myocardial-ckm','forrester','isch
 /** Snapshot of the moving parts in the toggle's section: CSS particle position, else the SVG markup. */
 const snapshot=page=>page.evaluate(()=>{
   const toggle=document.querySelector('[data-motion-toggle]');
-  const scope=toggle.closest('.pathophys-motion-bar').parentElement;
+  // The bar can sit in a toolbar beside the stage (electrophysiology): climb to the box that holds the drawing.
+  let scope=toggle.closest('.pathophys-motion-bar').parentElement;
+  while(scope.parentElement&&!scope.querySelector('svg, .hf-live-particle'))scope=scope.parentElement;
   const particle=scope.querySelector('.hf-live-particle')||document.querySelector('.hf-live-particle');
   const r=particle?.getBoundingClientRect();
   return {kind:particle?'particle':'svg',x:r?.x??0,y:r?.y??0,markup:[...scope.querySelectorAll('svg')].map(s=>s.outerHTML).join('')};
