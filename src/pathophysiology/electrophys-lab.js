@@ -216,6 +216,20 @@ export function createElectrophysLab(opts = {}) {
     syncPlaybackUi();
   });
 
+  // Space plays and pauses while the station is on screen, also after a tab of this station was clicked.
+  // Form fields, the play button itself (its own Space clicks it) and controls elsewhere keep their Space.
+  const onKey = (event) => {
+    if (event.code !== 'Space' || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!root.isConnected || root.offsetParent === null) return;
+    const target = event.target;
+    if (target.closest?.('input, select, textarea, [contenteditable="true"], [data-motion-toggle]')) return;
+    if (target.closest?.('button, a') && !root.contains(target)) return;
+    event.preventDefault();
+    paused = !paused;
+    syncPlaybackUi();
+  };
+  document.addEventListener('keydown', onKey);
+
   $('[data-motion-speed]').addEventListener('change', (e) => {
     speed = Number(e.target.value) || 1;
   });
@@ -234,6 +248,7 @@ export function createElectrophysLab(opts = {}) {
     btn.setAttribute('aria-pressed', String(!paused));
     btn.classList.toggle('active', !paused);
     btn.textContent = paused ? (en ? '▷ Play' : '▷ Oynat') : (en ? 'Ⅱ Pause' : 'Ⅱ Duraklat');
+    btn.title = en ? 'Play / pause (Space)' : 'Oynat / duraklat (Space)';
   }
 
   function render() {
@@ -700,6 +715,7 @@ export function createElectrophysLab(opts = {}) {
     destroy() {
       if (rafId) cancelAnimationFrame(rafId);
       rafId = null;
+      document.removeEventListener('keydown', onKey);
       root.remove();
     }
   };

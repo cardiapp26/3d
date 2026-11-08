@@ -194,43 +194,6 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     addCurveTube(C.purkinjeLpf, 0.012);
   }
 
-  // Build dense subendocardial Purkinje network lines once chamber vertices are loaded
-  function buildPurkinjeMeshOverlay() {
-    const linePts = [];
-    for (const chId of ['lv', 'rv']) {
-      const mesh = chambers.find((m) => m.userData.id === chId);
-      if (!mesh) continue;
-      const pos = mesh.geometry.attributes.position;
-      const stride = Math.max(1, Math.floor(pos.count / 95));
-      const nodes = [];
-      for (let i = 0; i < pos.count; i += stride) {
-        const y = pos.getY(i);
-        if (y < 0.35) nodes.push(new THREE.Vector3(pos.getX(i), y, pos.getZ(i)));
-      }
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const d = nodes[i].distanceTo(nodes[j]);
-          if (d > 0.14 && d < 0.34) {
-            linePts.push(nodes[i].x, nodes[i].y, nodes[i].z, nodes[j].x, nodes[j].y, nodes[j].z);
-          }
-        }
-      }
-    }
-    if (!linePts.length) return;
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute('position', new THREE.Float32BufferAttribute(linePts, 3));
-    const mat = new THREE.LineBasicMaterial({
-      color: '#fde68a',
-      transparent: true,
-      opacity: 0.48,
-      depthTest: false
-    });
-    const lattice = new THREE.LineSegments(geom, mat);
-    lattice.renderOrder = 4;
-    conductionGroup.add(lattice);
-    conductionLines.push(lattice);
-  }
-
   // ---- Build 3D Intracardiac Catheters ------------------------------------
   function buildCatheters() {
     disposeNode(catheterGroup);
@@ -462,7 +425,7 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
 
     conductionGroup.visible = Boolean(lv.showConduction);
     for (const line of conductionLines) {
-      if (line.material) line.material.opacity = condOpacity * (line.isLineSegments ? 0.55 : 0.9);
+      if (line.material) line.material.opacity = condOpacity * 0.9;
     }
 
     for (const mesh of chambers) {
@@ -698,7 +661,6 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       }
     }
 
-    buildPurkinjeMeshOverlay();
     disposeNode(gltf.scene);
     decoder.dispose();
     loaded = true;
