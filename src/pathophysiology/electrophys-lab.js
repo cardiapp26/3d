@@ -1,5 +1,7 @@
 // Interactive Cardiac Action Potential, Ion Channel Traffic & Arrhythmogenesis Lab
-import { drawVentricularScene, ventricularFrameAt, VENTRICULAR_PLAYBACK_MS } from './ventricular-ap-scene.js';
+import {
+  drawVentricularScene, ventricularFrameAt, VENTRICULAR_PLAYBACK_MS, VENTRICULAR_SCENE_HEIGHT
+} from './ventricular-ap-scene.js';
 
 export function createElectrophysLab(opts = {}) {
   const mount = opts.mount || opts.container;
@@ -55,7 +57,7 @@ export function createElectrophysLab(opts = {}) {
     <div class="pathophys-grid">
       <div class="pathophys-stage ep-stage">
         <div class="ep-svg-frame" data-ep-film>
-          <svg viewBox="0 0 580 553" class="pathophys-svg ep-svg" role="img"></svg>
+          <svg viewBox="0 0 580 ${VENTRICULAR_SCENE_HEIGHT}" class="pathophys-svg ep-svg" role="img"></svg>
         </div>
         <div class="ep-svg-frame" data-ep-legacy hidden>
           <svg viewBox="0 0 580 430" class="pathophys-svg ep-svg" role="img"></svg>

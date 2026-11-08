@@ -1,10 +1,16 @@
 // Teaching diagram. Voltage is interpolated from the station's schematic
 // keyframes. Particle counts and channel activity are qualitative.
+const PLATEAU_START_MS = 78;
+const CA_PEAK_MS = 130;
+const CA_RECOVERY_MS = 420;
+const ION_PANEL_HEIGHT = 97;
+export const VENTRICULAR_SCENE_HEIGHT = 553 + ION_PANEL_HEIGHT;
+
 const FRAMES = [
   { from: 0, to: 60, duration: 1200, phase: 4 },
   { from: 60, to: 65, duration: 1400, phase: 0, gates: ['na'] },
-  { from: 65, to: 78, duration: 1050, phase: 1, gates: ['ito'] },
-  { from: 78, to: 190, duration: 2200, phase: 2, gates: ['ca', 'k'] },
+  { from: 65, to: PLATEAU_START_MS, duration: 1050, phase: 1, gates: ['ito'] },
+  { from: PLATEAU_START_MS, to: 190, duration: 2200, phase: 2, gates: ['ca', 'k'] },
   { from: 190, to: 315, duration: 2100, phase: 3, gates: ['k'] },
   { from: 315, to: 500, duration: 2050, phase: 4 }
 ];
@@ -23,6 +29,18 @@ export function ventricularFrameAt(elapsed) {
   return { ...frame, progress, time: frame.from + (frame.to - frame.from) * progress };
 }
 
+// Illustrative free cytosolic Ca²⁺ transient. The normalized level conveys
+// timing only. It does not estimate concentration or SR calcium content.
+export function cytosolicCalciumAt(time) {
+  if (time < PLATEAU_START_MS || time >= CA_RECOVERY_MS) return { stage: 'basal', level: 0 };
+  if (time < CA_PEAK_MS) {
+    const progress = (time - PLATEAU_START_MS) / (CA_PEAK_MS - PLATEAU_START_MS);
+    return { stage: 'rising', level: 1 - (1 - progress) ** 2 };
+  }
+  const progress = (time - CA_PEAK_MS) / (CA_RECOVERY_MS - CA_PEAK_MS);
+  return { stage: 'falling', level: (1 - progress) ** 2 };
+}
+
 const CHANNELS = [
   { id: 'na', x: 151, label: 'Na⁺ · Iₙₐ', color: '#a13e18', light: '#ffdac0', ion: 'Na⁺', inward: true },
   { id: 'ito', x: 260, label: 'K⁺ · Iₜₒ', color: '#086961', light: '#a2e3d5', ion: 'K⁺' },
@@ -38,6 +56,15 @@ const COPY = {
     cell: 'VENTRİKÜL MİYOSİTİ', neighbor: 'Komşu hücre', patch: 'Sarkolemma',
     disc: 'Ara disk', nucleus: 'Çekirdek',
     outside: 'Hücre dışı', inside: 'Hücre içi', time: 'Zaman (ms)',
+    pools: {
+      title: 'Hücre içi iyon durumu', note: 'Na⁺ ve K⁺ düzeyleri tek atımda çok az değişir',
+      na: 'Dışarıya göre düşük', k: 'Dışarıya göre yüksek',
+      influx: '↓ Hücreye giriş', efflux: '↑ Hücreden çıkış', steady: 'Gradyan korunuyor',
+      calcium: 'Serbest Ca²⁺',
+      basal: ['Bazal', 'Sitozolde çok düşük düzey'],
+      rising: ['Artıyor', 'L tipi giriş → SR salınımı'],
+      falling: ['Azalıyor', 'SERCA geri alımı · NCX çıkışı']
+    },
     phases: [
       ['Depolarizasyon', 'Hızlı Na⁺ girişi membran potansiyelini yükseltir.'],
       ['Erken repolarizasyon', 'Na⁺ kanalları inaktive olur. Geçici K⁺ çıkışı çentik oluşturur.'],
@@ -45,13 +72,22 @@ const COPY = {
       ['Repolarizasyon', 'Ca²⁺ akımı azalır. Dışa K⁺ akımı baskınlaşır.'],
       ['İstirahat', 'Iₖ₁ membran potansiyelini yaklaşık −90 mV’da kararlı tutar.']
     ],
-    phase: 'Faz', note: 'Şematik iz · Yavaşlatılmış oynatma · İyon sayıları temsili'
+    phase: 'Faz', note: 'Şematik düzey ve iz · Yavaşlatılmış oynatma · İyon sayıları temsili'
   },
   en: {
     title: 'The ventricular myocyte action potential',
     cell: 'VENTRICULAR MYOCYTE', neighbor: 'Adjacent cell', patch: 'Sarcolemma',
     disc: 'Intercalated disc', nucleus: 'Nucleus',
     outside: 'Outside', inside: 'Inside', time: 'Time (ms)',
+    pools: {
+      title: 'Intracellular ion levels', note: 'Bulk Na⁺ and K⁺ change very little per beat',
+      na: 'Low relative to outside', k: 'High relative to outside',
+      influx: '↓ Influx', efflux: '↑ Efflux', steady: 'Gradient maintained',
+      calcium: 'Free Ca²⁺',
+      basal: ['Basal', 'Very low cytosolic level'],
+      rising: ['Rising', 'L-type influx → SR release'],
+      falling: ['Falling', 'SERCA uptake · NCX extrusion']
+    },
     phases: [
       ['Depolarization', 'Rapid Na⁺ influx raises the membrane potential.'],
       ['Early repolarization', 'Na⁺ channels inactivate. Transient K⁺ efflux creates a notch.'],
@@ -59,7 +95,7 @@ const COPY = {
       ['Repolarization', 'Ca²⁺ current falls. Outward K⁺ current predominates.'],
       ['Rest', 'Iₖ₁ stabilizes the membrane potential near −90 mV.']
     ],
-    phase: 'Phase', note: 'Schematic trace · Slowed playback · Ion counts illustrative'
+    phase: 'Phase', note: 'Schematic levels and trace · Slowed playback · Ion counts illustrative'
   }
 };
 
@@ -106,6 +142,7 @@ let sceneSerial = 0;
 
 export function drawVentricularScene(svg, lang, keyframes) {
   const t = COPY[lang];
+  const pools = t.pools;
   const prefix = `ventricular-scene-${++sceneSerial}`;
   const paint = name => `url(#${prefix}-${name})`;
   const curve = [[0, keyframes[0][1]], ...keyframes, [500, keyframes.at(-1)[1]]];
@@ -163,7 +200,7 @@ export function drawVentricularScene(svg, lang, keyframes) {
         <stop stop-color="${light}"/><stop offset=".78" stop-color="${color}"/>
       </linearGradient>`).join('')}
     </defs>
-    <rect x="1" y="1" width="578" height="551" rx="14" fill="${paint('paper')}" stroke="#d7dfd9"/>
+    <rect x="1" y="1" width="578" height="${VENTRICULAR_SCENE_HEIGHT - 2}" rx="14" fill="${paint('paper')}" stroke="#d7dfd9"/>
     <g font-family="system-ui,sans-serif" fill="#182e39">
       <rect x="26" y="18" width="14" height="3" rx="1.5" fill="#af5641"/>
       <text x="47" y="23" font-size="10.5" letter-spacing="1.8" font-weight="800" fill="#435e67">${t.cell}</text>
@@ -207,6 +244,14 @@ export function drawVentricularScene(svg, lang, keyframes) {
       <rect x="24" y="236" width="532" height="20" fill="${paint('lipids')}"/>
       <text x="33" y="222" font-size="11" font-weight="750" fill="#435e67">${t.outside}</text>
       <text x="33" y="282" font-size="11" font-weight="750" fill="#694c4d">${t.inside}</text>
+      <g fill="#a13e18" opacity=".52">
+        <circle cx="109" cy="278" r="2.2"/><circle cx="122" cy="289" r="1.8"/>
+      </g>
+      <g fill="#086961" opacity=".52">
+        <circle cx="199" cy="282" r="2.3"/><circle cx="214" cy="291" r="2"/>
+        <circle cx="297" cy="276" r="2.2"/><circle cx="309" cy="290" r="2"/>
+        <circle cx="321" cy="282" r="2.4"/><circle cx="532" cy="281" r="2.3"/>
+      </g>
       ${CHANNELS.map(channel => {
         const { id, x, label, color, inward } = channel;
         return `
@@ -223,7 +268,36 @@ export function drawVentricularScene(svg, lang, keyframes) {
         </g>
         ${[0, 1, 2].map(() => ion(channel)).join('')}`;
       }).join('')}
+      <g data-sr-release fill="none" stroke="#633e9c" stroke-width="1.4" opacity="0">
+        <path d="M415 282 Q407 267 390 280 m5 1 -5 -1 2 -4" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <rect x="410" y="279" width="30" height="15" rx="7" fill="#f1e6f5" stroke="#a984b5"/>
+      <text x="425" y="289.5" text-anchor="middle" font-size="8.5" font-weight="800" fill="#633e9c">SR</text>
+      <g data-cytosolic-calcium fill="#8c62bf" opacity="0">
+        <circle cx="336" cy="279" r="2"/><circle cx="347" cy="290" r="2.3"/>
+        <circle cx="388" cy="287" r="2.2"/><circle cx="400" cy="292" r="1.7"/><circle cx="449" cy="282" r="2.1"/>
+      </g>
 
+      <rect x="22" y="309" width="536" height="90" rx="10" fill="#fcfdfb" stroke="#d6e0da"/>
+      <text x="33" y="326" font-size="12" font-weight="800">${pools.title}</text>
+      <text x="547" y="326" text-anchor="end" font-size="10" font-weight="600" fill="#435e67">${pools.note}</text>
+      ${[
+        { id: 'na', x: 33, ion: 'Na⁺', color: CHANNELS[0].color, bg: '#fff4eb' },
+        { id: 'k', x: 207, ion: 'K⁺', color: CHANNELS[3].color, bg: '#ebf8f3' }
+      ].map(({ id, x, ion, color, bg }) => `
+        <rect x="${x}" y="334" width="166" height="55" rx="7" fill="${bg}"/>
+        <text x="${x + 10}" y="351" font-size="13" font-weight="800" fill="${color}">${ion}</text>
+        <text x="${x + 10}" y="367" font-size="10.5" fill="#435e67">${pools[id]}</text>
+        <text data-ion-flow="${id}" x="${x + 10}" y="381" font-size="10.5" font-weight="750" data-active-color="${color}"></text>
+      `).join('')}
+      <rect x="381" y="334" width="166" height="55" rx="7" fill="#f3edf9"/>
+      <text x="391" y="351" font-size="12.5" font-weight="800" fill="#633e9c">${pools.calcium}</text>
+      <text data-ca-stage x="537" y="351" text-anchor="end" font-size="10.5" font-weight="750" fill="#633e9c"></text>
+      <rect x="391" y="359" width="146" height="6" rx="3" fill="#e2d5f0"/>
+      <rect data-ca-level x="391" y="359" width="0" height="6" rx="3" fill="#8554ba"/>
+      <text data-ca-detail x="391" y="381" font-size="9.5" font-weight="650" fill="#633e9c"></text>
+
+      <g transform="translate(0 ${ION_PANEL_HEIGHT})">
       <rect x="22" y="310" width="536" height="178" rx="10" fill="#fcfdfb" stroke="#d6e0da"/>
       <text x="33" y="327" font-size="11.5" font-weight="800">Vₘ (mV)</text>
       <text x="541" y="327" text-anchor="end" font-size="11" font-weight="650" fill="#435e67">${t.time}</text>
@@ -245,6 +319,7 @@ export function drawVentricularScene(svg, lang, keyframes) {
       <text data-ap-voltage x="510.5" y="512.5" text-anchor="middle" font-size="13" font-weight="800" style="font-variant-numeric:tabular-nums"></text>
       <text data-ap-explanation x="33" y="529" font-size="11.5"></text>
       <text x="33" y="541" font-size="9" fill="#435e67">${t.note}</text>
+      </g>
     </g>`;
 
   const find = selector => svg.querySelector(selector);
@@ -257,6 +332,13 @@ export function drawVentricularScene(svg, lang, keyframes) {
   const label = find('[data-ep-live-phase]');
   const voltage = find('[data-ap-voltage]');
   const explanation = find('[data-ap-explanation]');
+  const sodiumFlow = find('[data-ion-flow="na"]');
+  const potassiumFlow = find('[data-ion-flow="k"]');
+  const calciumStage = find('[data-ca-stage]');
+  const calciumLevel = find('[data-ca-level]');
+  const calciumDetail = find('[data-ca-detail]');
+  const cytosolicCalcium = find('[data-cytosolic-calcium]');
+  const srRelease = find('[data-sr-release]');
   const phaseMarks = [dot, halo, find('[data-phase-color]'), find('[data-voltage-bg]'), voltage];
   const channels = CHANNELS.map(channel => {
     const gate = find(`[data-ap-gate="${channel.id}"]`);
@@ -291,6 +373,20 @@ export function drawVentricularScene(svg, lang, keyframes) {
     const arriving = phase === 4 && time < 60 && progress > 0.58;
     pulse.setAttribute('opacity', arriving || phase === 0 ? '1' : '0');
     pulse.setAttribute('cx', phase === 0 ? 140 + 327 * progress : 48 + 92 * (progress - 0.58) / 0.42);
+
+    const sodiumIn = gates.includes('na');
+    const potassiumOut = gates.includes('ito') || gates.includes('k');
+    sodiumFlow.textContent = sodiumIn ? pools.influx : pools.steady;
+    sodiumFlow.setAttribute('fill', sodiumIn ? sodiumFlow.dataset.activeColor : '#52666e');
+    potassiumFlow.textContent = potassiumOut ? pools.efflux : pools.steady;
+    potassiumFlow.setAttribute('fill', potassiumOut ? potassiumFlow.dataset.activeColor : '#52666e');
+    const calcium = cytosolicCalciumAt(time);
+    const [calciumLabel, calciumMechanism] = pools[calcium.stage];
+    calciumStage.textContent = calciumLabel;
+    calciumDetail.textContent = calciumMechanism;
+    calciumLevel.setAttribute('width', 10 + 136 * calcium.level);
+    cytosolicCalcium.setAttribute('opacity', calcium.level * 0.86);
+    srRelease.setAttribute('opacity', calcium.stage === 'rising' ? '.84' : '0');
 
     for (const { id, x, inward, gate, closed, arrow, light, ions } of channels) {
       const active = gates.includes(id);
