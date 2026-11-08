@@ -92,11 +92,7 @@ export const EAM3D_TEXT = Object.freeze({
       participates: 'Ağ ektopi ve aritmiye katılır'
     },
     ablationBox: {
-      title: '3B RF ABLASYON VE LEZYON HATLARI',
-      hint: 'Hedef ablasyon hattını uygulayın ve 3B devrenin nasıl yavaşladığını, blok olduğunu veya sonlandığını izleyin.',
-      apply: 'RF Hattı Uygula',
       applied: 'Uygulandı (Blok)',
-      clear: 'Tüm Lezyonları Temizle',
       lines: {
         'slow-pathway': 'Koch üçgeni yavaş yol ablasyonu (AVNRT)',
         'cti-line': 'Kavotriküspit istmus (CTI) hattı (Tipik Flutter)',
@@ -262,11 +258,7 @@ export const EAM3D_TEXT = Object.freeze({
       participates: 'Network takes part in ectopy and arrhythmia'
     },
     ablationBox: {
-      title: '3D RF ABLATION & LESION LINES',
-      hint: 'Place a 3D lesion line and watch the circuit respond: block, slow, reorganize, or terminate.',
-      apply: 'Apply RF Line',
       applied: 'Applied (Blocked)',
-      clear: 'Clear All Lesions',
       lines: {
         'slow-pathway': 'Triangle of Koch slow pathway ablation (AVNRT)',
         'cti-line': 'Cavotricuspid isthmus (CTI) line (Typical Flutter)',

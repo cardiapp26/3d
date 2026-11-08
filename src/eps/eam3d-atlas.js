@@ -14,6 +14,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { createRfLayer } from './eam3d-rf-layer.js';
 import { ATLAS_URL, normalizedParts, normalizeAtlasName } from '../atlas.js';
 import { ATLAS_CONDUCTION as C } from '../ecg/ecg-atlas-conduction.js';
 import { ATLAS_CONDUCTION_EXTRAS as X } from './conduction-atlas-extras.js';
@@ -115,6 +116,9 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   const circuitGroup = new THREE.Group();
   const tagGroup = new THREE.Group();
   rootGroup.add(vesselGroup, chamberGroup, conductionGroup, catheterGroup, lesionGroup, circuitGroup, tagGroup);
+  // RF lesion tags, catheter tip and target guide (eam3d-rf-console.js drives them).
+  const rfLayer = createRfLayer();
+  rootGroup.add(rfLayer.group);
   scene.add(rootGroup);
 
   const chambers = [];
@@ -308,13 +312,13 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     badges.replaceChildren();
     circuitBadges.length = 0;
 
-    // 1. Placed RF ablation lesion lines
+    // 1. Blocked lines: a thin glowing line under the RF lesion tags (rf layer).
     for (const lineId of state.ablatedLines) {
       const line = EAM3D_ABLATION_LINES[lineId];
       if (!line) continue;
       const curve = new THREE.CatmullRomCurve3(line.points.map(V));
       const tube = new THREE.Mesh(
-        new THREE.TubeGeometry(curve, 28, 0.026, 8, false),
+        new THREE.TubeGeometry(curve, 28, 0.012, 8, false),
         new THREE.MeshStandardMaterial({
           color: '#dc2626',
           emissive: '#ef4444',
@@ -325,15 +329,6 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       );
       tube.renderOrder = 10;
       lesionGroup.add(tube);
-      for (const pt of curve.getPoints(8)) {
-        const sphere = new THREE.Mesh(
-          new THREE.SphereGeometry(0.036, 12, 10),
-          new THREE.MeshStandardMaterial({ color: '#fecaca', emissive: '#dc2626', emissiveIntensity: 0.9, depthTest: false })
-        );
-        sphere.position.copy(pt);
-        sphere.renderOrder = 11;
-        lesionGroup.add(sphere);
-      }
     }
 
     // 2. Probabilistic Circuit Modeling ribbons (1..6) when Survey mode is active
@@ -749,6 +744,7 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     if (prevLesions !== nextLesions || prevSurvey !== nextSurvey) {
       rebuildLesionsAndCircuits();
     }
+    rfLayer.setState(patch);
     paintFrame();
     dirty = true;
   }

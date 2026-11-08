@@ -10,7 +10,6 @@ import {
   EAM3D_CATHETERS,
   EAM3D_CHANNELS,
   PACING_CHANNELS,
-  EAM3D_ABLATION_LINES,
   scenarioSpec,
   evaluateVertex3d,
   sampleChannelsAt,
@@ -19,6 +18,7 @@ import {
 } from './eam3d-model.js';
 import { EAM3D_TEXT } from './eam3d-text.js';
 import { createEam3dAtlas } from './eam3d-atlas.js';
+import { createRfConsole } from './eam3d-rf-console.js';
 
 function el(doc, tag, className, text, attrs = {}) {
   const node = doc.createElement(tag);
@@ -82,6 +82,8 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
   let lastFrameTs = 0;
   let atlasInstance = null;
   let atlasInitStarted = false;
+  // RF lesion tags and target line for the 3D map, from the RF console.
+  let rfVisual = { lesions3d: [], target: null };
   let lastSurveyReport = runCircuitSurvey({
     mapPreset: state.surveyPreset,
     runs: state.surveyRuns,
@@ -311,26 +313,28 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
   condCard.append(condTitle, condCheckGrid);
   deckEl.appendChild(condCard);
 
-  // Card 5: 3D RF Ablation Lines
-  const ablateCard = el(doc, 'div', 'eam3d-card');
-  sectionEls.ablate = ablateCard;
-  const ablateHead = el(doc, 'div', 'eam3d-card-head');
-  const ablateTitle = el(doc, 'h3', 'eam3d-card-title');
-  const clearLesionsBtn = el(doc, 'button', 'eam3d-btn eam3d-btn--danger', null, {
-    type: 'button',
-    'data-eam3d-clear-lesions': 'true',
+  // Card 5: 3D RF ablation (eam3d-rf-console.js): point-by-point lesions, gaps, block, safety.
+  const rfConsole = createRfConsole(doc, {
+    getLang,
+    getScenario: () => state.scenarioId,
+    getLevers: () => state.levers,
+    onChange({ blocked, lesions3d, target }) {
+      state.appliedLesions = [...blocked];
+      rfVisual = { lesions3d, target };
+      recomputeSurvey();
+      syncAll();
+    },
+    onTip(pos) {
+      if (atlasInstance && atlasInstance.ok) atlasInstance.setState({ rfTip: pos });
+    },
+    onFocus() {
+      if (state.activeRail === 'ablate') return;
+      state.activeRail = 'ablate';
+      syncRailUI();
+    },
   });
-  clearLesionsBtn.type = 'button';
-  ablateHead.append(ablateTitle, clearLesionsBtn);
-
-  const ablationListEl = el(doc, 'div', 'eam3d-list', null, {
-    'data-eam3d-ablation-list': 'true',
-  });
-  const ablationVerdictEl = el(doc, 'div', 'eam3d-summary-box', null, {
-    'data-eam3d-ablation-verdict': 'true',
-  });
-  ablateCard.append(ablateHead, ablationListEl, ablationVerdictEl);
-  deckEl.appendChild(ablateCard);
+  sectionEls.ablate = rfConsole.card;
+  deckEl.appendChild(rfConsole.card);
 
   // Card 6: Probabilistic Circuit Modeling ("Find the circuit")
   const surveyCard = el(doc, 'div', 'eam3d-card', null, {
@@ -441,7 +445,7 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
   });
   fallbackCanvas.width = 640;
   fallbackCanvas.height = 460;
-  stageEl.append(canvasHost, fallbackCanvas);
+  stageEl.append(canvasHost, fallbackCanvas, rfConsole.hud);
 
   const bottomBar = el(doc, 'div', 'eam3d-bottombar');
   const bottomControls = el(doc, 'div', 'eam3d-bottom-controls');
@@ -669,12 +673,6 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     syncAll();
   });
 
-  clearLesionsBtn.addEventListener('click', () => {
-    state.appliedLesions = [];
-    recomputeSurvey();
-    syncAll();
-  });
-
   surveyPresetSelect.addEventListener('change', () => {
     state.surveyPreset = surveyPresetSelect.value;
     recomputeSurvey();
@@ -766,54 +764,14 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       toggleClass(btn, 'is-active', state.activeRail === id);
       label.textContent = t.rails[id] || id;
     });
+    rfConsole.hud.hidden = !(state.activeRail === 'ablate' || rfConsole.isDelivering());
+    if (atlasInstance && atlasInstance.ok) atlasInstance.setState(rfOverlay());
   }
 
-  function renderAblationList() {
-    const { lang, t } = getT();
-    ablationListEl.replaceChildren();
-    const appliedSet = new Set(state.appliedLesions);
-
-    Object.values(EAM3D_ABLATION_LINES).forEach((line) => {
-      const isApplied = appliedSet.has(line.id);
-      const item = el(doc, 'div', `eam3d-list-item${isApplied ? ' is-applied' : ''}`);
-      const row = el(doc, 'div', 'eam3d-list-row');
-      const title = el(doc, 'span', 'eam3d-list-title', t.ablationBox.lines[line.id] || line.id);
-      const btn = el(
-        doc,
-        'button',
-        `eam3d-btn${isApplied ? ' is-active' : ''}`,
-        isApplied ? t.ablationBox.applied : t.ablationBox.apply,
-        { type: 'button', 'data-eam3d-ablate-line': line.id },
-      );
-      btn.type = 'button';
-      btn.addEventListener('click', () => {
-        const idx = state.appliedLesions.indexOf(line.id);
-        if (idx >= 0) {
-          state.appliedLesions.splice(idx, 1);
-        } else {
-          state.appliedLesions.push(line.id);
-        }
-        recomputeSurvey();
-        syncAll();
-      });
-      row.append(title, btn);
-      const meta = el(
-        doc,
-        'div',
-        'eam3d-list-meta',
-        `${line.chamber.toUpperCase()} · ${line.lengthMm} mm`,
-      );
-      item.append(row, meta);
-      ablationListEl.appendChild(item);
-    });
-
-    const effSpec = scenarioSpec(state.scenarioId, state.levers, appliedSet);
-    const terminated = state.scenarioId !== 'sinus' && effSpec.id === 'sinus';
-    ablationVerdictEl.textContent = terminated
-      ? lang === 'en'
-        ? 'Target circuit blocked -> Sinus rhythm restored (CL 833 ms).'
-        : 'Hedef reentran devre bloklandı -> Sinüs ritmi sağlandı (CL 833 ms).'
-      : t.ablationBox.hint;
+  /** Catheter tip and target guide on the map while the RF card is in use. */
+  function rfOverlay() {
+    const showRf = state.activeRail === 'ablate' || rfConsole.isDelivering();
+    return { rfTip: showRf ? rfConsole.tipPosition() : null, rfTarget: showRf ? rfConsole.targetLine() : null };
   }
 
   function renderSurveyLists() {
@@ -867,13 +825,8 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
         { type: 'button', 'data-eam3d-apply-line': p.id },
       );
       btn.type = 'button';
-      btn.addEventListener('click', () => {
-        if (!state.appliedLesions.includes(p.id)) {
-          state.appliedLesions.push(p.id);
-        }
-        recomputeSurvey();
-        syncAll();
-      });
+      // The proposed line is ablated with ideal RF lesions (the console redraws everything).
+      btn.addEventListener('click', () => rfConsole.applyIdeal(p.id));
       row.append(title, btn);
       const meta = el(
         doc,
@@ -974,9 +927,8 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       toggleClass(btn, 'is-active', state.levers.wallLayer === layer);
     });
 
-    ablateTitle.textContent = t.ablationBox.title;
-    clearLesionsBtn.textContent = t.ablationBox.clear;
-    renderAblationList();
+    rfConsole.setScenario(state.scenarioId);
+    rfConsole.render();
 
     surveyTitle.textContent = t.surveyBox.title;
     surveySub.textContent = t.surveyBox.intro;
@@ -1047,6 +999,8 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
         timeMs: state.simTimeMs,
         levers: state.levers,
         ablatedLines: state.appliedLesions,
+        rfLesions: rfVisual.lesions3d,
+        ...rfOverlay(),
         showSurveyRibbons: state.showCircuitRibbons,
         selectedCircuit: state.selectedCircuitIndex,
         surveyPreset: state.surveyPreset,
@@ -1221,16 +1175,13 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       ctx.restore();
     });
 
-    state.appliedLesions.forEach((lineId) => {
-      const line = EAM3D_ABLATION_LINES[lineId];
-      if (!line) return;
+    // RF lesion tags, coloured by depth grade like the 3D map.
+    rfVisual.lesions3d.forEach(({ pos, color }) => {
       ctx.save();
-      ctx.fillStyle = '#ef4444';
-      line.points.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(cx + p[0] * scale, cy - p[1] * scale, 5, 0, Math.PI * 2);
-        ctx.fill();
-      });
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cx + pos[0] * scale, cy - pos[1] * scale, 4, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     });
   }
@@ -1280,6 +1231,7 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     if (state.running) {
       state.simTimeMs += dt;
     }
+    rfConsole.tick(dt);
 
     if (atlasInstance && atlasInstance.ok && state.atlasStatus === 'ready') {
       toggleClass(stageEl, 'is-fallback', false);
@@ -1339,7 +1291,13 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       syncAll();
     },
     getState() {
-      return state;
+      return { ...state, rf: rfConsole.getState() };
+    },
+    /** RF console (tests: deliverNow, applyIdeal, clear). */
+    rf: rfConsole,
+    /** The control Space presses: RF on the ablation card, otherwise run / freeze. */
+    spaceTarget() {
+      return state.activeRail === 'ablate' ? rfConsole.spaceTarget() : runBtn;
     },
     getAtlas() {
       return atlasInstance
