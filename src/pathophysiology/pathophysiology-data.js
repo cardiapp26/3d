@@ -192,54 +192,143 @@ export const PATHOPHYS_STATIONS = [
   }
 ].map((station, index) => ({ ...station, num: String(index + 1).padStart(2, '0') }));
 
+// P-V exploration scenarios, one list. params: elastance-model values (edp is the filling pressure the
+// EDPVR passes through at that EDV; valve shapes AS/AR/MR loops). cath: the catheterization module
+// scenario whose loop is overlaid dashed (null when that module has none). look: what to see on the loop.
+export const PV_GROUPS = [
+  { id: 'base', name: t('Referans ve yük', 'Reference and loading') },
+  { id: 'myo', name: t('Miyokard', 'Myocardium') },
+  { id: 'valve', name: t('Kapak', 'Valve') },
+  { id: 'peri', name: t('Perikard', 'Pericardium') },
+  { id: 'right', name: t('Sağ kalp ve şant', 'Right heart and shunts') }
+];
+
 export const PV_SCENARIOS = [
   {
-    id: 'normal',
+    id: 'normal', group: 'base', cath: 'normal',
     name: t('Normal Referans', 'Normal Reference'),
     desc: t('Normal ventrikül kontraktilitesi, normal arteriyel kompliyans ve fizyolojik dolum.', 'Normal inotropy, arterial elastance, and physiological diastolic filling.'),
+    look: t('Referans döngü: EDV yaklaşık 130 mL, ESV yaklaşık 50 mL, sistol sonu basıncı yaklaşık 90 mmHg. Diğer senaryoları bu şekille karşılaştırın.', 'Reference loop: EDV about 130 mL, ESV about 50 mL, end-systolic pressure about 90 mmHg. Compare every other scenario with this shape.'),
     params: { edv: 130, ees: 2.34, ea: 1.11, stiffness: 0.025, edp: 10 }
   },
   {
-    id: 'hfref',
-    name: t('HFrEF (Sistolik Kalp Yetersizliği)', 'HFrEF (Systolic Heart Failure)'),
-    desc: t('Çökmüş kontraktilite (düşük Ees), kompanse edici dilatasyon (yüksek EDV) ve düşmüş vuru hacmi / EF.', 'Depressed inotropy (low Ees), compensatory chamber dilation, and low EF.'),
-    params: { edv: 220, ees: 0.65, ea: 1.85, stiffness: 0.02, edp: 28 }
-  },
-  {
-    id: 'hfpef',
-    name: t('HFpEF (Diyastolik Kalp Yetersizliği)', 'HFpEF (Diastolic Heart Failure)'),
-    desc: t('Belirgin artmış miyokardiyal sertlik (dik EDPVR), normal EDV ancak yüksek dolum basıncı ve konjesyon.', 'Steep diastolic EDPVR curve, elevated filling pressures despite normal cavity volume.'),
-    params: { edv: 115, ees: 3.4, ea: 2.1, stiffness: 0.046, edp: 26 }
-  },
-  {
-    id: 'as',
-    name: t('Aort Darlığı (Basınç Yükü)', 'Aortic Stenosis (Pressure Overload)'),
-    desc: t('Transvalvüler direnç nedeniyle çok yüksek tepe ventrikül basıncı, artmış ard-yük ve sekonder hipertrofi.', 'Elevated intraventricular systolic pressure, high afterload, and concentric remodeling.'),
-    params: { edv: 125, ees: 3.5, ea: 2.7, stiffness: 0.032, edp: 20, valve: 'as' }
-  },
-  {
-    id: 'ar',
-    name: t('Aort Yetersizliği (Hacim + Basınç Yükü)', 'Aortic Regurgitation (Combined Load)'),
-    desc: t('Diyastolde aorttan ventriküle geri kaçış: Devasa EDV, geniş nabız basıncı ve izovolümetrik gevşeme kaybı.', 'Diastolic aortic regurgitant volume: marked LV dilation, wide pulse pressure, no true isovolumic relaxation.'),
-    params: { edv: 235, ees: 1.85, ea: 1.05, stiffness: 0.018, edp: 16, valve: 'ar' }
-  },
-  {
-    id: 'mr',
-    name: t('Mitral Yetersizliği (Düşük Dirençli Kaçış)', 'Mitral Regurgitation (Low-Impedance Leak)'),
-    desc: t('Sistol başında sol atriyuma kaçış (izovolümetrik kasılma fazı silinir), yüksek toplam debi ama azalmış ileri debi.', 'Early systolic regurgitation into the low-pressure left atrium, abolishing isovolumic contraction.'),
-    params: { edv: 165, ees: 2.4, ea: 0.95, stiffness: 0.028, edp: 24, valve: 'mr' }
-  },
-  {
-    id: 'inotrope',
+    id: 'inotrope', group: 'base', cath: null,
     name: t('Pozitif İnotrop / Egzersiz', 'Positive Inotrope / Exercise'),
     desc: t('Artmış kontraktilite (dikleşmiş Ees), sola kaymış sistol sonu hacmi ve yüksek ejeksiyon fraksiyonu.', 'Enhanced contractility (steeper Ees), reduced end-systolic volume, and high EF.'),
+    look: t('ESPVR dikleşir; sistol sonu noktası sola kayar ve döngü sola doğru genişler (ESV düşer, vuru hacmi ve EF artar). EDPVR değişmez.', 'The ESPVR steepens; the end-systolic point moves left and the loop widens leftward (lower ESV, larger stroke volume and EF). The EDPVR is unchanged.'),
     params: { edv: 135, ees: 4.4, ea: 1.35, stiffness: 0.025, edp: 11 }
   },
   {
-    id: 'hypovolemia',
+    id: 'hypovolemia', group: 'base', cath: null,
     name: t('Hipovolemik Şok (Ön-yük Kaybı)', 'Hypovolemic Shock (Preload Depletion)'),
     desc: t('Yetersiz venöz dönüş (düşük EDV), çökmüş vuru hacmi ve kompanse edici taşikardi/vazokonstriksiyon.', 'Depleted venous return (low EDV), small stroke volume, and high systemic vascular resistance.'),
+    look: t('Döngü normal EDPVR üzerinde sola, küçük hacimlere kayar ve daralır: düşük EDV ve EDP, küçük vuru hacmi. Vazokonstriksiyon Ea eğimini dikleştirir.', 'The loop slides left along the normal EDPVR to small volumes and narrows: low EDV and EDP, small stroke volume. Vasoconstriction steepens the Ea line.'),
     params: { edv: 78, ees: 2.34, ea: 1.6, stiffness: 0.025, edp: 3 }
+  },
+  {
+    id: 'hfref', group: 'myo', cath: 'acute_lv_failure',
+    name: t('HFrEF (Sistolik Kalp Yetersizliği)', 'HFrEF (Systolic Heart Failure)'),
+    desc: t('Çökmüş kontraktilite (düşük Ees), kompanse edici dilatasyon (yüksek EDV) ve düşmüş vuru hacmi / EF.', 'Depressed inotropy (low Ees), compensatory chamber dilation, and low EF.'),
+    look: t('ESPVR yatıklaşır; döngü sağa (büyük hacimlere) kayar, daralır ve yüksek EDP ile biter. Ea/Ees oranı 2 üstünde: verimsiz eşleşme.', 'The ESPVR flattens; the loop shifts right to large volumes, narrows and ends at a high EDP. Ea/Ees is above 2: inefficient coupling.'),
+    params: { edv: 220, ees: 0.65, ea: 1.85, stiffness: 0.02, edp: 28 }
+  },
+  {
+    id: 'hfpef', group: 'myo', cath: null,
+    name: t('HFpEF (Diyastolik Kalp Yetersizliği)', 'HFpEF (Diastolic Heart Failure)'),
+    desc: t('Belirgin artmış miyokardiyal sertlik (dik EDPVR), normal EDV ancak yüksek dolum basıncı ve konjesyon.', 'Steep diastolic EDPVR curve, elevated filling pressures despite normal cavity volume.'),
+    look: t('EDPVR dikleşir; EDV normal kalırken diyastol sonu noktası yukarı çıkar (yüksek EDP). ESPVR korunmuş ya da dik, EF normal.', 'The EDPVR steepens; EDV stays normal while the end-diastolic point rises (high EDP). The ESPVR is preserved or steep, EF normal.'),
+    params: { edv: 115, ees: 3.4, ea: 2.1, stiffness: 0.046, edp: 26 }
+  },
+  {
+    id: 'hocm', group: 'myo', cath: 'hocm',
+    name: t('HOKM (Obstrüktif Hipertrofik KMP)', 'HOCM (Obstructive Hypertrophic CM)'),
+    desc: t('Hipertrofik, sert ve hiperdinamik LV; sistolde dinamik sol ventrikül çıkış yolu darlığı.', 'Hypertrophied, stiff and hyperdynamic LV with dynamic systolic LV outflow obstruction.'),
+    look: t('Küçük, dik ESPVR’lı hiperdinamik döngü: küçük ESV, yüksek EF. Dinamik çıkış yolu gradyanı tepe sistolik basıncı yükseltir; dik EDPVR yüksek EDP verir.', 'A small hyperdynamic loop on a steep ESPVR: small ESV, high EF. The dynamic outflow gradient lifts peak systolic pressure; the steep EDPVR gives a high EDP.'),
+    params: { edv: 100, ees: 5.0, ea: 2.3, stiffness: 0.045, edp: 22, valve: 'as' }
+  },
+  {
+    id: 'restrictive', group: 'myo', cath: 'restrictive_cardiomyopathy',
+    name: t('Restriktif Kardiyomiyopati', 'Restrictive Cardiomyopathy'),
+    desc: t('Sert miyokard (amiloid vb.): dolum erken diyastolde durur, EF korunmuş olabilir.', 'Stiff myocardium (amyloid and others): filling stops early in diastole, EF may be preserved.'),
+    look: t('Çok dik EDPVR: küçük hacimde yüksek EDP, dar döngü ve düşük vuru hacmi. PV düzleminde konstriksiyona çok benzer; ayrım kateterde solunumla ventriküler diskordans ve RV/LV diyastolik basınç farkıyla yapılır.', 'A very steep EDPVR: high EDP at a small volume, a narrow loop and a low stroke volume. On the P-V plane it looks much like constriction; the catheter separates them by respiratory ventricular discordance and the RV/LV diastolic pressure gap.'),
+    params: { edv: 90, ees: 2.2, ea: 2.3, stiffness: 0.055, edp: 26 }
+  },
+  {
+    id: 'as', group: 'valve', cath: 'aortic_stenosis_severe',
+    name: t('Aort Darlığı (Basınç Yükü)', 'Aortic Stenosis (Pressure Overload)'),
+    desc: t('Transvalvüler direnç nedeniyle çok yüksek tepe ventrikül basıncı, artmış ard-yük ve sekonder hipertrofi.', 'Elevated intraventricular systolic pressure, high afterload, and concentric remodeling.'),
+    look: t('Döngü yukarı uzar: tepe sistolik basınç ESP’nin çok üstünde (transvalvüler gradyan). Hipertrofi ESPVR ve EDPVR’yi dikleştirir; EDV yaklaşık normal.', 'The loop grows tall: peak systolic pressure sits far above the ESP (the transvalvular gradient). Hypertrophy steepens both the ESPVR and the EDPVR; EDV is about normal.'),
+    params: { edv: 125, ees: 3.5, ea: 2.7, stiffness: 0.032, edp: 20, valve: 'as' }
+  },
+  {
+    id: 'ar', group: 'valve', cath: 'aortic_regurgitation_severe',
+    name: t('Aort Yetersizliği (Hacim + Basınç Yükü)', 'Aortic Regurgitation (Combined Load)'),
+    desc: t('Diyastolde aorttan ventriküle geri kaçış: Devasa EDV, geniş nabız basıncı ve izovolümetrik gevşeme kaybı.', 'Diastolic aortic regurgitant volume: marked LV dilation, wide pulse pressure, no true isovolumic relaxation.'),
+    look: t('Döngü sağa çok genişler (büyük EDV ve toplam vuru hacmi). Gerçek izovolümetrik gevşeme yoktur: ventrikül aorttan geri dolarken hacim daha basınç düşerken artar.', 'The loop widens far to the right (large EDV and total stroke volume). There is no true isovolumic relaxation: the aorta refills the ventricle, so volume rises while pressure is still falling.'),
+    params: { edv: 235, ees: 1.85, ea: 1.05, stiffness: 0.018, edp: 16, valve: 'ar' }
+  },
+  {
+    id: 'mr', group: 'valve', cath: 'mitral_regurgitation_severe',
+    name: t('Mitral Yetersizliği (Düşük Dirençli Kaçış)', 'Mitral Regurgitation (Low-Impedance Leak)'),
+    desc: t('Sistol başında sol atriyuma kaçış (izovolümetrik kasılma fazı silinir), yüksek toplam debi ama azalmış ileri debi.', 'Early systolic regurgitation into the low-pressure left atrium, abolishing isovolumic contraction.'),
+    look: t('İzovolümetrik kasılma kaybolur: ventrikül, aort kapağı açılmadan sol atriyuma boşalmaya başlar ve döngünün sağ kenarı eğilir. Toplam vuru hacmi büyük, ileri vuru hacmi küçük; düşük empedanslı kaçış etkin Ea’yı düşürür.', 'Isovolumic contraction disappears: the ventricle empties into the left atrium before the aortic valve opens, so the right edge of the loop leans. Total stroke volume is large, forward stroke volume small; the low-impedance leak lowers the effective Ea.'),
+    params: { edv: 165, ees: 2.4, ea: 0.95, stiffness: 0.028, edp: 24, valve: 'mr' }
+  },
+  {
+    id: 'ms', group: 'valve', cath: 'mitral_stenosis_severe',
+    name: t('Mitral Darlığı (Dolum Engeli)', 'Mitral Stenosis (Inflow Obstruction)'),
+    desc: t('Mitral darlığı LV dolumunu kısıtlar: sol atriyum basıncı yüksek, LV ön-yükü düşük.', 'The narrowed mitral valve limits LV filling: high left atrial pressure, low LV preload.'),
+    look: t('Döngü küçük ve sola kaymış: LV az dolar (düşük EDV ve EDP), vuru hacmi düşer. LV kasılması normaldir; yüksek basınç sol atriyumdadır ve LV döngüsünde görülmez.', 'A small, left-shifted loop: the LV underfills (low EDV and EDP) and stroke volume falls. LV contraction is normal; the high pressure is in the left atrium and does not show on the LV loop.'),
+    params: { edv: 95, ees: 2.8, ea: 1.5, stiffness: 0.025, edp: 6 }
+  },
+  {
+    id: 'constriction', group: 'peri', cath: 'constrictive_pericarditis',
+    name: t('Konstriktif Perikardit', 'Constrictive Pericarditis'),
+    desc: t('Kalınlaşmış perikard toplam kalp hacmini sınırlar; ventriküller arası etkileşim artar.', 'A thickened pericardium caps total heart volume; ventricular interdependence rises.'),
+    look: t('Sert perikard dolumu sınırlar: dik EDPVR, küçük EDV, yüksek EDP ve dar döngü. Miyokard normal olduğu için ESPVR korunur.', 'The rigid pericardium limits filling: steep EDPVR, small EDV, high EDP and a narrow loop. The myocardium is normal, so the ESPVR is preserved.'),
+    params: { edv: 95, ees: 2.34, ea: 2.2, stiffness: 0.055, edp: 22 }
+  },
+  {
+    id: 'tamponade', group: 'peri', cath: 'tamponade',
+    name: t('Kardiyak Tamponad', 'Cardiac Tamponade'),
+    desc: t('Perikard sıvısının basıncı odacıkları dıştan sıkıştırır; dolum ve vuru hacmi düşer.', 'Pericardial fluid pressure squeezes the chambers from outside; filling and stroke volume fall.'),
+    look: t('Perikard basıncı tüm diyastolik basınçları yükseltir: döngü küçük, sola kaymış ve diyastolik kenarı yukarı kalkmış. Vuru hacmi çok düşer; taşikardi ve vazokonstriksiyon Ea’yı dikleştirir. Model bu dış basıncı dik bir EDPVR ile yaklaşık gösterir.', 'Pericardial pressure lifts every diastolic pressure: a small, left-shifted loop with a raised diastolic limb. Stroke volume falls steeply; tachycardia and vasoconstriction steepen Ea. The model approximates this external pressure with a steep EDPVR.'),
+    params: { edv: 80, ees: 2.34, ea: 2.8, stiffness: 0.055, edp: 16 }
+  },
+  {
+    id: 'ph-pre', group: 'right', cath: 'precapillary_ph',
+    name: t('Prekapiller PH (PAH)', 'Pre-capillary PH (PAH)'),
+    desc: t('Pulmoner arteriyel hipertansiyon: yüksek PVR, RV basınç yükü; PCWP normal.', 'Pulmonary arterial hypertension: high PVR, RV pressure overload; normal PCWP.'),
+    look: t('Sorun sağ kalpte: LV az dolar (septum sola itilir), döngü küçük ve sola kayar; LV EDP normal ya da düşük, ESPVR normal.', 'The problem is on the right: the LV underfills (the septum bows left), so the loop is small and shifted left; LV EDP is normal or low, the ESPVR normal.'),
+    params: { edv: 100, ees: 2.34, ea: 2.0, stiffness: 0.03, edp: 9 }
+  },
+  {
+    id: 'ph-post', group: 'right', cath: 'postcapillary_ph',
+    name: t('Postkapiller PH (Sol Kalp)', 'Post-capillary PH (Left Heart)'),
+    desc: t('Sol kalp hastalığına bağlı PH: yüksek PCWP geriye pulmoner dolaşıma yansır.', 'PH from left heart disease: the high PCWP is transmitted back to the pulmonary circulation.'),
+    look: t('Sol kalp hastalığı döngüsü: büyük EDV, yatık ESPVR ve yüksek EDP. Pulmoner basınç bu yüksek dolum basıncını yansıtır.', 'A left heart disease loop: large EDV, flat ESPVR and high EDP. The pulmonary pressure mirrors this high filling pressure.'),
+    params: { edv: 145, ees: 1.1, ea: 2.0, stiffness: 0.03, edp: 26 }
+  },
+  {
+    id: 'rv-infarct', group: 'right', cath: 'rv_infarct',
+    name: t('Sağ Ventrikül Enfarktı', 'Right Ventricular Infarction'),
+    desc: t('RV pompa yetersizliği, düşük LV ön-yükü ve hipotansiyon.', 'RV pump failure, low LV preload and hypotension.'),
+    look: t('RV debisi düştüğü için LV az dolar: döngü küçük ve sola kaymış. Dilate RV ve perikard kısıtlaması LV diyastolik basıncını görece yüksek tutar.', 'Low RV output underfills the LV: a small, left-shifted loop. The dilated RV and pericardial constraint keep LV diastolic pressure relatively high.'),
+    params: { edv: 95, ees: 2.34, ea: 1.5, stiffness: 0.03, edp: 15 }
+  },
+  {
+    id: 'asd', group: 'right', cath: 'asd_left_to_right',
+    name: t('ASD (Soldan Sağa Şant)', 'ASD (Left-to-Right Shunt)'),
+    desc: t('Atriyal septal defekt: sağ kalp hacim yükü, Qp/Qs > 1.', 'Atrial septal defect: right heart volume load, Qp/Qs > 1.'),
+    look: t('Şant atriyum düzeyinde; fazla kan sağ kalbe gider. LV normal ya da az dolar: döngü normale yakın ya da hafif küçük.', 'The shunt is atrial, so the extra blood goes to the right heart. The LV fills normally or a little less: a near-normal or slightly small loop.'),
+    params: { edv: 110, ees: 2.34, ea: 1.65, stiffness: 0.025, edp: 9 }
+  },
+  {
+    id: 'vsd', group: 'right', cath: 'vsd_left_to_right',
+    name: t('VSD (Soldan Sağa Şant)', 'VSD (Left-to-Right Shunt)'),
+    desc: t('Ventriküler septal defekt: şant kanı akciğerden sol kalbe döner, sol kalp hacim yükü.', 'Ventricular septal defect: shunted blood returns through the lungs to the left heart, a left heart volume load.'),
+    look: t('LV hacim yükü: büyük EDV ve vuru hacmi. Kanın bir kısmı sistolde düşük dirençli RV’ye kaçtığı için etkin Ea düşük; ileri vuru hacmi toplamdan azdır.', 'An LV volume load: large EDV and stroke volume. Part of each beat escapes into the low-resistance RV in systole, so the effective Ea is low and forward stroke volume is smaller than the total.'),
+    params: { edv: 200, ees: 1.6, ea: 0.75, stiffness: 0.02, edp: 12 }
   }
 ];
 

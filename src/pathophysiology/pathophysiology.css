@@ -1452,6 +1452,24 @@ body.pathophys-app {
 /* Catheter scenario overlay in the P-V exploration (pv-loop-lab.js). */
 .pathophys-cath-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0 0 12px; font-size: 13px; }
 .pathophys-cath-row label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 600; min-width: 0; max-width: 100%; }
-.pathophys-cath-row select { min-width: 0; max-width: 100%; width: 22em; }
+.pathophys-cath-row[hidden] { display: none; }
+.pathophys-cath-row input { accent-color: #7048e8; }
 .pathophys-cath-row p { margin: 0; flex: 1 1 260px; font-size: 12px; color: var(--text-muted, #4b635b); }
 .legend-cath { background: repeating-linear-gradient(90deg, #7048e8 0 6px, transparent 6px 10px); }
+
+/* Unified P-V scenarios: one button row per group. */
+.pathophys-presets-grouped { flex-direction: column; gap: 6px; }
+.pathophys-preset-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pathophys-preset-group-label { flex: 0 0 9.5em; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-muted, #4b635b); }
+.pathophys-presets-bar button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pathophys-presets-bar button.is-base { border-color: var(--accent); color: var(--accent); border-style: dashed; }
+@media (max-width: 640px) { .pathophys-preset-group-label { flex-basis: 100%; } }
+
+/* What the P-V lines show. */
+.pathophys-pv-explain { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md, 10px); background: var(--bg-surface); font-size: 13px; line-height: 1.5; }
+.pathophys-pv-explain h4 { margin: 0 0 6px; font-size: 13px; }
+.pathophys-pv-explain ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.pathophys-pv-explain li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.pathophys-pv-explain li[hidden] { display: none; }
+.pathophys-pv-explain .legend-color { transform: translateY(1px); }
+.pathophys-pv-look { margin: 10px 0 0; padding-top: 8px; border-top: 1px dashed var(--border); }

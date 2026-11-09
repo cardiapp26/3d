@@ -67,9 +67,14 @@ const merged = (base, input) => {
   return out;
 };
 
-/** Validated parameter set (unknown preset falls back to normal). */
-export function pvParams(input = {}, presetId = 'normal') {
-  const base = PV_PRESETS[presetId] || PV_PRESETS.normal;
+/**
+ * Validated parameter set. `preset` is a PV_PRESETS id (unknown falls back to normal) or a condition
+ * object of the same shape ({ edv, ees, ea, stiffness, edp, valve? }).
+ */
+export function pvParams(input = {}, preset = 'normal') {
+  const base = preset && typeof preset === 'object' && Number.isFinite(preset.edv) && Number.isFinite(preset.edp)
+    ? { ...PV_PRESETS.normal, ...preset }
+    : PV_PRESETS[preset] || PV_PRESETS.normal;
   const p = merged(base, input);
   const edv = clamp(p.edv, PV_LIMITS.edv);
   const stiffness = clamp(p.stiffness, PV_LIMITS.stiffness);
