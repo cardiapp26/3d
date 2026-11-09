@@ -25,6 +25,11 @@ assert.ok(loop('normal', { stiffness: 0.045 }).edp > normal.edp, 'stiffer EDPVR:
 // Out-of-range inputs are clamped.
 assert.equal(pvParams({ edv: 9999 }, 'normal').edv, PV_LIMITS.edv[1]);
 assert.equal(pvParams({}, 'unknown').edv, PV_PRESETS.normal.edv);
+// A condition object works as the preset: its valve and EDPVR anchor survive slider edits.
+const asBase = { edv: 125, ees: 3.5, ea: 2.7, stiffness: 0.032, edp: 20, valve: 'as' };
+assert.equal(pvParams({ edv: 140 }, asBase).valve, 'as');
+assert.ok(Math.abs(pvModelLoop(pvParams({}, asBase)).edp - 20) < 0.5, 'EDPVR passes through the condition EDP');
+assert.equal(pvParams({}, { edv: 'x' }).edv, PV_PRESETS.normal.edv, 'malformed condition falls back to normal');
 
 // Conditions.
 const hfref = loop('hfref-decompensated');
