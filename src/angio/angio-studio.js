@@ -147,10 +147,15 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       box.scrollIntoView({ behavior: 'smooth', block: 'center' });
       box.classList.remove('is-flash'); void box.offsetWidth; box.classList.add('is-flash');
     },
-    onFluoro: on => atlasElement.querySelector('.angio-atlas-pair').classList.toggle('is-solo', !on),
+    onFluoro: on => {
+      atlasElement.querySelector('.angio-atlas-pair').classList.toggle('is-solo', !on);
+      atlasElement.querySelector('[data-console-bar]').hidden = !on;
+    },
     onSegmentation: on => atlas?.setSegmentation(on)
   });
   atlasElement.querySelector('.angio-atlas-pair').before(viewBar.element);
+  // Fluoroscopy settings live in the top bar, so the anatomy and fluoroscopy images start at the same height.
+  viewBar.element.append(atlasElement.querySelector('[data-console-bar]'));
   const deviceElement = document.createElement('div');
   deviceElement.className = 'angio-device-viewport';
   deviceElement.dataset.angioDevice = '';
@@ -447,9 +452,6 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
             <div class="angio-head-controls">
               <button type="button" aria-pressed="${state.cinePlaying}" class="angio-tool-btn ${state.cinePlaying ? 'active' : ''}" data-toggle-cine="true">
                 ${state.cinePlaying ? (isTr ? '⏸ Durdur' : '⏸ Freeze') : (isTr ? '▶ Cine Akışı' : '▶ Play Cine')}
-              </button>
-              <button type="button" class="angio-tool-btn angio-share-btn" id="angio-btn-share" title="${isTr ? 'Bağlantıyı Kopyala' : 'Copy Share URL'}">
-                🔗 ${isTr ? 'Açıyı Paylaş' : 'Share View URL'}
               </button>
               <button type="button" class="angio-inject-btn ${state.contrastInjecting ? 'injecting' : ''}" data-inject-contrast="true">
                 💉 ${isTr ? 'Kontrast Ver (Puff)' : 'Inject Contrast'}
@@ -803,20 +805,6 @@ export function createAngioStudio({ mount, getLang = () => 'tr' }) {
       state.activeLesionId = e.target.value;
       renderFull();
       container.querySelector('[data-angio-schematic]').open = true;
-    });
-
-    // Share URL button
-    container.querySelector('#angio-btn-share')?.addEventListener('click', () => {
-      if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-          const btn = container.querySelector('#angio-btn-share');
-          if (btn) {
-            const old = btn.textContent;
-            btn.textContent = getLang() === 'tr' ? '✓ Kopyalandı!' : '✓ Link Copied!';
-            setTimeout(() => { btn.textContent = old; }, 1800);
-          }
-        });
-      }
     });
   }
 
