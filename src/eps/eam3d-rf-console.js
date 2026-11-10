@@ -176,7 +176,22 @@ export function createRfConsole(doc, { getLang, getScenario, getLevers, onChange
   const demoBtn = button(doc, 'eam3d-btn eam3d-btn--accent eam3d-rf-demo', { 'data-eam3d-rf-demo': 'true' });
   const scope = el(doc, 'p', 'eam3d-rf-scope');
 
-  card.append(head, targetLabel, meta, hazard, powerRow, forceRow, posRow, spacingRow, autoLabel, actions, statusBox, safetyBox, legend, logTitle, logTable, demoBtn, scope);
+  // Five groups that sit side by side when the console is docked under the 3D view:
+  // target line, energy, catheter position, delivery and outcome, lesion log.
+  const group = (...nodes) => {
+    const col = el(doc, 'div', 'eam3d-rf-col');
+    col.append(...nodes);
+    return col;
+  };
+  const logScroll = el(doc, 'div', 'eam3d-rf-log-wrap');
+  logScroll.appendChild(logTable);
+  card.append(
+    group(head, targetLabel, meta, hazard),
+    group(powerRow, forceRow),
+    group(posRow, spacingRow, autoLabel),
+    group(actions, statusBox, safetyBox),
+    group(legend, logTitle, logScroll, demoBtn, scope)
+  );
 
   // ---- Readout over the 3D view -----------------------------------------------------
   const hud = el(doc, 'div', 'eam3d-rf-hud', null, { 'data-eam3d-rf-hud': 'true' });

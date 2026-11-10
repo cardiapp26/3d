@@ -15,6 +15,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { createRfLayer } from './eam3d-rf-layer.js';
+import { createCircuitLayer } from './eam3d-circuit-layer.js';
+import { createMappingLayer } from './eam3d-mapping-layer.js';
+import { MAP_PALETTES, voltageScale } from './eam3d-mapping-model.js';
+import { ANCHORS } from './eam3d-anatomy.js';
 import { ATLAS_URL, normalizedParts, normalizeAtlasName } from '../atlas.js';
 import { ATLAS_CONDUCTION as C } from '../ecg/ecg-atlas-conduction.js';
 import { ATLAS_CONDUCTION_EXTRAS as X } from './conduction-atlas-extras.js';
@@ -50,19 +54,35 @@ const CAMERA_VIEWS = Object.freeze({
 
 const CHANNEL_BY_ID = new Map(EAM3D_CHANNELS.filter((ch) => ch.catheter).map((ch) => [ch.id, ch]));
 // Patch fields compared by identity; levers and lesion lists are mutated in place by the panel.
-const PRIMITIVE_PATCH_KEYS = new Set(['timeMs', 'scenario', 'stim', 'mapMode', 'view']);
+const PRIMITIVE_PATCH_KEYS = new Set(['timeMs', 'clockMs', 'scenario', 'stim', 'mapMode', 'view']);
 const VESSEL_IDS = new Set(['aorta', 'pa', 'svc', 'ivc', 'lspv', 'lipv', 'rspv', 'ripv']);
 
-// Isochronal LAT palette: Red (earliest) -> Orange -> Yellow -> Green -> Cyan -> Blue -> Purple (latest)
-const LAT_STOPS = [
-  new THREE.Color('#ef4444'),
-  new THREE.Color('#f97316'),
-  new THREE.Color('#eab308'),
-  new THREE.Color('#22c55e'),
-  new THREE.Color('#06b6d4'),
-  new THREE.Color('#3b82f6'),
-  new THREE.Color('#8b5cf6')
-];
+// Map colours follow the mapping system of the selected catheter (CARTO for PentaRay, EnSite
+// for HD Grid); see MAP_PALETTES in eam3d-mapping-model.js.
+const toColors = (list) => list.map((hex) => new THREE.Color(hex));
+const PALETTES = Object.fromEntries(
+  Object.entries(MAP_PALETTES).map(([system, p]) => [
+    system,
+    {
+      lat: toColors(p.lat),
+      voltage: toColors(p.voltage),
+      belowWindow: new THREE.Color(p.belowWindow),
+      scar: new THREE.Color(p.scar),
+      unmapped: new THREE.Color(p.unmapped)
+    }
+  ])
+);
+// Colour maps are drawn as a nearly opaque shell with flat, untone-mapped colour so the bands
+// stay saturated; SHELL_GAIN keeps the scene lights from washing them out.
+const SHELL_OPACITY = 0.94;
+const SHELL_GAIN = 0.36;
+const GHOST_OPACITY = 0.14;
+
+/** Write a system's colour for a bipolar voltage into `out`. */
+function voltageColor(system, palette, bipolarMv, out) {
+  const { below, t } = voltageScale(system, bipolarMv);
+  return below ? out.copy(palette.belowWindow) : samplePalette(palette.voltage, t, out);
+}
 
 /** Write the palette colour at t (0..1) into `out` without allocating. */
 function samplePalette(stops, t, out) {
@@ -76,14 +96,16 @@ const WALL_SCALE = Object.freeze({ all: 1, epi: 1, mid: 0.97, endo: 0.94, 'hide-
 const ELECTRODE_GLOW = 0.58;
 const ELECTRODE_GLOW_LIT = 1.9;
 
-export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = () => {}, onStatus = () => {} } = {}) {
+export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = () => {}, onStatus = () => {}, onMapping = () => {} } = {}) {
   const element = document.createElement('div');
   element.className = 'eam3d-stage';
   const host = document.createElement('div');
   host.className = 'eam3d-webgl';
-  const badges = document.createElement('div');
-  badges.className = 'eam3d-badges';
-  element.append(host, badges);
+  // Circuit ribbons, badges, landmark labels and legend (eam3d-circuit-layer.js).
+  const circuitLayer = createCircuitLayer({ onCircuitSelect: (n) => onCircuitSelect(n) });
+  element.append(host, circuitLayer.overlay);
+  // Roving mapping catheter, acquired points and the map they build (eam3d-mapping-layer.js).
+  const mappingLayer = createMappingLayer({ onProgress: (progress) => onMapping(progress) });
 
   let renderer;
   try {
@@ -130,9 +152,8 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   const conductionGroup = new THREE.Group();
   const catheterGroup = new THREE.Group();
   const lesionGroup = new THREE.Group();
-  const circuitGroup = new THREE.Group();
   const tagGroup = new THREE.Group();
-  rootGroup.add(vesselGroup, chamberGroup, conductionGroup, catheterGroup, lesionGroup, circuitGroup, tagGroup);
+  rootGroup.add(vesselGroup, chamberGroup, conductionGroup, catheterGroup, lesionGroup, circuitLayer.group, mappingLayer.group, tagGroup);
   // RF lesion tags, catheter tip and target guide (eam3d-rf-console.js drives them).
   const rfLayer = createRfLayer();
   rootGroup.add(rfLayer.group);
@@ -142,7 +163,6 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   const vessels = [];
   const electrodeMeshes = new Map();
   const conductionLines = [];
-  const circuitBadges = [];
   let gridGroup = null;
   let selectionMarker = null;
 
@@ -158,7 +178,13 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     showSurveyRibbons: false,
     selectedCircuit: null,
     surveyPreset: 'biatrial-scar',
-    surveyRuns: 100
+    surveyRuns: 100,
+    circuitLabels: null,
+    clockMs: 0,
+    mappingCatheter: 'pentaray',
+    mappingChamber: 'ra',
+    mappingRunning: false,
+    mappingResetToken: 0
   };
 
   let loaded = false;
@@ -293,10 +319,6 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   function rebuildLesionsAndCircuits() {
     disposeNode(lesionGroup);
     lesionGroup.clear();
-    disposeNode(circuitGroup);
-    circuitGroup.clear();
-    badges.replaceChildren();
-    circuitBadges.length = 0;
 
     // 1. Blocked lines: a thin glowing line under the RF lesion tags (rf layer).
     for (const lineId of state.ablatedLines) {
@@ -317,56 +339,19 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       lesionGroup.add(tube);
     }
 
-    // 2. Probabilistic Circuit Modeling ribbons (1..6) when Survey mode is active
-    if (state.showSurveyRibbons) {
-      const survey = runCircuitSurvey({
-        mapPreset: state.surveyPreset,
-        runs: state.surveyRuns,
-        levers: state.levers,
-        ablatedLines: state.ablatedLines
-      });
-      for (const c of survey.circuits) {
-        const isSelected = state.selectedCircuit === c.number;
-        const opacity = c.interrupted ? 0.18 : isSelected ? 1.0 : 0.82;
-        const curve = new THREE.CatmullRomCurve3(c.ribbon3d.map(V), true);
-        const ribbon = new THREE.Mesh(
-          new THREE.TubeGeometry(curve, 40, isSelected ? 0.032 : 0.022, 8, true),
-          new THREE.MeshStandardMaterial({
-            color: c.color,
-            emissive: c.color,
-            emissiveIntensity: isSelected ? 0.9 : 0.55,
-            transparent: true,
-            opacity,
-            depthTest: false
+    // 2. Probabilistic circuit modeling ribbons (1..6) when the survey is shown
+    circuitLayer.update({
+      report: state.showSurveyRibbons
+        ? runCircuitSurvey({
+            mapPreset: state.surveyPreset,
+            runs: state.surveyRuns,
+            levers: state.levers,
+            ablatedLines: state.ablatedLines
           })
-        );
-        ribbon.renderOrder = 12;
-        circuitGroup.add(ribbon);
-
-        // Directional cone arrow along the circuit ribbon
-        const arrowPt = curve.getPointAt(0.35);
-        const tangent = curve.getTangentAt(0.35).normalize();
-        const cone = new THREE.Mesh(
-          new THREE.ConeGeometry(0.055, 0.13, 10),
-          new THREE.MeshBasicMaterial({ color: c.color, transparent: true, opacity, depthTest: false })
-        );
-        cone.position.copy(arrowPt);
-        cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
-        cone.renderOrder = 13;
-        circuitGroup.add(cone);
-
-        // Numbered HTML badge (1..6) projected over the 3D ribbon
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `eam3d-circuit-badge${isSelected ? ' is-selected' : ''}${c.interrupted ? ' is-blocked' : ''}`;
-        btn.textContent = String(c.number);
-        btn.style.setProperty('--badge-color', c.color);
-        btn.dataset.circuitBadge = c.id;
-        btn.addEventListener('click', () => onCircuitSelect(c.number));
-        badges.append(btn);
-        circuitBadges.push({ id: c.id, anchor: V(c.ribbon3d[0]), el: btn });
-      }
-    }
+        : null,
+      selected: state.selectedCircuit,
+      labels: state.circuitLabels
+    });
   }
 
   // ---- Bake Per-Vertex LAT & Substrate Properties -------------------------
@@ -469,10 +454,29 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     for (const line of conductionLines) {
       if (line.material) line.material.opacity = condOpacity * 0.9;
     }
-    tagGroup.visible = mode === 'voltage' && !xray;
+    // Advance the mapping run: one acquisition per accepted beat of the mapped chamber.
+    if (mappingLayer.isRunning()) {
+      const mapped = mappingLayer.chamber();
+      const atrialMap = mapped === 'ra' || mapped === 'la';
+      mappingLayer.step(state.clockMs, {
+        truthAt: (pos, chamber) => evaluateVertex3d(pos, chamber, state.scenario, lv, state.ablatedLines),
+        rhythm: {
+          tcl: atrialMap ? spec.tcl : spec.vTcl,
+          reentrant: spec.reentrant,
+          // AF has no stable cycle: activation points are refused, voltage is still collected.
+          stableCycle: spec.id !== 'af',
+          refLat: evaluateVertex3d(ANCHORS.csOstium, 'ra', state.scenario, lv, state.ablatedLines).lat
+        }
+      });
+    }
+    const system = mappingLayer.system();
+    const palette = PALETTES[system];
+    const acquiredAny = mappingLayer.hasMap();
+    tagGroup.visible = mode === 'voltage' && !xray && !acquiredAny;
 
-    // Voltage and X-ray colours do not change with time: paint them once per bake.
-    const staticKey = xray || mode === 'voltage' ? `${xray ? 'xray' : mode}|${bakedKey}` : '';
+    // Voltage and X-ray colours do not change with time: paint them once per bake and map version.
+    const mapVersion = acquiredAny ? mappingLayer.mapFor(mappingLayer.chamber()).version : 0;
+    const staticKey = xray || mode === 'voltage' ? `${xray ? 'xray' : mode}|${bakedKey}|${mappingLayer.system()}|${mapVersion}` : '';
     const skipColours = staticKey !== '' && staticKey === paintedStaticKey;
     paintedStaticKey = staticKey;
 
@@ -490,9 +494,15 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
         mesh.position.set(c.x * (1 - s), c.y * (1 - s), c.z * (1 - s));
       }
 
-      mesh.material.opacity = mode === 'lat' || mode === 'voltage'
-        ? Math.max(myoOpacity, 0.78)
-        : myoOpacity;
+      const shell = !xray && (mode === 'lat' || mode === 'voltage');
+      // While a map is being built only the mapped chamber is solid; the others are ghosts.
+      const ghost = shell && acquiredAny && chId !== mappingLayer.chamber();
+      mesh.material.opacity = ghost ? GHOST_OPACITY : shell ? Math.max(myoOpacity, SHELL_OPACITY) : myoOpacity;
+      mesh.material.color.setScalar(shell ? SHELL_GAIN : 1);
+      if (mesh.material.toneMapped === shell) {
+        mesh.material.toneMapped = !shell;
+        mesh.material.needsUpdate = true;
+      }
       mesh.material.wireframe = Boolean(
         (isAtrial && lv.highDensityAtria) || (!isAtrial && lv.highDensityVentricles)
       );
@@ -507,23 +517,31 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       const maxLat = paced ? eam.range[2] : eam.range[1];
       const latSpan = Math.max(1, (maxLat > minLat ? maxLat : minLat + 250) - minLat);
       const apd = actionPotentialMs(chId, clock.cycle, lv);
+      // Once a mapping run has points, LAT and voltage show only what was acquired.
+      const acquired = shell && acquiredAny ? mappingLayer.mapFor(chId) : null;
+      const acquiredSpan = acquired ? Math.max(1, acquired.latMax - acquired.latMin) : 1;
 
       for (let i = 0; i < colorAttr.count; i++) {
         const tissue = eam.tissues[i];
 
         if (xray) {
           tmpColor.copy(xrayColor);
+        } else if (shell && acquiredAny) {
+          const volt = acquired ? acquired.volt[i] : NaN;
+          if (Number.isNaN(volt)) tmpColor.copy(palette.unmapped);
+          else if (mode === 'voltage') voltageColor(system, palette, volt, tmpColor);
+          else if (Number.isNaN(acquired.lat[i])) tmpColor.copy(palette.scar);
+          else samplePalette(palette.lat, (acquired.lat[i] - acquired.latMin) / acquiredSpan, tmpColor);
         } else if (mode === 'voltage') {
-          if (tissue === 'scar') tmpColor.copy(scarColor);
-          else if (tissue === 'channel') tmpColor.copy(channelColor);
-          else samplePalette(LAT_STOPS, (eam.bipolars[i] - 0.3) / 1.5, tmpColor);
+          if (tissue === 'scar') tmpColor.copy(palette.scar);
+          else voltageColor(system, palette, eam.bipolars[i], tmpColor);
         } else if (tissue === 'scar') {
           if (mode === 'phase') tmpColor.setHSL(0, 0.85, 0.22);
-          else tmpColor.copy(scarColor);
+          else tmpColor.copy(mode === 'lat' ? palette.scar : scarColor);
         } else {
           const age = activationAge(lats[i], clock);
           if (mode === 'lat') {
-            samplePalette(LAT_STOPS, (lats[i] - minLat) / latSpan, tmpColor);
+            samplePalette(palette.lat, (lats[i] - minLat) / latSpan, tmpColor);
             // Animated wavefront highlight sweeping through the LAT map
             if (age < 14) tmpColor.lerp(waveFrontColor, 0.75);
           } else if (mode === 'phase') {
@@ -557,13 +575,7 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   }
 
   function updateBadgePositions() {
-    if (!circuitBadges.length || !host.clientWidth) return;
-    for (const b of circuitBadges) {
-      const p = b.anchor.clone().project(camera);
-      b.el.hidden = p.z > 1;
-      b.el.style.left = `${((p.x + 1) * host.clientWidth) / 2}px`;
-      b.el.style.top = `${((-p.y + 1) * host.clientHeight) / 2}px`;
-    }
+    circuitLayer.project(camera, host.clientWidth, host.clientHeight);
   }
 
   // ---- Raycasting: Click 3D Heart to Inspect LAT/Voltage & Move HD Grid ---
@@ -608,7 +620,10 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   });
 
   function placeGrid() {
+    // The selected mapping catheter (PentaRay or HD Grid) stands in for the fixed grid paddle.
+    mappingLayer.park(state.gridSite);
     if (!gridGroup) return;
+    gridGroup.visible = false;
     const home = DEFAULT_GRID_SITE.pos;
     const at = state.gridSite.pos;
     gridGroup.position.set(at[0] - home[0], at[1] - home[1], at[2] - home[2]);
@@ -714,6 +729,10 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     decoder.dispose();
     loaded = true;
     element.dataset.loaded = 'true';
+    circuitLayer.setAnatomy(chambers, vessels);
+    mappingLayer.setAnatomy(chambers);
+    mappingLayer.configure({ catheterId: state.mappingCatheter, chamber: state.mappingChamber });
+    placeGrid();
     bakedKey = '';
     rebuildLesionsAndCircuits();
     paintFrame();
@@ -744,7 +763,9 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     if (PRIMITIVE_PATCH_KEYS.size && Object.keys(patch).every((k) => PRIMITIVE_PATCH_KEYS.has(k) && Object.is(state[k], patch[k]))) return;
     const prevLesions = [...state.ablatedLines].join(',');
     const prevSurvey = `${state.showSurveyRibbons}|${state.selectedCircuit}|${state.surveyPreset}|${state.surveyRuns}`;
+    const prevLabels = state.circuitLabels;
     const prevGrid = state.gridSite;
+    const prevMapping = { running: state.mappingRunning, reset: state.mappingResetToken };
     state = {
       ...state,
       ...patch,
@@ -754,8 +775,13 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     };
     const nextLesions = [...state.ablatedLines].join(',');
     const nextSurvey = `${state.showSurveyRibbons}|${state.selectedCircuit}|${state.surveyPreset}|${state.surveyRuns}`;
+    if (loaded) {
+      mappingLayer.configure({ catheterId: state.mappingCatheter, chamber: state.mappingChamber });
+      if (prevMapping.reset !== state.mappingResetToken) mappingLayer.reset();
+      if (prevMapping.running !== state.mappingRunning) mappingLayer.setRunning(state.mappingRunning, state.clockMs);
+    }
     if (prevGrid !== state.gridSite) placeGrid();
-    if (prevLesions !== nextLesions || prevSurvey !== nextSurvey) {
+    if (prevLesions !== nextLesions || prevSurvey !== nextSurvey || prevLabels !== state.circuitLabels) {
       rebuildLesionsAndCircuits();
     }
     rfLayer.setState(patch);
@@ -774,6 +800,8 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       cancelAnimationFrame(raf);
       resizeObserver?.disconnect();
       controls.dispose();
+      circuitLayer.dispose();
+      mappingLayer.dispose();
       decoder.dispose();
       disposeNode(scene);
       renderer.dispose();

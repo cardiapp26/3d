@@ -27,6 +27,16 @@ import {
 import { EAM3D_TEXT } from '../../src/eps/eam3d-text.js';
 import { createRhythmTimeline } from '../../src/eps/eam3d-timeline.js';
 import { polygraphWindowMs } from '../../src/eps/eam3d-polygraph.js';
+import {
+  MAPPING_CATHETERS,
+  MAP_PALETTES,
+  MAPPING_SETTINGS,
+  voltageScale,
+  acquireBeat,
+  createRng,
+  relativeLat,
+  summarizeSession
+} from '../../src/eps/eam3d-mapping-model.js';
 
 // 1. Scenarios, map modes, wall layers and catheters match the workstation specification
 assert.equal(EAM3D_SCENARIOS.includes('avnrt'), true);
@@ -239,5 +249,70 @@ for (let i = 1; i <= 30; i++) capped.startAt(i * 100, { scenarioId: 'sinus' });
 assert.equal(capped.list().length, 12, 'old segments are pruned');
 assert.equal(polygraphWindowMs(100), 1200);
 assert.equal(polygraphWindowMs(25), 4800);
+
+// 17. Mapping catheters: published electrode layouts and each system's colour convention
+const penta = MAPPING_CATHETERS.pentaray;
+const hdGrid = MAPPING_CATHETERS.hdgrid;
+assert.equal(penta.electrodes.length, 20, 'PentaRay: 5 splines x 4 electrodes');
+assert.equal(hdGrid.electrodes.length, 16, 'HD Grid: 4 x 4 electrodes');
+assert.equal(penta.system, 'carto');
+assert.equal(hdGrid.system, 'ensite');
+const gapMm = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const firstSpline = penta.electrodes.filter((e) => e.spline === 0);
+assert.deepEqual(
+  [0, 1, 2].map((k) => Math.round(gapMm(firstSpline[k], firstSpline[k + 1]))),
+  [2, 6, 2],
+  'PentaRay 2-6-2 mm spacing'
+);
+for (const [a, b] of hdGrid.bipoles) {
+  assert.equal(Math.round(gapMm(hdGrid.electrodes[a], hdGrid.electrodes[b])), 3, 'HD Grid bipoles are 3 mm, along and across');
+}
+assert.equal(hdGrid.bipoles.length, 24, 'HD Wave: 12 along + 12 across the splines');
+assert.equal(penta.bipoles.length, 10, 'PentaRay: two 2 mm pairs per spline');
+assert.equal(MAP_PALETTES.carto.lat[0], '#ff0000', 'CARTO: red is earliest');
+assert.equal(MAP_PALETTES.ensite.lat[0], '#ffffff', 'EnSite: white is earliest');
+assert.notDeepEqual(MAP_PALETTES.carto.lat, MAP_PALETTES.ensite.lat);
+assert.equal(MAP_PALETTES.ensite.lat[MAP_PALETTES.ensite.lat.length - 1], '#7800c8', 'EnSite: purple is latest');
+// Voltage: both systems use the 0.5-1.5 mV window; below it CARTO stays red, EnSite turns grey
+assert.deepEqual(voltageScale('ensite', 0.3), { below: true, t: 0 });
+assert.deepEqual(voltageScale('ensite', 1.0), { below: false, t: 0.5 });
+assert.equal(voltageScale('carto', 2.4).t, 1, 'healthy tissue is at the top of the scale');
+assert.equal(MAP_PALETTES.carto.belowWindow, MAP_PALETTES.carto.voltage[0], 'CARTO: low voltage is red');
+assert.equal(MAP_PALETTES.ensite.belowWindow, MAP_PALETTES.ensite.scar, 'EnSite: low voltage is grey scar');
+assert.notEqual(MAP_PALETTES.ensite.unmapped, MAP_PALETTES.ensite.scar, 'unmapped shell is not confused with scar');
+assert.notEqual(hdGrid.color, penta.color, 'each catheter has its own colour');
+
+// 18. Reference-relative LAT and the window of interest
+assert.equal(relativeLat(230, 10, 240, true), -20, 'reentry: late activation wraps to just before the reference');
+assert.equal(relativeLat(230, 10, 833, false), 220, 'focal / sinus rhythm is not wrapped');
+assert.equal(relativeLat(130, 10, 240, true), -120, 'the window of interest spans one cycle');
+
+// 19. One acquired beat: contact, noise, scar and unstable cycles
+const flat = (wallMm) => hdGrid.electrodes.map((e) => ({ pos: [e.x / 36, e.y / 36, 0], wallMm }));
+const healthy = () => ({ lat: 100, bipolar: 2.4, tissue: 'normal' });
+const stable = { tcl: 400, reentrant: false, stableCycle: true, refLat: 0 };
+const beat = acquireBeat({ electrodes: flat(0.5), bipoles: hdGrid.bipoles, truthAt: healthy, rhythm: stable, rng: createRng(7) });
+assert.equal(beat.length, 24, 'one point per bipole');
+assert.ok(beat.every((p) => p.accepted && p.lat !== null));
+assert.ok(beat.every((p) => Math.abs(p.lat - 100) <= 4 * MAPPING_SETTINGS.latNoiseMs), 'LAT scatter stays within a few ms');
+assert.ok(new Set(beat.map((p) => p.lat)).size > 1, 'points are not identical: beat-to-beat noise');
+const replay = acquireBeat({ electrodes: flat(0.5), bipoles: hdGrid.bipoles, truthAt: healthy, rhythm: stable, rng: createRng(7) });
+assert.deepEqual(replay, beat, 'the same seed replays the same acquisition');
+const floating = acquireBeat({ electrodes: flat(6), bipoles: hdGrid.bipoles, truthAt: healthy, rhythm: stable, rng: createRng(7) });
+assert.ok(floating.every((p) => !p.accepted && p.reason === 'no-contact'), 'a floating catheter gives no points');
+const scarBeat = acquireBeat({ electrodes: flat(0.5), bipoles: hdGrid.bipoles, truthAt: () => ({ lat: 100, bipolar: 0.1, tissue: 'scar' }), rhythm: stable, rng: createRng(7) });
+assert.ok(scarBeat.every((p) => p.accepted && p.lat === null && p.bipolar < 0.5), 'dense scar: voltage point without LAT');
+const afBeat = acquireBeat({ electrodes: flat(0.5), bipoles: hdGrid.bipoles, truthAt: healthy, rhythm: { ...stable, stableCycle: false }, rng: createRng(7) });
+assert.ok(afBeat.every((p) => p.accepted && p.lat === null), 'unstable cycle (AF): voltage only');
+const liftedVolt = acquireBeat({ electrodes: flat(3), bipoles: [[0, 1]], truthAt: healthy, rhythm: stable, rng: createRng(3) })[0].bipolar;
+const contactVolt = acquireBeat({ electrodes: flat(0), bipoles: [[0, 1]], truthAt: healthy, rhythm: stable, rng: createRng(3) })[0].bipolar;
+assert.ok(liftedVolt < contactVolt, 'poor contact lowers the recorded voltage');
+
+const summary = summarizeSession({ points: [...beat, ...floating, ...scarBeat], mappedVertices: 250, totalVertices: 1000, beats: 3, elapsedMs: 1200 });
+assert.equal(summary.pointsTaken, 72);
+assert.equal(summary.pointsUsed, 48);
+assert.equal(summary.latPoints, 24);
+assert.equal(summary.coveragePct, 25);
+assert.equal(summary.lowVoltagePct, 50, 'half of the used points are scar');
 
 console.log('PASS test-eam3d: four-chamber 3D EAM model, catheters, polygraph, stimulation, RF ablation & probabilistic circuit survey');

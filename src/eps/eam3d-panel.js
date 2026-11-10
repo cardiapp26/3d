@@ -21,19 +21,39 @@ import { el, toggleClass, button, scrollToCard } from './eam3d-dom.js';
 import { createLeverCards } from './eam3d-lever-cards.js';
 import { createSurveyCard, SURVEY_PRESETS } from './eam3d-survey-card.js';
 import { createStimBar } from './eam3d-stim-bar.js';
+import { createMappingCard } from './eam3d-mapping-card.js';
+import { MAPPING_CATHETERS, MAP_PALETTES } from './eam3d-mapping-model.js';
 
 const RAILS = Object.freeze(['case', 'map', 'ablate', 'survey']);
 const RAIL_ICONS = Object.freeze({ case: '3D', map: 'MAP', ablate: 'RF', survey: 'AI' });
 const SWEEP_SPEEDS = Object.freeze([25, 50, 100, 200]);
 const LEGEND_KEYS = Object.freeze({ live: 'legendLive', lat: 'legendLat', voltage: 'legendVoltage', phase: 'legendPhase' });
 
-// Colour bar under the 3D view, matching what each map mode paints on the heart.
-const SCALE_GRADIENTS = Object.freeze({
-  live: 'linear-gradient(90deg, #fffbeb 0%, #ea580c 30%, #8a6d28 100%)',
-  lat: 'linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6)',
-  voltage: 'linear-gradient(90deg, #475569 0 14%, #ef4444 14%, #eab308 45%, #22c55e 62%, #3b82f6 82%, #8b5cf6 100%)',
-  phase: 'linear-gradient(90deg, hsl(0 85% 52%), hsl(74 85% 52%), hsl(148 85% 52%), hsl(221 85% 52%), hsl(295 85% 52%))',
+// Colour bar under the 3D view, matching what each map mode paints on the heart. Activation
+// and voltage maps follow the mapping system of the selected catheter (CARTO or EnSite).
+const LIVE_GRADIENT = 'linear-gradient(90deg, #fffbeb 0%, #ea580c 30%, #8a6d28 100%)';
+const PHASE_GRADIENT = 'linear-gradient(90deg, hsl(0 85% 52%), hsl(74 85% 52%), hsl(148 85% 52%), hsl(221 85% 52%), hsl(295 85% 52%))';
+function scaleGradient(mapMode, system) {
+  if (mapMode === 'live') return LIVE_GRADIENT;
+  if (mapMode === 'phase') return PHASE_GRADIENT;
+  const palette = MAP_PALETTES[system];
+  if (mapMode === 'lat') return `linear-gradient(90deg, ${palette.lat.join(', ')})`;
+  // Voltage: a flat block for everything below the window, then the scale inside it.
+  return `linear-gradient(90deg, ${palette.belowWindow} 0 16%, ${palette.voltage.map((c, i) => `${c} ${16 + (i * 84) / (palette.voltage.length - 1)}%`).join(', ')})`;
+}
+
+// Chamber a mapping run starts in for each rhythm.
+const MAPPING_CHAMBER_BY_SCENARIO = Object.freeze({
+  avnrt: 'ra',
+  sinus: 'ra',
+  'flutter-typical': 'ra',
+  'atrial-scar-flutter': 'la',
+  'avrt-left': 'la',
+  'vt-ischemic': 'lv',
+  'pvc-rvot': 'rv',
+  af: 'la',
 });
+const GRID_CHANNEL_IDS = Object.freeze(['grid-a12', 'grid-a23', 'grid-a34']);
 
 function hasWebGL(doc) {
   try {
@@ -67,7 +87,14 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     inspectedPoint: null,
     gridSite: DEFAULT_GRID_SITE,
     atlasStatus: 'loading',
+    mappingCatheter: 'pentaray',
+    mappingChamber: MAPPING_CHAMBER_BY_SCENARIO.avnrt,
+    mappingRunning: false,
+    mappingResetToken: 0,
+    mappingProgress: null,
   };
+  // Set by callbacks that fire inside an atlas update; the next frame runs the full sync.
+  let syncPending = false;
 
   // What the heart did and does over time (eam3d-timeline.js); the polygraph and 3D map replay it.
   const timeline = createRhythmTimeline({ scenarioId: state.scenarioId });
@@ -149,7 +176,6 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
 
   const mapModeTitle = el(doc, 'div', 'eam3d-card-title');
   const mapModeGrid = el(doc, 'div', 'eam3d-mode-grid');
-  sectionEls.map = mapModeGrid;
   const mapModeBtns = new Map();
   EAM3D_MAP_MODES.forEach((mode) => {
     const btn = button(doc, 'eam3d-mode-btn', { 'data-eam3d-map-mode': mode });
@@ -167,6 +193,40 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
 
   caseCard.append(caseHead, scenarioField, mapModeTitle, mapModeGrid, scenarioSummary);
   deckEl.appendChild(caseCard);
+
+  // Mapping card: catheter, chamber and the point-by-point acquisition (eam3d-mapping-card.js).
+  const discardMap = () => {
+    state.mappingRunning = false;
+    state.mappingProgress = null;
+    state.mappingResetToken += 1;
+  };
+  const mappingCard = createMappingCard(doc, {
+    onCatheter(catheterId) {
+      state.mappingCatheter = catheterId;
+      discardMap();
+      syncAll();
+    },
+    onChamber(chamber) {
+      state.mappingChamber = chamber;
+      discardMap();
+      syncAll();
+    },
+    onToggle() {
+      state.mappingRunning = !state.mappingRunning;
+      // Show the map that is being built: activation, or voltage when the cycle is unstable.
+      if (state.mappingRunning && (state.mapMode === 'live' || state.mapMode === 'phase')) {
+        state.mapMode = currentSpec().id === 'af' ? 'voltage' : 'lat';
+      }
+      if (state.mappingRunning) state.running = true;
+      syncAll();
+    },
+    onReset() {
+      discardMap();
+      syncAll();
+    },
+  });
+  sectionEls.map = mappingCard.card;
+  deckEl.appendChild(mappingCard.card);
 
   // Cards 2-4: atria, ventricles and His-Purkinje levers (eam3d-lever-cards.js).
   const leverCards = createLeverCards(doc, {
@@ -200,8 +260,9 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       syncRailUI();
     },
   });
+  // The RF console docks under the 3D view, in place of the stimulator, while Ablation is open.
   sectionEls.ablate = rfConsole.card;
-  deckEl.appendChild(rfConsole.card);
+  rfConsole.card.hidden = true;
 
   // Card 6: probabilistic circuit modeling, "Find the circuit" (eam3d-survey-card.js).
   const surveyCard = createSurveyCard(doc, {
@@ -271,11 +332,11 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
   const bottomControls = el(doc, 'div', 'eam3d-bottom-controls');
 
   const scaleBar = el(doc, 'div', 'eam3d-scale-bar');
-  const scaleGradient = el(doc, 'span', 'eam3d-scale-gradient');
+  const scaleBarFill = el(doc, 'span', 'eam3d-scale-gradient');
   const scaleLabel = el(doc, 'span', '', null, {
     'data-eam3d-scale-label': 'true',
   });
-  scaleBar.append(scaleGradient, scaleLabel);
+  scaleBar.append(scaleBarFill, scaleLabel);
 
   bottomControls.append(...leverCards.opacitySliders, scaleBar);
 
@@ -330,7 +391,7 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     onDeliver: deliverStim,
   });
 
-  root.append(leftCol, centerCol, rightCol, stimBar.element);
+  root.append(leftCol, centerCol, rightCol, stimBar.element, rfConsole.card);
 
   function recomputeSurvey() {
     lastSurveyReport = runCircuitSurvey({
@@ -346,9 +407,22 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     syncAll();
   }
 
+  /** Select a circuit (or clear it) and turn the C-arm to the view that shows it best. */
   function toggleCircuit(circuitNumber) {
     state.selectedCircuitIndex = state.selectedCircuitIndex === circuitNumber ? null : circuitNumber;
+    const circuit = lastSurveyReport.circuits.find((c) => c.number === state.selectedCircuitIndex);
+    if (circuit && circuit.view && EAM3D_VIEWS.includes(circuit.view)) {
+      state.carmPreset = circuit.view;
+      if (atlasInstance) atlasInstance.setView(circuit.view);
+    }
     syncAll();
+  }
+
+  // Legend and landmark labels of the 3D circuit layer, with the ablation line names.
+  const circuitLabelCache = new Map();
+  function circuitLabels(t) {
+    if (!circuitLabelCache.has(t)) circuitLabelCache.set(t, { ...t.surveyBox.map3d, lines: t.ablationBox.lines });
+    return circuitLabelCache.get(t);
   }
 
   /** Run a pacing maneuver from the stimulator bar and put its train on the timeline. */
@@ -378,6 +452,9 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     state.scenarioId = scenarioSelect.value;
     state.inspectedPoint = null;
     state.lastStimResult = null;
+    // A map belongs to the rhythm it was acquired in.
+    discardMap();
+    state.mappingChamber = MAPPING_CHAMBER_BY_SCENARIO[state.scenarioId] || state.mappingChamber;
     startSegment();
     if (state.scenarioId === 'vt-ischemic' || state.scenarioId === 'atrial-scar-flutter') {
       state.surveyPreset = state.scenarioId === 'vt-ischemic' ? 'vt-scar' : 'biatrial-scar';
@@ -405,6 +482,33 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     drawFallbackViewport();
   });
 
+  const currentSpec = () => scenarioSpec(state.scenarioId, state.levers, new Set(state.appliedLesions));
+  const mappingSystem = () => MAPPING_CATHETERS[state.mappingCatheter].system;
+
+  function syncMappingCard(t) {
+    mappingCard.sync({
+      t,
+      catheterId: state.mappingCatheter,
+      chamber: state.mappingChamber,
+      running: state.mappingRunning,
+      progress: state.mappingProgress,
+      unstableCycle: currentSpec().id === 'af',
+      gradient: scaleGradient('lat', mappingSystem()),
+    });
+  }
+
+  /** Progress of the mapping run, reported by the 3D map after every acquired beat. */
+  function onMappingProgress(progress) {
+    state.mappingProgress = progress.active ? progress : null;
+    // The polygraph's mapping-catheter channels record from where the catheter is now.
+    if (progress.running && progress.site) state.gridSite = { pos: progress.site, chamber: progress.chamber };
+    if (progress.done && state.mappingRunning) {
+      state.mappingRunning = false;
+      syncPending = true;
+    }
+    syncMappingCard(getT().t);
+  }
+
   function getT() {
     return { t: EAM3D_TEXT[getLang() === 'en' ? 'en' : 'tr'] };
   }
@@ -415,7 +519,11 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       toggleClass(btn, 'is-active', state.activeRail === id);
       label.textContent = t.rails[id] || id;
     });
-    rfConsole.hud.hidden = !(state.activeRail === 'ablate' || rfConsole.isDelivering());
+    const rfOpen = state.activeRail === 'ablate' || rfConsole.isDelivering();
+    rfConsole.hud.hidden = !rfOpen;
+    rfConsole.card.hidden = !rfOpen;
+    stimBar.element.hidden = rfOpen;
+    toggleClass(root, 'is-rf-docked', rfOpen);
     if (atlasInstance && atlasInstance.ok) atlasInstance.setState(rfOverlay());
   }
 
@@ -517,8 +625,11 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     const liveLine = liveRhythmLine(t);
     statusPill.textContent = `${state.running ? t.status.running : t.status.frozen} · ${liveLine}`;
 
-    scaleLabel.textContent = t.viewport[LEGEND_KEYS[state.mapMode]];
-    if (scaleGradient.style) scaleGradient.style.background = SCALE_GRADIENTS[state.mapMode];
+    const system = mappingSystem();
+    const legendKey = LEGEND_KEYS[state.mapMode];
+    scaleLabel.textContent = t.viewport[`${legendKey}_${system}`] || t.viewport[legendKey];
+    if (scaleBarFill.style) scaleBarFill.style.background = scaleGradient(state.mapMode, system);
+    syncMappingCard(t);
     syncInspectReadout();
 
     // Right polygraph header
@@ -538,11 +649,17 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
         view: state.carmPreset,
         levers: state.levers,
         gridSite: state.gridSite,
+        clockMs: state.simTimeMs,
+        mappingCatheter: state.mappingCatheter,
+        mappingChamber: state.mappingChamber,
+        mappingRunning: state.mappingRunning,
+        mappingResetToken: state.mappingResetToken,
         ablatedLines: state.appliedLesions,
         rfLesions: rfVisual.lesions3d,
         ...rfOverlay(),
         showSurveyRibbons: state.showCircuitRibbons,
         selectedCircuit: state.selectedCircuitIndex,
+        circuitLabels: circuitLabels(t),
         surveyPreset: state.surveyPreset,
         surveyRuns: state.surveyRuns,
       });
@@ -558,6 +675,9 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       levers: state.levers,
       gridSite: state.gridSite,
       segmentAt: timeline.at,
+      labels: Object.fromEntries(
+        GRID_CHANNEL_IDS.map((id, i) => [id, MAPPING_CATHETERS[state.mappingCatheter].polygraphLabels[i]]),
+      ),
     });
   }
 
@@ -588,6 +708,7 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
         syncInspectReadout();
       },
       onCircuitSelect: toggleCircuit,
+      onMapping: onMappingProgress,
       onStatus(status) {
         state.atlasStatus = status;
         drawFallbackViewport();
@@ -618,11 +739,14 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     }
     rfConsole.tick(dt);
     // A pacing train just ended (or began): refresh the rhythm badges.
-    if (timeline.at(state.simTimeMs) !== shownSegment || timeline.isPacingAt(state.simTimeMs) !== shownPacing) syncAll();
+    if (syncPending || timeline.at(state.simTimeMs) !== shownSegment || timeline.isPacingAt(state.simTimeMs) !== shownPacing) {
+      syncPending = false;
+      syncAll();
+    }
 
     if (atlasInstance && atlasInstance.ok && state.atlasStatus === 'ready') {
       toggleClass(stageEl, 'is-fallback', false);
-      atlasInstance.setState(timeline.rhythmAt(state.simTimeMs));
+      atlasInstance.setState({ ...timeline.rhythmAt(state.simTimeMs), clockMs: state.simTimeMs });
     } else {
       drawFallbackViewport();
     }
