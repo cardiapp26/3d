@@ -20,12 +20,20 @@ import { ATLAS_CONDUCTION as C } from '../ecg/ecg-atlas-conduction.js';
 import { ATLAS_CONDUCTION_EXTRAS as X } from './conduction-atlas-extras.js';
 import {
   EAM3D_CATHETERS,
+  EAM3D_CHANNELS,
   EAM3D_ABLATION_LINES,
   DEFAULT_LEVERS,
-  buildHdGridElectrodes,
+  DEFAULT_GRID_SITE,
+  WAVEFRONT_MS,
+  scenarioSpec,
+  chamberClock,
+  activationAge,
+  actionPotentialMs,
+  waveLevel,
+  pacedClock,
+  pacedLat,
   evaluateVertex3d,
-  vertexWaveState,
-  sampleChannelsAt,
+  createChannelSampler,
   runCircuitSurvey
 } from './eam3d-model.js';
 
@@ -40,6 +48,9 @@ const CAMERA_VIEWS = Object.freeze({
   xray: [DIST * Math.sin(Math.PI / 6), 0.35, DIST * Math.cos(Math.PI / 6)]
 });
 
+const CHANNEL_BY_ID = new Map(EAM3D_CHANNELS.filter((ch) => ch.catheter).map((ch) => [ch.id, ch]));
+// Patch fields compared by identity; levers and lesion lists are mutated in place by the panel.
+const PRIMITIVE_PATCH_KEYS = new Set(['timeMs', 'scenario', 'stim', 'mapMode', 'view']);
 const VESSEL_IDS = new Set(['aorta', 'pa', 'svc', 'ivc', 'lspv', 'lipv', 'rspv', 'ripv']);
 
 // Isochronal LAT palette: Red (earliest) -> Orange -> Yellow -> Green -> Cyan -> Blue -> Purple (latest)
@@ -53,11 +64,17 @@ const LAT_STOPS = [
   new THREE.Color('#8b5cf6')
 ];
 
-function samplePalette(stops, t) {
+/** Write the palette colour at t (0..1) into `out` without allocating. */
+function samplePalette(stops, t, out) {
   const u = Math.max(0, Math.min(1, t)) * (stops.length - 1);
   const i = Math.min(stops.length - 2, Math.floor(u));
-  return stops[i].clone().lerp(stops[i + 1], u - i);
+  return out.lerpColors(stops[i], stops[i + 1], u - i);
 }
+
+// Wall-layer view of the ventricles: shrink the shell toward its own centre.
+const WALL_SCALE = Object.freeze({ all: 1, epi: 1, mid: 0.97, endo: 0.94, 'hide-epi': 0.94 });
+const ELECTRODE_GLOW = 0.58;
+const ELECTRODE_GLOW_LIT = 1.9;
 
 export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = () => {}, onStatus = () => {} } = {}) {
   const element = document.createElement('div');
@@ -136,6 +153,8 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     timeMs: 0,
     levers: { ...DEFAULT_LEVERS },
     ablatedLines: new Set(),
+    stim: null,
+    gridSite: DEFAULT_GRID_SITE,
     showSurveyRibbons: false,
     selectedCircuit: null,
     surveyPreset: 'biatrial-scar',
@@ -147,6 +166,10 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   let dirty = true;
   let raf = 0;
   let bakedKey = '';
+  let samplerKey = '';
+  let sampler = null;
+  let samplerStim = null;
+  let paintedStaticKey = '';
 
   const disposeNode = (node) => node.traverse((o) => {
     o.geometry?.dispose();
@@ -303,7 +326,7 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
         ablatedLines: state.ablatedLines
       });
       for (const c of survey.circuits) {
-        const isSelected = state.selectedCircuit === c.id;
+        const isSelected = state.selectedCircuit === c.number;
         const opacity = c.interrupted ? 0.18 : isSelected ? 1.0 : 0.82;
         const curve = new THREE.CatmullRomCurve3(c.ribbon3d.map(V), true);
         const ribbon = new THREE.Mesh(
@@ -339,7 +362,7 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
         btn.textContent = String(c.number);
         btn.style.setProperty('--badge-color', c.color);
         btn.dataset.circuitBadge = c.id;
-        btn.addEventListener('click', () => onCircuitSelect(c.id));
+        btn.addEventListener('click', () => onCircuitSelect(c.number));
         badges.append(btn);
         circuitBadges.push({ id: c.id, anchor: V(c.ribbon3d[0]), el: btn });
       }
@@ -355,6 +378,8 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       lv.ventricularCv,
       lv.afRemodelling,
       lv.vtStudyMesh,
+      lv.conductionParticipates,
+      state.stim ? state.stim.channel : '',
       [...state.ablatedLines].sort().join(',')
     ].join('|');
     if (key === bakedKey || !loaded) return;
@@ -363,13 +388,18 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     disposeNode(tagGroup);
     tagGroup.clear();
 
+    // Atria share one LAT colour scale and ventricles another, so "early" and "late"
+    // mean the same thing across the two chambers of a pair.
+    const ranges = { atrial: [Infinity, -Infinity, 0], ventricular: [Infinity, -Infinity, 0] };
+
     for (const mesh of chambers) {
       const chId = mesh.userData.id;
+      const range = ranges[chId === 'ra' || chId === 'la' ? 'atrial' : 'ventricular'];
       const pos = mesh.geometry.attributes.position;
       const lats = new Float32Array(pos.count);
+      const pacedLats = state.stim ? new Float32Array(pos.count) : null;
       const bipolars = new Float32Array(pos.count);
       const tissues = new Array(pos.count);
-      let minLat = Infinity, maxLat = -Infinity;
 
       for (let i = 0; i < pos.count; i++) {
         const pt = [pos.getX(i), pos.getY(i), pos.getZ(i)];
@@ -377,12 +407,14 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
         lats[i] = info.lat;
         bipolars[i] = info.bipolar;
         tissues[i] = info.tissue;
+        if (pacedLats) pacedLats[i] = pacedLat(pt, chId, state.stim);
         if (info.tissue !== 'scar') {
-          if (info.lat < minLat) minLat = info.lat;
-          if (info.lat > maxLat) maxLat = info.lat;
+          if (info.lat < range[0]) range[0] = info.lat;
+          if (info.lat > range[1]) range[1] = info.lat;
+          if (pacedLats && pacedLats[i] > range[2]) range[2] = pacedLats[i];
         }
-        // Place sparse 3D LP / LAVA sphere markers on substrate channels
-        if (info.tag && i % 42 === 0 && state.mapMode === 'voltage') {
+        // Sparse 3D LP / LAVA sphere markers on substrate channels (shown on the voltage map)
+        if (info.tag && i % 42 === 0) {
           const dot = new THREE.Mesh(
             new THREE.SphereGeometry(0.024, 8, 8),
             new THREE.MeshBasicMaterial({ color: info.tag === 'lp' ? '#ffffff' : '#f472b6', depthTest: false })
@@ -392,14 +424,19 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
           tagGroup.add(dot);
         }
       }
-      mesh.userData.eam = {
-        lats,
-        bipolars,
-        tissues,
-        minLat: Number.isFinite(minLat) ? minLat : 0,
-        maxLat: Number.isFinite(maxLat) && maxLat > minLat ? maxLat : 250
-      };
+      mesh.userData.eam = { lats, pacedLats, bipolars, tissues, range };
     }
+  }
+
+  function ensureSampler() {
+    const key = `${bakedKey}|${state.gridSite.chamber}|${state.gridSite.pos.join(',')}`;
+    if (sampler && key === samplerKey && samplerStim === state.stim) return;
+    samplerKey = key;
+    samplerStim = state.stim;
+    sampler = createChannelSampler(state.scenario, state.levers, state.ablatedLines, {
+      stim: state.stim,
+      gridSite: state.gridSite
+    });
   }
 
   // ---- Paint 3D Chambers & Catheter Electrodes for Current Time -----------
@@ -410,15 +447,20 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   const depolarizedColor = new THREE.Color('#ea580c');
   const scarColor = new THREE.Color('#475569');
   const channelColor = new THREE.Color('#dc2626');
+  const xrayColor = new THREE.Color('#94a3b8');
+  const litElectrodes = new Set();
 
   function paintFrame() {
     if (!loaded) return;
     ensureVertexMapBaked();
+    ensureSampler();
     const lv = state.levers;
     const xray = state.view === 'xray';
-    const sample = sampleChannelsAt(state.timeMs, state.scenario, lv, state.ablatedLines);
-    const tcl = sample.tcl;
-    const cyclePhase = ((state.timeMs % tcl) + tcl) % tcl;
+    const mode = state.mapMode;
+    const spec = scenarioSpec(state.scenario, lv, state.ablatedLines);
+    const paced = state.stim ? pacedClock(state.stim, state.timeMs) : null;
+    const atrialClock = paced || chamberClock(spec, 'ra', state.timeMs);
+    const ventricularClock = paced || chamberClock(spec, 'lv', state.timeMs);
 
     const myoOpacity = xray ? 0.16 : Math.max(0.12, Math.min(0.95, lv.myocardiumOpacity / 100));
     const condOpacity = Math.max(0.1, Math.min(1, lv.conductionOpacity / 100));
@@ -427,21 +469,28 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     for (const line of conductionLines) {
       if (line.material) line.material.opacity = condOpacity * 0.9;
     }
+    tagGroup.visible = mode === 'voltage' && !xray;
+
+    // Voltage and X-ray colours do not change with time: paint them once per bake.
+    const staticKey = xray || mode === 'voltage' ? `${xray ? 'xray' : mode}|${bakedKey}` : '';
+    const skipColours = staticKey !== '' && staticKey === paintedStaticKey;
+    paintedStaticKey = staticKey;
 
     for (const mesh of chambers) {
       const chId = mesh.userData.id;
       const isAtrial = chId === 'ra' || chId === 'la';
       if (chId === 'ra') mesh.visible = Boolean(lv.raVisible);
       else if (chId === 'la') mesh.visible = Boolean(lv.laVisible);
-      else mesh.visible = Boolean(lv.ventriclesVisible && lv.wallLayer !== 'hide-epi');
+      else mesh.visible = Boolean(lv.ventriclesVisible);
 
-      // Wall layer visual scale/representation for ventricles
       if (!isAtrial) {
-        const s = lv.wallLayer === 'endo' ? 0.94 : lv.wallLayer === 'mid' ? 0.97 : 1.0;
+        const s = WALL_SCALE[lv.wallLayer] ?? 1;
+        const c = mesh.userData.centre;
         mesh.scale.setScalar(s);
+        mesh.position.set(c.x * (1 - s), c.y * (1 - s), c.z * (1 - s));
       }
 
-      mesh.material.opacity = state.mapMode === 'lat' || state.mapMode === 'voltage'
+      mesh.material.opacity = mode === 'lat' || mode === 'voltage'
         ? Math.max(myoOpacity, 0.78)
         : myoOpacity;
       mesh.material.wireframe = Boolean(
@@ -449,49 +498,43 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       );
 
       const eam = mesh.userData.eam;
-      if (!eam) continue;
+      if (!eam || skipColours || (!mesh.visible && !staticKey)) continue;
       const colorAttr = mesh.geometry.attributes.color;
       const restBase = isAtrial ? restAtrialColor : restVentricularColor;
+      const clock = isAtrial ? atrialClock : ventricularClock;
+      const lats = paced && eam.pacedLats ? eam.pacedLats : eam.lats;
+      const minLat = paced ? 0 : Number.isFinite(eam.range[0]) ? eam.range[0] : 0;
+      const maxLat = paced ? eam.range[2] : eam.range[1];
+      const latSpan = Math.max(1, (maxLat > minLat ? maxLat : minLat + 250) - minLat);
+      const apd = actionPotentialMs(chId, clock.cycle, lv);
 
       for (let i = 0; i < colorAttr.count; i++) {
-        const lat = eam.lats[i];
-        const bipolar = eam.bipolars[i];
         const tissue = eam.tissues[i];
 
         if (xray) {
-          tmpColor.set('#94a3b8');
-        } else if (state.mapMode === 'voltage') {
+          tmpColor.copy(xrayColor);
+        } else if (mode === 'voltage') {
           if (tissue === 'scar') tmpColor.copy(scarColor);
           else if (tissue === 'channel') tmpColor.copy(channelColor);
-          else {
-            const f = Math.max(0, Math.min(1, (bipolar - 0.3) / 1.5));
-            tmpColor.copy(samplePalette(LAT_STOPS, f));
-          }
-        } else if (state.mapMode === 'lat') {
-          if (tissue === 'scar') tmpColor.copy(scarColor);
-          else {
-            const f = (lat - eam.minLat) / Math.max(1, eam.maxLat - eam.minLat);
-            tmpColor.copy(samplePalette(LAT_STOPS, f));
-            // Animated wavefront highlight sweeping through the LAT map
-            if (Math.abs(lat - cyclePhase) < 14) {
-              tmpColor.lerp(waveFrontColor, 0.75);
-            }
-          }
-        } else if (state.mapMode === 'phase') {
-          const w = vertexWaveState(lat, tcl, state.timeMs, chId, tissue);
-          const hue = ((w.phase + Math.PI) / (2 * Math.PI)) * 0.82;
-          tmpColor.setHSL(hue, 0.85, tissue === 'scar' ? 0.22 : 0.52);
+          else samplePalette(LAT_STOPS, (eam.bipolars[i] - 0.3) / 1.5, tmpColor);
+        } else if (tissue === 'scar') {
+          if (mode === 'phase') tmpColor.setHSL(0, 0.85, 0.22);
+          else tmpColor.copy(scarColor);
         } else {
-          // 'live' mode: translucent amber myocardium with bright depolarization wave
-          if (tissue === 'scar') {
-            tmpColor.copy(scarColor);
-          } else if (tissue === 'channel') {
-            const w = vertexWaveState(lat, tcl, state.timeMs, chId, tissue);
-            tmpColor.copy(channelColor).lerp(waveFrontColor, w.front ? 0.85 : w.u * 0.4);
+          const age = activationAge(lats[i], clock);
+          if (mode === 'lat') {
+            samplePalette(LAT_STOPS, (lats[i] - minLat) / latSpan, tmpColor);
+            // Animated wavefront highlight sweeping through the LAT map
+            if (age < 14) tmpColor.lerp(waveFrontColor, 0.75);
+          } else if (mode === 'phase') {
+            tmpColor.setHSL((Math.min(age, clock.cycle) / Math.max(1, clock.cycle)) * 0.82, 0.85, 0.52);
           } else {
-            const w = vertexWaveState(lat, tcl, state.timeMs, chId, tissue);
-            if (w.front) tmpColor.copy(waveFrontColor);
-            else if (w.u > 0.05) tmpColor.copy(restBase).lerp(depolarizedColor, Math.min(1, w.u * 1.15));
+            // 'live' mode: amber myocardium with a bright depolarization wave
+            const u = waveLevel(age, apd);
+            const front = age <= WAVEFRONT_MS;
+            if (tissue === 'channel') tmpColor.copy(channelColor).lerp(waveFrontColor, front ? 0.85 : u * 0.4);
+            else if (front) tmpColor.copy(waveFrontColor);
+            else if (u > 0.05) tmpColor.copy(restBase).lerp(depolarizedColor, Math.min(1, u * 1.15));
             else tmpColor.copy(restBase);
           }
         }
@@ -500,12 +543,16 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       colorAttr.needsUpdate = true;
     }
 
-    // Pulse catheter electrodes when local activation passes
-    const anyLit = sample.litChannels.length > 0;
+    // Flash exactly the bipole the wavefront is passing, in step with the polygraph.
+    litElectrodes.clear();
+    for (const chId of sampler(state.timeMs).litChannels) {
+      const ch = CHANNEL_BY_ID.get(chId);
+      if (ch) for (const idx of ch.electrodes) litElectrodes.add(`${ch.catheter}-${idx}`);
+    }
     for (const [key, elMesh] of electrodeMeshes) {
-      const catId = key.split('-')[0];
-      const active = anyLit && sample.litChannels.some((ch) => ch.startsWith(catId));
-      elMesh.scale.setScalar(active ? 1.32 : 1.0);
+      const lit = litElectrodes.has(key);
+      elMesh.scale.setScalar(lit ? 1.45 : 1.0);
+      elMesh.material.emissiveIntensity = lit ? ELECTRODE_GLOW_LIT : ELECTRODE_GLOW;
     }
   }
 
@@ -541,11 +588,9 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
     const hit = raycaster.intersectObjects(visibleChambers, false)[0];
     if (!hit) return;
 
-    const pt = [
-      Number(hit.point.x.toFixed(3)),
-      Number(hit.point.y.toFixed(3)),
-      Number(hit.point.z.toFixed(3))
-    ];
+    // Tissue lookups use the baked (unscaled) frame; wall-layer views scale the ventricle mesh.
+    const local = hit.object.worldToLocal(hit.point.clone());
+    const pt = [Number(local.x.toFixed(3)), Number(local.y.toFixed(3)), Number(local.z.toFixed(3))];
     const chId = hit.object.userData.id;
     const info = evaluateVertex3d(pt, chId, state.scenario, state.levers, state.ablatedLines);
     lastReadout = { chamber: chId.toUpperCase(), point: pt, ...info };
@@ -554,17 +599,20 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
       selectionMarker.position.copy(hit.point);
       selectionMarker.visible = true;
     }
-    // Move the 4x4 HD Grid paddle to the clicked 3D surface location
-    if (gridGroup) {
-      const newPts = buildHdGridElectrodes(pt);
-      newPts.forEach((p, idx) => {
-        const m = electrodeMeshes.get(`grid-${idx}`);
-        if (m) m.position.copy(V(p));
-      });
-    }
+    // Move the 4x4 HD Grid paddle (splines and electrodes) to the clicked surface point
+    state = { ...state, gridSite: { pos: pt, chamber: chId } };
+    placeGrid();
+    paintFrame();
     dirty = true;
     onPointSelect(lastReadout);
   });
+
+  function placeGrid() {
+    if (!gridGroup) return;
+    const home = DEFAULT_GRID_SITE.pos;
+    const at = state.gridSite.pos;
+    gridGroup.position.set(at[0] - home[0], at[1] - home[1], at[2] - home[2]);
+  }
 
   function resize() {
     if (destroyed) return;
@@ -638,7 +686,8 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
             side: THREE.DoubleSide
           })
         );
-        mesh.userData = { ...part };
+        geometry.computeBoundingBox();
+        mesh.userData = { ...part, centre: geometry.boundingBox.getCenter(new THREE.Vector3()) };
         mesh.renderOrder = 2;
         chamberGroup.add(mesh);
         chambers.push(mesh);
@@ -691,18 +740,21 @@ export function createEam3dAtlas({ onPointSelect = () => {}, onCircuitSelect = (
   }
 
   function setState(patch) {
+    // Frozen simulation: the per-frame rhythm patch changes nothing, skip the repaint.
+    if (PRIMITIVE_PATCH_KEYS.size && Object.keys(patch).every((k) => PRIMITIVE_PATCH_KEYS.has(k) && Object.is(state[k], patch[k]))) return;
     const prevLesions = [...state.ablatedLines].join(',');
     const prevSurvey = `${state.showSurveyRibbons}|${state.selectedCircuit}|${state.surveyPreset}|${state.surveyRuns}`;
-    const prevMapMode = state.mapMode;
+    const prevGrid = state.gridSite;
     state = {
       ...state,
       ...patch,
       levers: patch.levers ? { ...state.levers, ...patch.levers } : state.levers,
-      ablatedLines: patch.ablatedLines ? new Set(patch.ablatedLines) : state.ablatedLines
+      ablatedLines: patch.ablatedLines ? new Set(patch.ablatedLines) : state.ablatedLines,
+      gridSite: patch.gridSite || state.gridSite
     };
     const nextLesions = [...state.ablatedLines].join(',');
     const nextSurvey = `${state.showSurveyRibbons}|${state.selectedCircuit}|${state.surveyPreset}|${state.surveyRuns}`;
-    if (prevMapMode !== state.mapMode) bakedKey = '';
+    if (prevGrid !== state.gridSite) placeGrid();
     if (prevLesions !== nextLesions || prevSurvey !== nextSurvey) {
       rebuildLesionsAndCircuits();
     }

@@ -5,7 +5,6 @@
 export const EAM3D_TEXT = Object.freeze({
   tr: {
     tab: '3B elektroanatomik harita',
-    eyebrow: 'DÖRT BOŞLUKLU 3B SİMÜLASYON VE ELEKTROANATOMİK HARİTALAMA',
     title: '3B Elektroanatomik Haritalama ve Devre Bulucu',
     intro: 'Atriyumlar, ventriküller ve His-Purkinje ileti ağı tek bir 3B modelde: intrakardiyak kateterler (DUO, CS, HRA, His, RV, HD Grid), canlı elektrogramlar, programlı stimülasyon, 3B ablasyon ve olasılıksal devre modelleme.',
     rails: {
@@ -17,17 +16,7 @@ export const EAM3D_TEXT = Object.freeze({
     status: {
       running: 'ÇALIŞIYOR',
       frozen: 'DONDURULDU',
-      pacing: 'PACING AKTİF',
-      loading: '3B kalp atlası yükleniyor...',
-      ready: '3B harita hazır',
-      failed: 'WebGL / 3B atlas yüklenemedi; 2B şematik görünüm aktif.'
-    },
-    topActions: {
-      pause: 'Duraklat',
-      resume: 'Sürdür',
-      reset: 'Sıfırla',
-      freeze: 'Dondur',
-      stimulator: 'Stimülatör'
+      pacing: 'PACING AKTİF'
     },
     views: {
       ap: 'AP',
@@ -43,13 +32,13 @@ export const EAM3D_TEXT = Object.freeze({
       importMap: 'Harita İçe Aktar'
     },
     scenarios: {
-      avnrt: 'AVNRT (Tipik yavaş-hızlı · CL 392 ms)',
-      sinus: 'Sinüs ritmi (Normal iletim · CL 833 ms)',
-      'flutter-typical': 'Tipik Atriyal Flutter (CTI saat yönü tersi · CL 240 ms)',
-      'atrial-scar-flutter': 'Atriyal Skar Flutter (Sol/Biatriyal · CL 265 ms)',
-      'avrt-left': 'Ortodromik AVRT (Sol lateral aksesuar yol · CL 350 ms)',
-      'vt-ischemic': 'İskemik Skar VT (LV inferolateral istmus · CL 320 ms)',
-      'pvc-rvot': 'RVOT Septal VES / PVC (Fokal çıkış · CL 540 ms)',
+      avnrt: 'AVNRT (Tipik yavaş-hızlı)',
+      sinus: 'Sinüs ritmi (Normal iletim)',
+      'flutter-typical': 'Tipik Atriyal Flutter (CTI saat yönü tersi)',
+      'atrial-scar-flutter': 'Atriyal Skar Flutter (Sol/Biatriyal)',
+      'avrt-left': 'Ortodromik AVRT (Sol lateral aksesuar yol)',
+      'vt-ischemic': 'İskemik Skar VT (LV inferolateral istmus)',
+      'pvc-rvot': 'RVOT Septal VES / PVC (Fokal çıkış)',
       af: 'Atriyal Fibrilasyon (Yüksek yoğunluklu biatriyal rotor/dalga)'
     },
     mapModes: {
@@ -72,7 +61,6 @@ export const EAM3D_TEXT = Object.freeze({
     ventriclesBox: {
       title: 'VENTRİKÜLLER',
       visible: 'Ventriküller',
-      wall: 'DUVAR KATMANI',
       walls: {
         all: 'Tümü',
         endo: 'Endo',
@@ -104,7 +92,6 @@ export const EAM3D_TEXT = Object.freeze({
       }
     },
     surveyBox: {
-      eyebrow: 'OLASIKSAL DEVRE MODELLEME',
       title: 'Vaka haritasından potansiyel devrelere (Find the Circuit)',
       intro: 'Voltaj haritasını içe aktarın, 10–1.000 koşuluk olasılık motoru ile potansiyel reentran devreleri tarayın ve minimal müdahale hatlarını karşılaştırın.',
       preset: 'Voltaj haritası kaynağı',
@@ -119,6 +106,9 @@ export const EAM3D_TEXT = Object.freeze({
       circuitsTitle: 'Saptanan Potansiyel Devreler',
       linesTitle: 'Önerilen Minimal Müdahale Hatları',
       applyLine: 'Hattı Uygula',
+      blocked: 'Bloklu',
+      conducting: 'İletimde',
+      isthmus: 'İstmus',
       circuitNames: {
         'circuit-1-mitral': '1 · Perimitral (Mitral anülüs çevresi)',
         'circuit-2-roof': '2 · LA Tavan bağımlı (PV üstü makroreentri)',
@@ -132,18 +122,20 @@ export const EAM3D_TEXT = Object.freeze({
     viewport: {
       myoOpacity: 'Miyokard opaklığı',
       condOpacity: 'İleti/Kateter opaklığı',
-      pointReadout: '3B Nokta Okuması: kateter veya 3B yüzeye tıklayın',
-      legendLive: 'Canlı Vm: Beyaz cephe -> Turuncu depolarize -> Mavi/Kehribar dinlenme',
+      pointReadout: 'Nokta okuması: yüzeye tıklayın; HD Grid oraya taşınır',
+      tissues: { normal: 'Normal doku', border: 'Sınır zon', scar: 'Skar', channel: 'İleti kanalı' },
+      legendLive: 'Canlı Vm: Beyaz cephe -> Turuncu depolarize -> Kehribar dinlenme',
       legendLat: 'LAT İzokronal: Kırmızı (en erken) -> Sarı -> Yeşil -> Mavi -> Mor (en geç)',
-      legendVoltage: 'Bipolar Voltaj: <0.5 mV Skar (Kırmızı/Gri) · 0.5-1.5 mV Sınır · >1.5 mV Normal (Mor)',
+      legendVoltage: 'Bipolar Voltaj: Gri yoğun skar · <0.5 mV Kırmızı (kanal) · 0.5-1.5 mV Sınır · >1.5 mV Normal (Mor)',
       legendPhase: 'Faz Haritası: -π .. +π rotor fazı ve faz tekillikleri'
     },
     polygraph: {
       cl: 'CL',
       bpm: 'atım/dk',
-      ref: 'ref: DUO 19-20',
+      atrial: 'A',
+      ventricular: 'V',
+      irregular: 'düzensiz',
       record: 'KAYIT',
-      lead12: '12-Derivasyon',
       canvasLabel: 'Canlı çok kanallı intrakardiyak elektrogram ve yüzey EKG monitörü'
     },
     stim: {
@@ -158,6 +150,7 @@ export const EAM3D_TEXT = Object.freeze({
       s2: 'S2 (ms)',
       channel: 'Pacing kanalı',
       output: '10.0 mA · 2.0 ms',
+      deliver: 'Stim Uygula',
       verdicts: {
         overdriveEntrained: (ppi, diff) => `Overdrive entrainment: PPI = ${ppi} ms, PPI - TCL = ${diff} ms (${diff <= 30 ? 'devre içi' : 'devreye uzak'}).`,
         overdriveTerminated: () => 'Overdrive burst pacing reentran devreyi kırdı -> Sinüs ritmi sağlandı.',
@@ -171,7 +164,6 @@ export const EAM3D_TEXT = Object.freeze({
   },
   en: {
     tab: '3D electroanatomic map',
-    eyebrow: 'FOUR-CHAMBER 3D SIMULATION & ELECTROANATOMICAL MAPPING',
     title: '3D Electroanatomical Mapping & Circuit Finder',
     intro: 'Atria, ventricles, and the His-Purkinje conduction system in one 3D model: intracardiac catheters (DUO, CS, HRA, His, RV, HD Grid), live electrograms, programmed stimulation, 3D ablation, and probabilistic circuit modeling.',
     rails: {
@@ -183,17 +175,7 @@ export const EAM3D_TEXT = Object.freeze({
     status: {
       running: 'RUNNING',
       frozen: 'FROZEN',
-      pacing: 'PACING',
-      loading: 'Loading 3D heart atlas...',
-      ready: '3D map ready',
-      failed: 'WebGL / 3D atlas unavailable; schematic fallback active.'
-    },
-    topActions: {
-      pause: 'Pause',
-      resume: 'Resume',
-      reset: 'Reset',
-      freeze: 'Freeze',
-      stimulator: 'Stimulator'
+      pacing: 'PACING'
     },
     views: {
       ap: 'AP',
@@ -209,13 +191,13 @@ export const EAM3D_TEXT = Object.freeze({
       importMap: 'Import map'
     },
     scenarios: {
-      avnrt: 'AVNRT (Typical slow-fast · CL 392 ms)',
-      sinus: 'Sinus rhythm (Normal conduction · CL 833 ms)',
-      'flutter-typical': 'Typical Atrial Flutter (CCW CTI · CL 240 ms)',
-      'atrial-scar-flutter': 'Atrial Scar Flutter (Left/Biatrial · CL 265 ms)',
-      'avrt-left': 'Orthodromic AVRT (Left lateral pathway · CL 350 ms)',
-      'vt-ischemic': 'Ischemic Scar VT (LV inferolateral isthmus · CL 320 ms)',
-      'pvc-rvot': 'RVOT Septal PVC (Focal outflow origin · CL 540 ms)',
+      avnrt: 'AVNRT (Typical slow-fast)',
+      sinus: 'Sinus rhythm (Normal conduction)',
+      'flutter-typical': 'Typical Atrial Flutter (CCW CTI)',
+      'atrial-scar-flutter': 'Atrial Scar Flutter (Left/Biatrial)',
+      'avrt-left': 'Orthodromic AVRT (Left lateral pathway)',
+      'vt-ischemic': 'Ischemic Scar VT (LV inferolateral isthmus)',
+      'pvc-rvot': 'RVOT Septal PVC (Focal outflow origin)',
       af: 'Atrial Fibrillation (High-density biatrial rotors/wavelets)'
     },
     mapModes: {
@@ -238,7 +220,6 @@ export const EAM3D_TEXT = Object.freeze({
     ventriclesBox: {
       title: 'VENTRICLES',
       visible: 'Ventricles',
-      wall: 'WALL',
       walls: {
         all: 'All',
         endo: 'Endo',
@@ -270,7 +251,6 @@ export const EAM3D_TEXT = Object.freeze({
       }
     },
     surveyBox: {
-      eyebrow: 'PROBABILISTIC CIRCUIT MODELING',
       title: 'From a case map to potential circuits',
       intro: 'Import a case voltage map, use the probability engine across 10–1,000 runs to survey potential circuits, and compare minimal-intervention ablation lines.',
       preset: 'Voltage map source',
@@ -285,6 +265,9 @@ export const EAM3D_TEXT = Object.freeze({
       circuitsTitle: 'Surveyed Potential Circuits',
       linesTitle: 'Proposed Minimal Intervention Lines',
       applyLine: 'Apply Line',
+      blocked: 'Blocked',
+      conducting: 'Conducting',
+      isthmus: 'Isthmus',
       circuitNames: {
         'circuit-1-mitral': '1 · Perimitral (Mitral annulus macroreentry)',
         'circuit-2-roof': '2 · LA Roof-dependent macroreentry',
@@ -298,18 +281,20 @@ export const EAM3D_TEXT = Object.freeze({
     viewport: {
       myoOpacity: 'Myocardium opacity',
       condOpacity: 'Conduction/Catheter opacity',
-      pointReadout: '3D Point Readout: click a catheter or 3D chamber wall',
-      legendLive: 'Live Vm: White wavefront -> Orange depolarized -> Blue/Amber resting',
+      pointReadout: 'Point readout: click the surface; the HD Grid moves there',
+      tissues: { normal: 'Normal tissue', border: 'Border zone', scar: 'Scar', channel: 'Conducting channel' },
+      legendLive: 'Live Vm: White wavefront -> Orange depolarized -> Amber resting',
       legendLat: 'Isochronal LAT: Red (earliest) -> Yellow -> Green -> Blue -> Purple (latest)',
-      legendVoltage: 'Bipolar Voltage: <0.5 mV Scar (Red/Grey) · 0.5-1.5 mV Border · >1.5 mV Normal (Purple)',
+      legendVoltage: 'Bipolar Voltage: Grey dense scar · <0.5 mV Red (channel) · 0.5-1.5 mV Border · >1.5 mV Normal (Purple)',
       legendPhase: 'Phase Map: -π .. +π rotor phase & phase singularities'
     },
     polygraph: {
       cl: 'CL',
       bpm: 'bpm',
-      ref: 'ref: DUO 19-20',
+      atrial: 'A',
+      ventricular: 'V',
+      irregular: 'irregular',
       record: 'RECORD',
-      lead12: '12-lead',
       canvasLabel: 'Live multichannel intracardiac electrogram and surface ECG monitor'
     },
     stim: {
@@ -324,6 +309,7 @@ export const EAM3D_TEXT = Object.freeze({
       s2: 'S2 (ms)',
       channel: 'Pacing channel',
       output: '10.0 mA · 2.0 ms',
+      deliver: 'Deliver Stim',
       verdicts: {
         overdriveEntrained: (ppi, diff) => `Overdrive entrainment: PPI = ${ppi} ms, PPI - TCL = ${diff} ms (${diff <= 30 ? 'in circuit' : 'out of circuit'}).`,
         overdriveTerminated: () => 'Overdrive burst pacing interrupted the reentrant circuit -> Sinus rhythm restored.',
