@@ -1,3 +1,4 @@
+import { createCarotidAtlas } from './carotid-atlas.js';
 import {
   ARCH_TYPES,
   ARCH_VARIANTS,
@@ -38,6 +39,7 @@ function imagingMarkup(state, lang) {
   const t = imagingCopy[lang];
   return `<section class="carotid-imaging" aria-label="${t.label}">
     <div class="carotid-imaging-head"><h3>${t.title}</h3><div role="group" aria-label="${t.title}">${['dsa', 'fluoro'].map(mode => `<button type="button" class="carotid-chip" data-fluo-mode="${mode}" aria-pressed="${state.imagingMode === mode}">${t[mode]}</button>`).join('')}</div></div>
+    <button type="button" class="carotid-chip" data-carotid-atlas-anatomy aria-pressed="false">3B</button>
     <canvas data-carotid-fluo width="540" height="440" role="img" aria-label="${t.label}"></canvas>
     <p class="control-explain" data-fluo-note>${t.note}</p>
   </section>`;
@@ -203,6 +205,11 @@ export function createCarotidPanel({ mount, getLang }) {
   };
   let hitRegions = [];
   let device = null;
+  let atlas = null;
+  let atlasAnatomy = false;
+  const useAtlas = () => state.view !== 'stenosis'
+    && !(state.view === 'arch' && (state.archType !== 'I' || state.archVariant !== 'normal'))
+    && !(state.view === 'ica' && (state.angle !== 25 || state.coil));
 
   // Back the 540 x 440 logical detector with device pixels so vessels stay sharp on HiDPI screens.
   function sizeDetector(canvas) {
@@ -216,8 +223,28 @@ export function createCarotidPanel({ mount, getLang }) {
   function drawFluoro() {
     const canvas = mount.querySelector('[data-carotid-fluo]');
     if (!canvas) return;
-    const result = renderCarotidFluoro(canvas, { ...state, lang: getLang(), pixelRatio: sizeDetector(canvas) });
-    hitRegions = result.hitRegions;
+    const lang = getLang();
+    canvas.dataset.imageSource = useAtlas() ? 'atlas' : 'simulation';
+    const atlasButton = mount.querySelector('[data-carotid-atlas-anatomy]');
+    atlasButton.hidden = !useAtlas();
+    atlasButton.textContent = lang === 'en' ? (atlasAnatomy ? 'Fluoroscopy' : '3D anatomy') : (atlasAnatomy ? 'Floroskopi' : '3B anatomi');
+    atlasButton.setAttribute('aria-pressed', String(atlasAnatomy));
+    if (useAtlas()) {
+      hitRegions = [];
+      mount.querySelector('[data-fluo-note]').textContent = lang === 'en'
+        ? 'Cardia atlas meshes · Scroll to zoom. Not a patient radiograph. Select structures and ICA segments in the teaching schematic below.'
+        : 'Cardia atlas yüzeyleri · Kaydır: yakınlaştır. Hasta radyografisi değildir. Yapı ve İKA segmenti seçimi aşağıdaki öğretim şemasındadır.';
+      if (atlas) atlas.draw(canvas, { viewId: state.view, alpha: state.alpha, beta: state.beta, imagingMode: state.imagingMode, contrastOpacity: state.contrast, bolusWave: 1.2, selectedId: state.selected, lang }, atlasAnatomy);
+      else {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#cbd5e1'; ctx.font = '14px system-ui';
+        ctx.fillText(lang === 'en' ? 'Atlas unavailable. Check WebGL and reload.' : 'Atlas açılamadı. WebGL desteğini kontrol edip yeniden yükleyin.', 15, 60);
+      }
+    } else {
+      mount.querySelector('[data-fluo-note]').textContent = (lang === 'en' ? 'Variant / intervention exercise · ' : 'Varyant / girişim alıştırması · ') + imagingCopy[lang].note;
+      const result = renderCarotidFluoro(canvas, { ...state, lang, pixelRatio: sizeDetector(canvas) });
+      hitRegions = result.hitRegions;
+    }
     device?.setAngles(state.alpha, state.beta);
     const puck = mount.querySelector('[data-carotid-puck]');
     puck.style.left = `${(state.alpha + 90) / 180 * 100}%`;
@@ -299,6 +326,11 @@ export function createCarotidPanel({ mount, getLang }) {
   }
 
   function bindEvents() {
+    mount.querySelector('[data-carotid-atlas-anatomy]').addEventListener('click', () => { atlasAnatomy = !atlasAnatomy; drawFluoro(); });
+    mount.querySelector('[data-carotid-fluo]').addEventListener('wheel', event => {
+      if (!useAtlas() || !atlas) return;
+      event.preventDefault(); atlas.zoom(event.deltaY); drawFluoro();
+    }, { passive: false });
     mount.querySelector('[data-carotid-anatomy]').addEventListener('toggle', event => { state.anatomyOpen = event.currentTarget.open; });
     mount.querySelector('[data-carotid-beam]').addEventListener('change', event => {
       state.beam = event.target.checked;
@@ -337,7 +369,7 @@ export function createCarotidPanel({ mount, getLang }) {
     }));
     mount.querySelector('[data-carotid-fluo]').addEventListener('click', event => {
       const rect = event.currentTarget.getBoundingClientRect();
-      const id = hitTestCarotid(hitRegions, (event.clientX - rect.left) * 540 / rect.width, (event.clientY - rect.top) * 440 / rect.height);
+      const id = useAtlas() ? atlas?.pick((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height) : hitTestCarotid(hitRegions, (event.clientX - rect.left) * 540 / rect.width, (event.clientY - rect.top) * 440 / rect.height);
       if (id) selectStructure(id);
     });
     mount.querySelectorAll('[data-view-tab]').forEach(button => button.addEventListener('click', () => {
@@ -393,6 +425,8 @@ export function createCarotidPanel({ mount, getLang }) {
   const onResize = () => drawFluoro();
   window.addEventListener('resize', onResize);
 
+  try { atlas = createCarotidAtlas({ onReady: () => drawFluoro() }); }
+  catch (error) { console.warn('Carotid atlas unavailable', error); }
   render();
   return {
     render,
@@ -402,6 +436,7 @@ export function createCarotidPanel({ mount, getLang }) {
     dispose: () => {
       window.removeEventListener('resize', onResize);
       device?.dispose();
+      atlas?.dispose();
       device = null;
       mount.replaceChildren();
     }
