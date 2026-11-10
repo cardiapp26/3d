@@ -1114,3 +1114,8 @@
     box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.55);
   }
 }
+
+.peri-atlas-toolbar { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-bottom: 1px solid #334155; }
+.peri-atlas-toolbar span { color: #b7c5d1; font-size: 11px; line-height: 1.5; }
+.peri-atlas-toolbar button { flex-shrink: 0; }
+.peri-tele-strip[hidden], .peri-toggle-chip[hidden], .peri-atlas-toolbar button[hidden] { display: none; }

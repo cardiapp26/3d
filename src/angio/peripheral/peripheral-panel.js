@@ -1,3 +1,4 @@
+import { createPeripheralAtlas } from './peripheral-atlas.js';
 // Peripheral angiography studio: 5 vascular territories, 71-structure interactive SVG atlas,
 // live C-arm fluoroscopy/DSA/roadmap projection engine, 3D C-arm gantry, 2D angle joystick,
 // contrast bolus-chase animation, clinical lesion/CTO simulator, and ABI/TBI calculator.
@@ -198,6 +199,8 @@ export function createPeripheralPanel({ mount, getLang }) {
 
   let skeletonReady = false;
   let device = null;
+  let atlas = null;
+  let atlasAnatomy = false;
   let clickRegions = [];
   let animFrameId = null;
   let lastFrameTime = performance.now();
@@ -259,6 +262,10 @@ export function createPeripheralPanel({ mount, getLang }) {
             <div class="peri-fluoro-head">
               <h2 class="peri-subcard-title" data-peri-dsa-title></h2>
               <div class="peri-img-modes" role="group" data-peri-img-modes></div>
+            </div>
+            <div class="peri-atlas-toolbar">
+              <button type="button" class="peri-chip" data-peri-atlas-anatomy aria-pressed="false"></button>
+              <span data-peri-image-source role="status"></span>
             </div>
             <div class="peri-fluoro-canvas-wrap">
               <canvas id="peri-fluo-canvas" data-peri-fluo-canvas width="540" height="440"></canvas>
@@ -402,6 +409,12 @@ export function createPeripheralPanel({ mount, getLang }) {
       <div class="peri-tip" data-peri-tip hidden></div>
     </div>`;
 
+    try { atlas = createPeripheralAtlas({ onReady: () => drawFluoro() }); }
+    catch (error) { console.warn('Peripheral WebGL unavailable', error); }
+    mount.querySelector('[data-peri-atlas-anatomy]').addEventListener('click', () => {
+      atlasAnatomy = !atlasAnatomy;
+      drawFluoro();
+    });
     const deviceMount = mount.querySelector('[data-peri-device]');
     if (deviceMount) {
       try {
@@ -519,7 +532,7 @@ export function createPeripheralPanel({ mount, getLang }) {
     const canvas = mount.querySelector('[data-peri-fluo-canvas]');
     if (!canvas) return;
     const lang = getLang() === 'en' ? 'en' : 'tr';
-    clickRegions = renderPeripheralFluoroscopyCanvas(canvas, {
+    const renderState = {
       viewId: state.viewId,
       alpha: state.alpha,
       beta: state.beta,
@@ -536,7 +549,31 @@ export function createPeripheralPanel({ mount, getLang }) {
       selectedId: state.selectedId,
       cinePlaying: state.cinePlaying,
       lang
-    });
+    };
+    const procedural = Boolean(activeLesionObj()?.id && activeLesionObj().id !== 'none');
+    const button = mount.querySelector('[data-peri-atlas-anatomy]');
+    button.hidden = procedural;
+    button.textContent = lang === 'en' ? (atlasAnatomy ? 'Fluoroscopy' : '3D anatomy') : (atlasAnatomy ? 'Floroskopi' : '3B anatomi');
+    button.setAttribute('aria-pressed', String(atlasAnatomy));
+    const sourceNote = mount.querySelector('[data-peri-image-source]');
+    const sourceText = procedural
+      ? (lang === 'en' ? 'Intervention exercise · schematic lesion and devices' : 'Girişim alıştırması · şematik lezyon ve cihazlar')
+      : (lang === 'en' ? 'Cardia atlas meshes · Scroll to zoom · Not a patient radiograph' : 'Cardia atlas yüzeyleri · Kaydır: yakınlaştır · Hasta radyografisi değildir');
+    if (sourceNote.textContent !== sourceText) sourceNote.textContent = sourceText;
+    mount.querySelector('.peri-tele-strip').hidden = !procedural;
+    mount.querySelectorAll('[data-peri-toggle]').forEach(input => { input.parentElement.hidden = !procedural && input.dataset.periToggle !== 'labels'; });
+    canvas.dataset.imageSource = procedural ? 'simulation' : 'atlas';
+    if (!procedural) {
+      clickRegions = [];
+      if (atlas) atlas.draw(canvas, renderState, atlasAnatomy);
+      else {
+        canvas.dataset.periAtlas = 'error';
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#b6c2cc'; ctx.font = '14px system-ui';
+        ctx.fillText(lang === 'en' ? '3D view unavailable. Check WebGL and reload.' : '3B görünüm açılamadı. WebGL desteğini kontrol edip yeniden yükleyin.', 15, 60);
+      }
+    } else clickRegions = renderPeripheralFluoroscopyCanvas(canvas, renderState);
   }
 
   function updateAbiUI() {
@@ -850,9 +887,16 @@ export function createPeripheralPanel({ mount, getLang }) {
           y: (e.clientY - rect.top) * (lh / Math.max(1, rect.height))
         };
       };
+      canvas.addEventListener('wheel', e => {
+        if (canvas.dataset.imageSource !== 'atlas' || !atlas) return;
+        e.preventDefault(); atlas.zoom(e.deltaY); drawFluoro();
+      }, { passive: false });
+      const imageHit = pt => canvas.dataset.imageSource === 'atlas'
+        ? atlas?.pick(pt.x / Number(canvas.dataset.logicalW || 540), pt.y / Number(canvas.dataset.logicalH || 440))
+        : hitTestPeripheralVessel(clickRegions, pt.x, pt.y);
       canvas.addEventListener('pointermove', e => {
         const pt = coords(e);
-        const hit = hitTestPeripheralVessel(clickRegions, pt.x, pt.y);
+        const hit = imageHit(pt);
         if (hit !== state.hoveredId) {
           state.hoveredId = hit;
           canvas.style.cursor = hit ? 'pointer' : 'crosshair';
@@ -867,7 +911,7 @@ export function createPeripheralPanel({ mount, getLang }) {
       });
       canvas.addEventListener('click', e => {
         const pt = coords(e);
-        const hit = hitTestPeripheralVessel(clickRegions, pt.x, pt.y);
+        const hit = imageHit(pt);
         if (hit) select(hit);
       });
     }
@@ -1108,6 +1152,7 @@ export function createPeripheralPanel({ mount, getLang }) {
     dispose() {
       if (animFrameId) cancelAnimationFrame(animFrameId);
       device?.dispose();
+      atlas?.dispose();
     }
   };
 }

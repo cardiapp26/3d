@@ -41,6 +41,7 @@ async function clickPathMidpoint(page, structure, id) {
     assert.equal(await originalDevice.evaluate(canvas => canvas === document.querySelector('[data-carotid-device] canvas')), true, 'rerenders retain WebGL canvas and inspection state');
     const detector = page.locator('[data-carotid-fluo]');
     await detector.waitFor({ state: 'visible' });
+    await page.waitForFunction(() => document.querySelector('[data-carotid-fluo]').dataset.periAtlas === 'ready');
     const detectorImage = () => detector.evaluate(canvas => canvas.toDataURL());
     const detectorPixels = () => detector.evaluate(canvas => {
       // Exclude text readouts: an angle label alone must not satisfy this test.
@@ -79,17 +80,21 @@ async function clickPathMidpoint(page, structure, id) {
     assert.equal(await page.locator('[data-fluo-mode="fluoro"]').getAttribute('aria-pressed'), 'true');
     await page.locator('[data-fluo-mode="dsa"]').click();
 
-    const { buildCarotidModel, projectCarotidPoint } = await import('../src/angio/carotid/carotid-fluoro.js');
-    const rcca = buildCarotidModel({ view: 'arch' }).vessels.find(vessel => vessel.id === 'rcca');
-    const end = rcca.points.at(-1), start = rcca.points.at(-2);
-    const target = projectCarotidPoint(start.map((value, axis) => value * .25 + end[axis] * .75), 40, 20);
-    await detector.scrollIntoViewIfNeeded();
+    // Variant exercises retain their schematic geometry and detector picking.
+    await page.locator('[data-arch-type="II"]').click();
+    assert.equal(await detector.getAttribute('data-image-source'), 'simulation');
+    const target = await page.evaluate(() => {
+      const region = window.carotidAngio.getHitRegions().find(item => item.id === 'rcca');
+      return region.points[Math.floor(region.points.length * .8)];
+    });
+    await detector.evaluate(canvas => canvas.scrollIntoView({ block: 'center', behavior: 'instant' }));
     const box = await detector.boundingBox();
     const unselected = await detectorPixels();
-    await page.mouse.click(box.x + (270 + target.u * 118.8) * box.width / 540, box.y + (220 + target.v * 118.8) * box.height / 440);
+    await page.mouse.click(box.x + target.x * box.width / 540, box.y + target.y * box.height / 440);
     assert.equal(await page.locator('[data-detail-id]').getAttribute('data-detail-id'), 'rcca', 'detector vessel click opens matching detail');
     assert.notEqual(await detectorPixels(), unselected, 'selected detector vessel has visible highlight');
 
+    await page.locator('[data-arch-type="I"]').click();
     assert.equal((await page.locator('[data-site-badge]').textContent()).trim(), 'KAROTİS ANJİYOGRAFİ');
     assert.match(await page.locator('h1').textContent(), /Karotis ve serebral/);
     assert.equal(await page.locator('[data-view-tab]').count(), 5, 'five tabs rendered');
