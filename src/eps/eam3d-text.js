@@ -47,6 +47,32 @@ export const EAM3D_TEXT = Object.freeze({
       voltage: 'Substrat Voltaj Haritası (Bipolar mV)',
       phase: 'Faz / Rotor Haritası (Hilbert fazı)'
     },
+    mappingBox: {
+      title: 'HARİTALAMA',
+      catheter: 'Haritalama kateteri',
+      catheters: {
+        pentaray: 'PENTARAY NAV ECO (20 kutup, 2-6-2 mm · CARTO)',
+        hdgrid: 'Advisor HD Grid X (16 kutup, 3 mm · EnSite)'
+      },
+      chamber: 'Haritalanacak boşluk',
+      chambers: { ra: 'Sağ atriyum', la: 'Sol atriyum', rv: 'Sağ ventrikül', lv: 'Sol ventrikül' },
+      systems: {
+        carto: 'CARTO renk düzeni: kırmızı en erken / düşük voltaj, mor en geç / sağlıklı',
+        ensite: 'EnSite renk düzeni: beyaz en erken, mor en geç; voltajda <0.5 mV gri (skar), mor sağlıklı'
+      },
+      start: 'Haritalamayı başlat',
+      stop: 'Haritalamayı durdur',
+      resume: 'Haritalamaya devam et',
+      reset: 'Haritayı sil',
+      idle: 'Henüz nokta alınmadı. Harita modları tüm yüzeyde ideal haritayı gösteriyor.',
+      how: 'Kateter duvarda gezer; her kabul edilen atımda temas eden bipoller birer nokta verir. Yüzey yalnızca noktaların çevresinde renklenir, alınmamış bölge gri kalır.',
+      afNote: 'AF\'de siklus kararsız: aktivasyon (LAT) noktaları kabul edilmez, yalnızca voltaj toplanır.',
+      done: 'Harita tamamlandı. Aktivasyon ve voltaj modları arasında geçebilir, yeni harita için silebilirsiniz.',
+      stats: (s) =>
+        `${s.pointsUsed} nokta kullanıldı (${s.pointsTaken} alındı, ${s.pointsTaken - s.pointsUsed} temassız) · LAT ${s.latPoints} · kaplama %${s.coveragePct} · ${s.beats} atım · ${s.seconds} sn` +
+        (s.latRange ? ` · LAT ${s.latRange[0]} .. ${s.latRange[1]} ms (ref: KS)` : '') +
+        ` · düşük voltaj (<0.5 mV) %${s.lowVoltagePct} · ${s.electrodes} elektrot, ${s.bipoles} bipol, dolgu eşiği ${s.fillMm} mm`
+    },
     atriaBox: {
       title: 'ATRİYUMLAR',
       ra: 'Sağ atriyum (RA)',
@@ -106,6 +132,33 @@ export const EAM3D_TEXT = Object.freeze({
       circuitsTitle: 'Saptanan Potansiyel Devreler',
       linesTitle: 'Önerilen Minimal Müdahale Hatları',
       applyLine: 'Hattı Uygula',
+      map3d: {
+        legendTitle: 'Haritadaki devreler',
+        legendHint: 'Renkli halka = olası reentri yolu, ok = dönüş yönü. Bir devreye tıklayın: en iyi görünüm açılır, yolu ve kesen hat yazılır.',
+        blocked: 'Bloklu',
+        cutBy: 'Kesen hat',
+        circuits: {
+          'circuit-1-mitral': { short: 'Perimitral', how: 'Sol atriyumda mitral anülüsün çevresinde döner (LAO\'da anülüs karşıdan görülür).' },
+          'circuit-2-roof': { short: 'LA tavan', how: 'Sol pulmoner venlerin çevresinde, LA tavanı ve arka duvar üzerinden döner.' },
+          'circuit-3-posterior-fig8': { short: 'LA arka duvar, sekiz', how: 'LA arka duvarında, pulmoner venler arasında iki halkalı sekiz şekli.' },
+          'circuit-4-anterior-scar': { short: 'LA ön skar', how: 'LA ön duvarındaki düşük voltajlı koridorun çevresinde döner.' },
+          'circuit-5-cti': { short: 'CTI / triküspit', how: 'Sağ atriyumda triküspit anülüs çevresinde döner, CTI\'dan geçer (tipik flutter).' },
+          'circuit-6-vt-isthmus': { short: 'LV skar istmusu', how: 'LV inferolateral skarın içindeki yavaş iletim kanalından geçip skar kenarından döner (VT).' }
+        },
+        landmarks: {
+          mv: 'Mitral anülüs',
+          tv: 'Triküspit anülüs',
+          cs: 'KS ağzı',
+          cti: 'CTI',
+          roof: 'LA tavanı',
+          posterior: 'LA arka duvar',
+          scar: 'LV skar',
+          lspv: 'LSPV',
+          lipv: 'LIPV',
+          rspv: 'RSPV',
+          ripv: 'RIPV'
+        }
+      },
       blocked: 'Bloklu',
       conducting: 'İletimde',
       isthmus: 'İstmus',
@@ -122,11 +175,13 @@ export const EAM3D_TEXT = Object.freeze({
     viewport: {
       myoOpacity: 'Miyokard opaklığı',
       condOpacity: 'İleti/Kateter opaklığı',
-      pointReadout: 'Nokta okuması: yüzeye tıklayın; HD Grid oraya taşınır',
+      pointReadout: 'Nokta okuması: yüzeye tıklayın; haritalama kateteri oraya taşınır',
       tissues: { normal: 'Normal doku', border: 'Sınır zon', scar: 'Skar', channel: 'İleti kanalı' },
       legendLive: 'Canlı Vm: Beyaz cephe -> Turuncu depolarize -> Kehribar dinlenme',
-      legendLat: 'LAT İzokronal: Kırmızı (en erken) -> Sarı -> Yeşil -> Mavi -> Mor (en geç)',
-      legendVoltage: 'Bipolar Voltaj: Gri yoğun skar · <0.5 mV Kırmızı (kanal) · 0.5-1.5 mV Sınır · >1.5 mV Normal (Mor)',
+      legendLat: 'LAT (CARTO): Kırmızı (en erken) -> Sarı -> Yeşil -> Mavi -> Mor (en geç)',
+      legendLat_ensite: 'LAT (EnSite): Beyaz (en erken) -> Kırmızı -> Sarı -> Yeşil -> Mavi -> Mor (en geç)',
+      legendVoltage_ensite: 'Bipolar Voltaj (EnSite): Gri skar (<0.5 mV) -> Kırmızı -> Sarı -> Yeşil -> Mavi -> Mor (>1.5 mV)',
+      legendVoltage: 'Bipolar Voltaj (CARTO): <0.5 mV Kırmızı (skar) · 0.5-1.5 mV Sınır · >1.5 mV Mor (sağlıklı) · Gri yoğun skar',
       legendPhase: 'Faz Haritası: -π .. +π rotor fazı ve faz tekillikleri'
     },
     polygraph: {
@@ -206,6 +261,32 @@ export const EAM3D_TEXT = Object.freeze({
       voltage: 'Substrate Voltage Map (Bipolar mV)',
       phase: 'Phase / Rotor Map (Hilbert phase)'
     },
+    mappingBox: {
+      title: 'MAPPING',
+      catheter: 'Mapping catheter',
+      catheters: {
+        pentaray: 'PENTARAY NAV ECO (20 poles, 2-6-2 mm · CARTO)',
+        hdgrid: 'Advisor HD Grid X (16 poles, 3 mm · EnSite)'
+      },
+      chamber: 'Chamber to map',
+      chambers: { ra: 'Right atrium', la: 'Left atrium', rv: 'Right ventricle', lv: 'Left ventricle' },
+      systems: {
+        carto: 'CARTO colours: red earliest / low voltage, purple latest / healthy',
+        ensite: 'EnSite colours: white earliest, purple latest; on voltage <0.5 mV is grey (scar), purple healthy'
+      },
+      start: 'Start mapping',
+      stop: 'Stop mapping',
+      resume: 'Resume mapping',
+      reset: 'Clear map',
+      idle: 'No points yet. The map modes show the ideal map over the whole surface.',
+      how: 'The catheter roves over the wall; on every accepted beat each bipole in contact gives one point. The surface is coloured only around acquired points, the rest stays grey.',
+      afNote: 'The cycle is unstable in AF: activation (LAT) points are refused, only voltage is collected.',
+      done: 'Map complete. Switch between activation and voltage, or clear it to map again.',
+      stats: (s) =>
+        `${s.pointsUsed} points used (${s.pointsTaken} taken, ${s.pointsTaken - s.pointsUsed} no contact) · LAT ${s.latPoints} · coverage ${s.coveragePct}% · ${s.beats} beats · ${s.seconds} s` +
+        (s.latRange ? ` · LAT ${s.latRange[0]} .. ${s.latRange[1]} ms (ref: CS)` : '') +
+        ` · low voltage (<0.5 mV) ${s.lowVoltagePct}% · ${s.electrodes} electrodes, ${s.bipoles} bipoles, fill threshold ${s.fillMm} mm`
+    },
     atriaBox: {
       title: 'ATRIA',
       ra: 'Right atrium',
@@ -265,6 +346,33 @@ export const EAM3D_TEXT = Object.freeze({
       circuitsTitle: 'Surveyed Potential Circuits',
       linesTitle: 'Proposed Minimal Intervention Lines',
       applyLine: 'Apply Line',
+      map3d: {
+        legendTitle: 'Circuits on the map',
+        legendHint: 'Coloured loop = possible reentry path, arrow = direction of rotation. Click a circuit: the best view opens, with its path and the line that cuts it.',
+        blocked: 'Blocked',
+        cutBy: 'Cut by',
+        circuits: {
+          'circuit-1-mitral': { short: 'Perimitral', how: 'Turns around the mitral annulus in the left atrium (LAO shows the annulus en face).' },
+          'circuit-2-roof': { short: 'LA roof', how: 'Turns around the left pulmonary veins, over the LA roof and down the posterior wall.' },
+          'circuit-3-posterior-fig8': { short: 'LA posterior, figure of eight', how: 'Two loops on the LA posterior wall, between the pulmonary veins.' },
+          'circuit-4-anterior-scar': { short: 'LA anterior scar', how: 'Turns around a low-voltage corridor on the LA anterior wall.' },
+          'circuit-5-cti': { short: 'CTI / tricuspid', how: 'Turns around the tricuspid annulus in the right atrium, through the CTI (typical flutter).' },
+          'circuit-6-vt-isthmus': { short: 'LV scar isthmus', how: 'Runs through the slow channel inside the LV inferolateral scar and returns around its border (VT).' }
+        },
+        landmarks: {
+          mv: 'Mitral annulus',
+          tv: 'Tricuspid annulus',
+          cs: 'CS os',
+          cti: 'CTI',
+          roof: 'LA roof',
+          posterior: 'LA posterior wall',
+          scar: 'LV scar',
+          lspv: 'LSPV',
+          lipv: 'LIPV',
+          rspv: 'RSPV',
+          ripv: 'RIPV'
+        }
+      },
       blocked: 'Blocked',
       conducting: 'Conducting',
       isthmus: 'Isthmus',
@@ -281,11 +389,13 @@ export const EAM3D_TEXT = Object.freeze({
     viewport: {
       myoOpacity: 'Myocardium opacity',
       condOpacity: 'Conduction/Catheter opacity',
-      pointReadout: 'Point readout: click the surface; the HD Grid moves there',
+      pointReadout: 'Point readout: click the surface; the mapping catheter moves there',
       tissues: { normal: 'Normal tissue', border: 'Border zone', scar: 'Scar', channel: 'Conducting channel' },
       legendLive: 'Live Vm: White wavefront -> Orange depolarized -> Amber resting',
-      legendLat: 'Isochronal LAT: Red (earliest) -> Yellow -> Green -> Blue -> Purple (latest)',
-      legendVoltage: 'Bipolar Voltage: Grey dense scar · <0.5 mV Red (channel) · 0.5-1.5 mV Border · >1.5 mV Normal (Purple)',
+      legendLat: 'LAT (CARTO): Red (earliest) -> Yellow -> Green -> Blue -> Purple (latest)',
+      legendLat_ensite: 'LAT (EnSite): White (earliest) -> Red -> Yellow -> Green -> Blue -> Purple (latest)',
+      legendVoltage_ensite: 'Bipolar Voltage (EnSite): Grey scar (<0.5 mV) -> Red -> Yellow -> Green -> Blue -> Purple (>1.5 mV)',
+      legendVoltage: 'Bipolar Voltage (CARTO): <0.5 mV Red (scar) · 0.5-1.5 mV Border · >1.5 mV Purple (healthy) · Grey dense scar',
       legendPhase: 'Phase Map: -π .. +π rotor phase & phase singularities'
     },
     polygraph: {

@@ -53,9 +53,10 @@ export function createPolygraph(doc, { canvas, wrap }) {
 
   /**
    * Draw the window that ends at `nowMs`.
-   * @param {{ nowMs: number, sweepSpeed: number, levers: object, gridSite: object, segmentAt: (ms: number) => object }} view
+   * @param {{ nowMs: number, sweepSpeed: number, levers: object, gridSite: object, segmentAt: (ms: number) => object,
+   *   labels?: Record<string, string> }} view `labels` renames channels (the mapping catheter's bipoles)
    */
-  function draw({ nowMs, sweepSpeed, levers, gridSite, segmentAt }) {
+  function draw({ nowMs, sweepSpeed, levers, gridSite, segmentAt, labels = {} }) {
     const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
     if (!ctx) return;
     const { dpr, cssW, cssH } = fitCanvas();
@@ -108,7 +109,7 @@ export function createPolygraph(doc, { canvas, wrap }) {
       ctx.stroke();
 
       ctx.fillStyle = ch.color;
-      ctx.fillText(ch.label, 5, midY);
+      ctx.fillText(labels[ch.id] || ch.label, 5, midY);
 
       ctx.strokeStyle = ch.color;
       ctx.lineWidth = ch.kind === 'surface' ? 1.5 : 1.15;

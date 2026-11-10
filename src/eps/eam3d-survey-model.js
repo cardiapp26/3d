@@ -18,6 +18,8 @@ export function runCircuitSurvey({ mapPreset = 'biatrial-scar', runs = 100, leve
   const candidates = [
     {
       id: 'circuit-1-mitral',
+      // C-arm view that shows this circuit best (annuli en face in LAO, posterior LA in PA).
+      view: 'lao30',
       number: 1,
       color: '#ec4899',
       chamber: 'la',
@@ -32,6 +34,7 @@ export function runCircuitSurvey({ mapPreset = 'biatrial-scar', runs = 100, leve
     },
     {
       id: 'circuit-2-roof',
+      view: 'pa',
       number: 2,
       color: '#ef4444',
       chamber: 'la',
@@ -46,6 +49,7 @@ export function runCircuitSurvey({ mapPreset = 'biatrial-scar', runs = 100, leve
     },
     {
       id: 'circuit-3-posterior-fig8',
+      view: 'pa',
       number: 3,
       color: '#10b981',
       chamber: 'la',
@@ -60,6 +64,7 @@ export function runCircuitSurvey({ mapPreset = 'biatrial-scar', runs = 100, leve
     },
     {
       id: 'circuit-4-anterior-scar',
+      view: 'ap',
       number: 4,
       color: '#eab308',
       chamber: 'la',
@@ -74,6 +79,7 @@ export function runCircuitSurvey({ mapPreset = 'biatrial-scar', runs = 100, leve
     },
     {
       id: 'circuit-5-cti',
+      view: 'lao30',
       number: 5,
       color: '#38bdf8',
       chamber: 'ra',
@@ -88,6 +94,7 @@ export function runCircuitSurvey({ mapPreset = 'biatrial-scar', runs = 100, leve
     },
     {
       id: 'circuit-6-vt-isthmus',
+      view: 'pa',
       number: 6,
       color: '#a855f7',
       chamber: 'lv',

@@ -183,6 +183,25 @@ const painted = (page, sel) =>
     assert.equal(await page.evaluate(() => window.epsLab.panel.eam3d.getState().scenarioId), 'flutter-typical');
     await ws.locator('[data-eam3d-clear-lesions]').click();
 
+    // Point-by-point mapping: catheter choice sets the system palette, the map builds beat by beat
+    await ws.locator('[data-eam3d-rail="map"]').click();
+    assert.match(await ws.locator('[data-eam3d-mapping-system]').textContent(), /CARTO/, 'PentaRay maps in CARTO colours');
+    await ws.locator('[data-eam3d-mapping-catheter]').selectOption('hdgrid');
+    assert.match(await ws.locator('[data-eam3d-mapping-system]').textContent(), /EnSite/, 'HD Grid maps in EnSite colours');
+    assert.match(await ws.locator('[data-eam3d-scale-label]').textContent(), /Canlı|Live/, 'live mode keeps its own legend');
+    await ws.locator('[data-eam3d-mapping-toggle]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.panel.eam3d.getState().mapMode), 'lat', 'mapping opens the activation map');
+    assert.match(await ws.locator('[data-eam3d-scale-label]').textContent(), /EnSite/);
+    await page.waitForFunction(() => (window.epsLab.panel.eam3d.getState().mappingProgress?.stats?.pointsUsed || 0) > 40, null, { timeout: 20000 });
+    const mapping = await page.evaluate(() => window.epsLab.panel.eam3d.getState().mappingProgress);
+    assert.ok(mapping.stats.coveragePct > 0 && mapping.stats.coveragePct < 100, `map is partly built: ${mapping.stats.coveragePct}%`);
+    assert.ok(mapping.stats.pointsTaken >= mapping.stats.pointsUsed, 'some points may be refused for contact');
+    await ws.locator('[data-eam3d-mapping-toggle]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.panel.eam3d.getState().mappingRunning), false);
+    await ws.locator('[data-eam3d-mapping-reset]').click();
+    assert.equal(await page.evaluate(() => window.epsLab.panel.eam3d.getState().mappingProgress), null, 'clearing the map returns to the ideal map');
+    await ws.locator('[data-eam3d-map-mode="live"]').click();
+
     // Probabilistic Circuit Survey ("Find the circuit")
     await ws.locator('[data-eam3d-import-map]').click();
     assert.equal(

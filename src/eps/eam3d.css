@@ -354,14 +354,9 @@
 /* The atlas (eam3d-atlas.js) fills the host; without a size of its own the
    canvas sets its own height and the resize observer grows it without end. */
 .eam3d-stage,
-.eam3d-webgl,
-.eam3d-badges {
+.eam3d-webgl {
   position: absolute;
   inset: 0;
-}
-
-.eam3d-badges {
-  pointer-events: none;
 }
 
 .eam3d-webgl canvas {
@@ -389,29 +384,183 @@
   z-index: 3;
 }
 
+.eam3d-circuit-overlay,
+.eam3d-circuit-tags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .eam3d-circuit-badge {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 24px;
   height: 24px;
+  padding: 0 7px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.92);
   border: 2px solid var(--badge-color, #38bdf8);
   color: #f8fafc;
   font-size: 11px;
   font-weight: 800;
-  display: flex;
-  align-items: center;
   justify-content: center;
   cursor: pointer;
   pointer-events: auto;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
 }
 
 .eam3d-circuit-badge.is-selected {
   background: var(--badge-color, #38bdf8);
   color: #020617;
-  transform: translate(-50%, -50%) scale(1.18);
+  z-index: 2;
+}
+
+.eam3d-circuit-badge.is-blocked {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.eam3d-circuit-badge[hidden],
+.eam3d-landmark-tag[hidden],
+.eam3d-circuit-legend[hidden] {
+  display: none;
+}
+
+/* Anatomical landmark names: quiet text so they orient without competing with the circuits. */
+.eam3d-landmark-tag {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(2, 6, 23, 0.62);
+  color: #e2e8f0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Compact list, top right; the explanation goes in the caption so the heart stays visible. */
+.eam3d-circuit-legend {
+  position: absolute;
+  right: 8px;
+  top: 46px;
+  width: min(178px, calc(100% - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 6px;
+  background: rgba(7, 11, 20, 0.82);
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  border-radius: 6px;
+  color: #e2e8f0;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+}
+
+.eam3d-circuit-caption {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 96px;
+  padding: 5px 9px;
+  background: rgba(7, 11, 20, 0.88);
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  border-left: 3px solid var(--badge-color, #64748b);
+  border-radius: 5px;
+  color: #cbd5e1;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.eam3d-circuit-caption b {
+  color: #f8fafc;
+}
+
+.eam3d-circuit-caption span {
+  color: #fca5a5;
+  white-space: nowrap;
+}
+
+.eam3d-circuit-caption[hidden] {
+  display: none;
+}
+
+.eam3d-circuit-legend strong {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.eam3d-circuit-legend-row {
+  display: grid;
+  grid-template-columns: 9px 10px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 2px;
+  padding: 3px 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.eam3d-circuit-legend-row:hover {
+  background: rgba(30, 41, 59, 0.7);
+}
+
+.eam3d-circuit-legend-row.is-selected {
+  border-color: var(--badge-color, #38bdf8);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.eam3d-circuit-legend-row.is-blocked span {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+.eam3d-circuit-legend-row i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--badge-color, #38bdf8);
+}
+
+.eam3d-circuit-legend-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eam3d-circuit-legend-row em {
+  font-style: normal;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+@media (max-width: 600px) {
+  .eam3d-circuit-legend {
+    width: 150px;
+  }
+
+  .eam3d-circuit-caption {
+    bottom: 104px;
+    font-size: 10px;
+  }
+
+  .eam3d-landmark-tag {
+    font-size: 9px;
+  }
 }
 
 .eam3d-bottombar {
@@ -544,6 +693,56 @@
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* Mapping card */
+.eam3d-mapping-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eam3d-mapping-system {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: #cbd5e1;
+}
+
+.eam3d-mapping-swatch {
+  flex: 0 0 56px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.eam3d-mapping-go.is-running {
+  background: #b45309;
+  border-color: #f59e0b;
+  color: #fffbeb;
+}
+
+.eam3d-mapping-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: #1e293b;
+  overflow: hidden;
+}
+
+.eam3d-mapping-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #38bdf8;
+  transition: width 0.25s linear;
+}
+
+.eam3d-mapping-note {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: #94a3b8;
 }
 
 /* Bottom Stimulator Bar */
