@@ -206,6 +206,8 @@ export const EAM3D_TEXT = Object.freeze({
       channel: 'Pacing kanalı',
       output: '10.0 mA · 2.0 ms',
       deliver: 'Stim Uygula',
+      openRf: 'RF ablasyon paneli ▸',
+      backToStim: '◂ Stimülatör',
       verdicts: {
         overdriveEntrained: (ppi, diff) => `Overdrive entrainment: PPI = ${ppi} ms, PPI - TCL = ${diff} ms (${diff <= 30 ? 'devre içi' : 'devreye uzak'}).`,
         overdriveTerminated: () => 'Overdrive burst pacing reentran devreyi kırdı -> Sinüs ritmi sağlandı.',
@@ -420,6 +422,8 @@ export const EAM3D_TEXT = Object.freeze({
       channel: 'Pacing channel',
       output: '10.0 mA · 2.0 ms',
       deliver: 'Deliver Stim',
+      openRf: 'RF ablation panel ▸',
+      backToStim: '◂ Stimulator',
       verdicts: {
         overdriveEntrained: (ppi, diff) => `Overdrive entrainment: PPI = ${ppi} ms, PPI - TCL = ${diff} ms (${diff <= 30 ? 'in circuit' : 'out of circuit'}).`,
         overdriveTerminated: () => 'Overdrive burst pacing interrupted the reentrant circuit -> Sinus rhythm restored.',
