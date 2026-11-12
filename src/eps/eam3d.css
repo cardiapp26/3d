@@ -695,6 +695,20 @@
   height: 100%;
 }
 
+/* Switches the bottom bar between the stimulator and the RF console. */
+.eam3d-dock-switch {
+  border-color: #f87171;
+  color: #fecaca;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.eam3d-rf-card .eam3d-dock-switch {
+  align-self: flex-start;
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+
 /* Mapping card */
 .eam3d-mapping-card {
   display: flex;

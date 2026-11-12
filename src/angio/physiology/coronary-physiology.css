@@ -1200,3 +1200,8 @@
 @media (max-width: 760px) {
   .phys-fluoro-canvas { height: 300px; }
 }
+
+.phys-atlas-stage { padding: 0 12px 10px; }
+.phys-atlas-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 540 / 440; border-radius: 8px; background: #d9dcdd; }
+.phys-atlas-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 10px; color: #a7b8c6; font-size: 12px; }
+.phys-exercise-title { margin: 0; padding: 12px; border-top: 1px solid #283548; color: #cbd5e1; font-size: 12px; font-weight: 600; }

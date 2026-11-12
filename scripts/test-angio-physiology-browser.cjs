@@ -57,6 +57,7 @@ async function main() {
     // 2b. Angiographic view: tapping on the measured vessel moves the sensor (readout follows),
     // the arrow keys step it, and the image type and C-arm projection switch.
     const fluoro = page.locator('[data-phys-fluoro-canvas]');
+    await fluoro.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     const fluoroBox = await fluoro.boundingBox();
     assert.ok(fluoroBox && fluoroBox.width > 300 && fluoroBox.height > 250, 'Angiographic canvas must render');
     const target = await fluoro.evaluate((el) => el._physHit.path.find((q) => q.mm >= 20));

@@ -61,9 +61,10 @@ const gradeOf = (lesion) => (lesion.pop ? 'pop' : lesionGrade(lesion));
  * @param {Document} doc
  * @param {{ getLang: () => string, getScenario: () => string, getLevers: () => object,
  *   onChange: (s: { blocked: Set<string>, lesions3d: object[], target: string }) => void,
- *   onTip: (pos: number[]|null) => void, onFocus?: () => void }} opts
+ *   onTip: (pos: number[]|null) => void, onFocus?: () => void, leading?: Node | null }} opts
+ *   `leading` is placed before the card title (the panel's switch back to the stimulator).
  */
-export function createRfConsole(doc, { getLang, getScenario, getLevers, onChange, onTip, onFocus = () => {} }) {
+export function createRfConsole(doc, { getLang, getScenario, getLevers, onChange, onTip, onFocus = () => {}, leading = null }) {
   let state = {
     targetLine: defaultLineFor(getScenario()),
     scenario: getScenario(),
@@ -186,7 +187,7 @@ export function createRfConsole(doc, { getLang, getScenario, getLevers, onChange
   const logScroll = el(doc, 'div', 'eam3d-rf-log-wrap');
   logScroll.appendChild(logTable);
   card.append(
-    group(head, targetLabel, meta, hazard),
+    group(...(leading ? [leading] : []), head, targetLabel, meta, hazard),
     group(powerRow, forceRow),
     group(posRow, spacingRow, autoLabel),
     group(actions, statusBox, safetyBox),
@@ -271,11 +272,15 @@ export function createRfConsole(doc, { getLang, getScenario, getLevers, onChange
     emitChange();
   }
 
-  /** Replace a line's lesions with ideal ones (demo, survey "apply line"). */
+  /**
+   * Replace a line's lesions with ideal ones (demo, survey "apply line"). The console then shows
+   * that line as its target, so the card, the log and the map describe the same lesion set.
+   */
   function applyIdeal(lineId) {
     if (!EAM3D_ABLATION_LINES[lineId] || state.delivery) return;
     const ideal = idealLesions(lineId, state.nextId);
-    patch({ lesions: [...state.lesions.filter((l) => l.lineId !== lineId), ...ideal], nextId: state.nextId + ideal.length, waitedLost: null, lastStop: null });
+    const picked = lineId !== state.targetLine ? { targetLine: lineId, userPicked: true, positionMm: Math.min(2, EAM3D_ABLATION_LINES[lineId].lengthMm / 2) } : {};
+    patch({ ...picked, lesions: [...state.lesions.filter((l) => l.lineId !== lineId), ...ideal], nextId: state.nextId + ideal.length, waitedLost: null, lastStop: null });
     emitChange();
   }
 
