@@ -139,7 +139,11 @@ const pvX = v => 40 + clamp(v, 0, 300) * 0.95;
 const pvY = p => 200 - clamp(p, 0, 165) * 1.1;
 const loopPath = pts => `${pts.map((q, i) => `${i ? 'L' : 'M'}${pvX(q.v).toFixed(1)} ${pvY(q.p).toFixed(1)}`).join(' ')} Z`;
 // Geometry sketch: cavity radius ~ cube root of volume, wall volume conserved (systolic thickening).
-const GEOM = { lv: { K: 9.5, cx: 160 }, hcm: { K: 5.04, cx: 230 } };
+const GEOM = { lv: { K: 9.5, cx: 90 }, hcm: { K: 5.04, cx: 230 } };
+
+// Frontal lung outlines (viewer's left = right lung); the left lung carries the cardiac notch.
+const LUNG_R = 'M 80,30 C 60,26 34,50 24,92 C 18,120 20,138 30,138 L 78,138 C 84,138 86,132 86,124 L 86,40 C 86,34 84,30 80,30 Z';
+const LUNG_L = 'M 100,30 C 120,26 146,50 156,92 C 162,120 160,138 150,138 L 114,138 C 104,138 99,126 96,110 C 94,100 94,92 94,84 L 94,40 C 94,34 96,30 100,30 Z';
 
 function rings(K, edv, wall, v) {
   const rd = K * Math.cbrt(edv);
@@ -230,15 +234,15 @@ function htmlTemplates(t, en) {
       </div>
       <div class="vicious-cycle-box">
         <svg viewBox="0 0 320 170" class="hf-congestion-svg" aria-hidden="true">
-          <defs><clipPath id="hf-lung-clip"><ellipse cx="52" cy="80" rx="34" ry="58"/><ellipse cx="128" cy="80" rx="34" ry="58"/></clipPath></defs>
+          <defs><clipPath id="hf-lung-clip"><path d="${LUNG_R}"/><path d="${LUNG_L}"/></clipPath></defs>
           <g data-hf-lungs>
-            <ellipse cx="52" cy="80" rx="34" ry="58" class="hf-lung"/><ellipse cx="128" cy="80" rx="34" ry="58" class="hf-lung"/>
+            <path d="${LUNG_R}" class="hf-lung"/><path d="${LUNG_L}" class="hf-lung"/>
             <rect data-hf-fluid x="10" y="138" width="160" height="0" fill="#3b82f6" opacity="0.45" clip-path="url(#hf-lung-clip)"/>
             <g data-hf-blines class="hf-blines" opacity="0">
-              ${[100, 109, 118].map(y => `<line x1="20" y1="${y}" x2="32" y2="${y}"/><line x1="148" y1="${y}" x2="160" y2="${y}"/>`).join('')}
+              ${[100, 109, 118].map(y => `<line x1="27" y1="${y}" x2="40" y2="${y}"/><line x1="140" y1="${y}" x2="153" y2="${y}"/>`).join('')}
             </g>
           </g>
-          <path d="M 90,20 L 90,44" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+          <path d="M 90,6 V 34 M 90,34 L 74,50 M 90,34 L 106,50" fill="none" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
           <rect x="204" y="20" width="16" height="120" rx="7" class="hf-vein"/>
           <rect data-hf-jvp x="207" y="140" width="10" height="0" rx="4" fill="#2563eb"/>
           <line x1="196" y1="110" x2="228" y2="110" stroke="#64748b" stroke-dasharray="3 2"/>
@@ -275,12 +279,12 @@ function starlingCardHtml(pid, en) {
           <rect x="200" y="28" width="115" height="18" rx="3" fill="#fee2e2" opacity="0.85"/>
           <text x="204" y="41" font-size="9" font-weight="800" fill="#991b1b">${en ? 'Pulmonary Edema (≥18)' : 'Akciğer Konjesyonu (≥18)'}</text>
           <path d="M 45,180 Q 90,75 160,60 T 310,50" fill="none" stroke="#22c55e" stroke-width="2" opacity="${pid === 'normal' ? '1' : '0.4'}"/>
-          <text x="270" y="45" font-size="9" font-weight="700" fill="#22c55e">Normal</text>
+          <text x="112" y="62" font-size="9.5" font-weight="800" fill="#15803d" text-anchor="end">Normal</text>
           <path d="M 45,182 Q 100,140 180,135 T 310,140" fill="none" stroke="#ef4444" stroke-width="2.5" opacity="${pid === 'hfref' || pid === 'dcm' ? '1' : '0.4'}"/>
           <text x="270" y="152" font-size="9.5" font-weight="800" fill="#ef4444">HFrEF / DCM</text>
           <circle data-sl-ring r="9" fill="none" stroke="#f59e0b" stroke-width="2"/>
           <circle data-sl-point r="7" fill="#f59e0b" stroke="#fff" stroke-width="2"/>
-          <text data-sl-label font-size="10.5" font-weight="800" fill="#f59e0b"></text>
+          <text data-sl-label font-size="10.5" font-weight="800" fill="#b45309" class="hf-geom-label"></text>
         </svg>
       </div>
       <div class="starling-notes">
@@ -297,24 +301,35 @@ function geometrySvg(pid, maneuver, en) {
     return `
       <path d="M 60,80 Q 95,20 160,25 Q 165,80 160,135 Q 95,140 60,80 Z" fill="#0284c7" opacity="0.3" stroke="#0284c7" stroke-width="2"/>
       <rect x="140" y="25" width="45" height="110" rx="10" fill="#ef4444" opacity="0.75" stroke="#b91c1c" stroke-width="2"/>
-      <text x="162" y="85" font-size="10" font-weight="900" fill="#fff" text-anchor="middle">ASH (22mm)</text>
+      <text x="100" y="84" font-size="11" font-weight="800" fill="#0369a1" text-anchor="middle">RV</text>
+      <text x="162" y="84" font-size="11" font-weight="900" fill="#fff" text-anchor="middle">ASH</text>
+      <text x="162" y="17" font-size="9.5" font-weight="800" fill="#b91c1c" text-anchor="middle">Septum 22 mm</text>
       <circle data-lv-wall cx="230" cy="80" r="30" fill="none" stroke="var(--border)" stroke-width="14"/>
       <path data-sam d="M 195,50 L 202,75" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
-      <text x="210" y="78" font-size="10" font-weight="800" fill="#f59e0b" class="hf-geom-label">SAM ${sam}</text>
+      <text x="230" y="150" font-size="10" font-weight="800" fill="#b45309" text-anchor="middle" class="hf-geom-label">SAM ${sam}</text>
       <text x="230" y="84" font-size="11" font-weight="800" fill="var(--text-sub)" text-anchor="middle" class="hf-geom-label">LV</text>`;
   }
   const look = {
-    normal: { c: '#16a34a', a: en ? 'Normal geometry' : 'Normal Geometri', b: en ? 'balanced h/r -> physiological σ' : 'h/r dengeli -> fizyolojik σ' },
-    hfref: { c: '#ef4444', a: en ? 'Eccentric dilation' : 'Eksantrik Dilatasyon', b: en ? 'r ↑↑, h ↓ -> huge wall stress (σ)' : 'r ↑↑, h ↓ -> Devasa Duvar Stresi (σ)' },
-    dcm: { c: '#ef4444', a: en ? 'Eccentric dilation' : 'Eksantrik Dilatasyon', b: en ? 'r ↑↑, h ↓ -> huge wall stress (σ)' : 'r ↑↑, h ↓ -> Devasa Duvar Stresi (σ)' },
-    hfpef: { c: '#0284c7', a: en ? 'Concentric hypertrophy' : 'Konsantrik Hipertrofi', b: en ? 'h ↑↑, r ↓ -> wall stress preserved' : 'h ↑↑, r ↓ -> Duvar Stresi Korunur' },
-    rcm: { c: '#0284c7', a: en ? 'Rigid infiltrated wall' : 'Rijit İnfiltratif Duvar', b: en ? 'h ↑, r normal -> filling restricted' : 'h ↑, r normal -> doluş kısıtlı' }
-  }[pid] || { c: '#16a34a', a: '', b: '' };
+    normal: { c: '#16a34a', a: en ? 'Normal geometry' : 'Normal geometri', b: en ? ['h/r balanced', 'physiological σ'] : ['h/r dengeli', 'fizyolojik σ'] },
+    hfref: { c: '#ef4444', a: en ? 'Eccentric dilation' : 'Eksantrik dilatasyon', b: en ? ['r ↑↑, h ↓', 'wall stress (σ) rises steeply'] : ['r ↑↑, h ↓', 'duvar stresi (σ) çok artar'] },
+    dcm: { c: '#ef4444', a: en ? 'Eccentric dilation' : 'Eksantrik dilatasyon', b: en ? ['r ↑↑, h ↓', 'wall stress (σ) rises steeply'] : ['r ↑↑, h ↓', 'duvar stresi (σ) çok artar'] },
+    hfpef: { c: '#0284c7', a: en ? 'Concentric hypertrophy' : 'Konsantrik hipertrofi', b: en ? ['h ↑↑, r ↓', 'wall stress preserved'] : ['h ↑↑, r ↓', 'duvar stresi korunur'] },
+    rcm: { c: '#0284c7', a: en ? 'Rigid infiltrated wall' : 'Rijit infiltratif duvar', b: en ? ['h ↑, r normal', 'filling restricted'] : ['h ↑, r normal', 'doluş kısıtlı'] }
+  }[pid] || { c: '#16a34a', a: '', b: ['', ''] };
+  // Short-axis ring on the left with live r and h markers; labels sit beside it, never on it.
+  const cx = GEOM.lv.cx;
   return `
-    <circle data-lv-wall cx="160" cy="80" r="60" fill="none" stroke="${look.c}" stroke-width="10" opacity="0.8"/>
-    <circle data-lv-cavity cx="160" cy="80" r="50" fill="${look.c}" opacity="0.15"/>
-    <text x="160" y="75" font-size="10.5" font-weight="800" fill="${look.c}" text-anchor="middle" class="hf-geom-label">${look.a}</text>
-    <text x="160" y="92" font-size="9" fill="var(--text-sub)" text-anchor="middle" class="hf-geom-label">${look.b}</text>`;
+    <circle data-lv-wall cx="${cx}" cy="80" r="60" fill="none" stroke="${look.c}" stroke-width="10" opacity="0.8"/>
+    <circle data-lv-cavity cx="${cx}" cy="80" r="50" fill="${look.c}" opacity="0.15"/>
+    <line data-lv-r x1="${cx}" y1="80" x2="${cx + 50}" y2="80" stroke="#334155" stroke-width="1.4" stroke-dasharray="3 2"/>
+    <circle cx="${cx}" cy="80" r="2" fill="#334155"/>
+    <text data-lv-rt x="${cx + 25}" y="75" font-size="10.5" font-weight="800" font-style="italic" fill="#334155" text-anchor="middle" class="hf-geom-label">r</text>
+    <line data-lv-h x1="${cx + 50}" y1="80" x2="${cx + 60}" y2="80" stroke="#0f172a" stroke-width="3"/>
+    <text data-lv-ht x="${cx + 64}" y="76" font-size="10.5" font-weight="800" font-style="italic" fill="#0f172a" class="hf-geom-label">h</text>
+    <text x="178" y="56" font-size="12" font-weight="800" fill="${look.c}">${look.a}</text>
+    <text x="178" y="76" font-size="10.5" font-weight="700" fill="var(--text-main)">${look.b[0]}</text>
+    <text x="178" y="92" font-size="10.5" fill="var(--text-sub)">→ ${look.b[1]}</text>
+    <text x="178" y="116" font-size="9.5" font-style="italic" fill="var(--text-sub)">σ = P · r / 2h</text>`;
 }
 
 function geometryCardHtml(pt, maneuver, t, en) {
@@ -363,8 +378,8 @@ function cycleCardHtml(therapy, t, en) {
           ${node(192, 80, 120, 34, '#ede9fe', '#7c3aed', '#5b21b6', en ? 'Renin-angiotensin (RAAS)' : 'Renin-Anjiyotensin (RAAS)', en ? 'Ang II, aldosterone' : 'Anjiyo II, Aldosteron')}
           ${node(222, 2, 96, 28, '#dcfce7', '#16a34a', '#166534', 'NP (BNP/ANP) ↑', en ? 'Natriuresis, vasodilation' : 'Natriürez, vazodilatasyon')}
           ${node(10, 166, 300, 38, '#fee2e2', '#dc2626', '#991b1b', en ? 'Myocyte apoptosis, fibrosis, chamber dilation' : 'Miyosit Apoptozu, Fibrozis, Ventrikül Genişlemesi', en ? 'Afterload rises -> heart failure worsens further!' : 'Ard Yük Artışı -> Kalp Yetmezliği Daha da Ağırlaşır!')}
-          <text x="166" y="124" font-size="8" fill="#991b1b">${en ? 'Afterload ↑' : 'Ard yük ↑'}</text>
-          <text x="166" y="134" font-size="8" fill="#991b1b">${en ? 'Wall stress ↑' : 'Duvar gerilimi ↑'}</text>
+          <text x="166" y="124" font-size="8" fill="#991b1b" class="hf-geom-label">${en ? 'Afterload ↑' : 'Ard yük ↑'}</text>
+          <text x="166" y="134" font-size="8" fill="#991b1b" class="hf-geom-label">${en ? 'Wall stress ↑' : 'Duvar gerilimi ↑'}</text>
           <g class="hf-tokens">${LINKS.map(l => Array.from({ length: TOKENS }, () => `<circle data-hf-token="${l.key}" r="3.4" fill="${l.color}" cx="-10" cy="-10"/>`).join('')).join('')}</g>
           ${LINKS.filter(l => l.breakable).map(l => `<g data-hf-break="${l.key}" opacity="0"><circle r="7" fill="#fff" stroke="#16a34a" stroke-width="2"/><path d="M -3.5,-3.5 L 3.5,3.5 M 3.5,-3.5 L -3.5,3.5" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round"/></g>`).join('')}
         </svg>
@@ -545,6 +560,14 @@ export function createHeartFailureLab(opts = {}) {
     attr(wallEl, 'r', ((r + R) / 2).toFixed(1));
     attr(wallEl, 'stroke-width', (R - r).toFixed(1));
     attr($('[data-lv-cavity]'), 'r', r.toFixed(1));
+    const rLine = $('[data-lv-r]');
+    if (rLine) {
+      attr(rLine, 'x2', (g.cx + r).toFixed(1));
+      attr($('[data-lv-rt]'), 'x', (g.cx + r / 2).toFixed(1));
+      attr($('[data-lv-h]'), 'x1', (g.cx + r).toFixed(1));
+      attr($('[data-lv-h]'), 'x2', (g.cx + R).toFixed(1));
+      attr($('[data-lv-ht]'), 'x', (g.cx + R + 4).toFixed(1));
+    }
     const sam = $('[data-sam]');
     if (sam) {
       // SAM: the anterior leaflet is drawn toward the septum in mid-systole (Venturi and drag forces).
@@ -577,7 +600,7 @@ export function createHeartFailureLab(opts = {}) {
     attr(ring, 'opacity', (0.9 - 0.8 * lv.contraction).toFixed(2));
     const label = $('[data-sl-label]');
     const flip = cx > 220;
-    attr(label, 'x', (flip ? cx - 10 : cx + 10).toFixed(1)); attr(label, 'y', (cy - 8).toFixed(1));
+    attr(label, 'x', (flip ? cx - 10 : cx + 10).toFixed(1)); attr(label, 'y', (cy - 14).toFixed(1));
     attr(label, 'text-anchor', flip ? 'end' : 'start');
     setText('[data-sl-label]', `${Math.round(shown.sv)} mL @ ${Math.round(shown.lvedp)} mmHg`);
   }
