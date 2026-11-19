@@ -1,5 +1,6 @@
 import { createHemodynamics } from './hemodynamics.js';
 import { createHemoPanel } from './hemo-panel.js';
+import { CATH_STEP } from './cath-lab.js';
 import { hemoJvpScenario } from './jvp-physiology.js';
 
 // Glue between the catheterization lesson, the 3D cath lab and the
@@ -11,10 +12,22 @@ import { hemoJvpScenario } from './jvp-physiology.js';
 // beat, the ECG and the tracings agree; the previous rate is restored when
 // the mode is left.
 
-// Which catheter stage of the cath lab shows the station a channel measures
-// (cath-lab.js: 0 RA, 1 RV, 2 PA + wedge, 3 left heart, 4 both catheters).
-const STATION_STEP = Object.freeze({ ra: 0, rv: 1, pa: 2, pcwp: 2, lv: 3, ao: 3 });
-const BOTH_CATHETERS = 4;
+// Which catheter stage of the cath lab (cath-lab.js CATH_STEP) shows the
+// station a channel measures.
+const STATION_STEP = Object.freeze({
+  ra: CATH_STEP.ra, rv: CATH_STEP.rv, pa: CATH_STEP.pa, pcwp: CATH_STEP.pa, lv: CATH_STEP.left, ao: CATH_STEP.left
+});
+const BOTH_CATHETERS = CATH_STEP.both;
+// Shunt run sites (hemo-shunt-run.js) with a catheter course of their own;
+// the other sites use the stage of their pressure station.
+const SITE_STEP = Object.freeze({ ivc: CATH_STEP.ivc, svc: CATH_STEP.svc, pv: CATH_STEP.pulmonaryVein });
+// 3D station pick ids to shunt run sites. The caval and pulmonary vein
+// stations exist only for sampling, so a click there always draws the sample.
+const PICK_SITE = Object.freeze({
+  'cath-svc': 'svc', 'cath-ivc': 'ivc', 'cath-ra': 'ra', 'cath-rv': 'rv', 'cath-pa': 'pa', 'cath-wedge': 'pcwp',
+  'cath-pv': 'pv', 'cath-ao': 'ao'
+});
+const SAMPLING_ONLY_SITES = Object.freeze(['svc', 'ivc', 'pv']);
 // 3D station pick ids (cath-lab.js) to panel channels.
 const PICK_STATION = Object.freeze({
   'cath-ra': 'ra', 'cath-rv': 'rv', 'cath-pa': 'pa', 'cath-wedge': 'pcwp', 'cath-lv': 'lv', 'cath-ao': 'ao'
@@ -58,6 +71,11 @@ export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp }) {
       onStationFocus(station) {
         showStations(panel.getChannels());
         onFocus?.(station);
+      },
+      // A shunt run sample: the catheter takes the course to that site.
+      onSample(site) {
+        heart.setCathStep(SITE_STEP[site.id] ?? STATION_STEP[site.channel]);
+        onFocus?.(site.id);
       }
     });
     jvpLink = document.createElement('button');
@@ -122,6 +140,18 @@ export function createHemoMode({ heart, mount, getLang, onFocus, onOpenJvp }) {
       const next = [...current, station].slice(-MAX_CHANNELS);
       p.setChannels(next);
       showStations(next);
+    },
+    /**
+     * The user clicked a 3D station. A sampling-only station (SVC, IVC,
+     * pulmonary vein) draws its sample and opens the shunt run; the pressure
+     * stations do so while the shunt run is open.
+     */
+    pickStation(pickId) {
+      const siteId = PICK_SITE[pickId];
+      if (!active || !siteId) return;
+      const run = ensurePanel().getShuntRun();
+      if (!run.element.open && !SAMPLING_ONLY_SITES.includes(siteId)) return;
+      if (run.sample(siteId)) run.element.open = true;
     },
     tick(state) {
       if (active && panel) panel.draw(state);

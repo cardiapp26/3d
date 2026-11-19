@@ -603,7 +603,12 @@ try {
   heart = createHeart(
     document.querySelector('#viewport'),
     // A click in the scene selects what is already in view; the camera keeps the module's framing.
-    (id, branch) => { inspect(id, false, true, branch); practice?.onScenePick(resolveStructureId(id)); },
+    (id, branch) => {
+      inspect(id, false, true, branch);
+      // A clicked catheter station draws its shunt run sample.
+      if (typeof id === 'string' && id.startsWith('cath-')) hemoMode?.pickStation(id);
+      practice?.onScenePick(resolveStructureId(id));
+    },
     onHoverStructure,
     (angles) => updateJoystickFromCamera(angles)
   );
@@ -753,6 +758,7 @@ const hemoMode = heart ? createHemoMode({
   heart,
   mount: document.querySelector('#hemo-panel'),
   getLang: () => (getContentLanguage() === 'tr' ? 'tr' : 'en'),
+  // Stations and shunt run sites share the `cath-` pick ids (svc, ivc and pv are sampling sites).
   onFocus: station => inspect(`cath-${station === 'pcwp' ? 'wedge' : station}`, false, false),
   onOpenJvp: scenario => openJvpCase(scenario)
 }) : null;

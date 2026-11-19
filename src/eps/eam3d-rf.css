@@ -239,11 +239,12 @@
   color: #64748b;
 }
 
-/* Readout over the 3D view, top right under the status badge (the opacity bar covers the bottom). */
+/* Readout over the 3D view, top left under the status badge: the circuit legend uses the top
+   right and the opacity bar covers the bottom. */
 .eam3d-rf-hud {
   position: absolute;
-  right: 10px;
-  top: 46px;
+  left: 10px;
+  top: 84px;
   z-index: 4;
   min-width: 190px;
   background: rgba(7, 11, 20, 0.88);

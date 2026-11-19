@@ -138,6 +138,10 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     const label = el(doc, 'span', 'eam3d-rail-label', railId.toUpperCase());
     btn.append(el(doc, 'span', 'eam3d-rail-icon', RAIL_ICONS[railId]), label);
     btn.addEventListener('click', () => {
+      if (railId === 'ablate') {
+        openRf();
+        return;
+      }
       state.activeRail = railId;
       syncRailUI();
       scrollToCard(sectionEls[railId]);
@@ -238,8 +242,13 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
   });
   deckEl.append(...leverCards.cards);
 
+  // Back from the RF console to the stimulator (the rail the user came from).
+  let railBeforeRf = 'case';
+  const stimSwitch = button(doc, 'eam3d-btn eam3d-dock-switch', { 'data-eam3d-open-stim': 'true' });
+
   // Card 5: 3D RF ablation (eam3d-rf-console.js): point-by-point lesions, gaps, block, safety.
   const rfConsole = createRfConsole(doc, {
+    leading: stimSwitch,
     getLang,
     getScenario: () => state.scenarioId,
     getLevers: () => state.levers,
@@ -256,6 +265,7 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
     },
     onFocus() {
       if (state.activeRail === 'ablate') return;
+      railBeforeRf = state.activeRail;
       state.activeRail = 'ablate';
       syncRailUI();
     },
@@ -263,6 +273,19 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
   // The RF console docks under the 3D view, in place of the stimulator, while Ablation is open.
   sectionEls.ablate = rfConsole.card;
   rfConsole.card.hidden = true;
+  stimSwitch.addEventListener('click', () => {
+    if (rfConsole.isDelivering()) return;
+    state.activeRail = railBeforeRf === 'ablate' ? 'case' : railBeforeRf;
+    syncRailUI();
+  });
+
+  /** Open the RF console in the bottom bar and bring it into view. */
+  function openRf() {
+    if (state.activeRail !== 'ablate') railBeforeRf = state.activeRail;
+    state.activeRail = 'ablate';
+    syncRailUI();
+    scrollToCard(rfConsole.card);
+  }
 
   // Card 6: probabilistic circuit modeling, "Find the circuit" (eam3d-survey-card.js).
   const surveyCard = createSurveyCard(doc, {
@@ -283,8 +306,11 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       syncAll();
     },
     onSelectCircuit: toggleCircuit,
-    // The proposed line is ablated with ideal RF lesions (the console redraws everything).
-    onApplyLine: (lineId) => rfConsole.applyIdeal(lineId),
+    // The proposed line is ablated with ideal RF lesions and the RF console opens to show them.
+    onApplyLine(lineId) {
+      rfConsole.applyIdeal(lineId);
+      openRf();
+    },
   });
   sectionEls.survey = surveyCard.card;
   deckEl.appendChild(surveyCard.card);
@@ -389,6 +415,7 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       syncAll();
     },
     onDeliver: deliverStim,
+    onOpenRf: openRf,
   });
 
   root.append(leftCol, centerCol, rightCol, stimBar.element, rfConsole.card);
@@ -520,6 +547,8 @@ export function createEam3dPanel(doc, { getLang = () => 'tr' } = {}) {
       label.textContent = t.rails[id] || id;
     });
     const rfOpen = state.activeRail === 'ablate' || rfConsole.isDelivering();
+    stimSwitch.textContent = t.stim.backToStim;
+    stimSwitch.disabled = rfConsole.isDelivering();
     rfConsole.hud.hidden = !rfOpen;
     rfConsole.card.hidden = !rfOpen;
     stimBar.element.hidden = rfOpen;

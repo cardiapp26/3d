@@ -242,7 +242,10 @@ export function createHemodynamics(initialId = 'normal') {
     const sats = scenario.saturations;
     const mixedVenous = mixedVenousSaturation(sats.svc, sats.ivc);
     const shunt = qpQs({ arterial: sats.ao, mixedVenous, pulmonaryVein: sats.pv, pulmonaryArtery: sats.pa });
-    const qp = (shunt && Number.isFinite(shunt) && shunt > 1) ? scenario.co * shunt : scenario.co;
+    // Pulmonary flow: systemic flow times Qp/Qs, also when the net shunt is
+    // right-to-left (Eisenmenger), where pulmonary flow is below systemic.
+    const shunted = Number.isFinite(shunt) && shunt > 0 && (shunt > 1 || flags.has('right_to_left_atrial'));
+    const qp = shunted ? scenario.co * shunt : scenario.co;
     return {
       hr,
       co: scenario.co,

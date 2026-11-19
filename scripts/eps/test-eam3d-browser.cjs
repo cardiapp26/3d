@@ -143,6 +143,13 @@ const painted = (page, sel) =>
     // 3D RF ablation console: the scenario picks its line; ideal lesions end AVNRT.
     const rfState = () => page.evaluate(() => window.epsLab.panel.eam3d.getState().rf);
     const applied = () => page.evaluate(() => window.epsLab.panel.eam3d.getState().appliedLesions);
+    // The bottom bar switches between the stimulator and the RF console
+    assert.equal(await ws.locator('[data-eam3d-rf-console]').isVisible(), false, 'stimulator shown first');
+    await ws.locator('[data-eam3d-open-rf]').click();
+    assert.equal(await ws.locator('[data-eam3d-rf-console]').isVisible(), true, 'RF console opens from the stimulator bar');
+    assert.equal(await ws.locator('[data-eam3d-stimbar]').isVisible(), false);
+    await ws.locator('[data-eam3d-open-stim]').click();
+    assert.equal(await ws.locator('[data-eam3d-stimbar]').isVisible(), true, 'back to the stimulator');
     await ws.locator('[data-eam3d-rail="ablate"]').click();
     assert.equal(await ws.locator('[data-eam3d-rf-target]').inputValue(), 'slow-pathway', 'AVNRT targets the slow pathway');
     assert.equal(await ws.locator('[data-eam3d-rf-hud]').isVisible(), true, 'RF readout over the 3D view');

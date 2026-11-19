@@ -106,3 +106,19 @@
   .hf-pillar-btn { transition: none; }
   .hf-ef-live { transform: none !important; }
 }
+
+/* Badges and toolbar pills had no base rule here, so they rendered as oversized plain text. */
+.heart-failure-lab .badge {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+.heart-failure-lab .card-head { flex-wrap: wrap; }
+.heart-failure-lab .control-cluster { flex-wrap: wrap; min-width: 0; }
+.heart-failure-lab .btn-group { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.heart-failure-lab .btn-group .stage-btn { flex: 0 0 auto; min-height: 36px; justify-content: center; }

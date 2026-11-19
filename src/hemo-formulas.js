@@ -151,3 +151,49 @@ export function oximetryStepUp(sats) {
   if (finite(sats.pa) - finite(sats.rv) >= 5) return { level: 'great-artery', rise: sats.pa - sats.rv };
   return null;
 }
+
+// Thresholds used when a left-to-right atrial shunt is assessed for closure
+// (2018 AHA/ACC adult congenital guideline, as summarized in UpToDate
+// "Management of atrial septal defects in adults"): a shunt is hemodynamically
+// significant from Qp/Qs 1.5; pulmonary hypertension is "moderate" from a PA
+// systolic pressure of half the systemic systolic pressure or a PVR of
+// one-third of SVR, and "severe" above two-thirds for either.
+export const SIGNIFICANT_QPQS = 1.5;
+export const PH_MODERATE_PASP_RATIO = 0.5;
+export const PH_MODERATE_PVR_RATIO = 1 / 3;
+export const PH_SEVERE_RATIO = 2 / 3;
+export const PVR_TREAT_FIRST_WOOD = 5;      // above this, targeted PAH therapy and re-study come first
+export const NET_RIGHT_TO_LEFT_QPQS = 0.95; // Qp/Qs below this is read as net right-to-left
+export const PV_ARTERIAL_PROXY_MIN = 95;    // arterial saturation may stand in for pulmonary venous from here
+export const PV_ASSUMED_SATURATION = 98;
+
+/**
+ * Pulmonary venous saturation for the Qp calculation: the measured sample if
+ * there is one; otherwise the arterial saturation when it is at least 95%;
+ * otherwise an assumed 98% (a desaturated artery may mean right-to-left shunt).
+ * @param {{ pulmonaryVein?: number, arterial: number }} s percent
+ * @returns {{ value: number, source: 'measured'|'arterial'|'assumed' }}
+ */
+export function pulmonaryVenousSaturation({ pulmonaryVein, arterial }) {
+  if (Number.isFinite(pulmonaryVein)) return { value: pulmonaryVein, source: 'measured' };
+  if (finite(arterial) >= PV_ARTERIAL_PROXY_MIN) return { value: arterial, source: 'arterial' };
+  return { value: PV_ASSUMED_SATURATION, source: 'assumed' };
+}
+
+/**
+ * Where a shunt stands against the closure thresholds. Teaching
+ * classification of the numbers only; irreversibility of pulmonary
+ * hypertension needs vasoreactivity testing or treatment and a re-study.
+ * @param {{ qpQs: number, paspRatio: number, pvrSvrRatio: number }} p
+ *   paspRatio: PA systolic / systemic systolic; pvrSvrRatio: PVR / SVR.
+ * @returns {'closure'|'case_by_case'|'contraindicated'|'right_to_left'|'not_significant'|null}
+ */
+export function shuntClosureClass({ qpQs, paspRatio, pvrSvrRatio }) {
+  if (![qpQs, paspRatio, pvrSvrRatio].every(Number.isFinite)) return null;
+  const severe = paspRatio > PH_SEVERE_RATIO || pvrSvrRatio > PH_SEVERE_RATIO;
+  if (qpQs < NET_RIGHT_TO_LEFT_QPQS) return severe ? 'contraindicated' : 'right_to_left';
+  if (qpQs < SIGNIFICANT_QPQS) return 'not_significant';
+  if (severe) return 'contraindicated';
+  const moderate = paspRatio >= PH_MODERATE_PASP_RATIO || pvrSvrRatio >= PH_MODERATE_PVR_RATIO;
+  return moderate ? 'case_by_case' : 'closure';
+}

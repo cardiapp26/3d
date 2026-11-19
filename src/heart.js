@@ -290,7 +290,7 @@ export function createHeart(container, onSelect = () => {}, onHover = () => {}, 
   bachmannTargetGroup.name = 'Bachmann pacing target';
   bachmannTargetGroup.visible = false;
   heart.add(bachmannTargetGroup);
-  const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getVesselTrim:(name)=>vesselTrims.get(name)||null, isReady });
+  const cathLab = createCathLab({ sourceCenter, meshVertices, getMeshes:(id)=>meshMap.get(id)||[], getVesselTrim:(name)=>vesselTrims.get(name)||null, isReady, getFossa:()=>transseptal.group.getObjectByName('Fossa ovalis')?.position||null });
   heart.add(cathLab.group);
   const annuli = createAnnuli({ sourceCenter, register, meshVertices, getMeshes:(id)=>meshMap.get(id)||[] });
   const thorax = createThorax({ sourceCenter, register });

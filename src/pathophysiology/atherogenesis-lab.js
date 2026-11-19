@@ -3,15 +3,21 @@
 // Porsch & Binder (2024), Gelfand et al. (2025), Rashedi et al. (2026).
 
 import { ATHEROMA_STAGES, ATHEROMA_MODIFIERS } from './pathophysiology-data.js';
+import { HOTSPOTS } from './atherogenesis-text.js';
 import { createCycleClock, createMotionBar, cycleShape, tweenValues } from './cycle-clock.js';
+import { plaqueGeometry, morphMarkup, applyGeometry, animateFlow, flowStep, mixHex } from './atherogenesis-motion.js';
 import {
-  plaqueGeometry, morphMarkup, applyGeometry, cellMarkup, animateCells, animateFlow, flowStep
-} from './atherogenesis-motion.js';
+  STAGE_BEATS, beatCount, beatIndex, beatStartU, beatSettledU, stageP,
+  proteoglycanMarkup, actorMarkup, collectActors, animateActors, focusFor
+} from './atherogenesis-beats.js';
 
 if (typeof document !== 'undefined') import('./atherogenesis-motion.css');
 
 const STORY_HOLD_MS = 5200;
-const MORPH_MS = 1100;
+const MORPH_MS = 900;
+// Cardiac cycles one stage timeline lasts (about 4 s per beat at the default 0.5x speed).
+const CYCLES_PER_BEAT = 2.6;
+const LESION_ENDO = [2, 6];
 
 export function createAtherogenesisLab(opts = {}) {
   const mount = opts.mount || opts.container;
@@ -28,44 +34,6 @@ export function createAtherogenesisLab(opts = {}) {
   let capThickness = 85;    // µm
   let patientAge = 55;      // Years for Ference cumulative exposure
   let statinStartAge = 0;   // 0 = untreated, or 35 / 50
-
-  const HOTSPOTS = {
-    liver: {
-      title: { tr: 'Karaciğer ve MASLD (Averna 2026)', en: 'Liver & MASLD (Averna 2026)' },
-      body: {
-        tr: 'İnsülin direnci ve hepatik steatoz (MASLD), MTP ve de novo lipogenez yoluyla büyük VLDL1 salınımını artırır. CETP aktivitesiyle kolesterol esteri kaybedip trigliserid kazanan LDL partikülleri hepatik lipaz tarafından küçültülerek subendotelyal proteoglikanlara çok yüksek afinite gösteren küçük-yoğun LDL (sdLDL) haline gelir.',
-        en: 'Insulin resistance and hepatic steatosis (MASLD) drive large VLDL1 overproduction. CETP-mediated lipid exchange and hepatic lipase remodeling generate highly atherogenic small dense LDL (sdLDL) and remnants.'
-      }
-    },
-    endothelium: {
-      title: { tr: 'Endotel Bariyeri ve Transsitoz (Borén 2025)', en: 'Endothelial Barrier & Transcytosis (Borén 2025)' },
-      body: {
-        tr: 'Arteriyel dallanma noktalarındaki düşük/osilatuar kayma gerilimi (shear stress) glikokaliksi inceltir ve eNOS kaynaklı NO üretimini düşürür. Çapı <70 nm olan ApoB partikülleri SR-BI ve ALK1 reseptör aracılı kaveoler transsitozla intimaya geçer.',
-        en: 'Low oscillatory shear stress at arterial bifurcations thins the glycocalyx and reduces eNOS nitric oxide. ApoB lipoproteins (<70 nm) cross the endothelium via SR-BI and ALK1 caveolar transcytosis.'
-      }
-    },
-    proteoglycan: {
-      title: { tr: 'Proteoglikan Retansiyon Tuzağı (Williams & Tabas / Borén 2025)', en: 'Proteoglycan Retention Trap (Borén 2025)' },
-      body: {
-        tr: 'Aterogenezi başlatan temel olay: ApoB-100 üzerindeki pozitif yüklü (B-bölgesi) aminoasit dizileri, subendotelyal biglikan ve versikan proteoglikanlarının negatif yüklü kondroitin sülfat zincirlerine kilitlenir. Tutulan partiküller ROS ve sfingomiyelinaz ile agregasyona ve oksidasyona (oxLDL) uğrar.',
-        en: 'The initiating step of atherogenesis: positively charged site-B residues on apoB-100 bind negatively charged chondroitin sulfate chains on intimal biglycan and versican, trapping particles for oxidation into oxLDL.'
-      }
-    },
-    foamcell: {
-      title: { tr: 'Makrofaj Köpük Hücresi ve NLRP3 (Porsch 2024)', en: 'Macrophage Foam Cell & NLRP3 (Porsch 2024)' },
-      body: {
-        tr: 'CD36 ve SR-A çöpçü reseptörleri LDL reseptörünün aksine hücre içi kolesterol artsa bile kapanmaz. Aşırı kolesterol esteri birikimi köpük hücresini oluşturur; serbest kolesterol kristalleri lizozomu yırtarak NLRP3 inflamazomunu ve IL-1β / IL-6 kaskadını tetikler.',
-        en: 'Unlike LDLR, scavenger receptors CD36 and SR-A lack sterol downregulation. Unchecked oxLDL uptake forms foam cells; intracellular cholesterol crystals rupture lysosomes to activate NLRP3 and IL-1β/IL-6.'
-      }
-    },
-    cap: {
-      title: { tr: 'Fibröz Kılıf, TCFA (<65 µm) ve Tromboz (Rashedi 2026)', en: 'Fibrous Cap, TCFA (<65 µm) & Thrombosis (Rashedi 2026)' },
-      body: {
-        tr: 'VSMC tarafından sentezlenen kollajen kılıf plağı stabilize eder. Ancak makrofaj MMP-1/8/13 kollajenazları kılıfı <65 µm altına incelttiğinde (TCFA) omuz bölgesinden yırtılır. Antifosfolipid antikorları (anti-β2GPI) endotel ve trombositlerde Doku Faktörü (TF) ekspresyonunu artırarak oklüzif trombozu hızlandırır.',
-        en: 'VSMC collagen stabilizes the cap, but macrophage MMP-1/8/13 degradation creates a Thin-Cap Fibroatheroma (<65 µm). Rupture exposes Tissue Factor, while antiphospholipid antibodies (anti-β2GPI) amplify thrombosis.'
-      }
-    }
-  };
 
   root.innerHTML = `
     <div class="athero-story-head">
@@ -85,7 +53,12 @@ export function createAtherogenesisLab(opts = {}) {
     <div class="preset-pill-group" style="margin-top:10px" data-athero-modifiers></div>
     <div class="pathophys-grid">
       <div class="pathophys-stage athero-stage">
-        <svg viewBox="0 0 640 360" class="pathophys-svg athero-svg" role="group" aria-label="Atherogenesis Multi-Organ Cross Section"></svg>
+        <svg viewBox="0 0 640 340" class="pathophys-svg athero-svg" role="group" aria-label="Atherogenesis Multi-Organ Cross Section"></svg>
+        <div class="athero-beat-box">
+          <p class="athero-beat-title" data-athero-i18n="beatTitle"></p>
+          <ol class="athero-beats" data-athero-beats></ol>
+        </div>
+        <div class="athero-legend" data-athero-legend aria-hidden="true"></div>
         <div class="athero-hotspot-bar" data-athero-hotspots></div>
         <div class="clinical-desc-box" style="width:100%;margin-top:8px" data-athero-inspector></div>
         <div class="athero-cumulative-box" style="width:100%;margin-top:12px">
@@ -160,8 +133,14 @@ export function createAtherogenesisLab(opts = {}) {
   let morph = { p: 0 };
   let cancelMorph = () => {};
   let storyTimer = null;
+  let storyOn = false;
   let refs = null;
   let flowS = 0, cellT = 0, lastPhase = null;
+  let stageU = 0;           // progress through the current stage's beats (0..1)
+  let holdUntil = 0;        // timeline waits while the plaque morphs to a new start
+  let shownBeat = -1;
+  const lastStage = ATHEROMA_STAGES.length - 1;
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const $ = sel => root.querySelector(sel);
   const $$ = sel => Array.from(root.querySelectorAll(sel));
@@ -183,21 +162,37 @@ export function createAtherogenesisLab(opts = {}) {
   function stopStory() {
     if (storyTimer != null) clearTimeout(storyTimer);
     storyTimer = null;
+    storyOn = false;
   }
-  function selectStage(index, { fromStory = false } = {}) {
-    if (!fromStory) stopStory();
-    currentStageIndex = Math.max(0, Math.min(ATHEROMA_STAGES.length - 1, index));
+  /** Morph the plaque to where the timeline now stands; the timeline waits meanwhile. */
+  function retarget() {
     cancelMorph();
-    cancelMorph = tweenValues({ p: morph.p }, { p: currentStageIndex }, values => {
+    holdUntil = performance.now() + MORPH_MS;
+    cancelMorph = tweenValues({ p: morph.p }, { p: stageP(currentStageIndex, stageU) }, values => {
       morph = { p: values.p };
       paintGeometry();
     }, MORPH_MS);
+  }
+  function selectStage(index, { fromStory = false } = {}) {
+    if (!fromStory) stopStory();
+    currentStageIndex = Math.max(0, Math.min(lastStage, index));
+    // Playing: start at the first beat. Paused or reduced motion: show the finished stage.
+    stageU = clock.getState().playing ? 0 : beatSettledU(currentStageIndex, beatCount(currentStageIndex) - 1);
     selectedHotspot = stageTargets[currentStageIndex];
     if (currentStageIndex === 4 && capThickness > 60) {
       capThickness = 50;
       $('[data-athero-slider="cap"]').value = '50';
     }
+    retarget();
     render();
+  }
+  function seekBeat(beat) {
+    stopStory();
+    stageU = clock.getState().playing ? beatStartU(currentStageIndex, beat) : beatSettledU(currentStageIndex, beat);
+    retarget();
+    syncMotionUi();
+    if (refs) paintBeat(plaqueGeometry(morph.p, capThickness));
+    clock.refresh();
   }
   $('[data-athero-prev]').addEventListener('click', () => selectStage(currentStageIndex - 1));
   $('[data-athero-next]').addEventListener('click', () => selectStage(currentStageIndex + 1));
@@ -206,17 +201,23 @@ export function createAtherogenesisLab(opts = {}) {
     motionEnabled = clock.getState().playing;
     syncMotionUi();
   });
-  function storyStep(index) {
+  // Without motion the story steps through the finished stages on a timer.
+  function storyStepStatic(index) {
     selectStage(index, { fromStory: true });
-    storyTimer = index < ATHEROMA_STAGES.length - 1
-      ? setTimeout(() => storyStep(index + 1), STORY_HOLD_MS)
-      : setTimeout(() => { storyTimer = null; syncMotionUi(); }, STORY_HOLD_MS * 0.4);
-    syncMotionUi();
+    storyTimer = setTimeout(() => {
+      if (index < lastStage) storyStepStatic(index + 1);
+      else { stopStory(); syncMotionUi(); }
+    }, STORY_HOLD_MS);
   }
   $('[data-athero-story]').addEventListener('click', () => {
-    if (storyTimer != null) { stopStory(); syncMotionUi(); return; }
-    if (!clock.getState().playing && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) clock.setPlaying(true);
-    storyStep(0);
+    if (storyOn) { stopStory(); syncMotionUi(); return; }
+    storyOn = true;
+    if (reducedMotion()) storyStepStatic(0);
+    else {
+      if (!clock.getState().playing) clock.setPlaying(true);
+      selectStage(0, { fromStory: true });
+    }
+    syncMotionUi();
   });
 
   function syncMotionUi() {
@@ -228,7 +229,7 @@ export function createAtherogenesisLab(opts = {}) {
       : (en ? '▷ Animate flow' : '▷ Akışı canlandır');
     motionBtn.setAttribute('aria-pressed', String(motionEnabled));
     const storyBtn = $('[data-athero-story]');
-    const playingStory = storyTimer != null;
+    const playingStory = storyOn;
     storyBtn.textContent = playingStory
       ? (en ? '■ Stop the story' : '■ Hikâyeyi durdur')
       : (en ? '▶ Play the whole story' : '▶ Tüm hikâyeyi oynat');
@@ -241,6 +242,37 @@ export function createAtherogenesisLab(opts = {}) {
     applyGeometry(refs, plaqueGeometry(morph.p, capThickness), getLang() === 'en');
   }
 
+  /** Advance the stage timeline by d cardiac cycles; loops, or moves on in story mode. */
+  function advanceTimeline(d) {
+    stageU += d / (CYCLES_PER_BEAT * beatCount(currentStageIndex));
+    if (stageU < 1) {
+      morph = { p: stageP(currentStageIndex, stageU) };
+      return;
+    }
+    if (storyOn && currentStageIndex < lastStage) { selectStage(currentStageIndex + 1, { fromStory: true }); return; }
+    if (storyOn) { stopStory(); syncMotionUi(); }
+    stageU = 0;
+    retarget();
+  }
+
+  function paintBeat(geo) {
+    const beat = beatIndex(currentStageIndex, stageU);
+    const n = beatCount(currentStageIndex);
+    if (beat !== shownBeat) {
+      shownBeat = beat;
+      $$('[data-beat]').forEach((btn, i) => {
+        btn.classList.toggle('active', i === beat);
+        btn.classList.toggle('done', i < beat);
+        if (i === beat) btn.setAttribute('aria-current', 'step'); else btn.removeAttribute('aria-current');
+      });
+    }
+    $(`[data-beat="${beat}"]`)?.style.setProperty('--beat-k', (stageU * n - beat).toFixed(3));
+    const f = focusFor(currentStageIndex, beat, geo);
+    const el = refs.focus;
+    el.setAttribute('cx', f.x.toFixed(1)); el.setAttribute('cy', f.y.toFixed(1));
+    el.setAttribute('rx', f.rx.toFixed(1)); el.setAttribute('ry', f.ry.toFixed(1));
+  }
+
   function frame(state) {
     const shape = cycleShape(state.phase);
     motionBar.render(state, shape.phase);
@@ -249,11 +281,20 @@ export function createAtherogenesisLab(opts = {}) {
     if (d > 0.25) d = 0;
     lastPhase = state.phase;
     if (!refs) return;
+    if (d > 0 && performance.now() >= holdUntil) advanceTimeline(d);
+    if (!refs) return;
     const geo = plaqueGeometry(morph.p, capThickness);
+    applyGeometry(refs, geo, getLang() === 'en');
     flowS += flowStep(d, shape.pressure, geo);
     cellT += d;
     animateFlow(refs, flowS, shape.pressure, geo);
-    animateCells(refs.cells, cellT, geo);
+    const injury = animateActors(refs.actors, currentStageIndex, stageU, cellT, geo);
+    refs.endo.forEach((r, i) => {
+      if (i < LESION_ENDO[0] || i > LESION_ENDO[1]) return;
+      r.setAttribute('fill', mixHex('#fecaca', '#f87171', injury));
+      r.setAttribute('stroke', mixHex('#dc2626', '#b91c1c', injury));
+    });
+    paintBeat(geo);
   }
 
   // Original schematic thumbnails: same tissue layers, progressively different contents.
@@ -394,6 +435,30 @@ export function createAtherogenesisLab(opts = {}) {
       });
     });
 
+    // 4b. Guided beats: the caption list the animation steps through
+    $('[data-athero-beats]').innerHTML = STAGE_BEATS[currentStageIndex].map((beat, i) => `
+      <li><button type="button" class="athero-beat" data-beat="${i}">
+        <span class="athero-beat-num">${i + 1}</span><span class="athero-beat-text">${t(beat)}</span>
+      </button></li>`).join('');
+    shownBeat = -1;
+    $$('[data-beat]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        seekBeat(parseInt(btn.dataset.beat, 10));
+        $(`[data-beat="${btn.dataset.beat}"]`)?.focus({ preventScroll: true });
+      });
+    });
+    const swatch = (fill, stroke, label, extra = '') => `<span><i style="background:${fill};border-color:${stroke};${extra}"></i>${label}</span>`;
+    $('[data-athero-legend]').innerHTML = [
+      swatch('#eab308', '#92400e', 'LDL (apoB-100)'),
+      swatch('#ea580c', '#7c2d12', en ? 'sdLDL / remnant' : 'sdLDL / kalıntı'),
+      swatch('#a855f7', '#6b21a8', 'Lp(a)'),
+      swatch('#c2410c', '#78350f', 'oxLDL'),
+      swatch('#3b82f6', '#1e3a8a', en ? 'Monocyte' : 'Monosit'),
+      swatch('#fcd34d', '#b45309', en ? 'Foam cell' : 'Köpük hücresi'),
+      swatch('#fb7185', '#be123c', en ? 'Smooth muscle cell' : 'Düz kas hücresi', 'border-radius:40%;'),
+      swatch('#0d9488', '#0f766e', en ? 'Fibrous cap' : 'Fibröz kılıf', 'border-radius:2px;height:6px;')
+    ].join('');
+
     // 5. Stage Details & Mod Card
     const st = ATHEROMA_STAGES[currentStageIndex];
     $('[data-athero-title]').textContent = t(st.title);
@@ -409,7 +474,8 @@ export function createAtherogenesisLab(opts = {}) {
     const I18N = {
       storyEyebrow: en ? 'INSIDE THE ARTERY WALL' : 'DAMAR DUVARININ İÇİNDE',
       storyTitle: en ? 'Follow the life of a plaque' : 'Bir plağın gelişimini izle',
-      storyHint: en ? 'Select a stage, then explore the structures in the artery. Schematic stages, not a fixed timeline.' : 'Bir evre seç, ardından damar üzerindeki yapıları keşfet. Evreler şematiktir; sabit bir zaman çizelgesi değildir.',
+      storyHint: en ? 'Each stage plays as numbered steps; the dashed ring shows where to look. Select a step to replay it. Schematic stages, not a fixed timeline.' : 'Her evre numaralı adımlar halinde oynar; kesikli halka nereye bakacağını gösterir. Bir adımı yeniden izlemek için üzerine dokun. Evreler şematiktir; sabit bir zaman çizelgesi değildir.',
+      beatTitle: en ? 'What is happening now' : 'Şu anda ne oluyor',
       simTitle: en ? 'Plaque Microenvironment & Exposure Parameters' : 'Plak Mikroçevresi ve Maruziyet Parametreleri',
       lblApoB: en ? 'Plasma LDL-C / ApoB Load' : 'Plazma LDL-C / ApoB Yükü',
       lblAge: en ? 'Patient Age (Cumulative Exposure)' : 'Hasta Yaşı (Kümülatif Maruziyet)',
@@ -513,92 +579,6 @@ export function createAtherogenesisLab(opts = {}) {
       `;
     }
 
-    // Subendothelial Proteoglycan web (always visible in intima so learner sees retention mechanism)
-    const proteoglycanWeb = `
-      <g stroke="#d97706" stroke-width="1.2" opacity="0.55" fill="none">
-        <path d="M 80 145 Q 110 135, 140 148 T 200 145 T 260 150"/>
-        <path d="M 95 162 Q 130 152, 165 164 T 235 160"/>
-        <line x1="110" y1="138" x2="110" y2="165"/><line x1="155" y1="140" x2="155" y2="166"/><line x1="195" y1="138" x2="195" y2="165"/>
-      </g>
-    `;
-
-    // Stage-dependent intimal progression
-    let intimaContent = '';
-    if (stageIdx === 0) {
-      intimaContent = `
-        <g stroke="#d97706" stroke-width="2" stroke-dasharray="3 2" fill="none">
-          <path d="M 190 68 L 190 135"/>
-          <path d="M 310 68 L 310 138"/>
-          <path d="M 430 68 L 430 135"/>
-        </g>
-        <circle cx="190" cy="142" r="6" fill="#eab308" stroke="#92400e" stroke-width="1.5"/>
-        <circle cx="310" cy="146" r="6" fill="#eab308" stroke="#92400e" stroke-width="1.5"/>
-        <circle cx="430" cy="142" r="6" fill="#a855f7" stroke="#6b21a8" stroke-width="1.5"/>
-        <text x="320" y="185" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">
-          ${en ? 'SR-BI / ALK1 Transcytosis of ApoB Particles into Intima' : 'ApoB Partiküllerinin SR-BI / ALK1 ile İntimaya Transsitozu'}
-        </text>
-      `;
-    } else if (stageIdx === 1) {
-      intimaContent = `
-        <g>
-          <circle cx="120" cy="150" r="7" fill="#d97706" stroke="#78350f" stroke-width="2"/>
-          <circle cx="155" cy="155" r="7" fill="#d97706" stroke="#78350f" stroke-width="2"/>
-          <circle cx="195" cy="148" r="7" fill="#d97706" stroke="#78350f" stroke-width="2"/>
-          <circle cx="290" cy="154" r="7.5" fill="#ea580c" stroke="#7c2d12" stroke-width="2"/>
-          <circle cx="340" cy="148" r="7.5" fill="#ea580c" stroke="#7c2d12" stroke-width="2"/>
-          <circle cx="395" cy="156" r="7.5" fill="#ea580c" stroke="#7c2d12" stroke-width="2"/>
-          <text x="340" y="185" text-anchor="middle" font-size="12" font-weight="800" fill="#9a3412">
-            ${en ? 'Proteoglycan-Bound ApoB → ROS Oxidation (oxLDL & OxPL)' : 'Proteoglikana Bağlı ApoB → ROS Oksidasyonu (oxLDL ve OxPL)'}
-          </text>
-        </g>
-      `;
-    } else if (stageIdx === 2) {
-      intimaContent = `
-        <g>
-          <!-- Monocyte diapedesis track (the animated monocyte follows it) -->
-          <path d="M 235 94 L 242 132" stroke="#2563eb" stroke-width="2" stroke-dasharray="3 2" opacity="0.5"/>
-          <!-- Foam cells with lipid droplets -->
-          ${[260, 325, 390, 450].map((cx, i) => `
-            <g transform="translate(${cx}, ${165 + (i % 2) * 14})"><g class="athero-cell-pulse" style="--flow-delay:${-i * .6}s">
-              <circle cx="0" cy="0" r="20" fill="#f59e0b" fill-opacity="0.28" stroke="#b45309" stroke-width="2"/>
-              <circle cx="-6" cy="-5" r="4.5" fill="#eab308"/><circle cx="6" cy="-4" r="4" fill="#eab308"/>
-              <circle cx="-4" cy="6" r="4" fill="#eab308"/><circle cx="6" cy="5" r="4.5" fill="#eab308"/>
-              <!-- Cholesterol crystal needles -->
-              <line x1="-8" y1="9" x2="9" y2="-8" stroke="#fef08a" stroke-width="2"/>
-            </g></g>
-          `).join('')}
-          <text x="355" y="218" text-anchor="middle" font-size="12" font-weight="800" fill="#7c2d12">
-            ${en ? 'CD36/SR-A Foam Cells + Cholesterol Crystals → NLRP3 → IL-1β / IL-6' : 'CD36/SR-A Köpük Hücreleri + Kolesterol Kristalleri → NLRP3 → IL-1β / IL-6'}
-          </text>
-        </g>
-      `;
-    } else if (stageIdx === 3) {
-      // Necrotic core and fibrous cap are the persistent morph paths (atherogenesis-motion.js).
-      intimaContent = `
-        <g>
-          <!-- Cholesterol crystals inside necrotic core -->
-          <g stroke="#fef9c3" stroke-width="2.2">
-            <line x1="295" y1="195" x2="325" y2="180"/><line x1="340" y1="185" x2="375" y2="200"/><line x1="360" y1="208" x2="395" y2="192"/>
-          </g>
-          <text x="345" y="132" text-anchor="middle" font-size="11.5" font-weight="800" fill="#0f766e">
-            ${en ? `VSMC Collagen Fibrous Cap (${capThickness} µm)` : `VSMC Kollajen Fibröz Kılıf (${capThickness} µm)`}
-          </text>
-          <text x="345" y="215" text-anchor="middle" font-size="12" font-weight="800" fill="#713f12">
-            ${en ? 'Acellular Lipid-Rich Necrotic Core (Defective Efferocytosis)' : 'Hücresiz Lipid-Zengin Nekrotik Çekirdek (Kusurlu Efferositoz)'}
-          </text>
-        </g>
-      `;
-    } else {
-      intimaContent = `
-        <g>
-          <!-- Core, ruptured cap and thrombus are persistent morph shapes (atherogenesis-motion.js). -->
-          <text x="348" y="195" text-anchor="middle" font-size="12" font-weight="800" fill="#7f1d1d">
-            ${en ? 'MMP-1/8/13 Cap Rupture (<65 µm TCFA)' : 'MMP-1/8/13 Kılıf Yırtılması (<65 µm TCFA)'}
-          </text>
-        </g>
-      `;
-    }
-
     const mm = morphMarkup(en);
     svg.innerHTML = `
       <defs>
@@ -619,7 +599,7 @@ export function createAtherogenesisLab(opts = {}) {
         <rect x="18" y="16" width="112" height="62" rx="8" fill="#fff7ed" stroke="${selectedHotspot === 'liver' ? '#0d9488' : '#fdba74'}" stroke-width="2"/>
         <path d="M 30 48 C 28 28, 56 22, 82 30 C 92 34, 88 52, 65 54 C 48 56, 32 54, 30 48 Z" fill="${liverFill}"/>
         ${steatosisDots}
-        <text x="74" y="69" text-anchor="middle" font-size="9.5" font-weight="800" fill="#7c2d12">
+        <text x="74" y="69" text-anchor="middle" font-size="8.4" font-weight="800" fill="#7c2d12">
           ${isMasld ? (en ? 'MASLD Liver: ↑VLDL1' : 'MASLD Karaciğer: ↑VLDL1') : (en ? 'Liver: ApoB Secretion' : 'Karaciğer: ApoB Salınımı')}
         </text>
       </g>
@@ -635,8 +615,8 @@ export function createAtherogenesisLab(opts = {}) {
         <!-- Endothelial Monolayer -->
         <g class="athero-clickable" data-svg-hs="endothelium" style="cursor:pointer">
           ${[15, 85, 155, 225, 295, 365, 435, 505, 575].map((x, idx) => {
-            const damaged = stageIdx >= 0 && idx >= 2 && idx <= 6;
-            return `<rect data-am-endo x="${x}" y="96" width="52" height="13" rx="5" fill="${damaged ? '#f87171' : '#fca5a5'}" stroke="${damaged ? '#b91c1c' : '#dc2626'}" stroke-width="1.5"/>`;
+            const lesion = idx >= LESION_ENDO[0] && idx <= LESION_ENDO[1];
+            return `<rect data-am-endo x="${x}" y="96" width="52" height="13" rx="5" fill="${lesion ? '#fecaca' : '#fca5a5'}" stroke="#dc2626" stroke-width="1.5"/>`;
           }).join('')}
         </g>
 
@@ -647,7 +627,7 @@ export function createAtherogenesisLab(opts = {}) {
         </text>
 
         <g class="athero-clickable" data-svg-hs="proteoglycan" style="cursor:pointer">
-          ${proteoglycanWeb}
+          ${proteoglycanMarkup()}
         </g>
 
         <!-- Tunica Media (VSMCs), drawn before the plaque so migrating SMCs stay visible -->
@@ -660,22 +640,12 @@ export function createAtherogenesisLab(opts = {}) {
 
         <g class="athero-clickable" data-svg-hs="${stageTargets[stageIdx]}" style="cursor:pointer">
           ${mm.core}
-          ${intimaContent}
           ${mm.thrombus}
         </g>
 
         <!-- Stage cells (schematic trajectories on the shared cardiac clock) -->
-        <g aria-hidden="true" class="athero-mechanism-cells">${cellMarkup(stageIdx)}</g>
-      </g>
-
-      <!-- Particle Legend Bar at bottom of SVG -->
-      <g transform="translate(18, 316)" font-size="10" font-weight="700" fill="#334155">
-        <circle cx="8" cy="8" r="5.5" fill="#eab308" stroke="#92400e"/><text x="18" y="12">LDL (ApoB-100)</text>
-        <circle cx="115" cy="8" r="4.5" fill="#ea580c" stroke="#7c2d12"/><text x="124" y="12">${en ? 'sdLDL / Remnant' : 'sdLDL / Kalıntı'}</text>
-        <circle cx="230" cy="8" r="5.5" fill="#a855f7" stroke="#6b21a8"/><text x="240" y="12">Lp(a) + OxPL</text>
-        <circle cx="335" cy="8" r="6" fill="#d97706" stroke="#78350f"/><text x="346" y="12">oxLDL</text>
-        <circle cx="405" cy="8" r="6.5" fill="#f59e0b" fill-opacity="0.4" stroke="#b45309"/><text x="416" y="12">${en ? 'Foam Cell' : 'Köpük Hücresi'}</text>
-        <rect x="498" y="3" width="16" height="9" rx="2" fill="#0d9488"/><text x="518" y="12">${en ? 'Fibrous Cap' : 'Fibröz Kılıf'}</text>
+        <g aria-hidden="true" class="athero-mechanism-cells" data-am="actors">${actorMarkup(stageIdx, en)}</g>
+        ${mm.focus}
       </g>
     `;
 
@@ -683,10 +653,9 @@ export function createAtherogenesisLab(opts = {}) {
     refs = {
       lumen: am('lumen'), wall: am('wall'), mound: am('mound'), intima: am('intima'), iel: am('iel'), media: am('media'),
       core: am('core'), cap: am('cap'), breach: am('breach'), thrombus: am('thrombus'), remodel: am('remodel'),
-      readout: am('readout'), shear: am('shear'),
+      readout: am('readout'), shear: am('shear'), focus: am('focus'), actors: collectActors(am('actors')),
       endo: Array.from(svg.querySelectorAll('[data-am-endo]')),
       arrows: Array.from(svg.querySelectorAll('[data-am-shear-arrow]')),
-      cells: Array.from(svg.querySelectorAll('[data-cell]')),
       particles: Array.from(svg.querySelectorAll('.athero-flow-particle')).map(el => ({ el, x0: Number(el.dataset.x0) }))
     };
     paintGeometry();

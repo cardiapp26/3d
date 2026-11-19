@@ -17,9 +17,10 @@ const clampMs = (raw, limits) => Math.max(limits.min, Math.min(limits.max, Numbe
  * @param {{
  *   onToggleRun: () => void,
  *   onDeliver: (maneuver: { mode: string, channelId: string, bclMs: number, s2Ms: number }) => void,
+ *   onOpenRf: () => void,
  * }} handlers
  */
-export function createStimBar(doc, { onToggleRun, onDeliver }) {
+export function createStimBar(doc, { onToggleRun, onDeliver, onOpenRf }) {
   let settings = { stimMode: 'burst', stimBclMs: BCL_LIMITS.fallback, stimS2Ms: S2_LIMITS.fallback, stimChannel: 'rv-d' };
 
   const bar = el(doc, 'div', 'eam3d-stimbar', null, { 'data-eam3d-stimbar': 'true' });
@@ -79,7 +80,10 @@ export function createStimBar(doc, { onToggleRun, onDeliver }) {
 
   controls.append(bcl.wrap, s2.wrap, channelWrap, deliverButton);
   const verdict = el(doc, 'div', 'eam3d-stim-verdict', null, { 'data-eam3d-stim-verdict': 'true' });
-  bar.append(controls, verdict);
+  // The bottom bar holds either the stimulator or the RF console; this switches to RF.
+  const rfButton = button(doc, 'eam3d-btn eam3d-dock-switch', { 'data-eam3d-open-rf': 'true' });
+  rfButton.addEventListener('click', onOpenRf);
+  bar.append(controls, verdict, rfButton);
 
   /** @param {{ t: object, running: boolean, verdictText: string }} view */
   function sync({ t, running, verdictText }) {
@@ -93,6 +97,7 @@ export function createStimBar(doc, { onToggleRun, onDeliver }) {
     s2.label.textContent = t.stim.s2;
     channelLabel.textContent = t.stim.channel;
     deliverButton.textContent = t.stim.deliver;
+    rfButton.textContent = t.stim.openRf;
     verdict.textContent = verdictText;
   }
 

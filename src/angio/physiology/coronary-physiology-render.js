@@ -69,6 +69,7 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
     }
     const totalNarrow = clamp(diffuseNarrow + plaqueNarrow + spasmFactor * 0.82, 0, 0.88);
     return {
+      offset: -baseR * Math.min(plaqueNarrow, totalNarrow) * 0.66,
       outerR: baseR + 5,
       lumenR: Math.max(2.4, baseR * (1 - totalNarrow)),
       baseR
@@ -82,16 +83,16 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
   const topAdventitia = [];
   const botAdventitia = [];
 
-  for (let mm = 0; mm <= 80; mm += 2) {
+  for (let mm = 0; mm <= 80; mm += 1) {
     const x = xOfMm(mm);
     const cy = centerY(mm);
-    const { outerR, lumenR, baseR } = halfRadiusAt(mm);
+    const { outerR, lumenR, baseR, offset } = halfRadiusAt(mm);
     topOuter.push(`${x.toFixed(1)},${(cy - outerR).toFixed(1)}`);
     botOuter.push(`${x.toFixed(1)},${(cy + outerR).toFixed(1)}`);
     topAdventitia.push(`${x.toFixed(1)},${(cy - baseR).toFixed(1)}`);
     botAdventitia.push(`${x.toFixed(1)},${(cy + baseR).toFixed(1)}`);
-    topLumen.push(`${x.toFixed(1)},${(cy - lumenR).toFixed(1)}`);
-    botLumen.push(`${x.toFixed(1)},${(cy + lumenR).toFixed(1)}`);
+    topLumen.push(`${x.toFixed(1)},${(cy + offset - lumenR).toFixed(1)}`);
+    botLumen.push(`${x.toFixed(1)},${(cy + offset + lumenR).toFixed(1)}`);
   }
 
   const outerPolygon = [...topOuter, ...botOuter.reverse()].join(' ');
@@ -99,13 +100,16 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
   const lumenPolygon = [...topLumen, ...botLumen.reverse()].join(' ');
 
   // Wire centerline path from guide catheter to distal tip
-  const wirePts = [];
-  for (let mm = 0; mm <= 80; mm += 4) {
-    wirePts.push(`${mm === 0 ? 'M' : 'L'}${xOfMm(mm).toFixed(1)} ${(centerY(mm) + 1.5).toFixed(1)}`);
-  }
-
+  const lumenY = mm => centerY(mm) + halfRadiusAt(mm).offset;
+  const lumenPath = (start, end) => {
+    const points = [start];
+    for (let mm = start + 1; mm < end; mm++) points.push(mm);
+    points.push(end);
+    return points.map((mm, i) => `${i ? 'L' : 'M'}${xOfMm(mm).toFixed(1)} ${lumenY(mm).toFixed(1)}`).join(' ');
+  };
+  const tipMm = Math.min(80, sensorMm + (modality === 'doppler' ? 0 : 30));
   const sensorX = xOfMm(sensorMm);
-  const sensorY = centerY(sensorMm) + 1.5;
+  const sensorY = lumenY(sensorMm);
   const currentRatio = samplePullbackRatio(caseObj, sensorMm, {
     hyperemia: state.hyperemia,
     stentedIds: state.stentedIds || [],
@@ -115,19 +119,19 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
 
   // Stent struts for stented lesions
   const stentSvg = lesions.filter(l => stentedSet.has(l.id)).map(l => {
-    const x1 = xOfMm(l.posMm - l.lengthMm);
-    const x2 = xOfMm(l.posMm + l.lengthMm);
-    const cy = centerY(l.posMm);
-    const r = state.underexpanded ? 11 : 15;
-    const struts = [];
-    for (let sx = x1; sx <= x2; sx += 6) {
-      struts.push(`<line x1="${sx.toFixed(1)}" y1="${(cy - r).toFixed(1)}" x2="${(sx + 3).toFixed(1)}" y2="${(cy + r).toFixed(1)}" stroke="#93c5fd" stroke-width="1.3" opacity="0.85"/>`);
-      struts.push(`<line x1="${(sx + 3).toFixed(1)}" y1="${(cy - r).toFixed(1)}" x2="${sx.toFixed(1)}" y2="${(cy + r).toFixed(1)}" stroke="#93c5fd" stroke-width="1.3" opacity="0.85"/>`);
-    }
-    return `<g class="stent-mesh">
-      <rect x="${x1.toFixed(1)}" y="${(cy - r).toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${(r * 2).toFixed(1)}" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="3 2" rx="2"/>
-      ${struts.join('')}
-    </g>`;
+    const start = Math.max(0, l.posMm - (l.lengthMm || 7) / 2);
+    const end = Math.min(80, l.posMm + (l.lengthMm || 7) / 2);
+    const rails = [-1, 1].map(side => {
+      const points = [];
+      for (let mm = start, i = 0; ; mm = Math.min(end, mm + 0.65), i++) {
+        const radius = halfRadiusAt(mm).lumenR;
+        const depth = i % 2 ? 0.70 : 0.98;
+        points.push(`${xOfMm(mm).toFixed(1)},${(lumenY(mm) + side * radius * depth).toFixed(1)}`);
+        if (mm >= end) break;
+      }
+      return `<polyline points="${points.join(' ')}" fill="none" stroke="#cedeea" stroke-width="1.6"/>`;
+    });
+    return `<g class="stent-mesh">${rails.join('')}</g>`;
   }).join('');
 
   // Lesion labels
@@ -148,9 +152,9 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
     state.device === 'mc';
   const mcEndMm = state.device === 'mc' ? sensorMm : 18;
   const mcEndX = xOfMm(mcEndMm);
-  const mcEndY = centerY(mcEndMm);
+  const mcEndY = lumenY(mcEndMm);
   const mcSvg = showMc ? `<g class="infusion-mc">
-    <path d="M 55 ${centerY(0) - 2} L ${mcEndX.toFixed(1)} ${(mcEndY - 2).toFixed(1)}" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+    <path d="${lumenPath(0, mcEndMm)}" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
     <circle cx="${(mcEndX - 3).toFixed(1)}" cy="${(mcEndY - 2).toFixed(1)}" r="2.2" fill="#e0f2fe"/>
     ${modality === 'continuous' && state.infusing ? `
       <path d="M ${mcEndX.toFixed(1)} ${(mcEndY - 6).toFixed(1)} Q ${(mcEndX + 28).toFixed(1)} ${(mcEndY - 12).toFixed(1)} ${(mcEndX + 54).toFixed(1)} ${(mcEndY - 4).toFixed(1)}" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="4 3" fill="none" class="phys-saline-jet"/>
@@ -182,8 +186,8 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
     underexpanded: state.underexpanded || false,
     microcatheter: state.device === 'mc'
   });
-  const mapTop = 158;
-  const mapBot = 228;
+  const mapTop = 170;
+  const mapBot = 216;
   const yOfFfr = ffr => mapBot - ((clamp(ffr, 0.4, 1.05) - 0.4) / 0.65) * (mapBot - mapTop);
   const pbPath = pb.points
     .filter(pt => pt.xMm >= (state.pullbackDone ? 0 : sensorMm))
@@ -199,9 +203,12 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
         <stop offset="100%" stop-color="#7f1d2d"/>
       </linearGradient>
       <linearGradient id="physLumenGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#b91c1c"/>
-        <stop offset="50%" stop-color="#ef4444"/>
-        <stop offset="100%" stop-color="#991b1b"/>
+        <stop offset="0%" stop-color="#501b28"/>
+        <stop offset="50%" stop-color="#aa4651"/>
+        <stop offset="100%" stop-color="#431521"/>
+      </linearGradient>
+      <linearGradient id="physPlaque" x2="0" y2="1">
+        <stop stop-color="#ba845a"/><stop offset=".65" stop-color="#f2cc87"/><stop offset="1" stop-color="#996347"/>
       </linearGradient>
     </defs>
 
@@ -213,13 +220,13 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
 
     <!-- Outer adventitia & plaque yellow fill -->
     <polygon points="${outerPolygon}" fill="url(#physWallGrad)" stroke="#9f1239" stroke-width="1"/>
-    <polygon points="${mediaPolygon}" fill="#d97706" opacity="0.65"/>
+    <polygon points="${mediaPolygon}" fill="url(#physPlaque)"/>
 
     <!-- Patent red blood lumen -->
-    <polygon points="${lumenPolygon}" fill="url(#physLumenGrad)"/>
+    <polygon points="${lumenPolygon}" fill="url(#physLumenGrad)" stroke="#e5a69a" stroke-width="0.9"/>
 
     <!-- Animated blood flow erythrocytes -->
-    <path d="${wirePts.join(' ')}" fill="none" stroke="#fca5a5" stroke-width="2.2" stroke-dasharray="4 14" opacity="0.65" class="phys-blood-stream"/>
+    <path d="${lumenPath(0, 80)}" fill="none" stroke="#fca5a5" stroke-width="2.2" stroke-dasharray="4 14" opacity="0.65" class="phys-blood-stream"/>
 
     <!-- Stent overlay if Virtual PCI active -->
     ${stentSvg}
@@ -232,7 +239,9 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
     ${mcSvg}
 
     <!-- Intracoronary wire -->
-    <path d="${wirePts.join(' ')}" fill="none" stroke="#e2e8f0" stroke-width="1.6" opacity="0.9"/>
+    <path d="${lumenPath(0, tipMm)}" fill="none" stroke="#e2e8f0" stroke-width="1.6" opacity="0.9"/>
+
+    <path d="${lumenPath(sensorMm, tipMm)}" fill="none" stroke="#f8fafc" stroke-width="2.3" stroke-dasharray="1 1"/>
 
     <!-- Glowing sensor marker (clickable / draggable target) -->
     <g class="phys-sensor-marker" data-sensor-mm="${Math.round(sensorMm)}">
@@ -246,10 +255,12 @@ export function renderVesselCutawaySvg(caseObj, state = {}, lang = 'tr') {
     <!-- Embedded Hyperemic Pullback Pd/Pa Map -->
     <rect x="64" y="146" width="446" height="90" rx="6" fill="#0b1018" stroke="#1e293b" stroke-width="1"/>
     <text x="74" y="160" fill="#94a3b8" font-size="9.5" font-weight="600">${isTr ? 'HİPEREMİK PULLBACK HARİTASI (Pd/Pa · 0–80 mm)' : 'HYPEREMIC PULLBACK MAP (Pd/Pa · 0–80 mm)'}</text>
+    ${[0, 20, 40, 60, 80].map(mm => `<line x1="${xOfMm(mm)}" x2="${xOfMm(mm)}" y1="167" y2="218" stroke="#203041"/><text x="${xOfMm(mm)}" y="231" text-anchor="middle" fill="#a5b4c5" font-size="9">${mm}</text>`).join('')}
+    <line x1="${sensorX}" x2="${sensorX}" y1="${sensorY + 9}" y2="218" stroke="#e4b64d" stroke-opacity=".5" stroke-dasharray="2 4"/>
     <line x1="76" y1="${y80.toFixed(1)}" x2="496" y2="${y80.toFixed(1)}" stroke="#f87171" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
     <text x="500" y="${(y80 + 3).toFixed(1)}" fill="#f87171" font-size="9" font-weight="600">0.80</text>
     <path d="${pbPath}" fill="none" stroke="#f59e0b" stroke-width="2.4" stroke-linecap="round"/>
-    <circle cx="${sensorX.toFixed(1)}" cy="${yOfFfr(pb.points[Math.round(sensorMm)]?.ffr ?? 0.95).toFixed(1)}" r="4.5" fill="#38bdf8" stroke="#070a0f" stroke-width="1.5"/>
+    <circle cx="${sensorX.toFixed(1)}" cy="${yOfFfr(pb.points[Math.round(sensorMm)]?.ffr ?? 0.95).toFixed(1)}" r="4.5" fill="#fbbf24" stroke="#070a0f" stroke-width="1.5"/>
   </svg>`;
 }
 

@@ -1,3 +1,4 @@
+import { createPhysiologyAtlas } from './coronary-physiology-atlas.js';
 // Coronary Physiology Lab · Interactive Cath-Lab Workstation Panel
 // Combines the 4 invasive physiology modalities, hemodynamic simulator, artifact QA, and calculators.
 
@@ -37,6 +38,7 @@ import {
 const pick = (obj, lang) => (obj && typeof obj === 'object' ? (obj[lang === 'en' ? 'en' : 'tr'] ?? obj.tr ?? '') : String(obj ?? ''));
 
 export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
+  let atlas = null;
   const initialCalcValues = {};
   for (const card of CALCULATOR_CARDS) {
     initialCalcValues[card.id] = {};
@@ -1109,7 +1111,7 @@ export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
 
     const vesselMount = root.querySelector('[data-phys-vessel-mount]');
     if (vesselMount) vesselMount.innerHTML = renderVesselCutawaySvg(caseObj, state, lang);
-    drawFluoro(root, state, caseObj, lang);
+    drawFluoro(root, state, caseObj, lang, atlas);
 
     renderPressureConsoleCanvas(root.querySelector('[data-phys-pressure-canvas]'), caseObj, state, lang);
     renderModalityDetailCanvas(root.querySelector('[data-phys-detail-canvas]'), state.modality, caseObj, state, lang);
@@ -1121,7 +1123,7 @@ export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
       const caseObj = findClinicalCase(state.caseId);
       renderPressureConsoleCanvas(root.querySelector('[data-phys-pressure-canvas]'), caseObj, state, lang);
       renderModalityDetailCanvas(root.querySelector('[data-phys-detail-canvas]'), state.modality, caseObj, state, lang);
-      drawFluoro(root, state, caseObj, lang);
+      drawFluoro(root, state, caseObj, lang, atlas);
     } else if (state.workspaceMode === 'simulator') {
       const simResult = simulateHemodynamicCircuit(state.simParams);
       renderSimulatorCanvas(root.querySelector('[data-sim-canvas]'), simResult, 'pq', state.simStateMode, lang);
@@ -1191,6 +1193,8 @@ export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
 
     // Angiographic card: drag the sensor along the vessel, switch view and projection.
     bindFluoro(root, state, {
+      atlas,
+      onAtlasZoom: () => drawFluoro(root, state, findClinicalCase(state.caseId), getLang(), atlas),
       onSensor: mm => {
         state.sensorMm = mm;
         if (findClinicalCase(state.caseId).artifact === 'whip') state.artifactFixed = true;
@@ -1421,6 +1425,11 @@ export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
     const dt = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
     lastTs = ts;
 
+    if (state.workspaceMode === 'lab' && state.contrastProgress < 1 && !state.frozen) {
+      state.contrastProgress = Math.min(1, state.contrastProgress + dt / 2.4);
+      drawFluoro(root, state, findClinicalCase(state.caseId), getLang(), atlas);
+    }
+
     if (!state.frozen && state.workspaceMode === 'lab') {
       state.phaseOffset = (state.phaseOffset + dt * 0.85) % 1;
       const pCanvas = root.querySelector('[data-phys-pressure-canvas]');
@@ -1433,9 +1442,11 @@ export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
   }
 
   // The angiographic canvas follows its box (column width changes with the window).
-  const onResize = () => { if (state.workspaceMode === 'lab') drawFluoro(root, state, findClinicalCase(state.caseId), getLang()); };
+  const onResize = () => { if (state.workspaceMode === 'lab') drawFluoro(root, state, findClinicalCase(state.caseId), getLang(), atlas); };
   window.addEventListener('resize', onResize);
 
+  try { atlas = createPhysiologyAtlas({ onReady: () => drawAllCanvases() }); }
+  catch (error) { console.warn('Coronary physiology atlas unavailable', error); }
   render();
   rafId = requestAnimationFrame(animLoop);
 
@@ -1448,6 +1459,7 @@ export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
       if (rafId) cancelAnimationFrame(rafId);
       if (pullbackTimer) clearInterval(pullbackTimer);
       window.removeEventListener('resize', onResize);
+      atlas?.dispose();
       root.remove();
     }
   };

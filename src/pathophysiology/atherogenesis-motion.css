@@ -14,3 +14,30 @@
   .athero-head-actions { width:100%; }
   .athero-head-actions button { flex:1 1 140px; }
 }
+
+/* Guided beats: numbered captions the scene steps through, plus the focus ring. */
+.athero-beat-box { width:100%; margin-top:10px; padding:12px; border:1px solid #c4ded5; border-radius:14px; background:#f4faf7; }
+.athero-beat-title { margin:0 0 8px; font-size:10.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#397766; }
+.athero-beats { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.athero-beat { position:relative; overflow:hidden; display:flex; align-items:flex-start; gap:10px; width:100%; min-height:44px; padding:9px 11px; border:1px solid transparent; border-radius:10px; background:transparent; color:#5b7069; font:inherit; font-size:13px; line-height:1.5; text-align:left; cursor:pointer; }
+.athero-beat:hover { background:#e9f4ef; }
+.athero-beat-num { flex:0 0 24px; height:24px; border-radius:50%; display:grid; place-items:center; background:#dbe9e3; color:#47645c; font-size:12px; font-weight:800; }
+.athero-beat.done { color:#47645c; }
+.athero-beat.done .athero-beat-num { background:#9fd0bf; color:#134e3f; }
+.athero-beat.active { background:#fff; border-color:#287c65; color:#12362d; font-weight:600; box-shadow:0 3px 12px #23694e1a; }
+.athero-beat.active .athero-beat-num { background:#0f766e; color:#fff; }
+.athero-beat.active::after { content:""; position:absolute; left:0; bottom:0; height:3px; width:100%; background:#0f766e; transform-origin:left; transform:scaleX(var(--beat-k,0)); }
+.athero-legend { display:flex; flex-wrap:wrap; gap:6px 14px; width:100%; margin-top:8px; font-size:11.5px; font-weight:600; color:#475569; }
+.athero-legend span { display:inline-flex; align-items:center; gap:5px; }
+.athero-legend i { width:11px; height:11px; border-radius:50%; border:1.5px solid; flex-shrink:0; }
+@media (prefers-reduced-motion:no-preference) {
+  .athero-motion-on .athero-focus-ring { animation:athero-focus-march 1.4s linear infinite; }
+}
+@keyframes athero-focus-march { to { stroke-dashoffset:-24; } }
+@media (max-width:600px) {
+  /* Keep the scene in view: number chips in one row, only the active caption in full. */
+  .athero-beats { display:flex; flex-wrap:wrap; gap:8px; }
+  .athero-beat:not(.active) { width:auto; min-width:44px; justify-content:center; padding:9px; background:#e9f4ef; }
+  .athero-beat:not(.active) .athero-beat-text { display:none; }
+  .athero-beats li:has(.athero-beat.active) { order:9; flex:1 0 100%; }
+}
