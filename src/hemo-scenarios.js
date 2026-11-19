@@ -14,8 +14,11 @@ export const WAVEFORM_FLAGS = Object.freeze([
   'square_root_sign', 'equalized_diastolic', 'spike_and_dome', 'brockenbrough',
   'wide_pulse_pressure', 'pulsus_paradoxus', 'ventricular_interdependence',
   'lv_ao_gradient', 'lv_pcwp_gradient', 'ventricularized_ra', 'kussmaul',
-  'dicrotic_notch_absent', 'step_up_atrial', 'step_up_ventricular', 'parvus_tardus'
+  'dicrotic_notch_absent', 'step_up_atrial', 'step_up_ventricular', 'parvus_tardus', 'right_to_left_atrial'
 ]);
+
+/** Flags of an atrial communication: the catheter can cross it to the left atrium and pulmonary veins. */
+export const ATRIAL_COMMUNICATION_FLAGS = Object.freeze(['step_up_atrial', 'right_to_left_atrial']);
 
 export const SCENARIOS = Object.freeze({
   normal: {
@@ -186,6 +189,38 @@ export const SCENARIOS = Object.freeze({
     hr: 75,
     flags: ['step_up_atrial'],
     citations: ['Source 1 p. 107', 'Source 1 p. 108', 'Source 1 p. 109', 'Source 1 p. 110', 'Source 1 p. 111', 'Source 1 p. 367', 'Source 4 p. 18', 'Source 4 p. 19', 'Source 4 p. 20']
+  },
+  // The two cases below are hand-built teaching constructions, not entries of
+  // research/hemodynamics-scenarios.json: saturations and pressures are chosen
+  // so that the Fick flows and the closure thresholds (Qp/Qs 1.5; PA systolic
+  // 50% and two-thirds of systemic; PVR one-third and two-thirds of SVR) land
+  // in the "case by case" and "do not close" groups. Systemic flow equals the
+  // Fick value for an assumed VO2 of 125 mL/min/m2, BSA 1.9 m2 and Hb 14 g/dL.
+  asd_moderate_ph: {
+    id: 'asd_moderate_ph',
+    label: { en: 'ASD with moderate pulmonary hypertension', tr: 'ASD + orta pulmoner hipertansiyon' },
+    stations: {
+      ra: {'a': 11, 'v': 10, 'mean': 9}, rv: {'systolic': 68, 'edp': 9}, pa: {'systolic': 68, 'diastolic': 28},
+      pcwp: {'a': 11, 'v': 12, 'mean': 10}, lv: {'systolic': 120, 'edp': 10}, ao: {'systolic': 120, 'diastolic': 75}
+    },
+    saturations: {'svc': 66, 'ivc': 72, 'ra': 79, 'rv': 80, 'pa': 80, 'pv': 97, 'lv': 97, 'ao': 97},
+    co: 4.2,
+    hr: 78,
+    flags: ['step_up_atrial'],
+    citations: ['Source 1 p. 108', 'Source 1 p. 110', 'UpToDate: Management of atrial septal defects in adults (topic 1417, v30.0)']
+  },
+  asd_eisenmenger: {
+    id: 'asd_eisenmenger',
+    label: { en: 'ASD, Eisenmenger (right-to-left shunt)', tr: 'ASD, Eisenmenger (sağdan sola şant)' },
+    stations: {
+      ra: {'a': 14, 'v': 11, 'mean': 11}, rv: {'systolic': 108, 'edp': 11}, pa: {'systolic': 108, 'diastolic': 52},
+      pcwp: {'a': 10, 'v': 11, 'mean': 9}, lv: {'systolic': 112, 'edp': 9}, ao: {'systolic': 112, 'diastolic': 70}
+    },
+    saturations: {'svc': 52, 'ivc': 56, 'ra': 54, 'rv': 54, 'pa': 54, 'pv': 97, 'lv': 85, 'ao': 85},
+    co: 3.9,
+    hr: 82,
+    flags: ['right_to_left_atrial'],
+    citations: ['Source 1 p. 103', 'Source 1 p. 110', 'Source 1 p. 327', 'UpToDate: Management of atrial septal defects in adults (topic 1417, v30.0)']
   },
   vsd_left_to_right: {
     id: 'vsd_left_to_right',

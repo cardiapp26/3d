@@ -63,10 +63,33 @@
 .hemo-calc-out{display:grid;gap:2px;margin-top:6px;background:#f4f7f1;border-radius:6px;padding:6px 8px}
 .hemo-panel .hemo-formula{margin:5px 0 0;font-size:10px;line-height:1.45;color:#96a28e;overflow-wrap:anywhere}
 
+/* Shunt run (src/hemo-shunt-run.js): sampling sites, worked steps, verdict */
+.hemo-run-sites{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px}
+.hemo-run-site{display:grid;gap:1px;justify-items:start;align-content:start;text-align:left;min-width:0;border:1px solid #dce4d7;border-left:3px solid var(--hemo-sat,#dce4d7);background:#fff;border-radius:6px;padding:5px 6px;font-size:10.5px;color:#748276;cursor:pointer;transition:background .12s,border-color .12s}
+.hemo-run-site:hover:not(:disabled){background:#f4f7f1}
+.hemo-run-site:focus-visible{outline:2px solid #299f8a;outline-offset:1px}
+.hemo-run-site:disabled{opacity:.5;cursor:not-allowed}
+.hemo-run-site.is-done{background:#f4f7f1;color:#263e3b}
+.hemo-run-site.is-last{box-shadow:0 0 0 2px rgba(41,159,138,.45)}
+.hemo-run-site-name{font-weight:600;color:#31573f}
+.hemo-run-site-sat{font-size:13px;line-height:1.2;color:#263e3b;font-variant-numeric:tabular-nums}
+.hemo-run-site-pressure{font-size:9.5px;line-height:1.25;color:#748276;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.hemo-run-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.hemo-run-actions .hemo-preset:disabled{opacity:.5;cursor:default}
+.hemo-run-next{background:#244f43;border-color:#244f43;color:#fff}
+.hemo-run-next:hover:not(:disabled){background:#1c4035;border-color:#1c4035}
+.hemo-run-locked .hemo-metric-label{color:#96a28e}
+.hemo-run-locked .hemo-metric-value{font-weight:400;color:#96a28e;white-space:normal;text-align:right}
+.hemo-run-verdict{margin-top:6px;border:1px solid #dce4d7;border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.45;background:#f4f7f1;color:#62745f}
+.hemo-run-verdict[data-class="closure"]{border-color:#9fc3b3;background:#e9f5ee;color:#1f5a41}
+.hemo-run-verdict[data-class="case_by_case"],.hemo-run-verdict[data-class="right_to_left"]{border-color:#e2c98f;background:#fbf4e2;color:#6d5212}
+.hemo-run-verdict[data-class="contraindicated"]{border-color:#e3a6ae;background:#fbecee;color:#8e2f47}
+
 @media (max-width:640px){
   .hemo-canvas{height:150px}
   .hemo-pill{padding:4px 9px}
 }
 @media (max-width:360px){
   .hemo-metrics{grid-template-columns:1fr}
+  .hemo-run-sites{grid-template-columns:repeat(2,minmax(0,1fr))}
 }

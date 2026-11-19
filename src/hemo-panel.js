@@ -8,6 +8,7 @@ import { STATIONS, STATION_INFO } from './hemodynamics.js';
 import { CYCLE_SYNC as S, phaseToTime, timeToPhase } from './cardiac-cycle.js';
 import { ecgSample } from './ecg-trace.js';
 import { createCalculators, fmt, metricRows } from './hemo-panel-calculators.js';
+import { createShuntRun } from './hemo-shunt-run.js';
 
 const TEXT = {
   tr: {
@@ -269,7 +270,9 @@ function drawTraces(ctx, g) {
  * Create the hemodynamics panel inside root.
  * @param {HTMLElement} root empty container provided by the integrator
  * @param {{ hemo: object, lang?: 'tr'|'en', getCycleState?: () => ({ phase: number, bpm: number, rhythm: string, playing: boolean }),
- *   onScenarioChange?: (id: string) => void, onChannelsChange?: (stations: string[]) => void, onStationFocus?: (station: string) => void }} options
+ *   onScenarioChange?: (id: string) => void, onChannelsChange?: (stations: string[]) => void, onStationFocus?: (station: string) => void,
+ *   onSample?: (site: { id: string, channel: string }) => void }} options
+ *   onSample: a shunt run sample was drawn at a site (hemo-shunt-run.js RUN_SITES); without it the site's station is focused.
  */
 export function createHemoPanel(root, options = {}) {
   const { hemo, getCycleState = () => ({}), onScenarioChange, onChannelsChange, onStationFocus } = options;
@@ -290,7 +293,16 @@ export function createHemoPanel(root, options = {}) {
   const { element, select, badge, pills, presetButtons, canvasWrap, canvas, beatsSelect, respBox, pvcButton, hint, grid, metricsTitle } = buildDom();
   beatsSelect.value = String(state.beats);
   const calculators = createCalculators({ lang, signal: ac.signal });
-  element.append(calculators.element);
+  // Sampling a site follows the catheter: its tracing replaces the shown
+  // channels, which also advances the 3D catheter to that station.
+  const shuntRun = createShuntRun({
+    hemo, lang, signal: ac.signal,
+    onSample(site) {
+      applyChannels([site.channel], true);
+      if (options.onSample) options.onSample(site); else onStationFocus?.(site.channel);
+    }
+  });
+  element.append(shuntRun.element, calculators.element);
   root.append(element);
   const layer = document.createElement('canvas');
 
@@ -327,6 +339,7 @@ export function createHemoPanel(root, options = {}) {
     badge.textContent = TEXT[lang].badge(hemo.getScenario());
     renderMetrics();
     calculators.prefill(hemo);
+    shuntRun.reset();
   }
 
   function syncScenario() {
@@ -438,6 +451,7 @@ export function createHemoPanel(root, options = {}) {
       applyText();
       renderMetrics();
       calculators.setLanguage(lang);
+      shuntRun.setLanguage(lang);
       draw();
     },
     setScenario(id) {
@@ -460,7 +474,9 @@ export function createHemoPanel(root, options = {}) {
     /** Toggle the post-PVC beat (the beat after the cursor's first beat). */
     triggerPvc() { state.pvc = !state.pvc; pvcButton.setAttribute('aria-pressed', String(state.pvc)); draw(); },
     setHint(text) { hint.textContent = text || ''; hint.hidden = !text; },
-    setCalculatorsOpen(open) { calculators.element.open = Boolean(open); },
+    /** Open or close the worked sections together: the shunt run and the calculators. */
+    setCalculatorsOpen(open) { calculators.element.open = Boolean(open); shuntRun.element.open = Boolean(open); },
+    getShuntRun: () => shuntRun,
     destroy() {
       destroyed = true;
       ac.abort();

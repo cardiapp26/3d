@@ -2,14 +2,29 @@ import * as THREE from 'three';
 import { centroid, sharedRim, nearestLoop, inferiorCavalOstium } from './mesh-utils.js';
 
 /**
+ * Catheter stages of the lab. The right heart catheter has three courses from
+ * the inferior vena cava: the Swan-Ganz route (RA, RV, PA and wedge), a turn
+ * up into the superior vena cava, and a crossing of an atrial septal defect
+ * into the left atrium and a right pulmonary vein (oximetry run).
+ */
+export const CATH_STEP = Object.freeze({ ra: 0, rv: 1, pa: 2, left: 3, both: 4, ivc: 5, svc: 6, pulmonaryVein: 7 });
+const RIGHT_ROUTE_BY_STEP = Object.freeze({ [CATH_STEP.svc]: 'rhcSvc', [CATH_STEP.pulmonaryVein]: 'rhcLa' });
+const RIGHT_ROUTES = Object.freeze(['rhc', 'rhcSvc', 'rhcLa']);
+
+/**
  * Procedural 3D cardiac catheterization lab (Netter-style teaching module).
  * Right heart catheter (Swan-Ganz): femoral vein -> IVC -> RA -> RV -> PA,
  * with a wedge balloon at full advancement. Left heart catheter: retrograde
  * femoral artery -> aorta -> across the aortic valve into the LV.
  * Measurement stations carry pickIds that open pressure/saturation content.
+ * `getFossa` gives the measured fossa ovalis site (transseptal.js), where the
+ * oximetry catheter crosses to the left atrium.
  */
 export function createCathLab(helpers) {
-  const { sourceCenter, meshVertices = () => [], getMeshes = () => [], getVesselTrim = () => null, isReady = () => true } = helpers;
+  const {
+    sourceCenter, meshVertices = () => [], getMeshes = () => [], getVesselTrim = () => null, isReady = () => true,
+    getFossa = () => null
+  } = helpers;
   const group = new THREE.Group();
   group.name = 'Catheterization Lab';
   group.visible = false;
@@ -45,7 +60,7 @@ export function createCathLab(helpers) {
   let currentProgress = 1;
   let activeStep = 0;
   let wedgeBalloon = null;
-  let rightStepStops = { ra: 1, rv: 1 };
+  let rightStepStops = {};
 
   function meshCenterline(points, axisValue, step, minCount = 15) {
     const bins = new Map();
@@ -168,7 +183,9 @@ export function createCathLab(helpers) {
       }
       return best.fraction;
     };
-    rightStepStops = { ra: fractionAt(ra), rv: fractionAt(rvBody) };
+    // IVC sample: the tip stays in the cava, below the right atrial floor.
+    const ivcStop = fractionAt(ivcOs.clone().add(new THREE.Vector3(0, -0.25, 0)));
+    rightStepStops = { [CATH_STEP.ivc]: ivcStop, [CATH_STEP.ra]: fractionAt(ra), [CATH_STEP.rv]: fractionAt(rvBody) };
     const rightCatheter = progressiveTube('rhc', rhcCurve, 0.02, matRight);
     rightCatheter.name = 'Swan-Ganz catheter route';
     rhcGroup.add(rightCatheter);
@@ -185,6 +202,40 @@ export function createCathLab(helpers) {
     rhcGroup.add(station(rvBody.clone(), 'cath-rv', 'RV measurement station', 'right'));
     rhcGroup.add(station(paTrunk.clone(), 'cath-pa', 'PA measurement station', 'right'));
     rhcGroup.add(station(paTarget.clone(), 'cath-wedge', 'Distal PA balloon target', 'right'));
+
+    // -------------------------------------------------------------
+    // Oximetry run: the same venous entry, turned up into the SVC, or
+    // across an atrial septal defect into a right pulmonary vein.
+    // -------------------------------------------------------------
+    const venousEntry = () => rhcPts.slice(0, 3).map(point => point.clone());
+    const svcCenter = sourceCenter('svc') || ra.clone().add(new THREE.Vector3(0, 1.2, -0.1));
+    const svcLoop = nearestLoop(getMeshes('svc')[0], ra);
+    const svcOs = svcLoop ? svcLoop.center.clone() : ra.clone().lerp(svcCenter, 0.5);
+    const svcTarget = svcOs.clone().lerp(svcCenter, 0.6);
+    const svcCurve = new THREE.CatmullRomCurve3([...venousEntry(), ra.clone(), svcOs.clone(), svcTarget.clone()], false, 'centripetal');
+    const svcCatheter = progressiveTube('rhcSvc', svcCurve, 0.02, matRight);
+    svcCatheter.name = 'Catheter route to the superior vena cava';
+    svcCatheter.visible = false;
+    rhcGroup.add(svcCatheter);
+
+    const la = sourceCenter('la') || ra.clone().add(new THREE.Vector3(0.9, 0.45, -0.9));
+    const fossa = getFossa()?.clone() || ra.clone().lerp(la, 0.5);
+    const pvTarget = sourceCenter('rspv') || la.clone().lerp(svcCenter, 0.35);
+    const laCurve = new THREE.CatmullRomCurve3([
+      ...venousEntry(),
+      ivcOs.clone().lerp(fossa, 0.6),
+      fossa.clone(),
+      fossa.clone().lerp(la, 0.3).lerp(pvTarget, 0.35),
+      pvTarget.clone()
+    ], false, 'centripetal');
+    const laCatheter = progressiveTube('rhcLa', laCurve, 0.02, matRight);
+    laCatheter.name = 'Catheter route across the atrial septal defect';
+    laCatheter.visible = false;
+    rhcGroup.add(laCatheter);
+
+    rhcGroup.add(station(rhcCurve.getPointAt(ivcStop), 'cath-ivc', 'IVC sampling station', 'right'));
+    rhcGroup.add(station(svcTarget.clone(), 'cath-svc', 'SVC sampling station', 'right'));
+    rhcGroup.add(station(pvTarget.clone(), 'cath-pv', 'Pulmonary vein sampling station', 'left'));
 
     group.add(rhcGroup);
     stages.rhc = rhcGroup;
@@ -232,9 +283,7 @@ export function createCathLab(helpers) {
     if (!initialized) return;
     const progress = Math.max(0.05, Math.min(1, currentProgress));
     for (const [key, record] of Object.entries(progressive)) {
-      const stageStop = key === 'rhc'
-        ? activeStep === 0 ? rightStepStops.ra : activeStep === 1 ? rightStepStops.rv : 1
-        : 1;
+      const stageStop = key === 'rhc' ? rightStepStops[activeStep] ?? 1 : 1;
       const t = progress * stageStop;
       const totalPoints = 64;
       const numPoints = Math.max(4, Math.floor(totalPoints * t));
@@ -244,7 +293,7 @@ export function createCathLab(helpers) {
       record.mesh.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(sampled), numPoints * 2, record.radius, 8, false);
     }
     // Wedge balloon inflates only when the RHC is fully advanced on the wedge step.
-    if (wedgeBalloon) wedgeBalloon.visible = activeStep === 2 && currentProgress >= 0.99;
+    if (wedgeBalloon) wedgeBalloon.visible = activeStep === CATH_STEP.pa && currentProgress >= 0.99;
   }
 
   function setProgress(progress) {
@@ -253,15 +302,18 @@ export function createCathLab(helpers) {
     updateGeometry();
   }
 
-  // Steps: 0 RA, 1 RV, 2 PA + wedge, 3 left heart (LV/aorta), 4 oximetry overview.
+  // Steps (CATH_STEP): 0 RA, 1 RV, 2 PA + wedge, 3 left heart (LV/aorta), 4 both
+  // catheters, 5 IVC sample, 6 SVC sample, 7 pulmonary vein across an atrial defect.
   function setStep(stepIndex) {
     init();
     activeStep = Number(stepIndex);
     if (!initialized) return;
-    const rightVisible = activeStep !== 3;
-    const leftVisible = activeStep === 3 || activeStep === 4;
+    const rightVisible = activeStep !== CATH_STEP.left;
+    const leftVisible = activeStep === CATH_STEP.left || activeStep === CATH_STEP.both;
     stages.rhc.visible = rightVisible;
     stages.lhc.visible = leftVisible;
+    const route = RIGHT_ROUTE_BY_STEP[activeStep] || 'rhc';
+    for (const key of RIGHT_ROUTES) progressive[key].mesh.visible = key === route;
     updateGeometry();
   }
 
