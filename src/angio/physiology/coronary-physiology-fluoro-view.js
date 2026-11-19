@@ -1,7 +1,7 @@
 // Angiography card of the coronary physiology lab: markup, controls and pointer handling for
 // the fluoroscopic view (coronary-physiology-fluoro.js). Dragging or tapping along the measured
 // vessel moves the wire sensor; the panel owns the state and redraws the readouts.
-import { FLUORO_PROJECTIONS, renderCoronaryFluoro, nearestPathMm } from './coronary-physiology-fluoro.js';
+import { FLUORO_PROJECTIONS, nearestPathMm } from './coronary-physiology-fluoro.js';
 
 const VIEWS = [
   ['cine', { tr: 'Cine (kontrast)', en: 'Cine (contrast)' }],
@@ -31,23 +31,20 @@ export function fluoroCardHtml(state, lang) {
           ${projections.map((p, i) => `<button type="button" class="phys-chip ${i === current ? 'active' : ''}" data-phys-fluoro-proj="${i}" aria-pressed="${i === current}">${angleText(p)}</button>`).join('')}
         </div>
       </div>
-      <div class="phys-atlas-stage">
-        <canvas data-phys-atlas-canvas width="540" height="440" role="img" aria-label="${isTr ? 'Cardia koroner atlas projeksiyonu' : 'Cardia coronary atlas projection'}"></canvas>
-        <div class="phys-atlas-tools">
-          <button type="button" class="phys-chip" data-phys-atlas-anatomy aria-pressed="${Boolean(state.atlasAnatomy)}">${isTr ? (state.atlasAnatomy ? 'Floroskopi' : '3B anatomi') : (state.atlasAnatomy ? 'Fluoroscopy' : '3D anatomy')}</button>
-          <span>${isTr ? 'Anjiyografiyle aynı atlas · Mavi: hedef damar · Kaydır: yakınlaştır' : 'Same atlas as angiography · Blue: target vessel · Scroll to zoom'}</span>
-        </div>
-        <p class="phys-fluoro-tip">${isTr ? 'Hasta radyografisi değildir. Olgu darlığı, tel ve basınç değerleri aşağıdaki şematik alıştırmada gösterilir; atlas üzerinde ölçülmez.' : 'Not a patient radiograph. Case lesions, wire and pressure values appear in the schematic exercise below; they are not measured on the atlas.'}</p>
-      </div>
-      <h4 class="phys-exercise-title">${isTr ? 'Basınç teli ve Pd/Pa · Şematik alıştırma' : 'Pressure wire and Pd/Pa · Schematic exercise'}</h4>
       <div class="phys-fluoro-head">
         <div class="phys-fluoro-views" role="group" aria-label="${isTr ? 'Görüntü türü' : 'Image type'}">
           ${VIEWS.map(([id, label]) => `<button type="button" class="phys-chip ${state.fluoroView === id ? 'active' : ''}" data-phys-fluoro-view="${id}" aria-pressed="${state.fluoroView === id}">${isTr ? label.tr : label.en}</button>`).join('')}
         </div>
       </div>
-      <div class="phys-fluoro-stage">
-        <canvas class="phys-fluoro-canvas" data-phys-fluoro-canvas tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="80"
+      <div class="phys-atlas-stage">
+        <canvas class="phys-fluoro-canvas" data-phys-atlas-canvas data-phys-fluoro-canvas tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="80"
           aria-valuenow="${Math.round(state.sensorMm)}" aria-label="${isTr ? 'Sensör konumu (mm). Damar boyunca sürükleyin veya ok tuşlarını kullanın.' : 'Sensor position (mm). Drag along the vessel or use the arrow keys.'}"></canvas>
+        <div class="phys-atlas-tools">
+          <button type="button" class="phys-chip" data-phys-atlas-anatomy aria-pressed="${Boolean(state.atlasAnatomy)}">${isTr ? (state.atlasAnatomy ? 'Floroskopi' : '3B anatomi') : (state.atlasAnatomy ? 'Fluoroscopy' : '3D anatomy')}</button>
+          <button type="button" class="phys-chip" data-phys-contrast>${isTr ? 'Kontrast ver' : 'Inject contrast'}</button>
+          <span>${isTr ? 'Kaydır: yakınlaştır · Sarı halka: sensör' : 'Scroll to zoom · Yellow ring: sensor'}</span>
+        </div>
+        <p class="phys-fluoro-tip">${isTr ? 'Anjiyografiyle aynı 3B damar atlası. Darlık, cihazlar, kontrast geçişi ve Pd/Pa eğitim simülasyonudur; hasta kaydı değildir. mm: atlas damar yolu boyunca konum.' : 'Same 3D vascular atlas as angiography. Lesions, devices, contrast transit and Pd/Pa are educational simulations, not a patient recording. mm: position along the atlas vessel path.'}</p>
       </div>
       <div class="phys-fluoro-foot">
 
@@ -62,18 +59,13 @@ export function drawFluoro(root, state, caseObj, lang, atlas = null) {
   if (!canvas) return null;
   const projections = projectionsFor(state.vessel);
   const proj = projections[Math.min(state.fluoroProj || 0, projections.length - 1)];
-  const atlasCanvas = root.querySelector('[data-phys-atlas-canvas]');
-  if (atlasCanvas) {
-    if (atlas) atlas.draw(atlasCanvas, { viewId: state.vessel, alpha: proj.alpha, beta: proj.beta,
-      imagingMode: state.fluoroView === 'fluoro' ? 'fluoro' : 'dsa', contrastOpacity: 1,
-      bolusWave: 1.2, selectedId: state.vessel.toLowerCase(), lang }, Boolean(state.atlasAnatomy));
-    else {
-      const ctx = atlasCanvas.getContext('2d'); ctx.fillStyle = '#d9dcdd'; ctx.fillRect(0, 0, atlasCanvas.width, atlasCanvas.height);
+  let hit = { path: [], lesions: [], sensor: null };
+  if (atlas) hit = atlas.draw(canvas, { state, caseObj, lang, alpha: proj.alpha, beta: proj.beta });
+  else {
+      const ctx = canvas.getContext('2d'); ctx.fillStyle = '#d9dcdd'; ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#25303b'; ctx.font = '14px system-ui';
       ctx.fillText(lang === 'tr' ? 'Atlas açılamadı. WebGL desteğini kontrol edin.' : 'Atlas unavailable. Check WebGL support.', 15, 60);
-    }
   }
-  const hit = renderCoronaryFluoro(canvas, { caseObj, state, lang, alpha: proj.alpha, beta: proj.beta, view: state.fluoroView });
   canvas.setAttribute('aria-valuenow', String(Math.round(state.sensorMm)));
   canvas.setAttribute('aria-valuetext', `${Math.round(state.sensorMm)} mm, Pd/Pa ${hit.sensor?.ratio?.toFixed(2) ?? ''}`);
   canvas._physHit = hit;
@@ -85,6 +77,9 @@ export function drawFluoro(root, state, caseObj, lang, atlas = null) {
  * re-renders the workspace after a view or projection change.
  */
 export function bindFluoro(root, state, { onSensor, onChange, atlas, onAtlasZoom }) {
+  root.querySelector('[data-phys-contrast]')?.addEventListener('click', () => {
+    state.contrastProgress = 0; state.fluoroView = 'cine'; state.atlasAnatomy = false; onChange();
+  });
   root.querySelector('[data-phys-atlas-anatomy]')?.addEventListener('click', () => {
     state.atlasAnatomy = !state.atlasAnatomy; onChange();
   });

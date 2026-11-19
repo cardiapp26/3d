@@ -12,11 +12,20 @@ const { startApp } = require('./lib/app-server.cjs');
     await page.goto(`${app.url}/angio/physiology/?lang=tr`, { waitUntil: 'domcontentloaded' });
     const canvas = page.locator('[data-phys-atlas-canvas]');
     await page.waitForFunction(() => document.querySelector('[data-phys-atlas-canvas]')?.dataset.periAtlas === 'ready');
+    assert.equal(await page.locator('.phys-fluoro-card canvas').count(), 1, 'one shared anatomical scene, no separate schematic');
+    assert.equal(await canvas.evaluate(c => c === document.querySelector('[data-phys-fluoro-canvas]')), true);
     const pixels = () => canvas.evaluate(c => c.toDataURL());
     const images = new Set();
     for (const vessel of ['LAD', 'LCX', 'RCA']) {
       await page.selectOption('[data-phys-vessel]', vessel);
       assert.equal(Number(await canvas.getAttribute('data-atlas-meshes')), vessel === 'RCA' ? 2 : 4, `${vessel}: all coronary source meshes`);
+      assert.ok(Number(await canvas.getAttribute('data-path-length-mm')) >= 110, `${vessel}: measured source arc accommodates sensor and tip`);
+      const registration = await canvas.evaluate(c => {
+        const h = c._physHit, p = h.path.find(p => p.mm === h.sensor.mm);
+        return { distance: Math.hypot(p.x - h.sensor.x, p.y - h.sensor.y), end: h.path.at(-1).mm };
+      });
+      assert.equal(registration.distance, 0, `${vessel}: sensor and clickable lumen share projection`);
+      assert.equal(registration.end, 80);
       images.add(await pixels());
       await canvas.screenshot({ path: `/tmp/physiology-atlas-${vessel}.png` });
     }
@@ -34,11 +43,19 @@ const { startApp } = require('./lib/app-server.cjs');
     assert.equal(await page.locator('[data-phys-fluoro-canvas]').getAttribute('aria-valuenow'), '35', 'sensor exercise preserved');
     assert.equal(await page.evaluate(() => window.coronaryPhysiology.getState().sensorMm), 35);
     await page.locator('[data-phys-lang="en"]').click();
-    assert.match(await page.locator('.phys-atlas-stage').textContent(), /not measured on the atlas/);
+    assert.match(await page.locator('.phys-atlas-stage').textContent(), /educational simulations, not a patient recording/);
+    await page.locator('[data-phys-contrast]').click();
+    await page.waitForFunction(() => window.coronaryPhysiology.getState().contrastProgress > .1);
+    const filling = await pixels();
+    await page.waitForFunction(() => window.coronaryPhysiology.getState().contrastProgress === 1);
+    assert.notEqual(await pixels(), filling, 'contrast front advances through source anatomy');
+    assert.equal(await page.locator('[data-phys-fluoro-view="cine"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('[data-phys-atlas-anatomy]').getAttribute('aria-pressed'), 'false');
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
     assert.deepEqual(errors, []);
+    await canvas.screenshot({ path: '/tmp/physiology-atlas-mobile.png' });
     await page.evaluate(() => window.coronaryPhysiology.destroy());
-    console.log('PASS physiology atlas: LAD/LCX/RCA, source meshes, projection, anatomy, zoom, sensor state, language, mobile, disposal');
+    console.log('PASS physiology atlas: shared LAD/LCX/RCA source geometry, sensor registration, projection, anatomy, zoom, animated contrast, language, mobile, disposal');
   } finally { await browser.close(); await app.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

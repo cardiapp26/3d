@@ -1425,6 +1425,11 @@ export function createCoronaryPhysiologyPanel({ mount, getLang = () => 'tr' }) {
     const dt = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
     lastTs = ts;
 
+    if (state.workspaceMode === 'lab' && state.contrastProgress < 1 && !state.frozen) {
+      state.contrastProgress = Math.min(1, state.contrastProgress + dt / 2.4);
+      drawFluoro(root, state, findClinicalCase(state.caseId), getLang(), atlas);
+    }
+
     if (!state.frozen && state.workspaceMode === 'lab') {
       state.phaseOffset = (state.phaseOffset + dt * 0.85) % 1;
       const pCanvas = root.querySelector('[data-phys-pressure-canvas]');
