@@ -35,7 +35,8 @@ for (const mod of SITE_MODULES) {
 }
 assert.match(SITE_MODULES.find((m) => m.id === 'anatomy').path, /#\/mode\/anatomy$/, 'anatomy menu link opens the 3D route, not the welcome page');
 DOMAINS.forEach((d) => bilingual(d.label, `domain ${d.id}`));
-for (const key of ['title', 'heroTitle', 'heroLead', 'heroCta', 'howTitle', 'disclaimer']) bilingual(HOME_TEXT[key], key);
+for (const key of ['title', 'navAbout', 'navAboutTitle', 'heroTitle', 'heroLead', 'heroCta', 'howTitle', 'disclaimer']) bilingual(HOME_TEXT[key], key);
+for (const key of ['title', 'close', 'disclaimerTitle', 'disclaimer', 'madeBy', 'contactLead', 'thanks', 'limitsTitle', 'limits']) bilingual(HOME_TEXT.about[key], `about.${key}`);
 HOME_TEXT.faq.forEach((f, i) => { bilingual(f.q, `faq ${i}.q`); bilingual(f.a, `faq ${i}.a`); });
 
 // DRTR platform links: the home page first, then every app; https on drtr.uk, bilingual text,

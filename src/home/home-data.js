@@ -168,6 +168,8 @@ export const HOME_TEXT = Object.freeze({
   navHow: w('Nasıl çalışır', 'How it works'),
   navFaq: w('Sorular', 'Questions'),
   navDrtr: w('DRTR', 'DRTR'),
+  navAbout: w('Hakkında', 'About'),
+  navAboutTitle: w('Hakkında ve sorumluluk reddi', 'About and disclaimer'),
   navOpen: w('3B Anatomi\'yi aç', 'Open 3D Anatomy'),
   heroTitle: w('İnteraktif kardiyak\nöğrenme platformu', 'Interactive cardiac\nlearning platform'),
   heroLead: w(
@@ -197,5 +199,26 @@ export const HOME_TEXT = Object.freeze({
   drtrTitle: w('DRTR platformundaki diğer uygulamalar', 'Other apps on the DRTR platform'),
   drtrLead: w('Aynı geliştiriciden, tarayıcıda çalışan ücretsiz klinik, akademik ve verimlilik araçları.', 'Free clinical, academic and productivity tools from the same developer, all running in the browser.'),
   drtrNewTab: w('yeni sekmede açılır', 'opens in a new tab'),
-  disclaimer: w('Şematik eğitim simülatörüdür; gerçek hasta kaydı veya tıbbi cihaz değildir. Klinik karar amacıyla kullanılamaz.', 'Schematic education simulator; not patient data or a medical device. Not for clinical decisions.')
+  disclaimer: w('Şematik eğitim simülatörüdür; gerçek hasta kaydı veya tıbbi cihaz değildir. Klinik karar amacıyla kullanılamaz.', 'Schematic education simulator; not patient data or a medical device. Not for clinical decisions.'),
+  about: Object.freeze({
+    title: w('Hakkında ve sorumluluk reddi', 'About and disclaimer'),
+    close: w('Kapat ×', 'Close ×'),
+    disclaimerTitle: w('Sorumluluk reddi', 'Disclaimer'),
+    disclaimer: w(
+      'Bilgilendirme ve eğitim amaçlıdır. Kayıtlar, eğriler ve sayısal değerler öğretim için tasarlanmış sentetik verilerdir; tanı veya tedavi kararında kullanılmaz. Klinik bilgi için uzman hekime ve doğrulanmış kaynaklara başvurun.',
+      'For information and teaching only. Recordings, curves and values are synthetic teaching data designed for learning; do not use them for diagnosis or treatment decisions. For clinical information, consult a specialist and verified sources.'
+    ),
+    madeBy: w('Yapım: Dr. Yusuf Hoşoğlu', 'Made by: Dr. Yusuf Hoşoğlu'),
+    contactLead: w('İletişim:', 'Contact:'),
+    email: 'adycovs@gmail.com',
+    thanks: w(
+      'Ekokardiyografi alanında duayen hocamız Prof. Dr. Cihan Örem\'e katkılarından dolayı teşekkür ederiz.',
+      'We thank our esteemed professor in the field of echocardiography, Prof. Dr. Cihan Örem, for the contributions.'
+    ),
+    limitsTitle: w('Kaynaklar ve model sınırları', 'Sources and model limitations'),
+    limits: w(
+      'Metinler, eşikler ve hesaplar seçilmiş kılavuz ve ders kitaplarına dayanır (ESC, ACC/AHA, EAPCI, ASE, Guyton & Hall). 3B kalp ve damar örgüleri proje sahibinin özgün tasarımıdır; hücre çizimleri, atım ve fizyolojik eğriler şematiktir. Kaynak incelemesi, simülatörün klinik geçerliliğini doğrulamaz.',
+      'Descriptions, cut-offs and calculators are grounded in selected guidelines and textbooks (ESC, ACC/AHA, EAPCI, ASE, Guyton & Hall). 3D heart and vascular meshes are an original design by the project owner; cell diagrams, beating and physiological curves are schematic. Source review does not validate the simulator for clinical use.'
+    )
+  })
 });

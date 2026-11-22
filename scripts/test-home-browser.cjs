@@ -64,10 +64,21 @@ const APP = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '');
     await page.waitForSelector('#viewport', { timeout: 60000 });
     assert.equal(await page.locator('#home').count(), 0);
 
-    // Language toggle.
+    // Language toggle and header About & Disclaimer dialog (TR and EN).
     await page.goto(`${APP}/?lang=tr`, { waitUntil: 'networkidle' });
+    await page.click('[data-home-about]');
+    await page.waitForSelector('[data-home-about-dialog][open]');
+    assert.match(await page.locator('[data-home-about-dialog]').textContent(), /Sorumluluk reddi/);
+    assert.match(await page.locator('[data-home-about-dialog]').textContent(), /Dr\. Yusuf Hoşoğlu/);
+    await page.click('[data-home-about-close]');
+    assert.equal(await page.locator('[data-home-about-dialog][open]').count(), 0, 'about dialog closes');
+
     await page.click('[data-home-lang="en"]');
     assert.match(await page.title(), /Interactive cardiology studio/);
+    await page.click('[data-home-about]');
+    await page.waitForSelector('[data-home-about-dialog][open]');
+    assert.match(await page.locator('[data-home-about-dialog]').textContent(), /About and disclaimer/);
+    await page.click('[data-home-about-close]');
     await page.click('[data-home-lang="tr"]');
 
     // From a depth-2 module the brand still reaches the welcome page.
@@ -78,6 +89,9 @@ const APP = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '');
     const phone = await browser.newPage({ ...devices['iPhone 13'] });
     await phone.goto(`${APP}/?lang=tr`, { waitUntil: 'networkidle' });
     assert.ok(await phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal overflow on a phone');
+    await phone.click('[data-home-about]');
+    await phone.waitForSelector('[data-home-about-dialog][open]');
+    await phone.click('[data-home-about-close]');
     const phoneApps = await phone.evaluate(() => {
       const grid = document.querySelector('#home-drtr .home-apps');
       const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;

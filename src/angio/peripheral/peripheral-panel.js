@@ -557,8 +557,8 @@ export function createPeripheralPanel({ mount, getLang }) {
     button.setAttribute('aria-pressed', String(atlasAnatomy));
     const sourceNote = mount.querySelector('[data-peri-image-source]');
     const sourceText = procedural
-      ? (lang === 'en' ? 'Intervention exercise · schematic lesion and devices' : 'Girişim alıştırması · şematik lezyon ve cihazlar')
-      : (lang === 'en' ? 'Cardia atlas meshes · Scroll to zoom · Not a patient radiograph' : 'Cardia atlas yüzeyleri · Kaydır: yakınlaştır · Hasta radyografisi değildir');
+      ? (lang === 'en' ? 'Intervention exercise · schematic lesion and devices · Drag: rotate' : 'Girişim alıştırması · şematik lezyon ve cihazlar · Sürükle: döndür')
+      : (lang === 'en' ? 'Cardia atlas meshes · Drag: rotate · Scroll: zoom · Not a patient radiograph' : 'Cardia atlas yüzeyleri · Sürükle: döndür · Kaydır: yakınlaştır · Hasta radyografisi değildir');
     if (sourceNote.textContent !== sourceText) sourceNote.textContent = sourceText;
     mount.querySelector('.peri-tele-strip').hidden = !procedural;
     mount.querySelectorAll('[data-peri-toggle]').forEach(input => { input.parentElement.hidden = !procedural && input.dataset.periToggle !== 'labels'; });
@@ -878,6 +878,11 @@ export function createPeripheralPanel({ mount, getLang }) {
 
     const canvas = mount.querySelector('[data-peri-fluo-canvas]');
     if (canvas) {
+      let isDraggingCanvas = false;
+      let canvasDownX = 0, canvasDownY = 0;
+      let canvasStartAlpha = 0, canvasStartBeta = 0;
+      let canvasHasMoved = false;
+
       const coords = e => {
         const rect = canvas.getBoundingClientRect();
         const lw = Number(canvas.dataset.logicalW || 540);
@@ -894,22 +899,62 @@ export function createPeripheralPanel({ mount, getLang }) {
       const imageHit = pt => canvas.dataset.imageSource === 'atlas'
         ? atlas?.pick(pt.x / Number(canvas.dataset.logicalW || 540), pt.y / Number(canvas.dataset.logicalH || 440))
         : hitTestPeripheralVessel(clickRegions, pt.x, pt.y);
+
+      canvas.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        isDraggingCanvas = true;
+        canvasHasMoved = false;
+        canvasDownX = e.clientX;
+        canvasDownY = e.clientY;
+        canvasStartAlpha = state.alpha;
+        canvasStartBeta = state.beta;
+        canvas.setPointerCapture?.(e.pointerId);
+        canvas.style.cursor = 'grabbing';
+      });
+
       canvas.addEventListener('pointermove', e => {
+        if (isDraggingCanvas) {
+          const dx = e.clientX - canvasDownX;
+          const dy = e.clientY - canvasDownY;
+          if (Math.hypot(dx, dy) > 4) canvasHasMoved = true;
+          const rect = canvas.getBoundingClientRect();
+          const dAlpha = (dx / Math.max(1, rect.width)) * 180;
+          const dBeta = -(dy / Math.max(1, rect.height)) * 90;
+          setAngles(Math.round(canvasStartAlpha + dAlpha), Math.round(canvasStartBeta + dBeta));
+          return;
+        }
         const pt = coords(e);
         const hit = imageHit(pt);
         if (hit !== state.hoveredId) {
           state.hoveredId = hit;
-          canvas.style.cursor = hit ? 'pointer' : 'crosshair';
+          canvas.style.cursor = hit ? 'pointer' : 'grab';
           drawFluoro();
         }
       });
+
+      const stopCanvasDrag = e => {
+        if (!isDraggingCanvas) return;
+        isDraggingCanvas = false;
+        canvas.releasePointerCapture?.(e.pointerId);
+        canvas.style.cursor = state.hoveredId ? 'pointer' : 'grab';
+      };
+      canvas.addEventListener('pointerup', stopCanvasDrag);
+      canvas.addEventListener('pointercancel', stopCanvasDrag);
+
       canvas.addEventListener('pointerleave', () => {
+        if (isDraggingCanvas) return;
         if (state.hoveredId) {
           state.hoveredId = null;
           drawFluoro();
         }
+        canvas.style.cursor = 'grab';
       });
+
       canvas.addEventListener('click', e => {
+        if (canvasHasMoved) {
+          canvasHasMoved = false;
+          return;
+        }
         const pt = coords(e);
         const hit = imageHit(pt);
         if (hit) select(hit);
