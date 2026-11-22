@@ -232,8 +232,8 @@ export function createCarotidPanel({ mount, getLang }) {
     if (useAtlas()) {
       hitRegions = [];
       mount.querySelector('[data-fluo-note]').textContent = lang === 'en'
-        ? 'Cardia atlas meshes · Scroll to zoom. Not a patient radiograph. Select structures and ICA segments in the teaching schematic below.'
-        : 'Cardia atlas yüzeyleri · Kaydır: yakınlaştır. Hasta radyografisi değildir. Yapı ve İKA segmenti seçimi aşağıdaki öğretim şemasındadır.';
+        ? 'Cardia atlas meshes · Drag to rotate · Scroll to zoom. Not a patient radiograph. Select structures and ICA segments in the teaching schematic below.'
+        : 'Cardia atlas yüzeyleri · Sürükle: döndür · Kaydır: yakınlaştır. Hasta radyografisi değildir. Yapı ve İKA segmenti seçimi aşağıdaki öğretim şemasındadır.';
       if (atlas) atlas.draw(canvas, { viewId: state.view, alpha: state.alpha, beta: state.beta, imagingMode: state.imagingMode, contrastOpacity: state.contrast, bolusWave: 1.2, selectedId: state.selected, lang }, atlasAnatomy);
       else {
         const ctx = canvas.getContext('2d');
@@ -327,10 +327,75 @@ export function createCarotidPanel({ mount, getLang }) {
 
   function bindEvents() {
     mount.querySelector('[data-carotid-atlas-anatomy]').addEventListener('click', () => { atlasAnatomy = !atlasAnatomy; drawFluoro(); });
-    mount.querySelector('[data-carotid-fluo]').addEventListener('wheel', event => {
+    const fluoCanvas = mount.querySelector('[data-carotid-fluo]');
+    let isDraggingFluo = false;
+    let fluoDownX = 0, fluoDownY = 0;
+    let fluoStartAlpha = 0, fluoStartBeta = 0;
+    let fluoHasMoved = false;
+
+    fluoCanvas.addEventListener('wheel', event => {
       if (!useAtlas() || !atlas) return;
       event.preventDefault(); atlas.zoom(event.deltaY); drawFluoro();
     }, { passive: false });
+
+    fluoCanvas.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      isDraggingFluo = true;
+      fluoHasMoved = false;
+      fluoDownX = event.clientX;
+      fluoDownY = event.clientY;
+      fluoStartAlpha = state.alpha;
+      fluoStartBeta = state.beta;
+      fluoCanvas.setPointerCapture?.(event.pointerId);
+      fluoCanvas.style.cursor = 'grabbing';
+    });
+
+    fluoCanvas.addEventListener('pointermove', event => {
+      if (isDraggingFluo) {
+        const dx = event.clientX - fluoDownX;
+        const dy = event.clientY - fluoDownY;
+        if (Math.hypot(dx, dy) > 4) fluoHasMoved = true;
+        const rect = fluoCanvas.getBoundingClientRect();
+        const dAlpha = (dx / Math.max(1, rect.width)) * 180;
+        const dBeta = -(dy / Math.max(1, rect.height)) * 80;
+        state.alpha = Math.round(Math.max(-90, Math.min(90, fluoStartAlpha + dAlpha)));
+        state.beta = Math.round(Math.max(-40, Math.min(40, fluoStartBeta + dBeta)));
+        drawFluoro();
+      } else {
+        const rect = fluoCanvas.getBoundingClientRect();
+        const id = useAtlas()
+          ? atlas?.pick((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height)
+          : hitTestCarotid(hitRegions, (event.clientX - rect.left) * 540 / rect.width, (event.clientY - rect.top) * 440 / rect.height);
+        fluoCanvas.style.cursor = id ? 'pointer' : 'grab';
+      }
+    });
+
+    const stopFluoDrag = event => {
+      if (!isDraggingFluo) return;
+      isDraggingFluo = false;
+      fluoCanvas.releasePointerCapture?.(event.pointerId);
+      const rect = fluoCanvas.getBoundingClientRect();
+      const id = useAtlas()
+        ? atlas?.pick((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height)
+        : hitTestCarotid(hitRegions, (event.clientX - rect.left) * 540 / rect.width, (event.clientY - rect.top) * 440 / rect.height);
+      fluoCanvas.style.cursor = id ? 'pointer' : 'grab';
+    };
+    fluoCanvas.addEventListener('pointerup', stopFluoDrag);
+    fluoCanvas.addEventListener('pointercancel', stopFluoDrag);
+    fluoCanvas.addEventListener('pointerleave', () => {
+      if (!isDraggingFluo) fluoCanvas.style.cursor = 'grab';
+    });
+
+    fluoCanvas.addEventListener('click', event => {
+      if (fluoHasMoved) {
+        fluoHasMoved = false;
+        return;
+      }
+      const rect = event.currentTarget.getBoundingClientRect();
+      const id = useAtlas() ? atlas?.pick((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height) : hitTestCarotid(hitRegions, (event.clientX - rect.left) * 540 / rect.width, (event.clientY - rect.top) * 440 / rect.height);
+      if (id) selectStructure(id);
+    });
+
     mount.querySelector('[data-carotid-anatomy]').addEventListener('toggle', event => { state.anatomyOpen = event.currentTarget.open; });
     mount.querySelector('[data-carotid-beam]').addEventListener('change', event => {
       state.beam = event.target.checked;
@@ -367,11 +432,6 @@ export function createCarotidPanel({ mount, getLang }) {
       mount.querySelector('[data-fluo-beta]').value = 0;
       drawFluoro();
     }));
-    mount.querySelector('[data-carotid-fluo]').addEventListener('click', event => {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const id = useAtlas() ? atlas?.pick((event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height) : hitTestCarotid(hitRegions, (event.clientX - rect.left) * 540 / rect.width, (event.clientY - rect.top) * 440 / rect.height);
-      if (id) selectStructure(id);
-    });
     mount.querySelectorAll('[data-view-tab]').forEach(button => button.addEventListener('click', () => {
       state.view = button.dataset.viewTab;
       state.selected = null;

@@ -5,11 +5,24 @@
 .athero-head-actions button { flex-shrink:0; min-height:44px; }
 .pathophys-athero-lab .pathophys-cycle-bar { margin-bottom:12px; }
 .pathophys-athero-lab [data-athero-story].active { background:#0f766e; color:#fff; border-color:#0f766e; }
-.pathophys-athero-lab .athero-flow-particle { transform-box:fill-box; transform-origin:center; }
+.pathophys-athero-lab .athero-flow-particle,
+.pathophys-athero-lab [data-am-liver-dot],
+.pathophys-athero-lab [data-a="nlrp3-ring"],
+.pathophys-athero-lab [data-ros],
+.pathophys-athero-lab [data-ros-ring],
+.pathophys-athero-lab .athero-cum-pulse { transform-box:fill-box; transform-origin:center; }
+.pathophys-athero-lab .vulnerability-bar-fill { transition:width .35s ease, background-color .35s ease; }
 @media (prefers-reduced-motion:no-preference) {
   .pathophys-athero-lab.athero-clocked .athero-flow-particle { animation-name:athero-tumble; animation-duration:1.8s; animation-timing-function:ease-in-out; }
+  .pathophys-athero-lab .athero-cum-pulse { animation:athero-cum-ring 1.8s ease-out infinite; animation-play-state:paused; }
+  .pathophys-athero-lab.athero-motion-on .athero-cum-pulse { animation-play-state:running; }
 }
 @keyframes athero-tumble { 0%,100% { scale:1; } 50% { scale:1.12; } }
+@keyframes athero-cum-ring { 0% { scale:.7; opacity:.85; } 100% { scale:1.85; opacity:0; } }
+@media (prefers-reduced-motion:reduce) {
+  .pathophys-athero-lab .athero-cum-pulse { animation:none; opacity:.45; }
+  .pathophys-athero-lab .vulnerability-bar-fill { transition:none; }
+}
 @media (max-width:600px) {
   .athero-head-actions { width:100%; }
   .athero-head-actions button { flex:1 1 140px; }

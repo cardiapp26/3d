@@ -74,6 +74,7 @@ function render() {
         <a href="#home-drtr" data-home-anchor>${esc(pick(t.navDrtr))}</a>
       </nav>
       <div class="home-nav-actions">
+        <button type="button" class="home-nav-about" data-home-about aria-haspopup="dialog" aria-controls="home-about-dialog" title="${esc(pick(t.navAboutTitle))}">${esc(pick(t.navAbout))}</button>
         <div class="home-lang" role="group" aria-label="Dil / Language">
           <button type="button" data-home-lang="tr" aria-pressed="${lang === 'tr'}">TR</button>
           <button type="button" data-home-lang="en" aria-pressed="${lang === 'en'}">EN</button>
@@ -118,13 +119,44 @@ function render() {
     <footer class="home-footer">
       <span>✳ CARDIA</span>
       <span>${esc(pick(t.disclaimer))}</span>
-    </footer>`;
+    </footer>
+    <dialog class="home-dialog" id="home-about-dialog" data-home-about-dialog aria-labelledby="home-about-title">
+      <div class="home-dialog-head">
+        <h2 id="home-about-title">${esc(pick(t.about.title))}</h2>
+        <button type="button" class="home-dialog-close" data-home-about-close>${esc(pick(t.about.close))}</button>
+      </div>
+      <section class="home-dialog-disclaimer" role="note">
+        <h3>${esc(pick(t.about.disclaimerTitle))}</h3>
+        <p>${esc(pick(t.about.disclaimer))}</p>
+      </section>
+      <div class="home-dialog-meta">
+        <p><strong>${esc(pick(t.about.madeBy))}</strong></p>
+        <p>${esc(pick(t.about.contactLead))} <a href="mailto:${esc(t.about.email)}">${esc(t.about.email)}</a></p>
+      </div>
+      <p class="home-dialog-thanks">${esc(pick(t.about.thanks))}</p>
+      <div class="home-dialog-limits">
+        <h3>${esc(pick(t.about.limitsTitle))}</h3>
+        <p>${esc(pick(t.about.limits))}</p>
+      </div>
+    </dialog>`;
   root.querySelectorAll('[data-home-lang]').forEach((b) => b.addEventListener('click', () => {
     if (b.dataset.homeLang === lang) return;
     lang = b.dataset.homeLang;
     rememberLanguage(lang);
     render();
   }));
+  const aboutBtn = root.querySelector('[data-home-about]');
+  const aboutDialog = root.querySelector('[data-home-about-dialog]');
+  if (aboutBtn && aboutDialog) {
+    aboutBtn.addEventListener('click', () => {
+      if (typeof aboutDialog.showModal === 'function') aboutDialog.showModal();
+      else aboutDialog.setAttribute('open', '');
+    });
+    aboutDialog.querySelector('[data-home-about-close]')?.addEventListener('click', () => aboutDialog.close());
+    aboutDialog.addEventListener('click', (e) => {
+      if (e.target === aboutDialog) aboutDialog.close();
+    });
+  }
   // In-page anchors scroll without leaving a hash (a hash here is reserved for 3D routes).
   root.querySelectorAll('[data-home-anchor]').forEach((a) => a.addEventListener('click', (e) => {
     const target = document.querySelector(a.getAttribute('href'));

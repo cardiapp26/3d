@@ -5,7 +5,7 @@
 import { ATHEROMA_STAGES, ATHEROMA_MODIFIERS } from './pathophysiology-data.js';
 import { HOTSPOTS } from './atherogenesis-text.js';
 import { createCycleClock, createMotionBar, cycleShape, tweenValues } from './cycle-clock.js';
-import { plaqueGeometry, morphMarkup, applyGeometry, animateFlow, flowStep, mixHex } from './atherogenesis-motion.js';
+import { plaqueGeometry, morphMarkup, immuneLumenMarkup, applyGeometry, animateFlow, flowStep, mixHex } from './atherogenesis-motion.js';
 import {
   STAGE_BEATS, beatCount, beatIndex, beatStartU, beatSettledU, stageP,
   proteoglycanMarkup, actorMarkup, collectActors, animateActors, focusFor
@@ -13,10 +13,10 @@ import {
 
 if (typeof document !== 'undefined') import('./atherogenesis-motion.css');
 
-const STORY_HOLD_MS = 5200;
-const MORPH_MS = 900;
-// Cardiac cycles one stage timeline lasts (about 4 s per beat at the default 0.5x speed).
-const CYCLES_PER_BEAT = 2.6;
+const STORY_HOLD_MS = 4800;
+const MORPH_MS = 520;
+// Cardiac cycles one stage timeline lasts (about 3.5 s per beat at default 0.5x speed).
+const CYCLES_PER_BEAT = 2.1;
 const LESION_ENDO = [2, 6];
 
 export function createAtherogenesisLab(opts = {}) {
@@ -237,9 +237,21 @@ export function createAtherogenesisLab(opts = {}) {
     storyBtn.classList.toggle('active', playingStory);
   }
 
+  function getAnimCtx() {
+    const mod = getActiveModifier();
+    const inflam = Math.min(1, Math.max(0, (inflammation * mod.inflamMult - 0.5) / 9.5));
+    return {
+      time: cellT,
+      modifierId: currentModifierId,
+      inflam,
+      apoBFlux: apoBFlux * mod.apoBMult
+    };
+  }
+
   function paintGeometry() {
     if (!refs) return;
-    applyGeometry(refs, plaqueGeometry(morph.p, capThickness), getLang() === 'en');
+    const ctx = getAnimCtx();
+    applyGeometry(refs, plaqueGeometry(morph.p, capThickness), getLang() === 'en', 0, ctx.inflam, 0);
   }
 
   /** Advance the stage timeline by d cardiac cycles; loops, or moves on in story mode. */
@@ -284,15 +296,23 @@ export function createAtherogenesisLab(opts = {}) {
     if (d > 0 && performance.now() >= holdUntil) advanceTimeline(d);
     if (!refs) return;
     const geo = plaqueGeometry(morph.p, capThickness);
-    applyGeometry(refs, geo, getLang() === 'en');
     flowS += flowStep(d, shape.pressure, geo);
     cellT += d;
-    animateFlow(refs, flowS, shape.pressure, geo);
-    const injury = animateActors(refs.actors, currentStageIndex, stageU, cellT, geo);
+    const ctx = getAnimCtx();
+    const { injury, endoPart } = animateActors(refs.actors, currentStageIndex, stageU, cellT, geo, ctx);
+    applyGeometry(refs, geo, getLang() === 'en', shape.pressure, ctx.inflam, endoPart);
+    animateFlow(refs, flowS, shape.pressure, geo, { ...ctx, injury });
+    // Subtle undulation of the intimal proteoglycan matrix
+    if (refs.pgPaths) {
+      const w = 2.4 * Math.sin(cellT * 2.6);
+      refs.pgPaths[0]?.setAttribute('d', `M 246 152 Q 285 ${(142 + w).toFixed(1)} 320 156 T 390 ${(152 - w).toFixed(1)} T 444 156`);
+      refs.pgPaths[1]?.setAttribute('d', `M 258 170 Q 300 ${(160 - w).toFixed(1)} 338 172 T 432 ${(168 + w).toFixed(1)}`);
+    }
+    const endoHeat = Math.min(1, injury * (0.75 + 0.25 * ctx.inflam));
     refs.endo.forEach((r, i) => {
       if (i < LESION_ENDO[0] || i > LESION_ENDO[1]) return;
-      r.setAttribute('fill', mixHex('#fecaca', '#f87171', injury));
-      r.setAttribute('stroke', mixHex('#dc2626', '#b91c1c', injury));
+      r.setAttribute('fill', mixHex('#fecaca', '#f87171', endoHeat));
+      r.setAttribute('stroke', mixHex('#dc2626', '#b91c1c', endoHeat));
     });
     paintBeat(geo);
   }
@@ -531,53 +551,33 @@ export function createAtherogenesisLab(opts = {}) {
   function drawAtheroSvg(stageIdx, en, mod) {
     const svg = $('.athero-svg');
     const isMasld = mod.id === 'masld';
-    const isAuto = mod.id === 'autoimmune';
-    const isAps = mod.id === 'aps';
 
     // Top-left mini Liver organ box showing hepatic VLDL output into circulation
     const liverFill = isMasld ? '#d97706' : '#9a3412';
     const steatosisDots = isMasld
-      ? `<circle cx="42" cy="36" r="5" fill="#fde047"/><circle cx="58" cy="32" r="4.5" fill="#fde047"/><circle cx="50" cy="46" r="5" fill="#fde047"/><circle cx="68" cy="44" r="4" fill="#fde047"/>`
-      : `<circle cx="48" cy="38" r="2.5" fill="#fed7aa" opacity="0.5"/>`;
+      ? `<circle data-am-liver-dot cx="42" cy="36" r="5" fill="#fde047"/><circle data-am-liver-dot cx="58" cy="32" r="4.5" fill="#fde047"/><circle data-am-liver-dot cx="50" cy="46" r="5" fill="#fde047"/><circle data-am-liver-dot cx="68" cy="44" r="4" fill="#fde047"/>`
+      : `<circle data-am-liver-dot cx="48" cy="38" r="2.8" fill="#fed7aa" opacity="0.6"/>`;
 
     // ApoB particle count in lumen
-    const numParticles = Math.min(18, Math.max(5, Math.round((apoBFlux * mod.apoBMult) / 14)));
+    const numParticles = Math.min(20, Math.max(6, Math.round((apoBFlux * mod.apoBMult) / 12)));
     const lumenParticles = [];
     for (let i = 0; i < numParticles; i++) {
       const px = 145 + ((i * 31) % 465);
-      const py = 30 + ((i * 19) % 52);
+      const py = 26 + ((i * 19) % 54);
       const isSdLdl = isMasld && i % 2 === 0;
       const isLpa = i % 5 === 0;
       const r = isSdLdl ? 4.8 : 6.2;
       const fill = isLpa ? '#a855f7' : (isSdLdl ? '#ea580c' : '#eab308');
       const stroke = isLpa ? '#6b21a8' : '#92400e';
       lumenParticles.push(`
-        <g class="athero-flow-particle" data-x0="${px}" style="--flow-delay: ${-i * 0.7}s; --particle-x: ${px}px">
+        <g class="athero-flow-particle" data-x0="${px}" data-y0="${py}" style="--flow-delay: ${-i * 0.7}s; --particle-x: ${px}px">
           <circle cx="${px}" cy="${py}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
           ${isLpa ? `<path d="M ${px + r} ${py - 3} Q ${px + r + 5} ${py}, ${px + r} ${py + 3}" fill="none" stroke="#7e22ce" stroke-width="1.5"/>` : ''}
         </g>
       `);
     }
 
-    // Antiphospholipid antibodies or autoimmune cytokines in lumen
-    let immuneLumen = '';
-    if (isAps) {
-      immuneLumen = `
-        <g stroke="#be123c" stroke-width="1.8" fill="none">
-          <path d="M 250 78 L 250 86 M 250 82 L 245 76 M 250 82 L 255 76"/>
-          <path d="M 340 76 L 340 84 M 340 80 L 335 74 M 340 80 L 345 74"/>
-          <path d="M 430 78 L 430 86 M 430 82 L 425 76 M 430 82 L 435 76"/>
-        </g>
-        <text x="340" y="70" text-anchor="middle" font-size="10" font-weight="700" fill="#9f1239">Anti-β2GPI / aPL → TLR4</text>
-      `;
-    } else if (isAuto) {
-      immuneLumen = `
-        <g fill="#db2777">
-          <circle cx="235" cy="76" r="3"/><circle cx="295" cy="78" r="3"/><circle cx="385" cy="75" r="3"/><circle cx="455" cy="77" r="3"/>
-        </g>
-        <text x="345" y="70" text-anchor="middle" font-size="10" font-weight="700" fill="#9d174d">IL-17 · TNF · IFN-γ · NETs</text>
-      `;
-    }
+    const immuneLumen = immuneLumenMarkup(mod.id);
 
     const mm = morphMarkup(en);
     svg.innerHTML = `
@@ -590,7 +590,9 @@ export function createAtherogenesisLab(opts = {}) {
 
       <!-- Arterial Lumen (height pulses with the cardiac cycle) -->
       <rect data-am="lumen" x="10" y="10" width="620" height="84" fill="url(#atheroLumenGrad)" rx="8"/>
-      <text x="615" y="28" text-anchor="end" font-size="11" font-weight="700" fill="#991b1b">
+      ${mm.streamlines}
+      ${mm.rbcs}
+      <text x="615" y="28" text-anchor="end" font-size="11" font-weight="700" fill="#991b1b" stroke="#fff5f5" stroke-width="2.5" paint-order="stroke">
         ${en ? 'Arterial Lumen (Bloodstream)' : 'Arter Lümeni (Kan Akımı)'}
       </text>
 
@@ -603,6 +605,7 @@ export function createAtherogenesisLab(opts = {}) {
           ${isMasld ? (en ? 'MASLD Liver: ↑VLDL1' : 'MASLD Karaciğer: ↑VLDL1') : (en ? 'Liver: ApoB Secretion' : 'Karaciğer: ApoB Salınımı')}
         </text>
       </g>
+      ${mm.liverBuds}
 
       <!-- Circulating Lipoprotein Particles (pulsatile: fast in systole, slow in diastole) -->
       ${lumenParticles.join('')}
@@ -612,6 +615,7 @@ export function createAtherogenesisLab(opts = {}) {
 
       <g data-am="wall">
         ${mm.mound}
+        ${mm.glycocalyx}
         <!-- Endothelial Monolayer -->
         <g class="athero-clickable" data-svg-hs="endothelium" style="cursor:pointer">
           ${[15, 85, 155, 225, 295, 365, 435, 505, 575].map((x, idx) => {
@@ -652,11 +656,25 @@ export function createAtherogenesisLab(opts = {}) {
     const am = key => svg.querySelector(`[data-am="${key}"]`);
     refs = {
       lumen: am('lumen'), wall: am('wall'), mound: am('mound'), intima: am('intima'), iel: am('iel'), media: am('media'),
-      core: am('core'), cap: am('cap'), breach: am('breach'), thrombus: am('thrombus'), remodel: am('remodel'),
+      core: am('core'), coreInner: am('core-inner'), cap: am('cap'), collagen: am('collagen'), capStress: am('cap-stress'),
+      breach: am('breach'), thrombus: am('thrombus'), remodel: am('remodel'),
       readout: am('readout'), shear: am('shear'), focus: am('focus'), actors: collectActors(am('actors')),
       endo: Array.from(svg.querySelectorAll('[data-am-endo]')),
       arrows: Array.from(svg.querySelectorAll('[data-am-shear-arrow]')),
-      particles: Array.from(svg.querySelectorAll('.athero-flow-particle')).map(el => ({ el, x0: Number(el.dataset.x0) }))
+      eddies: Array.from(svg.querySelectorAll('[data-am-eddy]')),
+      streams: Array.from(svg.querySelectorAll('[data-am-stream]')),
+      rbcs: Array.from(svg.querySelectorAll('[data-am-rbc]')).map(el => ({
+        el, x0: Number(el.dataset.x0), lane: Number(el.dataset.lane)
+      })),
+      liverBuds: Array.from(svg.querySelectorAll('[data-am-liver-bud]')),
+      liverDots: Array.from(svg.querySelectorAll('[data-am-liver-dot]')),
+      cilia: Array.from(svg.querySelectorAll('[data-am-cilia]')),
+      fibrin: Array.from(svg.querySelectorAll('[data-am-fibrin]')),
+      pheno: Array.from(svg.querySelectorAll('[data-am-pheno]')),
+      pgPaths: Array.from(svg.querySelectorAll('[data-am-pg]')),
+      particles: Array.from(svg.querySelectorAll('.athero-flow-particle')).map(el => ({
+        el, x0: Number(el.dataset.x0), y0: Number(el.dataset.y0)
+      }))
     };
     paintGeometry();
     clock.refresh();
@@ -735,6 +753,7 @@ export function createAtherogenesisLab(opts = {}) {
       ${statinStartAge > 0 ? `<polyline points="${ptsTreated.join(' ')}" fill="none" stroke="#0d9488" stroke-width="2.8"/>` : ''}
 
       <!-- Patient current coordinate -->
+      <circle class="athero-cum-pulse" cx="${ptX}" cy="${ptY}" r="9.5" fill="none" stroke="${currentExp >= 5000 ? '#dc2626' : '#0d9488'}" stroke-width="2"/>
       <circle cx="${ptX}" cy="${ptY}" r="5.5" fill="${currentExp >= 5000 ? '#dc2626' : '#0d9488'}" stroke="#fff" stroke-width="1.8"/>
       <text x="${Math.min(w - 85, Math.max(padL + 60, ptX))}" y="${Math.max(padT + 14, ptY - 9)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#0f172a">
         ${currentExp.toLocaleString()} mg/dL·${en ? 'yr' : 'yıl'}

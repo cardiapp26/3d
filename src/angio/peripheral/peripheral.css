@@ -303,7 +303,12 @@
   width: min(100%, 577px);
   max-width: 100%;
   height: auto;
-  cursor: crosshair;
+  cursor: grab;
+  touch-action: none;
+}
+
+#peri-fluo-canvas:active {
+  cursor: grabbing;
 }
 
 .peri-toggle-strip {
